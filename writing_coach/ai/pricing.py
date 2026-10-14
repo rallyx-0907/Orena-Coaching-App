@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-04.v2"
+PRICING_CATALOG_VERSION = "2026-10-14.v3"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -36,6 +36,15 @@ _CATALOG = MappingProxyType({
     ("groq", "openai/gpt-oss-120b"): TokenPricing("groq", "openai/gpt-oss-120b", "USD", 0.15, 0.60),
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
+    # AI Cost Router (D-18X): pinned OpenRouter ":free" models, an explicit zero rate so a free call is "estimated at 0"
+    # and never counted as unpriced by the daily spend ledger. Source: openrouter.ai model pages, input and output
+    # both 0 for the ":free" variant. TO VERIFY against the live catalogue before activation: the ids below could
+    # not be checked from the build environment (no live-catalogue access), and a retired id simply answers an
+    # error and fails over.
+    ("openrouter", "google/gemma-4-31b-it:free"): TokenPricing("openrouter", "google/gemma-4-31b-it:free", "USD", 0.0, 0.0),
+    ("openrouter", "qwen/qwen3-next-80b-a3b-instruct:free"): TokenPricing(
+        "openrouter", "qwen/qwen3-next-80b-a3b-instruct:free", "USD", 0.0, 0.0
+    ),
 })
 
 
@@ -110,6 +119,15 @@ def resolve_token_pricing(provider: object, model: object) -> TokenPricing | Non
     return _CATALOG.get(key)
 
 
+def is_free_model(provider: object, model: object) -> bool:
+    """A model that costs nothing and may log prompts: a zero-rate catalogue entry, or an OpenRouter ":free" id."""
+
+    pricing = resolve_token_pricing(provider, model)
+    if pricing is not None:
+        return pricing.input_per_million == 0 and pricing.output_per_million == 0
+    return str(provider or "").strip().casefold() == "openrouter" and str(model or "").strip().endswith(":free")
+
+
 def estimate_token_cost(provider: object, model: object, usage: object) -> dict[str, Any]:
     """Return an explicit cost state and event-time pricing provenance.
 
@@ -137,9 +155,17 @@ def estimate_token_cost(provider: object, model: object, usage: object) -> dict[
     else:
         usage_state = "complete"
         reason = None
+    free = pricing is not None and pricing.input_per_million == 0 and pricing.output_per_million == 0
     if pricing is None:
         state = "unpriced"
         reason = "model_not_cataloged"
+    elif free:
+        # A zero rate is the same whatever was counted: free is "estimated at 0", never "unknown" (which the
+        # spend ledger would charge as an unpriced call).
+        state = "estimated"
+        reason = None
+        usage_state = "complete"
+        prompt = completion = 0
     elif usage_state != "complete":
         state = usage_state
     else:

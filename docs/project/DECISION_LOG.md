@@ -6174,3 +6174,59 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
+
+
+## D-192 - AI Cost Router, slice 1: word_translation, OpenRouter free pool, explicit operator failover (2026-10-14)
+
+**Status: PROPOSED** (needs independent architecture review before it merges; AGENTS.md architecture review authority,
+design `docs/project/proposals/AI_COST_ROUTER.md`, PR #165). No schema, no migration, no UI change. The capability ships
+without a stored configuration, so it is disabled until the owner saves and enables one.
+
+Owner decisions of 2026-10-14, recorded here before the tests that pinned the old rules change:
+
+1. **The basic tap may call AI, through `word_translation` only, sending the word only.** The input is one word or phrase
+   of at most three words and 40 characters (at most 8 Han characters), with the two languages and an optional part of
+   speech; never the sentence, never the article. The tap's order is unchanged until it misses: catalogue, then CC-CEDICT
+   or dictionaryapi, then the machine translators, then this capability, only when it is enabled, within the tap budget.
+   If the budget passes, the call still finishes in the background and fills the cache. `meaningSource` stays
+   `machine_translation`. A per-account brake limits cache-miss calls; over it the learner gets the deterministic answer,
+   never a 429. "Lookup never AI" (the docstring of `reading_lookup.py`, `tests/test_lookup_deterministic.py`,
+   `tests/test_reading_lookup.py`) is replaced by: **AI is reached from a word tap only through `word_translation`, only
+   on a deterministic miss, only when the capability is enabled.** Explain / "Why here?" (D-130.3, D-133) is unchanged and
+   remains the only way a sentence reaches AI.
+2. **OpenRouter, pinned `:free` models only, no credit.** The `openrouter/*` router ids (`openrouter/auto`,
+   `openrouter/free`) are refused, so is any id without a vendor prefix, so is any model that is not `:free`. Requests send
+   `provider.allow_fallbacks=false`: the router owns failover and the order is never random. A free endpoint may log
+   prompts, so a provider marked `may_log_prompts` and any free model are refused for `learner_text` capabilities (the
+   input-class rule, D-104); `word_translation` is `public_reference`. The key is entered by the owner (D-037 store or
+   `OPENROUTER_API_KEY`); no agent handles it. Free models have explicit zero-rate price entries (pricing catalogue
+   `2026-10-14.v3`), so the daily spend ledger no longer counts them as unpriced.
+3. **Lane.** The UI/Reading lane builds the router core in small PRs, each reviewed independently; the Intelligence lane
+   calls it only through `route()` and keeps `agent_turn_*`.
+4. **Order.** Slice 1 (this) before the Admin design addendum; the pool editor, config v2, the persistent cache and local
+   tiers are later slices.
+5. **Supersedes D-035's "primary-only" wording and clarifies D-010.** Operator-configured, ordered pools with tier labels,
+   per-attempt timeouts, a total deadline, cooldown and full telemetry are **explicit failover**, not silent failover:
+   D-010 forbids a *silent paid* failover, and this slice's pool is free-only and logged on every attempt. An
+   availability failure (429, 402, 5xx, timeout, unavailable) moves to the next entry; invalid output retries once and then
+   moves on; terminal errors (disabled, unsupported, invalid configuration) are never failed over. A paid tier or an
+   escalation still needs the owner's explicit configuration and a spend cap. The learner runtime already behaved this
+   way since `a50f96a7` (2026-09-22); the pinned Admin design A5 says the standby is "used automatically when the primary
+   fails".
+
+MEMORY CONTRADICTION (settled by the owner's instruction above): D-035 and `docs/ORENA_AI_COST_REDUCTION_PLAN.md` §6-7
+described a primary-only runtime; `routing.py` and `platform.py` implemented automatic failover to the standby.
+
+**Mechanics (for the reviewer).** `route(capability_key, input, deadline=None)` in `writing_coach/ai/router/`; the pool runs
+through `platform.generate_structured`, which gained `validate=`, `deadline=`, `invalid_retries=`, `attempt_timeout=`,
+`router_version=` and `capability_mode=` (all inert by default). `timeout_seconds` is now a supported capability option
+(G1) and `AIProviderError.status_code` is set by the providers (G4). The L1 cache is keyed without the model, with
+single-flight and a 60-second negative cache. Telemetry gains `tier, phase, attempt, fallback_reason, http_status_class,
+router_version` and an `ai.router.rollup` row per capability each minute; neither carries a word, a prompt or an answer.
+`word_translation` is `opt_in`: outside the legacy-to-capability activation set (`activation_capabilities()`).
+
+**Not verified.** The pinned ids `google/gemma-4-31b-it:free` and `qwen/qwen3-next-80b-a3b-instruct:free` could not be
+checked against the live OpenRouter catalogue from the build environment; verify before activation (a retired id only
+fails over). No live provider call was made.
+
+**Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.

@@ -48,8 +48,15 @@ class AICapabilityDefinition:
     implemented: bool
     allowed_fallback_policies: frozenset[AIFallbackPolicy]
     language_overrides_allowed: bool = False
+    # What a request to this capability may carry (AI Cost Router, D-18X). `learner_text` is the conservative
+    # default: a free tier or any provider that may log prompts is refused for it. `public_reference` is a word or
+    # phrase taken from published content, with no learner-authored text.
+    input_class: str = "learner_text"
+    # Not part of the legacy-to-capability activation set: switched on by the operator, ships disabled.
+    opt_in: bool = False
 
 
+INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
 _CAPABILITY_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
@@ -61,7 +68,11 @@ def _definition(
     configurable: bool,
     implemented: bool,
     fallback_policies: frozenset[AIFallbackPolicy] = frozenset({AIFallbackPolicy.NONE}),
+    input_class: str = "learner_text",
+    opt_in: bool = False,
 ) -> AICapabilityDefinition:
+    if input_class not in INPUT_CLASSES:
+        raise ValueError(f"Invalid input class for {key!r}: {input_class!r}")
     if not _CAPABILITY_KEY.fullmatch(key):
         raise ValueError(f"Invalid AI capability key: {key!r}")
     if not provider_backed and operation is not AIOperation.DETERMINISTIC:
@@ -75,6 +86,8 @@ def _definition(
         configurable=configurable,
         implemented=implemented,
         allowed_fallback_policies=fallback_policies,
+        input_class=input_class,
+        opt_in=opt_in,
     )
 
 
@@ -136,6 +149,18 @@ _DEFINITIONS = (
         provider_backed=True,
         configurable=True,
         implemented=True,
+    ),
+    # AI Cost Router slice 1 (D-18X): the basic tap's last layer. A word or phrase of at most three words, never the
+    # sentence; ships disabled and is switched on by the operator, so it is outside the activation set.
+    _definition(
+        "word_translation",
+        operation=AIOperation.STRUCTURED_TEXT_GENERATION,
+        provider_backed=True,
+        configurable=True,
+        implemented=True,
+        fallback_policies=_DETERMINISTIC_FALLBACK,
+        input_class="public_reference",
+        opt_in=True,
     ),
     _definition(
         "grammar_lesson_generator",
@@ -251,6 +276,14 @@ def configurable_provider_capabilities() -> tuple[AICapabilityDefinition, ...]:
         and definition.provider_backed
         and definition.configurable
     )
+
+
+def activation_capabilities() -> tuple[AICapabilityDefinition, ...]:
+    """The configurable capabilities the legacy-to-capability activation requires a row for.
+
+    Opt-in capabilities (`word_translation`) ship disabled and are not part of that gate."""
+
+    return tuple(definition for definition in configurable_provider_capabilities() if not definition.opt_in)
 
 
 def get_capability(key: str) -> AICapabilityDefinition | None:

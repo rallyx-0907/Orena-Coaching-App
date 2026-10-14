@@ -20,6 +20,7 @@ from writing_coach.ai.base import (
     AICapabilityUnsupported,
     AIModelCatalogEmpty,
     AIModelUnavailable,
+    AIOutputInvalid,
     AIProviderError,
     AIProviderNotConfigured,
     AIProviderResponseInvalid,
@@ -29,10 +30,12 @@ from writing_coach.ai.base import (
     ChatStreamEvent,
     normalized_latency,
     normalized_rate_limit,
+    http_status_class,
     normalized_usage,
     sanitize_telemetry,
     telemetry_error_class,
 )
+from writing_coach.ai import routing as _routing
 from writing_coach.ai.capabilities import AIOperation, require_capability
 from writing_coach.ai.config import CapabilityConfig, validate_capability_config
 from writing_coach.ai.control_plane import (
@@ -50,6 +53,8 @@ from writing_coach.ai.routing import (
     Attempt,
     ProviderTarget,
     build_chain,
+    fallback_reason,
+    provider_tier,
     run_chain,
 )
 from writing_coach.ai.providers import build_providers, get_provider_definition, provider_definitions
@@ -163,6 +168,12 @@ _PROVIDER_CONFIG_META: dict[str, dict[str, str | None]] = {
         "credential_env": "GROQ_API_KEY",
         "model_env": None,
         "models_env": "GROQ_MODELS",
+    },
+    "openrouter": {
+        "endpoint_env": "OPENROUTER_BASE_URL",
+        "credential_env": "OPENROUTER_API_KEY",
+        "model_env": None,
+        "models_env": "OPENROUTER_MODELS",
     },
     "gemini": {
         "endpoint_env": "GEMINI_BASE_URL",
@@ -296,7 +307,23 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
         return
 
 
-def _record_attempt(capability_key: str | None) -> Callable[[Attempt], None]:
+def _router_fields(router_version: str | None, provider: str | None, model: str | None, *, attempt: int | None,
+                   reason: str | None = None, status_class: str | None = None) -> dict[str, Any]:
+    """The AI Cost Router's telemetry fields (D-18X); empty for every non-routed call."""
+
+    if router_version is None:
+        return {}
+    return {
+        "tier": provider_tier(provider or "", model or ""),
+        "phase": "pool",
+        "attempt": attempt,
+        "fallback_reason": reason,
+        "http_status_class": status_class,
+        "router_version": router_version,
+    }
+
+
+def _record_attempt(capability_key: str | None, router_version: str | None = None) -> Callable[[Attempt], None]:
     """Every rung is logged, not only the one that answered.
 
     Without this a fallback is invisible: the operator sees one success and
@@ -305,7 +332,10 @@ def _record_attempt(capability_key: str | None) -> Callable[[Attempt], None]:
     answer are recorded here.
     """
 
+    counter = {"n": 0}
+
     def record(attempt: Attempt) -> None:
+        counter["n"] += 1
         if attempt.outcome == "success":
             return
         model_display, model_redacted = safe_model_display(attempt.model)
@@ -333,10 +363,41 @@ def _record_attempt(capability_key: str | None) -> Callable[[Attempt], None]:
                 "rate_limit": normalized_rate_limit(None),
                 "cost": estimate_token_cost(attempt.provider, model_display, None),
                 "quota_available": "unknown",
+                **_router_fields(router_version, attempt.provider, model_display, attempt=counter["n"],
+                                 reason=attempt.reason, status_class=attempt.status_class),
             }
         )
 
     return record
+
+
+# A chain with a deadline does not retry an invalid answer with less than this left.
+MIN_RETRY_SECONDS = 0.5
+
+
+def _record_invalid_output(capability_key: str | None, target: ProviderTarget, result: AIResult,
+                           router_version: str | None, *, attempt: int) -> None:
+    """An answer that parsed but failed the contract is a failed generation that may still have cost tokens."""
+
+    model_display, model_redacted = safe_model_display(target.model)
+    usage = normalized_usage(result.runtime)
+    _persist_operation_telemetry(
+        {
+            "capability": safe_capability_display(capability_key) if capability_key else "legacy",
+            "origin": "learner",
+            "provider": target.provider,
+            "model": model_display or None,
+            "model_redacted": model_redacted,
+            "outcome": "failure",
+            "error_class": "output_invalid",
+            "latency_ms": None,
+            "usage": usage,
+            "rate_limit": normalized_rate_limit(None),
+            "cost": estimate_token_cost(target.provider, model_display, usage),
+            "quota_available": "unknown",
+            **_router_fields(router_version, target.provider, model_display, attempt=attempt, reason="invalid_output"),
+        }
+    )
 
 
 AGENT_TURN_CAPABILITY = "agent_turn_fast"
@@ -457,12 +518,29 @@ def generate_structured(
     temperature: float = 0.1,
     seed: int | None = None,
     capability_key: str | None = None,
+    validate: Callable[[dict[str, Any]], None] | None = None,
+    deadline: float | None = None,
+    invalid_retries: int = 0,
+    attempt_timeout: float | None = None,
+    router_version: str | None = None,
+    capability_mode: bool = False,
 ) -> AIResult:
+    """One structured request through the learner runtime.
+
+    The AI Cost Router (D-18X) adds keyword-only inputs, all inert by default: `validate` is the contract's semantic
+    check, run inside the chain so an invalid answer retries (`invalid_retries`) and then moves on to the standby
+    like any availability failure; `deadline` is an absolute `monotonic()` time for the whole chain, and each
+    attempt's HTTP timeout is the configured one (else `attempt_timeout`) capped by what remains; `router_version`
+    adds the router's fields to telemetry; `capability_mode` selects the explicit capability configuration whatever
+    `AI_RUNTIME_MODE` is (a routed capability has no legacy selection).
+    """
+
     started = perf_counter()
     provider_id: str | None = None
     model: str | None = None
+    attempts_made = {"calls": 0}
 
-    def finish(result: AIResult) -> AIResult:
+    def finish(result: AIResult, attempts: list[Attempt] | None = None) -> AIResult:
         runtime = dict(result.runtime or {})
         provider_id = str(result.provider or "") or None
         model_display, model_redacted = safe_model_display(result.model)
@@ -479,13 +557,16 @@ def generate_structured(
             "rate_limit": normalized_rate_limit(runtime.get("rate_limit")),
             "cost": estimate_token_cost(provider_id, model_display, normalized_usage(runtime)),
             "quota_available": "unknown",
+            **_router_fields(router_version, provider_id, model_display, attempt=len(attempts or ()) or 1),
         }
+        if router_version is not None:
+            runtime["router"] = {"attempts": list(attempts or ()), "calls": attempts_made["calls"]}
         _persist_operation_telemetry(runtime["telemetry"])
         result.runtime = runtime
         return result
 
     try:
-        if runtime_mode() is AIRuntimeMode.LEGACY:
+        if runtime_mode() is AIRuntimeMode.LEGACY and not capability_mode:
             item, model = active_selection()
             provider_id = str(getattr(item, "id", "") or "") or None
             if not item.configured:
@@ -532,6 +613,15 @@ def generate_structured(
             timeout_seconds=config.timeout_seconds,
         )
 
+        def _timeout_for(target: ProviderTarget) -> float | None:
+            """This attempt's HTTP timeout: the configured one (else the caller's), capped by what remains."""
+
+            limit = float(target.timeout_seconds) if target.timeout_seconds is not None else attempt_timeout
+            if deadline is not None:
+                remaining = max(0.05, deadline - _routing.monotonic())
+                limit = remaining if limit is None else min(limit, remaining)
+            return limit
+
         def _ask(target: ProviderTarget) -> AIResult:
             nonlocal provider_id, model
             provider_id, model = target.provider, target.model
@@ -541,20 +631,44 @@ def generate_structured(
             if not item.configured:
                 raise AIProviderUnavailable(f"{item.name} is not configured.")
             generate_once = getattr(item, "generate_json_once", None) or item.generate_json
-            return generate_once(
-                messages=messages,
-                schema=schema,
-                model=target.model,
-                max_output_tokens=max_output_tokens,
-                temperature=config.temperature if config.temperature is not None else temperature,
-                seed=seed,
-            )
+            invalid: AIOutputInvalid | None = None
+            for _try in range(max(0, int(invalid_retries)) + 1):
+                if _try and deadline is not None and deadline - _routing.monotonic() < MIN_RETRY_SECONDS:
+                    break  # no time for a second try: the standby gets what is left
+                options: dict[str, Any] = {}
+                timeout = _timeout_for(target)
+                if timeout is not None:
+                    options["timeout"] = timeout
+                attempts_made["calls"] += 1
+                result = generate_once(
+                    messages=messages,
+                    schema=schema,
+                    model=target.model,
+                    max_output_tokens=max_output_tokens,
+                    temperature=config.temperature if config.temperature is not None else temperature,
+                    seed=seed,
+                    **options,
+                )
+                if validate is None:
+                    return result
+                try:
+                    validate(result.data)
+                    return result
+                except AIOutputInvalid as exc:
+                    invalid = exc
+                    _record_invalid_output(capability_key, target, result, router_version, attempt=chain.index(target) + 1)
+            assert invalid is not None
+            raise invalid
 
-        routed = run_chain(chain, _ask, on_attempt=_record_attempt(capability_key))
+        routed = run_chain(
+            chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline
+        )
         provider_id, model = routed.target.provider, routed.target.model
-        return finish(routed.value)
+        return finish(routed.value, routed.attempts)
     except (AICapabilityError, AIProviderError) as exc:
         model_display, model_redacted = safe_model_display(model)
+        if router_version is not None:
+            exc.router_calls = attempts_made["calls"]  # type: ignore[attr-defined]
         exc.telemetry = {
             "capability": safe_capability_display(capability_key) if capability_key else "legacy",
             "origin": "learner",
@@ -568,6 +682,9 @@ def generate_structured(
             "rate_limit": normalized_rate_limit(getattr(exc, "rate_limit", None)),
             "cost": estimate_token_cost(provider_id, model_display, None),
             "quota_available": "unknown",
+            **_router_fields(router_version, provider_id, model_display, attempt=len(getattr(exc, "attempts", ())) or 1,
+                             reason=fallback_reason(exc) if isinstance(exc, AIProviderError) else None,
+                             status_class=http_status_class(getattr(exc, "status_code", None))),
         }
         _persist_operation_telemetry(exc.telemetry)
         raise

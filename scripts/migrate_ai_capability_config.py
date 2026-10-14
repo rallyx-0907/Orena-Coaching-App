@@ -15,7 +15,7 @@ if str(ROOT) not in sys.path:
 
 from writing_coach.ai.capabilities import (  # noqa: E402
     AIFallbackPolicy,
-    configurable_provider_capabilities,
+    activation_capabilities,
 )
 from writing_coach.ai.config import CapabilityConfig, validate_capability_config  # noqa: E402
 from writing_coach.persistence.config import create_runtime_engine  # noqa: E402
@@ -81,7 +81,7 @@ def migrate_capability_configs(
 
     created: list[str] = []
     skipped: list[str] = []
-    for definition in configurable_provider_capabilities():
+    for definition in activation_capabilities():
         config = _seed_config(definition.key, provider, model)
         if repository.get_capability_config(definition.key) is not None:
             skipped.append(definition.key)

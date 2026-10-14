@@ -17,7 +17,8 @@ from writing_coach.ai.capabilities import (
     AIFallbackPolicy,
     require_capability,
 )
-from writing_coach.ai.providers import ProviderDefinition, get_provider_definition
+from writing_coach.ai.pricing import is_free_model
+from writing_coach.ai.providers import ProviderDefinition, check_model_allowed, get_provider_definition
 
 
 CONFIG_VERSION = 1
@@ -194,6 +195,20 @@ def validate_capability_config(
             raise AIProviderUnsupportedOperation(
                 f"Backup AI provider {backup.id!r} does not support options: {sorted(backup_unsupported)!r}."
             )
+    check_model_allowed(provider.id, config.model)
+    if config.backup_provider is not None:
+        check_model_allowed(config.backup_provider, config.backup_model or "")
+    if definition.input_class == "learner_text":
+        # A free tier, or any endpoint that may log prompts, never receives learner-authored text (D-18X, D-104).
+        pool = [(provider, config.model)]
+        if config.backup_provider is not None:
+            pool.append((get_provider_definition(config.backup_provider), config.backup_model or ""))
+        for entry, model in pool:
+            if entry.may_log_prompts or is_free_model(entry.id, model):
+                raise AICapabilityConfigInvalid(
+                    f"{definition.key!r} carries learner text: provider {entry.id!r} / model {model!r} "
+                    "(a free tier or a provider that may log prompts) is refused."
+                )
     if config.fallback_policy not in definition.allowed_fallback_policies:
         raise AICapabilityConfigInvalid(
             f"Fallback policy {config.fallback_policy.value!r} is not allowed for {definition.key!r}."

@@ -12,9 +12,11 @@ import requests
 from urllib.parse import urlsplit, urlunsplit
 
 from writing_coach.ai.base import (
+    AICapabilityConfigInvalid,
     AIProviderError,
     AIProviderNotConfigured,
     AIProviderResponseInvalid,
+    AIProviderTimeout,
     AIProviderUnavailable,
     AIResult,
     ChatFinished,
@@ -36,6 +38,8 @@ class ProviderDefinition:
     secret_mode: str
     supported_operations: frozenset[AIOperation]
     supported_option_keys: frozenset[str]
+    # The provider's endpoint may log or train on prompts (a free tier): refused for `learner_text` capabilities.
+    may_log_prompts: bool = False
 
     def supports(self, operation: AIOperation) -> bool:
         return operation in self.supported_operations
@@ -77,10 +81,9 @@ def _normalized_rate_limit_headers(headers: object) -> dict[str, int | None]:
         if parsed <= 10**15:
             result[key] = parsed
     return result
-# generate_json() consumes temperature per request. Timeout is currently bound
-# to each runtime instance from environment configuration, so capability config
-# must not claim it is independently supported yet.
-_TEXT_OPTION_KEYS = frozenset({"temperature"})
+# generate_json_once() takes a temperature and a per-request timeout (AI Cost Router, G1), so a capability's own
+# timeout_seconds is saved and applied; the instance timeout from the environment is only the default.
+_TEXT_OPTION_KEYS = frozenset({"temperature", "timeout_seconds"})
 _PROVIDER_DEFINITIONS = (
     ProviderDefinition('azure-openai', 'Azure OpenAI', 'cloud', 'server-managed', _STRUCTURED_TEXT_OPERATIONS, _TEXT_OPTION_KEYS),
     ProviderDefinition('azure-speech', 'Azure Speech', 'cloud', 'server-managed', frozenset({AIOperation.PRONUNCIATION_EVALUATION}), frozenset()),
@@ -124,6 +127,17 @@ _PROVIDER_DEFINITIONS = (
         supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
     ),
+    # D-18X: only pinned ":free" models, and a free endpoint may log prompts, so it receives published reference
+    # input only (never learner text). Structured text only: it is not offered for agent turns.
+    ProviderDefinition(
+        id="openrouter",
+        name="OpenRouter",
+        kind="cloud",
+        secret_mode="server-managed",
+        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_option_keys=_TEXT_OPTION_KEYS,
+        may_log_prompts=True,
+    ),
 )
 _PROVIDER_CATALOG = MappingProxyType(
     {definition.id: definition for definition in _PROVIDER_DEFINITIONS}
@@ -140,6 +154,25 @@ def get_provider_definition(provider_id: str) -> ProviderDefinition | None:
     """Look up a known provider descriptor without inspecting its environment."""
 
     return _PROVIDER_CATALOG.get(str(provider_id or "").strip().casefold())
+
+
+def check_model_allowed(provider_id: str, model: str) -> None:
+    """The model allowlist rule of a provider, static and offline (D-18X).
+
+    OpenRouter: a pinned, vendor-prefixed ":free" id only. `openrouter/auto`, `openrouter/free` and every other
+    `openrouter/*` id pick a model at random behind the router, an id without a vendor prefix is not a model id, and
+    a paid id would spend credit the owner has not bought. Other providers have no rule here."""
+
+    if str(provider_id or "").strip().casefold() != "openrouter":
+        return
+    value = str(model or "").strip()
+    vendor, _, name = value.partition("/")
+    if not value or not vendor or not name or vendor.casefold() == "openrouter":
+        raise AICapabilityConfigInvalid(
+            "OpenRouter needs a pinned vendor-prefixed model id; the openrouter/* router ids are refused."
+        )
+    if not value.endswith(":free") or name == ":free":
+        raise AICapabilityConfigInvalid("OpenRouter is limited to pinned ':free' models.")
 
 
 def _schema_instruction(schema: dict[str, Any]) -> str:
@@ -284,10 +317,10 @@ class OllamaProvider:
             raise _invalid_model_catalog() from exc
         return sorted(set(_model_catalog(envelope, container_key="models", model_key="name")))
 
-    def generate_json_once(self, **kwargs: Any) -> AIResult:
+    def generate_json_once(self, timeout: float | None = None, **kwargs: Any) -> AIResult:
         """Execute one live-test request; Ollama has no compatibility retry."""
 
-        return self.generate_json(**kwargs)
+        return self.generate_json(timeout=timeout, **kwargs)
 
     def generate_json(
         self,
@@ -298,6 +331,7 @@ class OllamaProvider:
         max_output_tokens: int,
         temperature: float,
         seed: int | None = None,
+        timeout: float | None = None,
     ) -> AIResult:
         if not model:
             raise AIProviderUnavailable("No Ollama model is selected.")
@@ -324,17 +358,19 @@ class OllamaProvider:
             response = requests.post(
                 f"{self.base_url}/api/chat",
                 json=body,
-                timeout=self.timeout,
+                timeout=timeout if timeout is not None else self.timeout,
             )
             response.raise_for_status()
             envelope = response.json()
+        except requests.Timeout as exc:
+            raise AIProviderTimeout("Ollama timed out.") from exc
         except requests.ConnectionError as exc:
             raise AIProviderUnavailable("Ollama is not reachable.") from exc
-        except requests.Timeout as exc:
-            raise AIProviderUnavailable("Ollama timed out.") from exc
         except requests.HTTPError as exc:
             status = exc.response.status_code if exc.response is not None else "?"
-            raise AIProviderError(f"Ollama returned HTTP {status}.") from exc
+            error = AIProviderError(f"Ollama returned HTTP {status}.")
+            error.status_code = exc.response.status_code if exc.response is not None else None
+            raise error from exc
         except ValueError as exc:
             raise AIProviderError("Ollama returned a non-JSON HTTP response.") from exc
 
@@ -372,8 +408,10 @@ class OpenAICompatibleProvider:
         model_filter: str = "",
         supports_seed: bool = True,
         credential_override: dict[str, Any] | None = None,
+        extra_body: dict[str, Any] | None = None,
     ) -> None:
         credential_override = credential_override or {}
+        self.extra_body = dict(extra_body or {})
         self.id = provider_id
         self.name = name
         override_key = credential_override.get("api_key")
@@ -481,6 +519,12 @@ class OpenAICompatibleProvider:
             if any(word in lowered for word in blocked):
                 return False
             return bool(lowered.startswith("gpt-") or re.match(r"^o\d", lowered))
+        if self.model_filter == "openrouter-free":
+            try:
+                check_model_allowed("openrouter", model)
+            except AICapabilityConfigInvalid:
+                return False
+            return True
         if self.model_filter == "groq-text":
             # Groq serves speech, text-to-speech and prompt-classification models
             # from the same catalog endpoint. Only chat models belong in a
@@ -549,12 +593,14 @@ class OpenAICompatibleProvider:
             if self._accept_model(model)
         )
 
-    def _post_chat(self, body: dict[str, Any]) -> dict[str, Any]:
+    def _post_chat(self, body: dict[str, Any], timeout: float | None = None) -> dict[str, Any]:
+        if self.extra_body:
+            body = {**body, **self.extra_body}
         response = requests.post(
             f"{self.base_url}/chat/completions",
             headers=self._headers(),
             json=body,
-            timeout=self.timeout,
+            timeout=timeout if timeout is not None else self.timeout,
             **({'allow_redirects': False} if self.id == 'azure-openai' else {}),
         )
         if self.id == 'azure-openai' and 300 <= response.status_code < 400:
@@ -566,6 +612,7 @@ class OpenAICompatibleProvider:
                 f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip()
             )
             error.rate_limit = dict(self._last_rate_limit)
+            error.status_code = response.status_code
             raise error
         try:
             return response.json()
@@ -640,13 +687,17 @@ class OpenAICompatibleProvider:
         max_output_tokens: int,
         temperature: float,
         seed: int | None = None,
+        timeout: float | None = None,
     ) -> AIResult:
-        """Execute one structured request without the legacy compatibility retry."""
+        """Execute one structured request without the legacy compatibility retry.
+
+        `timeout` (seconds) bounds this request; without it the instance timeout applies."""
 
         if not self.configured:
             raise AIProviderNotConfigured(f"{self.name} is not configured on the server.")
         if not model:
             raise AIProviderUnavailable(f"No model is selected for {self.name}.")
+        check_model_allowed(self.id, model)  # defence in depth: a router id never reaches the wire
 
         enriched = [dict(message) for message in messages]
         if enriched and enriched[0].get("role") == "system":
@@ -665,11 +716,11 @@ class OpenAICompatibleProvider:
         if seed is not None and self.supports_seed:
             body["seed"] = seed
         try:
-            envelope = self._post_chat(body)
+            envelope = self._post_chat(body) if timeout is None else self._post_chat(body, timeout)
+        except requests.Timeout as exc:
+            raise AIProviderTimeout(f"{self.name} timed out.") from exc
         except requests.ConnectionError as exc:
             raise AIProviderUnavailable(f"{self.name} is not reachable.") from exc
-        except requests.Timeout as exc:
-            raise AIProviderUnavailable(f"{self.name} timed out.") from exc
 
         first_choice, content = _openai_message_content(envelope)
         usage = envelope.get("usage") if isinstance(envelope.get("usage"), dict) else {}
@@ -750,6 +801,7 @@ class OpenAICompatibleProvider:
                 response.close()
             error = AIProviderError(f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip())
             error.rate_limit = dict(self._last_rate_limit)
+            error.status_code = response.status_code
             raise error
         return self._read_chat_stream(response, should_stop)
 
@@ -920,6 +972,21 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             default_models=(),
             model_filter="groq-text",
             credential_override=provider_credentials.get("groq"),
+        ),
+        # D-18X. Key from the D-037 store or OPENROUTER_API_KEY (a name here, never a value). OpenRouter's own model
+        # fallback is switched off: the router owns failover and the order is never random.
+        "openrouter": OpenAICompatibleProvider(
+            provider_id="openrouter",
+            name="OpenRouter",
+            api_key_env="OPENROUTER_API_KEY",
+            base_url_env="OPENROUTER_BASE_URL",
+            default_base_url="https://openrouter.ai/api/v1",
+            models_env="OPENROUTER_MODELS",
+            default_models=(),
+            model_filter="openrouter-free",
+            supports_seed=False,
+            credential_override=provider_credentials.get("openrouter"),
+            extra_body={"provider": {"allow_fallbacks": False}},
         ),
         "gemini": OpenAICompatibleProvider(
             provider_id="gemini",

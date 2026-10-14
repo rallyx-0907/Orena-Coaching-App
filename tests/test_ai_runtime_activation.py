@@ -7,7 +7,7 @@ import requests
 
 from scripts import validate_ai_runtime_activation as activation
 from writing_coach.ai.base import AICapabilityConfigInvalid
-from writing_coach.ai.capabilities import AIFallbackPolicy, configurable_provider_capabilities
+from writing_coach.ai.capabilities import AIFallbackPolicy, activation_capabilities
 from writing_coach.ai.config import CapabilityConfig
 from writing_coach.ai.providers import ProviderDefinition
 from writing_coach.persistence.platform_repository import CapabilityConfigRecord
@@ -43,7 +43,7 @@ class Repository:
                     else AIFallbackPolicy.NONE
                 ),
             )
-            for definition in configurable_provider_capabilities()
+            for definition in activation_capabilities()
         }
         self.reads = 0
 
@@ -209,3 +209,17 @@ def test_cli_failure_output_is_structured_and_secret_safe(monkeypatch, capsys) -
         "gate": "ai-capability-runtime-activation",
         "error": "AI runtime activation readiness validation failed.",
     }
+
+
+def test_a_disabled_opt_in_word_translation_row_does_not_block_activation(monkeypatch) -> None:
+    """D-18X: word_translation ships disabled and is outside the activation set; a row for it is allowed, not needed."""
+
+    repository = Repository()
+    assert "word_translation" not in repository.configs  # not required
+    ready(monkeypatch, repository)
+    repository.configs["word_translation"] = CapabilityConfig(
+        enabled=False, provider="openrouter", model="google/gemma-4-31b-it:free",
+        fallback_policy=AIFallbackPolicy.DETERMINISTIC_FALLBACK,
+    )
+    report = ready(monkeypatch, repository)
+    assert report["ok"] is True and "word_translation" not in report["validated_capabilities"]

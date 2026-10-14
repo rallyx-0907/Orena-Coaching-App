@@ -40,15 +40,22 @@ from typing import Any, Callable, Iterable
 
 from writing_coach.ai.base import (
     AICapabilityError,
+    AIOutputInvalid,
     AIProviderError,
+    AIProviderNotConfigured,
     AIProviderResponseInvalid,
+    AIProviderTimeout,
     AIProviderUnavailable,
+    http_status_class,
 )
+from writing_coach.ai.pricing import is_free_model
 
 # Consecutive availability failures before a provider is stood down.
 FAILURES_BEFORE_COOLDOWN = 3
 FIRST_COOLDOWN_SECONDS = 30.0
 MAX_COOLDOWN_SECONDS = 300.0
+# A chain with a deadline does not start another attempt with less than this left (AI Cost Router, D-18X).
+MIN_ATTEMPT_SECONDS = 0.2
 
 
 class AllProvidersUnavailable(AIProviderUnavailable):
@@ -61,6 +68,7 @@ class AllProvidersUnavailable(AIProviderUnavailable):
     def __init__(self, message: str, attempts: list["Attempt"]) -> None:
         super().__init__(message)
         self.attempts = attempts
+        self.reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -81,6 +89,9 @@ class Attempt:
     outcome: str
     error_class: str | None = None
     latency_ms: int | None = None
+    # Why the chain moved on (router vocabulary, see `fallback_reason`) and the HTTP class of the failure.
+    reason: str | None = None
+    status_class: str | None = None
 
 
 def classify(error: BaseException) -> str:
@@ -98,6 +109,41 @@ def classify(error: BaseException) -> str:
     if isinstance(error, AIProviderError):
         return "availability"
     return "terminal"
+
+
+def fallback_reason(error: BaseException) -> str:
+    """The closed, prompt-free reason a rung failed, for telemetry and the router rollup."""
+
+    status = getattr(error, "status_code", None)
+    if isinstance(error, AIOutputInvalid):
+        return "invalid_output"
+    if isinstance(error, (AIProviderTimeout, TimeoutError)):
+        return "timeout"
+    if status == 429:
+        return "rate_limited"
+    if status == 402:
+        return "payment_required"
+    if status in (401, 403):
+        return "auth_failed"
+    if type(status) is int and status >= 500:
+        return "server_error"
+    if type(status) is int and status >= 400:
+        return "client_error"
+    if isinstance(error, AIProviderNotConfigured):
+        return "not_configured"
+    if isinstance(error, AIProviderResponseInvalid):
+        return "malformed_response"
+    if isinstance(error, AIProviderUnavailable):
+        return "unavailable"
+    return "provider_error"
+
+
+def provider_tier(provider: str, model: str) -> str:
+    """`local` (our own machine), `free` (a zero-rate model) or `paid`."""
+
+    if str(provider or "").strip().casefold() == "ollama":
+        return "local"
+    return "free" if is_free_model(provider, model) else "paid"
 
 
 class ProviderHealth:
@@ -198,6 +244,7 @@ def run_chain(
     *,
     health: ProviderHealth | None = None,
     on_attempt: Callable[[Attempt], None] | None = None,
+    deadline: float | None = None,
 ) -> RoutingResult:
     """Ask each rung in turn until one answers.
 
@@ -205,6 +252,9 @@ def run_chain(
     every retry, so a learner turn cannot be answered twice. A terminal error
     is re-raised immediately and unchanged: the caller still needs to know it
     was a bad request, not a provider outage.
+
+    `deadline` is an absolute `monotonic()` time: once less than `MIN_ATTEMPT_SECONDS`
+    remains, no further rung is started.
     """
     tracker = health or provider_health
     attempts: list[Attempt] = []
@@ -214,8 +264,15 @@ def run_chain(
 
     last_error: BaseException | None = None
     for target in rungs:
+        if deadline is not None and deadline - monotonic() < MIN_ATTEMPT_SECONDS:
+            if last_error is not None:
+                last_error.attempts = attempts  # type: ignore[attr-defined]
+                raise last_error
+            error = AllProvidersUnavailable("The time allowed for this capability has run out.", attempts)
+            error.reason = "deadline"
+            raise error
         if not tracker.is_available(target.provider):
-            record = Attempt(target.provider, target.model, "skipped_unhealthy")
+            record = Attempt(target.provider, target.model, "skipped_unhealthy", reason="cooling_down")
             attempts.append(record)
             if on_attempt:
                 on_attempt(record)
@@ -227,7 +284,8 @@ def run_chain(
             latency = int((monotonic() - started) * 1000)
             kind = classify(error)
             record = Attempt(
-                target.provider, target.model, "failure", type(error).__name__, latency
+                target.provider, target.model, "failure", type(error).__name__, latency,
+                reason=fallback_reason(error), status_class=http_status_class(getattr(error, "status_code", None)),
             )
             attempts.append(record)
             if on_attempt:
