@@ -379,7 +379,7 @@ Runner-up: Simple English Wikipedia (EN-5), pending Q2.
 - **Q3. NonCommercial.** MIT News, ProPublica, 阮一峰, 爱范儿 and 報導者 are NC. Orena has paid plans; is any learner use "non-commercial"? I assumed no, so these are MANUAL_ONLY. A written permission from a publisher would change that.
 - **Q4. NoDerivatives.** The Conversation, ProPublica, MIT News, 阮一峰 and 報導者 are ND. The engine normalises and re-flows text; is an unaltered, attributed, link-back display a legitimate Orena mode, or should these be link-out only?
 - **Q5. Public domain scope.** Gutenberg and Wikisource status is US-law based and varies by author death date; Orena users are global. Do we accept US status, or restrict to authors who died before a cut-off year?
-- **Q6. VOA wire copy.** Is excluding items that carry an AFP, AP or Reuters credit enough for ZH-2 and EN-3, and who maintains that rule?
+- **Q6. VOA wire copy.** Is excluding items that carry an AFP, AP or Reuters credit enough for ZH-2 and EN-3, and who maintains that rule? *Partly answered 2026-10-14 by D-192 (PROPOSED): items with a wire credit or no byline lose the source-level public-domain answer; the host table in `reading_rights_refinement.py` is the rule's owner.*
 - **Q7. Taiwan government text.** Does the Government Open Data License v1 apply to agency web news, or only to datasets? Without written confirmation 行政院 stays MANUAL_ONLY.
 - **Q8. Frozen archives.** VOA Learning English, Wikinews (EN and ZH) are closed or frozen. Is a one-off archive import a "source" under D-111, and does a closed project change the attribution wording?
 - **Q9. Script variant.** Is Traditional Chinese content (Global Voices 中文, 報導者, 苦劳网, 行政院) in scope for the Simplified learner track?

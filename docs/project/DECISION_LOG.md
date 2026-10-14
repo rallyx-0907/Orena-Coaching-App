@@ -6174,3 +6174,46 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
+
+## D-192 - Per-item rights: a staff-only public-domain source does not vouch for wire copy (2026-10-14)
+
+**Status: PROPOSED.** Changes how rights are recorded at ingest for Reading, which is a lifecycle/rights change, so it needs
+independent architecture review before it is ACCEPTED; the implementer does not approve it. No schema or migration change.
+Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human is listed at the end.
+
+1. **Problem.** VOA's own staff output is US-government work and in the public domain, but VOA also carries and rewrites
+   wire copy (Reuters, AP, AFP) and uses third-party photos, which are not. The VOA 中文 source's licence note made every
+   VOA item read as "Public domain", and the learner credit line named it as the licence.
+2. **Rule, as configuration.** `writing_coach/reading_rights_refinement.py` holds `SOURCE_RIGHTS_RULES`, keyed by host
+   (same matching as `reading_source_cleanup.SOURCE_RULES`). The flag `public_domain_requires_staff_authorship` is set for
+   `voanews.com` and `voachinese.com`. No code branches on a publisher's name; another source with the same condition gets
+   the same flag. It is a code table, not an admin setting or a column, because the source row has no config column
+   (`polling_policy` is a polling field and is unused).
+3. **At ingest** (`ReadingContentEngine.process`, where a source's answers are inherited into the snapshot): for a flagged
+   host the item is `withheld` when the extractor shows wire evidence, or when it has no byline (authorship cannot be
+   established). Then `can_republish`, `can_adapt` and `license_note` are not copied from the source into the immutable
+   snapshot. An absent key is the existing "unknown" (`rights_state`), so nothing new is stored and nothing is denied.
+   Only keys whose origin is the source are withheld; an answer submitted for the article is kept. Otherwise the outcome is
+   `kept` and the item inherits as before.
+4. **Effects, all through existing mechanisms.** The review page shows D-190's `rights_unknown` warning (and the existing
+   incomplete-credit warning, as no licence is recorded); an administrator publishes only with `acknowledge_warnings` and a
+   reason, audited. D-111 refuses automatic admission (`rights_not_cleared`). `recognise_license` finds no "public domain"
+   text, so the learner is shown no licence. An administrator can still record the answers on the review page.
+5. **Evidence kept.** `source_items.metadata.rights_refinement` and `analysis.rights_refinement`: `outcome`, `reasons`
+   (`wire_copy`, `no_staff_byline`), the matching lines (at most five, 120 characters each), and the withheld keys.
+6. **Detection is deliberately narrow.** Wire evidence is a line of at most 40 characters that names an agency and is a
+   bracketed credit, a derivation note ("本文依据了美联社的报道", "综合", "编译", "来源：") or a credit label, a dateline
+   `（路透社）—`, a byline or attribution line that is an agency, or the English equivalents. A sentence in a staff story that
+   cites an agency as a news source ("路透社说…", "对美联社说…", "澳大利亚联邦警察(AFP)") is VOA's own writing and is not
+   evidence. Measured on 213 pages from voachinese.com (2026-10-14): 2 carry a derivation note, 13 have no byline (video,
+   audio and index pages, which the quality gate already holds), and the other pages keep their rights.
+7. **Not covered.** Third-party photos and video are not text and are not inspected (catalogue Q1 / D-189). An inline mention
+   of an agency is not treated as wire copy; whether to treat it as one is the human's call (below).
+8. **Existing data is not modified.** Articles ingested before this change keep their snapshot. The read-only
+   `scripts/check_published_reading_rights_refinement.py` judges the stored text now and lists published articles from a
+   flagged source that show wire copy or no byline, with whether their effective rights still say "can republish".
+9. **Human decisions left.** (a) Whether a published item that asserts public domain but shows wire copy is unpublished or
+   given an answer on its review page (the eight trial publishes on :8021 should be run through the script first).
+   (b) Whether VOA stories that cite an agency inline are acceptable as staff-written. (c) Whether VOA contributor
+   bylines (non-staff names) establish staff authorship. (d) Image rights (Q1). (e) Who maintains the host table.
+   Review: pending; reviewer, commit and outcome are recorded here when done.
