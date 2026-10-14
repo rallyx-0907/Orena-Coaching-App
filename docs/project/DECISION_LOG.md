@@ -6175,6 +6175,27 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
 
+   Tightened 2026-10-14 (`claude/reading-quality-voa`, `reading-quality/3`): a live dry run found two VOA 中文 pages that
+   point 7 let through. `voachinese.com/p/6197` (topic page: no article element, one prose paragraph, 193 Hanzi of
+   teasers) is now a hard `index_page` through the generic rule "no article structure and a body under 400 Hanzi / 150
+   words". `voachinese.com/p/9647` (player page with a programme rundown, 302 Hanzi) is now a hard `media_page` through
+   "player markup, no article or main element (`no_semantic_container`) and a body under 600 Hanzi / 200 words". No source
+   name is used; the limits sit below the shortest genuine article of the evidence set. Real VOA 中文, NASA and Global
+   Voices articles stay clean (fixtures in `tests/fixtures/reading_quality/`). This changes the publish lifecycle, so it
+   **requires an independent re-review** before the entry returns to ACCEPTED.
+   Known false-positive class, accepted: a genuine short single-paragraph page with no article or main element
+   (`index_page`), or a 260-600 Hanzi / 60-200 word article with an embedded player in a plain div (`media_page`), is
+   hard-flagged and needs the audited `quality_override` with a reason; the same page inside `<article>` or `<main>` is
+   not blocked. `no_semantic_container` is derived from the real absence of an article or main element for every
+   extraction method, so a player page that fell back to whole-page extraction is caught too. Tests pin both cases.
+   Stored rows: `scripts/check_reading_quality_backlog.py` recomputes from stored facts, so rows with
+   `no_article_structure` may newly show `index_page`; rows without the new `no_semantic_container` fact are not
+   caught by the media rule.
+   Review of 8055ddbc: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer: APPROVED WITH
+   CONDITIONS (CI green before merge; fixture attribution README; this entry). Addendum in
+   `docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`. Re-review of 87968f7e (same reviewer role):
+   APPROVE, no open P0/P1; merged once CI was green.
+
 ## D-192 - Reading publisher: the learner-facing name is separate from the internal source name (2026-10-14)
 
 **Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVED WITH CONDITIONS on 09bd6b60, re-review APPROVE on 47e19c05; merged once CI was green). Refines D-189/D-190. Lane B item 2 of Reading Production Readiness.
