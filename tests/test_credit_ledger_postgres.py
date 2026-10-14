@@ -66,7 +66,15 @@ def ledger_world(migrations):
         connection.execute(text(f"CREATE ROLE {role} LOGIN PASSWORD '{password}' NOSUPERUSER NOBYPASSRLS"))
         connection.execute(text(f"GRANT orena_credit_runtime TO {role}"))
         # what the application's runtime role already holds outside the credit tables
-        connection.execute(text(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users, billing_orders TO {role}"))
+        # what the application's runtime role holds outside the credit tables (RUNBOOK_R-MON-014 §2): DML without
+        # DELETE/TRUNCATE on every other table; the credit tables come only through orena_credit_runtime
+        names = connection.execute(text(
+            "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename NOT IN "
+            "('credit_accounts', 'credit_ledger', 'credit_reversal_requests', 'alembic_version')")).scalars().all()
+        for name in names:
+            connection.execute(text(f'GRANT SELECT, INSERT, UPDATE ON "{name}" TO {role}'))
+        # the order code comes from a sequence (0027); the application runtime holds USAGE on its sequences (runbook §2)
+        connection.execute(text(f"GRANT USAGE, SELECT ON SEQUENCE billing_order_code_seq TO {role}"))
     runtime_url = make_url(f"{URL}{options}").set(username=role, password=password)
     runtime = create_engine(runtime_url, future=True, pool_size=12, max_overflow=4)
     repository = PostgresCreditRepository(runtime)
@@ -716,7 +724,7 @@ def test_p1_2_a_harmless_role_without_runtime_membership_is_not_ready_until_it_i
     name, password = f"orena_lonely_{uuid.uuid4().hex[:8]}", uuid.uuid4().hex
     _login(ledger.admin, name, password)
     ledger.sql(f'GRANT USAGE ON SCHEMA "{ledger.schema}" TO {name}')
-    ledger.sql(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users TO {name}")
+    ledger.sql(f"GRANT SELECT, INSERT, UPDATE ON account_incarnations, users, billing_orders TO {name}")
     engine = _engine_as(name, password, ledger.schema)
     try:
         lonely = CreditService(PostgresCreditRepository(engine))

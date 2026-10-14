@@ -267,6 +267,8 @@ def test_a_committed_payos_payment_not_yet_synced_refuses_a_manual_write():
             with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
                 _proposed("20261005_0027_billing_orders").upgrade()
                 _proposed("20261014_0031_billing_reconciliation").upgrade()
+                _proposed("20261014_0032_credit_ledger").upgrade()
+                _proposed("20261015_0033_credit_topup_orders").upgrade()
             key = f"entitlement-sync-{uuid.uuid4()}"
             account = stable_uuid("user", key)
             with engine.begin() as connection:

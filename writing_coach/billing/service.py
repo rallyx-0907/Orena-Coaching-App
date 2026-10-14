@@ -11,6 +11,12 @@ Access changes only through the commerce repository (`record_event`), from a ver
   recorded as a `prepaid:<incarnation>` subscription whose version is the order count.
 A checkout return URL grants nothing.
 
+PR-MON-5 (design revision 3, D-MON-022): a **credit pack** (`BILLING_CREDIT_PACKS_FILE`, a human gate - no file, no
+packs) is sold through the same payOS checkout as a `credit_pack` order that snapshots its units. Its payment is
+recorded by the same `record_payment` (webhook or lookup); the paid order, not the event, is the source of truth, and
+its credit is the ledger's exact top-up `billing_order / payos:<code>`. A full refund takes the credit back through a
+ledger reversal (C5). Credit packs are sold only while credits are ready, and never while a credit gap is critical.
+
 A verified money event is acknowledged only once it is durable (PR-MON-3, D-MON-004): as the order, a receipt, or a
 reconciliation item (`persistence/billing_reconciliation_repository.py`). A business anomaly - an unknown order, a
 mismatch, a payment for a deleted account, an undecidable subscription event, a refund - is recorded as an item and
@@ -22,6 +28,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import urllib.request
 import uuid
 from collections.abc import Callable, Mapping
@@ -44,6 +51,11 @@ _LIVE = frozenset({"active", "trialing", "past_due", "paused", "pending"})
 # A payment Orena cannot apply, and the reconciliation item it is kept as (PR-MON-3 §4.2).
 _PAYMENT_ANOMALY = {"unknown_order": "payment_unknown_order", "mismatch": "payment_mismatch",
                     "not_payable": "payment_not_payable"}
+# A credit-pack price key: `credits:<pack_id>:payos`.
+CREDIT_PREFIX = "credits:"
+_PACK_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
+# The credit gaps that close credit-pack checkouts (§6.2, §7.1); they never close plan checkouts.
+CREDIT_CHECKOUT_BLOCKERS = ("credit_topup_unapplied", "credit_reversal_unapplied")
 # A subscription event the commerce record could not decide.
 _UNDECIDED = frozenset({"unknown", "foreign_incarnation", "payload_conflict", "rejected"})
 
@@ -95,6 +107,44 @@ def load_prices(env: Mapping[str, str]) -> dict[str, Price]:
     return prices
 
 
+@dataclass(frozen=True)
+class CreditPack:
+    """One pack of credits for sale (K1: the numbers are the human's, in the packs file, never a default here)."""
+
+    pack_id: str
+    credit_units: int
+    currency: str
+    amount_minor: int
+    gateway: str
+
+    @property
+    def key(self) -> str:
+        return f"{CREDIT_PREFIX}{self.pack_id}:{self.gateway}"
+
+
+def load_credit_packs(env: Mapping[str, str]) -> dict[str, CreditPack]:
+    """The credit packs on sale, keyed `credits:<pack_id>:payos`. No file, no packs: nothing is sold (K1)."""
+
+    path = str(env.get("BILLING_CREDIT_PACKS_FILE", "")).strip()
+    if not path:
+        return {}
+    packs: dict[str, CreditPack] = {}
+    for item in json.loads(Path(path).read_text(encoding="utf-8")):
+        units, amount = item["credit_units"], item["amount_minor"]
+        if type(units) is not int or units <= 0 or type(amount) is not int or amount <= 0:
+            raise ValueError("a credit pack has positive integer units and a positive integer amount")
+        if not _PACK_ID.match(str(item["pack_id"])):
+            raise ValueError("a credit pack id is lower-case letters, digits, '-' or '_' (at most 40)")
+        if str(item["gateway"]) != "payos" or str(item["currency"]).upper() != "VND":
+            raise ValueError("credit packs are sold through payOS in VND (D-MON-002)")
+        pack = CreditPack(pack_id=str(item["pack_id"]), credit_units=units, currency="VND", amount_minor=amount,
+                          gateway="payos")  # fmt: skip
+        if pack.key in packs:
+            raise ValueError(f"{pack.key} is listed twice")
+        packs[pack.key] = pack
+    return packs
+
+
 def build_gateways(env: Mapping[str, str]) -> dict[str, Any]:
     from writing_coach.billing.payos import PayOSGateway
     from writing_coach.billing.polar import PolarGateway
@@ -127,8 +177,11 @@ class BillingService:
     def __init__(self, *, orders: Any, commerce: Any, gateways: Mapping[str, Any], prices: Mapping[str, Price],
                  catalog: Callable[[], Mapping[str, Any]] = lambda: current_plans(strict=True),
                  send: Callable[[dict], dict] = _send, now: Callable[[], datetime] = lambda: datetime.now(UTC),
-                 reconciliation: Any = None) -> None:
+                 reconciliation: Any = None, credit_packs: Mapping[str, CreditPack] | None = None,
+                 credits: Any = None) -> None:
         self._orders = orders
+        self._credit_packs = dict(credit_packs or {})
+        self._credits = credits  # the CreditService (PR-MON-4), only where credits are enabled
         # The reconciliation items (PR-MON-3). Without them no anomaly can be recorded, so none is acknowledged.
         self._items = reconciliation
         self._commerce = commerce
@@ -138,6 +191,13 @@ class BillingService:
         self._catalog = catalog
         self._send = send
         self._now = now
+
+    def attach_credits(self, credits: Any) -> None:
+        self._credits = credits
+
+    @property
+    def credits(self) -> Any:
+        return self._credits
 
     @property
     def orders(self) -> Any:
@@ -205,6 +265,38 @@ class BillingService:
                  "amount_minor": price.amount_minor, "gateway": price.gateway}
                 for key, price in self._sellable(checks).items()]  # fmt: skip
 
+    def credits_ready(self) -> bool:
+        if self._credits is None:
+            return False
+        try:
+            return bool(self._credits.status()["ready"])
+        except Exception:  # noqa: BLE001 - a readiness that cannot be read is not ready
+            return False
+
+    def _credit_checkout_blocked(self) -> bool:
+        """A critical payOS item, or an open credit gap (§6.2, §7.1), closes credit-pack checkouts; unreadable
+        reconciliation state closes them too."""
+
+        critical = self._critical_blocked()
+        if critical is None or "payos" in critical:
+            return True
+        try:
+            open_by_kind = self._items.summary()["open_by_kind"] if self._items is not None else {}
+        except Exception:  # noqa: BLE001
+            return True
+        return any(open_by_kind.get(kind, 0) for kind in CREDIT_CHECKOUT_BLOCKERS)
+
+    def credit_offers(self) -> list[dict[str, Any]]:
+        """The credit packs on sale now: none unless packs are configured, payOS has its keys, credits are ready and
+        no credit gap is critical (K5)."""
+
+        if not self._credit_packs or "payos" not in self._gateways or not self.credits_ready():
+            return []
+        if self._credit_checkout_blocked():
+            return []
+        return [{"key": pack.key, "pack_id": pack.pack_id, "credit_units": pack.credit_units, "currency": pack.currency,
+                 "amount_minor": pack.amount_minor, "gateway": pack.gateway} for pack in self._credit_packs.values()]
+
     def gateway_report(self) -> dict[str, dict[str, Any]]:
         """Per gateway: configured (its keys, and so its webhook verification), its prices against the catalogue, and
         ready - configured, priced, every price the catalogue's. No secret, no key material."""
@@ -244,10 +336,15 @@ class BillingService:
 
     def start_checkout(self, *, incarnation_id: str, price_key: str, operation_id: str, return_url: str,
                        cancel_url: str, confirmed_amount_minor: int | None, confirmed_currency: str | None,
-                       customer_email: str = "") -> dict[str, Any]:
+                       customer_email: str = "", confirmed_credit_units: int | None = None) -> dict[str, Any]:
         """`confirmed_*` is the price the learner saw and confirmed. It is never charged - the server's price is -
         but a checkout whose confirmed price is not the server's does not start (`price_changed`)."""
 
+        if price_key.startswith(CREDIT_PREFIX):
+            return self._start_credit_checkout(incarnation_id=incarnation_id, pack_key=price_key,
+                                               operation_id=operation_id, return_url=return_url, cancel_url=cancel_url,
+                                               amount=confirmed_amount_minor, currency=confirmed_currency,
+                                               units=confirmed_credit_units)  # fmt: skip
         price = self._prices.get(price_key)
         gateway = self._gateways.get(price.gateway) if price else None
         if price is None or gateway is None:
@@ -270,12 +367,7 @@ class BillingService:
         intent = CheckoutIntent(operation_id=operation_id, incarnation_id=incarnation_id, price=price,
                                 return_url=return_url, cancel_url=cancel_url, customer_email=customer_email)  # fmt: skip
         if gateway.kind == "domestic":
-            request = gateway.checkout_request(intent, order_code=int(order["order_code"]),
-                                               description=f"OR{order['order_code']}",
-                                               expires_at=order.get("expires_at"))  # fmt: skip
-            answer = self._send(request)
-            data = answer.get("data") or {}
-            reference, url, qr = str(data.get("paymentLinkId") or ""), str(data.get("checkoutUrl") or ""), str(data.get("qrCode") or "")
+            return self._open_domestic_link(gateway, intent, order, price.gateway)
         else:
             answer = self._send(gateway.checkout_request(intent))
             reference, url, qr = str(answer.get("id") or ""), str(answer.get("url") or ""), ""
@@ -284,6 +376,56 @@ class BillingService:
         if reference:
             self._orders.set_reference(order["id"], reference)
         return {"redirect_url": url, "qr": qr, "order_code": int(order["order_code"]), "gateway": price.gateway}
+
+    def _open_domestic_link(self, gateway: Any, intent: CheckoutIntent, order: Mapping[str, Any],
+                            gateway_name: str) -> dict[str, Any]:
+        """The payOS payment link for a committed order. No transaction or lock is held while payOS is called."""
+
+        request = gateway.checkout_request(intent, order_code=int(order["order_code"]),
+                                           description=f"OR{order['order_code']}",
+                                           expires_at=order.get("expires_at"))  # fmt: skip
+        data = self._send(request).get("data") or {}
+        reference, url, qr = str(data.get("paymentLinkId") or ""), str(data.get("checkoutUrl") or ""), str(data.get("qrCode") or "")
+        if not url:
+            raise RuntimeError("gateway_checkout_failed")
+        if reference:
+            self._orders.set_reference(order["id"], reference)
+        return {"redirect_url": url, "qr": qr, "order_code": int(order["order_code"]), "gateway": gateway_name}
+
+    def _start_credit_checkout(self, *, incarnation_id: str, pack_key: str, operation_id: str, return_url: str,
+                               cancel_url: str, amount: int | None, currency: str | None,
+                               units: int | None) -> dict[str, Any]:
+        """A credit pack, sold only at its configured amount and units, as confirmed by the learner, and only while
+        credits are ready (§5). The order snapshots the pack; the browser's numbers are never charged or credited."""
+
+        pack = self._credit_packs.get(pack_key)
+        gateway = self._gateways.get(pack.gateway) if pack else None
+        if pack is None or gateway is None:
+            raise LookupError("price_not_offered")
+        uuid.UUID(operation_id)
+        if amount is None or not currency or units is None:
+            raise CheckoutRefused("price_unconfirmed")
+        if (type(amount) is not int or amount != pack.amount_minor or str(currency).strip().upper() != pack.currency
+                or type(units) is not int or units != pack.credit_units):
+            raise CheckoutRefused("price_changed")
+        if not self.credits_ready() or self._credits.ensure_account(incarnation_id) is None:
+            raise CheckoutRefused("credits_not_ready")
+        if self._credit_checkout_blocked():
+            raise CheckoutRefused("reconciliation_critical")
+        order = self._orders.create_order(operation_id=operation_id, incarnation_id=incarnation_id, gateway=pack.gateway,
+                                          plan_id=None, period=None, currency=pack.currency,
+                                          amount_minor=pack.amount_minor, product_kind="credit_pack",
+                                          credit_pack_id=pack.pack_id, credit_units=pack.credit_units)  # fmt: skip
+        if order["conflict"]:
+            raise CheckoutRefused("operation_conflict")
+        if order["state"] != "created":
+            raise CheckoutRefused("checkout_already_started" if order["state"] == "pending" else "order_closed")
+        # The payment request needs only the amount and currency; the pack rides as the price's plan id.
+        carrier = Price(plan_id=pack.pack_id, period="month", currency=pack.currency, amount_minor=pack.amount_minor,
+                        gateway=pack.gateway)  # fmt: skip
+        intent = CheckoutIntent(operation_id=operation_id, incarnation_id=incarnation_id, price=carrier,
+                                return_url=return_url, cancel_url=cancel_url)  # fmt: skip
+        return self._open_domestic_link(gateway, intent, order, pack.gateway)
 
     def _refuse_unverified_price(self, key: str, price: Price, amount: int | None, currency: str | None) -> None:
         try:
@@ -461,7 +603,44 @@ class BillingService:
             return WebhookOutcome(status)
         if status not in ("applied", "duplicate"):
             raise RuntimeError(f"unexpected payment status {status!r}")
+        if marked.get("product_kind") == "credit_pack":
+            return self.apply_credit_topup(order_code, gateway=gateway, facts=facts)
         return self.sync_prepaid(marked["incarnation_id"], gateway, event_id=f"{gateway}:paid:{order_code}")
+
+    def apply_credit_topup(self, order_code: int, *, gateway: str = "payos",
+                           facts: Mapping[str, Any] | None = None) -> WebhookOutcome:
+        """Credit a paid credit-pack order (§6). A database error raises (the webhook answers 503 and payOS
+        redelivers); a business refusal is answered once its obligation is durable or derivable: the paid order and
+        its gap, which the reconciler repairs or escalates."""
+
+        if self._credits is None:
+            return WebhookOutcome("credit_pending", "credits_not_configured")
+        outcome = self._credits.apply_credit_topup(order_code)
+        if outcome.status == "applied":
+            return WebhookOutcome("apply", "credit_topup")
+        if outcome.status == "duplicate":
+            return WebhookOutcome("duplicate", "credit_topup")
+        if outcome.status == "account_deleted":
+            order = self._orders.order(order_code=order_code) or {}
+            # C1: no credit on a deleted account; the money is owed back through the existing money path
+            self._item("paid_deleted_account", gateway, str(order_code),
+                       reason="paid credit pack; the account was deleted before its credit; a refund is owed",
+                       **{**(facts or {}), "billing_order_id": order.get("id"),
+                          "incarnation_id": order.get("incarnation_id")})  # fmt: skip
+            return WebhookOutcome("paid_deleted_account")
+        if outcome.status == "order_refunded":
+            return WebhookOutcome("refunded", "credit_not_given")
+        return WebhookOutcome("credit_pending", outcome.status)
+
+    def reverse_credit_topup(self, order_code: int, *, reason: str, actor: str = "system") -> WebhookOutcome:
+        if self._credits is None:
+            return WebhookOutcome("credit_pending", "credits_not_configured")
+        outcome = self._credits.reverse_credit_topup(order_code, actor=actor, reason=reason)
+        if outcome.status in ("applied", "duplicate"):
+            return WebhookOutcome("apply" if outcome.status == "applied" else "duplicate", "credit_reversal")
+        if outcome.status == "not_credited":
+            return WebhookOutcome("refunded", "no_credit_to_reverse")
+        return WebhookOutcome("credit_pending", outcome.status)
 
     def sync_prepaid(self, incarnation_id: str, gateway: str, *, event_id: str) -> WebhookOutcome:
         """Record the account's prepaid state, replayed from its orders, as its prepaid subscription. Safe to
@@ -488,5 +667,58 @@ class BillingService:
         marked = self._orders.mark_refunded(order_code=order_code, note=note, now=self._now())
         if marked["status"] not in ("applied", "already_refunded"):
             return WebhookOutcome(marked["status"])
+        if order.get("product_kind") == "credit_pack":
+            # K2: a full refund takes back the full credit_units, C5 deciding what can be; also when already refunded
+            return self.reverse_credit_topup(order_code, reason=f"payment refunded: {note}"[:400], actor="operator")
         # Also when already refunded: syncing again repairs a crash between the refund and the access record.
         return self.sync_prepaid(marked["incarnation_id"], order["gateway"], event_id=f"{order['gateway']}:refund:{order_code}")
+
+    # ---- PR-MON-5: the reconciler's credit-order step (§6.2, §7.1) ----------------------------------------------------
+
+    def reconcile_credit_orders(self, *, limit: int = 100) -> dict[str, int]:
+        """Repair credit-pack gaps, escalate the ones that survive, and close a gap only on the fact its outcome names.
+        Each write is its own short transaction; no provider is called."""
+
+        counts = {"credit_topup_repaired": 0, "credit_topup_unapplied": 0, "credit_reversal_repaired": 0,
+                  "credit_reversal_unapplied": 0, "credit_gap_resolved": 0, "credit_gap_unrecordable": 0}
+        if self._credits is None or not self.credits_ready():
+            return counts
+        repository = self._credits.repository
+        for gap in repository.credit_topup_gaps(limit=limit):
+            outcome = self.apply_credit_topup(int(gap["order_code"]), gateway=gap["gateway"])
+            state = repository.credit_order_state(int(gap["order_code"])) or {}
+            if state.get("credited"):
+                counts["credit_topup_repaired"] += 1
+            elif state.get("state") == "paid" and outcome.status != "paid_deleted_account":
+                recorded = repository.record_credit_gap(kind="credit_topup_unapplied", order=gap,
+                                                        reason=f"paid, not credited: {outcome.detail or outcome.status}")
+                counts["credit_topup_unapplied" if recorded else "credit_gap_unrecordable"] += 1
+        for gap in repository.credit_reversal_gaps(limit=limit):
+            self.reverse_credit_topup(int(gap["order_code"]), reason="refund recorded; reversal repaired",
+                                      actor="reconciler")  # fmt: skip
+            state = repository.credit_order_state(int(gap["order_code"])) or {}
+            if state.get("reversed"):
+                counts["credit_reversal_repaired"] += 1
+            else:
+                topup = repository.entries_by_source("billing_order", f"{gap['gateway']}:{gap['order_code']}")
+                recorded = repository.record_credit_gap(kind="credit_reversal_unapplied", order=gap,
+                                                        reason="refunded; the credit reversal is not complete",
+                                                        topup_entry_id=topup)  # fmt: skip
+                counts["credit_reversal_unapplied" if recorded else "credit_gap_unrecordable"] += 1
+        for gap in repository.open_credit_gaps("credit_topup_unapplied"):
+            state = repository.credit_order_state(int(gap["order_code"])) or {}
+            outcome = ("credit_applied" if state.get("credited")
+                       else "payment_refunded" if state.get("state") == "refunded"
+                       else "refund_obligation_recorded" if repository.refund_obligation_recorded(state.get("id"))
+                       else None)  # fmt: skip
+            if outcome and self._items.auto_resolve(kind="credit_topup_unapplied", gateway="credits",
+                                                    dedupe_key=gap["dedupe_key"], outcome=outcome,
+                                                    note=f"closed by the reconciler: {outcome}", now=self._now()):
+                counts["credit_gap_resolved"] += 1
+        for gap in repository.open_credit_gaps("credit_reversal_unapplied"):
+            state = repository.credit_order_state(int(gap["order_code"])) or {}
+            if state.get("reversed") and self._items.auto_resolve(
+                    kind="credit_reversal_unapplied", gateway="credits", dedupe_key=gap["dedupe_key"],
+                    outcome="credit_reversed", note="the complete reversal exists", now=self._now()):
+                counts["credit_gap_resolved"] += 1
+        return counts

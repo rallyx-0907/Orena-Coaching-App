@@ -1286,7 +1286,9 @@ def _billing_service():
     """Billing (completion plan item 4) exists only when switched on, on PostgreSQL, with the account backbone;
     a gateway without keys and a plan without an approved price are simply not offered (human gates)."""
 
-    from writing_coach.billing.service import billing_enabled, build_gateways, load_prices, BillingService
+    from writing_coach.billing.service import (
+        billing_enabled, build_gateways, load_credit_packs, load_prices, BillingService,
+    )
 
     if not billing_enabled(os.environ) or _persistence_runtime.engine is None or not _account_backbone.is_active:
         return None
@@ -1297,6 +1299,7 @@ def _billing_service():
     return BillingService(orders=PostgresBillingRepository(_persistence_runtime.engine),
                           commerce=PostgresCommerceRepository(_persistence_runtime.engine),
                           gateways=build_gateways(os.environ), prices=load_prices(os.environ),
+                          credit_packs=load_credit_packs(os.environ),
                           reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine))
 
 
@@ -1335,6 +1338,8 @@ def _credit_service(service):
 
 
 _credits = _credit_service(_billing)
+if _billing is not None and _credits is not None:
+    _billing.attach_credits(_credits)  # PR-MON-5: credit-pack orders are credited through the ledger
 _billing_reconcile = _billing_reconciler(_billing)
 configure_billing(service=_billing, backbone=_account_backbone, admin_guard=require_admin,
                   reconciliation=_billing.reconciliation if _billing is not None else None,

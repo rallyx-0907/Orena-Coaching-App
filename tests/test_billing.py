@@ -264,7 +264,7 @@ def test_billing_is_off_by_default():
     import app as app_module
 
     client = TestClient(app_module.app)
-    assert client.get("/api/billing/offers").json() == {"enabled": False, "ready": False, "offers": []}
+    assert client.get("/api/billing/offers").json() == {"enabled": False, "ready": False, "offers": [], "credit_packs": []}
     assert client.post("/api/billing/webhooks/payos", content=payos_body()).status_code == 503
     checkout = client.post("/api/billing/checkout", json={"price": "premium:month:payos", "operation_id": str(uuid.uuid4())})
     assert checkout.status_code == 503
@@ -319,7 +319,9 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
         command.upgrade(cfg, BILLING_BASE)
         engine = create_engine(schema_url, future=True)
         # 0026 is in the chain (head) since its promotion; 0031 is PR-MON-3's follow-up on the proposed 0027.
-        migrations = [_proposed("20261005_0027_billing_orders"), _proposed("20261014_0031_billing_reconciliation")]
+        # the whole Billing chain the code reads (0033's order columns included, PR-MON-5)
+        migrations = [_proposed("20261005_0027_billing_orders"), _proposed("20261014_0031_billing_reconciliation"),
+                      _proposed("20261014_0032_credit_ledger"), _proposed("20261015_0033_credit_topup_orders")]
         try:
             with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
                 for migration in migrations:

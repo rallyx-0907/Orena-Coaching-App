@@ -92,6 +92,20 @@ class CreditService:
     def adjust(self, incarnation_id: str, **kwargs: Any) -> CreditOutcome:
         return self._guarded("adjust", incarnation_id, **kwargs)
 
+    def apply_credit_topup(self, order_code: int) -> CreditOutcome:
+        """PR-MON-5: credit a paid credit-pack order (one transaction, canonical lock order)."""
+
+        if self.privilege_violations():
+            return CreditOutcome("credits_runtime_privileged")
+        return self._repository.apply_credit_topup(order_code)
+
+    def reverse_credit_topup(self, order_code: int, *, actor: str, reason: str) -> CreditOutcome:
+        """PR-MON-5: take back a refunded credit-pack order's credit (K2, C5)."""
+
+        if self.privilege_violations():
+            return CreditOutcome("credits_runtime_privileged")
+        return self._repository.reverse_credit_topup(order_code, actor=actor, reason=reason)
+
     def balance(self, incarnation_id: str) -> dict[str, Any] | None:
         return self._repository.account(incarnation_id)
 
