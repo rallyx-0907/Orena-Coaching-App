@@ -1,6 +1,6 @@
 # Runbook: apply the Billing migrations 0027 → 0033 to a PostgreSQL runtime (operator task)
 
-Status: **authoritative on `main` since PR-MON-5 (#207, `2aa3bd04`)**. Not executed on any runtime.
+Status: **authoritative on `main` when PR #212 is merged**. Not executed on any runtime.
 
 `main` now carries the Billing chain `20261005_0027 → 20261014_0031 → 20261014_0032 → 20261015_0033`. A runtime that
 restarts on the new `main` before its database has these revisions runs code that reads columns and tables it does not
