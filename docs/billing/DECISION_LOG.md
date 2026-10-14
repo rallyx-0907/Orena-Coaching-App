@@ -174,3 +174,15 @@ results. | A financial snapshot needs an authorization boundary, and a reversal 
 Deployment prerequisite (operator gate): the runtime must connect as a non-superuser member of `orena_credit_runtime`
 before credits are enabled.
 
+D-MON-021 | 2026-10-14 | Credit ledger design revision 4 after the review of `2b6da4a7` (lane, pending the focused
+re-review). Reversal requests carry no back-reference: `credit_ledger.reversal_request_id` (exactly for `reversal`,
+partial UNIQUE) is the only link, inserted after its request, so the request stays immutable with immediate
+constraints. A money-side refund/chargeback event is globally unique on reversal requests (`source_type`,
+`source_ref`). 0032 extends `billing_reconciliation_items` with nullable structured `credit_*` references, per-kind
+CHECKs, extended class lists and a replaced guard trigger that also freezes the new facts. The definer function's
+schema is not writable by untrusted roles (else a dedicated `orena_credit` schema); 0032 needs a superuser or
+CREATEROLE executor, or roles provisioned out of band and asserted; `credit_runtime_privileges` checks every
+boundary-defeating privilege. | Constraints must be satisfiable as written, one money event must move credit once,
+and reconciliation facts must be as immutable as PR-MON-3's. | No code; 0032 not yet created; rebase and topology
+check before creating it.
+
