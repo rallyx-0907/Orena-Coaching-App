@@ -517,8 +517,8 @@ def _content_records() -> tuple[list[dict[str, Any]], dict[str, str]]:
     entries, issue = _shared_media()
     sources["media"] = "ok" if issue in {"", "index_missing"} else issue
     records.extend(media_record(entry) for entry in entries)
-    hidden = content_visibility.hidden_ids("listening")
-    records.extend(curated_media_record(lesson, hidden=lesson.lesson_id in hidden) for lesson in _curated_lessons())
+    records.extend(curated_media_record(lesson, hidden=content_visibility.is_hidden("listening", lesson.lesson_id))
+                   for lesson in _curated_lessons())
 
     if repository is not None and _vocabulary_available():
         sources["vocabulary"] = "ok"

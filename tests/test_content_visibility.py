@@ -134,3 +134,34 @@ def test_only_known_kinds_can_be_hidden_so_reading_articles_are_out_of_reach(sto
     reading_sources = [path for path in pathlib.Path(content_visibility.__file__).parent.glob("reading*.py")]
     assert reading_sources
     assert not [path.name for path in reading_sources if "content_visibility" in path.read_text(encoding="utf-8")]
+
+
+def test_a_store_that_was_never_readable_fails_closed_and_logs_once_per_window(store, caplog):
+    """Test content must not reach production on a guess (D-203 item 5)."""
+    store.fail_reads = True
+    content_visibility.configure(store)  # a fresh process: nothing has been read yet
+    with caplog.at_level("WARNING", logger=content_visibility.__name__):
+        assert catalog_lessons() == ()
+        assert catalog_lesson(PEN) is None
+        assert content_visibility.is_hidden("listening", "anything")
+        assert listening_api.listening_library(language="en", level=None, topic=None, tag=None)["items"] == []
+    assert store.reads == 1  # the failure is cached for the window, not retried on every call
+    assert len([r for r in caplog.records if r.levelname == "WARNING"]) == 1
+    # Once the store answers, the library is back.
+    store.fail_reads = False
+    content_visibility.clear_cache()
+    assert catalog_lesson(PEN) is not None
+
+
+def test_a_hidden_lesson_is_gone_from_the_agent_tool_and_the_licences_page(store):
+    import app as application
+    from fastapi import Response
+
+    def credits():
+        return str(application.orena_licences(Response()))
+
+    assert application._agent_listening_lesson(PEN) is not None
+    assert "Anna, do you have a pen?" in credits()
+    _hide(store)
+    assert application._agent_listening_lesson(PEN) is None
+    assert "Anna, do you have a pen?" not in credits()

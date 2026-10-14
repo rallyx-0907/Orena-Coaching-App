@@ -6768,9 +6768,7 @@ Status: ACCEPTED. Independent review 2026-10-14, Delegated Architecture Reviewer
 
 ## D-203 - Built-in learner content is test content; an Admin-controlled hide/show flag removes it from learners (2026-10-14)
 
-Status: PROPOSED. **Requires independent architecture review before acceptance** (a lifecycle/visibility change to learner-visible
-content; the implementer may not approve it, `AGENTS.md` "Architecture review authority"). Reviewer, commit and outcome are to be
-recorded here by the Delegated Architecture Reviewer. Owner decision of 2026-10-14: code-owned built-in learner content, for
+Status: ACCEPTED (merged once CI was green). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 8e7cdf92: ACCEPT WITH CONDITIONS, no P0/P1; P2-1 (fail closed on a never-read store) and P2-2 (cache the failure fallback, log once per window) fixed on this branch with tests (cold-start unreadable store, agent tool, licences page). Owner decision of 2026-10-14: code-owned built-in learner content, for
 example the Listening lessons in `writing_coach/content/listening_catalog.v1.json`, is test-only and must be removable from the
 product by the Admin through a server-side flag, never by editing code. No schema change, no migration.
 
@@ -6797,9 +6795,12 @@ product by the Admin through a server-side flag, never by editing code. No schem
    read (a concurrent change is a 409) and the audit row (`admin.content.visibility`: actor, item, from, to) commits in the same
    transaction; a no-op writes nothing and is recorded as `unchanged`. Admin UI: the existing Unpublish / Republish pair and
    status pill (`docs/design/canonical-ui/brief/BUILTIN_CONTENT_VISIBILITY_2026-10-14.md`).
-5. **Consistency.** A saved change applies at once in the saving worker and within 5 seconds in the others (the policies cache
-   interval). A store that cannot be read keeps the last value read in that process and logs; it never empties the library.
-   Listening routes carry no ETag, so no revision needs to move.
+5. **Consistency and failure.** A saved change applies at once in the saving worker and within 5 seconds in the others (the policies
+   cache interval). **Fail closed:** if a store is installed, has never been read successfully in this process and the read fails,
+   built-in lessons are treated as hidden until a read succeeds (test content must not reach production on a guess; the Admin list
+   shows them hidden too). After one good read, a later failure keeps that value. A failed read is cached for the same 5 seconds and
+   logged once per window. No store installed (unconfigured, tests) means nothing hidden. Listening routes carry no ETag, so no
+   revision needs to move.
 6. **Not covered, by design.** A learner's own saved progress for a hidden lesson stays stored and shows as unavailable without a
    title; it is not deleted. Default for genuinely curated items stays visible. Further kinds are added to
    `content_visibility.KINDS` only together with the filter on their learner paths.

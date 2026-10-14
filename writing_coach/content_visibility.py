@@ -50,7 +50,8 @@ class SettingStore(Protocol):
 
 _store: SettingStore | None = None
 _lock = threading.Lock()
-_cache: tuple[float, dict[str, frozenset[str]]] | None = None
+# (valid until, hidden ids by kind, or None when the store has never been read successfully and the last read failed)
+_cache: tuple[float, dict[str, frozenset[str]] | None] | None = None
 _last_good: dict[str, frozenset[str]] | None = None
 
 
@@ -80,7 +81,11 @@ def _parse(record: Mapping[str, Any] | None) -> dict[str, frozenset[str]]:
     return result
 
 
-def _loaded() -> dict[str, frozenset[str]]:
+def _loaded() -> dict[str, frozenset[str]] | None:
+    """The hidden ids by kind, or None when the state is unknown: a store is installed, it has never been read
+    successfully in this process, and the read failed. Built-in test content must not reach production on a guess,
+    so `is_hidden` treats unknown as hidden (D-203). Once a read has succeeded, a later failure keeps that value.
+    A failed read is remembered for CACHE_SECONDS and logged once per window."""
     global _cache, _last_good
     now = time.monotonic()
     with _lock:
@@ -90,10 +95,14 @@ def _loaded() -> dict[str, frozenset[str]]:
     if store is None:
         return {}
     try:
-        loaded = _parse(store.get_setting(SETTING_KEY))
-    except Exception:  # noqa: BLE001 - a store that cannot be read must not take the learner's library down
-        _log.warning("content visibility unreadable; keeping the last value read", exc_info=True)
-        return previous or {}
+        loaded: dict[str, frozenset[str]] | None = _parse(store.get_setting(SETTING_KEY))
+    except Exception:  # noqa: BLE001 - a store that cannot be read must not raise into the learner's request
+        _log.warning("content visibility unreadable; %s", "keeping the last value read" if previous is not None
+                     else "built-in content stays hidden until it can be read", exc_info=True)
+        loaded = previous
+        with _lock:
+            _cache = (now + CACHE_SECONDS, loaded)
+        return loaded
     with _lock:
         _cache = (now + CACHE_SECONDS, loaded)
         _last_good = loaded
@@ -101,12 +110,15 @@ def _loaded() -> dict[str, frozenset[str]]:
 
 
 def hidden_ids(kind: str) -> frozenset[str]:
-    """The ids of this kind an administrator has hidden from learners."""
-    return _loaded().get(kind, frozenset())
+    """The ids of this kind an administrator has hidden (empty when unknown; use `is_hidden` to decide visibility)."""
+    return (_loaded() or {}).get(kind, frozenset())
 
 
 def is_hidden(kind: str, item_id: str) -> bool:
-    return str(item_id) in hidden_ids(kind)
+    loaded = _loaded()
+    if loaded is None:
+        return True
+    return str(item_id) in loaded.get(kind, frozenset())
 
 
 def stored_meta() -> dict[str, Any]:
