@@ -179,7 +179,8 @@ def _yield_to_taps() -> None:
     config = router_module.load_config(CAPABILITY)
     shared = routing.provider_health.snapshot()
     for provider in {config.provider, config.backup_provider}:
-        if provider and shared.get(provider, {}).get("cooling_down"):
+        state = shared.get(provider, {}) if provider else {}
+        if state.get("cooling_down") and state.get("seconds_remaining", 0) > 0:  # an expired entry does not count
             pause_prefetch()
             raise PrefetchRefused("pool_cooling_down")
 

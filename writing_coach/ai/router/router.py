@@ -234,7 +234,7 @@ def _ask_pool(
                 _stats.count(capability, "invalid_outputs")
         if getattr(exc, "reason", None) == "deadline":
             _stats.count(capability, "deadline_exceeded")
-        if failed:
+        if failed and health is None:  # a background caller's failure never blocks a learner's tap on the same word
             _cache.mark_unavailable(key, NEGATIVE_SECONDS)  # nothing answered: do not ask again for about a minute
         raise
     except AICapabilityError:

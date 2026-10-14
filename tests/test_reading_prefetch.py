@@ -285,6 +285,28 @@ def test_prefetch_yields_while_the_shared_pool_is_cooling_down_for_the_taps(env)
     assert env.fake.calls == [] and tap.prefetch_paused()
 
 
+def test_a_prefetch_failure_on_a_word_does_not_block_the_tap_on_that_word(env) -> None:
+    env.fake.script = {GEMMA: [http_error(503)], STANDBY: [http_error(503)]}
+    with pytest.raises(Exception):  # noqa: B017 - the pool failed
+        tap.word_translation_prefetch("lantern", "en", "vi")
+    # No negative-cache entry: the tap on the same word asks the pool at once and is answered.
+    assert tap.word_translation_seam("lantern", "", [], "en", "vi") == "đèn"
+
+
+def test_an_expired_cooldown_entry_does_not_keep_prefetch_paused(env, monkeypatch) -> None:
+    from writing_coach.ai import routing
+
+    shared = routing.ProviderHealth(env.clock)
+    monkeypatch.setattr(routing, "provider_health", shared)
+    for _ in range(routing.FAILURES_BEFORE_COOLDOWN):
+        shared.record_failure("openrouter")
+    env.clock.now += routing.MAX_COOLDOWN_SECONDS + 1  # the flag is still set, nothing remains of it
+    snapshot = shared.snapshot()["openrouter"]
+    assert snapshot["cooling_down"] and snapshot["seconds_remaining"] == 0
+    assert tap.word_translation_prefetch("lantern", "en", "vi") == "đèn"
+    assert not tap.prefetch_paused()
+
+
 def test_the_daily_budget_is_a_global_cap_on_router_calls(env, monkeypatch) -> None:
     monkeypatch.setattr(tap, "PREFETCH_DAILY_CALLS", 3)
     service = lookup_service()
