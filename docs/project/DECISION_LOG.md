@@ -6475,3 +6475,31 @@ MANUAL_ONLY until the UI distinguishes scripts). Reading Production Readiness it
    backfill of already-published articles' stored script; no browser verification (Docker was unavailable); the Global Voices
    中文 source is not unlocked by this change, which is a human gate. Existing Traditional articles stay unlabelled on Discover
    until their script is stored: backfill before activating any Traditional source.
+
+## D-198 - Reading level: an interim, uncalibrated fix of the saturated automatic estimate (2026-10-14)
+
+**Status: PROPOSED.** Production Readiness item 7b (defect D6: a NASA press release rated C2, every VOA 中文 article HSK6). The owner chose
+"C now, then A": this entry is C. It is an interim correction, not a calibrated classifier. It changes no schema, no stored row and no
+dataset, and the reviewer override of D-196 keeps its precedence (`effective_level` = `reviewed_level`, else `estimated_level`; the
+estimator never reads `reviewed_level`).
+
+1. **Cause (measured).** `analyze_article` capped three signals so low that any news text saturated them: a ~100-word English list
+   and a 39-character Chinese list make "uncommon" 53-88 percent for every real text; 8-letter words (names, acronyms and hyphenated
+   compounds included) hit their cap at 22 percent; Chinese length was measured per full-stop sentence, and wire prose is one long
+   comma-joined sentence. All eight Chinese fixtures were HSK6; the NASA release was C2.
+2. **Change** (`writing_coach/reading_processing.py`, `LEVEL_VERSION = "reading-level/2"`, stored as `analysis.level_version`;
+   an article without it was estimated by the original heuristic):
+   - English signals ignore a capitalised word that does not open a sentence, an all-capitals word (acronym), a word touching a
+     digit, and count a hyphenated or apostrophed compound as its parts. The sentence-length and long-word normalisers moved from
+     26 to 30 words and from 22 to 30 percent so ordinary news no longer saturates them.
+   - Chinese length is the mean clause length, clauses ending at `。！？；，、：…`. The stored `average_sentence_length` is unchanged.
+   - Low confidence is deterministic: `confidence = min(1, words/400)*0.8 + 0.2 if at least 5 sentences`, below `LOW_CONFIDENCE`
+     = 0.5 (about 250 words or fewer, or a few long words and few sentences) the band is capped at C1 (English) / HSK5 (Chinese).
+   - `word_count`, `long_word_ratio`, `reading_time`, `confidence` and every stored field keep their meaning.
+3. **Result on the fixtures** (provisional author judgements, not truth): NASA C2 to C1 (B2-C1), Global Voices C2 to C1, VOA EN
+   C1 to B2; all Chinese news HSK6 to HSK5. Chinese stays one band wide for real news because the 39-character list still saturates its
+   half of the score: no Chinese discrimination is possible without a list.
+4. **Not done, by design.** The thresholds are uncalibrated (no CEFR/HSK list and no graded texts in the repository; the new
+   normalisers were chosen against four English fixtures and are therefore a fit, not a measurement). No stored article is
+   re-estimated; `scripts/report_reading_level_changes.py` is a read-only report of what would change, and re-estimating is an owner
+   decision. Option A (word and character lists, a labelled calibration set, a dataset and licence decision) replaces this.
