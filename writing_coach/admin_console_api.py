@@ -38,7 +38,7 @@ from urllib.parse import urlencode, urlsplit
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
-from writing_coach import media_library_api, reading_library_api
+from writing_coach import content_visibility, media_library_api, reading_library_api
 from writing_coach.admin_content import (
     book_error_stage,
     book_record,
@@ -64,6 +64,7 @@ from writing_coach.admin_metrics import (
     retention_windows,
 )
 from writing_coach.core.errors import orena_http_error
+from writing_coach.persistence.platform_repository import SettingConflict
 
 router = APIRouter(prefix="/api/admin/console", tags=["admin-console"])
 _logger = logging.getLogger(__name__)
@@ -516,7 +517,8 @@ def _content_records() -> tuple[list[dict[str, Any]], dict[str, str]]:
     entries, issue = _shared_media()
     sources["media"] = "ok" if issue in {"", "index_missing"} else issue
     records.extend(media_record(entry) for entry in entries)
-    records.extend(curated_media_record(lesson) for lesson in _curated_lessons())
+    hidden = content_visibility.hidden_ids("listening")
+    records.extend(curated_media_record(lesson, hidden=lesson.lesson_id in hidden) for lesson in _curated_lessons())
 
     if repository is not None and _vocabulary_available():
         sources["vocabulary"] = "ok"
@@ -826,7 +828,7 @@ def content_detail(kind: str, content_id: str, request: Request, response: Respo
         lesson = next((item for item in _curated_lessons() if item.lesson_id == content_id), None)
         if lesson is None:
             raise orena_http_error(404, "content_not_found", "This media is not in the library.")
-        record = curated_media_record(lesson)
+        record = curated_media_record(lesson, hidden=content_visibility.is_hidden("listening", lesson.lesson_id))
         transcript = lesson.media_object.transcript
         segments = [
             segment for segment in (transcript.segments if transcript is not None else ())
@@ -1185,6 +1187,33 @@ def review_media_rights(media_id: str, payload: MediaRightsIn, request: Request,
     return {"record": media_record(updated)}
 
 
+def _set_curated_visibility(admin: Mapping[str, Any], lesson: Any, wanted: str) -> dict[str, Any]:
+    """Hide a built-in lesson from learners, or show it again (D-203). The catalogue itself is never written.
+
+    Only a published lesson has a learner shelf to leave, and only `unpublished` / `published` mean anything for
+    it: a lesson cannot be archived, because nothing of it can be removed from the repository from here.
+    """
+    if wanted == "archived" or str(lesson.content_status) != "PUBLISHED":
+        raise orena_http_error(409, "content_builtin_state", "A built-in lesson can be hidden from learners or shown again.")
+    actor = _actor(admin)
+    try:
+        result = content_visibility.set_hidden(
+            "listening", lesson.lesson_id, wanted == "unpublished",
+            updated_by=str(admin.get("email") or actor), actor=actor, audit_extra={"origin": "curated"},
+        )
+    except SettingConflict:
+        raise orena_http_error(409, "content_visibility_conflict",
+                               "This was changed by someone else a moment ago. Reload to see it.") from None
+    except RuntimeError:
+        raise orena_http_error(503, "content_visibility_unavailable", "Built-in content cannot be hidden on this deployment.") from None
+    if not result["changed"]:
+        # Nothing was written, so no transaction carried an audit row; the no-op is still recorded like the media one.
+        _audit(admin, "admin.content.visibility", entity_type="listening_builtin", entity_id=lesson.lesson_id,
+               payload={"kind": "listening", "item": lesson.lesson_id, "from": "hidden" if result["from"] else "visible",
+                        "to": "hidden" if result["to"] else "visible", "outcome": "unchanged", "origin": "curated"})
+    return {"record": curated_media_record(lesson, hidden=result["to"])}
+
+
 @router.post("/content/media/{media_id}/status")
 def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, response: Response) -> dict[str, Any]:
     """Take a media item off the shelf, retire it, or put it back.
@@ -1204,6 +1233,9 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
     store = _state.media_store
     entry = store.get(media_id) if store is not None else None
     if entry is None or entry.library != "shared":
+        lesson = next((item for item in _curated_lessons() if item.lesson_id == media_id), None)
+        if lesson is not None:
+            return _set_curated_visibility(admin, lesson, wanted)
         raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
     transition = {}
 

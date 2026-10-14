@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
 
+from writing_coach import content_visibility
 from writing_coach.core.deployment import is_public_environment
 from writing_coach.listening_dev_artifact import verify_manifest_integrity
 from writing_coach.media_ingestion import MediaPlayback
@@ -578,7 +579,11 @@ def _learner_visible(lesson: CuratedListeningLesson) -> bool:
     PUBLISHED to get there.
     """
 
-    return lesson.content_status in {PUBLIC_CONTENT_STATUS, DEV_CONTENT_STATUS}
+    if lesson.content_status not in {PUBLIC_CONTENT_STATUS, DEV_CONTENT_STATUS}:
+        return False
+    # An administrator may take a built-in lesson off the shelf (D-203). Every learner path resolves a lesson through
+    # here, so one filter reaches lists, opens, search, progress cards and prefetch alike. Admin reads `CATALOG`.
+    return not content_visibility.is_hidden("listening", lesson.lesson_id)
 
 
 def catalog_lesson(lesson_id: str) -> CuratedListeningLesson | None:

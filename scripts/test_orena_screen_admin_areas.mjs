@@ -184,6 +184,8 @@ assert.equal(imports.defaultCollectionTitle('my_word-list.csv'), 'My word list')
 /* Content. */
 assert.deepEqual(content.lifecycleIntents(record('vocabulary', { actions: ['publish', 'archive'] })), ['archive'], 'vocabulary publishes through its attested form, not the footer');
 assert.deepEqual(content.lifecycleIntents(record('media', { actions: ['restore', 'republish', 'archive'] })), ['archive', 'restore', 'republish']);
+assert.deepEqual(content.lifecycleIntents(record('media', { origin: 'curated', actions: ['preview', 'unpublish'] })), ['unpublish'], 'a built-in lesson is hidden with the existing unpublish action (D-203)');
+assert.deepEqual(content.lifecycleIntents(record('media', { origin: 'curated', status: 'unpublished', actions: ['preview', 'republish'] })), ['republish'], 'and shown again with republish');
 assert.equal(content.COLLECTION_STATES.restore, 'unpublished', 'restoring never republishes a collection');
 assert.equal(content.canPublish({ attested: false }), false);
 assert.deepEqual(content.publishChecks({ rights: 'licensed', completeness: 'complete', attested: true }).map((c) => c.pass), [true, true, true]);

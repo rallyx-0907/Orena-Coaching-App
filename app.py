@@ -503,6 +503,11 @@ configure_plan_store(_persistence_runtime.platform_repository)
 from writing_coach import policies as _policies  # noqa: E402
 
 _policies.configure(_persistence_runtime.platform_repository)
+# D-203: which code-owned built-in lessons an administrator has hidden from learners lives in platform_settings too
+# (`content.visibility`); the Listening catalogue filters on it at the one place every learner path resolves a lesson.
+from writing_coach import content_visibility as _content_visibility  # noqa: E402
+
+_content_visibility.configure(_persistence_runtime.platform_repository)
 
 # PostgreSQL is the application runtime. In auth-disabled local development the
 # request scope still uses the stable user key "legacy"; seed that scope once so

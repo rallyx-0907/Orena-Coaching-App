@@ -158,8 +158,21 @@ def _media_actions(status: str, reprocessable: bool) -> list[str]:
     return actions
 
 
-def curated_media_record(lesson: Any) -> dict[str, Any]:
-    """A lesson from the code-owned curated catalog. Edited by review, not here."""
+def curated_media_record(lesson: Any, *, hidden: bool = False) -> dict[str, Any]:
+    """A lesson from the code-owned curated catalog. Edited by review, not here.
+
+    Its text, rights and timing are the repository's. Whether learners see it is the one thing an administrator
+    decides here (D-203): `hidden` shows it as unpublished and offers the existing unpublish / republish pair, which
+    write the visibility switch and never the catalogue. Only a published lesson can be hidden or shown again.
+    """
+    status = _CURATED_STATUS.get(str(lesson.content_status), "draft")
+    actions = ["preview"]
+    if str(lesson.content_status) == "PUBLISHED":
+        if hidden:
+            status = "unpublished"
+            actions.append("republish")
+        else:
+            actions.append("unpublish")
     source = lesson.source
     transcript = getattr(lesson.media_object, "transcript", None)
     segments = [
@@ -173,7 +186,7 @@ def curated_media_record(lesson: Any) -> dict[str, Any]:
         "title": lesson.media_object.asset.title,
         "subtitle": " · ".join(part for part in (_text(source.source_provider), _text(source.source_creator)) if part),
         "language": source.language,
-        "status": _CURATED_STATUS.get(str(lesson.content_status), "draft"),
+        "status": status,
         "origin": "curated",
         "created_at": None,
         "updated_at": None,
@@ -189,7 +202,7 @@ def curated_media_record(lesson: Any) -> dict[str, Any]:
             "content_status": str(lesson.content_status),
         },
         "issues": [] if segments else ["transcript_missing"],
-        "actions": ["preview"],
+        "actions": actions,
     }
 
 

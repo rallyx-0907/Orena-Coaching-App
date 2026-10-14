@@ -6158,3 +6158,14 @@ the Reader and Listening send nothing for a text in another language (`annotate-
 article, chapter (then book `learning_language`) or imported-text language to `''`; such a text is not tagged
 (plain text, zero requests). Open for the backend: guarantee `language` on every reading source so none is left
 untagged.
+
+## Hiding built-in lessons: the design draws no switch for code-owned content (D-203 proposed, 2026-10-14)
+
+The pinned `Orena Admin.dc.html` draws Content > Media with Unpublish / Republish for imported media only; the code-owned
+Listening lessons were listed read-only. The owner decided on 2026-10-14 that built-in lessons are test content the Admin
+must be able to remove. The slice reuses the media pair (pill "Unpublished", buttons Unpublish / Republish, status tab) for a
+built-in lesson and draws nothing new (`docs/design/canonical-ui/brief/BUILTIN_CONTENT_VISIBILITY_2026-10-14.md`, pending the
+next export). Not measured in a browser (barred for this slice). Open for the human: (1) whether the design should draw a
+distinct "built-in" origin mark on the row; (2) the Republish confirm body says republishing is "a separate decision" though it
+is immediate (pre-existing, shared with imported media); (3) Speaking's own authored catalogue is empty and has no Admin list, so
+it has no switch yet (the kind is added where its learner paths filter).

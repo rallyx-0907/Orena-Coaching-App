@@ -67,10 +67,10 @@ def catalog_lesson_resolver() -> Callable[[str, str], LessonRef | None]:
     """
     from writing_coach.listening_catalog import catalog_lessons
 
-    lessons = catalog_lessons()
-
     def resolve(asset: str, segment: str) -> LessonRef | None:
-        for lesson in lessons:
+        # Read at call time, not when the resolver is built: an administrator hiding a built-in lesson (D-203)
+        # must reach a progress row at once, not at the next restart.
+        for lesson in catalog_lessons():
             if lesson.source.source_media_id != asset:
                 continue
             for item in lesson.source.segments:
