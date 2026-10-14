@@ -46,7 +46,7 @@ import {
   sentencesOf,
   segmentId,
   segmentSentence,
-  kinsoku,
+  kinGroups,
   ROLES,
   aidsCount,
   endOfContent,
@@ -427,15 +427,9 @@ export default async function mountReader(element, ctx) {
      character. With pinyin on, EVERY character of a Chinese text is such a column - punctuation and
      an unannotated run carry a blank reading - exactly as the frame builds them, so a line's
      characters share one baseline and one pitch. */
-  const joinerMarkup = () => html`<span class="s-reader__nb" aria-hidden="true"></span>`;
-
-  /* `join` is false for a character inside a word's grid: a word never wraps apart, and a joiner there would
-     be one more grid column. The word's own edges are joined by pieceMarkup. */
-  function pystackMarkup(hanzi, syllable, marked = false, join = true) {
+  function pystackMarkup(hanzi, syllable, marked = false) {
     // A highlight marks the character itself; the pinyin above it stays supporting information (LEX-013).
-    const k = join ? kinsoku(hanzi) : '';
-    const joiner = joinerMarkup();
-    return html`${k === 'close' ? joiner : ''}<span class="s-reader__pystack"><span class="s-reader__py">${syllable || NBSP}</span><span class="${cls('s-reader__hz', marked && 's-reader__hl')}">${hanzi}</span></span>${k === 'open' ? joiner : ''}`;
+    return html`<span class="s-reader__pystack"><span class="s-reader__py">${syllable || NBSP}</span><span class="${cls('s-reader__hz', marked && 's-reader__hl')}">${hanzi}</span></span>`;
   }
 
   const stacked = () => pinyinOn && isZh;
@@ -483,8 +477,8 @@ export default async function mountReader(element, ctx) {
     return html`${out}`;
   }
 
-  function stackMarked(hanzi, syllable, on, join = true) {
-    return pystackMarkup(hanzi, syllable, on, join);
+  function stackMarked(hanzi, syllable, on) {
+    return pystackMarkup(hanzi, syllable, on);
   }
 
   function pieceMarkup(piece, seg, start = 0, ranges = []) {
@@ -507,14 +501,10 @@ export default async function mountReader(element, ctx) {
       ? chars.map((c) => {
           const at = i;
           i += String(c.h).length;
-          return ranges.length ? stackMarked(c.h, c.p, inRanges(ranges, at), false) : pystackMarkup(c.h, c.p, false, false);
+          return ranges.length ? stackMarked(c.h, c.p, inRanges(ranges, at)) : pystackMarkup(c.h, c.p);
         })
       : markedText(piece.text, start, ranges);
-    const first = Array.from(piece.text)[0];
-    const last = Array.from(piece.text).pop();
-    const lead = stacked() && kinsoku(first) === 'close' ? joinerMarkup() : '';
-    const trail = stacked() && kinsoku(last) === 'open' ? joinerMarkup() : '';
-    return html`${lead}<span class="${cls('s-reader__w', isPicked && 'is-picked')}" data-w="${piece.text}"${raw(attrs)}>${inner}</span>${trail}`;
+    return html`<span class="${cls('s-reader__w', isPicked && 'is-picked')}" data-w="${piece.text}"${raw(attrs)}>${inner}</span>`;
   }
 
   function sentenceMarkup(s, numBySeg) {
@@ -524,11 +514,30 @@ export default async function mountReader(element, ctx) {
     const mark = numBySeg.get(s.seg);
     const ranges = spanRanges(s, pieces.map((piece) => piece.text).join(''));
     let offset = 0;
-    return html`<span class="${cls('s-reader__sentence', highlighted(s.seg) && 'is-highlighted', selected?.seg === s.seg && 'is-selected')}" data-sentence data-segment="${s.seg}">${pieces.map((piece) => {
+    /* With pinyin on, a closing mark is kept on the line of what comes before it and an opening mark with what
+       follows, in one no-wrap unit (kinGroups) - the stacked columns are atomic, so a browser would otherwise break
+       between them. The unit holds the same word spans and columns, so taps and selection are unchanged. */
+    const atoms = [];
+    for (const piece of pieces) {
       const start = offset;
       offset += piece.text.length;
-      return pieceMarkup(piece, s.seg, start, ranges);
-    })}${
+      if (piece.word || !stacked()) {
+        const chars = Array.from(piece.text);
+        atoms.push({ first: chars[0], last: chars[chars.length - 1], markup: pieceMarkup(piece, s.seg, start, ranges) });
+        continue;
+      }
+      let at = start;
+      for (const ch of Array.from(piece.text)) {
+        atoms.push({ first: ch, last: ch, markup: pieceMarkup({ text: ch }, s.seg, at, ranges) });
+        at += ch.length;
+      }
+    }
+    const body = stacked()
+      ? kinGroups(atoms).map((group) => (group.length > 1
+        ? html`<span class="s-reader__kin">${group.map((i) => atoms[i].markup)}</span>`
+        : atoms[group[0]].markup))
+      : atoms.map((atom) => atom.markup);
+    return html`<span class="${cls('s-reader__sentence', highlighted(s.seg) && 'is-highlighted', selected?.seg === s.seg && 'is-selected')}" data-sentence data-segment="${s.seg}">${body}${
       mark
         ? html`<button type="button" class="s-reader__notemark" data-act="note-toggle" data-seg="${s.seg}" aria-expanded="${openNoteSegs.has(s.seg) ? 'true' : 'false'}" aria-label="${openNoteSegs.has(s.seg) ? t('noteCollapse') : t('noteExpand')}">${mark}</button>`
         : ''

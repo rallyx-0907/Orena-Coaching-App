@@ -193,10 +193,11 @@ export function segmentSentence(text, tokens, { saved = new Set() } = {}) {
 
 /* CJK line breaking (kinsoku). In running text the browser keeps closing punctuation off the start of a line
    and opening punctuation off the end of one (CSS `line-break: strict`). With pinyin on, every character is
-   its own atomic column, and a break is allowed between any two atomic boxes, so the rule has to be drawn
-   into the markup: a closing mark is joined to the character before it and an opening mark to the one after. */
-const CLOSING_PUNCT = new Set(Array.from('，。、；：？！．）］｝】〕〗〙〛」』》〉”’)]},.;:?!%'));
-const OPENING_PUNCT = new Set(Array.from('（［｛【〔〖〘〚「『《〈“‘([{'));
+   its own atomic column, and a browser may break between any two atomic boxes, so the rule is drawn into the
+   markup: a closing mark shares one no-wrap unit with what comes before it, an opening mark with what follows.
+   Only the CJK and full-width marks are listed; Latin punctuation keeps the browser's own behaviour. */
+const CLOSING_PUNCT = new Set(Array.from('，。、；：？！．）］｝】〕〗〙〛」』》〉”’％'));
+const OPENING_PUNCT = new Set(Array.from('（［｛【〔〖〘〚「『《〈“‘'));
 
 export function kinsoku(ch) {
   if (CLOSING_PUNCT.has(ch)) return 'close';
@@ -204,10 +205,22 @@ export function kinsoku(ch) {
   return '';
 }
 
-/* True when a line may break between two adjacent characters of a stacked Chinese text: never before a
-   closing mark, never after an opening one. The renderer places a no-break joiner exactly where this says no. */
+/* True when a line may break between two adjacent characters: never before a closing mark, never after an
+   opening one. */
 export function mayBreakBetween(prev, next) {
   return kinsoku(next) !== 'close' && kinsoku(prev) !== 'open';
+}
+
+/* Groups consecutive atoms (`{ first, last }`: a word, or one stacked character, by its first and last
+   character) that may not be split by a line break. Returns arrays of atom indexes; the renderer wraps every
+   group of more than one atom in one `white-space: nowrap` unit. */
+export function kinGroups(atoms) {
+  const groups = [];
+  for (let i = 0; i < atoms.length; i += 1) {
+    if (i > 0 && !mayBreakBetween(atoms[i - 1].last, atoms[i].first)) groups[groups.length - 1].push(i);
+    else groups.push([i]);
+  }
+  return groups;
 }
 
 /* Pinyin above each Hanzi (frame 14's `hc.p`/`hc.h` stack): one syllable per character when the
