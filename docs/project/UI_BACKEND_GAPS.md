@@ -6148,3 +6148,12 @@ is a decision for the human. Not done, by decision of scope: Discover has no scr
 and type), so a learner browsing Chinese sees both scripts, each Traditional card labelled; a "Simplified / Traditional"
 filter group, or a learner preference, is a follow-up. Articles published before this change have no stored `script` and
 read as unlabelled until re-analysed (the detail payload detects from the body on read; the list does not).
+
+## Reader tagger needs a text language (2026-10-14)
+
+`POST /api/media-learning/annotate` answers only for the learner's current learning language (409 otherwise), so
+the Reader and Listening send nothing for a text in another language (`annotate-policy.js#annotateAll`,
+`annotateAllowed`; region and script subtags are ignored: `zh-Hans` is `zh`). `reader/source.js` maps a missing
+article, chapter (then book `learning_language`) or imported-text language to `''`; such a text is not tagged
+(plain text, zero requests). Open for the backend: guarantee `language` on every reading source so none is left
+untagged.

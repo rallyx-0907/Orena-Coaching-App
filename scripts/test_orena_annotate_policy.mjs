@@ -147,8 +147,16 @@ assert.ok(m.stats.peak > 1 && m.stats.peak <= 6, `parallel after the first, peak
 resetAnnotatePolicy();
 m = make(422);
 await annotateAll(paragraphs, m.ask, { scope: 'art', language: 'zh', learning: 'zh' });
-assert.equal(m.stats.sent, 86, 'a payload error does not silence the others');
+assert.equal(m.stats.sent, 3, 'a text rejected by the tagger costs three requests, not one per paragraph');
 assert.equal(m.stats.peak, 1, 'no success yet: still one at a time');
+resetAnnotatePolicy();
+let n422 = 0;
+await annotateAll(paragraphs, async (i) => (n422 += 1, i === 1), { scope: 'art', language: 'zh', learning: 'zh' });
+assert.equal(n422, 86, 'one paragraph failing then one succeeding: the rest still run');
+assert.equal(annotateAllowed('zh-Hans', 'zh'), true);
+assert.equal(annotateAllowed('zh-CN', 'ZH'), true);
+assert.equal(annotateAllowed('en-US', 'en'), true);
+assert.equal(annotateAllowed('en', 'zh-Hans'), false);
 for (const f of ['reader', 'listening']) {
   const src = readFileSync(new URL(`../static/orena/screens/${f}/screen.js`, import.meta.url), 'utf8');
   assert.ok(src.includes(f === 'reader' ? 'annotateAll(' : 'annotateAllowed('), `${f} preflights the language`);

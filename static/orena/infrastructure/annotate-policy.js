@@ -68,20 +68,33 @@ export async function annotateWithPolicy(send, payload, { scope = '', sleep = wa
    another language is never sent: the client knows both, and asking would only cost a request that
    cannot succeed. An unknown language on either side is not asked either. */
 export function annotateAllowed(textLanguage, learningLanguage) {
-  const text = String(textLanguage || '').toLowerCase();
-  return Boolean(text) && text === String(learningLanguage || '').toLowerCase();
+  const text = primaryLanguage(textLanguage);
+  return Boolean(text) && text === primaryLanguage(learningLanguage);
 }
+
+/* `zh-Hans`, `zh-CN`, `en_US` and `ZH` are the languages `zh`, `zh`, `en` and `zh`. */
+function primaryLanguage(code) {
+  return String(code || '').trim().toLowerCase().split(/[-_]/)[0];
+}
+
+export const ANNOTATE_FIRST_TRIES = 3;
 
 /* Tag every item with `ask(item)` (resolves true when the tagger answered). Nothing is sent for a
    language the learner is not learning. The first answer is awaited alone, so an unexpected 4xx costs
-   one request and closes the pair; only then do `concurrency` workers share the rest. Items are tried
-   one at a time until one succeeds, so a payload error on one paragraph does not silence the others. */
+   one request and closes the pair; only then do `concurrency` workers share the rest. Until one
+   succeeds items are tried one at a time, so a payload error on one paragraph does not silence the
+   others - but only ANNOTATE_FIRST_TRIES times, so a text the tagger rejects entirely costs a handful of
+   requests, not one per paragraph. */
 export async function annotateAll(items, ask, { scope = '', language = '', learning = '', concurrency = 6 } = {}) {
   if (!annotateAllowed(language, learning)) return;
   const list = [...items];
   let next = 0;
+  let tries = 0;
   let answered = false;
-  while (!answered && next < list.length && !annotateRefused(scope, language)) answered = (await ask(list[next++])) === true;
+  while (!answered && tries < ANNOTATE_FIRST_TRIES && next < list.length && !annotateRefused(scope, language)) {
+    tries += 1;
+    answered = (await ask(list[next++])) === true;
+  }
   if (!answered) return;
   const workers = Array.from({ length: Math.min(concurrency, list.length - next) }, async () => {
     while (next < list.length && !annotateRefused(scope, language)) await ask(list[next++]);

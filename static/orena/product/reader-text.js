@@ -102,46 +102,12 @@ export function sentenceSpans(text) {
   const spans = [];
   let start = 0;
   for (const match of text.matchAll(SENTENCE_END)) {
-    if (!endsSentence(text, match)) continue;
     const end = match.index + match[0].length;
     if (end > start) spans.push({ start, end });
     start = end;
   }
   if (start < text.length) spans.push({ start, end: text.length });
   return spans;
-}
-
-/* A full stop is not always a sentence end: the "." inside "4.77", "U.S.", "e.g." or "Mr." is part of
-   the word. Only a bare run of ASCII dots is ambiguous - "!", "?", "。", "！", "？" and a newline always end
-   a sentence. A dot that is not followed by whitespace (or the end) never ends one; a title or a
-   dotted abbreviation does not end one before a lowercase word or a digit; "No." does not before a
-   number; an ellipsis does not before a lowercase word. */
-const HARD_ABBREVIATIONS = new Set(['mr', 'mrs', 'ms', 'mx', 'dr', 'prof', 'sr', 'jr', 'st', 'mt', 'vs', 'cf', 'gen', 'col', 'lt', 'sgt', 'capt', 'rep', 'sen', 'gov', 'rev', 'hon']);
-const SOFT_ABBREVIATIONS = new Set(['etc', 'inc', 'ltd', 'co', 'corp', 'approx', 'jan', 'feb', 'mar', 'apr', 'jun', 'jul', 'aug', 'sep', 'sept', 'oct', 'nov', 'dec']);
-const NUMBERED = new Set(['no', 'nos', 'vol', 'fig', 'p', 'pp', 'ch', 'art', 'sec']);
-const TERMINATORS = /^[.!?…。！？]+/u;
-
-function endsSentence(text, match) {
-  const lead = match[0];
-  if (lead.startsWith(String.fromCharCode(10))) return true;
-  const core = TERMINATORS.exec(lead)[0];
-  if (/[!?。！？]/u.test(core)) return true;
-  const after = match.index + lead.length;
-  if (after < text.length && !/\s$/u.test(lead)) return false; // "4.77", "U.S.", "a.b": no space after the dot
-  const next = /^\s*(\S)/u.exec(text.slice(after))?.[1] ?? '';
-  if (core.length > 1 || core === '…') return !/\p{Ll}/u.test(next); // an ellipsis before a lowercase word goes on
-  const word = /([\p{L}][\p{L}.]*)$/u.exec(text.slice(0, match.index))?.[1] ?? '';
-  if (!word) return true;
-  const lower = word.toLowerCase();
-  if (word.includes('.')) {
-    // "U.S.", "e.g.", "a.m.": a dotted abbreviation; only a time of day can end a sentence.
-    return ['a.m', 'p.m'].includes(lower) && (!next || /\p{Lu}/u.test(next));
-  }
-  if (/^\p{Lu}$/u.test(word)) return false; // an initial: "J. Smith"
-  if (HARD_ABBREVIATIONS.has(lower)) return false;
-  if (SOFT_ABBREVIATIONS.has(lower)) return !next || /\p{Lu}/u.test(next);
-  if (NUMBERED.has(lower) && /\d/u.test(next)) return false; // "No. 5"
-  return true;
 }
 
 // The sentence a selection sits in, so a meaning is asked about its own use.
