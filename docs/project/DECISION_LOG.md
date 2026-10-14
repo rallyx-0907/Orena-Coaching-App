@@ -6416,6 +6416,14 @@ implied; activation stays a separate owner action after the two model ids are ve
 checked against the live OpenRouter catalogue from the build environment; verify before activation (a retired id only
 fails over). No live provider call was made.
 
+**Amendment 2026-10-14 (models verified).** The ids were checked against the public OpenRouter catalogue
+(`https://openrouter.ai/api/v1/models`, no key). `google/gemma-4-31b-it:free` is **verified**;
+`qwen/qwen3-next-80b-a3b-instruct:free` **does not exist** and is removed. Pinned and zero-rated in `pricing.py`
+(`2026-10-14.v4`): `google/gemma-4-31b-it:free` (primary), `google/gemma-4-26b-a4b-it:free` (standby, same family,
+different weights) and `nvidia/nemotron-3-super-120b-a12b:free` (a second-vendor option). Other free ids the catalogue
+lists are not selectable until their zero-rate entry is added. The "Not verified" paragraph above is superseded by this
+note. An endpoint pasted as `.../chat/completions` is normalised to the base URL for every OpenAI-compatible provider.
+
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
 
 ## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)

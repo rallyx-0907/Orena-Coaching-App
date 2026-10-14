@@ -14,7 +14,7 @@ import time
 
 import pytest
 
-from tests.test_ai_router import GEMMA, QWEN, Fake, Repository, config, env, http_error  # noqa: F401 - `env` is a fixture
+from tests.test_ai_router import GEMMA, STANDBY, Fake, Repository, config, env, http_error  # noqa: F401 - `env` is a fixture
 from writing_coach.ai.router import tap
 from writing_coach.core.request_context import USER_KEY_CTX
 from writing_coach.reading_derived import DerivedCache
@@ -72,7 +72,7 @@ def test_an_unsupported_pair_is_not_sent(env) -> None:
 
 
 def test_a_failing_pool_is_a_miss_not_an_error(env) -> None:
-    env.fake.script = {GEMMA: [http_error(503)], QWEN: [http_error(503)]}
+    env.fake.script = {GEMMA: [http_error(503)], STANDBY: [http_error(503)]}
     assert tap.word_translation_seam("lamp", SENTENCE, [], "en", "vi") is None
 
 
