@@ -29,11 +29,13 @@ const KEYS = [
   'writeResponse', 'kindArticle', 'kindBook', 'kindText', 'modeActive', 'pageOf',
   'summaryGenerated', 'summaryLoading', 'summaryFailed', 'summaryStays', 'retry', 'translationFailed', 'translationLoading',
   'practiceTitle', 'minutes', 'endNotePractice',
+  'srcLabel', 'srcBy', 'srcOriginal',
 ];
 
 export const t = defineCopy('reader', {
   layers: Object.fromEntries(KEYS.map((key) => [key, SUPPORT.includes(key) ? 'support' : 'interface'])),
   en: {
+    srcLabel: 'Source: {name}', srcBy: 'by {name}', srcOriginal: 'Original article',
     readingAppearance: 'Reading appearance', aa: 'Aa', aaSmaller: 'Smaller text', aaLarger: 'Larger text', aidsLabel: 'Reading aids', moreLabel: 'More',
     themeDark: 'Dark theme', listen: 'Listen', listenPause: 'Pause read-aloud',
     saveLabel: 'Save', savedLabel: 'Saved ✓', savedToast: 'Saved', removedToast: 'Removed', saveFailed: 'Could not save right now',
@@ -59,6 +61,7 @@ export const t = defineCopy('reader', {
     summaryGenerated: 'Generated on request', summaryLoading: 'Writing the summary…', summaryFailed: 'The summary could not be made right now.', summaryStays: 'The text stays in place; close this panel to keep reading.', retry: 'Retry', translationFailed: 'The translation could not be made right now.', translationLoading: 'Translating…',
   },
   vi: {
+    srcLabel: 'Nguồn: {name}', srcBy: 'tác giả {name}', srcOriginal: 'Bài gốc',
     readingAppearance: 'Giao diện đọc', aa: 'Aa', aaSmaller: 'Chữ nhỏ hơn', aaLarger: 'Chữ lớn hơn', aidsLabel: 'Hỗ trợ đọc', moreLabel: 'Thêm',
     themeDark: 'Giao diện tối', listen: 'Nghe', listenPause: 'Tạm dừng đọc to',
     saveLabel: 'Lưu', savedLabel: 'Đã lưu ✓', savedToast: 'Đã lưu', removedToast: 'Đã xoá', saveFailed: 'Chưa lưu được lúc này',
@@ -84,6 +87,7 @@ export const t = defineCopy('reader', {
     summaryGenerated: 'Tạo khi bạn yêu cầu', summaryLoading: 'Đang viết bản tóm tắt…', summaryFailed: 'Chưa tạo được bản tóm tắt lúc này.', summaryStays: 'Văn bản vẫn ở nguyên chỗ; đóng bảng này để đọc tiếp.', retry: 'Thử lại', translationFailed: 'Chưa dịch được lúc này.', translationLoading: 'Đang dịch…',
   },
   zh: {
+    srcLabel: '来源：{name}', srcBy: '作者：{name}', srcOriginal: '原文',
     readingAppearance: '阅读外观', aa: 'Aa', aaSmaller: '缩小文字', aaLarger: '放大文字', aidsLabel: '阅读辅助', moreLabel: '更多',
     themeDark: '深色主题', listen: '朗读', listenPause: '暂停朗读',
     saveLabel: '收藏', savedLabel: '已收藏 ✓', savedToast: '已收藏', removedToast: '已移除', saveFailed: '暂时无法保存',
