@@ -45,7 +45,10 @@ def derive() -> dict[str, str]:
     traditional_forms = {form for forms in pairs.values() for form in forms}
     return {
         "format": "orena.zh-script-chars.v1",
-        "source": lexicon.provenance().get("release", ""),
+        "source": "CC-CEDICT",
+        "release": lexicon.provenance().get("release", ""),
+        "licence": "CC BY-SA 4.0",
+        "notice": "Derived from CC-CEDICT (MDBG and contributors; CEDICT (c) 1997, 1998 Paul Andrew Denisowski), see lexicon_data/",
         "simplified": "".join(sorted(simplified_heads - traditional_forms - shared)),
         "traditional": "".join(sorted(traditional_forms - simplified_heads - shared)),
     }

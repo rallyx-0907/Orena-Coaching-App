@@ -6388,4 +6388,5 @@ learner payload and a stored analysis field change); not activation of any sourc
    `unknown` draw nothing for the learner.
 6. **Not done.** No script filter or grouping in Discover and no learner script preference (follow-up, `UI_BACKEND_GAPS.md`); no
    backfill of already-published articles' stored script; no browser verification (Docker was unavailable); the Global Voices
-   中文 source is not unlocked by this change, which is a human gate.
+   中文 source is not unlocked by this change, which is a human gate. Existing Traditional articles stay unlabelled on Discover
+   until their script is stored: backfill before activating any Traditional source.
