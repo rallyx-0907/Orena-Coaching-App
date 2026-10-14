@@ -47,7 +47,7 @@ import { createLinePractice } from '../dictation/line-practice.js';
 import { t as dictT } from '../dictation/copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
-  wordTokens, hanTokens, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
+  wordTokens, hanTokens, createLineTagger, widenHanTap, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
   previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, keyWordsFrom, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
   phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
@@ -568,11 +568,13 @@ export default async function listening(element, ctx) {
     paintWordHighlight();
   }
 
+  let tapSeq = 0;
   rowsEl.addEventListener('click', (event) => {
+    tapSeq += 1; // any new tap supersedes a word tap still waiting for the tagger
     const wordEl = event.target.closest('[data-word]');
     if (wordEl) {
       event.stopPropagation();
-      onWordTap(wordEl.dataset.word, wordEl.dataset.seg);
+      onWordTap(wordEl.dataset.word, wordEl.dataset.seg, Number(wordEl.dataset.tok));
       return;
     }
     const rowEl = event.target.closest('[data-seg]');
@@ -620,8 +622,26 @@ export default async function listening(element, ctx) {
     rememberPlace(true);
   }
 
-  function onWordTap(word, segId) {
+  /* A Chinese line is drawn one Han character per column (the pinyin sits above each), so a tap names one
+     character. The word is what the learner pointed at: the line is tagged by the same local tagger the Reader
+     uses (briefly awaited, one request per line) and the tagged word covering that character is looked up; if the
+     tagger does not answer in time the character stands. */
+  const TAP_ANNOTATE_WAIT_MS = 1500;
+  const lineTagger = createLineTagger({
+    allowed: () => annotateAllowed(language, c.language),
+    request: async (text) => (await annotateWithPolicy(api.annotateMediaText, { text, source_language: language }, { scope: routeId }))?.annotations,
+  });
+  const wholeWordAt = (seg, word, tokIndex) => (isZh
+    ? widenHanTap({ text: seg.original_text, token: tokensOf(seg)[tokIndex], word, tags: () => lineTagger(seg.segment_id, seg.original_text), waitMs: TAP_ANNOTATE_WAIT_MS })
+    : word);
+
+  async function onWordTap(word, segId, tokIndex) {
     const seg = segOf(segId);
+    const mine = ++tapSeq; // latest tap wins: an older tap still waiting for the tagger opens nothing
+    if (seg) {
+      word = await wholeWordAt(seg, word, tokIndex);
+      if (!ctx.isCurrent() || mine !== tapSeq) return;
+    }
     if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
     openWordSheet(ctx, {
       word,

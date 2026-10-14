@@ -11,6 +11,7 @@
    pure functions over the real transcript - not its prototype timers or canned data. */
 import { wordSpans, activeWordIndex } from '../../capabilities/word-timeline.js';
 import { primaryLanguage } from '../../kit/lang.js';
+import { wordSpanAt } from '../../product/word-span.js';
 import { playbackAvailable } from '../../capabilities/media-player.js';
 export { primaryLanguage } from '../../kit/lang.js';
 
@@ -452,4 +453,35 @@ export function listenedMinutesLabel(ms) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
+}
+
+/* A Chinese line is drawn one Han character per column, so a tap names one character; the word is what the learner
+   pointed at. `createLineTagger` asks the local tagger once per line (nothing at all when `allowed()` is false, a
+   failed answer is forgotten so the next tap asks again) and `widenHanTap` widens a one-character tap to the tagged
+   word, waiting at most `waitMs` for the tagger; it answers the character itself whenever it cannot do better. */
+export function createLineTagger({ allowed, request }) {
+  const lines = new Map();
+  return function tagsOf(id, text) {
+    if (!lines.has(id)) {
+      lines.set(id, (async () => {
+        if (!allowed()) return null;
+        try {
+          const found = await request(String(text ?? '').slice(0, 1200));
+          return (found || []).filter((tok) => Number.isInteger(tok?.start) && Number.isInteger(tok?.end));
+        } catch {
+          lines.delete(id);
+          return null;
+        }
+      })());
+    }
+    return lines.get(id);
+  };
+}
+
+export async function widenHanTap({ text, token, word, tags, waitMs = 1500 }) {
+  if (!token || token.core !== word || Array.from(word).length !== 1 || !/\p{Script=Han}/u.test(word)) return word;
+  let timer = 0;
+  const found = await Promise.race([tags(), new Promise((resolve) => { timer = setTimeout(() => resolve(null), waitMs); })]);
+  clearTimeout(timer);
+  return wordSpanAt(text, found, token.start, word)?.text || word;
 }
