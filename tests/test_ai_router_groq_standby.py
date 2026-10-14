@@ -224,6 +224,43 @@ def test_the_groq_free_plan_model_is_a_zero_rate_free_standby_with_provenance() 
     assert (cost["state"], cost["amount"]) == ("estimated", 0.0)
 
 
+QWEN_GROQ = "qwen/qwen3.8-27b"
+
+
+def test_the_qwen_groq_model_is_a_zero_rate_free_standby_and_llama_stays_listed() -> None:
+    from writing_coach.ai.pricing import is_free_model
+    from writing_coach.ai.routing import provider_tier
+
+    entry = resolve_token_pricing("groq", QWEN_GROQ)
+    assert (entry.input_per_million, entry.output_per_million) == (0.0, 0.0)
+    assert "owner-confirmed Groq free plan" in entry.note
+    assert is_free_model("groq", QWEN_GROQ) and provider_tier("groq", QWEN_GROQ) == "free"
+    assert resolve_token_pricing("groq", FREE_GROQ) is not None  # kept, though this key's catalogue does not list it
+
+
+def test_the_qwen_groq_request_switches_thinking_off_and_other_models_are_untouched(monkeypatch) -> None:
+    import requests
+
+    from writing_coach.ai import providers as providers_module
+
+    sent: list[dict[str, Any]] = []
+
+    class Response:
+        status_code = 200
+        headers: dict[str, str] = {}
+
+        def json(self) -> dict[str, Any]:
+            return {"choices": [{"message": {"content": '{"meaning": "ha tang"}'}, "finish_reason": "stop"}]}
+
+    monkeypatch.setattr(requests, "post", lambda url, **kw: sent.append(kw["json"]) or Response())
+    groq = providers_module.build_providers({"groq": {"api_key": "test-key"}})["groq"]
+    for model in (QWEN_GROQ, GROQ_MODEL):
+        groq.generate_json_once(messages=[{"role": "user", "content": "x"}], schema={"type": "object"},
+                                model=model, max_output_tokens=120, temperature=0.0)
+    assert sent[0]["reasoning_effort"] == "none" and sent[0]["reasoning_format"] == "hidden"
+    assert "reasoning_effort" not in sent[1] and "reasoning_format" not in sent[1]
+
+
 def test_the_other_groq_entries_keep_their_paid_prices() -> None:
     paid = resolve_token_pricing("groq", GROQ_MODEL)
     assert (paid.input_per_million, paid.output_per_million) == (0.59, 0.79)
