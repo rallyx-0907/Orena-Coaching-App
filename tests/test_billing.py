@@ -276,8 +276,17 @@ URL = os.getenv("ORENA_TEST_POSTGRES_URL", "")
 ROOT = Path(__file__).resolve().parents[1]
 
 
+# The Billing revisions 0027 -> 0031 -> 0032 -> 0033 are promoted into the chain on the lane branch (PR-MON-5 migration
+# gate); the tests rehearse them from the revision just below them, and apply them one by one as before.
+BILLING_BASE = "20261005_0026"
+
+
 def _proposed(name: str):
-    spec = importlib.util.spec_from_file_location(name, ROOT / "migrations" / "proposed" / f"{name}.py")
+    """A revision module by file name: promoted (`versions/`) or still proposed (`proposed/`)."""
+    path = ROOT / "migrations" / "versions" / f"{name}.py"
+    if not path.exists():
+        path = ROOT / "migrations" / "proposed" / f"{name}.py"
+    spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -307,7 +316,7 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
         cfg.set_main_option("script_location", str(ROOT / "migrations"))
         cfg.set_main_option("path_separator", "os")
         cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, BILLING_BASE)
         engine = create_engine(schema_url, future=True)
         # 0026 is in the chain (head) since its promotion; 0031 is PR-MON-3's follow-up on the proposed 0027.
         migrations = [_proposed("20261005_0027_billing_orders"), _proposed("20261014_0031_billing_reconciliation")]

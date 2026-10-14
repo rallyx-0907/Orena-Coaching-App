@@ -1,4 +1,9 @@
 """payOS credit top-up orders (PR-MON-5; docs/billing/PR-MON-5_DESIGN.md revision 3, APPROVED FOR IMPLEMENTATION
+
+Promotion (2026-10-14, PR-MON-5 migration gate, the human's choice "promote on the branch, do not merge yet"):
+moved from `migrations/proposed/` into the chain with 0027 -> 0031 -> 0032 -> 0033, source control only and on the
+Billing lane branch. It is applied to no runtime; once merged, every PostgreSQL runtime must apply it (operator step,
+after a backup) before it starts again. The text below is the proposal's, unchanged.
 2026-10-14 on `89e97942`; D-MON-022).
 
 - `billing_orders` (0027/0031) gains a product kind. A `credit_pack` order snapshots its pack and units. The payloads

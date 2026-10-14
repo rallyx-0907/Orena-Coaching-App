@@ -15,14 +15,7 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
-**Open proposal (Billing), the PR-MON-5 migration gate:** `20261005_0027` → `20261014_0031` → `20261014_0032` (credit ledger, PR-MON-4) → `20261015_0033_credit_topup_orders.py` (PR-MON-5 design revision 3, APPROVED FOR IMPLEMENTATION). All four are proposed and are promoted together under the human's migration gate, in this order. 0033 reads 0032's builders and function text from its sibling file, so 0032 and 0033 must stay in the same directory.
-
-**Open proposal (Billing):** `20261005_0027_billing_orders.py` and its PR-MON-3 follow-up
-`20261014_0031_billing_reconciliation.py` (`down_revision = "20261005_0027"`; design APPROVED, implementation review
-pending; `docs/billing/PR-MON-3_DESIGN.md`). 0031 is a new revision rather than an edit of 0027 because no operator has
-confirmed that no runtime ever applied 0027 (decision H2). Promotion rule (H1): read the real Alembic head at promotion,
-parent on it, one financial or content migration into the chain at a time; the lane that promotes later re-parents its
-own revision. `20261005_0028_reading_derived_texts.py` sits on 0027 by linearity only; Billing does not edit it.
+**Promoted on the Billing lane branch (2026-10-14, PR-MON-5 migration gate, not yet merged):** `20261005_0027_billing_orders.py` → `20261014_0031_billing_reconciliation.py` → `20261014_0032_credit_ledger.py` → `20261015_0033_credit_topup_orders.py`, moved into `versions/` together (design reviews in `docs/reviews/architecture/PR_MON_3_*`, `PR_MON_4_*`, `PR_MON_5_*`). Source control only: no runtime has them. Once merged, every PostgreSQL runtime must apply them (operator step, after a backup) before it starts. `20261005_0028_reading_derived_texts.py` stays here on 0027 by linearity; under H1 the Reading lane re-parents it on the head of the day when it promotes it.
 
 **Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
 awaiting the human's authorization). If it is promoted after 0025, re-parent it on `20261004_0025`.

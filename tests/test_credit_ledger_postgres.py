@@ -14,7 +14,7 @@ from urllib.parse import quote
 
 import pytest
 
-from tests.test_billing import ROOT, _proposed
+from tests.test_billing import BILLING_BASE, ROOT, _proposed
 
 URL = os.getenv("ORENA_TEST_POSTGRES_URL", "")
 pytestmark = pytest.mark.skipif(not URL, reason="ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
@@ -59,7 +59,7 @@ def ledger_world(migrations):
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
     cfg.set_main_option("sqlalchemy.url", f"{URL}{options}".replace("%", "%%"))
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, BILLING_BASE)
     owner = create_engine(f"{URL}{options}", future=True)
     _migrate(owner, migrations)
     with owner.begin() as connection:
@@ -162,7 +162,7 @@ def test_0032_goes_down_only_while_empty_and_restores_0031_exactly(ledger):
         cfg.set_main_option("script_location", str(ROOT / "migrations"))
         cfg.set_main_option("path_separator", "os")
         cfg.set_main_option("sqlalchemy.url", str(engine.url.render_as_string(hide_password=False)).replace("%", "%%"))
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, BILLING_BASE)
         _migrate(engine, MIGRATIONS[:2])
         before = (ledger.sql(guard, engine=engine, s=schema), ledger.sql(checks, engine=engine))
         _migrate(engine, (MIGRATIONS[2],))
@@ -643,7 +643,7 @@ def _head(engine):
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
     cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False).replace("%", "%%"))
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, BILLING_BASE)
 
 
 def test_p1_1_a_non_superuser_executor_with_provisioned_roles_runs_0032_and_its_downgrade(ledger):

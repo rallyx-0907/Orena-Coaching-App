@@ -307,3 +307,43 @@ def test_a_reversal_with_its_entry_but_without_its_shortfall_item_is_not_complet
     item = gap_item(gate, "credit_reversal_unapplied", incarnation, paid, topup=topup)
     with pytest.raises(DBAPIError, match="complete reversal"):  # the 40 shortfall has no item
         resolve(gate, item, "credit_reversed")
+
+
+def test_the_promoted_chain_upgrades_and_downgrades_through_alembic(gate):
+    """The migration gate's rehearsal: the promoted 0027 -> 0031 -> 0032 -> 0033 is the single head, `alembic upgrade
+    head` applies all four, and an empty schema goes back to 0026 and up again."""
+    from urllib.parse import quote
+
+    from alembic import command
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from sqlalchemy import create_engine
+
+    from tests.test_billing import ROOT
+
+    schema = f"credit_{uuid.uuid4().hex[:10]}"
+    separator = "&" if "?" in URL else "?"
+    engine = create_engine(f"{URL}{separator}options={quote(f'-csearch_path={schema}')}", future=True)
+    cfg = Config(str(ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(ROOT / "migrations"))
+    cfg.set_main_option("path_separator", "os")
+    cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False).replace("%", "%%"))
+    script = ScriptDirectory.from_config(cfg)
+    assert script.get_heads() == ["20261015_0033"]
+    assert [script.get_revision(r).down_revision for r in ("20261005_0027", "20261014_0031", "20261014_0032",
+                                                         "20261015_0033")] == [
+        "20261005_0026", "20261005_0027", "20261014_0031", "20261014_0032"]
+    gate.sql(f'CREATE SCHEMA "{schema}"', engine=gate.admin)
+    try:
+        command.upgrade(cfg, "head")
+        version = "SELECT version_num FROM alembic_version"
+        assert gate.sql(version, engine=engine)[0]["version_num"] == "20261015_0033"
+        assert gate.sql("SELECT to_regclass('credit_ledger') AS t", engine=engine)[0]["t"] is not None
+        command.downgrade(cfg, "20261005_0026")
+        assert gate.sql(version, engine=engine)[0]["version_num"] == "20261005_0026"
+        assert gate.sql("SELECT to_regclass('billing_orders') AS t", engine=engine)[0]["t"] is None
+        command.upgrade(cfg, "head")
+        assert gate.sql(version, engine=engine)[0]["version_num"] == "20261015_0033"
+    finally:
+        engine.dispose()
+        gate.sql(f'DROP SCHEMA "{schema}" CASCADE', engine=gate.admin)

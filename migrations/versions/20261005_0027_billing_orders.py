@@ -1,5 +1,10 @@
 """Billing orders: one row per checkout attempt, for every gateway (completion plan item 4; BILLING_GATEWAYS.md).
 
+Promotion (2026-10-14, PR-MON-5 migration gate, the human's choice "promote on the branch, do not merge yet"):
+moved from `migrations/proposed/` into the chain with 0027 -> 0031 -> 0032 -> 0033, source control only and on the
+Billing lane branch. It is applied to no runtime; once merged, every PostgreSQL runtime must apply it (operator step,
+after a backup) before it starts again. The text below is the proposal's, unchanged.
+
 A merchant of record (Polar) runs the subscription itself; the order row only binds Orena's checkout - the
 account incarnation, the approved price, one operation id - to the gateway's reference. A domestic gateway
 (payOS) sells a prepaid period; its order row is also the payment fact: the period it bought, in what sequence,

@@ -1,4 +1,9 @@
 """Prepaid credit ledger (PR-MON-4; docs/billing/PR-MON-4_DESIGN.md revision 4, APPROVED FOR IMPLEMENTATION
+
+Promotion (2026-10-14, PR-MON-5 migration gate, the human's choice "promote on the branch, do not merge yet"):
+moved from `migrations/proposed/` into the chain with 0027 -> 0031 -> 0032 -> 0033, source control only and on the
+Billing lane branch. It is applied to no runtime; once merged, every PostgreSQL runtime must apply it (operator step,
+after a backup) before it starts again. The text below is the proposal's, unchanged.
 2026-10-14 on `48e1bf2e`; decisions C1-C7 = D-MON-019, D-MON-020, D-MON-021).
 
 Credits are an integer count of credit units; what a unit is worth is a human decision and is never coded here.

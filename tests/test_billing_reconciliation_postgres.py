@@ -13,7 +13,7 @@ from urllib.parse import quote
 
 import pytest
 
-from tests.test_billing import CHECKSUM, PAYOS, ROOT, _proposed
+from tests.test_billing import BILLING_BASE, CHECKSUM, PAYOS, ROOT, _proposed
 from writing_coach.billing.gateway import hmac_sha256_hex
 from writing_coach.billing.payos import signing_string
 
@@ -73,7 +73,7 @@ def world():
     cfg.set_main_option("script_location", str(ROOT / "migrations"))
     cfg.set_main_option("path_separator", "os")
     cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
-    command.upgrade(cfg, "head")
+    command.upgrade(cfg, BILLING_BASE)
     engine = create_engine(schema_url, future=True, connect_args={"application_name": app_name})
     migrations = [_proposed("20261005_0027_billing_orders"), _proposed("20261014_0031_billing_reconciliation")]
     with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
