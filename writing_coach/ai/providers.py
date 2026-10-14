@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
+import threading
+import time
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -143,6 +146,23 @@ _PROVIDER_DEFINITIONS = (
 _PROVIDER_CATALOG = MappingProxyType(
     {definition.id: definition for definition in _PROVIDER_DEFINITIONS}
 )
+
+
+# OpenRouter's live catalogue is read for every Admin render and every health check, and `providers()` rebuilds the
+# provider objects on each call, so the answer is kept per process: ten minutes when it was read, thirty seconds when
+# it could not be (a failure is not retried on every request). Keyed by endpoint and a fingerprint of the credential,
+# never the credential. The explicit credential test (`discover_models_live`) always asks live and refreshes it.
+CATALOGUE_TTL_SECONDS = 600.0
+CATALOGUE_FAILURE_SECONDS = 30.0
+_catalogue_clock = time.monotonic
+_catalogue_lock = threading.Lock()
+_catalogue_cache: dict[tuple[str, str, str], tuple[float, list[str] | None]] = {}
+_NOT_CACHED = object()
+
+
+def reset_catalogue_cache() -> None:
+    with _catalogue_lock:
+        _catalogue_cache.clear()
 
 
 def provider_definitions() -> tuple[ProviderDefinition, ...]:
@@ -565,6 +585,23 @@ class OpenAICompatibleProvider:
             return lowered.startswith("gemini-") and not any(word in lowered for word in blocked)
         return True
 
+    def _catalogue_key(self) -> tuple[str, str, str]:
+        return (self.id, self.base_url, hashlib.sha256(self.api_key.encode("utf-8")).hexdigest()[:16])
+
+    def _cached_catalogue(self) -> Any:
+        with _catalogue_lock:
+            held = _catalogue_cache.get(self._catalogue_key())
+            if held is None or held[0] <= _catalogue_clock():
+                return _NOT_CACHED
+            return held[1]
+
+    def _remember_catalogue(self, models: list[str] | None) -> None:
+        ttl = CATALOGUE_TTL_SECONDS if models is not None else CATALOGUE_FAILURE_SECONDS
+        with _catalogue_lock:
+            if len(_catalogue_cache) > 64:
+                _catalogue_cache.clear()
+            _catalogue_cache[self._catalogue_key()] = (_catalogue_clock() + ttl, models)
+
     def _read_time(self, models: list[str]) -> list[str]:
         """A code-owned allowlist is applied whenever a list is read, whatever its source (stored, environment, live)."""
 
@@ -572,7 +609,10 @@ class OpenAICompatibleProvider:
             return [model for model in models if self._accept_model(model)]
         return models
 
-    def list_models(self) -> list[str]:
+    def list_models(self, *, offline: bool = False) -> list[str]:
+        """The models on offer. `offline=True` never touches the network (health checks): what is configured, stored or
+        already cached, else nothing."""
+
         if not self.configured:
             return []
         if self.allowed_models and not self._models_are_cache:
@@ -583,15 +623,29 @@ class OpenAICompatibleProvider:
             # Resource model catalogues are not operator-created deployments.
             return []
 
+        cached_catalogue = self.model_filter == "openrouter-free"
+        if cached_catalogue:
+            held = self._cached_catalogue()
+            if held is not _NOT_CACHED and held is not None:
+                return list(held)
+        if offline:
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models))) if self._models_are_cache else []
+        if cached_catalogue and held is None:  # read and failed moments ago: do not ask again yet
+            return self._read_time(sorted(dict.fromkeys(self.allowed_models))) if self._models_are_cache else []
         try:
             response, native_gemini = self._model_catalog_request()
             response.raise_for_status()
-            return sorted({
+            models = sorted({
                 model
                 for model in self._catalog_models(response.json(), native_gemini=native_gemini)
                 if self._accept_model(model)
             })
+            if cached_catalogue:
+                self._remember_catalogue(models)
+            return models
         except Exception:
+            if cached_catalogue:
+                self._remember_catalogue(None)
             if self._models_are_cache:  # offline: the last saved list, re-filtered, rather than an empty picker
                 return self._read_time(sorted(dict.fromkeys(self.allowed_models)))
             return []
@@ -622,11 +676,14 @@ class OpenAICompatibleProvider:
             ) from exc
         except ValueError as exc:
             raise _invalid_model_catalog() from exc
-        return sorted(
+        discovered = sorted(
             model
             for model in set(self._catalog_models(envelope, native_gemini=native_gemini))
             if self._accept_model(model)
         )
+        if self.model_filter == "openrouter-free":
+            self._remember_catalogue(discovered)  # the explicit test refreshes what the pickers show
+        return discovered
 
     def _post_chat(self, body: dict[str, Any], timeout: float | None = None) -> dict[str, Any]:
         check_model_allowed(self.id, str(body.get("model") or ""))  # the choke point: no path skips the allowlist

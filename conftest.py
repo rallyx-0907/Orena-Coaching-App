@@ -73,3 +73,13 @@ def _fresh_word_translation_gate():
 
     reading_lookup.reset_seam_gate()
     yield
+
+
+@pytest.fixture(autouse=True)
+def _fresh_provider_catalogue_cache():
+    """The OpenRouter catalogue is cached per process (providers.py); a test's fake catalogue must not leak into the next."""
+
+    from writing_coach.ai import providers
+
+    providers.reset_catalogue_cache()
+    yield
