@@ -1,6 +1,7 @@
 """Local English IPA from CMUdict (D-202): conversion, lookup fallback order, table freshness."""
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -87,5 +88,5 @@ def test_table_metadata_and_freshness_check() -> None:
     assert (ROOT / "writing_coach/languages/english/CMUDICT-LICENSE.txt").read_text(encoding="utf-8").startswith(
         "Copyright (C) 1993-2015 Carnegie Mellon University")
     done = subprocess.run([sys.executable, "-I", str(ROOT / "scripts/build_english_ipa_table.py"), "--check"],
-                          capture_output=True, text=True, cwd=ROOT, env={"PYTHONPATH": str(ROOT)})
+                          capture_output=True, text=True, cwd=ROOT, env={**os.environ, "PYTHONPATH": str(ROOT)})
     assert done.returncode == 0, done.stdout + done.stderr

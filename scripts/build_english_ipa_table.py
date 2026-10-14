@@ -10,7 +10,7 @@ keys are lowercase, entries whose key has a digit or a character other than a-z,
     python scripts/build_english_ipa_table.py --check                                # no source: verify metadata
 
 Without --source, --check verifies the shipped table's metadata (pinned source hash and commit, converter
-version); with --source it rebuilds and requires an identical table. Stdlib only, offline.
+version, and that the table content matches its embedded digest); with --source it rebuilds and requires an identical table. Stdlib only, offline.
 """
 from __future__ import annotations
 
@@ -63,6 +63,7 @@ def derive(source: Path) -> dict:
         "licence": "BSD-style (Carnegie Mellon University)",
         "notice": "Copyright (C) 1993-2015 Carnegie Mellon University. All rights reserved. See CMUDICT-LICENSE.txt",
         "entries": len(table),
+        "tableSha256": ipa.table_digest(dict(sorted(table.items()))),
         "ipa": dict(sorted(table.items())),
     }
 
@@ -75,7 +76,8 @@ def main() -> int:
     if args.check and not args.source:
         meta = ipa.metadata() if OUT.is_file() else {}
         if not (meta.get("sourceSha256") == SOURCE_SHA256 and meta.get("sourceCommit") == SOURCE_COMMIT
-                and meta.get("converter") == ipa.CONVERTER_VERSION):
+                and meta.get("converter") == ipa.CONVERTER_VERSION
+                and meta.get("tableSha256") == meta.get("actualTableSha256")):
             print("cmudict_ipa.json.gz is stale or missing; run scripts/build_english_ipa_table.py --source ...")
             return 1
         return 0

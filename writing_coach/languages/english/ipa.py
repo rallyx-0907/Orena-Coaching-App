@@ -13,11 +13,14 @@ r-coloured stressed vowel.
 from __future__ import annotations
 
 import gzip
+import hashlib
 import json
+import logging
 import threading
 from pathlib import Path
 from typing import Any
 
+_log = logging.getLogger(__name__)
 CONVERTER_VERSION = "arpabet-ipa/1"
 TABLE_PATH = Path(__file__).resolve().parent / "cmudict_ipa.json.gz"
 
@@ -101,14 +104,24 @@ def _load() -> dict[str, str]:
                     with gzip.open(TABLE_PATH, "rt", encoding="utf-8") as handle:
                         payload: dict[str, Any] = json.load(handle)
                     _table = {str(k): str(v) for k, v in payload.get("ipa", {}).items()}
-                except (OSError, ValueError):
+                except (OSError, ValueError) as exc:
+                    # Logged once: the table is cached empty, so lookups degrade to no local reading.
+                    _log.warning("English IPA table unreadable (%s); local pronunciations are unavailable", exc)
                     _table = {}
     return _table
 
 
+def table_digest(table: dict[str, str]) -> str:
+    """SHA-256 of the table's canonical JSON, embedded as `tableSha256` and verified by the builder's --check."""
+    return hashlib.sha256(json.dumps(table, ensure_ascii=False, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
 def metadata() -> dict[str, Any]:
     with gzip.open(TABLE_PATH, "rt", encoding="utf-8") as handle:
-        return {key: value for key, value in json.load(handle).items() if key != "ipa"}
+        payload = json.load(handle)
+    meta = {key: value for key, value in payload.items() if key != "ipa"}
+    meta["actualTableSha256"] = table_digest(payload.get("ipa", {}))
+    return meta
 
 
 def ipa_for(word: str) -> str:
