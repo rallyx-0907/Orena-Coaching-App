@@ -48,11 +48,28 @@ def order(gate, incarnation, *, kind="credit_pack", units=100, state="paid", amo
     return row
 
 
-def topup_sql(gate, account, code, units, *, match=None):
+def topup_digest(gate, account, code, units):
+    """The repository's own intent digest of a billing-order top-up (`credit_repository.digest`)."""
+    from writing_coach.persistence.credit_repository import digest
+
+    incarnation = gate.sql("SELECT incarnation_id FROM credit_accounts WHERE id = :a", a=account)[0]["incarnation_id"]
+    return digest(kind="topup", account=str(incarnation), amount=units, source_type="billing_order",
+                  source_ref=f"payos:{code}")
+
+
+def reversal_digest(incarnation, topup, requested, code):
+    from writing_coach.persistence.credit_repository import digest
+
+    return digest(kind="reversal", account=str(incarnation), topup=str(topup), requested=requested,
+                  source_type="payos_refund", source_ref=f"payos:{code}")
+
+
+def topup_sql(gate, account, code, units, *, match=None, request_digest=None):
     statement = ("INSERT INTO credit_ledger (id, credit_account_id, kind, posted_delta, reserved_delta, amount, "
                  "source_type, source_ref, idempotency_key, request_digest, actor, created_at) VALUES (gen_random_uuid(), "
-                 ":a, 'topup', :u, 0, :u, 'billing_order', :ref, :ref, 'd', 'system', now())")
-    values = dict(a=account, u=units, ref=f"payos:{code}")
+                 ":a, 'topup', :u, 0, :u, 'billing_order', :ref, :ref, :d, 'system', now())")
+    values = dict(a=account, u=units, ref=f"payos:{code}",
+                  d=request_digest or topup_digest(gate, account, code, units))
     if match is None:
         gate.sql(statement, engine=gate.runtime, **values)
     else:
@@ -277,8 +294,9 @@ def test_a_reversal_request_without_its_durable_effects_is_not_complete(gate):
     # a request row alone (written around the repository): applied 100, but no reversal entry
     gate.sql("INSERT INTO credit_reversal_requests (id, credit_account_id, topup_entry_id, idempotency_key, "
              "request_digest, requested, applied, shortfall, source_type, source_ref, actor, reason, created_at) "
-             "VALUES (gen_random_uuid(), :a, :t, :ref, 'd', 100, 100, 0, 'payos_refund', :ref, 'x', 'x', now())",
-             engine=gate.runtime, a=account, t=topup, ref=f"payos:{paid['order_code']}")
+             "VALUES (gen_random_uuid(), :a, :t, :ref, :d, 100, 100, 0, 'payos_refund', :ref, 'x', 'x', now())",
+             engine=gate.runtime, a=account, t=topup, ref=f"payos:{paid['order_code']}",
+             d=reversal_digest(incarnation, topup, 100, paid["order_code"]))
     item = gap_item(gate, "credit_reversal_unapplied", incarnation, paid, topup=topup)
     with pytest.raises(DBAPIError, match="complete reversal"):
         resolve(gate, item, "credit_reversed")
@@ -298,8 +316,9 @@ def test_a_reversal_with_its_entry_but_without_its_shortfall_item_is_not_complet
     ref = f"payos:{paid['order_code']}"
     request = gate.sql("INSERT INTO credit_reversal_requests (id, credit_account_id, topup_entry_id, idempotency_key, "
                        "request_digest, requested, applied, shortfall, source_type, source_ref, actor, reason, created_at) "
-                       "VALUES (gen_random_uuid(), :a, :t, :ref, 'd', 100, 60, 40, 'payos_refund', :ref, 'x', 'x', now()) "
-                       "RETURNING id", engine=gate.runtime, a=account, t=topup, ref=ref)[0]["id"]
+                       "VALUES (gen_random_uuid(), :a, :t, :ref, :d, 100, 60, 40, 'payos_refund', :ref, 'x', 'x', now()) "
+                       "RETURNING id", engine=gate.runtime, a=account, t=topup, ref=ref,
+                       d=reversal_digest(incarnation, topup, 100, paid["order_code"]))[0]["id"]
     gate.sql("INSERT INTO credit_ledger (id, credit_account_id, kind, posted_delta, reserved_delta, amount, ref_entry_id, "
              "reversal_request_id, idempotency_key, request_digest, actor, reason, created_at) VALUES (gen_random_uuid(), "
              ":a, 'reversal', -60, 0, 60, :t, :req, :ref, 'd', 'x', 'x', now())",
@@ -347,3 +366,54 @@ def test_the_promoted_chain_upgrades_and_downgrades_through_alembic(gate):
     finally:
         engine.dispose()
         gate.sql(f'DROP SCHEMA "{schema}" CASCADE', engine=gate.admin)
+
+
+# ---- the request digest is part of the exact match (migration-gate review of `f81f0322`) -----------------------------
+
+def test_a_topup_with_the_wrong_digest_is_not_the_exact_topup(gate):
+    from sqlalchemy.exc import DBAPIError
+
+    incarnation = gate.account()
+    account = gate.balance(incarnation)["id"]
+    paid = order(gate, incarnation, units=100)
+    item = gap_item(gate, "credit_topup_unapplied", incarnation, paid)
+    # the right source, account and units, but another intent's digest
+    topup_sql(gate, account, paid["order_code"], 100, request_digest="0" * 64)
+    with pytest.raises(DBAPIError, match="exact top-up"):
+        resolve(gate, item, "credit_applied")
+    assert gate.sql("SELECT state FROM billing_reconciliation_items WHERE id = :id", id=item)[0]["state"] == "open"
+
+
+def test_the_right_digest_makes_the_exact_topup(gate):
+    incarnation = gate.account()
+    account = gate.balance(incarnation)["id"]
+    paid = order(gate, incarnation, units=100)
+    item = gap_item(gate, "credit_topup_unapplied", incarnation, paid)
+    topup_sql(gate, account, paid["order_code"], 100)  # the repository's digest, recomputed by the database
+    resolve(gate, item, "credit_applied")
+
+
+def test_a_reversal_request_with_the_wrong_digest_is_not_complete(gate):
+    from sqlalchemy.exc import DBAPIError
+
+    incarnation = gate.account()
+    account = gate.balance(incarnation)["id"]
+    paid = order(gate, incarnation, units=100)
+    topup_sql(gate, account, paid["order_code"], 100)
+    topup = gate.sql("SELECT id FROM credit_ledger WHERE source_ref = :r", r=f"payos:{paid['order_code']}")[0]["id"]
+    gate.sql("UPDATE billing_orders SET state = 'refunded', refunded_at = now(), refunded_by = 'operator' "
+             "WHERE id = :id", id=paid["id"])
+    ref = f"payos:{paid['order_code']}"
+    # account, top-up, source and requested all right; applied in full with its entry; only the digest is not the intent
+    request = gate.sql("INSERT INTO credit_reversal_requests (id, credit_account_id, topup_entry_id, idempotency_key, "
+                       "request_digest, requested, applied, shortfall, source_type, source_ref, actor, reason, created_at) "
+                       "VALUES (gen_random_uuid(), :a, :t, :ref, :d, 100, 100, 0, 'payos_refund', :ref, 'x', 'x', now()) "
+                       "RETURNING id", engine=gate.runtime, a=account, t=topup, ref=ref, d="f" * 64)[0]["id"]
+    gate.sql("INSERT INTO credit_ledger (id, credit_account_id, kind, posted_delta, reserved_delta, amount, ref_entry_id, "
+             "reversal_request_id, idempotency_key, request_digest, actor, reason, created_at) VALUES (gen_random_uuid(), "
+             ":a, 'reversal', -100, 0, 100, :t, :req, :ref, 'd', 'x', 'x', now())",
+             engine=gate.runtime, a=account, t=topup, req=request, ref=ref)
+    item = gap_item(gate, "credit_reversal_unapplied", incarnation, paid, topup=topup)
+    with pytest.raises(DBAPIError, match="complete reversal"):
+        resolve(gate, item, "credit_reversed")
+

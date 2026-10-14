@@ -97,15 +97,32 @@ ORDER_CHECKS = [
      "product_kind = 'plan' OR (paid_sequence IS NULL AND period_end IS NULL)"),
 ]
 
-# The exact top-up and the complete reversal (§6.1, §7.1), as SQL over the item's order. The intent digest is the
-# repository's check; the database checks every structural part.
+# The exact top-up and the complete reversal (§6.1, §7.1), as SQL over the item's order, including the request digest
+# (migration-gate review of `f81f0322`). The digest is the repository's own (`credit_repository.digest`): sha256 over
+# the canonical JSON of the intent - keys sorted, every value a string, no spaces - so the database recomputes it
+# exactly. Every value here is ASCII (UUIDs, integers, `payos:<code>`), so JSON needs no escaping.
+def _digest_sql(fields: list[tuple[str, str]]) -> str:
+    # each part closes the SQL literal, concatenates the value as text, and reopens it: "key":"' || (value)::text || '"
+    parts = ['"' + key + '":"\' || (' + expression + ")::text || '\"" for key, expression in sorted(fields)]
+    return "encode(sha256(convert_to('{" + ",".join(parts) + "}', 'UTF8')), 'hex')"
+
+
+_TOPUP_DIGEST = _digest_sql([("account", "a.incarnation_id"), ("amount", "o.credit_units"), ("kind", "'topup'"),
+                             ("source_ref", "o.gateway || ':' || o.order_code::text"),
+                             ("source_type", "'billing_order'")])
+_REVERSAL_DIGEST = _digest_sql([("account", "a.incarnation_id"), ("kind", "'reversal'"), ("requested", "o.credit_units"),
+                                ("source_ref", "o.gateway || ':' || o.order_code::text"),
+                                ("source_type", "'payos_refund'"), ("topup", "r.topup_entry_id")])
 _EXACT_TOPUP = """EXISTS (SELECT 1 FROM credit_ledger l JOIN credit_accounts a ON a.id = l.credit_account_id
                      JOIN billing_orders o ON o.id = NEW.billing_order_id
                      WHERE l.kind = 'topup' AND l.source_type = 'billing_order'
                        AND l.source_ref = o.gateway || ':' || o.order_code::text
-                       AND a.incarnation_id = o.incarnation_id AND l.amount = o.credit_units)"""
+                       AND a.incarnation_id = o.incarnation_id AND l.amount = o.credit_units
+                       AND l.request_digest = """ + _TOPUP_DIGEST + """)"""
 _COMPLETE_REVERSAL = """EXISTS (SELECT 1 FROM credit_reversal_requests r JOIN billing_orders o ON o.id = NEW.billing_order_id
+                     JOIN credit_accounts a ON a.id = r.credit_account_id
                      WHERE r.source_type = 'payos_refund' AND r.source_ref = o.gateway || ':' || o.order_code::text
+                       AND r.request_digest = """ + _REVERSAL_DIGEST + """
                        AND r.credit_account_id = NEW.credit_account_id AND r.topup_entry_id = NEW.credit_topup_entry_id
                        AND r.requested = o.credit_units
                        AND (r.applied = 0 OR (SELECT count(*) FROM credit_ledger e WHERE e.reversal_request_id = r.id
