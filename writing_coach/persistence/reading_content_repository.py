@@ -42,6 +42,7 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
+from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
 from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
 from writing_coach.reading_provenance import (
@@ -1116,7 +1117,11 @@ class ReadingContentRepository:
             if value is not None and value != current[field]:
                 values[field] = value
                 changes[field] = {"from": current[field], "to": value}
-        level_changed = reviewed_level != ""
+        level_changed = reviewed_level != "" and (reviewed_level or None) != current["reviewed_level"]
+        if reviewed_level:
+            bands = ZH_LEVEL_BANDS if current["language"] == "zh" else EN_LEVEL_BANDS
+            if reviewed_level not in bands:
+                raise ValueError(f"{reviewed_level!r} is not a level on this article's scale")
         if level_changed:
             values["reviewed_level"] = reviewed_level or None
             values["effective_level"] = _effective(

@@ -6364,11 +6364,32 @@ fails over). No live provider call was made.
 
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
 
+## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)
+
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE on 976b346d; merged once CI was green). Production Readiness item 7a; the human's order was
+"let the reviewer override first, then fix automatic CEFR/HSK classification" (defect D6, NASA release rated C2).
+
+The override already existed (`reviewed_level` / `effective_level`, `POST /api/admin/reading/articles/{id}`, a `level_override`
+review event, the segmented control on the article page). This decision closes the gaps and adds no storage and no migration:
+
+1. `estimated_level` stays the classifier's and is never written by an admin, so the automatic classifier can be compared to
+   reviewer corrections later. `effective_level` (override, else automatic) is the only level a learner list, filter or detail reads.
+2. The level must be on the article's own scale (A1-C2 for English, HSK1-HSK6 for Chinese, the constants of
+   `reading_processing`): the route answers 422 `reading_invalid_level` and the repository refuses with `ValueError`, so a script
+   is stopped too. Before, any string was stored.
+3. Setting the level it already has, or clearing an absent override, is not a change: no event, no revision bump.
+4. A change records a review event (actor, optional reason, `from`/`to`) and bumps `content_revision`; clearing restores the
+   automatic level. The bump follows the existing rule for every learner-visible field and applies to any status, not only
+   published (a draft has no cached copy, so it is harmless and keeps one rule).
+5. Admin UI: the pinned `Orena Admin.dc.html` already draws the control as "Keep estimate · {est}"; the label now carries the
+   automatic level. The design draws no reason field; the API accepts a `reason` and the UI does not send one.
+
+Not done here: improving the automatic classification (the next step).
+
 ## D-197 - Reading: Chinese script detection and the Traditional label (2026-10-14)
 
-**Status: PROPOSED.** Carries out D-189 (Traditional is allowed, labelled, never mixed with Simplified; Global Voices 中文 stays
-MANUAL_ONLY until the UI distinguishes scripts). Reading Production Readiness item 8 (part). Needs independent review (the
-learner payload and a stored analysis field change); not activation of any source.
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE WITH CONDITION on f4522b43; the P1, attribution of the derived table, is fixed; merged once CI was green). Carries out D-189 (Traditional is allowed, labelled, never mixed with Simplified; Global Voices 中文 stays
+MANUAL_ONLY until the UI distinguishes scripts). Reading Production Readiness item 8 (part). Not activation of any source.
 
 1. **Detection.** `writing_coach/languages/chinese/script_detection.py`: a pure function over character evidence. The table of
    characters that exist in one script only (`script_chars.json`, 2,505 Simplified-only and 3,427 Traditional-only) is derived

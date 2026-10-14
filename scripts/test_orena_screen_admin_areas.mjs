@@ -307,6 +307,7 @@ copyIndex.setLanguages({ ui: 'en', support: 'en' });
   const detail = String(rp.articlePage({ ...c, article: article({ status: 'needs_review', source: { ...article().source, rights_state: { can_republish: 'denied' } } }), sets: [], view }).markup);
   assert.doesNotMatch(detail, /data-action="publish"[^>]*disabled/, 'unclear rights warn; Publish stays available with a confirmed override (D-189)');
   assert.ok(detail.includes(t('rdRightsAdviceDenied')), 'the warning is said beside the button');
+  assert.ok(detail.includes(`${t('rdKeepEstimate')} · B2`), 'the override control names the automatic level it falls back to');
   assert.ok(detail.includes(t('rdBlockedTitle')) && detail.includes(t('rdBlockedText')), 'the warning is stated');
   assert.ok(detail.includes(t('rdWarn_rights_not_cleared')), 'the reason is listed');
   assert.match(detail, /data-a="rights-pick"[^>]*data-field="can_republish"[^>]*data-value="allowed"/, 'the admin can answer the rights question');
