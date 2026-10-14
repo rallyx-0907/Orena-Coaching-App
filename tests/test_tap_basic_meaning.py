@@ -1,7 +1,5 @@
-"""A basic tap always answers from deterministic layers, in order, and one layer failing never blanks the sheet.
-
-Catalogue -> dictionary -> free local translation. The reading translation engine may be the paid platform AI (the
-default); the tap must then still reach the free local translator rather than ending at "not prepared"."""
+"""A basic tap answers from deterministic layers in order (catalogue, dictionary, free translation), never from AI, and
+one failing layer never blanks the sheet. `word_translation` is a seam with no implementation yet."""
 
 from __future__ import annotations
 
@@ -13,22 +11,16 @@ from writing_coach.reading_lookup import ReadingLookupService
 from writing_coach.reading_translation import ReadingTranslationService
 
 
-class _Engine:
-    model_version = "x-1"
+class _Paid:
+    """The reading engine is the paid platform AI by default: a basic tap must never use it."""
 
-    def __init__(self, engine_id: str, meanings: dict[str, str] | None = None, fail: bool = False) -> None:
-        self.engine_id = engine_id
-        self.meanings = meanings or {}
-        self.fail = fail
-        self.calls = 0
+    engine_id = "ai"
+    model_version = "x"
+    calls = 0
 
-    def translate_batch(self, source_language, target_language, segments):
-        self.calls += 1
-        if self.fail:
-            from writing_coach.media_translation import TranslationProviderError
-
-            raise TranslationProviderError("down")
-        return {s.segment_id: self.meanings.get(s.original_text, "") for s in segments}
+    def translate_batch(self, *_a, **_k):
+        _Paid.calls += 1
+        raise AssertionError("the paid reading engine must not be used by a tap")
 
 
 class _Catalogue:
@@ -50,14 +42,12 @@ def _boom(_word):
     raise RuntimeError("dictionary down")
 
 
-def _service(primary, local, *, catalogue=None, dictionary=_miss):
-    cache = DerivedCache()
-    return ReadingLookupService(
-        catalogue,
-        dictionary,
-        ReadingTranslationService(primary, cache=cache),
-        local_translation_service=ReadingTranslationService(local, cache=cache) if local is not None else None,
-    )
+def _definition(text):
+    return lambda _w: {"definitions": [{"part_of_speech": "noun", "definition": text}], "phonetic": ""}
+
+
+def _service(*, catalogue=None, dictionary=_miss, seam=None):
+    return ReadingLookupService(catalogue, dictionary, ReadingTranslationService(_Paid(), cache=DerivedCache()), word_translation=seam)
 
 
 @pytest.fixture
@@ -72,6 +62,7 @@ def no_ai(monkeypatch):
     monkeypatch.setattr(media_interaction, "current_language_code", lambda: "en")
     monkeypatch.setattr(word_detail, "_saved_terms", None)
     monkeypatch.setattr(word_detail, "_cache", DerivedCache())
+    _Paid.calls = 0
     return calls
 
 
@@ -82,63 +73,54 @@ def _detail(service, text, context, source):
     )
 
 
-EN_SENTENCE = "A poetry book promotes Chabacano, Asia's only Spanish-based creole language."
-ZH_SENTENCE = "这本诗集推广语言。"
+EN = "A poetry book promotes Chabacano, Asia's only Spanish-based creole language."
+ZH = "这本诗集推广语言。"
 
 
-def test_en_to_vi_reaches_the_local_translator_when_the_reading_engine_is_the_paid_ai(no_ai):
-    ai = _Engine("ai", {"poetry": "AI MUST NOT BE USED"})
-    local = _Engine("local_marian", {"poetry": "thơ"})
-    out = _detail(_service(ai, local), "poetry", EN_SENTENCE, "en")
-    assert out["contextMeaning"] == "thơ" and out["meaningSource"] == "dictionary" and out["meaningLanguage"] == "vi"
-    assert out["available"] is True and out["partOfSpeech"] == "noun"
-    assert out["contextSentence"] == EN_SENTENCE
-    assert ai.calls == 0 and no_ai == []
+def test_en_dictionary_sense_answers_when_the_catalogue_misses(no_ai):
+    out = _detail(_service(dictionary=_definition("verse; poems")), "poetry", EN, "en")
+    assert out["contextMeaning"] == "verse; poems" and out["meaningSource"] == "dictionary" and out["available"]
+    assert out["partOfSpeech"] == "noun" and out["contextSentence"] == EN
+    assert _Paid.calls == 0 and no_ai == []
 
 
-def test_zh_to_vi_reaches_the_local_translator_and_keeps_the_cedict_original(no_ai):
-    ai = _Engine("ai")
-    local = _Engine("local_marian", {"语言": "ngôn ngữ"})
-    out = _detail(_service(ai, local), "语言", ZH_SENTENCE, "zh")
-    assert out["contextMeaning"] == "ngôn ngữ" and out["meaningLanguage"] == "vi"
-    assert out["originalDefinition"] and out["originalDefinition"]["language"] == "en"
-    assert ai.calls == 0 and no_ai == []
+def test_zh_cedict_sense_answers_for_a_vietnamese_sheet_without_ai(no_ai):
+    out = _detail(_service(), "语言", ZH, "zh")
+    assert out["available"] and out["meaningSource"] == "dictionary" and out["contextMeaning"]
+    assert out["originalDefinition"] is None or out["originalDefinition"]["language"] == "en"
+    assert _Paid.calls == 0 and no_ai == []
 
 
-def test_a_failing_dictionary_does_not_blank_the_sheet_when_translation_can_answer(no_ai):
-    out = _detail(_service(_Engine("ai"), _Engine("local_marian", {"poetry": "thơ"}), dictionary=_boom), "poetry", EN_SENTENCE, "en")
-    assert out["contextMeaning"] == "thơ" and out["available"] is True
-
-
-def test_a_failing_catalogue_does_not_stop_the_dictionary_or_translation(no_ai):
-    catalogue = _Catalogue(raises=RuntimeError("catalogue down"))
-    out = _detail(_service(_Engine("ai"), _Engine("local_marian", {"poetry": "thơ"}), catalogue=catalogue), "poetry", EN_SENTENCE, "en")
-    assert out["contextMeaning"] == "thơ"
-    dictionary = lambda w: {"definitions": [{"part_of_speech": "noun", "definition": "verse"}], "phonetic": "/p/"}  # noqa: E731
-    out = _detail(_service(_Engine("ai"), None, catalogue=catalogue, dictionary=dictionary), "poetry", EN_SENTENCE, "en")
-    assert out["contextMeaning"] == "verse" and out["meaningSource"] == "dictionary"
-
-
-def test_a_down_local_translator_leaves_the_dictionary_meaning(no_ai):
-    dictionary = lambda w: {"definitions": [{"part_of_speech": "noun", "definition": "verse"}], "phonetic": ""}  # noqa: E731
-    out = _detail(_service(_Engine("ai"), _Engine("local_marian", fail=True), dictionary=dictionary), "poetry", EN_SENTENCE, "en")
-    assert out["contextMeaning"] == "verse" and out["available"] is True
-
-
-def test_the_catalogue_meaning_still_wins_and_translation_is_not_asked(no_ai):
+def test_catalogue_wins_and_the_seam_is_not_asked(no_ai):
+    asked = []
     catalogue = _Catalogue({("en", "poetry"): {"term": "poetry", "short_meanings": [{"language": "vi", "text": "thi ca"}]}})
-    local = _Engine("local_marian", {"poetry": "thơ"})
-    out = _detail(_service(_Engine("ai"), local, catalogue=catalogue), "poetry", EN_SENTENCE, "en")
-    assert out["contextMeaning"] == "thi ca" and local.calls == 0
+    out = _detail(_service(catalogue=catalogue, seam=lambda *a: asked.append(a)), "poetry", EN, "en")
+    assert out["contextMeaning"] == "thi ca" and asked == []
 
 
-def test_a_paid_engine_is_never_the_local_fallback(no_ai):
-    ai = _Engine("ai", {"poetry": "x"})
-    paid_as_local = _Engine("groq", {"poetry": "y"})
-    out = _detail(_service(ai, paid_as_local), "poetry", EN_SENTENCE, "en")
-    assert out["available"] is False and ai.calls == 0 and paid_as_local.calls == 0
+def test_a_failing_dictionary_or_catalogue_does_not_blank_the_sheet(no_ai):
+    seam = lambda term, ctx, defs, src, tgt: "thơ"  # noqa: E731
+    assert _detail(_service(dictionary=_boom, seam=seam), "poetry", EN, "en")["contextMeaning"] == "thơ"
+    broken = _Catalogue(raises=RuntimeError("catalogue down"))
+    out = _detail(_service(catalogue=broken, dictionary=_definition("verse")), "poetry", EN, "en")
+    assert out["contextMeaning"] == "verse" and out["partOfSpeech"] == "noun"
 
 
-def test_every_layer_missing_is_the_only_unavailable_case(no_ai):
-    out = _detail(_service(_Engine("ai"), _Engine("local_marian", {})), "poetry", EN_SENTENCE, "en")
+def test_the_seam_receives_the_word_sentence_senses_and_languages(no_ai):
+    seen = []
+    out = _detail(_service(dictionary=_definition("verse"), seam=lambda *a: seen.append(a) or "thơ"), "poetry", EN, "en")
+    assert seen == [("poetry", EN, ["verse"], "en", "vi")] and out["contextMeaning"] == "thơ"
+
+
+def test_a_failing_seam_is_a_miss_and_the_dictionary_sense_stands(no_ai):
+    def bad(*_a):
+        raise RuntimeError("down")
+
+    out = _detail(_service(dictionary=_definition("verse"), seam=bad), "poetry", EN, "en")
+    assert out["contextMeaning"] == "verse" and out["available"]
+
+
+def test_unavailable_only_after_every_layer_missed(no_ai):
+    out = _detail(_service(), "poetry", EN, "en")
     assert out["available"] is False and out["meaningSource"] == "none"
+    assert _Paid.calls == 0 and no_ai == []
