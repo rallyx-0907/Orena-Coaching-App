@@ -8,8 +8,10 @@ answers folded over it, `overlay_rights`). It invents no new field.
 The same function feeds three places, so that none can drift from the others:
 the learner list and detail payloads, the admin publication gate, and the
 deterministic automatic admission. A text whose source terms require attribution
-(`attribution_required` is true) cannot be published without the publisher, the
-original address and the licence that the credit is made of.
+(`attribution_required` is true) is missing parts of its credit when the publisher,
+the original address or the licence is absent. That is a warning an administrator
+must knowingly override to publish (D-189 amends D-105's hard rights gate); only
+the automatic admission treats it as a refusal.
 """
 from __future__ import annotations
 
@@ -126,16 +128,9 @@ def missing_fields(provenance: Mapping[str, Any]) -> list[str]:
 
 
 def provenance_blockers(provenance: Mapping[str, Any]) -> list[dict[str, str]]:
-    """The one publication gate for attribution: a blocker per missing part."""
+    """One entry per missing part of a required credit (a warning for the admin route,
+    a refusal for automatic admission)."""
     return [
         {"code": "provenance_missing", "question": "attribution_required", "field": field}
         for field in missing_fields(provenance)
     ]
-
-
-class ProvenanceRefused(ValueError):
-    """Publishing was refused because required attribution is incomplete."""
-
-    def __init__(self, blockers: list[dict[str, str]]) -> None:
-        super().__init__("Required attribution is incomplete: " + ", ".join(b["field"] for b in blockers))
-        self.blockers = blockers

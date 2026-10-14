@@ -211,7 +211,7 @@ export function articlePage({ article, sets, view, t, ui, href, now }) {
   const kinds = ['word', 'phrase', 'collocation', 'grammar'];
   const actionButtons = actions.map((action) => ({
     label: t({ publish: 'rdPublish', unpublish: 'rdUnpublish', reject: 'rdReject', archive: 'rdArchive', restore: 'rdRestoreReview' }[action]),
-    disabled: action === 'publish' && blockers.length > 0,
+    disabled: false,
     tip: action === 'publish' && blockers.length ? t('rdPublishNeedsRights') : '',
     kind: action === 'publish' ? 'primary' : action === 'reject' || (action === 'archive' && article.status === 'published') ? 'danger' : '',
     a: 'article-act', data: { id: article.id, action },
@@ -302,7 +302,7 @@ export function articlePage({ article, sets, view, t, ui, href, now }) {
       ${html`<button type="button" class="a-back" data-go="${href('adminQueue', {}, { tab: tabOf(article.status) })}">${raw(icon('chevron-left', { size: 18 }))}${t(TAB_TITLE[tabOf(article.status)][0].replace('rdQTitle', 'rdTab'))}</button>`}
       <div class="a-sticky"><div class="a-sticky__text"><div class="a-pills">${pill(status)}${article.status === 'published' ? html`<a class="a-learnerlink" href="${learnerAddress('reading', article.id)}">${t('rdOpenAsLearner')}</a>` : ''}</div><h1 class="a-detail__title">${article.title}</h1></div><div class="a-sticky__acts">${actionButtons.map(button)}</div></div>
       ${view.actionError ? html`<div class="a-error" role="alert">${view.actionError}</div>` : ''}
-      ${blockers.length && !isLive ? banner({ tone: 'err', title: t('rdBlockedTitle'), text: t('rdBlockedText'), }) : ''}
+      ${blockers.length && !isLive ? banner({ tone: 'warn', title: t('rdBlockedTitle'), text: t('rdBlockedText'), }) : ''}
       <div class="a-rights"><div class="a-rights__text"><div class="a-rights__label">${t('rdRights')}</div><div class="a-rights__note">${t(rightsAdviceKey(blockers))}</div>${blockers.length ? html`<ul class="a-rights__list">${blockers.map((blocker) => html`<li>${t(`rdWarn_${blocker.code}`)}</li>`)}</ul>` : ''}${article.automation ? html`<div class="a-rights__note">${t('rdAutoEffective', { value: t(article.automation.allowed ? 'rdAnswerAllowed' : 'rdAnswerDenied'), origin: t(article.automation.origin === 'article' ? 'rdAutoFromArticle' : 'rdAutoFromSource') })}</div>` : ''}${article.rights_review ? html`<div class="a-rights__note">${t('rdRightsAnsweredBy', { who: article.rights_review.actor || '—', when: dateShort(article.rights_review.at, ui) })}</div>` : ''}</div>
         <div class="a-rights__edit">${rightsEditor(t, state, view.rightsDraft || {}, article.automation)}${view.rightsError ? html`<div class="a-error" role="alert">${view.rightsError}</div>` : ''}<div class="a-actions a-actions--end">${button({ label: view.rightsDirty ? t('rdRightsSave') : t('rdRightsSaved'), kind: 'primary', size: 'sm', a: 'rights-save', disabled: !view.rightsDirty || view.busy })}</div></div></div>
       ${dupes.length ? banner({ tone: 'warn', title: t('rdDupTitle'), text: t('rdDupText', { sources: dupes.map((copy) => copy.source_name || copy.source_slug || copy.source_id).join(', ') }) }) : ''}

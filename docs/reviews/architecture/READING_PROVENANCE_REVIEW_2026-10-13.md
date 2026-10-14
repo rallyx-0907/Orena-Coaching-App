@@ -72,3 +72,12 @@ None.
 - P2-9 D-18X remains PROPOSED: record this reviewer line and commit in the decision entry, and flip to ACCEPTED once P1s close.
 
 Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Commit reviewed: b94f4129.
+
+## Change after review (2026-10-14)
+
+The human replaced the publication policy this review approved. The hard gate in `ReadingContentRepository.set_status` and the
+409-only admin route are gone: rights and attribution are now warnings that an administrator may publish over only with an
+explicit `acknowledge_warnings` flag and a non-empty reason, recorded in the review event and audit record. The automatic
+admission (D-111) still refuses unclear rights and attribution; the checker script now reports whether a flagged published row
+carries a recorded override. P1-1 is closed by that human decision. **Re-review is required** of the amended behaviour before
+D-18X is ACCEPTED; the verdict above applies to commit b94f4129 only.

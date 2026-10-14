@@ -1,21 +1,23 @@
 """Read-only check: published Reading articles whose required attribution is incomplete (D-189).
 
-Before the publish gate learned about attribution, an article whose source terms
-require a credit could be published without the publisher, the original address
-or the licence that the credit is made of. This lists every article that is
-`published` today and fails `provenance_blockers` (the same function the publish
-routes and the automatic admission use), with its id, language, title and the
-missing parts. It writes nothing and unpublishes nothing: the engine is opened
-for reading only and the database URL is never printed.
+An administrator may publish over unclear rights or an incomplete credit, but only
+with an explicit, reasoned override that is recorded (D-189 amends D-105). This lists
+every article that is `published` today and fails `provenance_blockers` (the same
+function the publish route and the automatic admission use), with its id, language,
+title, the missing parts, and whether its latest publish decision recorded such an
+override. It writes nothing and unpublishes nothing: the engine is opened for
+reading only and the database URL is never printed.
 
 Run it inside the application container, against the database named by
 `POSTGRES_RUNTIME_URL` (or `--url`):
 
     python scripts/check_published_reading_provenance.py
 
-Exit status: 0 nothing to repair, 1 at least one article needs a decision,
-2 no usable database. What to do about a listed article (record the rights
-answers on its review page, or unpublish it) is a human decision.
+Exit status: 0 every incomplete credit was published over a recorded override (or
+there is none), 1 at least one article is incomplete with no recorded override, 2 no
+usable database. An overridden article is reported but is not a violation. What to do
+about an unrecorded one (record the answers on its review page, or unpublish it) is a
+human decision.
 """
 
 from __future__ import annotations
@@ -60,8 +62,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     print(f"{len(found)} published Reading article(s) missing required attribution:")
     for item in found:
-        print(f"- {item['id']}  language={item['language']}  missing={','.join(item['missing'])}  title: {item['title']}")
-    return 1
+        state = "overridden" if item["overridden"] else "NO RECORDED OVERRIDE"
+        print(f"- {item['id']}  language={item['language']}  missing={','.join(item['missing'])}  {state}  title: {item['title']}")
+    return 1 if any(not item["overridden"] for item in found) else 0
 
 
 if __name__ == "__main__":

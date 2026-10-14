@@ -141,28 +141,37 @@ export async function mountReading(shell, ctx) {
     try {
       if (action === 'publish') {
         article = article || await api.readingArticle(id);
-        if (publicationBlockers(article).length) {
-          /* Copyright is a hard gate: say why, and take the operator to where the questions are answered. */
-          if (routeId === 'adminArticle') {
-            view.actionError = t('rdBlockedText');
-            host.paint();
-          } else {
-            host.toast(t('rdBlockedToast'));
-            ctx.go(ctx.href('adminArticle', { id }));
-          }
-          return;
-        }
-        const advice = publicationAdvice(article);
-        if (advice.length) {
+        /* Rights and attribution warnings never block an administrator: they are confirmed with a
+           reason, which the server records (D-189). The server may know more than this list (an
+           incomplete credit), so a refusal is confirmed from its own list and sent again. */
+        const confirmWarnings = async (warnings) => {
           const answer = await host.confirm({
             title: t('rdPublishTitle', { title: article.title }),
             body: t('rdPublishRisk'),
-            list: advice.map((warning) => t(`rdWarn_${warning.code}`)),
+            list: warnings.map((warning) => (t.has(`rdWarn_${warning.code}`) ? t(`rdWarn_${warning.code}`) : warning.code)),
+            reason: { label: t('rdReasonLabel'), placeholder: t('rdOverrideReasonHint'), required: true },
             cancel: t('actCancel'), confirm: t('rdPublishAnyway'), danger: false,
           });
-          if (!answer.confirmed) return;
+          return answer.confirmed ? answer.reason : null;
+        };
+        const known = [...publicationBlockers(article), ...publicationAdvice(article)];
+        let reason = '';
+        let acknowledge = false;
+        if (known.length) {
+          reason = await confirmWarnings(known);
+          if (reason === null) return;
+          acknowledge = true;
         }
-        const done = await changeArticle(api, id, 'publish');
+        let done;
+        try {
+          done = await changeArticle(api, id, 'publish', reason, acknowledge);
+        } catch (error) {
+          const listed = error?.context?.blockers || error?.context?.context?.blockers || error?.blockers;
+          if (acknowledge || !Array.isArray(listed) || !listed.length) throw error;
+          reason = await confirmWarnings(listed);
+          if (reason === null) return;
+          done = await changeArticle(api, id, 'publish', reason, true);
+        }
         host.toast(done.publication_warnings?.length ? t('rdPublishedOver') : t('rdPublished'));
       } else if (action === 'reject') {
         const answer = await host.confirm({

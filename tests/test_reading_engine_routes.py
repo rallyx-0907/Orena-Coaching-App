@@ -94,7 +94,7 @@ def _publish_one(setup, *, language="en", topic="environment"):
     """Submit, process and publish one article through the real routes."""
     response = call(setup["admin"], "POST", "/api/admin/reading/jobs",
                     data={"kind": "text", "text": ARTICLE, "title": "Rain returns", "language": language,
-                          "can_republish": "true"})
+                          "can_republish": "true", "attribution_required": "false"})
     assert response.status_code == 202
     outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
     article_id = outcome["article_id"]
@@ -186,7 +186,7 @@ def test_the_queue_is_metadata_and_the_preview_is_where_the_body_is(setup):
 
 def test_publishing_is_its_own_act_and_is_audited(setup):
     call(setup["admin"], "POST", "/api/admin/reading/jobs",
-         data={"kind": "text", "text": ARTICLE, "can_republish": "true"})
+         data={"kind": "text", "text": ARTICLE, "can_republish": "true", "attribution_required": "false"})
     outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
     assert call(setup["learner"], "GET", "/api/reading/articles?language=en").json()["items"] == []
     response = call(setup["admin"], "POST", f"/api/admin/reading/articles/{outcome['article_id']}/status",
@@ -481,7 +481,7 @@ def test_no_image_candidate_reaches_a_learner_payload(setup):
     )
     response = call(setup["admin"], "POST", "/api/admin/reading/jobs",
                     data={"kind": "url", "url": "https://news.example.org/a/rivers", "language": "en",
-                          "can_republish": "true"})
+                          "can_republish": "true", "attribution_required": "false"})
     assert response.status_code == 202
     outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))
     article_id = outcome["article_id"]

@@ -6093,14 +6093,25 @@ Readiness" item P0-A.
   item and the effective rights (the immutable snapshot with the recorded rights answers folded over it). No migration,
   no schema change, no new stored field. A recorded rights answer on a published article bumps `content_revision`, so a
   cached copy revalidates.
-- **Gate.** Where the effective rights say `attribution_required` is true, publishing needs the publisher, the original
-  address and a licence name or address. The same function (`provenance_blockers`) is applied on every path: the admin
-  publish route (`publication_blockers`, 409 `reading_rights_not_cleared`), the repository transition
-  (`ReadingContentRepository.set_status`, `ProvenanceRefused`, so a path that skips the route is still stopped) and the
-  D-111 automatic admission (`attribution_missing`). It is stricter than the previous admission rule, under which an
-  author name alone sufficed. An unanswered attribution question stays advice (`attribution_unknown`), as before.
+- **Policy (amended by the human, 2026-10-14; amends D-105's hard rights gate).** An administrator can always publish a
+  Reading text by hand, even when rights or attribution are unknown or denied. Rights and attribution are warnings, not a
+  gate: `can_republish` / `can_adapt` denied or never answered (`rights_not_cleared`, `rights_unknown`,
+  `adaptation_not_cleared`, `adaptation_unknown`), `attribution_required` unanswered (`attribution_unknown`), and, where the
+  terms require attribution, a missing publisher, original address or licence (`provenance_missing`). Publishing over any of
+  them needs a deliberate override in the request (`acknowledge_warnings: true`) and a non-empty `reason`. Without the
+  override the route answers 409 `reading_rights_not_cleared` listing the warnings (`context.blockers`,
+  `context.override_field`); with the override but no reason, 422 `reading_reason_required`. The warnings, reason and actor
+  are recorded in the review event (`published_over_warnings`) and the admin audit record. The repository
+  (`ReadingContentRepository.set_status`) never refuses for rights or attribution. **No automatic publication while rights
+  or attribution are unclear:** the D-111 automatic admission keeps refusing `rights_not_cleared`, `attribution_unknown`
+  and `attribution_missing`. Hard gates are reserved for technical or content-integrity faults (empty body, broken
+  extraction, not an article), which are not part of this decision.
+- **Provenance check.** The same function (`provenance_blockers`) yields the warnings and the automatic-admission refusal.
+  It is stricter than the previous admission rule, under which an author name alone sufficed.
 - **No retroactive unpublishing.** Published articles stay readable. `scripts/check_published_reading_provenance.py` is a
-  read-only checker that lists the published articles that fall short; what to do with each is a human decision.
+  read-only checker that lists the published articles that fall short and whether the latest publish decision recorded an
+  override; it exits non-zero only for an incomplete credit with no recorded override. What to do with each is a human
+  decision.
 - **UI.** The publisher is the design's source line on the Discover card, the Content Detail hero and the Reader toolbar.
   The licence and the original link have no place in the pinned design's Reading frames; they reach the learner in
   Settings > Licences and data sources (`GET /api/licences`, whose Reading rows now credit the publisher). Recorded in
@@ -6114,5 +6125,5 @@ Readiness" item P0-A.
   Follow-ups: a source rename should bump its published articles' `content_revision` (no rename path exists today, so
   nothing bumps), the check-then-write in `set_status` (P2-1), scheduling the checker (P2-3), and the Global Voices
   original-publisher fields after PR #157 merges.
-- **Review needed.** Whether the gate should also refuse an unanswered attribution question for a real corpus, and whether
-  the reader needs a per-text licence line (a design decision).
+- **Review needed.** Re-review of the amended policy (see the review document), and whether the reader needs a per-text
+  licence line (a design decision).

@@ -41,7 +41,7 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
-from writing_coach.reading_provenance import ProvenanceRefused, build_provenance, provenance_blockers
+from writing_coach.reading_provenance import build_provenance, provenance_blockers
 from writing_coach.persistence.models import (
     ReadingArticle,
     ReadingArticleTarget,
@@ -1094,15 +1094,13 @@ class ReadingContentRepository:
 
         Publication is the only transition that makes anything learner-visible,
         and it is always an admin's act: nothing in the pipeline calls this.
+        Rights and attribution never refuse here (D-189 amends D-105): the admin
+        route requires an explicit, reasoned override and passes the warnings it
+        overrode, which are recorded in the review event.
         """
         current = self.get_article(article_id)
         if current is None:
             return None
-        if status == LEARNER_VISIBLE_STATUS and current["status"] != LEARNER_VISIBLE_STATUS:
-            # D-189: required attribution is part of publishing, on every path.
-            blockers = provenance_blockers(current["provenance"] or {})
-            if blockers:
-                raise ProvenanceRefused(blockers)
         moment = _now(now)
         values: dict[str, Any] = {"status": status, "updated_at": moment}
         if status == LEARNER_VISIBLE_STATUS:
@@ -1465,8 +1463,10 @@ class ReadingContentRepository:
         return found
 
     def published_missing_provenance(self, *, limit: int = 5000) -> list[dict[str, Any]]:
-        """Published articles whose source terms require attribution that is
-        incomplete (D-189). Read-only: nothing is unpublished by this."""
+        """Published articles whose required attribution is incomplete (D-189),
+        each with `overridden`: whether the latest publish decision recorded an
+        explicit, reasoned override of the warnings. Read-only: nothing is
+        unpublished by this."""
         with self.engine.connect() as connection:
             rows = connection.execute(
                 select(ReadingArticle.id, ReadingArticle.title, ReadingArticle.language)
@@ -1475,14 +1475,27 @@ class ReadingContentRepository:
                 .limit(max(1, int(limit)))
             ).all()
             credits = self._provenance_map(connection, [row.id for row in rows])
+            flagged = [row for row in rows if provenance_blockers(credits.get(row.id) or {})]
+            overridden: set[Any] = set()
+            if flagged:
+                events = connection.execute(
+                    select(ReadingReviewEvent.article_id, ReadingReviewEvent.reason, ReadingReviewEvent.changes_json)
+                    .where(ReadingReviewEvent.article_id.in_([row.id for row in flagged]),
+                           ReadingReviewEvent.action == LEARNER_VISIBLE_STATUS)
+                    .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
+                ).all()
+                latest: dict[Any, bool] = {}
+                for event in events:  # oldest first: the last one wins
+                    latest[event.article_id] = bool(
+                        (event.changes_json or {}).get("published_over_warnings") and str(event.reason or "").strip())
+                overridden = {key for key, value in latest.items() if value}
         found = []
-        for row in rows:
-            blockers = provenance_blockers(credits.get(row.id) or {})
-            if blockers:
-                found.append({
-                    "id": str(row.id), "title": row.title, "language": row.language,
-                    "missing": [item["field"] for item in blockers],
-                })
+        for row in flagged:
+            found.append({
+                "id": str(row.id), "title": row.title, "language": row.language,
+                "missing": [item["field"] for item in provenance_blockers(credits.get(row.id) or {})],
+                "overridden": row.id in overridden,
+            })
         return found
 
     def published_count(self, *, language: str | None = None) -> int:
