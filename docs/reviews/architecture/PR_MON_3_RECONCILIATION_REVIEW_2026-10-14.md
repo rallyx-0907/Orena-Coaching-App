@@ -772,3 +772,16 @@ Fixed in `bd572b8e`, as the minimal fix the review describes:
   - Mutant `p1_2_stale_after_disposition` (guard removed): caught by that test. 18/18 mutants are now caught,
     counting the 17 recorded at `1f73d4fa`.
 
+
+---
+
+# PR-MON-3 independent implementation review — verdict
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+PR-MON-3 independent implementation review: APPROVED.
+
+Approved code fix: bd572b8e
+Final reviewed HEAD: abf2b642
+
+Financial migration promotion/application remains a separate human gate.
