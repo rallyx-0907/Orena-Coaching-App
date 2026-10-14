@@ -1,6 +1,6 @@
 [
  {
-  "id": "tatoeba-工作",
+  "id": "tatoeba-work",
   "language": "zh",
   "label": "HSK3",
   "status": "PROVISIONAL",
@@ -9,10 +9,10 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-工作.txt"
+  "path": "zh/tatoeba-work.txt"
  },
  {
-  "id": "tatoeba-周末",
+  "id": "tatoeba-weekend",
   "language": "zh",
   "label": "HSK3",
   "status": "PROVISIONAL",
@@ -21,10 +21,10 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-周末.txt"
+  "path": "zh/tatoeba-weekend.txt"
  },
  {
-  "id": "tatoeba-回家",
+  "id": "tatoeba-home",
   "language": "zh",
   "label": "HSK3",
   "status": "PROVISIONAL",
@@ -33,10 +33,10 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-回家.txt"
+  "path": "zh/tatoeba-home.txt"
  },
  {
-  "id": "tatoeba-吃饭",
+  "id": "tatoeba-meals",
   "language": "zh",
   "label": "HSK3",
   "status": "PROVISIONAL",
@@ -45,10 +45,10 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-吃饭.txt"
+  "path": "zh/tatoeba-meals.txt"
  },
  {
-  "id": "tatoeba-天气",
+  "id": "tatoeba-weather",
   "language": "zh",
   "label": "HSK4",
   "status": "PROVISIONAL",
@@ -57,10 +57,10 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-天气.txt"
+  "path": "zh/tatoeba-weather.txt"
  },
  {
-  "id": "tatoeba-医生",
+  "id": "tatoeba-doctor",
   "language": "zh",
   "label": "HSK4",
   "status": "PROVISIONAL",
@@ -69,10 +69,10 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-医生.txt"
+  "path": "zh/tatoeba-doctor.txt"
  },
  {
-  "id": "tatoeba-孩子",
+  "id": "tatoeba-children",
   "language": "zh",
   "label": "HSK4",
   "status": "PROVISIONAL",
@@ -81,10 +81,10 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-孩子.txt"
+  "path": "zh/tatoeba-children.txt"
  },
  {
-  "id": "tatoeba-朋友",
+  "id": "tatoeba-friends",
   "language": "zh",
   "label": "HSK5",
   "status": "PROVISIONAL",
@@ -93,7 +93,7 @@
   "licence": "CC BY 2.0 FR (sentences CC0 where marked); attribution: Tatoeba contributors, https://tatoeba.org",
   "retrieved": "2026-10-14",
   "kind": "real human-written sentences, a set per topic (not a continuous article)",
-  "path": "zh/tatoeba-朋友.txt"
+  "path": "zh/tatoeba-friends.txt"
  },
  {
   "id": "zhwikipedia-cat",
