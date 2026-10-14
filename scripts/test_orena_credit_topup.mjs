@@ -144,8 +144,8 @@ const err = (category, status = 409, extra = {}) => Object.assign(new Error('raw
 /* --- pending -> confirmed only on backend terminal status ------------------------------------------------ */
 {
   eq(m.orderStateFrom({ state: 'paid', credited: true }), 'confirmed');
-  eq(m.orderStateFrom({ state: 'paid', credited: false }), 'waiting', 'paid but not yet credited is still waiting');
-  eq(m.orderStateFrom({ state: 'paid' }), 'waiting');
+  eq(m.orderStateFrom({ state: 'paid', credited: false }), 'received', 'paid but not yet credited is received, not confirmed');
+  eq(m.orderStateFrom({ state: 'paid' }), 'received');
   for (const s of ['expired', 'cancelled', 'failed', 'refunded']) eq(m.orderStateFrom({ state: s }), s);
   for (const s of [null, undefined, {}, { state: 'created' }, { state: 'pending' }, { state: 'whatever' }]) eq(m.orderStateFrom(s), 'waiting');
 
@@ -158,7 +158,7 @@ const err = (category, status = 409, extra = {}) => Object.assign(new Error('raw
     return { result, seen, slept, reads: i };
   };
   let r = await run([{ state: 'pending' }, { state: 'pending' }, { state: 'paid', credited: false }, { state: 'paid', credited: true }]);
-  eq([r.result.state, r.reads, r.seen], ['confirmed', 4, ['waiting', 'confirmed']], 'confirmed only when the backend says credited; polling stops');
+  eq([r.result.state, r.reads, r.seen], ['confirmed', 4, ['waiting', 'received', 'confirmed']], 'confirmed only when the backend says credited; polling stops');
   r = await run([{ state: 'pending' }, { state: 'expired' }]);
   eq([r.result.state, r.reads], ['expired', 2], 'a terminal non-success stops too');
   r = await run([{ state: 'pending' }], { maxAttempts: 5 });

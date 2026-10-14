@@ -1,16 +1,30 @@
-/* Credit top-up: the keys product/credit-topup.js points at (refusals, waiting states, history labels).
-   KEYS ONLY, NOT DESIGN COPY: no frame draws these yet (UI_BACKEND_GAPS "Credit top-up client", CT-6), so every
-   string below is a PLACEHOLDER the design will confirm or replace. The four history words are the billing lane's:
-   "Buy credits / Use credits / Refund credits / Adjust credits" and their Vietnamese "Mua Credits", "Dùng Credits",
-   "Hoàn Credits", "Điều chỉnh Credits". The Chinese strings are placeholders awaiting a native review.
-   Nothing here names a ledger, hold, settlement, reversal, reconciliation or shortfall: those are backend terms. */
+/* Credits (frames "Credits", "Credits Payment" and the Plan & usage Credits card of the 2026-10-14 design export) and
+   the refusals/waiting states product/credit-topup.js points at. All chrome (interface language, D-079).
+   English and Vietnamese are the design's own words; Chinese is a translation of them. The messages that no frame
+   draws (the err* and status* keys, and `unavailable`) are placeholders the design will confirm.
+   Nothing here names a ledger, hold, settlement, reversal, reconciliation or shortfall: those are backend terms.
+   The design's sample content (pack sizes, bonuses, prices, history rows, "calis@orena.app") is never copied. */
 import { defineCopy } from './index.js';
 
 const KEYS = [
+  /* refusals and waiting states (no frame draws them) */
   'errUnavailable', 'errTryLater', 'errPriceChanged', 'errNotOffered', 'errAlreadyStarted', 'errOrderClosed',
   'errGatewayUnavailable', 'errSignIn', 'errAccountClosed', 'errGeneric',
   'statusWaiting', 'statusStillWaiting', 'statusConfirmed', 'statusExpired', 'statusCancelled', 'statusFailed', 'statusRefunded',
+  /* history labels (the billing lane's four words) */
   'historyBuy', 'historyUse', 'historyRefund', 'historyAdjust',
+  /* Credits */
+  'title', 'creditBalance', 'credits', 'left', 'heroSub', 'addCredits', 'planButton', 'planStripSep',
+  'showQr', 'pendingText', 'packsSub', 'packsLabel', 'continue', 'vietqrNote',
+  'history', 'filterAll', 'filterIn', 'filterOut', 'emptyTitle', 'emptyText', 'emptyInTitle',
+  'howTitle', 'how1Title', 'how1Text', 'how2Title', 'how2Text', 'how3Title', 'how3Text', 'how4Title', 'how4Text', 'how5Title', 'how5Text',
+  /* Plan & usage card */
+  'cardText', 'viewHistory',
+  /* Credits Payment */
+  'sheetAdd', 'rowType', 'rowTypeValue', 'rowPlan', 'rowPlanValue', 'payToday', 'vietqrVia', 'scanWith', 'back', 'pay',
+  'scanTitle', 'amount', 'waitingTitle', 'waitingText', 'cancelPayment', 'vietqrBadge',
+  'receivedTitle', 'receivedAdding', 'receivedText', 'doneTitle', 'doneAdded', 'paid', 'done',
+  'expiredTitle', 'expiredText', 'makeNewQr', 'close',
 ];
 
 export const t = defineCopy('creditTopup', {
@@ -25,6 +39,28 @@ export const t = defineCopy('creditTopup', {
     statusConfirmed: 'Credits added', statusExpired: 'The payment time ran out', statusCancelled: 'The payment was cancelled',
     statusFailed: 'The payment did not go through', statusRefunded: 'This payment was refunded',
     historyBuy: 'Buy credits', historyUse: 'Use credits', historyRefund: 'Refund credits', historyAdjust: 'Adjust credits',
+    title: 'Credits', creditBalance: 'Credit balance', credits: 'Credits', left: 'left',
+    heroSub: "For Orena's AI features. Credits you buy never expire.", addCredits: 'Add Credits', planButton: 'Plan & usage',
+    planStripSep: "Credits are separate: they don't renew or expire.",
+    showQr: 'Show QR', pendingText: "Waiting for your transfer of {price} for {n} Credits. They're added as soon as it arrives.",
+    packsSub: 'One-time purchase. Nothing renews, and your plan stays the same.', packsLabel: 'Credit packs', continue: 'Continue',
+    vietqrNote: 'Pay with any Vietnamese banking app via payOS.',
+    history: 'History', filterAll: 'All', filterIn: 'Added', filterOut: 'Used', emptyTitle: 'No Credits used yet', emptyInTitle: 'Nothing added yet',
+    emptyText: 'Purchases, AI features you use and anything returned will show up here.',
+    howTitle: 'How Credits work',
+    how1Title: 'One-time purchase', how1Text: 'No subscription. Nothing renews or charges you again.',
+    how2Title: 'Separate from your plan', how2Text: "Buying Credits doesn't extend or change your plan. You can have both.",
+    how3Title: "They don't expire", how3Text: 'Credits you buy stay in your balance until you use them.',
+    how4Title: 'Used by AI features', how4Text: 'Writing evaluation, AI speaking, explanations and Orena Intelligence. Features use different amounts, and you see it before anything is used.',
+    how5Title: 'Returned if something fails', how5Text: "If an AI action doesn't finish, its Credits come back automatically.",
+    cardText: "One-time top-ups for Orena's AI features. Separate from your plan: they don't renew and never expire.", viewHistory: 'View history',
+    sheetAdd: 'Add Credits', rowType: 'Type', rowTypeValue: "One-time · doesn't renew", rowPlan: 'Your plan', rowPlanValue: '{plan} · unchanged',
+    payToday: 'Pay today', vietqrVia: 'VietQR via payOS', scanWith: 'Scan with any Vietnamese banking app', back: 'Back', pay: 'Pay {price}',
+    scanTitle: 'Scan to pay', amount: 'Amount', waitingTitle: 'Waiting for your transfer',
+    waitingText: "Orena notices the moment it arrives. You don't need to press anything.", cancelPayment: 'Cancel payment', vietqrBadge: 'VIETQR · PAYOS',
+    receivedTitle: 'Payment received', receivedAdding: 'Adding Credits', receivedText: 'Adding {n} Credits to your balance…',
+    doneTitle: 'Credits added', doneAdded: '+{n} Credits', paid: 'Paid', done: 'Done',
+    expiredTitle: 'This QR has expired', expiredText: 'Nothing was charged. Make a new QR to try again.', makeNewQr: 'Make a new QR', close: 'Close',
   },
   vi: {
     errUnavailable: 'Hiện chưa thể dùng Credits.', errTryLater: 'Hiện chưa thể mua Credits. Hãy thử lại sau.',
@@ -36,6 +72,28 @@ export const t = defineCopy('creditTopup', {
     statusConfirmed: 'Đã cộng Credits', statusExpired: 'Đã hết thời gian thanh toán', statusCancelled: 'Thanh toán đã bị hủy',
     statusFailed: 'Thanh toán không thành công', statusRefunded: 'Khoản thanh toán này đã được hoàn',
     historyBuy: 'Mua Credits', historyUse: 'Dùng Credits', historyRefund: 'Hoàn Credits', historyAdjust: 'Điều chỉnh Credits',
+    title: 'Credits', creditBalance: 'Số dư Credits', credits: 'Credits', left: 'còn lại',
+    heroSub: 'Dùng cho các tính năng AI của Orena. Credits đã mua không hết hạn.', addCredits: 'Thêm Credits', planButton: 'Gói & mức dùng',
+    planStripSep: 'Credits tách riêng khỏi gói: không gia hạn, không hết hạn.',
+    showQr: 'Xem mã QR', pendingText: 'Đang chờ bạn chuyển {price} cho {n} Credits. Credits được cộng ngay khi tiền về.',
+    packsSub: 'Mua một lần. Không tự gia hạn, gói của bạn giữ nguyên.', packsLabel: 'Các gói Credits', continue: 'Tiếp tục',
+    vietqrNote: 'Thanh toán bằng mọi ứng dụng ngân hàng Việt Nam qua payOS.',
+    history: 'Lịch sử', filterAll: 'Tất cả', filterIn: 'Đã cộng', filterOut: 'Đã dùng', emptyTitle: 'Chưa dùng Credits', emptyInTitle: 'Chưa có Credits nào được cộng',
+    emptyText: 'Lượt mua, tính năng AI đã dùng và Credits được hoàn sẽ hiện ở đây.',
+    howTitle: 'Credits hoạt động thế nào?',
+    how1Title: 'Mua một lần', how1Text: 'Không phải gói thuê bao. Không tự gia hạn, không trừ tiền lại.',
+    how2Title: 'Tách riêng khỏi gói', how2Text: 'Mua Credits không gia hạn hay thay đổi gói của bạn. Bạn có thể dùng cả hai.',
+    how3Title: 'Không hết hạn', how3Text: 'Credits đã mua nằm trong số dư đến khi bạn dùng.',
+    how4Title: 'Dùng cho tính năng AI', how4Text: 'Chấm bài viết, AI Speaking, giải thích và Orena Intelligence. Mỗi tính năng dùng lượng khác nhau, và bạn luôn thấy trước khi dùng.',
+    how5Title: 'Hoàn lại nếu có lỗi', how5Text: 'Nếu một tác vụ AI không hoàn tất, Credits tự động được hoàn lại.',
+    cardText: 'Nạp một lần cho các tính năng AI của Orena. Tách riêng khỏi gói: không gia hạn, không hết hạn.', viewHistory: 'Xem lịch sử',
+    sheetAdd: 'Thêm Credits', rowType: 'Loại', rowTypeValue: 'Một lần · không gia hạn', rowPlan: 'Gói của bạn', rowPlanValue: '{plan} · giữ nguyên',
+    payToday: 'Thanh toán hôm nay', vietqrVia: 'VietQR qua payOS', scanWith: 'Quét bằng mọi ứng dụng ngân hàng Việt Nam', back: 'Quay lại', pay: 'Thanh toán {price}',
+    scanTitle: 'Quét mã để thanh toán', amount: 'Số tiền', waitingTitle: 'Đang chờ bạn chuyển khoản',
+    waitingText: 'Orena nhận biết ngay khi tiền về. Bạn không cần bấm gì thêm.', cancelPayment: 'Huỷ thanh toán', vietqrBadge: 'VIETQR · PAYOS',
+    receivedTitle: 'Đã nhận thanh toán', receivedAdding: 'Đang cộng Credits', receivedText: 'Đang cộng {n} Credits vào số dư…',
+    doneTitle: 'Đã cộng Credits', doneAdded: '+{n} Credits', paid: 'Đã thanh toán', done: 'Xong',
+    expiredTitle: 'Mã QR đã hết hạn', expiredText: 'Bạn chưa bị trừ tiền. Tạo mã QR mới để thử lại.', makeNewQr: 'Tạo mã QR mới', close: 'Đóng',
   },
   zh: {
     errUnavailable: '暂时无法使用 Credits。', errTryLater: '暂时无法购买 Credits，请稍后再试。',
@@ -47,5 +105,27 @@ export const t = defineCopy('creditTopup', {
     statusConfirmed: 'Credits 已到账', statusExpired: '付款已超时', statusCancelled: '付款已取消',
     statusFailed: '付款未成功', statusRefunded: '此笔付款已退款',
     historyBuy: '购买 Credits', historyUse: '使用 Credits', historyRefund: '退还 Credits', historyAdjust: '调整 Credits',
+    title: 'Credits', creditBalance: 'Credits 余额', credits: 'Credits', left: '剩余',
+    heroSub: '用于 Orena 的 AI 功能。已购买的 Credits 不会过期。', addCredits: '充值 Credits', planButton: '套餐与用量',
+    planStripSep: 'Credits 独立于套餐：不会续费，也不会过期。',
+    showQr: '查看二维码', pendingText: '正在等待你转账 {price}，用于 {n} Credits。到账后会立即添加。',
+    packsSub: '一次性购买。不会自动续费，你的套餐保持不变。', packsLabel: 'Credits 套餐', continue: '继续',
+    vietqrNote: '可使用任意越南银行 App，通过 payOS 付款。',
+    history: '记录', filterAll: '全部', filterIn: '已添加', filterOut: '已使用', emptyTitle: '还没有使用 Credits', emptyInTitle: '还没有添加 Credits',
+    emptyText: '购买、已使用的 AI 功能以及退还的 Credits 会显示在这里。',
+    howTitle: 'Credits 如何运作',
+    how1Title: '一次性购买', how1Text: '不是订阅。不会自动续费，也不会再次扣款。',
+    how2Title: '独立于套餐', how2Text: '购买 Credits 不会延长或改变你的套餐。两者可以同时使用。',
+    how3Title: '不会过期', how3Text: '已购买的 Credits 会一直保留在余额中，直到你使用。',
+    how4Title: '用于 AI 功能', how4Text: '写作评估、AI 口语、讲解和 Orena Intelligence。各功能用量不同，使用前你都能看到。',
+    how5Title: '出错时退还', how5Text: '如果某个 AI 操作未能完成，其 Credits 会自动退还。',
+    cardText: '为 Orena 的 AI 功能一次性充值。独立于套餐：不会续费，也不会过期。', viewHistory: '查看记录',
+    sheetAdd: '充值 Credits', rowType: '类型', rowTypeValue: '一次性 · 不续费', rowPlan: '你的套餐', rowPlanValue: '{plan} · 保持不变',
+    payToday: '今日应付', vietqrVia: '通过 payOS 使用 VietQR', scanWith: '使用任意越南银行 App 扫码', back: '返回', pay: '支付 {price}',
+    scanTitle: '扫码支付', amount: '金额', waitingTitle: '正在等待你转账',
+    waitingText: '款项一到账 Orena 就会知道，你无需再点任何按钮。', cancelPayment: '取消支付', vietqrBadge: 'VIETQR · PAYOS',
+    receivedTitle: '已收到付款', receivedAdding: '正在添加 Credits', receivedText: '正在把 {n} Credits 添加到你的余额…',
+    doneTitle: 'Credits 已到账', doneAdded: '+{n} Credits', paid: '已支付', done: '完成',
+    expiredTitle: '二维码已过期', expiredText: '未扣款。重新生成二维码即可再试。', makeNewQr: '重新生成二维码', close: '关闭',
   },
 });

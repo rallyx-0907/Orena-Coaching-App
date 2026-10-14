@@ -39,7 +39,7 @@ const ROUTE_OF_FLAG = {
   FreeTalk: 'freetalk', Conv: 'conv', Situation: 'situation', Retell: 'retell', React: 'react', Timed: 'timed', Transfer: 'transfer',
   Feed: 'feed', Rewrite: 'rewrite', TimedWr: 'timedwr', RTransfer: 'rtransfer', RComplete: 'rcomplete', Attempts: 'attempts',
   SpSummary: 'spsummary', TimedReact: 'timedreact', GrammarLib: 'grammarlib', Respond: 'respond', Discussion: 'discussion',
-  Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming', Billing: 'billing', Pricing: 'pricing', Feedback: 'feedback',
+  Mock: 'mock', Sound: 'sound', ErrFix: 'errfix', Coming: 'coming', Billing: 'billing', Pricing: 'pricing', Credits: 'credits', Feedback: 'feedback',
 };
 const designKeys = new Set(ROUTES.map((route) => route.design));
 assert.ok(

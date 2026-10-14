@@ -67,6 +67,9 @@ export const api={
   /* Credit top-up (PR-MON-5): the packs on sale (`credit_packs`, empty unless the backend's gates all pass) and one
      checkout. The body is built by product/credit-topup.js from the offer just read, never here. */
   billingOffers:()=>request('/api/billing/offers'),
+  /* PROPOSED (UI_BACKEND_GAPS CT-1): the caller's own order. Not served yet; until it is the call answers 404 and the
+     watcher stops, so a payment is never shown as confirmed. */
+  billingOrder:(orderCode)=>request(`/api/billing/orders/${encodeURIComponent(orderCode)}`),
   billingCheckout:(body)=>request('/api/billing/checkout',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
   /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
   feedbackSend:(body)=>request('/api/feedback',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),

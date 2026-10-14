@@ -185,7 +185,7 @@ export const ORDER_TERMINAL = Object.freeze(['confirmed', 'expired', 'cancelled'
 
 export function orderStateFrom(status) {
   const state = String(status?.state || '');
-  if (state === 'paid') return status.credited === true ? 'confirmed' : 'waiting';
+  if (state === 'paid') return status.credited === true ? 'confirmed' : 'received'; // money seen, credits not yet added
   if (state === 'refunded') return 'refunded';
   if (state === 'expired' || state === 'cancelled' || state === 'failed') return state;
   return 'waiting'; // created, pending, unknown, missing: the backend has not said otherwise

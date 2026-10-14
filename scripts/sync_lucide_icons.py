@@ -111,6 +111,12 @@ NAMES = sorted(
         "upload",
         "volume-2",
         "whole-word",
+        "plus",
+        "qr-code",
+        "message-square-text",
+        "undo-2",
+        "loader",
+        "expand",
         "x",
         "zap",
     }

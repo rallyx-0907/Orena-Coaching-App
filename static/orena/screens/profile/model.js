@@ -86,13 +86,15 @@ export function buildProfileModel({ context, vocabulary, commerce } = {}) {
    shell router's own document-wide click listener already handles - no per-row listener needed;
    Platform admin is one, D-101 E: it opens the Admin inside this UI), 'signout' needs the screen's
    own handler. The row exists only for an admin - for anyone else it is absent, not disabled. */
-export function profileActions({ isAdmin = false } = {}) {
+export function profileActions({ isAdmin = false, credits = false } = {}) {
   const actions = [];
   if (isAdmin) actions.push({ id: 'admin', kind: 'nav' });
   actions.push({ id: 'settings', kind: 'nav' });
   actions.push({ id: 'history', kind: 'nav' });
   actions.push({ id: 'progress', kind: 'nav' });
   actions.push({ id: 'plan', kind: 'nav' });
+  // The 2026-10-14 export's Credits row; present only while the backend offers credit packs.
+  if (credits) actions.push({ id: 'credits', kind: 'nav' });
   actions.push({ id: 'privacy', kind: 'nav' });
   // The 2026-10-08 export's Feedback row (D-156).
   actions.push({ id: 'feedback', kind: 'nav' });
