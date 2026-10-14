@@ -151,3 +151,52 @@ These answer section 3.
 
    The catalogue is not widened until the three sources pass; the next candidates are Chinese public-domain sources
    such as zh Wikisource.
+
+## 6. Closing (2026-10-14)
+
+Owner instruction 2026-10-14. Milestone "Reading Sources - Production Readiness" (section 5, item 7):
+**CLOSED - source pipeline accepted; release follow-ups remain.** This does not say that Reading as a whole is
+production-ready.
+
+**Evidence.** Final consolidated acceptance on :8021, main `2ec7daea`, 2026-10-14. Criteria 1 to 4 met:
+
+- `word_translation`: the Groq standby `qwen/qwen3.8-27b` passed its live test; the OpenRouter primary returned 429.
+- Word Quick Sheet: EN to VI and ZH to VI show a Vietnamese meaning on the first tap, with IPA (English) or pinyin (Chinese).
+- NASA, Global Voices EN and VOA 中文 ran end to end. Three newly published articles are kept as the canonical smoke fixtures:
+
+  | source | article id |
+  | --- | --- |
+  | NASA | `9626a4b7-2485-47da-a06e-e7473ef232b4` |
+  | Global Voices EN | `d0b34c8d-8afa-4cab-b3d0-6faba663024b` |
+  | VOA 中文 | `31faead9-9a00-42d2-b587-1c2e66649193` |
+
+- `voachinese.com/z/1741` is held (not published).
+- Level spread: EN shows a spread of levels; zh news is HSK6 (see #203).
+- Not done: the touch-device check. It is the mobile release gate (#202).
+
+**Operational facts (observed only).** About 50 OpenRouter requests were made during the test day, after which the primary
+returned 429; the exact free-tier quota is not confirmed. Groq calls are recorded at $0 under the current
+observed/configured free-plan setup (owner-confirmed free plan on 2026-10-14); this is not guaranteed permanent pricing.
+D-200 and its prefetch sizing were reworded to this.
+
+**Release follow-ups, to be resolved before :8000.**
+
+| Priority | Issue | Subject |
+| --- | --- | --- |
+| P1 | #194 | Quick Sheet sense in context (泡沫) |
+| P1 | #195 | 404 on practice/annotations when the Reader opens |
+| P1 | #196 | NASA rights/source policy default |
+| P1 | #197 | No internal source name visible to learners |
+| P1 | #198 | A thumbnail never exposes an approved image without credit |
+| P2 | #199 | Extra English line on the ZH sheet |
+| P2 | #200 | NASA title suffix |
+| P2 | #201 | Admin image-review UX |
+| P2 | #202 | Touch verification (mobile release gate) |
+| HSK | #203 | Audit HSK6 for zh news before calling it a bug |
+| HSK | #204 | zh HSK1 to HSK5 source coverage |
+| Existing | #183 | Flaky media test |
+
+**:8000 is not deployed.** Deploying needs the owner's authorisation (and, per the existing handoff, migration 0026).
+
+**:8021 state.** Planned / done by the coordinator through Admin: the eight older sample publishes of section 4 are
+unpublished or archived, and the two learner test accounts are returned to Free. Not verified by this document.

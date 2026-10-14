@@ -43,14 +43,16 @@ Grammar Store (#106, main 4086b935): 0030 applied on :8021 only; learner + Admin
 595-point import rehearsed; UI wiring awaits the human. GRAMMAR_CONTENT_STORE.IMPLEMENTATION.md.
 
 Admin REVIEWABLE: six areas, sandbox routing, imports/EN/ZH lookup (`2931823`);
-Azure/Skin (`7857d43`) local125/Node/review pass. Azure browser evidence/limits:
-AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md. Existing EPUB evidence unchanged.
+Azure/Skin (`7857d43`) local125/Node/review pass. Evidence: AZURE_VISUAL_SKIN_BROWSER_CHECKPOINT.md.
 
-S6 (`71ddcd4`): REVIEWABLE; EN/ZH rights/publish/lifecycle and390x844 evidence:
-S6_ADMIN_MEDIA_BROWSER_CHECKPOINT.md. QA archived; preserve this accepted slice.
+S6 `71ddcd4`, S2 `637d0b2` (D-116), Listening `cab4773`: REVIEWABLE, preserved (S6_ADMIN_MEDIA_ and
+S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md).
 
-S2 (`637d0b2`, D-116): EN/ZH desktop/390x844, translation and skill returns verified;
-evidence/limits: S2_MEDIA_BASIC_BROWSER_CHECKPOINT.md. Listening `cab4773` preserved.
+## Reading Sources - Production Readiness (2026-10-14)
+
+CLOSED - source pipeline accepted; release follow-ups remain (Reading is not claimed production-ready). Accepted
+on :8021 at `2ec7daea`; no touch check. See READ_SOURCE_ACCEPTANCE_2026-10-13.md s6.
+Before :8000: P1 #194-#198, P2 #199-#202, HSK #203-4, #183. :8000 not deployed; owner authorises (+0026).
 
 ## DONE
 
@@ -65,7 +67,6 @@ Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migrat
 - Books storage: resolved by shared :8021 volume; old Alice assets lost.
   S8a (`b7380b1`): body/count/Admin-link fixes; evidence: S8_BOOKS_BROWSER_CHECKPOINT.md.
   Finish EN/ZH continuity/fidelity; no full Books completion claim.
-- Human review: Wave A/B.
 - Chinese writing evaluator recall (`ZH_WRITING_EVALUATOR_RECALL.md`): fix (1) landed
   (`871e2b9`, v2.7), benchmark measures recall (`fa93601`); live run for (4) waits for the
   human's go (provider cost).
@@ -74,13 +75,11 @@ Foundation/Wave A/B REVIEWABLE; history: PROJECT_STATE.md "New learner UI migrat
 - D4 (D-104/D-105): migrations 0017-0023, :8021 only; review APPROVE WITH CONDITIONS
   (`f30044a`); flag-on QA round 2 (`9a7b190`) six flows PASS. Open for the human: delete for
   an imported text, media-import bound. Before public release (D-143): ACCOUNT_RECORD_LIMITS, upload deletion/limits.
-
-- #137 (unmerged): signed-out `docker run` lanes need new env: SECURITY_BOUNDARY.md "Lane runtimes".
+- #137 (unmerged): signed-out `docker run` needs new env: SECURITY_BOUNDARY.md.
 
 ## PENDING
 
-Human: none for :8011 (deferred, D-102);
-PR67/68 independently reviewed and integrated; Grammar Store/API built, UI pending
+Human: none; PR67/68 independently reviewed and integrated; Grammar Store/API built, UI pending
 (D-111.4). Upstream GitHub PR state is unverified; integration is local only.
 Architecture approval is not evidence that the runtime already exists.
 
