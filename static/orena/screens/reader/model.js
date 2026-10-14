@@ -191,6 +191,38 @@ export function segmentSentence(text, tokens, { saved = new Set() } = {}) {
   return pieces;
 }
 
+/* CJK line breaking (kinsoku). In running text the browser keeps closing punctuation off the start of a line
+   and opening punctuation off the end of one (CSS `line-break: strict`). With pinyin on, every character is
+   its own atomic column, and a browser may break between any two atomic boxes, so the rule is drawn into the
+   markup: a closing mark shares one no-wrap unit with what comes before it, an opening mark with what follows.
+   Only the CJK and full-width marks are listed; Latin punctuation keeps the browser's own behaviour. */
+const CLOSING_PUNCT = new Set(Array.from('，。、；：？！．）］｝】〕〗〙〛」』》〉”’％'));
+const OPENING_PUNCT = new Set(Array.from('（［｛【〔〖〘〚「『《〈“‘'));
+
+export function kinsoku(ch) {
+  if (CLOSING_PUNCT.has(ch)) return 'close';
+  if (OPENING_PUNCT.has(ch)) return 'open';
+  return '';
+}
+
+/* True when a line may break between two adjacent characters: never before a closing mark, never after an
+   opening one. */
+export function mayBreakBetween(prev, next) {
+  return kinsoku(next) !== 'close' && kinsoku(prev) !== 'open';
+}
+
+/* Groups consecutive atoms (`{ first, last }`: a word, or one stacked character, by its first and last
+   character) that may not be split by a line break. Returns arrays of atom indexes; the renderer wraps every
+   group of more than one atom in one `white-space: nowrap` unit. */
+export function kinGroups(atoms) {
+  const groups = [];
+  for (let i = 0; i < atoms.length; i += 1) {
+    if (i > 0 && !mayBreakBetween(atoms[i - 1].last, atoms[i].first)) groups[groups.length - 1].push(i);
+    else groups.push([i]);
+  }
+  return groups;
+}
+
 /* Pinyin above each Hanzi (frame 14's `hc.p`/`hc.h` stack): one syllable per character when the
    tagger's reading has as many syllables as the word has characters; otherwise the whole reading
    sits above the word's first character rather than being split by a guess. Nothing for a word

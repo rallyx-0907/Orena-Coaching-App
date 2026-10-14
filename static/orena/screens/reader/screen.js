@@ -46,6 +46,7 @@ import {
   sentencesOf,
   segmentId,
   segmentSentence,
+  kinGroups,
   ROLES,
   aidsCount,
   endOfContent,
@@ -513,11 +514,30 @@ export default async function mountReader(element, ctx) {
     const mark = numBySeg.get(s.seg);
     const ranges = spanRanges(s, pieces.map((piece) => piece.text).join(''));
     let offset = 0;
-    return html`<span class="${cls('s-reader__sentence', highlighted(s.seg) && 'is-highlighted', selected?.seg === s.seg && 'is-selected')}" data-sentence data-segment="${s.seg}">${pieces.map((piece) => {
+    /* With pinyin on, a closing mark is kept on the line of what comes before it and an opening mark with what
+       follows, in one no-wrap unit (kinGroups) - the stacked columns are atomic, so a browser would otherwise break
+       between them. The unit holds the same word spans and columns, so taps and selection are unchanged. */
+    const atoms = [];
+    for (const piece of pieces) {
       const start = offset;
       offset += piece.text.length;
-      return pieceMarkup(piece, s.seg, start, ranges);
-    })}${
+      if (piece.word || !stacked()) {
+        const chars = Array.from(piece.text);
+        atoms.push({ first: chars[0], last: chars[chars.length - 1], markup: pieceMarkup(piece, s.seg, start, ranges) });
+        continue;
+      }
+      let at = start;
+      for (const ch of Array.from(piece.text)) {
+        atoms.push({ first: ch, last: ch, markup: pieceMarkup({ text: ch }, s.seg, at, ranges) });
+        at += ch.length;
+      }
+    }
+    const body = stacked()
+      ? kinGroups(atoms).map((group) => (group.length > 1
+        ? html`<span class="s-reader__kin">${group.map((i) => atoms[i].markup)}</span>`
+        : atoms[group[0]].markup))
+      : atoms.map((atom) => atom.markup);
+    return html`<span class="${cls('s-reader__sentence', highlighted(s.seg) && 'is-highlighted', selected?.seg === s.seg && 'is-selected')}" data-sentence data-segment="${s.seg}">${body}${
       mark
         ? html`<button type="button" class="s-reader__notemark" data-act="note-toggle" data-seg="${s.seg}" aria-expanded="${openNoteSegs.has(s.seg) ? 'true' : 'false'}" aria-label="${openNoteSegs.has(s.seg) ? t('noteCollapse') : t('noteExpand')}">${mark}</button>`
         : ''

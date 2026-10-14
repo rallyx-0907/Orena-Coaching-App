@@ -237,6 +237,17 @@
   font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 }
 
+/* CJK line breaking: strict kinsoku (closing marks never start a line, opening marks never end one). With pinyin on,
+   each character is an atomic column, so the model groups a mark with its neighbour in one no-wrap unit. */
+.s-reader__paragraph[data-tl="zh"],
+.s-reader__heading:lang(zh),
+.s-reader__title:lang(zh) {
+  line-break: strict;
+}
+.s-reader__kin {
+  white-space: nowrap;
+}
+
 .s-reader__heading {
   overflow-wrap: anywhere;
   font-size: 1.15em;
