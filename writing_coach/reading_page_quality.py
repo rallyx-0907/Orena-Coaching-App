@@ -25,7 +25,7 @@ from collections.abc import Mapping
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
-QUALITY_VERSION = "reading-quality/2"
+QUALITY_VERSION = "reading-quality/3"
 
 # ---- thresholds (per language: English words, Chinese Hanzi) -----------------
 # Set from the 2026-10-13 trial: the shortest genuine article was 248 English
@@ -38,6 +38,16 @@ MIN_BODY_UNITS = {"en": 80, "zh": 120}  # below: soft `body_below_minimum`
 # Player markup and a body this short: hard `media_page`. ZH sits just above the longest non-article of the
 # trial (245 Hanzi), so a genuine 300-Hanzi brief with an embedded video is not blocked.
 MEDIA_PAGE_MAX_UNITS = {"en": 60, "zh": 260}
+# Tightened 2026-10-14 (live dry run, extractor article-extract/4). Both rules read STRUCTURE the extractor
+# already measures, never a source name, and sit below the shortest genuine article of the evidence set
+# (NASA 589 / Global Voices 1686 English words; VOA 中文 785 and 1390 Hanzi; the 2026-10-13 trial's 248 / 983).
+# * Topic / category page: voachinese.com/p/6197 had no article element, one prose paragraph and 193 Hanzi of
+#   teasers ("更多内容", "订阅电邮新闻") -> hard `index_page`. ZH 400 / EN 150 sit well under the genuine minimum.
+# * Player page with no article: voachinese.com/p/9647 had a player, no article/main element and a 302-Hanzi
+#   programme rundown -> hard `media_page`. ZH 600 / EN 200. A video page that HAS an article or main element
+#   keeps the older, lower limit above.
+INDEX_SHORT_MAX_UNITS = {"en": 150, "zh": 400}
+MEDIA_NO_ARTICLE_MAX_UNITS = {"en": 200, "zh": 600}
 
 # ---- stable codes ------------------------------------------------------------
 HARD_ISSUES = frozenset({"empty_body", "media_page", "index_page", "bot_challenge", "special_page"})
@@ -181,10 +191,16 @@ def quality_flags(
         flags.append("special_page")
     if facts.get("media_player") and size < MEDIA_PAGE_MAX_UNITS[lang]:
         flags.append("media_page")
+    elif (
+        facts.get("media_player") and facts.get("no_semantic_container")
+        and size < MEDIA_NO_ARTICLE_MAX_UNITS[lang]
+    ):
+        flags.append("media_page")
     # Hard only on a strong signal: a listing title, a listing address, or a listing-shaped body on a page with
     # no article element and no prose. A dated timeline or a poem alone is only `index_like` (soft).
     listing = _looks_like_listing(body or "")
-    if facts.get("index_title") or facts.get("index_url") or (listing and facts.get("no_article_structure")):
+    teasers_only = bool(facts.get("no_article_structure")) and 0 < size < INDEX_SHORT_MAX_UNITS[lang]
+    if facts.get("index_title") or facts.get("index_url") or teasers_only or (listing and facts.get("no_article_structure")):
         flags.append("index_page")
     elif listing:
         flags.append("index_like")

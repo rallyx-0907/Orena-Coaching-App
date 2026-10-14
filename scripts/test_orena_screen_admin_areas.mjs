@@ -173,6 +173,8 @@ assert.equal(imports.slugFor('Open Stories!'), 'open-stories');
 assert.equal(imports.sourceBody({ name: ' Open ', url: 'https://o.org', rights: { can_republish: true } }).attribution_required, true);
 assert.equal(imports.sourceBody({ name: 'x', rights: { attribution_required: false } }).attribution_required, false);
 assert.equal(imports.sourceBody({ name: 'x', rights: {} }).automation_allowed, false, 'polling is not built, so a source never asks for it');
+assert.equal(imports.sourceBody({ name: 'QA NASA (RSS)', publicName: ' NASA ' }).public_name, 'NASA', 'the learner-facing publisher name is its own field, trimmed');
+assert.equal(imports.sourceBody({ name: 'x' }).public_name, '', 'no public name is sent as empty');
 assert.equal(imports.bookOutcome({ status: 'duplicate', title: 'T', book_id: 'B' }).state, 'duplicate');
 assert.equal(imports.mediaOutcome({ status: 'failed', category: 'media_unavailable' }).code, 'media_unavailable');
 const queue = [{ state: 'to_import', n: 1 }, { state: 'to_import', n: 2 }];

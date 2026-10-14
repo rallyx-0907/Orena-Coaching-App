@@ -44,7 +44,7 @@ export function progressFromContinuation(continuation, id, { idPrefix = '' } = {
   return entry ? placePercent(entry.place) : null;
 }
 
-/* GET /api/reading/articles item -> entry. `image` is the payload's approved same-origin picture (D-192) and
+/* GET /api/reading/articles item -> entry. `image` is the payload's approved same-origin picture (D-194) and
    is empty for every article whose source has not been allowed pictures, which draws the generated tile. The card's muted source line (the design's `c.source`) is the
    article's publisher from `provenance` (D-189), the same value the reader and Content Detail draw. */
 export function entryFromArticle(item, continuation) {
@@ -61,7 +61,7 @@ export function entryFromArticle(item, continuation) {
     level: item.level || '',
     topic: item.topic || '',
     readingSeconds: Number.isFinite(item.reading_time_seconds) ? item.reading_time_seconds : null,
-    // D-192: the approved same-origin picture, else '' and the generated tile.
+    // D-194: the approved same-origin picture, else '' and the generated tile.
     image: imageOf(item)?.cssUrl || '',
     started: progressFromContinuation(continuation, id) != null,
     progressPct: progressFromContinuation(continuation, id),

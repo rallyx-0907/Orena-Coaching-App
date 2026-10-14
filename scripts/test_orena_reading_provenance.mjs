@@ -96,7 +96,7 @@ assert.ok(/doc\.credit/.test(screenSource), 'the footnote reads the sanitised cr
 const readerSource = readFileSync(new URL('../static/orena/screens/reader/source.js', import.meta.url), 'utf8');
 assert.ok(/credit: creditOf\(article\)/.test(readerSource) && !/credit:.*kind === 'book'/.test(readerSource), 'only a published article carries a credit');
 
-// 6. D-192 thumbnails: imageOf trusts only our own same-origin copy with a credit; the Reader footnote carries the credit.
+// 6. D-194 thumbnails: imageOf trusts only our own same-origin copy with a credit; the Reader footnote carries the credit.
 const { imageOf } = await import('../static/orena/product/provenance.js');
 const ID = '0a52e5d0-0000-4000-8000-000000000001';
 const own = { url: `/api/reading/articles/${ID}/image?v=4`, credit: 'Photo: A. Tran', alt: 'A flooded field' };

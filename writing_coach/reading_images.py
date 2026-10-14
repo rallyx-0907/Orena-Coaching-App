@@ -1,6 +1,6 @@
 """Reading thumbnails: which candidate may become a card image, and how its bytes are fetched safely.
 
-A Reading card shows a real picture only when three things are all true (D-192, proposed):
+A Reading card shows a real picture only when three things are all true (D-194, proposed):
 
   a. the source's image policy allows it (`image_policy_allowed`; off for every source until the
      owner turns it on),
@@ -28,6 +28,8 @@ from writing_coach.media_safe_fetch import UnsafeMediaFetch, fetch_bounded
 
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 FETCH_TIMEOUT_SECONDS = 10.0
+# Wall-clock bound on the whole download: a publisher that drips bytes cannot hold a worker longer.
+TOTAL_FETCH_SECONDS = 20.0
 MIN_SHORT_SIDE = 400
 # Width / height: 1:2 (tall) to 2:1 (wide).
 MIN_ASPECT, MAX_ASPECT = 0.5, 2.0
@@ -236,6 +238,7 @@ def fetch_image(url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = 
             url,
             max_bytes=MAX_IMAGE_BYTES,
             timeout=FETCH_TIMEOUT_SECONDS,
+            total_timeout=TOTAL_FETCH_SECONDS,
             content_types=frozenset(ALLOWED_TYPES),
         )
     except UnsafeMediaFetch as exc:
@@ -244,6 +247,8 @@ def fetch_image(url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = 
             raise ImageRefused("image_too_large", message) from exc
         if "not supported" in message:
             raise ImageRefused("image_unsupported_type", message) from exc
+        if "took too long" in message:
+            raise ImageRefused("image_fetch_failed", message) from exc
         if "not allowed" in message or "valid public" in message:
             raise ImageRefused("image_unsafe_url", message) from exc
         raise ImageRefused("image_fetch_failed", message) from exc

@@ -6175,39 +6175,103 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
 
-## D-192 - Reading thumbnails: a picture needs the source's policy, an approval and a credit; a same-origin copy (2026-10-14)
+   Tightened 2026-10-14 (`claude/reading-quality-voa`, `reading-quality/3`): a live dry run found two VOA 中文 pages that
+   point 7 let through. `voachinese.com/p/6197` (topic page: no article element, one prose paragraph, 193 Hanzi of
+   teasers) is now a hard `index_page` through the generic rule "no article structure and a body under 400 Hanzi / 150
+   words". `voachinese.com/p/9647` (player page with a programme rundown, 302 Hanzi) is now a hard `media_page` through
+   "player markup, no article or main element (`no_semantic_container`) and a body under 600 Hanzi / 200 words". No source
+   name is used; the limits sit below the shortest genuine article of the evidence set. Real VOA 中文, NASA and Global
+   Voices articles stay clean (fixtures in `tests/fixtures/reading_quality/`). This changes the publish lifecycle, so it
+   **requires an independent re-review** before the entry returns to ACCEPTED.
+   Known false-positive class, accepted: a genuine short single-paragraph page with no article or main element
+   (`index_page`), or a 260-600 Hanzi / 60-200 word article with an embedded player in a plain div (`media_page`), is
+   hard-flagged and needs the audited `quality_override` with a reason; the same page inside `<article>` or `<main>` is
+   not blocked. `no_semantic_container` is derived from the real absence of an article or main element for every
+   extraction method, so a player page that fell back to whole-page extraction is caught too. Tests pin both cases.
+   Stored rows: `scripts/check_reading_quality_backlog.py` recomputes from stored facts, so rows with
+   `no_article_structure` may newly show `index_page`; rows without the new `no_semantic_container` fact are not
+   caught by the media rule.
+   Review of 8055ddbc: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer: APPROVED WITH
+   CONDITIONS (CI green before merge; fixture attribution README; this entry). Addendum in
+   `docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`. Re-review of 87968f7e (same reviewer role):
+   APPROVE, no open P0/P1; merged once CI was green.
 
-**Status: PROPOSED.** Needs independent architecture review (a rights policy and a new outbound fetch path) and the owner before
-merge. Owner decisions of 2026-10-14 are carried out as written; nothing here turns a source on. No schema or migration
-change. Closes U2 of `docs/content/READ_SOURCE_ACCEPTANCE_2026-10-13.md` (D-189 item 5 made the thumbnail "not a publish
-blocker"; the human has since made it P1 ship-readiness).
+## D-192 - Reading publisher: the learner-facing name is separate from the internal source name (2026-10-14)
+
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVED WITH CONDITIONS on 09bd6b60, re-review APPROVE on 47e19c05; merged once CI was green). Refines D-189/D-190. Lane B item 2 of Reading Production Readiness.
+
+Problem: learners saw the admin's bookkeeping name as the publisher ("Global Voices (English) RSS - trial", "QA NASA news
+releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, the source footnote and `/api/licences`.
+
+1. **Storage, no migration.** The source's learner-facing `public_name` lives in the existing `reading_sources.polling_policy`
+   JSON (key `public_name`; that column held only `{}`). A dedicated column was not needed; if the policy column is ever
+   given a real polling schema, move the key then (that would be a schema change needing independent review).
+2. **One pure function** (`reading_provenance.resolve_publisher`) returns `(publisher, via)`. The internal source `name`
+   is never an input. The site the text came from is, in order: the source `public_name`; for a built-in path
+   (manual/URL/file) only, the name typed for that text; the page's `og:site_name`; the cleaned host of the item address
+   (`voachinese.com`). The built-in labels ("Direct URL", "Manual paste", "File upload") and anything containing an address are
+   never a name. Nothing known gives an empty publisher, which the D-190 gate reports as a missing credit.
+3. **Republications.** When extraction provenance records a republication that names its original publisher, that
+   publisher is the credit and the site is `via`: "Originally published by Radio Free Asia via Global Voices". The credit
+   link and licence stay the item's own (the republisher's page). Only the publisher is drawn by clients today; `via` is
+   carried in `provenance` and in `text`.
+4. **Every learner payload** (list, detail, Discover, Content Detail, footnote, `/api/licences` text and source rows) reads
+   the resolved name; the admin lists keep the internal name. Changing a source's public name moves `content_revision` of its
+   published texts in the same transaction (D-190 follow-up P2-2).
+5. **Admin.** `POST /api/admin/reading/sources/{id}/public-name`, a "Public name" field on the register form and on the
+   source page. The pinned `Orena Admin.dc.html` draws no such field (`UI_BACKEND_GAPS.md`).
+6. **Consequences for D-190 and the licences page.** Because the host is a fallback, the D-190 "publisher missing" provenance
+   warning now fires only when no public name, no page site name and no host is known (a text with no address and no typed
+   name); a bare host such as `nasa.gov` counts as the credit. Names are trimmed of whitespace and separators only, so
+   balanced brackets and the full stop of an abbreviation survive ("Global Voices (English)", "Acme Inc.", "美国之音（VOA）").
+   A `/api/licences` source row with neither a public name nor a base-URL host is omitted; its texts are still credited
+   one by one in the text rows.
+
+## D-194 - Reading thumbnails: a picture needs the source's policy, an approval and a credit; a same-origin copy (2026-10-14)
+
+**Status: PROPOSED.** Needs the owner's approval of the image-rights policy and independent architecture review of the new
+outbound fetch path before merge. Owner decisions of 2026-10-14 are carried out as written; nothing here turns a source on. No
+schema or migration change. Closes U2 of `docs/content/READ_SOURCE_ACCEPTANCE_2026-10-13.md` (D-189 item 5 made the thumbnail
+"not a publish blocker"; the human has since made it P1 ship-readiness).
 
 1. **Rights (option B).** A learner sees a picture only when all three hold: (a) the source's image policy allows it
    (`reading_sources.polling_policy.image_policy.allowed`, the source's existing config JSON; absent means off, and no source is
    turned on by this change), (b) an administrator approved that specific candidate (an `image_set` review event), and (c) a
-   credit exists (the approved credit, else the candidate's credit, else the source's publisher). Otherwise the generated
-   letter tile. The rule is evaluated again on every list, detail and image read, so turning a source off hides its pictures
-   at once; the detail validator names whether a picture is present.
+   credit exists (the approved credit, else the candidate's credit, else the learner-facing publisher of D-192, never the
+   internal source name). Otherwise the generated letter tile. The rule is evaluated again on every list, detail and image
+   read. **Withdrawal:** changing a source's image policy, and rejecting or clearing a picture, moves `content_revision` of the
+   affected published articles in the same transaction, the image route stops serving at once (it re-evaluates the rule), and
+   it is sent `Cache-Control: private, no-cache` with an ETag from the stored hash, so a browser revalidates every time.
 2. **Same-origin copy, never hotlinked.** The candidate is fetched once, at approval, by `writing_coach/reading_images.fetch_image`
-   through the existing SSRF guard `media_safe_fetch.fetch_bounded` (http/https only; every resolved address must be globally
-   routable, so private, loopback, link-local, metadata, CGNAT and multicast are refused; each redirect hop is re-validated;
-   the connected address is re-checked against DNS rebinding; no cookies or credentials; the byte budget is enforced while
-   reading), with a 5 MB cap, a 10 s timeout, a content-type allowlist (JPEG, PNG, WebP, GIF) and a magic-byte check that
-   ignores the declared type (so SVG and HTML are refused). The bytes are stored in the existing `BookAssetStore` under
+   through the existing SSRF guard `media_safe_fetch.fetch_bounded` (http/https only; ports 80/443 only, also on redirects;
+   every resolved address must be globally routable, so private, loopback, link-local, metadata, CGNAT, IPv4-mapped IPv6 of
+   those and multicast are refused; each redirect hop is re-validated; the connected address is re-checked against DNS
+   rebinding; no cookies or credentials; the byte budget is enforced while reading; a total wall-clock deadline bounds the
+   whole fetch), with a 5 MB cap, a content-type allowlist (JPEG, PNG, WebP, GIF) and a magic-byte check that ignores the
+   declared type (so SVG and HTML are refused). The bytes are stored in the existing `BookAssetStore` under
    `reading-images/{article}/{sha256[:24]}.{ext}` and served by `GET /api/reading/articles/{id}/image` with `nosniff`, a
    `default-src 'none'; sandbox` CSP and `Cross-Origin-Resource-Policy: same-origin`. The learner payload carries
    `image: {url, credit, alt}` with that same-origin address only; a candidate's address never reaches a learner payload.
-   The admin preview is also fetched by the server, so the administrator's browser never contacts the publisher.
+   The admin preview is also fetched by the server (and kept briefly per candidate so a page view does not refetch), so the
+   administrator's browser never contacts the publisher. A failed approval deletes only a file that this call created.
 3. **Approval is a recorded answer, no migration.** `image_set` (the approved picture, or `null` to clear) and `image_rejected`
-   are `reading_review_events`, folded oldest first like a rights answer (`fold_image_events`); a change on a published
-   article bumps `content_revision`. Candidates stay where the extractor put them (`metadata.extraction.media`) and are
-   addressed by index, never by address.
+   are `reading_review_events`, folded oldest first like a rights answer (`fold_image_events`). Candidates stay where the
+   extractor put them (`metadata.extraction.media`) and are addressed by index, never by address. `polling_policy` now has two
+   keys (`public_name`, `image_policy`) and one locked writer, `_update_source_policy`.
 4. **Selection.** The og:image, then the lead image, then the article's images. A candidate is not offered when its declared
    or real short side is under 400px, its aspect is outside 1:2 to 2:1, or the same address is on two or more other items of
    the source (shared furniture such as a logo). Checked from the real bytes at approval when the page declared no size.
 5. **D-111 is unchanged.** Automatic admission never reads images; a picture changes no admission outcome.
 6. **Per-image licence is not modelled.** Approval is the administrator's act and is audited
-   (`admin.reading_image_approved`); the credit is shown, and the licence of an individual image is the administrator's
-   judgement (NASA images are carved out of its general statement, Global Voices images are not CC BY by default, VOA is
-   mixed). Which sources the owner turns on, and on what credit, is still the owner's call.
-7. **Not done.** A superseded approved file stays in the asset store (content-addressed, small).
+   (`admin.reading_image_approved`, with the candidate host); the credit is shown, and the licence of an individual image is
+   the administrator's judgement (NASA images are carved out of its general statement, Global Voices images are not CC BY by
+   default, VOA is mixed). Which sources the owner turns on, and on what credit, is still the owner's call.
+7. **Not done.** A superseded, cleared or rejected approved file stays in the asset store (content-addressed, small), so third
+   party bytes remain on disk after a withdrawal even though nothing serves them.
+
+**Independent review (2026-10-14).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on
+8980cf3d: APPROVED WITH CONDITIONS (CI green on the merged result; merge with D-192; renumber to D-194; route count). Conditions
+and P2 items addressed on the same branch: merged with main keeping the learner-facing publisher resolver, one locked
+`polling_policy` writer, a total fetch deadline and preview cache, immediate withdrawal and cache semantics, delete-only-what-
+this-call-created, the candidate host in the audit, and IPv4-mapped, non-default-port and peer-rebinding tests. Browser
+measurement of the surface is still pending.

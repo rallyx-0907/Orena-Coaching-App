@@ -11,7 +11,7 @@ frames by earlier slices) and are to be compared in a browser before the surface
 The thumbnail is P1 ship-readiness. A real picture appears only when (a) the source's image policy allows it (off for
 every source), (b) an administrator approved that specific candidate, and (c) a credit exists. Otherwise the card keeps the
 generated letter tile, which is the design's no-image state. Pictures are never hotlinked: the server keeps its own copy.
-Recorded as D-192 (proposed).
+Recorded as D-194 (proposed).
 
 ## Learner: no new component
 

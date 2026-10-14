@@ -11,6 +11,7 @@ from __future__ import annotations
 import http.client
 import ipaddress
 import socket
+import time
 from pathlib import Path
 from typing import Final
 from urllib.error import HTTPError, URLError
@@ -173,8 +174,13 @@ def fetch_bounded(
     timeout: float = DEFAULT_TIMEOUT_SECONDS,
     content_types: frozenset[str] = frozenset(),
     max_redirects: int = 3,
+    total_timeout: float | None = None,
 ) -> tuple[bytes, str]:
-    """Fetch a small response while enforcing a byte budget during reads."""
+    """Fetch a small response while enforcing a byte budget during reads.
+
+    `timeout` bounds each socket operation; `total_timeout`, when given, bounds the whole read in wall-clock
+    time, so a server that drips bytes cannot hold the caller for longer (the overshoot is at most one
+    socket operation)."""
     if max_bytes <= 0 or timeout <= 0 or max_redirects < 0:
         raise ValueError("fetch limits must be positive")
     with _open(url, timeout=timeout, max_redirects=max_redirects) as response:
@@ -183,7 +189,10 @@ def fetch_bounded(
             raise _unsafe("This media type is not supported.")
         chunks: list[bytes] = []
         total = 0
+        started = time.monotonic()
         while True:
+            if total_timeout is not None and time.monotonic() - started > total_timeout:
+                raise _unsafe("The media address took too long to answer.")
             chunk = response.read(min(1024 * 1024, max_bytes + 1))
             if not chunk:
                 break

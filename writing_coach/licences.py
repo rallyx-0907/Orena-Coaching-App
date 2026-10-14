@@ -12,6 +12,8 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from writing_coach.reading_provenance import host_name
+
 
 @dataclass(frozen=True)
 class Dataset:
@@ -102,16 +104,20 @@ def listening_catalog_credits(lessons: Iterable[Mapping[str, Any]]) -> list[dict
 
 
 def reading_source_credits(sources: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
-    return [
-        {
-            "title": _text(source.get("name")),
-            "creator": "",
-            "licence": _text(source.get("license_note")),
-            "source_url": _text(source.get("base_url")),
-        }
-        for source in sources
-        if _text(source.get("state")) == "active" and source.get("can_republish") and _text(source.get("license_note"))
-    ]
+    """The licence page names a source by its public name, else its host; the internal
+    name is administrator bookkeeping and never published. A source with neither is left out of this
+    list (its texts are still credited one by one in `reading_text_credits`) (D-192, proposed)."""
+    rows = []
+    for source in sources:
+        # The registry returns the rights nested under `rights`; a flat mapping is accepted too.
+        rights = source.get("rights") if isinstance(source.get("rights"), Mapping) else source
+        if not (_text(source.get("state")) == "active" and rights.get("can_republish") and _text(rights.get("license_note"))):
+            continue
+        title = _text(source.get("public_name")) or host_name(source.get("base_url"))
+        if title:
+            rows.append({"title": title, "creator": "", "licence": _text(rights.get("license_note")),
+                         "source_url": _text(source.get("base_url"))})
+    return rows
 
 
 def reading_text_credits(texts: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:

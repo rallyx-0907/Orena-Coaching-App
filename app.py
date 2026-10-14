@@ -1445,7 +1445,7 @@ def configure_reading_engine_from_runtime() -> None:
         # (never a passage) and decided by an administrator.
         evidence=evidence,
         generate=generate_structured,
-        # Approved Reading thumbnails live in the same asset store, under their own key prefix (D-192).
+        # Approved Reading thumbnails live in the same asset store, under their own key prefix (D-194).
         asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
     )
     configure_reading_articles(

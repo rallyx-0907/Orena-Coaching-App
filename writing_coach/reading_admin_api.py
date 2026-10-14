@@ -28,6 +28,7 @@ traceback.
 from __future__ import annotations
 
 import logging
+import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -101,7 +102,7 @@ class _Reading:
     audit: Callable[..., None] | None = None
     evidence: ReadingEvidenceRepository | None = None
     generate: Callable[..., Any] | None = None
-    # D-192 thumbnails: the existing asset store, and the (injectable) safe fetcher.
+    # D-194 thumbnails: the existing asset store, and the (injectable) safe fetcher.
     asset_store: BookAssetStore | None = None
     image_fetcher: Callable[..., Any] | None = None
 
@@ -326,12 +327,20 @@ class SourceBody(BaseModel):
     name: str = Field(min_length=1, max_length=240)
     source_type: str = Field(min_length=1, max_length=20)
     base_url: str = Field(default="", max_length=600)
+    public_name: str = Field(default="", max_length=120)
     languages: list[str] = Field(default_factory=list)
     automation_allowed: bool = False
     can_republish: bool = False
     can_adapt: bool = False
     attribution_required: bool = True
     license_note: str = Field(default="", max_length=2000)
+
+
+class SourcePublicNameBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    # The name learners see as the publisher. Empty clears it (the site name or host stands in).
+    public_name: str = Field(default="", max_length=120)
 
 
 class SourceStateBody(BaseModel):
@@ -490,10 +499,27 @@ def create_source(request: Request, response: Response, payload: SourceBody) -> 
                 "license_note": payload.license_note,
             },
             created_by=_actor(admin),
+            public_name=payload.public_name.strip(),
         )
     )
     _audit(admin, "admin.reading_source_created", entity_type="reading_source", entity_id=source["id"],
            payload={"slug": source["slug"], "source_type": source["source_type"]})
+    return source
+
+
+@router.post("/sources/{source_id}/public-name")
+def set_source_public_name(
+    request: Request, response: Response, source_id: str, payload: SourcePublicNameBody
+) -> dict[str, Any]:
+    """The publisher name learners see for this source's texts (D-192, proposed)."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    source = _guarded(lambda: _content().set_source_public_name(source_id, payload.public_name.strip()))
+    if source is None:
+        raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
+    _audit(admin, "admin.reading_source_public_name", entity_type="reading_source", entity_id=source_id,
+           payload={"public_name": source["public_name"]})
     return source
 
 
@@ -536,7 +562,7 @@ def update_source(
 def set_source_image_policy(
     request: Request, response: Response, source_id: str, payload: ImagePolicyBody
 ) -> dict[str, Any]:
-    """Allow or stop learner thumbnails from a source (D-192). Off for every source until turned on here."""
+    """Allow or stop learner thumbnails from a source (D-194). Off for every source until turned on here."""
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)
@@ -815,10 +841,31 @@ def set_article_rights(
     return article
 
 
-# -- thumbnails (D-192) ---------------------------------------------------------
+# -- thumbnails (D-194) ---------------------------------------------------------
 # A candidate is chosen by its index in the stored list - the request never carries an address - and its
 # bytes are fetched only here, through the existing SSRF guard, then kept in the asset store. A learner is
 # served that copy, never the third party's.
+
+# A page view asks for every candidate's preview and each is an outbound fetch, so a fetched preview is kept
+# briefly per (article, index, address): a reload within the window costs nothing, and the cache is bounded.
+_PREVIEW_TTL_SECONDS = 120.0
+_PREVIEW_MAX_ENTRIES = 8
+_preview_cache: dict[tuple[str, int, str], tuple[float, dict[str, Any]]] = {}
+
+
+def _cached_preview(article_id: str, index: int, url: str) -> dict[str, Any]:
+    now = time.monotonic()
+    for key in [key for key, (stamp, _) in _preview_cache.items() if now - stamp > _PREVIEW_TTL_SECONDS]:
+        del _preview_cache[key]
+    key = (article_id, index, url)
+    if key in _preview_cache:
+        return _preview_cache[key][1]
+    fetched = fetch_image(url, fetcher=_state.image_fetcher)
+    while len(_preview_cache) >= _PREVIEW_MAX_ENTRIES:
+        del _preview_cache[min(_preview_cache, key=lambda item: _preview_cache[item][0])]
+    _preview_cache[key] = (now, fetched)
+    return fetched
+
 
 _IMAGE_REFUSAL_STATUS = {"image_fetch_failed": 502, "image_unsafe_url": 422}
 
@@ -856,12 +903,12 @@ def preview_article_image(request: Request, article_id: str, index: int) -> Resp
     _admin(request)
     found = _image_candidate(article_id, index)
     try:
-        fetched = fetch_image(found["url"], fetcher=_state.image_fetcher)
+        fetched = _cached_preview(article_id, index, found["url"])
     except ImageRefused as exc:
         raise _image_error(exc) from exc
     return Response(
         content=fetched["data"], media_type=fetched["content_type"],
-        headers={"Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff",
+        headers={"Cache-Control": "private, max-age=60", "X-Content-Type-Options": "nosniff",
                  "Content-Security-Policy": "default-src 'none'; sandbox"},
     )
 
@@ -895,7 +942,11 @@ def approve_article_image(
         key = asset_key(article_id, fetched["sha256"], fetched["ext"])
     except ImageRefused as exc:
         raise _image_error(exc) from exc
-    store.put(key, fetched["data"])
+    # Content-addressed: re-approving the picture that is live writes the same key, so only a file this
+    # call created may be removed if recording fails.
+    created = not store.exists(key)
+    if created:
+        store.put(key, fetched["data"])
     stored = {
         "candidate_url": found["url"], "asset_key": key, "content_type": fetched["content_type"],
         "width": fetched["width"], "height": fetched["height"], "sha256": fetched["sha256"],
@@ -906,13 +957,16 @@ def approve_article_image(
             lambda: _content().approve_image(article_id, stored, actor=_actor(admin), reason=payload.reason.strip())
         )
     except Exception:
-        store.delete(key)
+        if created:
+            store.delete(key)
         raise
     if not recorded:
-        store.delete(key)
+        if created:
+            store.delete(key)
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
     _audit(admin, "admin.reading_image_approved", entity_type="reading_article", entity_id=article_id,
-           payload={"index": index, "sha256": fetched["sha256"], "credit": credit})
+           payload={"index": index, "sha256": fetched["sha256"], "credit": credit,
+                    "host": (urlsplit(found["url"]).hostname or "")[:200]})
     return _guarded(lambda: _content().image_review(article_id))
 
 

@@ -2554,7 +2554,7 @@ a.a-btn--primary:hover {
   font-variant-numeric: tabular-nums;
 }
 
-/* A candidate picture in the Reading review (D-192): the row's leading slot, sized like a small thumbnail. */
+/* A candidate picture in the Reading review (D-194): the row's leading slot, sized like a small thumbnail. */
 .a-row__tile:has(> .a-imgprev) {
   width: auto;
   height: auto;

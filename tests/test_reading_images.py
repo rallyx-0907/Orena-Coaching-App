@@ -1,4 +1,4 @@
-"""D-192 (proposed): a Reading card shows a real picture only under three conditions at once.
+"""D-194 (proposed): a Reading card shows a real picture only under three conditions at once.
 
 The source's image policy allows it (off by default), an administrator approved that candidate, and a credit
 exists. Otherwise the learner gets the generated letter tile. The picture is fetched once, at approval, through
@@ -261,6 +261,8 @@ def images(setup):  # noqa: F811
         audit=admin_api._state.audit, asset_store=store, image_fetcher=fetcher,
     )
     learner_api.configure_reading_articles(content, language_supported=lambda code: code in {"en", "zh"}, asset_store=store)
+    # The credit fallback is the learner-facing name (D-192); the built-in "Manual paste" is not one.
+    content.set_source_public_name(content.built_in_source_id("manual"), "Orena Reading Desk")
     setup.update(store=store, fetcher=fetcher)
     return setup
 
@@ -330,7 +332,7 @@ def test_an_approved_picture_reaches_the_learner_only_as_a_same_origin_copy(imag
     card = listed.json()["items"][0]["image"]
     assert card == detail.json()["image"]
     assert urlsplit(card["url"]).netloc == "" and card["url"].startswith(f"/api/reading/articles/{article_id}/image?v=")
-    assert card["credit"] == "Manual paste", "no candidate credit: the source's publisher"
+    assert card["credit"] == "Orena Reading Desk", "no candidate credit: the learner-facing publisher"
     assert card["alt"] == "A flooded field"
     assert detail.json()["content_revision"] > before
 
@@ -453,7 +455,7 @@ def test_the_preview_is_fetched_by_the_server_and_never_stored(images):
     article_id = _article_with_candidates(images)
     response = call(images["admin"], "GET", f"{ADMIN_BASE}/articles/{article_id}/images/0/preview")
     assert response.status_code == 200 and response.content == png()
-    assert response.headers["cache-control"] == "private, no-store"
+    assert response.headers["cache-control"] == "private, max-age=60"
     assert images["store"].files == {}
 
 
@@ -479,3 +481,156 @@ def test_a_decision_on_an_unpublished_article_does_not_move_the_cache_revision(i
     before = images["content"].get_article(article_id)["content_revision"]
     assert _approve(images, article_id).status_code == 200
     assert images["content"].get_article(article_id)["content_revision"] == before
+
+
+# ---- review conditions (PR #168) -----------------------------------------------------------------
+
+def test_the_image_credit_fallback_is_the_learner_facing_publisher_never_the_internal_name(images):
+    article_id = _article_with_candidates(images)
+    manual = images["content"].built_in_source_id("manual")
+    images["content"].set_source_public_name(manual, "Registry Desk")
+    _policy(images, article_id, True)
+    review = _approve(images, article_id, 0).json()
+    assert review["shown_to_learners"] is True
+    credit = _learner(images, article_id).json()["image"]["credit"]
+    assert credit == "Registry Desk" and "Manual paste" not in credit
+    listed = call(images["learner"], "GET", "/api/reading/articles?language=en", admin=False).json()["items"][0]
+    assert listed["image"]["credit"] == "Registry Desk"
+    # no public name, no site name, no address: the internal "Manual paste" is not a credit, so no picture
+    images["content"].set_source_public_name(manual, "")
+    assert _learner(images, article_id).json()["image"] is None
+
+
+@pytest.mark.parametrize("first", ["name", "image"])
+def test_the_two_policy_keys_survive_each_other_in_either_order(images, first):
+    content = images["content"]
+    manual = content.built_in_source_id("manual")
+    steps = {"name": lambda: content.set_source_public_name(manual, "Orena Reading Desk"),
+             "image": lambda: content.set_image_policy(manual, True, actor="admin")}
+    for key in (first, "image" if first == "name" else "name"):
+        steps[key]()
+    source = content.get_source(manual)
+    assert source["public_name"] == "Orena Reading Desk" and source["image_policy"] == {"allowed": True}
+    content.set_source_public_name(manual, "")
+    source = content.get_source(manual)
+    assert source["public_name"] == "" and source["image_policy"] == {"allowed": True}, "clearing one key keeps the other"
+
+
+def test_changing_the_image_policy_moves_the_revision_of_published_articles(images):
+    article_id = _article_with_candidates(images)
+    before = images["content"].get_article(article_id)["content_revision"]
+    _policy(images, article_id, True)
+    mid = images["content"].get_article(article_id)["content_revision"]
+    assert mid > before
+    _policy(images, article_id, True)
+    assert images["content"].get_article(article_id)["content_revision"] == mid, "no change, no bump"
+    _policy(images, article_id, False)
+    assert images["content"].get_article(article_id)["content_revision"] > mid
+
+
+def test_the_image_route_is_private_no_cache_with_an_etag_and_withdrawal_is_immediate(images):
+    article_id = _article_with_candidates(images)
+    _policy(images, article_id, True)
+    _approve(images, article_id, credit="Photo: A")
+    url = _learner(images, article_id).json()["image"]["url"]
+    served = call(images["learner"], "GET", url, admin=False)
+    assert served.headers["cache-control"] == "private, no-cache" and served.headers["etag"]
+    again = call(images["learner"], "GET", url, admin=False, headers={"if-none-match": served.headers["etag"]})
+    assert again.status_code == 304
+    call(images["admin"], "POST", f"{ADMIN_BASE}/articles/{article_id}/images/0/reject", json={})
+    assert call(images["learner"], "GET", url, admin=False).status_code == 404
+    assert _learner(images, article_id).json()["image"] is None
+    _approve(images, article_id, credit="Photo: A")
+    call(images["admin"], "POST", f"{ADMIN_BASE}/articles/{article_id}/image/clear", json={})
+    assert call(images["learner"], "GET", url, admin=False).status_code == 404
+
+
+def test_a_failed_recording_removes_only_a_file_this_call_created(images, monkeypatch):
+    article_id = _article_with_candidates(images)
+    _policy(images, article_id, True)
+
+    def broken(*args, **kwargs):
+        raise RuntimeError("database down")
+
+    real = images["content"].approve_image
+    monkeypatch.setattr(images["content"], "approve_image", broken)
+    with pytest.raises(RuntimeError):
+        _approve(images, article_id, credit="Photo: A")
+    assert images["store"].files == {}, "a file this call created is removed"
+    monkeypatch.setattr(images["content"], "approve_image", real)
+    assert _approve(images, article_id, credit="Photo: A").status_code == 200
+    (key,) = images["store"].files
+    monkeypatch.setattr(images["content"], "approve_image", broken)
+    with pytest.raises(RuntimeError):
+        _approve(images, article_id, credit="Photo: A")
+    assert key in images["store"].files, "the picture that is live is not deleted by a failed re-approval"
+
+
+def test_previews_are_kept_briefly_so_a_page_view_does_not_refetch(images):
+    article_id = _article_with_candidates(images)
+    admin_api._preview_cache.clear()
+    for _ in range(3):
+        assert call(images["admin"], "GET", f"{ADMIN_BASE}/articles/{article_id}/images/0/preview").status_code == 200
+    assert len(images["fetcher"].calls) == 1
+
+
+def test_a_drip_feeding_server_is_cut_off_by_the_total_deadline(monkeypatch):
+    import time
+
+    class Slow:
+        headers = type("H", (), {"get_content_type": staticmethod(lambda: "image/png")})()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def read(self, size):
+            time.sleep(0.03)
+            return b"x"
+
+    monkeypatch.setattr(media_safe_fetch, "_open", lambda *a, **k: Slow())
+    with pytest.raises(UnsafeMediaFetch):
+        media_safe_fetch.fetch_bounded("https://photos.example.org/a.png", total_timeout=0.1)
+
+
+def test_an_ipv4_mapped_loopback_is_refused_with_the_real_guard(monkeypatch):
+    monkeypatch.setattr(media_safe_fetch.socket, "getaddrinfo",
+                        lambda *a, **k: [(10, 1, 6, "", ("::ffff:127.0.0.1", 443, 0, 0))])
+    with pytest.raises(ImageRefused) as refusal:
+        fetch_image("https://photos.example.org/a.png")
+    assert refusal.value.code == "image_unsafe_url"
+
+
+@pytest.mark.parametrize("url", ["https://photos.example.org:8443/a.png", "http://photos.example.org:8080/a.png"])
+def test_a_non_default_port_is_refused_before_any_connection(monkeypatch, url):
+    monkeypatch.setattr(media_safe_fetch.socket, "getaddrinfo", lambda *a, **k: pytest.fail("resolved"))
+    with pytest.raises(ImageRefused) as refusal:
+        fetch_image(url)
+    assert refusal.value.code == "image_unsafe_url"
+
+
+def test_a_redirect_to_a_non_default_port_is_refused(monkeypatch):
+    monkeypatch.setattr(media_safe_fetch.socket, "getaddrinfo", lambda host, port, **k: [(2, 1, 6, "", ("93.184.216.34", port))])
+    handler = media_safe_fetch._CheckedRedirects(max_redirects=3)
+    request = media_safe_fetch.Request("https://photos.example.org/a.png")
+    with pytest.raises(UnsafeMediaFetch):
+        handler.redirect_request(request, None, 302, "Found", {}, "https://photos.example.org:8443/b.png")
+
+
+def test_a_peer_that_turns_private_after_the_name_was_checked_is_refused_at_connect(monkeypatch):
+    """DNS rebinding: the lookup was public, the connection lands on a private address."""
+    closed = []
+
+    class Peer:
+        def getpeername(self):
+            return ("10.0.0.7", 443)
+
+        def close(self):
+            closed.append(True)
+
+    monkeypatch.setattr(media_safe_fetch.socket, "create_connection", lambda *a, **k: Peer())
+    with pytest.raises(UnsafeMediaFetch):
+        media_safe_fetch._connect_public(("photos.example.org", 443), 5)
+    assert closed == [True]

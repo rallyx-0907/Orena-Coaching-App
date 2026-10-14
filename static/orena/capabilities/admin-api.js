@@ -144,9 +144,11 @@ export const adminApi = {
   readingCreateSource: (body) => request('/api/admin/reading/sources', json('POST', body)),
   readingSetSourceState: (id, state) =>
     request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state })),
+  readingSetSourcePublicName: (id, publicName) =>
+    request(`/api/admin/reading/sources/${encodeURIComponent(id)}/public-name`, json('POST', { public_name: publicName })),
   readingSetPolling: (id, state, enabled) =>
     request(`/api/admin/reading/sources/${encodeURIComponent(id)}`, json('POST', { state, polling_enabled: enabled })),
-  // D-192 thumbnails: a candidate is addressed by its index in the stored list, never by its address.
+  // D-194 thumbnails: a candidate is addressed by its index in the stored list, never by its address.
   readingImages: (id) => request(`/api/admin/reading/articles/${encodeURIComponent(id)}/images`),
   readingImagePreviewUrl: (id, index) => `/api/admin/reading/articles/${encodeURIComponent(id)}/images/${Number(index)}/preview`,
   readingImageApprove: (id, index, body = {}) =>

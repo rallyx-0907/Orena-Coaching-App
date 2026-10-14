@@ -14,7 +14,7 @@ export function sourceLine(article) {
   return publisherOf(article) || String(article?.attribution?.author || '').trim();
 }
 
-/* The card/hero picture of a published article (D-192): `{ url, cssUrl, credit, alt }`, or null for the generated
+/* The card/hero picture of a published article (D-194): `{ url, cssUrl, credit, alt }`, or null for the generated
    tile. The backend sends `image` only when the source allows pictures, an administrator approved one and a
    credit exists; the address is always our own same-origin copy. Anything else - another origin, no credit - is
    treated as no picture, so a payload can never make the page load a third party's file. */
@@ -62,7 +62,7 @@ export function creditOf(article) {
     author: author && author.toLowerCase() !== publisher.toLowerCase() ? author : '',
     url,
     license: licenseName ? { name: licenseName, url: safeHttpUrl(p.license?.url) } : null,
-    // D-192: the picture's credit joins this footnote, only when a picture is shown.
+    // D-194: the picture's credit joins this footnote, only when a picture is shown.
     image: imageOf(article)?.credit || '',
   };
   return credit.publisher || credit.url || credit.image ? credit : null;

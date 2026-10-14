@@ -219,6 +219,7 @@ export async function mountReading(shell, ctx) {
 
   /* ---- the review pane ---- */
   host.onInput((id, value) => {
+    if (routeId === 'adminSource' && id === 'publicName') { view.publicName = value; return; }
     if (routeId === 'adminAdd') { view[id] = value; if (id === 'registeredSource') host.paint(); return; }
     if (id === 'img_credit') { view.imgCredit = value; return; }
     if (['title', 'topic', 'body'].includes(id)) { view.edit[id] = value; view.dirty = true; view.editError = ''; }
@@ -307,7 +308,7 @@ export async function mountReading(shell, ctx) {
     host.paint();
   });
 
-  /* ---- the article's picture (D-192) ---- */
+  /* ---- the article's picture (D-194) ---- */
   async function imageCall(call, doneKey) {
     view.busy = true;
     view.imageError = '';
@@ -452,6 +453,19 @@ export async function mountReading(shell, ctx) {
     try {
       await api.readingSetSourceState(dataset.id, dataset.state);
       data.sources = (await api.readingSources()).items || [];
+      view.error = '';
+      host.toast(t('srcUpdated'));
+    } catch (error) {
+      view.error = explain(error);
+    }
+    host.paint();
+  });
+
+  host.on('source-public-name', async (control, dataset) => {
+    try {
+      await api.readingSetSourcePublicName(dataset.id, view.publicName ?? '');
+      data.sources = (await api.readingSources()).items || [];
+      view.publicName = undefined;
       view.error = '';
       host.toast(t('srcUpdated'));
     } catch (error) {

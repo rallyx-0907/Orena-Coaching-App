@@ -138,12 +138,13 @@ def read_article(request: Request, response: Response, article_id: str) -> Any:
 
 
 @router.get("/{article_id}/image")
-def read_article_image(article_id: str) -> Response:
-    """The approved thumbnail of a published article, from our own copy (D-192).
+def read_article_image(article_id: str, request: Request) -> Response:
+    """The approved thumbnail of a published article, from our own copy (D-194).
 
     Every part of the rule is checked again here - published, the source allows images, a candidate was
     approved, a credit exists - so an image that stopped qualifying is a 404 and the card falls back to its
-    letter tile. The address is content-versioned by `?v=`, so it can be cached hard.
+    letter tile. The response is `private, no-cache` with an ETag from the stored hash, so a browser revalidates
+    on every use and a withdrawn picture is gone at its next request.
     """
     repository = _require_repository()
     found = _guarded(lambda: repository.approved_image_asset(article_id))
@@ -153,13 +154,18 @@ def read_article_image(article_id: str) -> Response:
         data = _asset_store.get(found["asset_key"])
     except AssetNotFound as exc:
         raise orena_http_error(404, "reading_image_not_found", "That picture is not available.") from exc
+    etag = f'"{found["sha256"][:32]}"' if found.get("sha256") else ""
+    headers = {
+        "Cache-Control": "private, no-cache",
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": "default-src 'none'; sandbox",
+        "Cross-Origin-Resource-Policy": "same-origin",
+        **({"ETag": etag} if etag else {}),
+    }
+    if etag and request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
     return Response(
         content=data,
         media_type=found["content_type"],
-        headers={
-            "Cache-Control": "public, max-age=300",
-            "X-Content-Type-Options": "nosniff",
-            "Content-Security-Policy": "default-src 'none'; sandbox",
-            "Cross-Origin-Resource-Policy": "same-origin",
-        },
+        headers=headers,
     )

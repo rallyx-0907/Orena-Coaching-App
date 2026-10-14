@@ -85,7 +85,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(entry.started, true);
   assert.equal(entry.progressPct, 100);
   assert.equal(entry.language, '', 'no language field on this fixture - never invented');
-  // D-192: the approved same-origin picture reaches the card; any other address, or none, draws the tile.
+  // D-194: the approved same-origin picture reaches the card; any other address, or none, draws the tile.
   const picture = { url: '/api/reading/articles/0a52e5d0-0000-4000-8000-000000000001/image?v=2', credit: 'Photo: A', alt: '' };
   assert.equal(entryFromArticle({ id: 'a1', title: 'x', image: picture }, []).image, `url("${picture.url}")`);
   assert.equal(entryFromArticle({ id: 'a1', title: 'x', image: { ...picture, url: 'https://cdn.example.org/a.jpg' } }, []).image, '', 'a third-party address is never drawn');

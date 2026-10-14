@@ -317,7 +317,7 @@ export function articlePage({ article, sets, view, t, ui, href, now, images = nu
   };
 }
 
-/* The article's picture (D-192, docs/design/canonical-ui/brief/READING_THUMBNAIL_2026-10-14.md): the candidates the
+/* The article's picture (D-194, docs/design/canonical-ui/brief/READING_THUMBNAIL_2026-10-14.md): the candidates the
    page declared, each previewed by the server (the administrator's browser never contacts the publisher), with Approve
    and Reject. Built from the page's existing block, row and button; the letter tile is what a learner sees without one. */
 export function imagesBlock({ article, images, view, t, href, previewUrl }) {
@@ -513,6 +513,7 @@ export function sourcePage({ source, view, t, ui, href }) {
           { label: t('srcFactChecked'), value: source.last_checked_at ? relative(source.last_checked_at, ui) : '—' },
           { label: t('srcFactSuccess'), value: source.last_success_at ? relative(source.last_success_at, ui) : '—' },
         ], { columns: 4 }) })}
+        ${formBlock({ title: t('srcPublicName'), sub: t('srcPublicNameHint'), span: true, fields: [{ id: 'publicName', kind: 'text', label: t('srcPublicName'), value: view.publicName ?? source.public_name ?? '' }], actions: [{ label: t('srcPublicNameSave'), kind: 'primary', a: 'source-public-name', data: { id: source.id } }] })}
         ${block({ title: t('srcRights'), sub: t('srcRightsSub'), body: kv([
           { key: t('rdQ_can_republish'), value: t(RIGHT_ANSWER[answer(rights.can_republish)]), tone: rights.can_republish ? 'ok' : 'warn' },
           { key: t('rdQ_can_adapt'), value: t(RIGHT_ANSWER[answer(rights.can_adapt)]), tone: rights.can_adapt ? 'ok' : 'warn' },
