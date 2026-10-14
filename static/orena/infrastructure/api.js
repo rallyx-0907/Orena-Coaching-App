@@ -64,6 +64,10 @@ export const api={
   productCommerce:()=>request('/api/product/commerce',{headers:{'X-Orena-Timezone':deviceTimezone()}}),
   // The plan catalogue (Free, Plus, Pro with prices and entitlements); `billing_ready` is false.
   productPlans:()=>request('/api/product/plans'),
+  /* Credit top-up (PR-MON-5): the packs on sale (`credit_packs`, empty unless the backend's gates all pass) and one
+     checkout. The body is built by product/credit-topup.js from the offer just read, never here. */
+  billingOffers:()=>request('/api/billing/offers'),
+  billingCheckout:(body)=>request('/api/billing/checkout',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
   /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
   feedbackSend:(body)=>request('/api/feedback',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
   feedbackMine:()=>request('/api/feedback/mine'),

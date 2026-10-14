@@ -6169,3 +6169,32 @@ next export). Not measured in a browser (barred for this slice). Open for the hu
 distinct "built-in" origin mark on the row; (2) the Republish confirm body says republishing is "a separate decision" though it
 is immediate (pre-existing, shared with imported media); (3) Speaking's own authored catalogue is empty and has no Admin list, so
 it has no switch yet (the kind is added where its learner paths filter).
+
+
+## Credit top-up client (PR-MON-5 contract layer, 2026-10-14)
+
+The learner-side layer is `static/orena/product/credit-topup.js` (offers parsing, checkout with one operation id per
+purchase intent and a double-submit guard, error-code map, order watcher, history labels), `copy/credit-topup.js`
+(keys) and `api.billingOffers` / `api.billingCheckout`. Gate: `scripts/test_orena_credit_topup.mjs`. Credits are a
+one-time purchase, never a plan. Everything stays behind the backend's `ready` and `credit_packs`; migrations 0027-0033
+and `CREDITS_ENABLED` are not live. Missing backend data, no workaround written:
+
+- **CT-1 learner order status.** No learner endpoint reads an order. `GET /api/billing/offers` and
+  `POST /api/billing/checkout` are the only learner billing routes; the order code returned by checkout cannot be
+  looked up. Needed: `GET /api/billing/orders/{order_code}` (the caller's own order only) returning
+  `{ state: created|pending|paid|expired|cancelled|failed|refunded, credited: boolean, credit_units, amount_minor,
+  currency, expires_at }`. The watcher confirms only on `state == paid` and `credited == true`; `paid` alone is waiting.
+  Without it a payment can never be shown as confirmed, and the return URL is never trusted.
+- **CT-2 learner balance.** Balance and ledger are admin-only (`/api/admin/billing/credits/{incarnation}`). Needed: a
+  learner read of the caller's own balance (posted, available) and a page of entries.
+- **CT-3 learner history shape.** Needed: only learner-meaningful entries (topup, settle, refund, reversal, adjustment),
+  each with `kind`, signed `posted_delta` and `created_at`, and no reason, actor, source or hold entries. The client maps
+  kinds to Buy/Use/Refund/Adjust credits and drops reserve, release and reserve_expire rows; it never shows backend terms.
+- **CT-4 resume an order.** `checkout_already_started` (409) returns no payment link. Needed: the pending order's
+  `redirect_url` and `qr` (or the order read in CT-1 carrying them) so a returning learner can resume.
+- **CT-5 pack display data.** A pack carries only `pack_id`, `credit_units`, `currency`, `amount_minor`, `gateway`.
+  Needed if a frame shows them: a display name, a bonus/base split and a "popular" flag, or the frame must not draw them.
+- **CT-6 QR expiry and return URL.** Checkout returns `qr` and `redirect_url` but no `expires_at`; the return URL is fixed
+  to `/#/profile` and carries no order code, so the app cannot tell which order a return belongs to. Needed: `expires_at`
+  in the checkout answer, and a return/cancel URL carrying the order code (or the last order via CT-1).
+- **CT-7 copy.** Strings in `copy/credit-topup.js` are placeholders until a frame confirms them.
