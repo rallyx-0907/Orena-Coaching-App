@@ -199,9 +199,25 @@ class FakeCommerce:
         return {"status": "apply"}
 
 
-def service(commerce=None, orders=None):
+class FakeItems:
+    def __init__(self):
+        self.recorded: list = []
+
+    def record(self, **kwargs):
+        self.recorded.append(kwargs)
+        return {"id": len(self.recorded), "state": "open", **kwargs}
+
+    def auto_resolve(self, **kwargs):
+        return True
+
+    def critical_by_gateway(self):
+        return {}
+
+
+def service(commerce=None, orders=None, items=None):
     return BillingService(orders=orders or FakeOrders(), commerce=commerce or FakeCommerce(),
-                          gateways={"payos": PAYOS, "polar": POLAR}, prices={}, now=lambda: NOW)  # fmt: skip
+                          gateways={"payos": PAYOS, "polar": POLAR}, prices={}, now=lambda: NOW,
+                          reconciliation=items if items is not None else FakeItems())  # fmt: skip
 
 
 def test_a_first_subscription_event_attaches_only_to_an_account_orenas_checkout_named():
@@ -276,6 +292,7 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
     from alembic.runtime.migration import MigrationContext
     from sqlalchemy import create_engine, text
 
+    from writing_coach.persistence.billing_reconciliation_repository import PostgresReconciliationRepository
     from writing_coach.persistence.billing_repository import PostgresBillingRepository
     from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
 
@@ -292,7 +309,8 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
         cfg.set_main_option("sqlalchemy.url", schema_url.replace("%", "%%"))
         command.upgrade(cfg, "head")
         engine = create_engine(schema_url, future=True)
-        migrations = [_proposed("20261005_0027_billing_orders")]  # 0026 is in the chain (head) since its promotion
+        # 0026 is in the chain (head) since its promotion; 0031 is PR-MON-3's follow-up on the proposed 0027.
+        migrations = [_proposed("20261005_0027_billing_orders"), _proposed("20261014_0031_billing_reconciliation")]
         try:
             with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
                 for migration in migrations:
@@ -306,8 +324,9 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
             orders = PostgresBillingRepository(engine)
             commerce = PostgresCommerceRepository(engine)
             clock = [NOW]
+            items = PostgresReconciliationRepository(engine)
             billing = BillingService(orders=orders, commerce=commerce, gateways={"payos": PAYOS}, prices={},
-                                     now=lambda: clock[0])  # fmt: skip
+                                     now=lambda: clock[0], reconciliation=items)  # fmt: skip
 
             def order(operation):
                 return orders.create_order(operation_id=operation, incarnation_id=str(incarnation), gateway="payos",
@@ -322,6 +341,7 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
             assert billing.handle_webhook("payos", {}, payos_body(order=first["order_code"])).status == "apply"
             assert billing.handle_webhook("payos", {}, payos_body(order=first["order_code"])).status == "duplicate"
             assert billing.handle_webhook("payos", {}, payos_body(order=second["order_code"], amount=5)).status == "mismatch"
+            assert [item["kind"] for item in items.items(state="open")] == ["payment_mismatch"]  # kept, not a log line
             clock[0] = NOW + timedelta(days=3)
             assert billing.handle_webhook("payos", {}, payos_body(order=second["order_code"])).status == "apply"
             current = commerce.get_subscription(str(incarnation))
@@ -343,9 +363,8 @@ def test_postgres_prepaid_orders_extend_refund_and_record_access():
                                    {"now": NOW, "id": incarnation})
             assert billing.handle_webhook("payos", {}, payos_body(order=third["order_code"])).status == "paid_deleted_account"
             assert commerce.get_subscription(str(incarnation))["object_version"] == 3
-            with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
-                for migration in reversed(migrations):
-                    migration.downgrade()
+            owed = items.items(kind="paid_deleted_account")
+            assert len(owed) == 1 and owed[0]["reported_order_code"] == third["order_code"]  # the refund owed is kept
         finally:
             engine.dispose()
     finally:

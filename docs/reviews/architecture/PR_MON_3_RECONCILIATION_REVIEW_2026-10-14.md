@@ -495,3 +495,124 @@ and 0027 is unchanged, not promoted and not applied.
   - `billing_orders` gets a no-delete trigger.
   - R-MON-013 is narrowed as asked.
 - **H1–H7** are recorded as decided in §9. H2 waits for the operator's confirmation.
+
+---
+
+# PR-MON-3 — Focused Design Re-verification
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+Reviewer: ChatGPT — reviewer độc lập  
+Reviewed design commit: `5b44517502e46ce15f27860830245f8af62ba587`
+
+## Verdict
+
+**APPROVE DESIGN**
+
+Bốn P1 của review trước đã được đóng.
+
+### P1-1 — Unknown provider order
+
+**VERIFIED FIXED.**
+
+Provider facts và Orena internal links đã được tách riêng.
+
+`reported_order_code` và các provider facts không có foreign key, nên một payment cho order code chưa từng tồn tại trong Orena vẫn có thể được ghi durable trước khi webhook trả 2xx.
+
+`billing_order_id` và `incarnation_id` chỉ được điền khi Orena thực sự match được record.
+
+### P1-2 — Payment lookup sau local expiry
+
+**VERIFIED FIXED.**
+
+Local `expires_at` không còn là điểm dừng reconciliation.
+
+Expired payOS orders vẫn nằm trong pull set cho tới khi có một provider answer được phép coi là settled.
+
+Unknown/undocumented states không bị tự suy diễn thành terminal.
+
+Sau pull horizon, anomaly được mở nhưng lookup vẫn tiếp tục với cadence thấp hơn.
+
+Thiết kế cũng không còn phụ thuộc vào việc tái tạo webhook event ID từ dữ liệu poll.
+
+### P1-3 — Per-kind resolution và critical readiness
+
+**VERIFIED FIXED.**
+
+Safety-critical reconciliation kinds không thể bị Admin dismiss tùy ý.
+
+`entitlement_unsynced` chỉ được reconciler tự resolve sau khi invariant entitlement thật sự được phục hồi.
+
+Các money obligations yêu cầu outcome/reference/reason phù hợp.
+
+Critical condition tái diễn sẽ reopen item.
+
+Open critical reconciliation item làm gateway tương ứng `not ready`, trong khi webhook, reconciler và Admin recovery routes vẫn hoạt động.
+
+### P1-4 — Reconciler lock scope
+
+**VERIFIED FIXED.**
+
+Thiết kế dùng session-level advisory lock trên dedicated PostgreSQL connection cho toàn tick.
+
+Các mutation dùng transaction ngắn riêng.
+
+Không giữ DB transaction hoặc row lock trong lúc gọi payOS.
+
+Webhook/pull concurrency vẫn dựa vào idempotency như lớp bảo vệ cuối cùng.
+
+Implementation note:
+
+Sau khi gọi `pg_try_advisory_lock`, nếu driver/SQLAlchemy mở implicit transaction chỉ để thực hiện câu SELECT lấy lock, transaction đó phải được kết thúc trước external HTTP call; session advisory lock vẫn được giữ trên connection.
+
+## P2
+
+Các P2 của review trước đã được xử lý đủ ở design level:
+
+- pull batch limit;
+- timeout;
+- 429/backoff;
+- không tạo money anomaly vì rate-limit;
+- no-delete protection cho `billing_orders`;
+- R-MON-013 đã thu hẹp đúng phạm vi provider facts chưa được sandbox xác minh.
+
+Không có P2 nào block implementation.
+
+## H1–H7
+
+H1, H3, H4, H5, H6 và H7: **APPROVED / DECIDED** theo design revision 2.
+
+H2: **CONDITIONAL APPROVE** giữ nguyên.
+
+Trước khi implementation sửa trực tiếp proposed revision 0027, operator phải xác nhận:
+
+1. không runtime/shared DB nào có `alembic_version = 20261005_0027`;
+2. không có `billing_orders` được tạo thủ công từ revision đó;
+3. không có long-lived sandbox cần giữ migration history cũ.
+
+Nếu không thể xác nhận đủ ba điều, **không sửa 0027 in-place**. Dùng phương án follow-up revision đã mô tả trong design.
+
+Việc chọn một trong hai nhánh H2 này không cần architecture review mới, miễn implementation giữ đúng schema/invariants đã được duyệt.
+
+## Authorization to implement
+
+PR-MON-3 design được phép chuyển sang implementation slices 1–6 sau khi H2 được operator quyết định theo rule trên.
+
+Vẫn giữ các gate:
+
+- chỉ test migration trên PostgreSQL tạm;
+- không promote migration;
+- không apply lên `:8000`, `:8010`, `:8021` hoặc shared runtime;
+- không bật production Billing;
+- financial migration vẫn cần human authorization riêng trước promotion/application.
+
+Implementation hoàn tất vẫn cần independent review trước merge vì đây là payment + financial schema code.
+
+---
+
+## H2 branch taken (implementer, 2026-10-14)
+
+No operator confirmation was given, so 0027 is **not** changed in place. The approved schema change is a new
+proposed revision, `migrations/proposed/20261014_0031_billing_reconciliation.py` (`down_revision = "20261005_0027"`),
+as design §5 provides. If the operator later confirms all three conditions, folding it into 0027 is a
+source-control change only and needs no new architecture review.
