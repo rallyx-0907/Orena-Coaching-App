@@ -10,6 +10,12 @@ balance negative, double-close a hold or over-refund.
 - The digest is over the request's intent (§6), never over a derived result.
 - A reversal is decided once (`credit_reversal_requests`), never re-evaluated on a replay (P1-3).
 - No provider is called here, and nothing here sets a balance: there is no such operation.
+- PR-MON-5 (design revision 3, migration 0033): a paid credit-pack order is credited by `apply_credit_topup` - one
+  transaction in the canonical lock order (incarnation -> the order -> the credit account) that re-reads the order
+  under its lock, so a refund that won the race is seen and nothing is credited. Fulfillment is an **exact** match
+  (kind, source, the order's account, the snapshot units, the intent digest); a conflicting source never counts.
+  A refunded order's credit is taken back by `reverse_credit_topup` (C5), and a reversal counts only when its whole
+  durable result exists (the request, its entry, its shortfall item).
 """
 
 from __future__ import annotations
@@ -45,6 +51,42 @@ def digest(**intent: Any) -> str:
     canonical = json.dumps({key: (str(value) if value is not None else None) for key, value in intent.items()},
                            sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _digest_sql(fields: list[tuple[str, str]]) -> str:
+    """`digest()` recomputed in SQL: sha256 of the canonical JSON (sorted keys, string values, no spaces). The
+    values used here are ASCII only (UUIDs, integers, `payos:<code>`), so the JSON needs no escaping."""
+
+    parts = ['"' + key + '":"\' || (' + expression + ")::text || '\"" for key, expression in sorted(fields)]
+    return "encode(sha256(convert_to('{" + ",".join(parts) + "}', 'UTF8')), 'hex')"
+
+
+ORDER_SOURCE = "o.gateway || ':' || o.order_code::text"
+EXACT_TOPUP = (
+    "EXISTS (SELECT 1 FROM credit_ledger l JOIN credit_accounts a ON a.id = l.credit_account_id "
+    "WHERE l.kind = 'topup' AND l.source_type = 'billing_order' AND l.source_ref = " + ORDER_SOURCE + " "
+    "AND a.incarnation_id = o.incarnation_id AND l.amount = o.credit_units AND l.request_digest = "
+    + _digest_sql([("account", "a.incarnation_id"), ("amount", "o.credit_units"), ("kind", "'topup'"),
+                   ("source_ref", ORDER_SOURCE), ("source_type", "'billing_order'")]) + ")")
+COMPLETE_REVERSAL = (
+    "EXISTS (SELECT 1 FROM credit_reversal_requests r JOIN credit_accounts a ON a.id = r.credit_account_id "
+    "JOIN credit_ledger t ON t.id = r.topup_entry_id "
+    "WHERE r.source_type = 'payos_refund' AND r.source_ref = " + ORDER_SOURCE + " "
+    "AND a.incarnation_id = o.incarnation_id AND t.kind = 'topup' AND t.source_type = 'billing_order' "
+    "AND t.source_ref = " + ORDER_SOURCE + " AND r.requested = o.credit_units AND r.request_digest = "
+    + _digest_sql([("account", "a.incarnation_id"), ("kind", "'reversal'"), ("requested", "o.credit_units"),
+                   ("source_ref", ORDER_SOURCE), ("source_type", "'payos_refund'"), ("topup", "r.topup_entry_id")])
+    + " AND (r.applied = 0 OR (SELECT count(*) FROM credit_ledger e WHERE e.reversal_request_id = r.id "
+    "AND e.kind = 'reversal' AND e.credit_account_id = r.credit_account_id AND e.ref_entry_id = r.topup_entry_id "
+    "AND e.amount = r.applied) = 1) AND (r.shortfall = 0 OR EXISTS (SELECT 1 FROM billing_reconciliation_items s "
+    "WHERE s.kind = 'credit_reversal_shortfall' AND s.dedupe_key = r.id::text AND s.credit_reversal_request_id = r.id "
+    "AND s.credit_topup_entry_id = r.topup_entry_id AND s.credit_requested = r.requested "
+    "AND s.credit_applied = r.applied AND s.credit_shortfall = r.shortfall)))")
+
+
+# When a gap was last escalated: the reconciler works through the least recently seen gaps first (no starvation).
+_LAST_ESCALATED = ("(SELECT max(g.last_seen_at) FROM billing_reconciliation_items g WHERE g.billing_order_id = o.id "
+                   "AND g.kind = '{kind}')")
 
 
 @dataclass
@@ -397,6 +439,181 @@ class PostgresCreditRepository:
 
         return self._mutate(incarnation_id, decide, allow_deleted=True)
 
+    # ---- PR-MON-5: a paid credit-pack order's credit (design §6.1-§6.3, §7.1) ------------------------------------------
+
+    def apply_credit_topup(self, order_code: int, *, actor: str = "system") -> CreditOutcome:
+        """Credit a paid credit-pack order exactly once, in one transaction: the incarnation `FOR SHARE`, then the order
+        `FOR SHARE` (re-read here: a refund that committed first is seen), then the credit account `FOR UPDATE` and
+        the top-up. `duplicate` only for the exact expected top-up; any other entry on the order's source is a
+        `conflict` and the order stays unfulfilled. No provider is called."""
+
+        source_ref = None
+        try:
+            with self._engine.begin() as connection:
+                head = connection.execute(text(
+                    "SELECT incarnation_id, gateway, order_code FROM billing_orders WHERE order_code = :code"),
+                    {"code": order_code}).mappings().first()  # fmt: skip
+                if head is None:
+                    return CreditOutcome("not_found", detail="no such order")
+                incarnation = str(head["incarnation_id"])
+                status = connection.execute(text(
+                    "SELECT status FROM account_incarnations WHERE id = :inc FOR SHARE"), {"inc": incarnation}).scalar()
+                # Deliberate though redundant today: every state-changing order writer locks the incarnation first,
+                # which this FOR SHARE already blocks. The order lock is §6.3's canonical order and guards a future
+                # writer that skips the incarnation (0033's trigger locks the order too).
+                order = connection.execute(text(
+                    "SELECT id, product_kind, state, credit_units, gateway, order_code FROM billing_orders "
+                    "WHERE order_code = :code FOR SHARE"), {"code": order_code}).mappings().one()
+                if order["product_kind"] != "credit_pack":
+                    return CreditOutcome("invalid", detail="not a credit-pack order")
+                if order["state"] == "refunded":
+                    return CreditOutcome("order_refunded")
+                if order["state"] != "paid":
+                    return CreditOutcome("not_paid")
+                if status != "active":
+                    return CreditOutcome("account_deleted")
+                connection.execute(text(
+                    "INSERT INTO credit_accounts (id, incarnation_id, created_at, updated_at) VALUES (:id, :inc, :now, :now) "
+                    "ON CONFLICT (incarnation_id) DO NOTHING"),
+                    {"id": uuid.uuid4(), "inc": incarnation, "now": datetime.now(UTC)})  # fmt: skip
+                account = dict(connection.execute(text(
+                    "SELECT id, incarnation_id, posted, reserved, entry_count FROM credit_accounts "
+                    "WHERE incarnation_id = :inc FOR UPDATE"), {"inc": incarnation}).mappings().one())
+                units = int(order["credit_units"])
+                source_ref = f"{order['gateway']}:{order['order_code']}"
+                request_digest = digest(kind="topup", account=incarnation, amount=units, source_type="billing_order",
+                                        source_ref=source_ref)  # fmt: skip
+                existing = connection.execute(text(
+                    f"SELECT {_ENTRY_COLUMNS} FROM credit_ledger WHERE kind = 'topup' AND source_type = 'billing_order' "
+                    "AND source_ref = :r"), {"r": source_ref}).mappings().first()
+                if existing is not None:
+                    existing = dict(existing)
+                    exact = (str(existing["credit_account_id"]) == str(account["id"]) and int(existing["amount"]) == units
+                             and existing["request_digest"] == request_digest)  # fmt: skip
+                    return CreditOutcome("duplicate" if exact else "conflict", entry=existing,
+                                         detail="" if exact else "the order's source holds another top-up")
+                # checked after the duplicate lookup: a redelivery of a credited order stays a duplicate under review
+                if self._under_review(connection, account["id"]):
+                    return CreditOutcome("account_under_review")
+                entry = self._insert(connection, account["id"], kind="topup", posted=units, reserved=0, amount=units,
+                                     key=source_ref, request_digest=request_digest, actor=actor,
+                                     now=datetime.now(UTC), stype="billing_order", sref=source_ref)  # fmt: skip
+                return CreditOutcome("applied", entry=entry, extra={"credit_account_id": account["id"]})
+        except IntegrityError as error:
+            return CreditOutcome("conflict", detail=str(error.orig).splitlines()[0][:200],
+                                 extra={"source_ref": source_ref})
+
+    def reverse_credit_topup(self, order_code: int, *, actor: str, reason: str) -> CreditOutcome:
+        """A refunded credit-pack order takes back its full `credit_units` (K2), C5 deciding what can be reversed;
+        the money event is `payos_refund:<gateway>:<code>`. Nothing to reverse when the order was never credited."""
+
+        with self._engine.connect() as connection:
+            order = connection.execute(text(
+                f"SELECT o.incarnation_id, o.gateway, o.order_code, o.credit_units, o.state, o.product_kind, "
+                f"{EXACT_TOPUP} AS credited FROM billing_orders o WHERE o.order_code = :code"),
+                {"code": order_code}).mappings().first()  # fmt: skip
+            if order is None or order["product_kind"] != "credit_pack":
+                return CreditOutcome("not_found", detail="no such credit-pack order")
+            if order["state"] != "refunded":
+                return CreditOutcome("invalid", detail="the order is not refunded")
+            if not order["credited"]:
+                return CreditOutcome("not_credited")
+            source_ref = f"{order['gateway']}:{order['order_code']}"
+            topup = connection.execute(text(
+                "SELECT id FROM credit_ledger WHERE kind = 'topup' AND source_type = 'billing_order' AND source_ref = :r"),
+                {"r": source_ref}).scalar_one()  # fmt: skip
+        return self.reverse(str(order["incarnation_id"]), topup_entry_id=topup, requested=int(order["credit_units"]),
+                            source_type="payos_refund", source_ref=source_ref, actor=actor, reason=reason)  # fmt: skip
+
+    def credit_order_state(self, order_code: int) -> dict[str, Any] | None:
+        """What the reconciler needs about one credit-pack order: its state, whether its exact top-up exists, and
+        whether its complete reversal exists."""
+
+        with self._engine.connect() as connection:
+            row = connection.execute(text(
+                f"SELECT o.id, o.incarnation_id, o.state, o.credit_units, o.gateway, o.order_code, {EXACT_TOPUP} AS credited, "
+                f"{COMPLETE_REVERSAL} AS reversed FROM billing_orders o "
+                "WHERE o.order_code = :code AND o.product_kind = 'credit_pack'"), {"code": order_code}).mappings().first()
+        return dict(row) if row else None
+
+    def credit_topup_gaps(self, *, limit: int) -> list[dict[str, Any]]:
+        """Paid credit-pack orders without their exact top-up (§6.1)."""
+
+        with self._engine.connect() as connection:
+            rows = connection.execute(text(
+                "SELECT o.id, o.order_code, o.incarnation_id, o.credit_units, o.gateway FROM billing_orders o "
+                f"WHERE o.product_kind = 'credit_pack' AND o.state = 'paid' AND NOT {EXACT_TOPUP} "
+                f"ORDER BY {_LAST_ESCALATED.format(kind='credit_topup_unapplied')} NULLS FIRST, o.paid_at "
+                "LIMIT :limit"), {"limit": int(limit)}).mappings().all()
+        return [dict(row) for row in rows]
+
+    def credit_reversal_gaps(self, *, limit: int) -> list[dict[str, Any]]:
+        """Refunded credit-pack orders whose exact top-up exists without their complete reversal (§7.1)."""
+
+        with self._engine.connect() as connection:
+            rows = connection.execute(text(
+                "SELECT o.id, o.order_code, o.incarnation_id, o.credit_units, o.gateway FROM billing_orders o "
+                f"WHERE o.product_kind = 'credit_pack' AND o.state = 'refunded' AND {EXACT_TOPUP} "
+                f"AND NOT {COMPLETE_REVERSAL} "
+                f"ORDER BY {_LAST_ESCALATED.format(kind='credit_reversal_unapplied')} NULLS FIRST, o.refunded_at "
+                "LIMIT :limit"),
+                {"limit": int(limit)}).mappings().all()  # fmt: skip
+        return [dict(row) for row in rows]
+
+    def record_credit_gap(self, *, kind: str, order: dict[str, Any], reason: str, topup_entry_id: Any = None) -> bool:
+        """Open (or reopen) `credit_topup_unapplied` / `credit_reversal_unapplied` for an order. False when the
+        account has no credit account to name (credits were never set up for it): the gap stays derivable."""
+
+        now = datetime.now(UTC)
+        with self._engine.begin() as connection:
+            account = connection.execute(text("SELECT id FROM credit_accounts WHERE incarnation_id = :inc"),
+                                         {"inc": order["incarnation_id"]}).scalar()  # fmt: skip
+            if account is None:
+                return False
+            columns = {"credit_account_id": account, "credit_requested": int(order["credit_units"])}
+            if topup_entry_id is not None:
+                columns["credit_topup_entry_id"] = topup_entry_id
+            connection.execute(text(
+                "INSERT INTO billing_reconciliation_items AS item (id, kind, gateway, dedupe_key, reason, incarnation_id, "
+                f"billing_order_id, state, first_seen_at, last_seen_at, {', '.join(columns)}) VALUES (:id, :kind, "
+                f"'{CREDITS_GATEWAY}', :key, :reason, :inc, :order, 'open', :now, :now, "
+                f"{', '.join(':' + name for name in columns)}) ON CONFLICT (kind, gateway, dedupe_key) DO UPDATE SET "
+                "occurrences = item.occurrences + 1, last_seen_at = :now, "
+                "state = CASE WHEN item.state <> 'open' THEN 'open' ELSE item.state END, "
+                "reopened = CASE WHEN item.state <> 'open' THEN item.reopened + 1 ELSE item.reopened END, "
+                + ", ".join(f"{column} = CASE WHEN item.state <> 'open' THEN NULL ELSE item.{column} END"
+                            for column in ("resolution_outcome", "resolution_reference", "resolution_note", "resolved_by",
+                                           "resolved_at"))),
+                {"id": uuid.uuid4(), "kind": kind, "key": str(order["order_code"]), "reason": reason[:400],
+                 "inc": order["incarnation_id"], "order": order["id"], "now": now, **columns})  # fmt: skip
+        return True
+
+    def entries_by_source(self, source_type: str, source_ref: str) -> Any:
+        """The id of the top-up holding a money source, or None."""
+
+        with self._engine.connect() as connection:
+            return connection.execute(text(
+                "SELECT id FROM credit_ledger WHERE kind = 'topup' AND source_type = :t AND source_ref = :r"),
+                {"t": source_type, "r": source_ref}).scalar()  # fmt: skip
+
+    def refund_obligation_recorded(self, order_id: Any) -> bool:
+        """A `paid_deleted_account` item exists for the order: its money is owed back through that path (§6.2)."""
+
+        if order_id is None:
+            return False
+        with self._engine.connect() as connection:
+            return bool(connection.execute(text(
+                "SELECT EXISTS (SELECT 1 FROM billing_reconciliation_items WHERE kind = 'paid_deleted_account' "
+                "AND billing_order_id = :order)"), {"order": order_id}).scalar())
+
+    def open_credit_gaps(self, kind: str) -> list[dict[str, Any]]:
+        with self._engine.connect() as connection:
+            rows = connection.execute(text(
+                "SELECT i.dedupe_key, o.order_code FROM billing_reconciliation_items i "
+                "JOIN billing_orders o ON o.id = i.billing_order_id WHERE i.kind = :kind AND i.state = 'open'"),
+                {"kind": kind}).mappings().all()  # fmt: skip
+        return [dict(row) for row in rows]
+
     # ---- the reconciler's reads and writes (short transactions) -------------------------------------------------------
 
     def holds_to_close(self, *, now: datetime, limit: int) -> list[dict[str, Any]]:
@@ -502,6 +719,9 @@ class PostgresCreditRepository:
             "missing_lock_account_incarnations": "SELECT has_any_column_privilege(current_user, 'account_incarnations', "
                                                  "'UPDATE') AND has_table_privilege(current_user, "
                                                  "'account_incarnations', 'SELECT')",
+            # PR-MON-5 §6.3: a credit-pack top-up locks its order
+            "missing_lock_billing_orders": "SELECT has_any_column_privilege(current_user, 'billing_orders', 'UPDATE') "
+                                           "AND has_table_privilege(current_user, 'billing_orders', 'SELECT')",
         }
         for table, privileges in (("credit_ledger", ("SELECT", "INSERT")), ("credit_reversal_requests", ("SELECT", "INSERT")),
                                   ("billing_reconciliation_items", ("SELECT", "INSERT", "UPDATE"))):

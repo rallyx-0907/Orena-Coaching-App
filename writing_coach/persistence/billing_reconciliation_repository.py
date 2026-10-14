@@ -24,7 +24,8 @@ from sqlalchemy.engine import Engine
 
 # The credit kinds (proposed 0032, PR-MON-4) use the `credits` pseudo-gateway and their own structured columns; they
 # are written by `credit_repository` inside the credit transaction and closed here under the same rules.
-CRITICAL = frozenset({"entitlement_unsynced", "provider_paid_unrecorded", "credit_balance_drift"})
+CRITICAL = frozenset({"entitlement_unsynced", "provider_paid_unrecorded", "credit_balance_drift",
+                      "credit_topup_unapplied", "credit_reversal_unapplied"})
 MONEY = frozenset({"paid_deleted_account", "payment_unknown_order", "payment_mismatch", "payment_not_payable",
                    "credit_reversal_shortfall", "credit_balance_on_deletion"})
 DISMISSABLE = frozenset({"event_undecided", "provider_refund", "provider_state_unresolved", "credit_late_settle"})
@@ -54,6 +55,11 @@ RESOLUTION_RULES: dict[str, dict[str, bool]] = {
     "credit_reversal_shortfall": {"refund_confirmed": True, "obligation_waived": False},
     "credit_balance_on_deletion": {"refund_confirmed": True, "obligation_waived": False},
     "credit_late_settle": {"recorded": False},
+    # PR-MON-5 (0033): money taken and credit not given, or refunded and credit not taken back - the reconciler's alone,
+    # each outcome checked by the database (credit_applied / payment_refunded / refund_obligation_recorded;
+    # credit_reversed).
+    "credit_topup_unapplied": {},
+    "credit_reversal_unapplied": {},
 }
 
 _COLUMNS = (

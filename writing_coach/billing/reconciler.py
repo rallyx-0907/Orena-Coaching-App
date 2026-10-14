@@ -171,6 +171,8 @@ class BillingReconciler:
             steps = [("gaps", self._gaps), ("pull", self._pull), ("expire", self._expire)]
             if self._credits is not None:
                 steps.append(("credits", self._credit_step))
+            if getattr(self._service, "credits", None) is not None:
+                steps.append(("credit_orders", self._credit_order_step))
             for name, step in steps:
                 if not lock.alive():
                     counts["lock_lost"] += 1
@@ -334,6 +336,13 @@ class BillingReconciler:
 
         for name, value in self._credits.reconcile(items=self._items, now=self._now()).items():
             counts[f"credit_{name}"] += value
+
+    def _credit_order_step(self, counts: Counter[str], lock: Any) -> None:
+        """PR-MON-5 §6.2, §7.1: credit-pack orders paid without their exact top-up, and refunded without their complete
+        reversal - repaired, escalated, and closed only on their outcome's fact."""
+
+        for name, value in self._service.reconcile_credit_orders().items():
+            counts[name] += value
 
     def _expire(self, counts: Counter[str], lock: Any) -> None:
         counts["expired"] += self._orders.expire_abandoned(now=self._now())

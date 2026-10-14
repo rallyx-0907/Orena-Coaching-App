@@ -404,7 +404,7 @@ def test_a_runtime_that_is_not_billing_ready_offers_nothing_and_starts_no_checko
     service = billing([PLUS_VND], orders=orders, sent=sent)
     client = install(service, facts(service=service, **override))
 
-    assert client.get("/api/billing/offers").json() == {"enabled": True, "ready": False, "offers": []}
+    assert client.get("/api/billing/offers").json() == {"enabled": True, "ready": False, "offers": [], "credit_packs": []}
     refused = client.post("/api/billing/checkout", json=body())
     assert refused.status_code == 503 and "billing_not_ready" in refused.text
     assert orders.created == [] and sent == []
