@@ -48,6 +48,7 @@ import {
   sentencesOf,
   segmentId,
   segmentSentence,
+  wordSpanAt,
   kinGroups,
   ROLES,
   aidsCount,
@@ -852,8 +853,39 @@ export default async function mountReader(element, ctx) {
     if (tab && handle?.element) handle.element.querySelector(`[data-tab="${tab}"]`)?.click();
   }
 
-  function onTapWord({ word, unit }) {
+  /* A tap on a script written without spaces that has no word span yet names one character. The word is what
+     the learner pointed at, so the paragraph is tagged now (briefly awaited, shared with any aid already loading
+     it) and the word covering that character is looked up; if the tagger does not answer in time the character
+     stands, as before. */
+  const TAP_ANNOTATE_WAIT_MS = 1500;
+  async function wholeWordAt(seg, word, at) {
+    const raw = sentenceBySeg.get(seg)?.raw || '';
+    if (!Number.isInteger(at) || Array.from(word).length !== 1 || raw.slice(at, at + word.length) !== word) return word;
+    let tokens = annotations.get(seg);
+    if (!tokens?.length) {
+      const pi = Number(/^p(\d+)/.exec(seg)?.[1]);
+      if (!Number.isFinite(pi)) return word;
+      let timer = 0;
+      await Promise.race([
+        annotateParagraph(pi).catch(() => false),
+        new Promise((resolve) => { timer = window.setTimeout(resolve, TAP_ANNOTATE_WAIT_MS); }),
+      ]);
+      window.clearTimeout(timer);
+      tokens = annotations.get(seg);
+    }
+    return wordSpanAt(raw, tokens, at, word)?.text || word;
+  }
+
+  async function onTapWord({ word, unit, at }) {
     const seg = unit.dataset.segment;
+    if (at != null) {
+      const whole = await wholeWordAt(seg, word, at);
+      if (!ctx.isCurrent()) return;
+      if (whole !== word) {
+        paintBody();
+        word = whole;
+      }
+    }
     const piece = segmentSentence(sentenceBySeg.get(seg)?.raw || '', annotations.get(seg)).find((p) => p.word && p.text === word);
     if (posOn && piece?.role) {
       picked = `${seg}|${word}`;

@@ -42,7 +42,7 @@ function offsetAt(unit, x, y) {
 }
 
 /* `root` bounds the reading column. `unitOf(node)` finds the sentence element a node belongs to (or
-   null). Callbacks: `onTapWord({ word, unit })`, `onTapSentence({ unit })`, `onSelect({ unit, text })`.
+   null). Callbacks: `onTapWord({ word, unit, at })` (`at`: the character offset, only when no word span was under the pointer), `onTapSentence({ unit })`, `onSelect({ unit, text })`.
    Mounted once per Reader visit; returns a cleanup that drops every listener. */
 export function mountReaderLexical({ root, unitOf, onTapWord, onTapSentence, onSelect }) {
   let alive = true;
@@ -75,7 +75,7 @@ export function mountReaderLexical({ root, unitOf, onTapWord, onTapSentence, onS
       const text = unit.textContent || '';
       const span = plainWordAt(text, offset);
       if (span) {
-        onTapWord({ word: text.slice(span.start, span.end), unit });
+        onTapWord({ word: text.slice(span.start, span.end), unit, at: span.start });
         return;
       }
     }

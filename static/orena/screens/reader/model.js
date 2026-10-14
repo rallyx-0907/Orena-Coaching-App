@@ -191,6 +191,22 @@ export function segmentSentence(text, tokens, { saved = new Set() } = {}) {
   return pieces;
 }
 
+/* The tagged word that covers character offset `at` of a sentence's text, as `{ text, start, end }`, or null when
+   there are no tokens or none covers it. A tap on a script written without spaces that was not tagged yet (the
+   tagger answered late, or not at all) names one character; once the tagger has segmented the sentence, the word
+   under that character is what the learner pointed at. `expect` (the tapped character) guards a stale offset. */
+export function wordSpanAt(text, tokens, at, expect = '') {
+  const value = String(text ?? '');
+  if (!Array.isArray(tokens) || !Number.isInteger(at) || at < 0 || at >= value.length) return null;
+  if (expect && value.slice(at, at + expect.length) !== expect) return null;
+  for (const token of tokens) {
+    if (token.start <= at && at < token.end && token.end <= value.length && token.end > token.start) {
+      return { text: value.slice(token.start, token.end), start: token.start, end: token.end };
+    }
+  }
+  return null;
+}
+
 /* CJK line breaking (kinsoku). In running text the browser keeps closing punctuation off the start of a line
    and opening punctuation off the end of one (CSS `line-break: strict`). With pinyin on, every character is
    its own atomic column, and a browser may break between any two atomic boxes, so the rule is drawn into the
