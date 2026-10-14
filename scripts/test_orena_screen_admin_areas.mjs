@@ -404,6 +404,11 @@ fixtureFor = () => ({ body: { ok: true, id: 'J', items: [], results: [{ status: 
     'a comma inside a URL stays; a comma between URLs, a newline or whitespace separates',
   );
   assert.deepEqual(imports.splitMediaUrls(''), []);
+  assert.deepEqual(imports.splitMediaUrls('a.org/x.mp4,b.org/y.mp4'), ['a.org/x.mp4', 'b.org/y.mp4'], 'scheme-less addresses still split on a comma');
+  assert.deepEqual(imports.splitMediaUrls('https://a.org/v.mp4.' + String.fromCharCode(10) + 'https://b.org/w.mp4);' + String.fromCharCode(10) + 'https://c.org/Foo_(bar)'),
+    ['https://a.org/v.mp4', 'https://b.org/w.mp4', 'https://c.org/Foo_(bar)'],
+    'trailing . ) ; are trimmed, a balanced ) inside a URL stays');
+  assert.deepEqual(imports.splitMediaUrls('https://x.org/a,b,c.mp4'), ['https://x.org/a,b,c.mp4'], 'no split inside a URL');
   await imports.importMedia(adminApi, [{ url: 'https://x.org/v', state: 'ready' }, { file: new File(['x'], 'a.mp3'), state: 'to_import' }], 'en');
   await imports.previewVocabulary(adminApi, [new File(['a,b'], 'w.csv')]);
   await imports.importVocabulary(adminApi, { files: [new File(['a,b'], 'w.csv')], metadata: { title: 'W', language: 'en' }, mappings: {} });

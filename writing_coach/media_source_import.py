@@ -628,7 +628,15 @@ class MediaSourceImporter:
         token = hashlib.sha256(url.encode("utf-8")).hexdigest()[:32]
         asset_key = f"media/direct-{token}/original{suffix}"
         with TempMediaFile(suffix=suffix) as temp:
-            download_bounded(url, temp.path)
+            if commons is not None:
+                from writing_coach.media_commons import UPLOAD_HOSTS, USER_AGENT, refusal
+
+                try:
+                    download_bounded(url, temp.path, allowed_hosts=UPLOAD_HOSTS, user_agent=USER_AGENT)
+                except UnsafeMediaFetch as exc:
+                    raise refusal(exc) from exc
+            else:
+                download_bounded(url, temp.path)
             try:
                 probe = probe_media(temp.path)
             except ValueError as exc:
@@ -681,7 +689,9 @@ class MediaSourceImporter:
             "original_url": commons.page_url,
             "creator": commons.author,
             "creator_url": commons.author_url,
-            "license": commons.licence,
+            # Captured from Commons, not verified, and kept apart from `license` (the review reminder) so a licence name
+            # beside `rights` is never read as clearance.
+            "license_name": commons.licence,
             "license_url": commons.licence_url,
         }
 
@@ -717,6 +727,8 @@ class MediaSourceImporter:
             "creator": entry.creator,
             "creator_url": entry.source.get("creator_url", ""),
             "license": entry.source.get("license", ""),
+            "license_name": entry.source.get("license_name", ""),
+            "license_url": entry.source.get("license_url", ""),
             "original_url": entry.source.get("original_url", ""),
             "duration_ms": entry.duration_ms,
             "language": entry.language,

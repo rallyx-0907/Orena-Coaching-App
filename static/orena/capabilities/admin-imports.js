@@ -153,12 +153,23 @@ export async function importBooks(api = adminApi, items, language, onUpdate) {
 }
 
 /* The addresses in a pasted box. A URL may hold a comma (a signed link, a Commons filename), so the box splits on
-   line breaks and whitespace; a comma is a separator only where the next piece starts a new http(s):// address. */
+   line breaks and whitespace; a comma separates only where the next piece starts a new address (http(s):// or a
+   host/path). Punctuation that ends a sentence around a pasted link (. ; , and an unmatched ")") is trimmed. */
 export function splitMediaUrls(text) {
+  const trim = (piece) => {
+    let value = piece;
+    for (;;) {
+      const next = value.replace(/[.;,]+$/, '').replace(/^[,;]+/, '');
+      const unmatched = next.endsWith(')') && (next.match(/\(/g) || []).length < (next.match(/\)/g) || []).length;
+      const out = unmatched ? next.slice(0, -1) : next;
+      if (out === value) return out;
+      value = out;
+    }
+  };
   return String(text || '')
     .split(/\s+/)
-    .flatMap((token) => token.split(/,(?=https?:\/\/)/i))
-    .map((piece) => piece.replace(/^,+|,+$/g, '').trim())
+    .flatMap((token) => token.split(/,(?=(?:https?:\/\/|[a-z0-9-]+(?:\.[a-z0-9-]+)+\/))/i))
+    .map((piece) => trim(piece.trim()))
     .filter(Boolean);
 }
 

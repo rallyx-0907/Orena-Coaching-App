@@ -21,6 +21,25 @@ COMMONS_UPLOAD_HOST = "upload.wikimedia.org"
 COMMONS_API = f"https://{COMMONS_PAGE_HOST}/w/api.php"
 PLATFORM = "Wikimedia Commons"
 _API_MAX_BYTES = 1024 * 1024
+# Wikimedia's User-Agent policy asks scripted clients to identify themselves with a way to reach the operator; a
+# generic agent gets 403/429. The project URL is that contact (no personal address).
+USER_AGENT = "OrenaMediaImport/1.0 (https://github.com/rallyx-0907/Orena-Coaching-App; media import for a language-learning library)"
+API_HOSTS = frozenset({COMMONS_PAGE_HOST})
+UPLOAD_HOSTS = frozenset({COMMONS_UPLOAD_HOST})
+
+
+def refusal(exc: BaseException) -> CommonsRejected:
+    """A fetch that Wikimedia refused or did not answer, as the stable code that says which."""
+    status = getattr(exc, "status_code", None)
+    if status in {403, 429}:
+        return CommonsRejected(
+            "commons_rate_limited",
+            "Wikimedia Commons is limiting requests from this server right now. Try again in a few minutes.",
+        )
+    return CommonsRejected(
+        "commons_unavailable",
+        "Wikimedia Commons did not answer, so this file could not be checked. Try again later.",
+    )
 
 
 class CommonsRejected(Exception):
@@ -126,20 +145,22 @@ def resolve(url: str, *, fetch: Callable[..., tuple[bytes, str]] = fetch_bounded
     filename = _filename_from(url)
     query = (
         f"{COMMONS_API}?action=query&format=json&formatversion=2&prop=imageinfo&iiprop=url%7Cmime%7Cextmetadata"
-        f"&titles={quote('File:' + filename)}"
+        f"&redirects=1&titles={quote('File:' + filename)}"
     )
     try:
-        body, _type = fetch(query, max_bytes=_API_MAX_BYTES, timeout=10.0, total_timeout=15.0)
+        body, _type = fetch(
+            query, max_bytes=_API_MAX_BYTES, timeout=10.0, total_timeout=15.0, allowed_hosts=API_HOSTS, user_agent=USER_AGENT
+        )
         answer = json.loads(body.decode("utf-8"))
     except (UnsafeMediaFetch, ValueError, UnicodeDecodeError) as exc:
-        raise CommonsRejected(
-            "commons_unavailable",
-            "Wikimedia Commons did not answer, so this file could not be checked. Try again later.",
-        ) from exc
+        raise refusal(exc) from exc
     pages = (answer.get("query") or {}).get("pages") if isinstance(answer, dict) else None
     page = pages[0] if isinstance(pages, list) and pages and isinstance(pages[0], dict) else None
     if page is None or page.get("missing"):
         raise CommonsRejected("commons_file_missing", "This file does not exist on Wikimedia Commons.")
+    resolved = str(page.get("title") or "")
+    if resolved.casefold().startswith("file:") and resolved[5:].strip():
+        filename = resolved[5:].strip()
     info = (page.get("imageinfo") or [None])[0]
     if not isinstance(info, dict) or not info.get("url"):
         raise CommonsRejected("commons_file_missing", "Wikimedia Commons has no file behind this page.")

@@ -147,7 +147,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
           { key: t('ctFactLevel'), value: facts.level || '—' },
           { key: t('ctFactTopic'), value: facts.topic || '—' },
           { key: t('ctFactProvider'), value: facts.provider || '—' },
-          { key: t('ctFactLicense'), value: source.license || '—' },
+          { key: t('ctFactLicense'), value: [source.license_name, source.license].filter(Boolean).join(' · ') || '—' },
         ]) })}
         ${block({ title: t('ctLearnerView'), body: html`${link ? html`<a class="a-btn a-btn--md" href="${link}">${t('ctOpenAsLearner')}</a>` : html`<div class="a-hint">${t('ctNotLive')}</div>`}<div class="a-hint">${t('ctPlaysGap')}</div>` })}
         ${record.origin === 'imported' ? formBlock({ span: true, title: t('ctRightsOrigin'), sub: t('ctMediaRightsHelp'), fields: [

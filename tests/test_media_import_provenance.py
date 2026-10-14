@@ -143,7 +143,7 @@ def test_commons_import_stores_readable_title_author_licence_and_the_page(tmp_pa
     assert entry.canonical_url == UPLOAD
     assert entry.source["original_url"].endswith("/wiki/File:Example_clip-one.ogv")
     assert entry.source["platform"] == "Wikimedia Commons"
-    assert entry.source["license"] == "CC BY-SA 4.0"
+    assert entry.source["license_name"] == "CC BY-SA 4.0"
     assert entry.source["license_url"].startswith("https://creativecommons.org/")
     importer._store.upsert(entry)
     assert media_source_import.source_label(entry) == "Wikimedia Commons"

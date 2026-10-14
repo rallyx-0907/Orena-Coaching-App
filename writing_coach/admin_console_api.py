@@ -820,6 +820,7 @@ def content_detail(kind: str, content_id: str, request: Request, response: Respo
                 },
                 "source": {
                     "url": entry.canonical_url, "provider": entry.provider, "license": entry.source.get("license", ""),
+                    "license_name": entry.source.get("license_name", ""),
                     "license_url": entry.source.get("license_url", ""), "platform": entry.source.get("platform", ""),
                     "original_url": entry.source.get("original_url", ""), "creator": entry.creator,
                     "creator_url": entry.source.get("creator_url", ""),

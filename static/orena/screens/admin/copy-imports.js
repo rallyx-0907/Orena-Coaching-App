@@ -111,6 +111,7 @@ export const en = {
   impErr_commons_file_missing: 'This file does not exist on Wikimedia Commons.',
   impErr_commons_not_media: 'This Commons file is not audio or video.',
   impErr_commons_unavailable: 'Wikimedia Commons did not answer, so the file could not be checked. Try again later.',
+  impErr_commons_rate_limited: 'Wikimedia Commons is limiting requests from this server right now. Try again in a few minutes.',
   impErr_media_unreadable: 'The file was downloaded but is not audio or video Orena can read.',
 };
 
@@ -218,6 +219,7 @@ export const vi = {
   impErr_commons_file_missing: 'Tệp này không tồn tại trên Wikimedia Commons.',
   impErr_commons_not_media: 'Tệp Commons này không phải âm thanh hoặc video.',
   impErr_commons_unavailable: 'Wikimedia Commons không phản hồi nên chưa kiểm tra được tệp. Hãy thử lại sau.',
+  impErr_commons_rate_limited: 'Wikimedia Commons đang giới hạn yêu cầu từ máy chủ này. Hãy thử lại sau vài phút.',
   impErr_media_unreadable: 'Đã tải tệp về nhưng đó không phải âm thanh hoặc video mà Orena đọc được.',
 };
 
@@ -325,5 +327,6 @@ export const zh = {
   impErr_commons_file_missing: '这个文件在 Wikimedia Commons 上不存在。',
   impErr_commons_not_media: '这个 Commons 文件不是音频或视频。',
   impErr_commons_unavailable: 'Wikimedia Commons 没有响应，无法检查该文件，请稍后重试。',
+  impErr_commons_rate_limited: 'Wikimedia Commons 当前正在限制此服务器的请求，请几分钟后重试。',
   impErr_media_unreadable: '文件已下载，但不是 Orena 能读取的音频或视频。',
 };

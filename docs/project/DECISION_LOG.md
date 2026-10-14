@@ -6807,12 +6807,12 @@ product by the Admin through a server-side flag, never by editing code. No schem
 
 ## D-205 - Media import records provenance, specific rejections and a stable outcome (2026-10-14)
 
-Status: PROPOSED (pending independent review). Owner-approved P1s from the Video Sources Phase 0 runtime. No schema or
+Status: PROPOSED (pending re-review). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 89b89535: ACCEPT WITH CONDITIONS; conditions fixed on this branch (item 8). Owner-approved P1s from the Video Sources Phase 0 runtime. No schema or
 migration change: everything lives in existing JSON fields (`creator`, the `source` string map, `processing`).
 
 1. **Provenance.** A YouTube import stores the channel (oEmbed `author_name`/`author_url`) as `creator` and in `source`
    (`creator`, `creator_url`, `platform`, `original_url`). A Wikimedia Commons import stores the author, the licence short name
-   (in `license`) and its URL (`license_url`), the platform and the File: page. Rights are untouched: unknown stays unknown and
+   (in `license_name`, captured and not verified) and its URL (`license_url`); `license` keeps the "review provider terms before publishing" reminder, the platform and the File: page. Rights are untouched: unknown stays unknown and
    the item is held, never auto-published.
 2. **Commons.** `commons.wikimedia.org/wiki/File:...` pages and `upload.wikimedia.org` files (including `.ogv`) resolve through
    one bounded Commons API request to the media URL, a readable title (the page's own name, else the filename without
@@ -6830,3 +6830,14 @@ migration change: everything lives in existing JSON fields (`creator`, the `sour
    (not `unavailable`) when lines have a meaning. Only no lines at all is `failed`.
 7. **Not drawn.** The design draws no translation-progress or partial-translation state in the Admin; none was invented. The
    data is on the record for the console to show when the design adds it.
+8. **Review conditions, fixed.** Merged `main` (#209: `clean_asr_cues` runs after the `_speech` try/except). Commons requests send a
+   Wikimedia-style User-Agent naming the project URL (no personal address), pin `allowed_hosts` (API: commons.wikimedia.org,
+   download: upload.wikimedia.org) and use `redirects=1` (a renamed File: resolves; the filename is re-derived). A 403/429 from
+   Commons is `commons_rate_limited`, any other failure `commons_unavailable`, never `unsafe_source`. The licence is kept apart from
+   `license`; the credits rows and the listening source carry `license_name`/`license_url` (the credits page does not yet render the
+   link: follow-up). `splitMediaUrls` also splits scheme-less `host/path` pieces after a comma and trims trailing `. ; ,` and an
+   unmatched `)`; a URL with a literal space is still cut in two. A re-run clears `translation`/`translation_counts`. Tests: a
+   captured CC licence stays `rights=unknown`/held, `<script>` in Artist is plain text, oversize and 429 responses.
+9. **Follow-ups.** Re-importing an existing shared item with the same media id rewrites the whole entry (`source`, `creator`,
+   `title`), as before but now with Commons-derived values; confirm whether a curated title should survive. The credits page link
+   for `licence_url`. The Admin partial-translation state is in `UI_BACKEND_GAPS.md`.

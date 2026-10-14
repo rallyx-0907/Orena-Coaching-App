@@ -90,13 +90,14 @@ def media_credits(entries: Iterable[Any]) -> list[dict[str, str]]:
         source = getattr(entry, "source", None) or {}
         if not isinstance(source, Mapping):
             source = {}
-        licence = _text(source.get("license"))
+        licence = _text(source.get("license_name") or source.get("license"))
         if not licence:
             continue
         rows.append({
             "title": _text(getattr(entry, "title", "")),
             "creator": _text(getattr(entry, "creator", "")),
             "licence": licence,
+            "licence_url": _text(source.get("license_url")),
             "source_url": _text(source.get("provenance_url") or getattr(entry, "canonical_url", "")),
         })
     return rows
