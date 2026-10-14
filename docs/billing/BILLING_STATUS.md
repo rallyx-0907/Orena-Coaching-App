@@ -8,10 +8,10 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `d55526a2` (`origin/main`, 2026-10-14): PR-MON-2 merged as #162 (`ea68f8a8`); Reading #161 after it; the lane rebased onto it |
 | Last completed slice | PR-MON-2 Price Integrity + Runtime Readiness: architecture-APPROVED, CI green on `dfb213ce`, merged to `main` as #162 (`ea68f8a8`, 2026-10-14) |
-| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - DESIGN, stopped at the review checkpoint (revises the financial schema: proposed 0027 revision 2) |
+| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - DESIGN revision 2 (closes the 4 design P1s of the review of `a50aa76b`), awaiting the focused re-review; record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md` |
 | Current slice | PR-MON-3 design + migration plan: `PR-MON-3_DESIGN.md` (topology, failure modes F1-F12, reconciliation items, webhook mapping, reconciler, schema, rollback, tests, H1-H7) |
-| Exact next action | independent architecture review of `PR-MON-3_DESIGN.md` and the human's H1-H7; then implement slices 1-6 against a throwaway PostgreSQL only |
-| Blockers | review + human decisions H1-H7 before any code; no migration promoted or applied anywhere |
+| Exact next action | focused re-review of design revision 2; the operator's confirmation for H2 (no runtime has 0027); then implement slices 1-6 against a throwaway PostgreSQL only |
+| Blockers | design APPROVE; H2 operator confirmation. H1, H3-H7 decided by the review (design §9). No migration promoted or applied anywhere |
 | Test status | CI on #162 head `dfb213ce`: all jobs green (pytest, python-gates, node-gates, docker-build, aggregate `test`). The first CI run found the new readiness route unclassified in `tests/test_admin_authorization_matrix.py`; fixed by classifying it (admin 200, learner and anonymous refused). Local: throwaway PostgreSQL 414/415, the one failure INHERITED (#160) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
