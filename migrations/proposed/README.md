@@ -15,6 +15,8 @@ throwaway test database by pointing Alembic's `version_locations` at this
 directory. It becomes real by being moved into `versions/` — one `git mv`,
 after the review and authorization its own docstring names.
 
+**Open proposal (Billing), the PR-MON-5 migration gate:** `20261005_0027` → `20261014_0031` → `20261014_0032` (credit ledger, PR-MON-4) → `20261015_0033_credit_topup_orders.py` (PR-MON-5 design revision 3, APPROVED FOR IMPLEMENTATION). All four are proposed and are promoted together under the human's migration gate, in this order. 0033 reads 0032's builders and function text from its sibling file, so 0032 and 0033 must stay in the same directory.
+
 **Open proposal (Billing):** `20261005_0027_billing_orders.py` and its PR-MON-3 follow-up
 `20261014_0031_billing_reconciliation.py` (`down_revision = "20261005_0027"`; design APPROVED, implementation review
 pending; `docs/billing/PR-MON-3_DESIGN.md`). 0031 is a new revision rather than an edit of 0027 because no operator has
