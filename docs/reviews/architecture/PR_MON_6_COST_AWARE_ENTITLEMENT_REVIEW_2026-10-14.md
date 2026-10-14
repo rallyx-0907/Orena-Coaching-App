@@ -1,0 +1,122 @@
+# PR-MON-6 Architecture Review (design)
+
+Recorded from the reviewer's verdict (relayed by the human, 2026-10-14). The design is
+`docs/billing/PR-MON-6_DESIGN.md`.
+
+---
+
+# Review of design revision 1 (`cd9f6ae3433a009456e58b8efb29deb6c2de3c69`)
+
+## VERDICT
+
+**REQUEST CHANGES — focused revision**
+
+The overall architecture is accepted. Do not redesign:
+
+- a credit is metered work, not provider USD;
+- allowance → credits → refuse;
+- one funding source per operation;
+- reserve → dispatch → settle/release;
+- no database transaction across a provider call;
+- I-1: no funded admission, no paid-provider call;
+- PR-MON-4/5 C1–C7 and K1/K2/K5/K6 remain frozen.
+
+## P1-1: feature access must precede the cache/deterministic funding bypass
+
+Feature access is separate from the funding requirement. The required order is:
+
+`feature access → deterministic/cache → funding admission → provider`
+
+H-4 is closed: credits do not unlock a meter the effective plan disables. A disabled meter therefore returns 403
+`feature_not_in_plan` regardless of a cache hit, a deterministic result, allowance or credit balance.
+
+Required tests:
+- disabled meter + cache hit → 403;
+- disabled meter + deterministic result → 403;
+- enabled meter + cache hit → the result, with no funding consumed.
+
+## P1-2: close the zero-cost rung / reusable-credit loophole
+
+Revision 1 released a credit hold when a credits-funded operation was served by a local or free rung. That allows:
+allowance exhausted → reserve credits → served free → release → repeat, without consuming allowance or credits.
+
+H-3 is closed: credits pay for metered work, not provider cost.
+- A deterministic, stored or cached result available before admission costs no allowance and no credits.
+- An allowance-funded operation consumes allowance as today.
+- A credits-funded operation settles the configured meter charge, even when a local or free provider served it.
+- A paid provider settles the same charge.
+- The learner's credit price does not vary by model or provider.
+
+Remove "release credits on a zero-cost rung" from the test plan.
+
+## P1-3: make funding admission crash- and race-safe, and prove live funding at dispatch
+
+Define the exact state machine and serialization contract for `funding_admissions`.
+
+1. **One immutable operation identity.** An immutable request digest covers at least the incarnation, operation id,
+   meter, requested/reserved units, operation reference, and any other field that changes the funding request. The
+   same operation id with a different intent → 409 `operation_conflict`.
+2. **Serialize by operation id.** Concurrent requests for one operation never reserve two sources. A source is
+   chosen once and never changes on retry.
+3. **Crash recovery.** Handle these cases explicitly:
+   - the admission row is committed, no reservation;
+   - the reservation is committed, crash before the row is linked or funded;
+   - the admission is funded, crash before dispatch;
+   - settlement or release is committed, crash before the admission state update.
+
+   An exact backing reservation is adopted and verified, never duplicated. An old `admitting` row is refused only
+   after proving that no exact backing reservation exists.
+4. **Snapshot the funding decision.** Settlement and retry never recompute an admitted operation under a new H-1
+   price or policy.
+5. **`FundingContext` is not funding by itself.**
+   - It is created only after the durable state is `funded`.
+   - Immediately before any paid-provider outbound request, the backstop proves that the backing funding is still
+     valid and open for that operation and meter. A credit hold whose TTL has expired cannot authorize a call.
+   - Define propagation and cleanup across threads, streaming and async, so a context cannot leak into another
+     operation.
+   - `SystemFunding` stays separate and obeys its USD caps.
+
+   Add concurrency and crash tests.
+
+## P1-4: the cost model must price the economic operation and the actual packs
+
+- **Aggregate per operation first.** Aggregate `(operation_id, meter) → SUM(priced paid-provider cost)`, then compute
+  the cost per settled meter unit. p50/p95/max come from operation totals, not individual calls.
+- **Zero-cost share is separate.** It must not hide the p95 of operations that reach a paid provider.
+- **Unpriced calls lower evidence quality.** An unknown or unpriced billable call never silently counts as USD 0.
+- **Judge each pack on its own economics.** For each pack, `effective_vnd_per_credit = pack.amount_minor /
+  pack.credit_units`. Every offered pack must pass the margin/cost gate for every meter it may fund.
+
+## Human decisions
+
+| Id | Decision |
+| --- | --- |
+| H-1 | No production credit prices. Configuration and evidence contract only. |
+| H-2 | Units frozen: `speech.transcribe` second, `reading.assist` request, `word.assist` request, `writing.task` request, `speech.evaluate` second, `audio.tts` character. Granularity and plan limits stay human gates. |
+| H-3 | CLOSED: credits-funded work charges credits whichever rung served it. |
+| H-4 | CLOSED: credits do not unlock plan-disabled features (v1). |
+| H-5 | CLOSED: `media.import` is allowance-only. |
+| H-6 | CLOSED: `quota.abandoned_settles = admitted`, for the allowance only. |
+| H-7 | OFF: no VND/credit, FX, margin floor or evidence N chosen. Report and contract first. FX is a configured auditable reference, never live. |
+| H-8 | OFF: no production grants. Contract and anti-reclaim only. Default none. |
+
+## Still accepted
+
+- One source per operation.
+- Promotional before plan, earliest expiry first.
+- No transaction around a provider call.
+- `HOLD_TTL` ≤ 30 min.
+- C3 never charges the excess later.
+- The 429 body and the funding/estimate contracts for the UI.
+- `media.import` allowance-only.
+- Rollout switches off by default, and a log-only backstop stage first.
+- No implementation or migration before approval.
+
+## Deliverable
+
+Update only the PR-MON-6 design, status and review documents. No code, no migration 0034, no promotion or
+application, nothing enabled. Return the revision-2 commit for a focused review of the four P1s. If they close
+cleanly, the next verdict should be APPROVE FOR IMPLEMENTATION / MIGRATION GATE.
+
+**Answered by design revision 2** (this lane's next commit): §4 (P1-1), §3, §5.3 and §7 (P1-2), §2.1, §5.4, §5.6 and
+§11 (P1-3), §8 (P1-4), §13 (decisions, D-MON-023).
