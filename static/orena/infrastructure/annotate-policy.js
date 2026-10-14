@@ -63,3 +63,28 @@ export async function annotateWithPolicy(send, payload, { scope = '', sleep = wa
     }
   }
 }
+
+/* The tagger answers only for the learner's current learning language (409 otherwise), so a text in
+   another language is never sent: the client knows both, and asking would only cost a request that
+   cannot succeed. An unknown language on either side is not asked either. */
+export function annotateAllowed(textLanguage, learningLanguage) {
+  const text = String(textLanguage || '').toLowerCase();
+  return Boolean(text) && text === String(learningLanguage || '').toLowerCase();
+}
+
+/* Tag every item with `ask(item)` (resolves true when the tagger answered). Nothing is sent for a
+   language the learner is not learning. The first answer is awaited alone, so an unexpected 4xx costs
+   one request and closes the pair; only then do `concurrency` workers share the rest. Items are tried
+   one at a time until one succeeds, so a payload error on one paragraph does not silence the others. */
+export async function annotateAll(items, ask, { scope = '', language = '', learning = '', concurrency = 6 } = {}) {
+  if (!annotateAllowed(language, learning)) return;
+  const list = [...items];
+  let next = 0;
+  let answered = false;
+  while (!answered && next < list.length && !annotateRefused(scope, language)) answered = (await ask(list[next++])) === true;
+  if (!answered) return;
+  const workers = Array.from({ length: Math.min(concurrency, list.length - next) }, async () => {
+    while (next < list.length && !annotateRefused(scope, language)) await ask(list[next++]);
+  });
+  await Promise.all(workers);
+}

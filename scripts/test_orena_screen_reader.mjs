@@ -80,6 +80,13 @@ assert.deepEqual(sentencesOf('She left. He stayed!'), ['She left.', 'He stayed!'
 assert.deepEqual(sentencesOf('One sentence only'), ['One sentence only']);
 assert.deepEqual(sentencesOf('   '), []);
 assert.deepEqual(sentencesOf('他走了。她留下！'), ['他走了。', '她留下！']);
+// A full stop inside a number or an abbreviation never ends a sentence (NASA release: "USD 4.77 billion").
+assert.deepEqual(sentencesOf('The award is USD 4.77 billion, later USD 50.47 million. Next.'), ['The award is USD 4.77 billion, later USD 50.47 million.', 'Next.']);
+assert.deepEqual(sentencesOf('Mr. Smith met Dr. Lee at 5 p.m. They left.'), ['Mr. Smith met Dr. Lee at 5 p.m.', 'They left.']);
+assert.deepEqual(sentencesOf('The U.S. team, e.g. NASA, won. See No. 5.'), ['The U.S. team, e.g. NASA, won.', 'See No. 5.']);
+assert.deepEqual(sentencesOf('Wait... what? Yes.'), ['Wait... what?', 'Yes.']);
+assert.deepEqual(sentencesOf('预算为4.77亿美元，约５０．４７万元。完了！'), ['预算为4.77亿美元，约５０．４７万元。', '完了！']);
+assert.equal(sentencesOf('USD 4.77 billion').join(''), 'USD 4.77 billion', 'nothing is inserted when rejoined');
 assert.equal(segmentId(3, 1), 'p3s1');
 
 // 4. pageBlocks: a chapter that opens by repeating its own title (heading or plain line) does not

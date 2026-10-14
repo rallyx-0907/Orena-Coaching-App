@@ -31,7 +31,7 @@ import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
-import { annotateWithPolicy, annotateRefused } from '../../infrastructure/annotate-policy.js';
+import { annotateWithPolicy, annotateAll } from '../../infrastructure/annotate-policy.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { readReaderSettings, writeReaderSettings } from '../../product/reader-settings.js';
 import { openWordSheet, openSentenceSheet } from '../quick-sheet/sheet.js';
@@ -224,7 +224,7 @@ export default async function mountReader(element, ctx) {
 
   async function fetchAnnotations(pi) {
     const block = paragraphs.find((b) => b.type === 'paragraph' && b.pi === pi);
-    if (!block || !block.sentences.length) return;
+    if (!block || !block.sentences.length) return false;
     try {
       const value = await annotateWithPolicy(api.annotateMediaText, { text: block.text.slice(0, 1200), source_language: language }, { scope: contentId });
       const found = value?.annotations || [];
@@ -241,18 +241,19 @@ export default async function mountReader(element, ctx) {
             .map((tok) => ({ start: tok.start - start, end: tok.end - start, pos: tok.pos || '', pronunciation: tok.pronunciation || '' })),
         );
       }
+      return true;
     } catch {
       /* No tagger answer: this paragraph stays plain. */
+      return false;
     }
   }
 
+  /* Nothing is sent for a text that is not in the learner's learning language (the tagger would answer
+     409 to every paragraph); otherwise the first paragraph is asked alone, then the rest in parallel. */
   async function ensureAnnotations() {
-    const pending = doc.paragraphs.map((p) => p.pi);
-    let next = 0;
-    const workers = Array.from({ length: Math.min(ANNOTATE_CONCURRENCY, pending.length) }, async () => {
-      while (next < pending.length && !annotateRefused(contentId, language)) await annotateParagraph(pending[next++]);
+    await annotateAll(doc.paragraphs.map((p) => p.pi), annotateParagraph, {
+      scope: contentId, language, learning: ctx.context.language, concurrency: ANNOTATE_CONCURRENCY,
     });
-    await Promise.all(workers);
   }
 
   /* Translation on request (D-130): every sentence still missing a meaning is asked for, in turns;
