@@ -6639,7 +6639,7 @@ on a new word missed its budget (no gloss); the call finished in the background 
 
 ## D-201 - Reader sentence cut: numbers and abbreviations; old notes read through the old cut (2026-10-14)
 
-Status: proposed. Reviewer: independent review of PR #185 (its splitter half moved here).
+Status: ACCEPTED. Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: CHANGES REQUESTED on the splitter half of PR #185 (7c33a767), APPROVE WITH CONDITIONS on PR #186 (f579951e); P2-1..P2-4 fixed in 27fc012b; no stored learner data migrated; merged once CI was green.
 
 1. **The bug.** The Reader cut a paragraph at every full stop, so "USD 4.77 billion" rendered as two sentence spans
    ("USD 4." and "77 billion"). `product/reader-text.js#sentenceSpans` now ends a sentence at a dot only when whitespace
