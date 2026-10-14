@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import uuid
 from dataclasses import replace
+from types import SimpleNamespace
 from datetime import UTC, datetime
 
 import pytest
@@ -361,3 +362,77 @@ def test_the_running_app_reports_billing_not_ready_and_guards_the_readiness_repo
 
     monkeypatch.setattr(billing_api, "_admin", not_admin)
     assert client.get("/api/admin/billing/readiness").status_code == 403
+
+
+# ---- the learner entrypoints require a ready runtime (PR-MON-2 review P1) -----------------------------------
+
+@pytest.fixture
+def billing_routes(monkeypatch):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from writing_coach import billing_api
+
+    def install(service, runtime):
+        readiness.configure(runtime)
+        monkeypatch.setattr(billing_api, "_service", service)
+        monkeypatch.setattr(billing_api, "_ready", None)  # the real readiness decision
+        monkeypatch.setattr(billing_api, "_public_base", "https://orena.example")
+        monkeypatch.setattr(billing_api, "current_user_key", lambda: "learner-1")
+        monkeypatch.setattr(billing_api, "_incarnation", lambda: "inc-1")
+        app = FastAPI()
+        app.include_router(billing_api.router)
+        return TestClient(app)
+
+    yield install
+    readiness.configure(None)
+
+
+def body(**overrides):
+    return {"price": "plus:month:payos", "operation_id": str(uuid.uuid4()), "amount_minor": 199_000,
+            "currency": "VND", **overrides}  # fmt: skip
+
+
+@pytest.mark.parametrize("override", [
+    {"orders_schema": lambda: "absent"},  # configured, but 0027 `billing_orders` not applied
+    {"public_base_url": "http://orena.example"},  # production without https
+    {"public_base_url": ""},  # production without a public URL
+])
+def test_a_runtime_that_is_not_billing_ready_offers_nothing_and_starts_no_checkout(billing_routes, override):
+    install = billing_routes
+    orders, sent = Orders(), []
+    service = billing([PLUS_VND], orders=orders, sent=sent)
+    client = install(service, facts(service=service, **override))
+
+    assert client.get("/api/billing/offers").json() == {"enabled": True, "ready": False, "offers": []}
+    refused = client.post("/api/billing/checkout", json=body())
+    assert refused.status_code == 503 and "billing_not_ready" in refused.text
+    assert orders.created == [] and sent == []
+
+
+def test_a_billing_ready_runtime_offers_and_starts_checkout_as_before(billing_routes):
+    install = billing_routes
+    orders, sent = Orders(), []
+    service = billing([PLUS_VND], orders=orders, sent=sent)
+    client = install(service, facts(service=service))
+
+    offers = client.get("/api/billing/offers").json()
+    assert offers["enabled"] is True and offers["ready"] is True and len(offers["offers"]) == 1
+    started = client.post("/api/billing/checkout", json=body())
+    assert started.status_code == 200 and started.json()["redirect_url"] == "https://pay/x"
+    assert len(orders.created) == 1 and len(sent) == 1
+
+
+def test_a_verified_webhook_is_received_while_new_checkouts_are_closed(billing_routes):
+    install = billing_routes
+    received = []
+
+    class Service:
+        def handle_webhook(self, gateway, headers, raw):
+            received.append(gateway)
+            return SimpleNamespace(status="applied")
+
+    client = install(Service(), facts(orders_schema=lambda: "absent"))
+    answer = client.post("/api/billing/webhooks/payos", content=b"{}")
+    assert answer.status_code == 200 and answer.json() == {"ok": True, "status": "applied"}
+    assert received == ["payos"]

@@ -1,10 +1,14 @@
 """Billing routes (completion plan item 4; proposals/BILLING_GATEWAYS.md). Off unless `BILLING_ENABLED` is on.
 
-- `GET  /api/billing/offers`                     the approved prices whose gateway has keys (empty when off)
+- `GET  /api/billing/offers`                     the approved prices whose gateway has keys (empty unless ready)
 - `POST /api/billing/checkout`                   a signed-in learner starts paying for one price
 - `POST /api/billing/webhooks/{gateway}`         a gateway's signed event (no session; the signature is the proof)
 - `POST /api/admin/billing/orders/{code}/refund` an administrator records a domestic refund paid back by hand
 - `GET  /api/admin/billing/readiness`            why this runtime can or cannot take a payment (no secrets, PR-MON-2)
+
+Only the learner entrypoints (offers, checkout) require the runtime to be billing-ready (`billing.readiness`, the
+PR-MON-2 review P1): a runtime that is not starts no new payment. A verified webhook and the administrator's routes
+never wait on it - money already taken is still received and reconciled.
 
 There is no learner screen yet: the design draws no plans or checkout page (UI_BACKEND_GAPS BL-1).
 """
@@ -30,6 +34,7 @@ _service: Any = None
 _backbone: Any = None
 _admin: Callable[[Request], Any] | None = None
 _public_base: str = ""
+_ready: Callable[[], bool] | None = None  # None: `billing.readiness.billing_ready`
 MAX_WEBHOOK_BYTES = 256 * 1024
 
 
@@ -37,6 +42,14 @@ def configure_billing(*, service: Any, backbone: Any, admin_guard: Callable[[Req
                       public_base_url: str) -> None:
     global _service, _backbone, _admin, _public_base
     _service, _backbone, _admin, _public_base = service, backbone, admin_guard, public_base_url.rstrip("/")
+
+
+def _billing_ready() -> bool:
+    if _ready is not None:
+        return bool(_ready())
+    from writing_coach.billing import readiness
+
+    return readiness.billing_ready()
 
 
 def _require_service() -> Any:
@@ -77,12 +90,16 @@ class RefundIn(BaseModel):
 
 @router.get("/api/billing/offers")
 def billing_offers() -> dict[str, Any]:
-    return {"enabled": _service is not None, "offers": _service.offered() if _service is not None else []}
+    ready = _service is not None and _billing_ready()
+    return {"enabled": _service is not None, "ready": ready, "offers": _service.offered() if ready else []}
 
 
 @router.post("/api/billing/checkout")
 def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
     service = _require_service()
+    if not _billing_ready():  # before an order is written or a gateway is called
+        raise orena_http_error(503, "billing_not_ready", "Payments are not open right now. Try again later.",
+                               retryable=True)
     if current_user_key() in {"", "legacy", "local-admin"}:
         raise orena_http_error(401, "sign_in_required", "Sign in to pay.", retryable=False)
     incarnation = _incarnation()

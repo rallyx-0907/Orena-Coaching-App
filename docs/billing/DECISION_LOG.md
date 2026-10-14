@@ -120,3 +120,12 @@ the Plan screen reports unavailable, never a silent legacy plan. It asks again a
 answer. The source no longer also requires the backbone to be `active`, so a backbone left `unavailable` by the same
 failed listing cannot hide a paid account. | A paid account must never read a legacy plan because one startup query
 failed. | Readiness names `entitlement_source_unverified` / `commerce_schema_unreadable`.
+
+D-MON-017 | 2026-10-14 | The learner payment entrypoints require a billing-ready runtime (PR-MON-2 review P1). Extends
+D-MON-015. `GET /api/billing/offers` lists nothing and `POST /api/billing/checkout` answers 503 `billing_not_ready`
+(retryable) unless `billing.readiness.billing_ready()` is true - the same decision every surface reports - checked
+before any order is written or any gateway is called. A verified webhook, the administrator's refund and the readiness
+report are never gated: money already taken is received and reconciled. `billing_ready` does not mean the Polar-side
+price was verified (R-MON-011). | Readiness that only informs a screen would let a runtime without `billing_orders`
+or with a wrong public URL start a payment. | Reviewer: ChatGPT, verdict recorded in
+`docs/reviews/architecture/PR_MON_2_PRICE_READINESS_REVIEW_2026-10-14.md`.

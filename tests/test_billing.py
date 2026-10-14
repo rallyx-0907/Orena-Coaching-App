@@ -248,7 +248,7 @@ def test_billing_is_off_by_default():
     import app as app_module
 
     client = TestClient(app_module.app)
-    assert client.get("/api/billing/offers").json() == {"enabled": False, "offers": []}
+    assert client.get("/api/billing/offers").json() == {"enabled": False, "ready": False, "offers": []}
     assert client.post("/api/billing/webhooks/payos", content=payos_body()).status_code == 503
     checkout = client.post("/api/billing/checkout", json={"price": "premium:month:payos", "operation_id": str(uuid.uuid4())})
     assert checkout.status_code == 503
