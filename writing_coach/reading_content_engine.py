@@ -29,6 +29,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from writing_coach.reading_admission import source_origin_matches
+from writing_coach.reading_rights_refinement import WITHHELD_KEYS, refine_item_rights
 
 from writing_coach.persistence.reading_content_repository import (
     MAX_TARGETS,
@@ -269,9 +270,22 @@ class ReadingContentEngine:
                         and (submitted.kind != "url" or source_origin_matches(source, item.canonical_url))):
                     inherited = {key: value for key, value in source["rights"].items() if key != "automation_allowed"}
                     origins = {key: "article" if key in item.rights else "source" for key in inherited}
+                    # D-193: a source whose public-domain status holds only for its own staff output
+                    # does not hand that answer to an item showing wire copy or no byline.
+                    refinement = refine_item_rights(
+                        source_base_url=source.get("base_url") or "", canonical_url=item.canonical_url,
+                        author=item.author, body=item.body, metadata=item.metadata)
+                    extra: dict[str, Any] = {}
+                    if refinement is not None:
+                        extra["rights_refinement"] = refinement
+                        if refinement["outcome"] == "withheld":
+                            for key in WITHHELD_KEYS:
+                                if origins.get(key) == "source":
+                                    inherited.pop(key, None)
+                                    origins.pop(key, None)
                     item = replace(item, rights={**inherited, **item.rights}, metadata={
                         **item.metadata, "source_name": source["name"],
-                        "rights_known": True, "rights_origin": origins,
+                        "rights_known": True, "rights_origin": origins, **extra,
                     })
             # The last check before anything is written to the content tables.
             if not self.jobs.advance_stage(job_id, "deduplicating", worker_id=worker_id, now=now):
@@ -411,6 +425,7 @@ class ReadingContentEngine:
                 "extraction": item.metadata.get("extraction") or {},
                 "detected_language": item.metadata.get("detected_language", ""),
                 "rights_known": item.metadata.get("rights_known", False),
+                "rights_refinement": item.metadata.get("rights_refinement"),
             },
             targets=[
                 TargetInput(

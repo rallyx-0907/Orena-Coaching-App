@@ -6174,3 +6174,112 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
+
+   Tightened 2026-10-14 (`claude/reading-quality-voa`, `reading-quality/3`): a live dry run found two VOA 中文 pages that
+   point 7 let through. `voachinese.com/p/6197` (topic page: no article element, one prose paragraph, 193 Hanzi of
+   teasers) is now a hard `index_page` through the generic rule "no article structure and a body under 400 Hanzi / 150
+   words". `voachinese.com/p/9647` (player page with a programme rundown, 302 Hanzi) is now a hard `media_page` through
+   "player markup, no article or main element (`no_semantic_container`) and a body under 600 Hanzi / 200 words". No source
+   name is used; the limits sit below the shortest genuine article of the evidence set. Real VOA 中文, NASA and Global
+   Voices articles stay clean (fixtures in `tests/fixtures/reading_quality/`). This changes the publish lifecycle, so it
+   **requires an independent re-review** before the entry returns to ACCEPTED.
+   Known false-positive class, accepted: a genuine short single-paragraph page with no article or main element
+   (`index_page`), or a 260-600 Hanzi / 60-200 word article with an embedded player in a plain div (`media_page`), is
+   hard-flagged and needs the audited `quality_override` with a reason; the same page inside `<article>` or `<main>` is
+   not blocked. `no_semantic_container` is derived from the real absence of an article or main element for every
+   extraction method, so a player page that fell back to whole-page extraction is caught too. Tests pin both cases.
+   Stored rows: `scripts/check_reading_quality_backlog.py` recomputes from stored facts, so rows with
+   `no_article_structure` may newly show `index_page`; rows without the new `no_semantic_container` fact are not
+   caught by the media rule.
+   Review of 8055ddbc: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer: APPROVED WITH
+   CONDITIONS (CI green before merge; fixture attribution README; this entry). Addendum in
+   `docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`. Re-review of 87968f7e (same reviewer role):
+   APPROVE, no open P0/P1; merged once CI was green.
+
+## D-192 - Reading publisher: the learner-facing name is separate from the internal source name (2026-10-14)
+
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVED WITH CONDITIONS on 09bd6b60, re-review APPROVE on 47e19c05; merged once CI was green). Refines D-189/D-190. Lane B item 2 of Reading Production Readiness.
+
+Problem: learners saw the admin's bookkeeping name as the publisher ("Global Voices (English) RSS - trial", "QA NASA news
+releases (RSS)", "Direct URL"), in the Reader meta, Discover, Content Detail, the source footnote and `/api/licences`.
+
+1. **Storage, no migration.** The source's learner-facing `public_name` lives in the existing `reading_sources.polling_policy`
+   JSON (key `public_name`; that column held only `{}`). A dedicated column was not needed; if the policy column is ever
+   given a real polling schema, move the key then (that would be a schema change needing independent review).
+2. **One pure function** (`reading_provenance.resolve_publisher`) returns `(publisher, via)`. The internal source `name`
+   is never an input. The site the text came from is, in order: the source `public_name`; for a built-in path
+   (manual/URL/file) only, the name typed for that text; the page's `og:site_name`; the cleaned host of the item address
+   (`voachinese.com`). The built-in labels ("Direct URL", "Manual paste", "File upload") and anything containing an address are
+   never a name. Nothing known gives an empty publisher, which the D-190 gate reports as a missing credit.
+3. **Republications.** When extraction provenance records a republication that names its original publisher, that
+   publisher is the credit and the site is `via`: "Originally published by Radio Free Asia via Global Voices". The credit
+   link and licence stay the item's own (the republisher's page). Only the publisher is drawn by clients today; `via` is
+   carried in `provenance` and in `text`.
+4. **Every learner payload** (list, detail, Discover, Content Detail, footnote, `/api/licences` text and source rows) reads
+   the resolved name; the admin lists keep the internal name. Changing a source's public name moves `content_revision` of its
+   published texts in the same transaction (D-190 follow-up P2-2).
+5. **Admin.** `POST /api/admin/reading/sources/{id}/public-name`, a "Public name" field on the register form and on the
+   source page. The pinned `Orena Admin.dc.html` draws no such field (`UI_BACKEND_GAPS.md`).
+6. **Consequences for D-190 and the licences page.** Because the host is a fallback, the D-190 "publisher missing" provenance
+   warning now fires only when no public name, no page site name and no host is known (a text with no address and no typed
+   name); a bare host such as `nasa.gov` counts as the credit. Names are trimmed of whitespace and separators only, so
+   balanced brackets and the full stop of an abbreviation survive ("Global Voices (English)", "Acme Inc.", "美国之音（VOA）").
+   A `/api/licences` source row with neither a public name nor a base-URL host is omitted; its texts are still credited
+   one by one in the text rows.
+
+## D-193 - Per-item rights: a staff-only public-domain source does not vouch for wire copy (2026-10-14)
+
+**Status: ACCEPTED** (2026-10-14). Independent review: Delegated Architecture Reviewer, Claude Opus 5.5, APPROVED WITH
+CONDITIONS on bdb950a3, re-review APPROVE on 8f2ce5c3. The owner approved the rights policy as written on 2026-10-14,
+including the current answers to the open questions: an inline citation in VOA prose still counts as staff writing, and
+any byline (an institutional author such as "美国之音" and a contributor included) establishes staff authorship. Merged
+once CI was green. No schema or migration change.
+Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human is listed at the end.
+
+1. **Problem.** VOA's own staff output is US-government work and in the public domain, but VOA also carries and rewrites
+   wire copy (Reuters, AP, AFP) and uses third-party photos, which are not. The VOA 中文 source's licence note made every
+   VOA item read as "Public domain", and the learner credit line named it as the licence.
+2. **Rule, as configuration.** `writing_coach/reading_rights_refinement.py` holds `SOURCE_RIGHTS_RULES`, keyed by host
+   (same matching as `reading_source_cleanup.SOURCE_RULES`). The flag `public_domain_requires_staff_authorship` is set for
+   `voanews.com` and `voachinese.com`. No code branches on a publisher's name; another source with the same condition gets
+   the same flag. It is a code table, not an admin setting or a column, because the source row has no config column
+   (`polling_policy` is a polling field and is unused).
+3. **At ingest** (`ReadingContentEngine.process`, where a source's answers are inherited into the snapshot): for a flagged
+   host the item is `withheld` when the extractor shows wire evidence, or when it has no byline (authorship cannot be
+   established). Then `can_republish`, `can_adapt` and `license_note` are not copied from the source into the immutable
+   snapshot. An absent key is the existing "unknown" (`rights_state`), so nothing new is stored and nothing is denied.
+   Only keys whose origin is the source are withheld; an answer submitted for the article is kept. Otherwise the outcome is
+   `kept` and the item inherits as before.
+4. **Effects, all through existing mechanisms.** The review page shows D-190's `rights_unknown` warning (and the existing
+   incomplete-credit warning, as no licence is recorded); an administrator publishes only with `acknowledge_warnings` and a
+   reason, audited. D-111 refuses automatic admission (`rights_not_cleared`). `recognise_license` finds no "public domain"
+   text, so the learner is shown no licence. An administrator can still record the answers on the review page.
+5. **Evidence kept.** `source_items.metadata.rights_refinement` and `analysis.rights_refinement`: `outcome`, `reasons`
+   (`wire_copy`, `no_staff_byline`), the matching lines (at most five, 120 characters each), and the withheld keys.
+6. **Detection is deliberately narrow.** Wire evidence is, in Chinese, a line of at most 40 characters that names an agency
+   and is a bracketed credit, a derivation note ("本文依据了美联社的报道", "综合", "编译", "来源：") or a credit label, or a
+   dateline `（路透社）—`; in English, a line of at most 160 characters that ENDS on the agency in a credit form
+   ("Reuters contributed to this report", "Some information for this report came from AP, Reuters and AFP", "reported by
+   AP", "With reporting from Reuters", "adapted this story ... based on reporting from Agence France-Presse"); and a byline
+   or attribution line that is an agency. Agencies: 路透社, 美联社, 法新社, 德新社, 彭博社, 新华社, 中央社, 共同社, 韩联社,
+   纽约时报, Reuters, AP, AFP, dpa, Bloomberg, Kyodo, Yonhap, Xinhua, CNA, The New York Times (BBC, CNN and other
+   non-public-domain outlets are not listed yet). A sentence in a staff story that
+   cites an agency as a news source ("路透社说…", "对美联社说…", "澳大利亚联邦警察(AFP)") is VOA's own writing and is not
+   evidence ("Reuters reported that ...", "told AP"). One-off measurement, not reproducible from the repository: 213 pages
+   fetched from voachinese.com section pages on 2026-10-14 gave 2 with a derivation note, 13 with no byline (video, audio
+   and index pages, which the quality gate already holds), and the rest kept. English was checked on a real Learning
+   English page (the fixture); no wire-credit line was found on the current voanews.com front-page articles.
+7. **Not covered.** Third-party photos and video are not text and are not inspected (catalogue Q1 / D-189). An inline mention
+   of an agency is not treated as wire copy; whether to treat it as one is the human's call (below).
+8. **Existing data is not modified.** Articles ingested before this change keep their snapshot. The read-only
+   `scripts/check_published_reading_rights_refinement.py` judges the stored text now and lists published articles from a
+   flagged source that show wire copy or no byline, with whether their effective rights still say "can republish".
+9. **Human decisions left.** (a) Whether a published item that asserts public domain but shows wire copy is unpublished or
+   given an answer on its review page (the eight trial publishes on :8021 should be run through the script first).
+   (b) Whether VOA stories that cite an agency inline are acceptable as staff-written. (c) Whether VOA contributor
+   bylines (non-staff names) establish staff authorship, and whether an institutional author ("美国之音", "VOA Learning
+   English") counts as a byline: today it does, so a wire rewrite with an institutional author and no credit line is kept. (d) Image rights (Q1). (e) Who maintains the host table.
+   Review (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on bdb950a3:
+   APPROVED WITH CONDITIONS (English credit forms, further agencies, engine-level origin test, explicit no-byline fixture,
+   this entry's wording, renumbering from D-192 to D-193, CI green). The conditions are addressed in the following commit.
+   Status stays PROPOSED: the owner approves the rights policy before merge.

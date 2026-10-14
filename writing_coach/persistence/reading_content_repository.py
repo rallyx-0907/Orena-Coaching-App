@@ -35,6 +35,7 @@ import uuid
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from typing import Any
 
 from sqlalchemy import delete, func, insert, select, update
@@ -42,7 +43,10 @@ from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
-from writing_coach.reading_provenance import build_provenance, provenance_blockers
+from writing_coach.reading_provenance import (
+    PUBLIC_NAME_KEY, build_provenance, provenance_blockers, public_name_of, resolve_publisher,
+)
+from writing_coach.reading_rights_refinement import refine_item_rights
 from writing_coach.persistence.models import (
     ReadingArticle,
     ReadingArticleTarget,
@@ -65,6 +69,8 @@ BUILT_IN_SOURCES: dict[str, tuple[str, str, str]] = {
     "direct_url": ("0a52e5d0-0000-4000-8000-000000000002", "orena-direct-url", "Direct URL"),
     "file": ("0a52e5d0-0000-4000-8000-000000000003", "orena-file-upload", "File upload"),
 }
+
+BUILT_IN_SLUGS = frozenset(slug for _, slug, _ in BUILT_IN_SOURCES.values())
 
 LEARNER_VISIBLE_STATUS = "published"
 # Exactly what the learner routes return, and therefore exactly what must move
@@ -152,6 +158,7 @@ def _source(row: Any) -> dict[str, Any]:
         "name": row.name,
         "source_type": row.source_type,
         "base_url": row.base_url,
+        "public_name": public_name_of(row.polling_policy),
         "state": row.state,
         "languages": list(row.languages or []),
         "rights": {
@@ -168,6 +175,33 @@ def _source(row: Any) -> dict[str, Any]:
         "polling_cursor": row.polling_cursor,
         "created_at": _iso(row.created_at),
     }
+
+
+def _policy_with_public_name(policy: Any, public_name: str) -> dict[str, Any]:
+    """The source's `polling_policy` JSON with the learner-facing name set (or cleared)."""
+    merged = {key: value for key, value in (policy.items() if isinstance(policy, dict) else []) if key != PUBLIC_NAME_KEY}
+    name = public_name_of({PUBLIC_NAME_KEY: public_name})
+    if name:
+        merged[PUBLIC_NAME_KEY] = name
+    return merged
+
+
+def _learner_credit(row: Any, effective: dict[str, Any]) -> dict[str, Any]:
+    """The credit of one article from a row carrying the source (`slug`,
+    `polling_policy`), the item (`metadata`, `canonical_url`, `original_author`)
+    and the effective rights. The internal source name is deliberately not read."""
+    metadata = row.item_metadata if isinstance(row.item_metadata, dict) else {}
+    publisher, via = resolve_publisher(
+        extraction=metadata.get("extraction"),
+        public_name=public_name_of(row.source_policy),
+        entered_name=metadata.get("source_name"),
+        built_in=row.source_slug in BUILT_IN_SLUGS,
+        url=row.canonical_url,
+    )
+    return build_provenance(
+        publisher=publisher, via=via, url=row.canonical_url,
+        author=row.original_author, rights=effective,
+    )
 
 
 PERMISSIONS = ("automation_allowed", "can_republish", "can_adapt")
@@ -414,6 +448,7 @@ class ReadingContentRepository:
         languages: Sequence[str],
         rights: dict[str, Any],
         created_by: str,
+        public_name: str = "",
         now: datetime | None = None,
     ) -> dict[str, Any]:
         """A source an admin adds. It starts unapproved, whatever it claims.
@@ -441,7 +476,7 @@ class ReadingContentRepository:
                     attribution_required=bool(rights.get("attribution_required", True)),
                     license_note=str(rights.get("license_note", "")),
                     polling_enabled=False,
-                    polling_policy={},
+                    polling_policy=_policy_with_public_name({}, public_name),
                     created_by=created_by,
                     created_at=moment,
                     updated_at=moment,
@@ -467,6 +502,43 @@ class ReadingContentRepository:
                 select(ReadingSource).order_by(ReadingSource.state, ReadingSource.name)
             ).all()
         return [_source(row) for row in rows]
+
+    def set_source_public_name(
+        self, source_id: str, public_name: str, *, now: datetime | None = None
+    ) -> dict[str, Any] | None:
+        """Set the name learners see as the publisher of this source's texts.
+
+        Published texts of the source change what a learner reads (the credit is in
+        the list and the detail), so each one's `content_revision` moves in the same
+        transaction and cached copies refetch (D-190 follow-up P2-2). Nothing moves
+        when the name is unchanged.
+        """
+        if _lookup_uuid(source_id) is None:
+            return None
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            row = connection.execute(
+                select(ReadingSource.polling_policy).where(ReadingSource.id == _uuid(source_id))
+            ).first()
+            if row is None:
+                return None
+            policy = _policy_with_public_name(row.polling_policy, public_name)
+            if policy != (row.polling_policy or {}):
+                connection.execute(
+                    update(ReadingSource).where(ReadingSource.id == _uuid(source_id))
+                    .values(polling_policy=policy, updated_at=moment)
+                )
+                connection.execute(
+                    update(ReadingArticle)
+                    .where(
+                        ReadingArticle.status == LEARNER_VISIBLE_STATUS,
+                        ReadingArticle.source_item_id.in_(
+                            select(ReadingSourceItem.id).where(ReadingSourceItem.source_id == _uuid(source_id))
+                        ),
+                    )
+                    .values(content_revision=ReadingArticle.content_revision + 1, updated_at=moment)
+                )
+        return self.get_source(source_id)
 
     def set_source_state(
         self, source_id: str, state: str, *, actor: str, now: datetime | None = None
@@ -860,7 +932,10 @@ class ReadingContentRepository:
             ).first()
             source_head = (
                 connection.execute(
-                    select(ReadingSource.automation_allowed, ReadingSource.name).where(
+                    select(
+                        ReadingSource.automation_allowed, ReadingSource.name,
+                        ReadingSource.slug, ReadingSource.polling_policy,
+                    ).where(
                         ReadingSource.id == source_item.source_id
                     )
                 ).first()
@@ -884,12 +959,14 @@ class ReadingContentRepository:
             article["source"]["rights_state"] = rights_state(effective)
             article["source"]["rights_effective"] = effective
             article["source"]["source_name"] = source_head.name if source_head else ""
-            article["provenance"] = build_provenance(
-                publisher=article["source"]["source_name"],
-                url=article["source"]["canonical_url"],
-                author=article["source"]["author"],
-                rights=effective,
-            )
+            article["source"]["public_name"] = public_name_of(source_head.polling_policy) if source_head else ""
+            article["provenance"] = _learner_credit(SimpleNamespace(
+                item_metadata=article["source"].get("metadata"),
+                source_policy=source_head.polling_policy if source_head else {},
+                source_slug=source_head.slug if source_head else "",
+                canonical_url=article["source"]["canonical_url"],
+                original_author=article["source"]["author"],
+            ), effective)
             if decisions:
                 article["rights_review"] = {
                     "actor": decisions[-1]["actor"],
@@ -1419,7 +1496,9 @@ class ReadingContentRepository:
                 ReadingSourceItem.original_author,
                 ReadingSourceItem.canonical_url,
                 ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
-                ReadingSource.name.label("source_name"),
+                ReadingSourceItem.metadata_json.label("item_metadata"),
+                ReadingSource.slug.label("source_slug"),
+                ReadingSource.polling_policy.label("source_policy"),
                 ReadingSource.automation_allowed.label("source_automation"),
             )
             .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
@@ -1435,12 +1514,13 @@ class ReadingContentRepository:
         for row in rows:
             answered = [entry["answers"] for entry in decisions.get(row.id, [])]
             effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            credit = _learner_credit(row, effective)
             credits.append({
                 "title": row.title,
                 "language": row.language,
                 "author": row.original_author,
                 "source_url": row.canonical_url,
-                "source_name": row.source_name,
+                "source_name": credit["publisher"],
                 "license_note": str(effective.get("license_note") or ""),
             })
         return credits
@@ -1458,7 +1538,9 @@ class ReadingContentRepository:
                 ReadingSourceItem.original_author,
                 ReadingSourceItem.canonical_url,
                 ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
-                ReadingSource.name.label("source_name"),
+                ReadingSourceItem.metadata_json.label("item_metadata"),
+                ReadingSource.slug.label("source_slug"),
+                ReadingSource.polling_policy.label("source_policy"),
                 ReadingSource.automation_allowed.label("source_automation"),
             )
             .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
@@ -1470,10 +1552,7 @@ class ReadingContentRepository:
         for row in rows:
             answered = [entry["answers"] for entry in decisions.get(row.id, [])]
             effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
-            found[row.id] = build_provenance(
-                publisher=row.source_name, url=row.canonical_url,
-                author=row.original_author, rights=effective,
-            )
+            found[row.id] = _learner_credit(row, effective)
         return found
 
     def published_missing_provenance(self, *, limit: int = 5000) -> list[dict[str, Any]]:
@@ -1509,6 +1588,46 @@ class ReadingContentRepository:
                 "id": str(row.id), "title": row.title, "language": row.language,
                 "missing": [item["field"] for item in provenance_blockers(credits.get(row.id) or {})],
                 "overridden": row.id in overridden,
+            })
+        return found
+
+    def published_staff_only_rights_candidates(self, *, limit: int = 5000) -> list[dict[str, Any]]:
+        """Published articles from a source whose public-domain status holds only for its own staff
+        output (D-193), that show wire copy or no byline - judged now, from the stored snapshot,
+        because items ingested before the refinement carry no record of it. `asserted` says the
+        article's effective rights still answer "can republish" yes. Read-only."""
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(
+                    ReadingArticle.id, ReadingArticle.title, ReadingArticle.language,
+                    ReadingSourceItem.original_author, ReadingSourceItem.canonical_url,
+                    ReadingSourceItem.original_content.label("body"),
+                    ReadingSourceItem.metadata_json.label("item_metadata"),
+                    ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+                    ReadingSource.base_url.label("source_base_url"),
+                    ReadingSource.automation_allowed.label("source_automation"),
+                )
+                .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+                .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+                .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+                .order_by(ReadingArticle.language, ReadingArticle.title, ReadingArticle.id)
+                .limit(max(1, int(limit)))
+            ).all()
+            decisions = self._rights_decisions(connection, [row.id for row in rows])
+        found = []
+        for row in rows:
+            refinement = refine_item_rights(
+                source_base_url=row.source_base_url, canonical_url=row.canonical_url,
+                author=row.original_author, body=row.body, metadata=row.item_metadata or {})
+            if not refinement or refinement["outcome"] != "withheld":
+                continue
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            found.append({
+                "id": str(row.id), "title": row.title, "language": row.language,
+                "reasons": refinement["reasons"], "evidence": refinement["evidence"],
+                "asserted": rights_state(effective)["can_republish"] == "allowed",
+                "licence": build_provenance(publisher="", url="", author="", rights=effective)["license"]["name"],
             })
         return found
 
