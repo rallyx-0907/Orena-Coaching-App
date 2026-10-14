@@ -1,6 +1,7 @@
 # PR-MON-5 payOS Credit Top-up — design
 
-**State: DESIGN revision 3, awaiting the focused re-review.** Revision 3 answers the review of `f70ab375`, in which
+**State: DESIGN revision 3, APPROVED FOR IMPLEMENTATION** (focused re-review of `89e97942`, 2026-10-14; record:
+`docs/reviews/architecture/PR_MON_5_CREDIT_TOPUP_REVIEW_2026-10-14.md`). The contract is frozen. Revision 3 answers the review of `f70ab375`, in which
 P1-1 and the payload exclusivity are CLOSED:
 - P1-2: a reversal is fulfilled only by its complete durable result, §7.1;
 - P1-3: refund and top-up are serialized by one lock contract, §6.3, and the `payment_refunded` guard also requires

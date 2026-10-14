@@ -376,3 +376,34 @@ Design revision 3 (docs only).
   - Concurrency regressions cover both orderings, plus the backstop.
 - **`payment_refunded`.** The guard verifies the order is `refunded` **and** that no exact top-up exists (§6.2, §8).
 
+---
+
+# Focused re-review of design revision 3 (`89e97942e37bd9a48388d7de649504a6979ecc5e`)
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+Verdict: APPROVE FOR IMPLEMENTATION
+Tôi đã focused re-review commit 89e97942e37bd9a48388d7de649504a6979ecc5e. Hai blocker còn lại đã được đóng.
+P1-2 — CLOSED. Reversal giờ chỉ được coi là hoàn tất khi có complete durable result, không còn dựa riêng vào request row: exact request + reversal ledger entry khi applied > 0 + matching credit_reversal_shortfall khi shortfall > 0. Cùng predicate được dùng cho gap detection, repair success và DB terminal guard.
+P1-3 — CLOSED. Refund/top-up race đã có serialization contract rõ ràng:
+account_incarnations → billing_orders → credit_accounts
+apply_credit_topup() re-read order sau khi giữ lock, còn mark_refunded() dùng lock xung đột. Vì vậy:
+- top-up thắng → refund chờ → sau đó đi reversal;
+- refund thắng → top-up chờ → thấy refunded → không ghi credit.
+DB trigger 0033 còn backstop direct ledger insert, và payment_refunded chỉ được resolve khi refunded + không có exact top-up.
+Test plan cũng đã có race regression cho cả hai thứ tự commit, direct-insert backstop, complete reversal predicate và mutation guards tương ứng.
+Trạng thái các review item
+- P1-1 exact top-up fulfillment: CLOSED
+- P1-2 complete reversal fulfillment: CLOSED
+- P1-3 refund ↔ top-up serialization: CLOSED
+- Schema payload exclusivity: CLOSED
+- K1/K2/K5/K6: giữ nguyên, không reopen.
+- Không còn architecture blocker cho PR-MON-5.
+Có một lỗi tài liệu nhỏ không chặn: BILLING_STATUS.md trong diff vẫn ghi “focused re-review revision 2” ở Exact next action; khi cập nhật approval nên sửa thành design revision 3 approved.
+Bước tiếp theo
+Migration gate bây giờ có thể được mở, nhưng đây vẫn là human gate riêng, chưa phải lệnh apply production.
+Thứ tự:
+recheck topology → tạo/review 0033 → promote 0027 → 0031 → 0032 → 0033 → throwaway/staging migration + privilege + rollback/smoke tests
+Sau migration gate đạt mới triển khai code PR-MON-5 theo design.
+Chưa bật CREDITS_ENABLED, chưa apply production DB và chưa chạy R-MON-014 production.
+
