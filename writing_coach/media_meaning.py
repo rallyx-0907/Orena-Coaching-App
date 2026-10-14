@@ -58,7 +58,7 @@ class MeaningOutcome:
     """What the learner gets, and how much it cost to get it."""
 
     meanings: tuple[SegmentMeaning, ...]
-    status: str                  # ready | not_required | unavailable
+    status: str                  # ready | not_required | partial | unavailable
     provider_calls: int          # 0 when everything was pre-authored or cached
     failure_kind: str | None = None
 
@@ -157,7 +157,7 @@ def resolve_segment_meanings(
             return MeaningOutcome(
                 tuple(resolved[str(getattr(s, "segment_id", ""))] for s in segments
                       if str(getattr(s, "segment_id", "")) in resolved),
-                "unavailable", provider_calls, "translation_failed")
+                "partial" if resolved else "unavailable", provider_calls, "translation_failed")
         stamp = now or datetime.now(UTC).isoformat()
         for segment in missing:
             segment_id = str(getattr(segment, "segment_id", ""))
@@ -182,7 +182,8 @@ def resolve_segment_meanings(
     if not ordered:
         return MeaningOutcome((), "unavailable", provider_calls, "translation_unavailable")
     if len(ordered) != len(segments):
-        return MeaningOutcome(ordered, "unavailable", provider_calls, "translation_incomplete")
+        # Some lines have a meaning and the learner is shown them: that is `partial`, not a failure.
+        return MeaningOutcome(ordered, "partial", provider_calls, "translation_incomplete")
     return MeaningOutcome(ordered, "ready", provider_calls)
 
 

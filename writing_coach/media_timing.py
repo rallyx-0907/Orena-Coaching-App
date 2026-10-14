@@ -150,6 +150,7 @@ def _transcript_from_asr(
     return MediaAcquisition(
         media_object=media_object,
         playback=acquisition.playback,
+        provenance=acquisition.provenance,
     )
 
 

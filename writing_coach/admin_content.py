@@ -95,6 +95,28 @@ def _segments(entry: Any) -> list[Any]:
     return list(segments) if isinstance(segments, list) else []
 
 
+def media_outcome(entry: Any) -> dict[str, Any]:
+    """Where an imported item is, in the four words an operator needs: processing, held (waiting for a person),
+    failed (no usable transcript), ready. `reason` is the stable code stored on the item and `message` its English
+    sentence (rows written before the message was stored get it from the code). Translation is reported beside, as
+    `ready | partial | failed | deferred` with counts: a partial translation is not a failure and never moves the state."""
+    from writing_coach.media_transcript_pipeline import reason_message
+
+    processing = dict(getattr(entry, "processing", None) or {})
+    raw = str(processing.get("state") or "")
+    state = {"queued": "processing", "running": "processing", "failed": "failed", "held": "held", "ready": "ready"}.get(raw, raw)
+    reason = str(processing.get("reason") or "")
+    translation = str(processing.get("translation") or "")
+    counts = processing.get("translation_counts") if isinstance(processing.get("translation_counts"), Mapping) else {}
+    return {
+        "state": state,
+        "stage": str(processing.get("stage") or ""),
+        "reason": reason,
+        "message": str(processing.get("message") or "") or reason_message(reason),
+        "translation": {"state": translation, "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)}},
+    }
+
+
 def media_record(entry: Any) -> dict[str, Any]:
     """A media source an administrator imported into the shared library."""
     from writing_coach.media_source_import import public_thumbnail_url, source_label
@@ -131,6 +153,7 @@ def media_record(entry: Any) -> dict[str, Any]:
         },
         "issues": [] if segments else ["transcript_missing"],
         "processing": dict(getattr(entry, "processing", None) or {}),
+        "outcome": media_outcome(entry),
         "actions": actions,
     }
 
