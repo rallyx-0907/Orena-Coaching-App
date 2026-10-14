@@ -6124,3 +6124,13 @@ existing components only: a text field with a hint on the Register-source form a
 button on the source page (EN/VI/ZH copy). Whether the design wants this placed or worded differently, or the publisher
 shown as "via" for a republication in the Reader footnote, is a decision for the human. Existing sources have no public
 name until an administrator sets one; until then the site name or host stands in, never the internal name.
+
+## Chinese script label (D-197, proposed, 2026-10-14)
+
+The pinned design draws no script label. A Traditional Chinese article is labelled with elements it already draws (a
+Discover card tag, the Content Detail hero meta, the Reader toolbar meta), recorded in
+`docs/design/canonical-ui/brief/ZH_SCRIPT_LABEL_2026-10-14.md`; whether the design wants it placed or worded differently
+is a decision for the human. Not done, by decision of scope: Discover has no script filter (its groups are level, topic
+and type), so a learner browsing Chinese sees both scripts, each Traditional card labelled; a "Simplified / Traditional"
+filter group, or a learner preference, is a follow-up. Articles published before this change have no stored `script` and
+read as unlabelled until re-analysed (the detail payload detects from the body on read; the list does not).

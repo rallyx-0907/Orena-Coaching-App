@@ -37,6 +37,7 @@ from writing_coach.persistence.reading_content_repository import (
     TargetInput,
 )
 from writing_coach.persistence.reading_job_repository import ReadingJobRepository
+from writing_coach.languages.chinese.script_detection import detect_script
 from writing_coach.reading_page_quality import QUALITY_VERSION, quality_flags
 from writing_coach.reading_processing import (
     analyze_article,
@@ -424,6 +425,8 @@ class ReadingContentEngine:
                 "quality_version": QUALITY_VERSION,
                 "extraction": item.metadata.get("extraction") or {},
                 "detected_language": item.metadata.get("detected_language", ""),
+                # Chinese only: zh-Hans / zh-Hant / mixed / unknown (D-197); absent for other languages.
+                **({"script": detect_script(item.body)} if language == "zh" else {}),
                 "rights_known": item.metadata.get("rights_known", False),
                 "rights_refinement": item.metadata.get("rights_refinement"),
             },

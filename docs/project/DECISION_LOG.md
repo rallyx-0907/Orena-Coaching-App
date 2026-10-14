@@ -6363,3 +6363,29 @@ checked against the live OpenRouter catalogue from the build environment; verify
 fails over). No live provider call was made.
 
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
+
+## D-197 - Reading: Chinese script detection and the Traditional label (2026-10-14)
+
+**Status: PROPOSED.** Carries out D-189 (Traditional is allowed, labelled, never mixed with Simplified; Global Voices 中文 stays
+MANUAL_ONLY until the UI distinguishes scripts). Reading Production Readiness item 8 (part). Needs independent review (the
+learner payload and a stored analysis field change); not activation of any source.
+
+1. **Detection.** `writing_coach/languages/chinese/script_detection.py`: a pure function over character evidence. The table of
+   characters that exist in one script only (`script_chars.json`, 2,505 Simplified-only and 3,427 Traditional-only) is derived
+   from the vendored CC-CEDICT pack by `scripts/build_chinese_script_table.py` (stdlib, offline; `--check` fails when stale and
+   is a test). A character that some entry writes the same in both scripts (后, 台, 干) is excluded. No new dependency or dataset.
+2. **Thresholds** (named constants). Fewer than `MIN_EVIDENCE` = 15 script-specific characters: `unknown` (real articles carry
+   about one in four; headlines and snippets do not). Otherwise the minority script's share of the evidence at or under
+   `NOISE_SHARE` = 10 percent: the majority wins (`zh-Hans` / `zh-Hant`), which tolerates a quoted name or title; above it: `mixed`.
+   Measured on the repository's eight real VOA 中文 fixtures: all `zh-Hans`, 0 Traditional characters, 70-597 evidence each.
+3. **Storage, no migration.** `analysis.script` in the existing article analysis JSON, set at ingest for Chinese only. The learner
+   list and detail payloads carry `script` for a Chinese article (absent otherwise; an article with none stored reads `unknown`
+   in the list and is detected from its body in the detail).
+4. **Quality.** `script_mixed` is a SOFT issue (`QUALITY_VERSION` reading-quality/4): a reviewer sees it and automatic admission
+   holds it; it never blocks a publish. Admin Reading shows the script in the evidence panel.
+5. **Learner label.** "Traditional" / "Phồn thể" / "繁體" for `zh-Hant` only, on the Discover card tag list, the Content Detail
+   hero meta and the Reader toolbar meta (`brief/ZH_SCRIPT_LABEL_2026-10-14.md`). Simplified is unlabelled; `mixed` and
+   `unknown` draw nothing for the learner.
+6. **Not done.** No script filter or grouping in Discover and no learner script preference (follow-up, `UI_BACKEND_GAPS.md`); no
+   backfill of already-published articles' stored script; no browser verification (Docker was unavailable); the Global Voices
+   中文 source is not unlocked by this change, which is a human gate.

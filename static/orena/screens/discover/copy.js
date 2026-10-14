@@ -11,6 +11,7 @@ const KEYS = [
   'subtitle', 'searchPlaceholder', 'filters', 'importAction', 'clearFilters', 'emptyText', 'emptySearchText', 'searchEverywhere',
   'seeAll', 'importCta', 'tabAll', 'tabRead', 'tabListen', 'tabCollections', 'tabImported',
   'typeArticle', 'typeBook', 'typeVideo', 'typeAudio', 'typeCollection', 'typeText', 'typeUpload',
+  'scriptTraditional',
   'durationMinRead', 'durationChapters', 'durationItems', 'collectionWordCount', 'progressPercent', 'progressLearnedOf',
   'topic_daily_life', 'topic_travel', 'topic_conversations', 'topic_culture', 'topic_technology', 'topic_food', 'topic_work', 'topic_health', 'topic_education', 'topic_science', 'topic_nature', 'topic_society', 'topic_sports', 'topic_entertainment', 'topic_history', 'topic_business', 'topic_news', 'topic_relationships', 'topic_environment', 'topic_shopping', 'resultsLabel', 'groupLevel', 'groupTopic', 'groupType', 'clear', 'showResults',
 ];
@@ -39,6 +40,7 @@ export const t = defineCopy('discover', {
     topic_daily_life: 'Daily life', topic_travel: 'Travel', topic_conversations: 'Conversations', topic_culture: 'Culture', topic_technology: 'Technology', topic_food: 'Food', topic_work: 'Work', topic_health: 'Health', topic_education: 'Education', topic_science: 'Science', topic_nature: 'Nature', topic_society: 'Society', topic_sports: 'Sports', topic_entertainment: 'Entertainment', topic_history: 'History', topic_business: 'Business', topic_news: 'News', topic_relationships: 'Relationships', topic_environment: 'Environment', topic_shopping: 'Shopping',
     groupLevel: 'Level', groupTopic: 'Topic', groupType: 'Content type', clear: 'Clear',
     showResults_one: 'Show {n} result', showResults_other: 'Show {n} results',
+    scriptTraditional: 'Traditional',
   },
   vi: {
     chooseDictationMedia: 'Chọn bài để nghe và gõ lại nội dung.',
@@ -62,6 +64,7 @@ export const t = defineCopy('discover', {
     topic_daily_life: 'Đời sống hằng ngày', topic_travel: 'Du lịch', topic_conversations: 'Hội thoại', topic_culture: 'Văn hóa', topic_technology: 'Công nghệ', topic_food: 'Ẩm thực', topic_work: 'Công việc', topic_health: 'Sức khỏe', topic_education: 'Giáo dục', topic_science: 'Khoa học', topic_nature: 'Thiên nhiên', topic_society: 'Xã hội', topic_sports: 'Thể thao', topic_entertainment: 'Giải trí', topic_history: 'Lịch sử', topic_business: 'Kinh doanh', topic_news: 'Tin tức', topic_relationships: 'Các mối quan hệ', topic_environment: 'Môi trường', topic_shopping: 'Mua sắm',
     groupLevel: 'Trình độ', groupTopic: 'Chủ đề', groupType: 'Loại nội dung', clear: 'Xóa',
     showResults_other: 'Xem {n} kết quả',
+    scriptTraditional: 'Phồn thể',
   },
   zh: {
     chooseDictationMedia: '选择片段，听后写出内容。',
@@ -85,5 +88,6 @@ export const t = defineCopy('discover', {
     topic_daily_life: '日常生活', topic_travel: '旅行', topic_conversations: '对话', topic_culture: '文化', topic_technology: '科技', topic_food: '饮食', topic_work: '工作', topic_health: '健康', topic_education: '教育', topic_science: '科学', topic_nature: '自然', topic_society: '社会', topic_sports: '体育', topic_entertainment: '娱乐', topic_history: '历史', topic_business: '商业', topic_news: '新闻', topic_relationships: '人际关系', topic_environment: '环境', topic_shopping: '购物',
     groupLevel: '级别', groupTopic: '主题', groupType: '内容类型', clear: '清除',
     showResults_other: '查看 {n} 个结果',
+    scriptTraditional: '繁體',
   },
 });

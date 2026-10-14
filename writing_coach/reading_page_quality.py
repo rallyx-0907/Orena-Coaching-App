@@ -25,7 +25,9 @@ from collections.abc import Mapping
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
-QUALITY_VERSION = "reading-quality/3"
+from writing_coach.languages.chinese.script_detection import MIXED, detect_script
+
+QUALITY_VERSION = "reading-quality/4"
 
 # ---- thresholds (per language: English words, Chinese Hanzi) -----------------
 # Set from the 2026-10-13 trial: the shortest genuine article was 248 English
@@ -51,7 +53,7 @@ MEDIA_NO_ARTICLE_MAX_UNITS = {"en": 200, "zh": 600}
 
 # ---- stable codes ------------------------------------------------------------
 HARD_ISSUES = frozenset({"empty_body", "media_page", "index_page", "bot_challenge", "special_page"})
-SOFT_ISSUES = frozenset({"body_below_minimum", "extraction_medium_confidence", "generic_title", "index_like"})
+SOFT_ISSUES = frozenset({"body_below_minimum", "extraction_medium_confidence", "generic_title", "index_like", "script_mixed"})
 
 _CJK_RE = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 _WORD_RE = re.compile(r"[^\W_]+(?:['’-][^\W_]+)*", re.UNICODE)
@@ -210,6 +212,10 @@ def quality_flags(
         flags.append("extraction_medium_confidence")
     if _generic_title(title, str(facts.get("site_name") or "")):
         flags.append("generic_title")
+    # Soft: a Chinese text that mixes Simplified and Traditional is for a reviewer to look at (D-197). Traditional
+    # alone is fine - it is labelled for the learner - and a text too short to tell is not flagged.
+    if lang == "zh" and detect_script(body or "") == MIXED:
+        flags.append("script_mixed")
     return flags
 
 

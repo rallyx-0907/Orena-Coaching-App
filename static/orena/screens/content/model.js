@@ -9,6 +9,7 @@
    collection is a different route ("#/collection/:id") and never reaches this screen. */
 
 import { publisherOf, sourceLine } from '../../product/provenance.js';
+import { isTraditional } from '../../product/script.js';
 
 export const KINDS = Object.freeze(['article', 'book', 'media', 'upload', 'text']);
 
@@ -133,6 +134,7 @@ export function normalizeArticle(article) {
     // D-189: the publisher the payload's `provenance` names; the author is only the fallback of an older payload.
     source: sourceLine(article),
     level: String(article?.level || ''),
+    traditional: isTraditional(article),
     minutes: minutesFrom(article?.reading_time_seconds),
     topic: String(article?.topic || ''),
     desc: String(article?.description || article?.summary || '').trim(),

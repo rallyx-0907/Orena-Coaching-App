@@ -43,6 +43,7 @@ from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
+from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
 from writing_coach.reading_provenance import (
     PUBLIC_NAME_KEY, build_provenance, provenance_blockers, public_name_of, resolve_publisher,
 )
@@ -391,7 +392,16 @@ def _learner_row(row: Any) -> dict[str, Any]:
         "excerpt": row.excerpt,
         "published_at": _iso(row.published_at),
         "content_revision": row.content_revision,
+        **_script_field(row.language, getattr(row, "script", None)),
     }
+
+
+def _script_field(language: str, stored: Any) -> dict[str, Any]:
+    """`script` for a Chinese article only (zh-Hans / zh-Hant / mixed / unknown, D-197); other languages omit it.
+    An article ingested before the field existed has none stored: it reads as `unknown`, which is never labelled."""
+    if language != "zh":
+        return {}
+    return {"script": stored if stored in SCRIPTS else UNKNOWN}
 
 
 class ReadingContentRepository:
@@ -1321,6 +1331,7 @@ class ReadingContentRepository:
             ReadingArticle.excerpt,
             ReadingArticle.published_at,
             ReadingArticle.content_revision,
+            ReadingArticle.analysis_json["script"].as_string().label("script"),
         ).where(
             ReadingArticle.status == LEARNER_VISIBLE_STATUS,
             ReadingArticle.language == language,
@@ -1399,6 +1410,7 @@ class ReadingContentRepository:
             "word_count": row.word_count,
             "content_revision": row.content_revision,
             "published_at": _iso(row.published_at),
+            **_script_field(row.language, (row.analysis_json or {}).get("script") or detect_script(row.body)),
             "targets": [
                 {
                     "text": target.text,
