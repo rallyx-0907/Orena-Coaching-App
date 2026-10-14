@@ -111,9 +111,11 @@ shape).
 
 ## Public pages (D-160, pinned 2026-10-10)
 
-Served outside the learner frame, in the design's own runtime (`static/orena/public/support.js`, byte for byte the
-pinned `support.js`), from templates generated from the pinned files by `scripts/build_public_pages.mjs`. The
+Served outside the learner frame, in the design's own runtime (`static/orena/public/support.js`, the pinned
+`support.js` with the vendored script URLs and the inert-template read below), from templates generated from the pinned files by `scripts/build_public_pages.mjs`. The
 signed-in routing is in `app.py` `home()`.
+The Landing's template sits in an inert `<template data-dc-inert>` inside `<x-dc>` so the browser never parses the design's `{{ }}`
+bindings as live SVG (#155); `scripts/test_orena_no_placeholders.mjs` fails on any binding left in live markup.
 
 | Frame | Route | Code | Gate | Status |
 | --- | --- | --- | --- | --- |
