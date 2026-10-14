@@ -8,7 +8,7 @@
    uploaded media id), text (learner-imported text kept in device memory). A vocabulary
    collection is a different route ("#/collection/:id") and never reaches this screen. */
 
-import { publisherOf, sourceLine } from '../../product/provenance.js';
+import { imageOf, publisherOf, sourceLine } from '../../product/provenance.js';
 import { isTraditional } from '../../product/script.js';
 
 export const KINDS = Object.freeze(['article', 'book', 'media', 'upload', 'text']);
@@ -138,7 +138,7 @@ export function normalizeArticle(article) {
     minutes: minutesFrom(article?.reading_time_seconds),
     topic: String(article?.topic || ''),
     desc: String(article?.description || article?.summary || '').trim(),
-    image: '',
+    image: imageOf(article)?.cssUrl || '',
   };
 }
 

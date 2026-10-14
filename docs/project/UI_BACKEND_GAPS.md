@@ -6125,6 +6125,16 @@ button on the source page (EN/VI/ZH copy). Whether the design wants this placed 
 shown as "via" for a republication in the Reader footnote, is a decision for the human. Existing sources have no public
 name until an administrator sets one; until then the site name or host stands in, never the internal name.
 
+## Reading thumbnails: the design draws the image slot, not the admin review of a picture (D-194 proposed, 2026-10-14)
+
+The pinned design draws a cover image slot on the Discover card and the Content Detail hero (used by books and media), so the
+article now fills that slot when a picture is approved; otherwise the letter tile, the design's no-image state. The design
+draws no credit line for a picture, no admin "Picture" block on the Reading review page (A17) and no "Pictures" switch on
+the source page (A23). Recorded in `docs/design/canonical-ui/brief/READING_THUMBNAIL_2026-10-14.md` (pending the next
+export): the credit joins the Reader's source footnote (no new learner component); the admin blocks reuse the page's block,
+row, pill and button. Not measured in a browser yet (the browser was unavailable). Open for the human: whether the design
+should draw the credit on the card or hero itself instead of only in the Reader footnote.
+
 ## Chinese script label (D-197, proposed, 2026-10-14)
 
 The pinned design draws no script label. A Traditional Chinese article is labelled with elements it already draws (a

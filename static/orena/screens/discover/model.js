@@ -17,7 +17,7 @@
 
 import { duration } from '../../product/duration.js';
 import { placePercent } from '../../product/place-progress.js';
-import { publisherOf } from '../../product/provenance.js';
+import { imageOf, publisherOf } from '../../product/provenance.js';
 import { isTraditional } from '../../product/script.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { collectionTitle } from '../../copy/general-catalogue.js';
@@ -45,8 +45,8 @@ export function progressFromContinuation(continuation, id, { idPrefix = '' } = {
   return entry ? placePercent(entry.place) : null;
 }
 
-/* GET /api/reading/articles item -> entry. No image field exists for an article today (a real
-   backend gap, not an oversight). The card's muted source line (the design's `c.source`) is the
+/* GET /api/reading/articles item -> entry. `image` is the payload's approved same-origin picture (D-194) and
+   is empty for every article whose source has not been allowed pictures, which draws the generated tile. The card's muted source line (the design's `c.source`) is the
    article's publisher from `provenance` (D-189), the same value the reader and Content Detail draw. */
 export function entryFromArticle(item, continuation) {
   const id = `article:${item.id}`;
@@ -63,7 +63,8 @@ export function entryFromArticle(item, continuation) {
     level: item.level || '',
     topic: item.topic || '',
     readingSeconds: Number.isFinite(item.reading_time_seconds) ? item.reading_time_seconds : null,
-    image: '',
+    // D-194: the approved same-origin picture, else '' and the generated tile.
+    image: imageOf(item)?.cssUrl || '',
     started: progressFromContinuation(continuation, id) != null,
     progressPct: progressFromContinuation(continuation, id),
   };
