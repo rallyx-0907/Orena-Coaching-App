@@ -8,11 +8,11 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `d55526a2` (`origin/main`, 2026-10-14): PR-MON-2 merged as #162 (`ea68f8a8`); Reading #161 after it; the lane rebased onto it |
 | Last completed slice | PR-MON-2 Price Integrity + Runtime Readiness: architecture-APPROVED, CI green on `dfb213ce`, merged to `main` as #162 (`ea68f8a8`, 2026-10-14) |
-| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - DESIGN revision 2 (closes the 4 design P1s of the review of `a50aa76b`), awaiting the focused re-review; record: `docs/reviews/architecture/PR_MON_3_RECONCILIATION_REVIEW_2026-10-14.md` |
-| Current slice | PR-MON-3 design + migration plan: `PR-MON-3_DESIGN.md` (topology, failure modes F1-F12, reconciliation items, webhook mapping, reconciler, schema, rollback, tests, H1-H7) |
-| Exact next action | focused re-review of design revision 2; the operator's confirmation for H2 (no runtime has 0027); then implement slices 1-6 against a throwaway PostgreSQL only |
-| Blockers | design APPROVE; H2 operator confirmation. H1, H3-H7 decided by the review (design §9). No migration promoted or applied anywhere |
-| Test status | CI on #162 head `dfb213ce`: all jobs green (pytest, python-gates, node-gates, docker-build, aggregate `test`). The first CI run found the new readiness route unclassified in `tests/test_admin_authorization_matrix.py`; fixed by classifying it (admin 200, learner and anonymous refused). Local: throwaway PostgreSQL 414/415, the one failure INHERITED (#160) |
+| Active PR | **PR-MON-3 Billing Orders + Reconciliation Safety** - IMPLEMENTED on the lane branch (design APPROVED `5b445175`; H2 taken as follow-up revision 0031), awaiting the independent implementation review; request: `PR-MON-3_REVIEW_REQUEST.md` |
+| Current slice | PR-MON-3 slices 1-6 implemented (D-MON-018): proposed 0031, reconciliation items, write-before-ack, gap repair, reconciler with payOS lookups, Polar refunds, admin API |
+| Exact next action | re-run the PR-MON-3 mutation batch (interrupted by a Docker engine outage), then hand `PR-MON-3_REVIEW_REQUEST.md` to the independent reviewer; on APPROVE rebase and open the PR. No promotion or application of 0027/0031 |
+| Blockers | independent implementation review; promotion/application of 0027 + 0031 is a separate human gate |
+| Test status | local only (not CI), PR-MON-3 `1660eb78`. SQLite targeted (billing, reconciliation, price integrity, entitlement, account state, commerce, membership, admin console, admin authorization matrix, language limit, public routes): 596 passed, 1 skipped. Throwaway PostgreSQL 16 (billing, reconciliation incl. `test_billing_reconciliation_postgres.py`, price integrity, entitlement, every `tests/*_postgres.py`): 481 run, 480 passed, 1 failed = INHERITED #160. Host validators: project memory, architecture, boundaries pass; `validate_specialized_persistence_boundary.py` fails identically on clean `main` (not a CI gate). Mutation batch (12 mutants): interrupted by a Docker engine outage, results not recorded - to re-run |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
 ## Revised sequence (human, 2026-10-13)
