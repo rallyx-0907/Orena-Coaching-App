@@ -1,4 +1,4 @@
-"""Quality admission: the one place that says a page is not a publishable article (D-18X, PROPOSED).
+"""Quality admission: the one place that says a page is not a publishable article (D-191, PROPOSED).
 
 The trial (docs/content/READ_SOURCE_TRIAL_2026-10-13.md, D10) found pages that are
 not articles reaching the review queue: video and audio pages, index pages,

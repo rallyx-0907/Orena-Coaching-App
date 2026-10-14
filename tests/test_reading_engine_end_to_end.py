@@ -104,7 +104,7 @@ def _post_file(world, *, name="market.html", body=FILE_TEXT.encode("utf-8")):
         "POST",
         "/api/admin/reading/jobs",
         data={"kind": "file", "title": "The market on Saturday", "language": "en",
-              "can_republish": "true"},
+              "can_republish": "true", "attribution_required": "false"},
         files={"upload": (name, body, "text/html")},
     )
 

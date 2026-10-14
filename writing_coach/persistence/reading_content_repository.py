@@ -42,6 +42,7 @@ from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
+from writing_coach.reading_provenance import build_provenance, provenance_blockers
 from writing_coach.persistence.models import (
     ReadingArticle,
     ReadingArticleTarget,
@@ -857,21 +858,23 @@ class ReadingContentRepository:
             source_item = connection.execute(
                 select(ReadingSourceItem).where(ReadingSourceItem.id == row.source_item_id)
             ).first()
-            source_default = (
+            source_head = (
                 connection.execute(
-                    select(ReadingSource.automation_allowed).where(
+                    select(ReadingSource.automation_allowed, ReadingSource.name).where(
                         ReadingSource.id == source_item.source_id
                     )
-                ).scalar()
+                ).first()
                 if source_item
                 else None
             )
+            source_default = source_head.automation_allowed if source_head else None
             decisions = self._rights_decisions(connection, [row.id]).get(row.id, [])
         article = _article(row)
         article["targets"] = [_target(target) for target in targets]
         article["source"] = _item(source_item) if source_item else None
         article["rights_review"] = None
         article["automation"] = None
+        article["provenance"] = None
         if article["source"] is not None:
             # `source.rights` stays the snapshot as ingested; the state the gate
             # and the review page read is the snapshot with the recorded answers.
@@ -880,6 +883,13 @@ class ReadingContentRepository:
             article["automation"] = effective_automation(answered, source_default)
             article["source"]["rights_state"] = rights_state(effective)
             article["source"]["rights_effective"] = effective
+            article["source"]["source_name"] = source_head.name if source_head else ""
+            article["provenance"] = build_provenance(
+                publisher=article["source"]["source_name"],
+                url=article["source"]["canonical_url"],
+                author=article["source"]["author"],
+                rights=effective,
+            )
             if decisions:
                 article["rights_review"] = {
                     "actor": decisions[-1]["actor"],
@@ -965,6 +975,9 @@ class ReadingContentRepository:
                 changes={"from": before, "to": chosen},
                 now=moment,
             )
+            if current["status"] == LEARNER_VISIBLE_STATUS:
+                # The credit a learner reads is derived from these answers.
+                self._bump_revision(connection, _uuid(article_id), moment)
         return self.get_article(article_id)
 
     def article_for_source_item(self, source_item_id: str) -> dict[str, Any] | None:
@@ -1087,6 +1100,9 @@ class ReadingContentRepository:
 
         Publication is the only transition that makes anything learner-visible,
         and it is always an admin's act: nothing in the pipeline calls this.
+        Rights and attribution never refuse here (D-189 amends D-105): the admin
+        route requires an explicit, reasoned override and passes the warnings it
+        overrode, which are recorded in the review event.
         """
         current = self.get_article(article_id)
         if current is None:
@@ -1247,13 +1263,21 @@ class ReadingContentRepository:
         ).limit(bounded + 1)
         with self.engine.connect() as connection:
             rows = connection.execute(query).all()
-        page = rows[:bounded]
-        next_cursor = (
-            _encode_cursor(_aware(page[-1].published_at), str(page[-1].id))
-            if len(rows) > bounded and page
-            else None
-        )
-        return {"items": [_learner_row(row) for row in page], "next_cursor": next_cursor}
+            page = rows[:bounded]
+            next_cursor = (
+                _encode_cursor(_aware(page[-1].published_at), str(page[-1].id))
+                if len(rows) > bounded and page
+                else None
+            )
+            credits = self._provenance_map(connection, [row.id for row in page])
+        return {
+            "items": [
+                {**_learner_row(row), "provenance": credits.get(row.id) or build_provenance(
+                    publisher="", url="", author="", rights=None)}
+                for row in page
+            ],
+            "next_cursor": next_cursor,
+        }
 
     def get_published_article(self, article_id: str) -> dict[str, Any] | None:
         """What a learner opens: the text, the targets an admin approved, and
@@ -1286,6 +1310,7 @@ class ReadingContentRepository:
                     ReadingSourceItem.source_id,
                 ).where(ReadingSourceItem.id == row.source_item_id)
             ).first()
+            credit = self._provenance_map(connection, [row.id]).get(row.id)
         return {
             "id": str(row.id),
             "title": row.title,
@@ -1307,6 +1332,7 @@ class ReadingContentRepository:
                 }
                 for target in targets
             ],
+            "provenance": credit or build_provenance(publisher="", url="", author="", rights=None),
             "attribution": {
                 "author": source_item.original_author if source_item else "",
                 "source_url": source_item.canonical_url if source_item else "",
@@ -1418,6 +1444,73 @@ class ReadingContentRepository:
                 "license_note": str(effective.get("license_note") or ""),
             })
         return credits
+
+    def _provenance_map(self, connection: Any, article_ids: Sequence[Any]) -> dict[Any, dict[str, Any]]:
+        """The learner-visible credit of each article: its source's name, the
+        item's address and author, and the effective rights (snapshot with the
+        recorded answers folded over it). One set-wise query for the ids given,
+        so a list page costs two reads whatever its size."""
+        if not article_ids:
+            return {}
+        rows = connection.execute(
+            select(
+                ReadingArticle.id,
+                ReadingSourceItem.original_author,
+                ReadingSourceItem.canonical_url,
+                ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+                ReadingSource.name.label("source_name"),
+                ReadingSource.automation_allowed.label("source_automation"),
+            )
+            .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+            .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+            .where(ReadingArticle.id.in_(list(article_ids)))
+        ).all()
+        decisions = self._rights_decisions(connection, [row.id for row in rows])
+        found: dict[Any, dict[str, Any]] = {}
+        for row in rows:
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            found[row.id] = build_provenance(
+                publisher=row.source_name, url=row.canonical_url,
+                author=row.original_author, rights=effective,
+            )
+        return found
+
+    def published_missing_provenance(self, *, limit: int = 5000) -> list[dict[str, Any]]:
+        """Published articles whose required attribution is incomplete (D-189),
+        each with `overridden`: whether the latest publish decision recorded an
+        explicit, reasoned override of the warnings. Read-only: nothing is
+        unpublished by this."""
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(ReadingArticle.id, ReadingArticle.title, ReadingArticle.language)
+                .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+                .order_by(ReadingArticle.language, ReadingArticle.title, ReadingArticle.id)
+                .limit(max(1, int(limit)))
+            ).all()
+            credits = self._provenance_map(connection, [row.id for row in rows])
+            flagged = [row for row in rows if provenance_blockers(credits.get(row.id) or {})]
+            overridden: set[Any] = set()
+            if flagged:
+                events = connection.execute(
+                    select(ReadingReviewEvent.article_id, ReadingReviewEvent.reason, ReadingReviewEvent.changes_json)
+                    .where(ReadingReviewEvent.article_id.in_([row.id for row in flagged]),
+                           ReadingReviewEvent.action == LEARNER_VISIBLE_STATUS)
+                    .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
+                ).all()
+                latest: dict[Any, bool] = {}
+                for event in events:  # oldest first: the last one wins
+                    latest[event.article_id] = bool(
+                        (event.changes_json or {}).get("published_over_warnings") and str(event.reason or "").strip())
+                overridden = {key for key, value in latest.items() if value}
+        found = []
+        for row in flagged:
+            found.append({
+                "id": str(row.id), "title": row.title, "language": row.language,
+                "missing": [item["field"] for item in provenance_blockers(credits.get(row.id) or {})],
+                "overridden": row.id in overridden,
+            })
+        return found
 
     def published_count(self, *, language: str | None = None) -> int:
         query = select(func.count()).select_from(ReadingArticle).where(

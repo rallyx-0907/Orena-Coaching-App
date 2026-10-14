@@ -1,4 +1,4 @@
-# Architecture review: Reading quality admission gate (P0-E, D-18X PROPOSED)
+# Architecture review: Reading quality admission gate (P0-E, D-191 PROPOSED)
 
 Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer
 Commit reviewed: ae8b96db (claude/reading-quality-gate) against origin/claude/reading-source-cleanup (PR #157)
@@ -34,7 +34,7 @@ The two-layer split (facts at extraction, verdict from stable codes in one file)
 ## 4. Determinism and storage
 - Codes are computed once at ingest and stored in `analysis.quality_issues`; the route reads the stored list. Facts are stored in `analysis.extraction.page_facts`, so a reviewer can see why. Version constant `QUALITY_VERSION` exists but is not stored with the result (P2): store it next to the issues so a threshold change can be told from a stale verdict.
 - Consequences: changing a threshold does not change existing articles; and because the gate trusts stored codes, an article whose body is edited or re-adapted later keeps the old verdict (P2: recompute `empty_body`/listing/size codes on body change, or at least at publish for the codes that need only the body).
-- Articles that predate `page_facts` have no facts: no `media_page`, `bot_challenge`, `special_page` or title index flags are ever raised for them, so already-stored candidates sit at the previous behaviour and can be published. Required (P1-4 / condition): a read-only audit script like the provenance checker that recomputes `quality_flags` over unpublished and published articles (it cannot get raw-page facts, but it can compute body-only codes) and lists them; do not backfill silently. State this limitation in the D-18X entry.
+- Articles that predate `page_facts` have no facts: no `media_page`, `bot_challenge`, `special_page` or title index flags are ever raised for them, so already-stored candidates sit at the previous behaviour and can be published. Required (P1-4 / condition): a read-only audit script like the provenance checker that recomputes `quality_flags` over unpublished and published articles (it cannot get raw-page facts, but it can compute body-only codes) and lists them; do not backfill silently. State this limitation in the D-191 entry.
 - `item.metadata["extraction"]["page_facts"]` is only produced for URL extraction. Uploaded or pasted text never gets the hard fact codes, only body-derived ones; document this.
 
 ## 5. Tests
@@ -62,7 +62,7 @@ None.
 - P1-1 `reading_content_repository.py:~1066` (`set_status`) and `reading_admin_api.py:~776`: the hard gate lives only in the route; move the check into the repository transition with an explicit override parameter, consistent with P0-A.
 - P1-2 `reading_page_quality.py` `MEDIA_PAGE_MAX_UNITS` (zh 400) and the title branch of `bot_challenge` in `page_facts`: hard false positives on legitimate short articles. Tighten (see section 3), and add the negatives.
 - P1-3 Merge with P0-A: resolve the `raise orena_http_error(... reading_rights_not_cleared ...)` conflict by hand; add a combined override + provenance test.
-- P1-4 Articles stored before `page_facts` bypass the fact-based codes: add a read-only audit/recompute script and state the limitation in D-18X before the real corpus is published.
+- P1-4 Articles stored before `page_facts` bypass the fact-based codes: add a read-only audit/recompute script and state the limitation in D-191 before the real corpus is published.
 
 ### P2
 - P2-1 Override is only in the audit log; add it to the article's own status event.
@@ -71,6 +71,6 @@ None.
 - P2-4 Vacuous conditional in the medium-confidence engine test.
 - P2-5 Override has no separate permission or second reviewer; consider a role if the corpus becomes public.
 - P2-6 Document that pasted/uploaded text never gets fact-based codes.
-- P2-7 D-18X stays PROPOSED until reviewer line and commit are recorded in the entry.
+- P2-7 D-191 stays PROPOSED until reviewer line and commit are recorded in the entry.
 
 Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Commit reviewed: ae8b96db.

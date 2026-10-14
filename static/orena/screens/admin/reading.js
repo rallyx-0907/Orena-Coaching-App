@@ -6,7 +6,7 @@ import { languages } from '../../copy/index.js';
 import { adminApi } from '../../capabilities/admin-api.js';
 import { watch as watchJob } from '../../capabilities/admin-tray.js';
 import {
-  changeArticle, loadQueue, publicationAdvice, publicationBlockers, rightsChanges, saveArticle, submissionFrom, submissionProblem, submitContent, tabFrom,
+  changeArticle, confirmationsFor, loadQueue, publicationAdvice, publicationBlockers, qualityBlockers, rightsChanges, saveArticle, submissionFrom, submissionProblem, submitContent, tabFrom,
 } from '../../capabilities/admin-reading.js';
 import { t } from './copy.js';
 import { createHost } from './host.js';
@@ -141,28 +141,46 @@ export async function mountReading(shell, ctx) {
     try {
       if (action === 'publish') {
         article = article || await api.readingArticle(id);
-        if (publicationBlockers(article).length) {
-          /* Copyright is a hard gate: say why, and take the operator to where the questions are answered. */
-          if (routeId === 'adminArticle') {
-            view.actionError = t('rdBlockedText');
-            host.paint();
-          } else {
-            host.toast(t('rdBlockedToast'));
-            ctx.go(ctx.href('adminArticle', { id }));
-          }
-          return;
-        }
-        const advice = publicationAdvice(article);
-        if (advice.length) {
+        /* Rights and attribution warnings never block an administrator: they are confirmed with a
+           reason, which the server records (D-189). The server may know more than this list (an
+           incomplete credit), so a refusal is confirmed from its own list and sent again. */
+        const confirmWarnings = async (warnings) => {
           const answer = await host.confirm({
             title: t('rdPublishTitle', { title: article.title }),
             body: t('rdPublishRisk'),
-            list: advice.map((warning) => t(`rdWarn_${warning.code}`)),
+            list: warnings.map((warning) => {
+              const key = warning.gate === 'quality' ? `rdIssue_${warning.code}` : `rdWarn_${warning.code}`;
+              return t.has(key) ? t(key) : warning.code;
+            }),
+            reason: { label: t('rdReasonLabel'), placeholder: t('rdOverrideReasonHint'), required: true },
             cancel: t('actCancel'), confirm: t('rdPublishAnyway'), danger: false,
           });
-          if (!answer.confirmed) return;
+          return answer.confirmed ? answer.reason : null;
+        };
+        /* A page that is not an article is a second, separate confirmation (D-191): both kinds are
+           listed in one dialog with one reason, and each is sent as its own flag. */
+        const known = [...qualityBlockers(article), ...publicationBlockers(article), ...publicationAdvice(article)];
+        let reason = '';
+        let confirmed = { acknowledgeWarnings: false, qualityOverride: false };
+        if (known.length) {
+          reason = await confirmWarnings(known);
+          if (reason === null) return;
+          confirmed = confirmationsFor(known);
         }
-        const done = await changeArticle(api, id, 'publish');
+        let done;
+        try {
+          done = await changeArticle(api, id, 'publish', reason, confirmed.acknowledgeWarnings, confirmed.qualityOverride);
+        } catch (error) {
+          const listed = error?.context?.blockers || error?.context?.context?.blockers || error?.blockers;
+          if (!Array.isArray(listed) || !listed.length) throw error;
+          const needed = confirmationsFor(listed);
+          /* Ask again only for a confirmation not yet given; anything else is a real refusal. */
+          if (!(needed.acknowledgeWarnings && !confirmed.acknowledgeWarnings) && !(needed.qualityOverride && !confirmed.qualityOverride)) throw error;
+          reason = await confirmWarnings(listed);
+          if (reason === null) return;
+          confirmed = needed;
+          done = await changeArticle(api, id, 'publish', reason, confirmed.acknowledgeWarnings, confirmed.qualityOverride);
+        }
         host.toast(done.publication_warnings?.length ? t('rdPublishedOver') : t('rdPublished'));
       } else if (action === 'reject') {
         const answer = await host.confirm({

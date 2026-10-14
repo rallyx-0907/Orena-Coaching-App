@@ -6078,9 +6078,62 @@ This is not activation authorization: no source is published to production by th
    The catalogue is not widened until the three sources pass; the next candidates are Chinese public-domain sources
    such as zh Wikisource.
 
-## D-18X - Reading quality admission: non-articles cannot be published (PROPOSED, 2026-10-13)
+## D-190 - Reading provenance; rights and attribution are audited warnings on a manual publish (2026-10-14)
 
-**Status: PROPOSED.** Number to be assigned at merge. Changes the Reading publish lifecycle, so it needs an independent
+**Status: ACCEPTED** (independent re-review 2026-10-14, merged once CI was green). A lifecycle change, reviewed
+independently of the implementer. It carries out the human decision recorded as D-189 (2026-10-13): attribution or a source line is
+required before any real corpus is published. Implemented on `claude/reading-provenance`, "Reading Sources - Production
+Readiness" item P0-A.
+
+- **Provenance object.** The learner Reading list (`GET /api/reading/articles`) and detail
+  (`GET /api/reading/articles/{id}`) return `provenance`: `publisher` (the source record's name), `url` (the item's
+  canonical address), `author`, `license` (`name`, `url`, split from the rights `license_note`), `attribution_required`
+  (`required` / `not_required` / `unknown`) and `text` ("Originally published by Global Voices (by Peace News), CC BY
+  3.0."). It is derived by one pure function (`writing_coach/reading_provenance.py`) from the source record, the source
+  item and the effective rights (the immutable snapshot with the recorded rights answers folded over it). No migration,
+  no schema change, no new stored field. A recorded rights answer on a published article bumps `content_revision`, so a
+  cached copy revalidates.
+- **Policy (amended by the human, 2026-10-14; amends D-105's hard rights gate).** An administrator can always publish a
+  Reading text by hand, even when rights or attribution are unknown or denied. Rights and attribution are warnings, not a
+  gate: `can_republish` / `can_adapt` denied or never answered (`rights_not_cleared`, `rights_unknown`,
+  `adaptation_not_cleared`, `adaptation_unknown`), `attribution_required` unanswered (`attribution_unknown`), and, where the
+  terms require attribution, a missing publisher, original address or licence (`provenance_missing`). Publishing over any of
+  them needs a deliberate override in the request (`acknowledge_warnings: true`) and a non-empty `reason`. Without the
+  override the route answers 409 `reading_rights_not_cleared` listing the warnings (`context.blockers`,
+  `context.override_field`); with the override but no reason, 422 `reading_reason_required`. The warnings, reason and actor
+  are recorded in the review event (`published_over_warnings`) and the admin audit record. The repository
+  (`ReadingContentRepository.set_status`) never refuses for rights or attribution. **No automatic publication while rights
+  or attribution are unclear:** the D-111 automatic admission keeps refusing `rights_not_cleared`, `attribution_unknown`
+  and `attribution_missing`. Hard gates are reserved for technical or content-integrity faults (empty body, broken
+  extraction, not an article), which are not part of this decision.
+- **Provenance check.** The same function (`provenance_blockers`) yields the warnings and the automatic-admission refusal.
+  It is stricter than the previous admission rule, under which an author name alone sufficed.
+- **No retroactive unpublishing.** Published articles stay readable. `scripts/check_published_reading_provenance.py` is a
+  read-only checker that lists the published articles that fall short and whether the latest publish decision recorded an
+  override; it exits non-zero only for an incomplete credit with no recorded override. What to do with each is a human
+  decision.
+- **UI.** The publisher is the design's source line on the Discover card, the Content Detail hero and the Reader toolbar.
+  The licence and the original link have no place in the pinned design's Reading frames; they reach the learner in
+  Settings > Licences and data sources (`GET /api/licences`, whose Reading rows now credit the publisher). Recorded in
+  `UI_BACKEND_GAPS.md`.
+- **Independent review (2026-10-13).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on
+  b94f4129: APPROVED WITH CONDITIONS, `docs/reviews/architecture/READING_PROVENANCE_REVIEW_2026-10-13.md`. Conditions met
+  on the same branch: the learner payload names only a recognised licence (Creative Commons or public domain, fixed
+  spelling, Creative Commons address) and never the free-text `license_note`, which only sets `license.recorded` for the gate
+  (P1-2); negative and leak tests; an exact, size-independent query-count test; `relatednessScore` compares the
+  candidate's publisher before its author, on purpose. P1-1 (the `unknown` attribution policy) is left to the human.
+  Follow-ups: a source rename should bump its published articles' `content_revision` (no rename path exists today, so
+  nothing bumps), the check-then-write in `set_status` (P2-1), scheduling the checker (P2-3), and the Global Voices
+  original-publisher fields after PR #157 merges.
+- **Re-review (2026-10-14).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on
+  94e7374f (change b922f433): APPROVED WITH CONDITIONS - CI green before merge; follow-ups P2-1 (warnings read before the
+  write), P2-2 (the repository accepts warnings without a reason; the route enforces it, the checker treats it as no
+  override), P2-5 (the admin audit row is written after the review-event transaction). The reader's licence and
+  original-link line was decided by the human on 2026-10-14 and is a separate change.
+
+## D-191 - Reading quality admission: non-articles cannot be published (PROPOSED, 2026-10-14)
+
+**Status: PROPOSED.** Changes the Reading publish lifecycle, so it needs an independent
 architecture review before it is accepted (`AGENTS.md`, "Architecture review authority"). No schema or migration change.
 Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-E, D-189).
 
@@ -6090,7 +6143,13 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
 2. **Hard codes** (the page is not an article): `empty_body`, `media_page`, `index_page`, `bot_challenge`,
    `special_page`. `reading_admin_api.publication_blockers` returns them as `{code, gate: "quality"}`, and a reviewer's
    publish is refused `409 reading_quality_not_cleared`. An explicit `quality_override: true` with a reason publishes
-   anyway and is audited (`admin.reading_article_quality_override`); it never clears the rights gate.
+   anyway and is audited (`admin.reading_article_quality_override`). **The two confirmations are independent:**
+   `quality_override` never stands in for D-190's `acknowledge_warnings`, nor the reverse; an article with both kinds needs
+   both flags and one reason. 409 precedence: `reading_quality_not_cleared` while the quality override is missing, else
+   `reading_rights_not_cleared`; both list every blocker in `context.blockers` and the fields still to send in
+   `context.override_fields`. The repository enforces only the quality gate (rights never refuse there), so the rights
+   confirmation is a route-level, audited requirement; a quality override is not counted as a rights override by
+   `scripts/check_published_reading_provenance.py`.
 3. **Soft codes** (uncertain, still reviewable): `body_below_minimum`, `extraction_medium_confidence`, `generic_title`,
    plus the existing `too_short`, `too_long`, `language_*`, `repetitive`, `extraction_low_confidence`.
 4. **D-111 is unchanged:** any quality issue, hard or soft, means `review`; automatic admission never publishes a

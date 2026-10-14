@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
 
-from writing_coach.product.catalog import DEFAULT_PLAN_ID, Plan, known_plan_id, plan_by_id
-from writing_coach.product.membership import manual_expired
+from writing_coach.product.catalog import Plan
+from writing_coach.product import billing_grace
+from writing_coach.product.entitlement import BillingEntitlementSource, EffectiveEntitlement, resolve
 from writing_coach.product.repository import ProductRepository
 
 
@@ -58,30 +60,34 @@ UsageReader = Callable[[str, Plan], dict[str, dict[str, Any]]]
 
 
 class ProductService:
-    def __init__(self, repository: ProductRepository | None = None, usage: UsageReader | None = None) -> None:
+    def __init__(self, repository: ProductRepository | None = None, usage: UsageReader | None = None, *,
+                 billing: BillingEntitlementSource | None = None,
+                 clock: Callable[[], datetime] = lambda: datetime.now(UTC),
+                 grace: Callable[[], billing_grace.GracePolicy] = billing_grace.current) -> None:
         self.repository = repository
         self.usage = usage
+        # The billing record (`commerce_subscriptions`); None where the runtime has no commerce store (D-MON-006).
+        self.billing = billing
+        self.clock = clock
+        self.grace = grace   # the billing grace policy in force (D-MON-011), read at each resolution
 
     def _repository(self) -> ProductRepository:
         if self.repository is None:
             raise RuntimeError("Product repository has not been installed by the persistence runtime.")
         return self.repository
 
+    def entitlement(self, user_key: str) -> EffectiveEntitlement:
+        """The account's one effective entitlement (`writing_coach.product.entitlement`): every plan reader - the Plan
+        screen, quota admission, the language limit, the Admin membership guard - derives from this. A record that
+        cannot be read raises; nothing guesses a plan."""
+        legacy = self._repository().get_subscription(user_key)
+        billing = self.billing.subscription_for_user(user_key) if self.billing is not None else None
+        return resolve(legacy=legacy, billing=billing, now=self.clock(),
+                       grace=self.grace() if billing is not None else billing_grace.NO_GRACE)
+
     def plan_for_user(self, user_key: str, *, strict: bool = False) -> Plan:
         """The effective plan. `strict` (enforcement) raises when the catalogue cannot be read."""
-        subscription = self._repository().get_subscription(user_key)
-        return self._plan_for_subscription(subscription, strict=strict)
-
-    @staticmethod
-    def _plan_for_subscription(subscription: object | None, *, strict: bool = False) -> Plan:
-        status = str(getattr(subscription, "status", "") or "").strip().casefold()
-        plan_id = str(getattr(subscription, "plan_id", "") or "").strip().casefold()
-        if not subscription or status not in {"active", "trialing"} or manual_expired(subscription):
-            return plan_by_id(DEFAULT_PLAN_ID, strict=strict)
-        return plan_by_id(plan_id, strict=strict)
-
-    def _subscription(self, user_key: str):
-        return self._repository().get_subscription(user_key)
+        return self.entitlement(user_key).plan(strict=strict)
 
     def feature_access(self, *, user_key: str, feature: str) -> FeatureAccess:
         plan = self.plan_for_user(user_key)
@@ -136,7 +142,7 @@ class ProductService:
 
     def account_state(self, user_key: str) -> dict[str, Any]:
         try:
-            subscription = self._subscription(user_key)
+            effective = self.entitlement(user_key)
         except Exception:
             return {
                 "available": False,
@@ -146,12 +152,10 @@ class ProductService:
                 "billing_ready": False,
             }
 
-        status = str(getattr(subscription, "status", "") or "").strip().casefold() if subscription else "inactive"
-        # A plan an administrator set by hand ends on its date (D-154).
-        active = status in {"active", "trialing"} and not manual_expired(subscription)
-        raw_plan_id = str(getattr(subscription, "plan_id", "") or "").strip().casefold() if subscription else DEFAULT_PLAN_ID
-        plan_known = known_plan_id(raw_plan_id)
-        plan = plan_by_id(raw_plan_id if active and plan_known else DEFAULT_PLAN_ID)
+        status = effective.status
+        active = effective.active
+        plan_known = effective.plan_known
+        plan = effective.plan()
         features = {key: access.as_dict() for key, access in self._features_for_plan(user_key=user_key, plan=plan).items()}
         return {
             "available": True,
@@ -179,3 +183,8 @@ def configure_product_repository(repository: ProductRepository) -> None:
 
 def configure_product_usage(usage: UsageReader | None) -> None:
     product_service.usage = usage
+
+
+def configure_product_billing(source: BillingEntitlementSource | None) -> None:
+    """Install the billing record the effective entitlement reads (D-MON-006); None removes it."""
+    product_service.billing = source

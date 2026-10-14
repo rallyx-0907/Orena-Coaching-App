@@ -4,6 +4,7 @@
    memory, never the network). One shape out for all three, so the Reader and Reading Complete
    never each read a source their own way. */
 import { api } from '../../infrastructure/api.js';
+import { sourceLine } from '../../product/provenance.js';
 import {
   blocksForSource,
   pageBlocks,
@@ -32,7 +33,8 @@ export async function loadReadable(parsed, memory) {
       id,
       title,
       language: String(article?.language || ''),
-      author: String(article?.attribution?.author || ''),
+      // D-189: the toolbar's source (the frame's `rdDocMeta`) is the publisher; the author only for an older payload.
+      author: sourceLine(article),
       level: String(article?.level || ''),
       topic: String(article?.topic || ''),
       // The article's own reading time, whole minutes (practice mode's meta line).

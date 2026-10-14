@@ -152,8 +152,12 @@ export const adminApi = {
     request(`/api/admin/reading/articles/${encodeURIComponent(id)}`, json('POST', body)),
   readingSetRights: (id, body) =>
     request(`/api/admin/reading/articles/${encodeURIComponent(id)}/rights`, json('POST', body)),
-  readingSetStatus: (id, status, reason = '') =>
-    request(`/api/admin/reading/articles/${encodeURIComponent(id)}/status`, json('POST', { status, reason })),
+  readingSetStatus: (id, status, reason = '', acknowledgeWarnings = false, qualityOverride = false) =>
+    request(`/api/admin/reading/articles/${encodeURIComponent(id)}/status`, json('POST', {
+      status, reason,
+      ...(acknowledgeWarnings ? { acknowledge_warnings: true } : {}),
+      ...(qualityOverride ? { quality_override: true } : {}),
+    })),
   readingDecideTarget: (articleId, targetId, approved) =>
     request(
       `/api/admin/reading/articles/${encodeURIComponent(articleId)}/targets/${encodeURIComponent(targetId)}`,

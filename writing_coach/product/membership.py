@@ -109,7 +109,8 @@ def apply_change(
     if set_plan:
         plan_id = validate_plan(change.get("plan_id"))
         provider = str(account.get("provider") or "")
-        if provider and provider != MANUAL_PROVIDER and account.get("status") in {"active", "trialing"}:
+        if account.get("billing_owned") or (
+                provider and provider != MANUAL_PROVIDER and account.get("status") in {"active", "trialing"}):
             raise MembershipConflict("This account's plan is managed by billing; it cannot be set by hand.")
         until = None if plan_id == "free" else parse_until(change.get("until"))
     applied: dict = {}

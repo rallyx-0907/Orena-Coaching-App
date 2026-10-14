@@ -38,10 +38,10 @@ export function rightsLevel(state) {
   return answer === 'allowed' || answer === 'denied' ? answer : 'unknown';
 }
 
-/* Copyright is a hard gate at Publish (D-105). This is the server's rule
-   (reading_admin_api.publication_blockers) read ahead of the click: publishing needs the right to
-   republish and, for an adapted text, the right to adapt. An unanswered question refuses as
-   surely as a denial. The server still decides; this only says why before asking. */
+/* What is unclear about the rights at Publish (D-189 amends D-105). This is the server's list
+   (reading_admin_api.publication_blockers) read ahead of the click: the right to republish and,
+   for an adapted text, the right to adapt, denied or never answered. These are warnings: an
+   administrator can still publish, by confirming them and giving a reason. The server decides. */
 export function publicationBlockers(article) {
   const state = article?.source?.rights_state || {};
   const blockers = [];
@@ -56,7 +56,25 @@ export function publicationBlockers(article) {
   return blockers;
 }
 
-/* Advice that does not stop publication: attribution is an obligation, not a permission. */
+/* The hard quality failures of a page (reading_page_quality.HARD_ISSUES, D-191): the page is not an
+   article. Unlike the rights warnings they are a gate; they clear only with the separate quality
+   confirmation and a reason, and that never stands in for the rights confirmation. The server decides. */
+export const HARD_QUALITY_CODES = ['empty_body', 'media_page', 'index_page', 'bot_challenge', 'special_page'];
+export function qualityBlockers(article) {
+  const issues = article?.analysis?.quality_issues || [];
+  return HARD_QUALITY_CODES.filter((code) => issues.includes(code)).map((code) => ({ code, gate: 'quality' }));
+}
+
+/* Which confirmations a list of publish blockers asks for: the rights warnings and the quality
+   failure are separate decisions, each sent as its own flag. */
+export function confirmationsFor(list) {
+  return {
+    acknowledgeWarnings: list.some((item) => item.gate !== 'quality'),
+    qualityOverride: list.some((item) => item.gate === 'quality'),
+  };
+}
+
+/* More to confirm before publishing: attribution that was never answered. */
 export function publicationAdvice(article) {
   const state = article?.source?.rights_state || {};
   return (state.attribution_required || 'unknown') === 'unknown' ? [{ code: 'attribution_unknown', level: 'warning' }] : [];
@@ -231,10 +249,10 @@ export async function loadQueue(api = adminApi, { tab = 'review', cursor = '' } 
 }
 
 /* Change an article's status. A rejection keeps its reason; the server refuses one without. */
-export async function changeArticle(api = adminApi, id, action, reason = '') {
+export async function changeArticle(api = adminApi, id, action, reason = '', acknowledgeWarnings = false, qualityOverride = false) {
   const status = ARTICLE_ACTION_STATUS[action];
   if (!status) throw new Error(`Unknown article action: ${action}`);
-  return api.readingSetStatus(id, status, reason);
+  return api.readingSetStatus(id, status, reason, acknowledgeWarnings, qualityOverride);
 }
 
 /* Save what an operator can edit on a review pane. Only fields that changed are sent. */

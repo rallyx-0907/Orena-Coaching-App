@@ -115,11 +115,19 @@ def reading_source_credits(sources: Iterable[Mapping[str, Any]]) -> list[dict[st
 
 
 def reading_text_credits(texts: Iterable[Mapping[str, Any]]) -> list[dict[str, str]]:
-    """One row per published text whose rights carry a licence note (author, translator and terms)."""
+    """One row per published text whose rights carry a licence note: who credits it (the publisher, with the
+    author when they differ, D-189), the terms and the original address."""
+
+    def creator(text: Mapping[str, Any]) -> str:
+        publisher, author = _text(text.get("source_name")), _text(text.get("author"))
+        if publisher and author and publisher.casefold() != author.casefold():
+            return f"{publisher} ({author})"
+        return publisher or author
+
     return [
         {
             "title": _text(text.get("title")),
-            "creator": _text(text.get("author")),
+            "creator": creator(text),
             "licence": _text(text.get("license_note")),
             "source_url": _text(text.get("source_url")),
         }

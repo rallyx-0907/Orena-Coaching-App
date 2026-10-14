@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from writing_coach.reading_processing import normalize_url
+from writing_coach.reading_provenance import build_provenance, provenance_blockers
 
 ADMISSION_VERSION = "reading-admission/1"
 
@@ -53,9 +54,11 @@ def automatic_admission(
         reasons.append("source_snapshot_mismatch")
     if "attribution_required" not in rights:
         reasons.append("attribution_unknown")
-    elif rights["attribution_required"] and not (
-        snapshot.get("author") or snapshot.get("canonical_url")
-    ):
+    elif provenance_blockers(build_provenance(
+        publisher=source.get("name"), url=snapshot.get("canonical_url"),
+        author=snapshot.get("author"), rights=rights,
+    )):
+        # D-189: the same gate the administrator's publish route applies.
         reasons.append("attribution_missing")
     canonical_url = str(snapshot.get("canonical_url") or "")
     fetched_url = (snapshot.get("metadata") or {}).get("input_kind") == "url"

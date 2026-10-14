@@ -1,4 +1,4 @@
-"""Read-only check: stored Reading articles the quality gate (D-18X) could not judge.
+"""Read-only check: stored Reading articles the quality gate (D-191) could not judge.
 
 Articles stored before the quality gate carry no `analysis.extraction.page_facts`, and pasted
 or uploaded text never does, so the fact-based hard codes (`media_page`, `bot_challenge`,

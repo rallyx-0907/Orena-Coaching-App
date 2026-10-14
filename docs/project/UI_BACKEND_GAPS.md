@@ -6093,11 +6093,23 @@ in Admin > Operations > Policies as a new "Vocabulary" group (EN/VI/ZH: Vocabula
 existing policy block, label, chip and toggle. The pinned `Orena Admin.dc.html` draws no such group. Recorded as a gap
 for the human; not changed in this batch.
 
-## Reading quality gate: no pre-click state or override control in Admin Reading (D-18X, 2026-10-13)
+## Reading provenance: the design has no licence or original-link line (D-189, 2026-10-13)
 
-The server now refuses a reviewer's publish of a page flagged with a hard quality code (`media_page`, `index_page`,
-`bot_challenge`, `special_page`, `empty_body`) with `409 reading_quality_not_cleared`, and the new codes are listed with
-translated labels in the existing "Quality" evidence row. The pinned `Orena Admin.dc.html` draws no disabled-publish
-state for quality (`publicationBlockers` in `static/orena/capabilities/admin-reading.js` mirrors only the rights gate, so
-the click is refused by the server and shown as an error), and no control for the audited `quality_override` request
-field. Recorded for the human; no UI was invented.
+The learner Reading payloads now carry `provenance` (publisher, original URL, author, licence, attribution text; see
+D-190). The pinned design draws one source line: the Discover card's `c.source`, the Content Detail hero meta and the
+Reader toolbar's `rdDocMeta`. Those now show the publisher. The design draws no place for the licence name, the
+attribution text or a link to the original article on the Reader or Content Detail frames, so none was added. The
+licence credit CC BY requires is reachable only through Settings > Licences and data sources, which now credits the
+publisher. If the human wants the licence or the original link on the reader itself, the design has to draw it first.
+Also open: `provenance.text` is English-only (a fallback sentence); no client draws it, so no EN/VI/ZH copy was added.
+
+## Reading quality gate: no pre-click state or override control in Admin Reading (D-191, 2026-10-14)
+
+The server refuses a reviewer's publish of a page flagged with a hard quality code (`media_page`, `index_page`,
+`bot_challenge`, `special_page`, `empty_body`) with `409 reading_quality_not_cleared` unless the request carries
+`quality_override: true` and a reason; the codes are listed with translated labels in the existing "Quality" evidence row.
+The pinned `Orena Admin.dc.html` draws no disabled-publish state for quality and no quality override control. Publish
+reuses the existing confirm dialog drawn for the rights warnings (D-190): the hard quality codes are added to its list
+(labels `rdIssue_*`), the one reason serves both, and the client sends `quality_override` and `acknowledge_warnings`
+as separate flags, each only for the kind it lists. No new control was added; whether the design should draw a distinct
+quality confirmation is a decision for the human.

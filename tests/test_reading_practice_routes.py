@@ -153,7 +153,7 @@ def _article(setup, language="en", *, rights=None, level="B1", content_hash=None
         source_id=setup.content.built_in_source_id("manual"), source_native_id="", canonical_url="",
         title="Train", author="", published_at=None, language=language, body=BODIES[language],
         content_hash=content_hash or ((language * 64)[:64] if rights is None else ("f" * 64)), metadata={},
-        rights=rights if rights is not None else {"can_republish": True},
+        rights=rights if rights is not None else {"can_republish": True, "attribution_required": False},
     )
     article = setup.content.create_article(
         source_item_id=snapshot["id"], title="The late train", body=BODIES[language], excerpt="",
@@ -208,37 +208,45 @@ def _visible(setup, article_id) -> str:
     return setup.content.get_article(article_id)["status"]
 
 
-def test_an_article_with_no_rights_answers_cannot_be_published(setup):
+def test_an_article_with_no_rights_answers_publishes_only_over_an_explicit_override(setup):
     article_id = _article(setup, rights={})
     detail = _refused(setup, article_id)
-    assert detail["context"]["blockers"] == [{"code": "rights_unknown", "question": "can_republish"}]
+    # With nothing answered, the unanswered attribution question is listed with it; all are warnings.
+    assert [item["code"] for item in detail["context"]["blockers"]] == ["rights_unknown", "attribution_unknown"]
     assert _visible(setup, article_id) != "published"
     record = next(item for item in setup.audited if item["action"] == "admin.reading_article_publish_refused")
     assert record["payload"]["blockers"][0]["code"] == "rights_unknown"
+    overridden = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/status",
+                      json={"status": "published", "acknowledge_warnings": True, "reason": "owner confirmed by email"})
+    assert overridden.status_code == 200, overridden.text
+    assert {w["code"] for w in overridden.json()["publication_warnings"]} == {"rights_unknown", "attribution_unknown"}
 
 
-def test_a_refused_permission_blocks_publication(setup):
+def test_a_refused_permission_asks_for_the_override(setup):
     article_id = _article(setup, rights={"can_republish": False, "attribution_required": True})
     detail = _refused(setup, article_id)
     assert detail["context"]["blockers"][0]["code"] == "rights_not_cleared"
     assert _visible(setup, article_id) != "published"
 
 
-def test_a_cleared_article_publishes_and_unknown_attribution_is_only_advice(setup):
+def test_a_cleared_article_publishes_and_unknown_attribution_needs_the_override(setup):
     article_id = _article(setup, rights={"can_republish": True})
-    published = _publish(setup, article_id)
-    assert {item["code"] for item in published["publication_warnings"]} == {"attribution_unknown"}
+    assert {item["code"] for item in _refused(setup, article_id)["context"]["blockers"]} == {"attribution_unknown"}
+    published = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/status",
+                     json={"status": "published", "acknowledge_warnings": True, "reason": "internal text"})
+    assert published.status_code == 200, published.text
+    assert {item["code"] for item in published.json()["publication_warnings"]} == {"attribution_unknown"}
     cleared = _article(setup, rights={"can_republish": True, "attribution_required": False}, content_hash="e" * 64)
     assert _publish(setup, cleared)["publication_warnings"] == []
 
 
 def test_an_adapted_article_also_needs_the_right_to_adapt(setup):
-    article_id = _article(setup, rights={"can_republish": True, "attribution_required": True})
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False})
     with setup.engine.begin() as connection:
         connection.execute(update(ReadingArticle).where(ReadingArticle.id == uuid.UUID(article_id))
                            .values(is_adapted=True))
     detail = _refused(setup, article_id)
-    assert detail["context"]["blockers"] == [{"code": "adaptation_unknown", "question": "can_adapt"}]
+    assert detail["context"]["blockers"] == [{"code": "adaptation_unknown", "question": "can_adapt", "level": "warning"}]
     answered = call(setup.app, "POST", f"/api/admin/reading/articles/{article_id}/rights",
                     json={"can_adapt": True})
     assert answered.status_code == 200
@@ -290,7 +298,7 @@ def test_the_rights_route_refuses_an_empty_or_unknown_request(setup):
 
 
 def test_the_queue_carries_source_rights_and_target_count(setup):
-    open_id = _article(setup, rights={"can_republish": True})
+    open_id = _article(setup, rights={"can_republish": True, "attribution_required": False})
     blocked_id = _article(setup, rights={}, content_hash="d" * 64)
     items = {item["id"]: item for item in call(setup.app, "GET", "/api/admin/reading/queue").json()["items"]}
     assert items[open_id]["rights_level"] == "allowed"
@@ -309,7 +317,7 @@ def _rights_post(setup, article_id, body):
 
 
 def test_automation_is_the_source_default_until_an_article_override_is_recorded(setup):
-    article_id = _article(setup, rights={"can_republish": True})
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False})
     held = setup.content.get_article(article_id)
     default = held["automation"]["source_default"]
     assert held["automation"] == {"allowed": default, "override": None, "source_default": default, "origin": "source"}
@@ -326,7 +334,7 @@ def test_automation_is_the_source_default_until_an_article_override_is_recorded(
 
 
 def test_the_queue_and_publish_use_the_same_effective_automation(setup):
-    article_id = _article(setup, rights={"can_republish": True})
+    article_id = _article(setup, rights={"can_republish": True, "attribution_required": False})
     default = setup.content.get_article(article_id)["automation"]["source_default"]
     _rights_post(setup, article_id, {"automation_allowed": not default})
     item = next(x for x in call(setup.app, "GET", "/api/admin/reading/queue").json()["items"] if x["id"] == article_id)

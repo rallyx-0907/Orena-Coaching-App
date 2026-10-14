@@ -1192,6 +1192,27 @@ _quota.configure_quota(
     reason=_quota_reason,
 )
 configure_product_usage(_quota.usage_for)
+# D-MON-006: the effective entitlement reads the billing record (`commerce_subscriptions`) wherever this runtime has
+# the commerce store - PostgreSQL, the account backbone and the 0006 tables - whether or not checkout is switched on:
+# a recorded paid entitlement must not disappear with BILLING_ENABLED. Elsewhere nothing is installed and every plan
+# read is exactly the legacy row's.
+_COMMERCE_TABLES = ("commerce_subscriptions", "commerce_billing_event_receipts", "account_incarnations")
+
+
+def _billing_entitlement_source():
+    if _persistence_runtime.engine is None or _persistence_runtime.backend != "postgresql" or not _account_backbone.is_active:
+        return None
+    if not set(_COMMERCE_TABLES) <= set(_backbone_tables() or ()):
+        return None
+    from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
+    from writing_coach.product.entitlement import CommerceEntitlementSource
+
+    return CommerceEntitlementSource(PostgresCommerceRepository(_persistence_runtime.engine))
+
+
+from writing_coach.product.service import configure_product_billing  # noqa: E402
+
+configure_product_billing(_billing_entitlement_source())
 # D-170: the target-language count reads what the account holds from the same PostgreSQL the quota store lives on; a
 # runtime without that store has no ownership reader, and an enforced `languages.target` then answers 503.
 from writing_coach.persistence.language_ownership import PostgresLanguageOwnership  # noqa: E402

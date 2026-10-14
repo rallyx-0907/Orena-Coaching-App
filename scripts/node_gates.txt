@@ -129,3 +129,4 @@ scripts/test_orena_agent.mjs
 scripts/test_orena_surfaces.mjs
 scripts/test_orena_public_pages.mjs
 scripts/test_orena_general_catalogue.mjs
+scripts/test_orena_reading_provenance.mjs
