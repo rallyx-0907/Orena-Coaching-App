@@ -827,6 +827,7 @@ _media_library_store = FileMediaLibraryStore(_media_library_root)
 _media_library_assets = FilesystemBookAssetStore(_media_library_asset_root)
 from writing_coach.media_spend import SpendLedger
 from writing_coach.media_transcript_pipeline import MediaPipeline
+from writing_coach.languages.english.ipa import ipa_for as english_ipa_for
 from writing_coach.media_providers.youtube_audio import download_audio
 
 _media_pipeline = MediaPipeline(
@@ -835,7 +836,8 @@ _media_pipeline = MediaPipeline(
     ingestion=_media_ingestion_service,
     youtube_audio=download_audio,
     meanings=prepare_media_meanings,
-    english_reading=lambda word: lookup_dictionary(word, language="en", allow_ai=False, persist=False).get("phonetic", ""),
+    # D-204: import never makes a network call per word; local CMUdict IPA, empty on a miss.
+    english_reading=english_ipa_for,
     workers=1,
 )
 configure_media_library(

@@ -6804,3 +6804,18 @@ product by the Admin through a server-side flag, never by editing code. No schem
 6. **Not covered, by design.** A learner's own saved progress for a hidden lesson stays stored and shows as unavailable without a
    title; it is not deleted. Default for genuinely curated items stays visible. Further kinds are added to
    `content_visibility.KINDS` only together with the filter on their learner paths.
+
+## D-204 - Media import makes no per-word network lookup (2026-10-14)
+
+Status: PROPOSED (pending independent review). Owner decision 2026-10-14, from the Video Sources Phase 0 runtime: lesson
+preparation must never wait on a dictionary website. No schema change.
+
+1. **Cause.** `lesson_payload` asked `lookup_dictionary(word, allow_ai=False, persist=False)` (api.dictionaryapi.dev, up to ~20 s
+   or HTTP 522 per word) for every distinct word of an English transcript. A 63 s clip took 7 minutes and a 555 s clip 22 minutes
+   in the segment stage, on a single worker.
+2. **Rule.** During import, English pronunciation is the local CMUdict IPA (D-202, `ipa_for`) and empty on a miss. Word meaning
+   and enrichment during import use local catalogue or cache only; a miss is left for the learner's own on-demand tap lookup,
+   which is unchanged. Nothing in lesson preparation blocks on a dictionary. No worker or concurrency was added to hide latency.
+3. **Where.** `app.py` wires `MediaPipeline(english_reading=ipa_for)`; `tests/test_media_import_offline_lexicon.py` fails if the
+   import path makes any HTTP, socket or dictionary call. The line translation stage (`prepare_media_meanings`) is a separate,
+   spend-capped provider stage and is not a word lookup; it is unchanged.
