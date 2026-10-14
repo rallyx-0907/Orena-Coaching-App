@@ -6185,6 +6185,11 @@ and `CREDITS_ENABLED` are not live. Missing backend data, no workaround written:
   `{ state: created|pending|paid|expired|cancelled|failed|refunded, credited: boolean, credit_units, amount_minor,
   currency, expires_at }`. The watcher confirms only on `state == paid` and `credited == true`; `paid` alone is waiting.
   Without it a payment can never be shown as confirmed, and the return URL is never trusted.
+  **GO-LIVE BLOCKER (independent review of PR #213, P1-1).** `CREDITS_ENABLED` and `credit_packs` must stay off until
+  this route ships: with the route absent the first poll answers 404, the watcher stops and the sheet can only say
+  "waiting for payment confirmation", never confirm. The route serves only the caller's own order (another learner's code
+  answers 404, not 403, so codes are not probed), and its `state` and `credited` must match what `orderStateFrom` reads.
+  The client has no kill switch of its own: `credit_packs` is the only runtime gate that hides the screen.
 - **CT-2 learner balance.** Balance and ledger are admin-only (`/api/admin/billing/credits/{incarnation}`). Needed: a
   learner read of the caller's own balance (posted, available) and a page of entries.
 - **CT-3 learner history shape.** Needed: only learner-meaningful entries (topup, settle, refund, reversal, adjustment),
@@ -6192,6 +6197,8 @@ and `CREDITS_ENABLED` are not live. Missing backend data, no workaround written:
   kinds to Buy/Use/Refund/Adjust credits and drops reserve, release and reserve_expire rows; it never shows backend terms.
 - **CT-4 resume an order.** `checkout_already_started` (409) returns no payment link. Needed: the pending order's
   `redirect_url` and `qr` (or the order read in CT-1 carrying them) so a returning learner can resume.
+  Client behaviour until then: on `checkout_already_started` the client follows the order it already holds in this
+  session, otherwise shows the mapped friendly line and closes the sheet (no dead end, no resume possible).
 - **CT-5 pack display data.** A pack carries only `pack_id`, `credit_units`, `currency`, `amount_minor`, `gateway`.
   Needed if a frame shows them: a display name, a bonus/base split and a "popular" flag, or the frame must not draw them.
 - **CT-6 QR expiry and return URL.** Checkout returns `qr` and `redirect_url` but no `expires_at`; the return URL is fixed
@@ -6253,3 +6260,22 @@ it. No UI was invented. Open for the human: whether the media detail should show
 control to retry only the missing lines.
 
 - **Media licence link on the public credits page (D-205 follow-up).** Commons items now carry `license_name` and `license_url` through the credits rows and the listening payload, but no credits renderer shows the licence link, so CC attribution links stay invisible. Needs the design's credits row to place it.
+
+## Credits top-up client: follow-ups from the independent review of PR #213 (2026-10-15)
+
+Fixed in the client: pending wording (owner-mandated "Đang chờ xác nhận thanh toán" via `statusWaiting`/`statusStillWaiting`;
+the design's "waiting for your transfer" lines are sample copy, D-068, and are no longer rendered), watcher tied to the
+route, purchase cleared on sign-in refusal / auth stop / nothing on sale, closed-order steps use their own status line,
+`qrMatrix` no longer throws, `checkout_already_started` no longer loops.
+
+Not fixed, logged:
+
+- **P2-6 balance placeholder.** The balance shows "—" beside its unit until CT-2 ships; that glyph is not drawn by the design.
+- **P2-7 plan strip.** The only plan-derived text in the sheet comes from `/api/product/commerce`; keep Credits and
+  subscription state separate in any refactor.
+- **P2-8 offers read.** `GET /api/billing/offers` is read on each Plan and Profile load; share one cached read per route
+  entry when it matters.
+- **Reduced motion.** `data-cr-anim` hooks exist; the CSS honouring `prefers-reduced-motion` was not confirmed by the
+  reviewer and is not measured here (browser check belongs to the design-reviewer lane).
+- **A purchase survives a sign-out within one page session** only until the next Credits entry, auth stop or sign-in
+  refusal; a full-page sign-out reloads the module state. A session-scoped key would need an account id on the client.
