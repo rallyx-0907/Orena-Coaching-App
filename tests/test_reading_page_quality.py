@@ -1,4 +1,4 @@
-"""Quality admission (D-18X, PROPOSED): a page that is not an article never reaches a publish.
+"""Quality admission (D-191, PROPOSED): a page that is not an article never reaches a publish.
 
 Fixtures are modelled on the pages of the 2026-10-13 trial (reading_quality_fixtures).
 Hard codes refuse a reviewer's publish; every code, hard or soft, holds D-111
