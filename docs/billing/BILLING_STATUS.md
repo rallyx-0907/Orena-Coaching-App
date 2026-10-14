@@ -8,11 +8,11 @@
 | Branch | `feature/monetization-billing-v1` |
 | Main | `ceaaa9e2` (`origin/main`, 2026-10-14, PR #181); the lane rebased onto it; `migrations/` unchanged since `1a9e010d` (head `20261005_0026`) |
 | Last completed slice | PR-MON-3 Billing Orders + Reconciliation Safety: design and implementation architecture-APPROVED, CI green on `1f7d5865`, merged to `main` as #178 (`1a9e010d`, 2026-10-14) |
-| Active PR | **PR-MON-4 Prepaid Credit Ledger** - IMPLEMENTED on the lane branch (design APPROVED FOR IMPLEMENTATION `48e1bf2e`), awaiting the independent implementation review; request: `PR-MON-4_REVIEW_REQUEST.md` |
+| Active PR | **PR-MON-4 Prepaid Credit Ledger** - implementation review REQUEST CHANGES (3 P1s on `2f52279b`), all fixed (`b4cc46ff`, `90bb3b1c`); awaiting the focused re-review; code frozen otherwise. Record: `docs/reviews/architecture/PR_MON_4_CREDIT_LEDGER_REVIEW_2026-10-14.md` |
 | Current slice | PR-MON-4: proposed 0032 (on 0031), credit repository, `CreditService` gated by `credit_runtime_privileges`, reconciler credit step, admin read + adjustment routes |
-| Exact next action | independent implementation review of PR-MON-4; on APPROVE rebase and open the PR. 0027/0031/0032 stay proposed; credits OFF until the runtime connects as a non-superuser member of `orena_credit_runtime` (deployment gate) |
+| Exact next action | focused re-review of the PR-MON-4 P1 fixes; on APPROVE rebase and open the PR. 0027/0031/0032 stay proposed; credits OFF (R-MON-014 deployment gate) |
 | Blockers | the implementation review. Human gates: migration promotion/application (0027 -> 0031 -> 0032); runtime-role separation before credits are enabled |
-| Test status | local only (not CI), PR-MON-4 `dc193265`. SQLite targeted (credits, billing, reconciliation, price integrity, entitlement, account state, commerce, membership, admin console, admin matrix, language limit, public routes): 636 passed, 1 skipped. Throwaway PostgreSQL 16 (billing, credits, reconciliation, price integrity, entitlement, every `tests/*_postgres.py`): 524 run, 523 passed, 1 failed = INHERITED #160 - the 26 credit PG tests run as a non-superuser member of `orena_credit_runtime`. Mutations: 25/25 caught, each by its own guard's test (table in `PR-MON-4_REVIEW_REQUEST.md`) |
+| Test status | local only (not CI), after the review fixes. SQLite targeted: 636 passed, 1 skipped (`b4cc46ff`). Throwaway PostgreSQL 16 batch: 534 run, 533 passed, 1 failed = INHERITED #160 (`b4cc46ff`); credit tests 39 passed on `90bb3b1c` (31 PostgreSQL tests as a non-superuser runtime member, plus a non-superuser executor path). Mutations: 29/29 caught, each by its own guard's test (table in `PR-MON-4_REVIEW_REQUEST.md`) |
 | Next human checkpoint | PR-MON-2 architecture-review-ready report. Separate issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
 ## Revised sequence (human, 2026-10-13)

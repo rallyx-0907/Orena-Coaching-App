@@ -138,6 +138,19 @@ Each guard was removed in a throwaway copy, and `tests/test_credit_ledger.py` pl
 | the shortfall item's per-kind CHECK (P1-6) | 0032 | 1 | `test_credit_items_need_their_references_and_their_facts_never_change` |
 | no new charge on a deleted account (trigger) | 0032 | 1 | `test_a_deleted_account_keeps_its_credit_as_a_liability_and_takes_no_new_charge` |
 
+### After the implementation review's P1 fixes (`b4cc46ff`, `90bb3b1c`)
+
+All 25 mutants above were re-run on `b4cc46ff`, and each was caught again. Four new guards were added; their mutants are below. **29/29 caught.**
+
+The P1-3 lock mutant first hung, because its regression left the deletion transaction open when the assertion failed. `90bb3b1c` closes that transaction in `finally`, and the mutant was re-run on that commit, where it was caught.
+
+| Guard removed | Where | Failing tests | Guard's own test |
+| --- | --- | --- | --- |
+| readiness requires `orena_credit_runtime` membership (P1-2) | repository | 1 | `test_p1_2_a_harmless_role_without_runtime_membership_is_not_ready_until_it_is_a_member` |
+| the trigger locks the incarnation before the account (P1-3) | 0032 | 2 | `test_p1_3_a_direct_insert_waits_for_a_deletion_and_then_fails[topup]`, `test_p1_3_a_direct_insert_waits_for_a_deletion_and_then_fails[reserve]` |
+| existing roles are validated (P1-1) | 0032 | 1 | `test_p1_1_an_existing_role_that_is_not_safe_is_refused_before_any_ddl` |
+| a non-superuser executor needs owner membership WITH SET (P1-1) | 0032 | 1 | `test_p1_1_a_non_superuser_executor_with_provisioned_roles_runs_0032_and_its_downgrade` |
+
 ## Evidence
 
 See `BILLING_STATUS.md` ("Test status") and the mutation table below:
