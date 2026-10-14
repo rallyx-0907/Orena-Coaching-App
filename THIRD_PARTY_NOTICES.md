@@ -19,6 +19,9 @@ itself, not here.
 | `lucide` | Lucide icons, lucide-static 0.525.0 | ISC | `static/orena/kit/icons.js` | Lucide contributors |
 | `google-fonts` | Fredoka, Outfit, Plus Jakarta Sans, Literata, JetBrains Mono, Noto Sans SC, Noto Serif SC | SIL Open Font License 1.1 | `static/orena/fonts/` (self-hosted `woff2` files, fetched once by `scripts/fetch_self_hosted_fonts.py`; each family's licence text in `static/orena/fonts/licences/`) | The fonts' authors |
 | `nltk-tagger` | NLTK averaged perceptron tagger (English part-of-speech data) | Apache 2.0 | installed at build time | NLTK Project |
+| `cefrj-vocabulary` | CEFR-J Vocabulary Profile 1.5, English word levels A1-B2 (single words, lowest level kept) | Free for research and commercial use with citation (TUFS terms of use) | `writing_coach/languages/english/level_words_cefrj.json`, built by `scripts/build_reading_level_tables.py`; read by `writing_coach/reading_level.py` | Tono Laboratory, Tokyo University of Foreign Studies (TUFS); The CEFR-J Wordlist Version 1.5, compiled by Yukio Tono (http://www.cefr-j.org/download.html) |
+| `octanove-vocabulary` | Octanove Vocabulary Profile C1/C2 1.0, English word levels C1-C2 | CC BY-SA 4.0 - **ShareAlike**: this file, and any adaptation of it, stays under CC BY-SA 4.0. It is a separate data file so the licence does not extend to the CEFR-J table or to Orena's code | `writing_coach/languages/english/level_words_octanove_c1c2.json` (single words only, derived by the same script; licence text: `writing_coach/languages/english/CC-BY-SA-4.0.txt`) | Octanove Labs, distributed with the CEFR-J datasets by Open Language Profiles |
+| `hsk30-vocabulary` | HSK 3.0 word and character levels (10,959 pure-Hanzi words and 3,000 characters of the 11,092-entry source list; only each entry's level is kept) | MIT (ivankra/hsk30). Its README notes that the original standard is a PRC Ministry of Education publication and that the copyright claim on the data is questionable | `writing_coach/languages/chinese/level_words_hsk30.json`, built by `scripts/build_reading_level_tables.py`; read by `writing_coach/reading_level.py` | Ivan Krasilnikov and Shawky, https://github.com/ivankra/hsk30 (commit 4ff9e391); derived from the PRC Ministry of Education HSK 3.0 standard |
 
 Data under CC BY-SA remains under CC BY-SA after Orena's repackaging (share-alike); the repackaged
 files are published with their licence texts and modification notices.
@@ -40,3 +43,5 @@ design project's own file.
 
 The application image installs FFmpeg (`ffmpeg`, `ffprobe`) from Debian packages (LGPL-2.1+ /
 GPL-2+ depending on build); Orena invokes it as a separate program and does not link it.
+
+Test fixtures only (not shipped in the image, not served): `tests/fixtures/level_gold/zh/` holds Tatoeba sentences (CC BY 2.0 FR, sentence ids recorded per item) and Chinese Wikipedia lead paragraphs (CC BY-SA 4.0, page revision ids recorded per item; ShareAlike applies to those files only). See the fixture README for sources.
