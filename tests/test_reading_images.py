@@ -252,6 +252,14 @@ def test_the_fetch_sends_no_cookies_or_credentials():
 
 # ---- the routes ---------------------------------------------------------------------------------
 
+@pytest.fixture(autouse=True)
+def _fresh_preview_cache():
+    """The admin preview cache is module state; no test may see another's fetched picture."""
+    admin_api._preview_cache.clear()
+    yield
+    admin_api._preview_cache.clear()
+
+
 @pytest.fixture()
 def images(setup):  # noqa: F811
     store, fetcher = MemoryStore(), Fetcher()

@@ -6286,8 +6286,8 @@ Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human
 
 ## D-194 - Reading thumbnails: a picture needs the source's policy, an approval and a credit; a same-origin copy (2026-10-14)
 
-**Status: PROPOSED.** Needs the owner's approval of the image-rights policy and independent architecture review of the new
-outbound fetch path before merge. Owner decisions of 2026-10-14 are carried out as written; nothing here turns a source on. No
+**Status: ACCEPTED** (owner approved the image-rights policy on 2026-10-14; independent reviews below; no source is enabled
+by this change; merged once CI was green). Was PROPOSED. Owner decisions of 2026-10-14 are carried out as written; nothing here turns a source on. No
 schema or migration change. Closes U2 of `docs/content/READ_SOURCE_ACCEPTANCE_2026-10-13.md` (D-189 item 5 made the thumbnail
 "not a publish blocker"; the human has since made it P1 ship-readiness).
 
@@ -6326,12 +6326,14 @@ schema or migration change. Closes U2 of `docs/content/READ_SOURCE_ACCEPTANCE_20
 7. **Not done.** A superseded, cleared or rejected approved file stays in the asset store (content-addressed, small), so third
    party bytes remain on disk after a withdrawal even though nothing serves them.
 
-**Independent review (2026-10-14).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer, on
-8980cf3d: APPROVED WITH CONDITIONS (CI green on the merged result; merge with D-192; renumber to D-194; route count). Conditions
-and P2 items addressed on the same branch: merged with main keeping the learner-facing publisher resolver, one locked
-`polling_policy` writer, a total fetch deadline and preview cache, immediate withdrawal and cache semantics, delete-only-what-
-this-call-created, the candidate host in the audit, and IPv4-mapped, non-default-port and peer-rebinding tests. Browser
-measurement of the surface is still pending.
+**Independent reviews (2026-10-14).** Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer:
+8980cf3d APPROVED WITH CONDITIONS (merge with D-192, renumber to D-194, route count, CI green); 1d0cddbd APPROVED WITH
+CONDITIONS (a per-chunk wall-clock bound on the fetch, a merge with main); 14257a23 APPROVE, no open P0/P1, CI green. Conditions
+addressed on the branch: merged with main keeping the learner-facing publisher resolver, one locked `polling_policy` writer,
+a per-chunk total fetch deadline and a locked preview cache, immediate withdrawal and cache semantics, delete-only-what-this-
+call-created, the candidate host in the audit, and IPv4-mapped, non-default-port and peer-rebinding tests. The owner approved the
+image-rights policy on 2026-10-14; no source is enabled by this PR. Browser measurement of the surface is done by the human
+before merge.
 
 Note (review of 1d0cddbd): the whole rule fails closed. If the registry row, the stored event or the asset file cannot be
 read, the learner gets the letter tile or a 404, never a picture.
@@ -6415,3 +6417,25 @@ checked against the live OpenRouter catalogue from the build environment; verify
 fails over). No live provider call was made.
 
 **Supersedes / Superseded by:** Supersedes D-035 (primary-only wording); clarifies D-010.
+
+## D-196 - Reading level: the reviewer's override is validated, folded over the automatic level and never overwrites it (2026-10-14)
+
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE on 976b346d; merged once CI was green). Production Readiness item 7a; the human's order was
+"let the reviewer override first, then fix automatic CEFR/HSK classification" (defect D6, NASA release rated C2).
+
+The override already existed (`reviewed_level` / `effective_level`, `POST /api/admin/reading/articles/{id}`, a `level_override`
+review event, the segmented control on the article page). This decision closes the gaps and adds no storage and no migration:
+
+1. `estimated_level` stays the classifier's and is never written by an admin, so the automatic classifier can be compared to
+   reviewer corrections later. `effective_level` (override, else automatic) is the only level a learner list, filter or detail reads.
+2. The level must be on the article's own scale (A1-C2 for English, HSK1-HSK6 for Chinese, the constants of
+   `reading_processing`): the route answers 422 `reading_invalid_level` and the repository refuses with `ValueError`, so a script
+   is stopped too. Before, any string was stored.
+3. Setting the level it already has, or clearing an absent override, is not a change: no event, no revision bump.
+4. A change records a review event (actor, optional reason, `from`/`to`) and bumps `content_revision`; clearing restores the
+   automatic level. The bump follows the existing rule for every learner-visible field and applies to any status, not only
+   published (a draft has no cached copy, so it is harmless and keeps one rule).
+5. Admin UI: the pinned `Orena Admin.dc.html` already draws the control as "Keep estimate · {est}"; the label now carries the
+   automatic level. The design draws no reason field; the API accepts a `reason` and the UI does not send one.
+
+Not done here: improving the automatic classification (the next step).

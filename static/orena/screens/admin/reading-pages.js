@@ -233,7 +233,7 @@ export function articlePage({ article, sets, view, t, ui, href, now, images = nu
       <div class="a-field"><div class="a-field__label"><span>${t('rdFieldEstimated')}</span></div><div class="a-fact">${article.estimated_level || '—'}<small>${article.estimated_level_confidence != null ? t('rdConfidence', { n: Math.round(article.estimated_level_confidence * 100) }) : ''}</small></div></div>
       <div class="a-field"><div class="a-field__label"><span>${t('rdFieldTime')}</span></div><div class="a-fact">${t('rdMinutes', { n: readingMinutes(article.reading_time_seconds) })}<small>${t('rdWords', { n: num(article.word_count, ui) })}</small></div></div>
       ${formFields([
-        { id: 'reviewed_level', kind: 'seg', label: t('rdFieldReviewed'), span: true, options: [{ id: '', label: t('rdKeepEstimate'), on: reviewed === '' }, ...levelOptions(article.language).map((level) => ({ id: level, label: level, on: reviewed === level, disabled: !editable }))], disabledAll: !editable },
+        { id: 'reviewed_level', kind: 'seg', label: t('rdFieldReviewed'), span: true, options: [{ id: '', label: article.estimated_level ? `${t('rdKeepEstimate')} · ${article.estimated_level}` : t('rdKeepEstimate'), on: reviewed === '' }, ...levelOptions(article.language).map((level) => ({ id: level, label: level, on: reviewed === level, disabled: !editable }))], disabledAll: !editable },
         { id: 'body', kind: 'area', label: t('rdFieldBody'), span: true, rows: 12, value: value('body'), readOnly: !editable },
       ])}
     </div>
