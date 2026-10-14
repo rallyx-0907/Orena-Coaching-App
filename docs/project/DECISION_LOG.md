@@ -6807,7 +6807,7 @@ product by the Admin through a server-side flag, never by editing code. No schem
 
 ## D-204 - Media import makes no per-word network lookup (2026-10-14)
 
-Status: PROPOSED (pending independent review). Owner decision 2026-10-14, from the Video Sources Phase 0 runtime: lesson
+Status: ACCEPTED (merged once CI was green). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 552daf3f: ACCEPT, no P0/P1. Owner decision 2026-10-14, from the Video Sources Phase 0 runtime: lesson
 preparation must never wait on a dictionary website. No schema change.
 
 1. **Cause.** `lesson_payload` asked `lookup_dictionary(word, allow_ai=False, persist=False)` (api.dictionaryapi.dev, up to ~20 s
@@ -6816,6 +6816,11 @@ preparation must never wait on a dictionary website. No schema change.
 2. **Rule.** During import, English pronunciation is the local CMUdict IPA (D-202, `ipa_for`) and empty on a miss. Word meaning
    and enrichment during import use local catalogue or cache only; a miss is left for the learner's own on-demand tap lookup,
    which is unchanged. Nothing in lesson preparation blocks on a dictionary. No worker or concurrency was added to hide latency.
-3. **Where.** `app.py` wires `MediaPipeline(english_reading=ipa_for)`; `tests/test_media_import_offline_lexicon.py` fails if the
+3. **Readings.** New English readings are General American (CMUdict, D-202). Older stored lessons, and the cache-fed legacy
+   path, may carry dictionaryapi.dev readings (often British); no migration or reprocess rewrites them.
+4. **Word meaning.** Import does no word-meaning lookup at all; meaning is the learner's on-demand tap.
+5. **Remaining network in the readiness path** (none per word): caption and metadata fetch, yt-dlp audio, ASR, the spend-capped
+   line translation, and the `_prepare_model_clips` audio re-download.
+6. **Where.** `app.py` wires `MediaPipeline(english_reading=ipa_for)`; `tests/test_media_import_offline_lexicon.py` fails if the
    import path makes any HTTP, socket or dictionary call. The line translation stage (`prepare_media_meanings`) is a separate,
    spend-capped provider stage and is not a word lookup; it is unchanged.
