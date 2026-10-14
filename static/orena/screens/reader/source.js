@@ -5,6 +5,7 @@
    never each read a source their own way. */
 import { api } from '../../infrastructure/api.js';
 import { sourceLine, creditOf } from '../../product/provenance.js';
+import { isTraditional } from '../../product/script.js';
 import {
   blocksForSource,
   pageBlocks,
@@ -37,6 +38,7 @@ export async function loadReadable(parsed, memory) {
       author: sourceLine(article),
       credit: creditOf(article),
       level: String(article?.level || ''),
+      traditional: isTraditional(article),
       topic: String(article?.topic || ''),
       // The article's own reading time, whole minutes (practice mode's meta line).
       minutes: Number.isFinite(article?.reading_time_seconds) && article.reading_time_seconds > 0 ? Math.max(1, Math.round(article.reading_time_seconds / 60)) : 0,

@@ -344,12 +344,13 @@ export default async function mountReader(element, ctx) {
   const KIND_LABEL = { article: 'kindArticle', book: 'kindBook', text: 'kindText' };
   const toolbarMetaText = () =>
     practice
-      ? toolbarMeta({ author: t('practiceTitle'), level: doc.level, kindLabel: '', modeLabel: doc.minutes ? t('minutes', { n: doc.minutes }) : '', pageLabel: t('pageOf', pageOf(sentenceBySeg.size, percent)) })
+      ? toolbarMeta({ author: t('practiceTitle'), level: doc.level, scriptLabel: doc.traditional ? t('scriptTraditional') : '', kindLabel: '', modeLabel: doc.minutes ? t('minutes', { n: doc.minutes }) : '', pageLabel: t('pageOf', pageOf(sentenceBySeg.size, percent)) })
       : toolbarMeta({
       isBook: doc.isBook,
       chapterTitle: doc.chapterTitle,
       author: doc.author,
       level: doc.level,
+      scriptLabel: doc.traditional ? t('scriptTraditional') : '',
       chapterIndex: doc.neighbours?.index,
       chapterTotal: doc.neighbours?.total,
       kindLabel: t(KIND_LABEL[doc.kind] || 'kindText'),

@@ -18,6 +18,7 @@
 import { duration } from '../../product/duration.js';
 import { placePercent } from '../../product/place-progress.js';
 import { imageOf, publisherOf } from '../../product/provenance.js';
+import { isTraditional } from '../../product/script.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { collectionTitle } from '../../copy/general-catalogue.js';
 
@@ -58,6 +59,7 @@ export function entryFromArticle(item, continuation) {
     // changes with a later switch, and this is the value the data itself declares.
     language: item.language || '',
     author: publisherOf(item),
+    traditional: isTraditional(item),
     level: item.level || '',
     topic: item.topic || '',
     readingSeconds: Number.isFinite(item.reading_time_seconds) ? item.reading_time_seconds : null,
@@ -324,6 +326,8 @@ export function presentCard(entry, t) {
   if (entry.kind === 'collection' && entry.itemCount != null) meta = t.plural('collectionWordCount', entry.itemCount);
   const tags = [];
   if (entry.level) tags.push({ label: entry.level, tone: 'accent' });
+  // D-197: a Traditional Chinese article says so, in the same tag the level and topic use; Simplified is unlabelled.
+  if (entry.traditional) tags.push({ label: t('scriptTraditional') });
   // N-35: only a topic the vocabulary above names is shown, in the interface language (P-06).
   if (topicKey(entry.topic)) tags.push({ label: topicLabel(entry.topic, t) });
   if (entry.started) {

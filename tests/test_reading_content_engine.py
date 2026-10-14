@@ -248,6 +248,44 @@ def test_a_pasted_text_becomes_one_candidate_waiting_for_review(engine_parts):
     assert jobs.get_job(job["id"])["status"] == "completed"
 
 
+def _paste(engine_parts, body, language):
+    engine, content, jobs = engine_parts
+    engine.submit(SubmittedInput(kind="text", text=body, title="T", language=language, rights={}), actor="admin@example.com")
+    return content, content.get_article(engine.process(jobs.claim("worker-1"))["article_id"])
+
+
+ZH_ARTICLE_TRADITIONAL = (
+    "週末，我們來到山上的森林。老師帶著學生沿著小路慢慢走進松樹林。"
+    "松樹林裡很安靜，大家認真觀察樹木和地上的植物。遠處有一片竹林，竹林旁邊是一條清澈的小河。"
+    "朋友拿出相機拍照，記錄森林裡的風景。老師解釋保護環境的重要性，也介紹了幾種常見的植物。"
+    "大家把帶來的食物和水放在書包裡，沒有在森林裡留下垃圾。回家以後，學生寫下觀察到的事情。"
+)
+
+
+def test_a_chinese_candidate_stores_its_script_and_the_learner_payload_carries_it(engine_parts):
+    for body, script in ((ZH_ARTICLE, "zh-Hans"), (ZH_ARTICLE_TRADITIONAL, "zh-Hant")):
+        content, article = _paste(engine_parts, body, "zh")
+        assert article["analysis"]["script"] == script
+        assert "script_mixed" not in article["analysis"]["quality_issues"]
+        content.set_status(article["id"], "published", actor="admin@example.com")
+        assert content.get_published_article(article["id"])["script"] == script
+        assert [i["script"] for i in content.list_published(language="zh")["items"] if i["id"] == article["id"]] == [script]
+
+
+def test_mixed_scripts_are_stored_and_flagged_soft(engine_parts):
+    content, article = _paste(engine_parts, ZH_ARTICLE + ZH_ARTICLE_TRADITIONAL, "zh")
+    assert article["analysis"]["script"] == "mixed"
+    assert "script_mixed" in article["analysis"]["quality_issues"]
+
+
+def test_an_english_article_has_no_script(engine_parts):
+    content, article = _paste(engine_parts, ARTICLE, "en")
+    assert "script" not in article["analysis"]
+    content.set_status(article["id"], "published", actor="admin@example.com")
+    assert "script" not in content.get_published_article(article["id"])
+    assert all("script" not in item for item in content.list_published(language="en")["items"])
+
+
 def test_the_candidate_records_the_quality_problems_a_reviewer_should_see(engine_parts):
     engine, content, jobs = engine_parts
     engine.submit(

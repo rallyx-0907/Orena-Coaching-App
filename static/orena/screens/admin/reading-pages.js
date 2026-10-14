@@ -186,6 +186,7 @@ function evidenceFields(t, article, ui) {
   const meta = source.metadata || {};
   const rows = [
     [t('rdEvLang'), analysis.detected_language || meta.detected_language ? `${analysis.detected_language || meta.detected_language}${meta.detected_language_confidence != null ? ` (${meta.detected_language_confidence})` : ''}` : '—'],
+    ...(analysis.script ? [[t('rdEvScript'), t.has(`rdScript_${String(analysis.script).replace('-', '_')}`) ? t(`rdScript_${String(analysis.script).replace('-', '_')}`) : String(analysis.script)]] : []),
     [t('rdEvLevel'), article.estimated_level ? `${article.estimated_level}${article.estimated_level_confidence != null ? ` (${article.estimated_level_confidence})` : ''}` : '—'],
     [t('rdEvSentences'), analysis.sentence_count != null ? `${num(analysis.sentence_count, ui)} · ${t('rdEvAvgLength', { n: analysis.average_sentence_length })}` : '—'],
     [t('rdEvTargets'), num((article.targets || []).length, ui)],

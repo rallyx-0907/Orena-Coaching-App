@@ -6,6 +6,7 @@ import { defineCopy } from '../../copy/index.js';
 const KEYS = [
   'back',
   'typeArticle', 'typeBook', 'typeText', 'typeVideo', 'typeAudio',
+  'scriptTraditional',
   'startReading', 'continueReading', 'listen', 'continueListening', 'continueWatching',
   'save', 'saved', 'practiceThisText', 'transcript',
   'generated', 'captions', 'minutes',
@@ -26,6 +27,7 @@ export const t = defineCopy('content', {
     minutes: '{n} min',
     related: 'Related', resume: 'Resume', resumeAt: 'Resume at {at}', resumeChapter: 'Resume at chapter {n} of {total}', readAgain: 'Read again', progressPercent: '{pct}% complete',
     more: 'More', deleteFromOrena: 'Delete from Orena', deletedFromOrena: 'Deleted from Orena',
+    scriptTraditional: 'Traditional',
   },
   vi: {
     back: '← Quay lại',
@@ -38,6 +40,7 @@ export const t = defineCopy('content', {
     minutes: '{n} phút',
     related: 'Liên quan', resume: 'Tiếp tục', resumeAt: 'Tiếp tục từ {at}', resumeChapter: 'Tiếp tục ở chương {n} / {total}', readAgain: 'Đọc lại', progressPercent: 'Hoàn thành {pct}%',
     more: 'Thêm', deleteFromOrena: 'Xoá khỏi Orena', deletedFromOrena: 'Đã xoá khỏi Orena',
+    scriptTraditional: 'Phồn thể',
   },
   zh: {
     back: '← 返回',
@@ -50,5 +53,6 @@ export const t = defineCopy('content', {
     minutes: '{n} 分钟',
     related: '相关内容', resume: '继续', resumeAt: '从 {at} 继续', resumeChapter: '从第 {n} / {total} 章继续', readAgain: '重新阅读', progressPercent: '已完成 {pct}%',
     more: '更多', deleteFromOrena: '从 Orena 删除', deletedFromOrena: '已从 Orena 删除',
+    scriptTraditional: '繁體',
   },
 });

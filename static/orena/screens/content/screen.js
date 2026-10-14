@@ -26,6 +26,7 @@ import { openMedia } from '../../product/media-source.js';
 import { mapLesson } from '../listening/model.js';
 import { t } from './copy.js';
 import { bookPlace } from '../../product/place-progress.js';
+import { isTraditional } from '../../product/script.js';
 import {
   parseContentId,
   contentIdFor,
@@ -125,7 +126,7 @@ async function loadRelated(kind, id, language, current) {
           // languages-5 / finding A: the related list is the same language-scoped catalogue this
           // content item itself came from (loadRelated's own `language` argument).
           lang: language,
-          meta: metaLine([t('typeArticle'), item.level, minutesLabel(minutesFrom(item.reading_time_seconds))]),
+          meta: metaLine([t('typeArticle'), item.level, isTraditional(item) ? t('scriptTraditional') : '', minutesLabel(minutesFrom(item.reading_time_seconds))]),
           image: '',
         }),
       });
@@ -241,7 +242,8 @@ export default async function content(element, ctx) {
         height: 'var(--hero-h)',
         pill: typeLabel(kind, detail.playbackKind),
         title: langSpan(detail.title, detail.language),
-        meta: metaLine([detail.source, detail.level, minutesLabel(detail.minutes)]),
+        // D-197: a Traditional Chinese article is labelled in the hero meta line, after its level.
+        meta: metaLine([detail.source, detail.level, detail.traditional ? t('scriptTraditional') : '', minutesLabel(detail.minutes)]),
       })}
       <div class="${cls('s-content__grid', !related.length && 's-content__grid--full')}">
         <div class="s-content__main">

@@ -253,11 +253,11 @@ export function pageOf(sentenceCount, percent) {
 }
 
 /* The toolbar's second line, as the frame builds it (`rdDocMeta · rdPageLabel`): source, kind,
-   level and reading mode, then the page; a book names its chapter and position instead of a source.
+   level, script (a Traditional Chinese text only, D-197) and reading mode, then the page; a book names its chapter and position instead of a source.
    Labels come from the caller in the learner's language; missing parts are left out. */
-export function toolbarMeta({ isBook, chapterTitle = '', author = '', level = '', chapterIndex, chapterTotal, kindLabel = '', modeLabel = '', pageLabel = '' }) {
+export function toolbarMeta({ isBook, chapterTitle = '', author = '', level = '', scriptLabel = '', chapterIndex, chapterTotal, kindLabel = '', modeLabel = '', pageLabel = '' }) {
   const chapter = isBook && Number.isInteger(chapterIndex) && Number.isInteger(chapterTotal) ? `${chapterIndex + 1}/${chapterTotal}` : '';
-  return metaLine([isBook ? chapterTitle : author, kindLabel, level, modeLabel, chapter, pageLabel]);
+  return metaLine([isBook ? chapterTitle : author, kindLabel, level, scriptLabel, modeLabel, chapter, pageLabel]);
 }
 
 /* ------------------------------------------------------------------------------- End of text --- */

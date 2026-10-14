@@ -44,6 +44,7 @@ from sqlalchemy.engine import Engine
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
 from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
+from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
 from writing_coach.reading_images import (
     SHARED_URL_THRESHOLD,
     assess_candidates,
@@ -466,6 +467,14 @@ def _learner_row(row: Any) -> dict[str, Any]:
         "published_at": _iso(row.published_at),
         "content_revision": row.content_revision,
     }
+
+
+def _script_field(language: str, stored: Any) -> dict[str, Any]:
+    """`script` for a Chinese article only (zh-Hans / zh-Hant / mixed / unknown, D-197); other languages omit it.
+    An article ingested before the field existed has none stored: it reads as `unknown`, which is never labelled."""
+    if language != "zh":
+        return {}
+    return {"script": stored if stored in SCRIPTS else UNKNOWN}
 
 
 class ReadingContentRepository:
@@ -1599,12 +1608,15 @@ class ReadingContentRepository:
                 if len(rows) > bounded and page
                 else None
             )
+            scripts: dict[Any, Any] = {}
             credits, images = self._credits_and_images(
-                connection, [row.id for row in page], revisions={row.id: row.content_revision for row in page}
+                connection, [row.id for row in page], revisions={row.id: row.content_revision for row in page},
+                scripts=scripts,
             )
         return {
             "items": [
-                {**_learner_row(row), "provenance": credits.get(row.id) or build_provenance(
+                {**_learner_row(row), **_script_field(row.language, scripts.get(row.id)),
+                 "provenance": credits.get(row.id) or build_provenance(
                     publisher="", url="", author="", rights=None), "image": images.get(row.id)}
                 for row in page
             ],
@@ -1657,6 +1669,7 @@ class ReadingContentRepository:
             "word_count": row.word_count,
             "content_revision": row.content_revision,
             "published_at": _iso(row.published_at),
+            **_script_field(row.language, (row.analysis_json or {}).get("script") or detect_script(row.body)),
             "targets": [
                 {
                     "text": target.text,
@@ -1792,7 +1805,8 @@ class ReadingContentRepository:
         return self._credits_and_images(connection, article_ids, revisions=None)[0]
 
     def _credits_and_images(
-        self, connection: Any, article_ids: Sequence[Any], *, revisions: Mapping[Any, int] | None
+        self, connection: Any, article_ids: Sequence[Any], *, revisions: Mapping[Any, int] | None,
+        scripts: dict[Any, Any] | None = None,
     ) -> tuple[dict[Any, dict[str, Any]], dict[Any, dict[str, str] | None]]:
         """The credit of each article and, when `revisions` is given, its learner `image` (or None).
 
@@ -1824,6 +1838,10 @@ class ReadingContentRepository:
             answered = [entry["answers"] for entry in entries if entry["action"] == RIGHTS_EVENT]
             effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
             credits[row.id] = _learner_credit(row, effective)
+            if scripts is not None:
+                # The Chinese script was measured at ingest and kept with the snapshot's metadata, which this
+                # read already holds; the list never touches the article analysis (D-197).
+                scripts[row.id] = (row.item_metadata or {}).get("script")
             if revisions is not None:
                 images[row.id] = learner_image(
                     article_id=str(row.id),

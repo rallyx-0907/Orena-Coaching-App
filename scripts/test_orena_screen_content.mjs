@@ -83,9 +83,9 @@ assert.deepEqual(placeFor([{ id: 'other', place: { within: 50 } }], 'article:x')
 // or null, never a placeholder string or a guessed number.
 // D-130: the description is the article's own metadata; the body is never presented as one.
 assert.deepEqual(normalizeArticle({ title: 'Sông Hồng', attribution: { author: 'Báo X' }, level: 'B1', reading_time_seconds: 300, body: 'ngắn', description: 'Mô tả bài' }), {
-  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', minutes: 5, topic: '', desc: 'Mô tả bài', image: '',
+  title: 'Sông Hồng', language: '', source: 'Báo X', level: 'B1', traditional: false, minutes: 5, topic: '', desc: 'Mô tả bài', image: '',
 });
-assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', minutes: null, topic: '', desc: '', image: '' });
+assert.deepEqual(normalizeArticle({ title: 'No attribution', body: 'text' }), { title: 'No attribution', language: '', source: '', level: '', traditional: false, minutes: null, topic: '', desc: '', image: '' });
 // languages-5 / finding A: the article's own real language field
 // (reading_content_repository.py's `_article` projection), carried through untranslated.
 assert.equal(normalizeArticle({ title: 'x', body: '', language: 'zh' }).language, 'zh');

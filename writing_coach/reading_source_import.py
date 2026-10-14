@@ -35,6 +35,7 @@ from html import escape
 from html.parser import HTMLParser
 from typing import Any, Protocol
 
+from writing_coach.languages.chinese.script_detection import detect_script
 from writing_coach.media_safe_fetch import UnsafeMediaFetch, fetch_bounded
 from writing_coach.reading_article_extraction import extract_article
 from writing_coach.reading_processing import (
@@ -222,6 +223,10 @@ def _finish(
         "source_name": submitted.source_name,
         "rights_known": bool(submitted.rights),
     }
+    if language == "zh":
+        # A measured fact of the text, kept with the snapshot like `detected_language`: the learner list reads it
+        # from the source item it already joins, so it never reads the article analysis (D-197).
+        metadata["script"] = detect_script(body)
     metadata.update(raw.metadata)
     metadata.update(extra or {})
     return NormalizedSourceItem(
