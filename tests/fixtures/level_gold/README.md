@@ -12,8 +12,9 @@ refitted from the approved set, never from the provisional one alone. Reviewer c
 
 | File | What |
 | --- | --- |
-| `voa_en.json` + `en/*.txt` | 46 VOA Learning English pages (US-government work, public domain; some are adapted from agency reports and are fixtures only, like `tests/fixtures/voa_en`). The label is the level VOA states for the programme (Beginning: Let's Learn English Level 1 = A1, Level 2 = A2; Intermediate = B1). VOA's Advanced tier has no label (`null`, status `UNLABELLED`): the tier describes the learner, not the vocabulary. Texts are cut at 700 words. |
+| `voa_en.json` + `en/*.txt` | 36 VOA Learning English pages (US-government work, public domain). Ten pages that credit an agency ("reported this story for the Associated Press / AFP", adapted for VOA) were dropped from the first 46: no agency-credited text is committed here. The label is the level VOA states for the programme (Beginning: Let's Learn English Level 1 = A1, Level 2 = A2; Intermediate = B1). VOA's Advanced tier has no label (`null`, status `UNLABELLED`): the tier describes the learner, not the vocabulary. Texts are cut at 700 words. |
 | `samples_en.json`, `samples_zh.json` | Orena-written samples per band (A1-C2, HSK1-HSK6), owned by Orena. |
+| `zh_real.json` + `zh/*.txt` | 13 real easy Chinese texts with clear reuse rights, fetched 2026-10-14: eight Tatoeba sentence sets (CC BY 2.0 FR; sentence ids in `source`; attribution Tatoeba contributors) and five Chinese Wikipedia leads (CC BY-SA 4.0, revision in `source`). Labels were written by the author before the estimator ran. |
 | `real_articles.json` | Real pages already in `tests/fixtures` (NASA, Global Voices, VOA 中文), read through the page extractor. |
 
 ## Format

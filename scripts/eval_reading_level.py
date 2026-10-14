@@ -29,7 +29,7 @@ def load_gold() -> list[dict]:
     from writing_coach.reading_article_extraction import extract_article
 
     items: list[dict] = []
-    for name in ("voa_en.json", "samples_en.json", "samples_zh.json", "real_articles.json"):
+    for name in ("voa_en.json", "samples_en.json", "samples_zh.json", "real_articles.json", "zh_real.json"):
         for entry in json.loads((GOLD / name).read_text(encoding="utf-8")):
             if "path" in entry:
                 text = (GOLD / entry["path"]).read_text(encoding="utf-8")
@@ -63,10 +63,25 @@ def score(items: list[dict], predict) -> dict[str, dict]:
     return out
 
 
+def _memoize_counts() -> None:
+    """The fit re-estimates every text per grid point; the token counts do not depend on the thresholds."""
+    for name in ("_rank_counts_en", "_rank_counts_zh"):
+        original = getattr(reading_level, name)
+        cache: dict[str, object] = {}
+
+        def cached(text: str, _original=original, _cache=cache):
+            if text not in _cache:
+                _cache[text] = _original(text)
+            return _cache[text]
+
+        setattr(reading_level, name, cached)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--fit", action="store_true")
     args = parser.parse_args()
+    _memoize_counts()
     items = load_gold()
 
     def current(item):

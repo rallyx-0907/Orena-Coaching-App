@@ -165,28 +165,6 @@
   "path": "en/voa-a2-4073994-html.txt"
  },
  {
-  "id": "voa-b1-7921334-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/how-physical-therapists-can-prevent-future-health-problems/7921334.html",
-  "program": "Health & Lifestyle",
-  "truncated": true,
-  "path": "en/voa-b1-7921334-html.txt"
- },
- {
-  "id": "voa-b1-8001173-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/how-daylight-savings-time-affects-health/8001173.html",
-  "program": "Health & Lifestyle",
-  "truncated": true,
-  "path": "en/voa-b1-8001173-html.txt"
- },
- {
   "id": "voa-b1-7958876-html",
   "language": "en",
   "label": "B1",
@@ -196,28 +174,6 @@
   "program": "Health & Lifestyle",
   "truncated": true,
   "path": "en/voa-b1-7958876-html.txt"
- },
- {
-  "id": "voa-b1-7980912-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/how-to-reduce-risks-of-bad-air-quality/7980912.html",
-  "program": "Health & Lifestyle",
-  "truncated": false,
-  "path": "en/voa-b1-7980912-html.txt"
- },
- {
-  "id": "voa-b1-7953508-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/experts-provide-tips-for-avoiding-computer-linked-vision-trouble/7953508.html",
-  "program": "Health & Lifestyle",
-  "truncated": true,
-  "path": "en/voa-b1-7953508-html.txt"
  },
  {
   "id": "voa-b1-7998765-html",
@@ -231,28 +187,6 @@
   "path": "en/voa-b1-7998765-html.txt"
  },
  {
-  "id": "voa-b1-7989189-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/methods-for-protecting-earth-against-an-asteroid-strike/7989189.html",
-  "program": "Science in the News",
-  "truncated": false,
-  "path": "en/voa-b1-7989189-html.txt"
- },
- {
-  "id": "voa-b1-8005741-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/total-lunar-eclipse-to-turn-moon-red/8005741.html",
-  "program": "Science in the News",
-  "truncated": false,
-  "path": "en/voa-b1-8005741-html.txt"
- },
- {
   "id": "voa-b1-8001341-html",
   "language": "en",
   "label": "B1",
@@ -262,28 +196,6 @@
   "program": "Science in the News",
   "truncated": false,
   "path": "en/voa-b1-8001341-html.txt"
- },
- {
-  "id": "voa-b1-7985890-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/scientists-link-gene-to-human-speech/7985890.html",
-  "program": "Science in the News",
-  "truncated": false,
-  "path": "en/voa-b1-7985890-html.txt"
- },
- {
-  "id": "voa-b1-7990808-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/knitting-while-watching-movies-gains-popularity-/7990808.html",
-  "program": "Arts & Entertainment",
-  "truncated": false,
-  "path": "en/voa-b1-7990808-html.txt"
  },
  {
   "id": "voa-b1-7972740-html",
@@ -308,17 +220,6 @@
   "path": "en/voa-b1-7964993-html.txt"
  },
  {
-  "id": "voa-b1-7997203-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/researchers-south-korea-s-birth-rate-increase-last-year-unclear-/7997203.html",
-  "program": "As It Is",
-  "truncated": false,
-  "path": "en/voa-b1-7997203-html.txt"
- },
- {
   "id": "voa-b1-7980858-html",
   "language": "en",
   "label": "B1",
@@ -328,17 +229,6 @@
   "program": "As It Is",
   "truncated": false,
   "path": "en/voa-b1-7980858-html.txt"
- },
- {
-  "id": "voa-b1-7983265-html",
-  "language": "en",
-  "label": "B1",
-  "status": "PROVISIONAL",
-  "label_basis": "VOA stated tier Intermediate",
-  "source": "https://learningenglish.voanews.com/a/france-sets-new-plasma-record-in-hunt-for-nuclear-fusion/7983265.html",
-  "program": "As It Is",
-  "truncated": false,
-  "path": "en/voa-b1-7983265-html.txt"
  },
  {
   "id": "voa-b1-7972396-html",

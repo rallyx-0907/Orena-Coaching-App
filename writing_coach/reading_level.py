@@ -42,8 +42,7 @@ _EN_WORD = re.compile(r"[A-Za-z][A-Za-z'’-]*")
 _SENTENCE_START = re.compile(r"(?:^|[.!?]+[\"')\]]*\s+|\n\s*)[\"'“‘(]*$")
 _HAN = re.compile(r"[㐀-䶿一-鿿]")
 _ZH_CLAUSE_END = re.compile(r"[。！？；，、：…]+[」』”）]*")
-_ZH_SENTENCE_END = re.compile(r"[。！？；…]+[」』”）]*")
-_EN_SENTENCE_END = re.compile(r"[.!?]+[\"')\]]*\s+|[.!?]+[\"')\]]*$")
+EN_SENTENCE_END = re.compile(r"[.!?]+[\"')\]]*\s+|[.!?]+[\"')\]]*$")
 # jieba.posseg flags that are names, numbers or non-words: they never count.
 _ZH_SKIP_FLAGS = ("nr", "ns", "nt", "nz", "nrt", "nrfg", "m", "mq", "eng", "x", "w", "t", "q")
 
@@ -162,12 +161,11 @@ def _zh_clause_length(text: str) -> float:
 def _sentence_length(text: str, language: str) -> float:
     if language == "zh":
         return _zh_clause_length(text)
-    sentences = [s for s in _EN_SENTENCE_END.split(text) if s and s.strip()]
+    sentences = [s for s in EN_SENTENCE_END.split(text) if s and s.strip()]
     words = len(_EN_WORD.findall(text))
     return words / len(sentences) if sentences else 0.0
 
 
-@lru_cache(maxsize=256)
 def _rank_counts_en(text: str) -> tuple[Counter, Counter]:
     """Counter of rank (0-5 known, 6 beyond the lists) and of the unlisted/high words."""
     ranks: Counter = Counter()
@@ -187,8 +185,8 @@ def _rank_counts_en(text: str) -> tuple[Counter, Counter]:
     return ranks, words
 
 
-@lru_cache(maxsize=256)
 def _rank_counts_zh(text: str) -> tuple[Counter, Counter]:
+    """Counter of rank (0-5 = HSK1-6, 6 = HSK 7-9, 7 = in no list) and of the words above HSK2."""
     import jieba.posseg as pseg  # lazy: the library loads its dictionary on first use
 
     words_table, chars_table = _zh_tables()
@@ -201,13 +199,21 @@ def _rank_counts_zh(text: str) -> tuple[Counter, Counter]:
         if word in words_table:
             rank = words_table[word]
         else:
-            char_ranks = [chars_table.get(c, 6) for c in word if _HAN.match(c)]
-            rank = max(char_ranks) if char_ranks else 6
-        rank = 6 if rank > 5 else rank
+            # An unlisted word is mostly a compound of listed characters. Its level is its upper-median
+            # character: one hard character (a surname, a rare morpheme) does not set the whole word.
+            # A character in no list is rank 7.
+            char_ranks = sorted(chars_table.get(c, 7) for c in word if _HAN.match(c))
+            rank = char_ranks[len(char_ranks) // 2] if char_ranks else 7
         ranks[rank] += 1
         if rank >= 2:
             words[(word, rank)] += 1
     return ranks, words
+
+
+def _rank_label(rank: int, bands: tuple[str, ...], zh: bool) -> str:
+    if rank < 6:
+        return bands[rank]
+    return "HSK7-9" if zh and rank == 6 else "beyond"
 
 
 def _band_for(above: list[float], tau: float) -> int:
@@ -240,14 +246,16 @@ def estimate(text: str, language: str) -> dict[str, Any]:
     spread = abs(_band_for(above, tau * 0.7) - _band_for(above, tau * 1.4)) if scored else 2
     confidence = round(sample * (1.0, 0.75, 0.5, 0.5, 0.5, 0.5)[min(spread, 5)], 3)
     top = [
-        {"word": word, "band": bands[rank] if rank < 6 else "beyond", "count": count}
+        {"word": word, "band": _rank_label(rank, bands, zh), "count": count}
         for (word, rank), count in sorted(words.items(), key=lambda kv: (-kv[1], kv[0][0]))
         if rank > index
     ][:8]
     evidence = {
         "scored_tokens": scored,
         "coverage": {bands[k]: round(cumulative[k], 3) for k in range(6)},
-        "beyond_lists": round(counts[6] / total, 3),
+        # Chinese keeps HSK 7-9 (rank 6) apart from words in no list (rank 7); English has only the latter.
+        "beyond_lists": round(counts[7 if zh else 6] / total, 3),
+        **({"hsk7_9": round(counts[6] / total, 3)} if zh else {}),
         "lexical_band": bands[lexical],
         "sentence_length": round(length, 1),
         "top_above_band": top,

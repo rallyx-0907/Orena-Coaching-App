@@ -34,6 +34,7 @@ from html import unescape
 from html.parser import HTMLParser
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from writing_coach.reading_level import EN_SENTENCE_END
 from writing_coach.reading_level import estimate as estimate_level
 
 # Markup that is never article text, whatever it contains.
@@ -67,7 +68,6 @@ _TRACKING_PREFIXES = ("utm_", "pk_", "piwik_", "at_", "hsa_")
 _ALLOWED_SCHEMES = frozenset({"http", "https"})
 
 _CJK = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
-_EN_SENTENCE_END = re.compile(r"[.!?]+[\"')\]]*\s+|[.!?]+[\"')\]]*$")
 _ZH_SENTENCE_END = re.compile(r"[。！？；…]+[」』”）]*")
 _EN_WORD = re.compile(r"[A-Za-z][A-Za-z'’-]*")
 _WHITESPACE = re.compile(r"[^\S\n]+")
@@ -108,8 +108,6 @@ _EN_COMMON = frozenset(
     we well went were what when where which who will with work would year you your
     """.split()
 )
-# The Chinese characters that carry grammar rather than content.
-_ZH_COMMON = frozenset("的了是在我有和就不人都一个上也很到说要去你会着没有看好这那他她们与及为以于")
 
 # Particles that turn a plain verb into a phrasal verb.
 _PARTICLES = frozenset(
@@ -287,7 +285,7 @@ def _sentences(body: str, language: str) -> list[str]:
     if language == "zh":
         pieces = [piece.strip() for piece in _ZH_SENTENCE_END.split(text) if piece.strip()]
         return pieces or [text]
-    pieces = [piece.strip() for piece in _EN_SENTENCE_END.split(text) if piece and piece.strip()]
+    pieces = [piece.strip() for piece in EN_SENTENCE_END.split(text) if piece and piece.strip()]
     return pieces or [text]
 
 

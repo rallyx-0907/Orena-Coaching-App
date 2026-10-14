@@ -6511,7 +6511,7 @@ estimator never reads `reviewed_level`).
 
 ## D-199 - Reading level: coverage against graded word lists replaces the heuristic (reading-level/3) (2026-10-14)
 
-**Status: PROPOSED** (independent review to follow). Production Readiness item 7b, option A of D-198, chosen by the owner on
+**Status: ACCEPTED** (independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5: APPROVE WITH CONDITIONS on 538dc9ba; the conditions are addressed in the following commits; merged once CI was green, with the owner decisions of item 6). Production Readiness item 7b, option A of D-198, chosen by the owner on
 2026-10-14. Replaces the interim estimate of D-198. No schema change, no migration, no stored row changed; the reviewer
 override of D-196 keeps its precedence (the estimator never reads `reviewed_level`). No AI call: the `level_estimation`
 router capability (D-195) is not used.
@@ -6531,7 +6531,7 @@ router capability (D-195) is not used.
 2. **Estimator** (`writing_coach/reading_level.py`; `LEVEL_VERSION = "reading-level/3"`, stored as `analysis.level_version`).
    Names, acronyms, numbers and units never count (D-198's rules). English tokens are looked up with suffix rules and a small
    irregular-form table; Chinese is segmented with jieba, names/numbers/non-words are skipped by jieba tag, and an unlisted
-   word falls back to its characters (the hardest character). Band = the lowest band whose share of tokens above it is at most
+   word falls back to its characters (their upper median; HSK 7-9 is a rank of its own, capped to HSK6 for learners). Band = the lowest band whose share of tokens above it is at most
    `TAU` (en 0.10, zh 0.08); a mean sentence length of 20+ words (en) or clause length of 14+ (zh) adds one band, an English
    mean of 5 or fewer takes one off. `confidence` = `min(1, scored/300)` discounted when a 0.7x-1.4x change of `TAU` moves
    the band; below `LOW_CONFIDENCE` (0.1, about 35 scored words) the band is capped at C1 / HSK5.
@@ -6539,21 +6539,33 @@ router capability (D-195) is not used.
    the sentence length and the top eight out-of-band words with their count - never the text. Admin Reading's evidence panel shows
    coverage and those words in the existing row component (EN/VI/ZH copy `rdEvCoverage`, `rdEvAboveBand`); confidence was already
    drawn ("N% sure").
-3. **Calibration** (`tests/fixtures/level_gold/`, `scripts/eval_reading_level.py`). 58 labelled items (44 EN, 14 ZH): 46 VOA
+3. **Calibration** (`tests/fixtures/level_gold/`, `scripts/eval_reading_level.py`). 61 labelled items (34 EN, 27 ZH): 36 VOA
    Learning English pages labelled by VOA's stated tier (Beginning = A1/A2 by programme, Intermediate = B1; the Advanced tier
-   describes the learner, not the vocabulary, so it is unlabelled), Orena-written samples per band, and the real fixtures
-   (NASA, Global Voices, VOA 中文). **Every label is PROVISIONAL; none is owner-approved.** Agreement before (the D-198 heuristic,
-   same items) and after: English exact 29.5 percent to 77.3 percent, within one band 90.9 to 97.7; Chinese exact 7.1 to 92.9,
-   within one band 71.4 to 100. The parameters were fitted on these same items (3 per language), so these are in-sample; a two-fold
-   hold-out gave English 72.7/95.5 and 81.8/100 and Chinese 85.7/100 on both folds. Reviewer corrections will be read-only
-   evidence once a database is at hand, not the sole truth.
-4. **Result on real articles.** English: NASA C2 to C1, Global Voices C2 to C1, VOA Learning English spreads over A1-C1 (A1 7,
-   A2 18, B1 22, C1 2 across 49 pages). Chinese: the five VOA 中文 news pages all read HSK6 (80-90 percent of their words are in
-   the 1-6 lists; the rest are HSK 7-9). That is the honest answer for unedited news, but it means real Chinese news does not
-   spread: the repository holds no easier real Chinese article, so the Chinese spread (HSK1, 2, 4, 5, 6) is shown on the
-   author's samples. Real easy Chinese texts are what the owner can add to the gold set.
+   describes the learner, not the vocabulary, so it is unlabelled; ten pages that credit an agency were dropped), Orena-written
+   samples per band, the real fixtures (NASA, Global Voices, VOA 中文), and 13 real easy Chinese texts (item 4).
+   **Every label is PROVISIONAL; none is owner-approved.** Agreement with those labels, D-198 heuristic then this estimate on the
+   same items: English exact 35.3 percent then 70.6, within one band 88.2 then 97.1; Chinese exact 22.2 then 66.7, within one
+   band 85.2 then 92.6. The parameters were fitted on a subset of these items (three per language) so the figures are in-sample;
+   a two-fold hold-out gave English 52.9/82.4 and 70.6/100 and Chinese 76.9/92.3 and 50.0/100. They are regression guards, not
+   a claim of accuracy. Reviewer corrections will be read-only evidence once a database is at hand, not the sole truth.
+4. **Result on real articles.**
+   - English: NASA C2 to C1, Global Voices C2 to C1; VOA Learning English spreads over A1-C1.
+   - Chinese news: the five VOA 中文 pages all read HSK6 (D-198: all HSK5). 80-93 percent of their words are in the HSK 1-6 lists,
+     7-15 percent are HSK 7-9 and under 1 percent are in no list. HSK 7-9 is its own internal rank (shown to learners as HSK6, kept
+     in the evidence as `hsk7_9`), and an unlisted word takes the upper-median band of its characters rather than the hardest, so
+     the ceiling is the measurement and not an artefact of the fallback. Thresholds were not fitted to make news look easier.
+   - Chinese easy real texts (owner's acceptance, 2026-10-14): 13 real texts with clear reuse rights, labelled PROVISIONAL by the
+     author before the estimator ran: eight Tatoeba sentence sets (CC BY 2.0 FR) and five Chinese Wikipedia leads (CC BY-SA 4.0).
+     Estimate: HSK3 x2, HSK4 x4, HSK5 x2, HSK6 x5 (D-198: HSK4 x7, HSK5 x6). Eight of thirteen read below HSK6 over four bands, so the
+     criterion "real texts below HSK6 with a spread" is met on these. Agreement with the author's labels is 5 of 13 exact and 11
+     of 13 within one band: short sentence sets of about 75 words can be pushed up a band by three or four rare words, and the
+     encyclopedia leads read a band above the author's guess. Nothing was refitted for them.
 5. **Known limits.** The labels are judgements (the VOA tier is coarse and its A1/A2 split is by programme, not measured); a
    text is graded on vocabulary and length only, not on grammar, so a grammatically complex text in plain words reads low
    (an author B2 sample reads A2); an English word absent from CEFR-J/Octanove (technical terms, many derived forms) counts as
-   beyond C2, which is why a technical press release reads C1-C2; the suffix rules are heuristic. Re-estimating stored rows is
-   an owner decision: `scripts/report_reading_level_changes.py` (read-only) lists what would change under this version.
+   beyond C2, which is why a technical press release reads C1-C2; the suffix rules are heuristic; the Chinese threshold is
+   strict for texts under about 100 words. Re-estimating stored rows is an owner decision:
+   `scripts/report_reading_level_changes.py` (read-only) lists what would change under this version.
+6. **Owner decisions (2026-10-14).** (a) The use of the CEFR-J list as a repackaged derived table, and of the HSK 3.0 list from
+   ivankra/hsk30 (MIT, with the provenance caveat in item 1), are ACCEPTED in full by the owner; no further confirmation is needed.
+   (b) The Chinese acceptance gap was to be closed by adding easy real Chinese texts and checking; item 4 records the result.
