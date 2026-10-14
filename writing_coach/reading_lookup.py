@@ -181,9 +181,12 @@ def _catalog_candidates(selection: str, lemma: str) -> list[str]:
 def _safe_find_entry(
     repository: VocabularyLookup, language: str, normalized_term: str
 ) -> dict[str, Any] | None:
+    # Any failure of the catalogue is a miss: the dictionary and translation layers below can still answer.
     try:
         return repository.find_entry(language, normalized_term)
     except VocabularyContentUnavailable:
+        return None
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -259,8 +262,17 @@ def _start_local_translation(service, source, target, segments, text) -> Future 
         return future
 
 
+def _is_paid(service: Any) -> bool:
+    return bool(getattr(service, "uses_ai", False) or getattr(service, "uses_paid_provider", False))
+
+
 def _safe_machine_translation(
-    service: ReadingTranslationService, source: str, target: str, text: str, wait: float | None = None
+    service: ReadingTranslationService,
+    source: str,
+    target: str,
+    text: str,
+    wait: float | None = None,
+    local_service: ReadingTranslationService | None = None,
 ) -> str | None:
     segments = [TextSegment("selection", text)]
     try:
@@ -269,10 +281,13 @@ def _safe_machine_translation(
         held = reader(source, target, segments) if reader else None
         if held is not None:
             return held.translations[0][1] if held.translations else None
-        if getattr(service, "uses_ai", False) or getattr(service, "uses_paid_provider", False):
+        if _is_paid(service):
             # A word's meaning in its sentence is /word-detail's; a basic tap never creates a translation with the
-            # AI platform or any paid service. Only the free local engine (Marian) may create one here.
-            return None
+            # AI platform or any paid service. Only the free local engine (Marian) may create one here - the
+            # reading engine being the paid AI (the default) does not take that engine away from the tap.
+            if local_service is None or _is_paid(local_service):
+                return None
+            service = local_service
         if wait is None:
             result = service.translate(source, target, segments)
         else:
@@ -298,7 +313,9 @@ class ReadingLookupService:
         english_dictionary_cached: Callable[[str], dict[str, Any] | None] | None = None,
         *,
         budget_seconds: float | None = None,
+        local_translation_service: ReadingTranslationService | None = None,
     ) -> None:
+        self._local_translation_service = local_translation_service
         self._english_dictionary_cached = english_dictionary_cached
         self._budget = budget_seconds
         self._vocabulary_repository = vocabulary_repository
@@ -323,7 +340,10 @@ class ReadingLookupService:
                 part_of_speech="", pronunciation="", audio_url="", meanings=(), definitions=(),
             )
 
-        local = _local_token_facts(source, context if source == surrounding else selection, selection)
+        try:
+            local = _local_token_facts(source, context if source == surrounding else selection, selection)
+        except Exception:  # noqa: BLE001 - the tagger is an aid; the dictionary layers below do not depend on it
+            local = {"part_of_speech": "", "pronunciation": "", "base_form": "", "lemma": ""}
         part_of_speech = local["part_of_speech"]
         pronunciation = local["pronunciation"]
         base_form = local["base_form"]
@@ -397,7 +417,9 @@ class ReadingLookupService:
             wait = None
             if self._budget is not None:
                 wait = max(_MIN_TRANSLATION_WAIT, self._budget - (time.monotonic() - started))
-            translated = _safe_machine_translation(self._translation_service, source, target, selection, wait)
+            translated = _safe_machine_translation(
+                self._translation_service, source, target, selection, wait, self._local_translation_service
+            )
             if translated:
                 meanings.append(LookupMeaning(translated, "machine_translation"))
 

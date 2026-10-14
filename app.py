@@ -686,6 +686,12 @@ _reading_lookup_service = ReadingLookupService(
     _reading_translation_service,
     _reading_english_dictionary_cached,
     budget_seconds=TAP_BUDGET_SECONDS,
+    # The free local translator (Marian) belongs to the basic tap whichever engine translates reading text; with the
+    # paid AI as that engine, the tap would otherwise have no translation layer at all.
+    local_translation_service=ReadingTranslationService(
+        LocalHttpTranslationProvider(os.getenv("LOCAL_TRANSLATION_URL", "http://local-translator:8090")),
+        cache=_reading_derived_cache,
+    ),
 )
 configure_reading_lookup(_reading_lookup_service)
 # A saved word's meaning in the learner's support language (D-124), for the
