@@ -6286,8 +6286,10 @@ Answers catalogue question Q6 (VOA wire copy) in part; the part that stays human
 
 ## D-195 - AI Cost Router, slice 1: word_translation, OpenRouter free pool, explicit operator failover (2026-10-14)
 
-**Status: PROPOSED** (needs independent architecture review before it merges; AGENTS.md architecture review authority,
-design `docs/project/proposals/AI_COST_ROUTER.md`, PR #165). No schema, no migration, no UI change. The capability ships
+**Status: ACCEPTED** (2026-10-14). Independent review: Delegated Architecture Reviewer, Claude Opus 5.5, APPROVED WITH
+CONDITIONS on 43ce4621, re-review APPROVE on f1f5c60c; merged once CI was green. Owner decisions of 2026-10-14 are in
+the design `docs/project/proposals/AI_COST_ROUTER.md` (PR #165). Activation, the OpenRouter key and verifying the two
+pinned model ids remain owner actions. No schema, no migration, no UI change. The capability ships
 without a stored configuration, so it is disabled until the owner saves and enables one.
 
 Owner decisions of 2026-10-14, recorded here before the tests that pinned the old rules change:
