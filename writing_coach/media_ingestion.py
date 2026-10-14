@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Callable, Sequence
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Protocol
 from urllib.parse import urlsplit
@@ -93,6 +93,9 @@ class MediaAcquisition:
 
     media_object: MediaLearningObject
     playback: MediaPlayback
+    # Who made the source and where it came from, as the provider states it.
+    # Strings only; empty when the provider says nothing. It is provenance for the library entry, not learner copy.
+    provenance: Mapping[str, str] = field(default_factory=dict)
 
 
 class MediaProviderAdapter(Protocol):

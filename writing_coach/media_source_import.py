@@ -45,7 +45,7 @@ from writing_coach.media_thumbnail import (
 # extension is only a routing hint - ffprobe decides what the bytes really are,
 # so a lying extension costs one failed probe and never a wrong library entry.
 DIRECT_MEDIA_SUFFIXES = frozenset(
-    {".mp4", ".webm", ".mov", ".m4v", ".mkv", ".mp3", ".m4a", ".wav", ".ogg", ".opus", ".aac", ".flac"}
+    {".mp4", ".webm", ".mov", ".m4v", ".mkv", ".mp3", ".m4a", ".wav", ".ogg", ".ogv", ".opus", ".aac", ".flac"}
 )
 
 # The human label a card shows for where the media came from. Localisation is
@@ -117,12 +117,19 @@ def playback_for(entry: MediaLibraryEntry) -> dict[str, str]:
 
 
 def source_label(entry: MediaLibraryEntry) -> str:
-    return PROVIDER_LABELS.get(entry.provider, entry.provider)
+    # A platform the importer recorded (Wikimedia Commons, behind a direct file) names where the media really came from.
+    return str(entry.source.get("platform") or "") or PROVIDER_LABELS.get(entry.provider, entry.provider)
 
 
-def _source(provider: str, canonical_url: str, imported_by: str, *, kind: str = "admin-import") -> dict[str, str]:
-    """Provenance, stated as exactly what was checked and by whom."""
-    return {
+def _source(
+    provider: str, canonical_url: str, imported_by: str, *, kind: str = "admin-import", extra: Mapping[str, str] | None = None
+) -> dict[str, str]:
+    """Provenance, stated as exactly what was checked and by whom.
+
+    `extra` carries what the provider said about the source (platform, original URL, author and its address, licence
+    name and address). Only non-empty strings are kept; a provider that names a licence (Wikimedia Commons) replaces
+    the generic review reminder in `license` with that name."""
+    base = {
         "provider": provider,
         "type": kind,
         "provenance_url": canonical_url,
@@ -134,6 +141,14 @@ def _source(provider: str, canonical_url: str, imported_by: str, *, kind: str = 
         "review_status": "URL, playback reference and thumbnail checked at import time.",
         "imported_by": imported_by,
     }
+    for key, value in (extra or {}).items():
+        if isinstance(value, str) and value.strip():
+            base[key] = value.strip()
+    return base
+
+
+def _clean_creator(value: str) -> str:
+    return " ".join(str(value or "").split())[:240]
 
 
 def _entry_with(entry: MediaLibraryEntry, **changes: Any) -> MediaLibraryEntry:
@@ -200,7 +215,15 @@ class UnsupportedMediaAddress(Exception):
     goes with it was written for an operator and belongs to a category the
     console can translate. A `ValueError` from anywhere else is an internal
     detail and must not reach them.
+
+    `code` and `message` say which way the address is unusable (not a media suffix, a file ffprobe cannot read);
+    the bare form keeps the original "unsupported_media_type".
     """
+
+    def __init__(self, code: str = "unsupported_media_type", message: str = "This address is not a supported media file.") -> None:
+        super().__init__(code)
+        self.code = code
+        self.message = message
 
 
 class MediaLibraryWriteFailed(Exception):
@@ -233,7 +256,7 @@ def _safe_url_for_log(url: str) -> str:
     return f"{parts.scheme}://{parts.hostname}{port}{parts.path}"
 
 
-def _failure_reason(exc: BaseException) -> tuple[str, str]:
+def failure_reason(exc: BaseException) -> tuple[str, str]:
     """(category, sentence) for a failed import.
 
     Nothing here interpolates `str(exc)` for an exception this code did not
@@ -253,8 +276,12 @@ def _failure_reason(exc: BaseException) -> tuple[str, str]:
             f"The media library could not be written: {said}. "
             "This is a deployment problem, not a problem with the source.",
         )
+    from writing_coach.media_commons import CommonsRejected
+
+    if isinstance(exc, CommonsRejected):
+        return exc.code, exc.message
     if isinstance(exc, UnsupportedMediaAddress):
-        return "unsupported_media_type", "This address is not a supported media file."
+        return exc.code, exc.message
     if isinstance(exc, UnsafeMediaFetch):
         # Authored constants from `media_safe_fetch`, written to be shown.
         return "unsafe_source", str(exc)
@@ -409,7 +436,7 @@ class MediaSourceImporter:
 
     def _failed(self, url: str, exc: BaseException) -> MediaSourceImportItem:
         """Log everything, answer with the category and its sentence."""
-        category, detail = _failure_reason(exc)
+        category, detail = failure_reason(exc)
         _logger.error(
             "media import failed (%s) for %s", category, _safe_url_for_log(url),
             exc_info=(type(exc), exc, exc.__traceback__),
@@ -542,6 +569,14 @@ class MediaSourceImporter:
         host = (parsed.hostname or "").casefold()
         if host in {"youtu.be", "youtube.com"} or host.endswith(".youtube.com"):
             return self._from_youtube(url, language=language, imported_by=imported_by), None
+        from writing_coach.media_commons import is_commons_address, resolve
+
+        if is_commons_address(url):
+            validate_public_http_url(url)
+            found = resolve(url)
+            return self._from_direct_url(
+                found.media_url, language=language, imported_by=imported_by, persist_media=persist_media, commons=found
+            )
         return self._from_direct_url(url, language=language, imported_by=imported_by, persist_media=persist_media)
 
     def _from_youtube(self, url: str, *, language: str, imported_by: str) -> MediaLibraryEntry:
@@ -567,26 +602,39 @@ class MediaSourceImporter:
             duration_ms=asset.duration_ms or _transcript_duration_ms(acquisition),
             language=language,
             level="",
-            creator="",
-            source=_source("youtube", asset.source_url, imported_by),
+            creator=_clean_creator(acquisition.provenance.get("author", "")),
+            source=_source("youtube", asset.source_url, imported_by, extra={
+                "platform": PROVIDER_LABELS["youtube"],
+                "original_url": asset.source_url,
+                "creator": acquisition.provenance.get("author", ""),
+                "creator_url": acquisition.provenance.get("author_url", ""),
+            }),
             library="shared",
             created_at=_now(),
             lesson=_lesson_projection(media_id, acquisition, language),
         )
 
     def _from_direct_url(
-        self, url: str, *, language: str, imported_by: str, persist_media: bool
+        self, url: str, *, language: str, imported_by: str, persist_media: bool, commons: Any = None
     ) -> tuple[MediaLibraryEntry, MediaAcquisition | None]:
         """A media file on a public host: bounded, SSRF-guarded, probed locally."""
         validate_public_http_url(url)
         suffix = _safe_suffix(urlsplit(url).path)
         if suffix not in DIRECT_MEDIA_SUFFIXES:
-            raise UnsupportedMediaAddress
+            raise UnsupportedMediaAddress(
+                "unsupported_media_type",
+                f"This address ends in {Path(urlsplit(url).path).suffix.casefold()[:12] or 'no file type'}, which is not an audio or video file Orena can read.",
+            )
         token = hashlib.sha256(url.encode("utf-8")).hexdigest()[:32]
         asset_key = f"media/direct-{token}/original{suffix}"
         with TempMediaFile(suffix=suffix) as temp:
             download_bounded(url, temp.path)
-            probe = probe_media(temp.path)
+            try:
+                probe = probe_media(temp.path)
+            except ValueError as exc:
+                # ffprobe's own authored sentence: the file arrived and is not media this importer can use, which is
+                # not the same thing as an unsupported address.
+                raise UnsupportedMediaAddress("media_unreadable", str(exc)) from exc
             if persist_media:
                 # Storage, so a refusal here is the library's and says so.
                 try:
@@ -608,19 +656,34 @@ class MediaSourceImporter:
                 playback={"provider": "orena", "kind": probe.media_type, "url": f"/api/media/files/{asset_key}"},
                 # The filename is not a title, but it is the only true thing
                 # known about a direct file before a human edits it.
-                title=(Path(urlsplit(url).path).stem[:240] or "Imported media"),
+                title=(commons.title if commons is not None else Path(urlsplit(url).path).stem[:240] or "Imported media"),
                 thumbnail={"kind": "asset", "ref": thumbnail_key} if thumbnail_key else {"kind": "none", "ref": ""},
                 duration_ms=probe.duration_ms,
                 language=language,
                 level="",
-                creator="",
-                source=_source("direct", url, imported_by),
+                creator=_clean_creator(commons.author) if commons is not None else "",
+                source=_source("direct", url, imported_by, extra=self._commons_provenance(commons)),
                 library="shared",
                 created_at=_now(),
                 lesson=None,
             ),
             None,
         )
+
+    @staticmethod
+    def _commons_provenance(commons: Any) -> dict[str, str]:
+        if commons is None:
+            return {}
+        from writing_coach.media_commons import PLATFORM
+
+        return {
+            "platform": PLATFORM,
+            "original_url": commons.page_url,
+            "creator": commons.author,
+            "creator_url": commons.author_url,
+            "license": commons.licence,
+            "license_url": commons.licence_url,
+        }
 
     def _persist_thumbnail(self, path: Path, duration_ms: int, media_type: str, token: str) -> str:
         """A video gets a real non-blank frame; audio gets its own artwork.
@@ -652,6 +715,9 @@ class MediaSourceImporter:
             "canonical_url": entry.canonical_url,
             "title": entry.title,
             "creator": entry.creator,
+            "creator_url": entry.source.get("creator_url", ""),
+            "license": entry.source.get("license", ""),
+            "original_url": entry.source.get("original_url", ""),
             "duration_ms": entry.duration_ms,
             "language": entry.language,
             "level": entry.level,

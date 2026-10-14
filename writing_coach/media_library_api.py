@@ -35,7 +35,7 @@ from writing_coach import media_quota
 from writing_coach.core.errors import orena_http_error
 from writing_coach.media_library_store import OWNER_FIELD, MediaIndexUnavailable, MediaLibraryEntry, owner_token, visible_to
 from writing_coach.core.request_context import current_language_code, current_user_key
-from writing_coach.media_source_import import MediaSourceImporter, UnsafeMediaFetch, UnsupportedMediaAddress
+from writing_coach.media_source_import import MediaSourceImporter, UnsafeMediaFetch, UnsupportedMediaAddress, failure_reason
 from writing_coach.media_thumbnail import MAX_UPLOAD_BYTES, TempMediaFile
 
 router = APIRouter(prefix="/api/media", tags=["media-library"])
@@ -387,13 +387,12 @@ def _preview_one(importer: MediaSourceImporter, url: str, language: str) -> dict
         return {"url": "", "status": "error", "detail": "Enter a media URL."}
     try:
         row = importer.preview(cleaned, language=language)
-    except UnsafeMediaFetch as exc:
-        return {"url": cleaned, "status": "error", "detail": str(exc)}
-    except ValueError as exc:
-        return {"url": cleaned, "status": "error", "detail": str(exc)}
     except Exception as exc:  # one bad source must not end the batch
-        _logger.warning("media preview failed for %s: %s", cleaned, type(exc).__name__)
-        return {"url": cleaned, "status": "error", "detail": "This media source could not be read."}
+        # The same stable category and authored sentence the import report gives (never `str(exc)` of a foreign error),
+        # so a rejection says why instead of "the source could not be read".
+        category, detail = failure_reason(exc)
+        _logger.warning("media preview failed (%s) for %s: %s", category, cleaned, type(exc).__name__)
+        return {"url": cleaned, "status": "error", "detail": detail, "category": category}
     return {"url": cleaned, **row}
 
 

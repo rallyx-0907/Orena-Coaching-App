@@ -6804,3 +6804,29 @@ product by the Admin through a server-side flag, never by editing code. No schem
 6. **Not covered, by design.** A learner's own saved progress for a hidden lesson stays stored and shows as unavailable without a
    title; it is not deleted. Default for genuinely curated items stays visible. Further kinds are added to
    `content_visibility.KINDS` only together with the filter on their learner paths.
+
+## D-205 - Media import records provenance, specific rejections and a stable outcome (2026-10-14)
+
+Status: PROPOSED (pending independent review). Owner-approved P1s from the Video Sources Phase 0 runtime. No schema or
+migration change: everything lives in existing JSON fields (`creator`, the `source` string map, `processing`).
+
+1. **Provenance.** A YouTube import stores the channel (oEmbed `author_name`/`author_url`) as `creator` and in `source`
+   (`creator`, `creator_url`, `platform`, `original_url`). A Wikimedia Commons import stores the author, the licence short name
+   (in `license`) and its URL (`license_url`), the platform and the File: page. Rights are untouched: unknown stays unknown and
+   the item is held, never auto-published.
+2. **Commons.** `commons.wikimedia.org/wiki/File:...` pages and `upload.wikimedia.org` files (including `.ogv`) resolve through
+   one bounded Commons API request to the media URL, a readable title (the page's own name, else the filename without
+   extension and underscores), the author and the licence. The item is a direct media file (`provider: direct`) so reprocess
+   keeps working.
+3. **Rejections say why.** Stable codes: `commons_not_a_file`, `commons_not_commons`, `commons_file_missing`,
+   `commons_not_media`, `commons_unavailable`, `media_unreadable`, `unsupported_media_type` (now naming the suffix). The preview
+   rows carry the same `category` as the import report, so the console no longer shows the generic "source could not be read".
+4. **URL box.** Splits on line breaks and whitespace; a comma separates only where the next piece starts `http(s)://`.
+5. **Outcome.** `processing.reason` (stable code) is stored with `processing.message` (English sentence); the admin record gains
+   `outcome` = `processing | held | failed | ready` plus the reason, message and translation state, and a failed item no longer
+   reads as the held "Review" pill. New code `captions_blocked`: the provider refused the captions and the audio route failed.
+6. **Partial translation.** A line translation that reaches some lines is `partial` with `{done, total}` per language in
+   `processing.translation_counts`; the item state is unchanged and the learner payload's `translation.status` is `partial`
+   (not `unavailable`) when lines have a meaning. Only no lines at all is `failed`.
+7. **Not drawn.** The design draws no translation-progress or partial-translation state in the Admin; none was invented. The
+   data is on the record for the console to show when the design adds it.

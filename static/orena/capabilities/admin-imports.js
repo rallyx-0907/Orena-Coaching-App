@@ -72,7 +72,7 @@ export function mediaProcessingOutcome(detail) {
     : processing.state === 'failed' ? 'failed'
       : ['published', 'review', 'archived', 'unpublished'].includes(record.status) ? record.status : 'unpublished';
   return { state, stage: processing.stage || '', code: processing.reason || '',
-    message: processing.detail || '', processing, has_transcript: segment_count > 0, segment_count };
+    message: processing.message || processing.detail || '', processing, has_transcript: segment_count > 0, segment_count };
 }
 
 export function defaultCollectionTitle(filename) {
@@ -152,6 +152,16 @@ export async function importBooks(api = adminApi, items, language, onUpdate) {
   }, onUpdate);
 }
 
+/* The addresses in a pasted box. A URL may hold a comma (a signed link, a Commons filename), so the box splits on
+   line breaks and whitespace; a comma is a separator only where the next piece starts a new http(s):// address. */
+export function splitMediaUrls(text) {
+  return String(text || '')
+    .split(/\s+/)
+    .flatMap((token) => token.split(/,(?=https?:\/\/)/i))
+    .map((piece) => piece.replace(/^,+|,+$/g, '').trim())
+    .filter(Boolean);
+}
+
 /* A link's preview: one row per URL, `ready` when the provider answered, `failed` with the reason
    when it did not. Nothing is stored. */
 export async function checkMediaUrls(api = adminApi, urls, language) {
@@ -159,7 +169,7 @@ export async function checkMediaUrls(api = adminApi, urls, language) {
     const response = await api.mediaPreview(urls, language);
     return (response.items || []).map((row) => (row.status === 'ok'
       ? { ...row, name: row.url, state: 'ready', tags: [] }
-      : { url: row.url, name: row.url, state: 'failed', code: 'source', stage: 'source', message: row.detail }));
+      : { url: row.url, name: row.url, state: 'failed', code: row.category || 'source', stage: 'source', message: row.detail }));
   } catch (error) {
     return urls.map((url) => ({ url, name: url, state: 'failed', code: error?.category || 'unknown', message: error?.message || '' }));
   }

@@ -398,6 +398,12 @@ fixtureFor = () => ({ body: { ok: true, id: 'J', items: [], results: [{ status: 
   await imports.loadHistory(adminApi, { kind: 'book' });
   await imports.importBooks(adminApi, [{ file: new File(['x'], 'a.epub'), state: 'to_import' }], 'en');
   await imports.checkMediaUrls(adminApi, ['https://x.org/v'], 'en');
+  assert.deepEqual(
+    imports.splitMediaUrls('https://a.org/f,y.mp4\n https://b.org/z\thttps://c.org/w,https://d.org/v,\n\n'),
+    ['https://a.org/f,y.mp4', 'https://b.org/z', 'https://c.org/w', 'https://d.org/v'],
+    'a comma inside a URL stays; a comma between URLs, a newline or whitespace separates',
+  );
+  assert.deepEqual(imports.splitMediaUrls(''), []);
   await imports.importMedia(adminApi, [{ url: 'https://x.org/v', state: 'ready' }, { file: new File(['x'], 'a.mp3'), state: 'to_import' }], 'en');
   await imports.previewVocabulary(adminApi, [new File(['a,b'], 'w.csv')]);
   await imports.importVocabulary(adminApi, { files: [new File(['a,b'], 'w.csv')], metadata: { title: 'W', language: 'en' }, mappings: {} });

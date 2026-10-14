@@ -19,7 +19,8 @@ const STATUS_PILL = {
   review: ['ctStatusReview', 'info'], processing: ['ctStatusProcessing', 'info'],
 };
 const statusPill = (t, record) => {
-  const [label, tone] = STATUS_PILL[record.status] || ['ctStatusDraft', 'mute'];
+  /* A media item the pipeline could not finish is `review` in the index like one held for rights; the outcome tells them apart. */
+  const [label, tone] = record.outcome?.state === 'failed' && record.status === 'review' ? ['impFailed', 'err'] : STATUS_PILL[record.status] || ['ctStatusDraft', 'mute'];
   return { label: t(label), tone };
 };
 
@@ -135,11 +136,11 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
     markup: html`<section class="a-page" data-screen-label="A12 Media detail">
       ${pageHead({ back: { href: href('adminMedia'), label: t('ctMedia') }, title: record.title, sub: record.subtitle || '', pills: [statusPill(t, record), missing ? { label: t('ctTranscriptMissing'), tone: 'warn' } : { label: t('ctTranscriptReady'), tone: 'ok' }], actions: lifecycleButtons(t, record, 'media').filter((action) => action.data.intent !== 'reprocess').map((action) => ({ ...action, disabled: view.busy })) })}
       ${view.error ? html`<div class="a-error" role="alert">${view.error}</div>` : ''}
-      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${t('ctMissingText')}</div></div></div>` : ''}
+      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${record.outcome?.state === 'failed' && record.outcome.reason ? (t.has(`impErr_${record.outcome.reason}`) ? t(`impErr_${record.outcome.reason}`) : record.outcome.message || t('ctMissingText')) : t('ctMissingText')}</div></div></div>` : ''}
       ${['queued', 'running'].includes(record.processing?.state) ? processingProgressMarkup(record.processing.stage, Object.fromEntries(['fetch', 'transcribe', 'segment', 'translate', 'ready'].map((stage) => [stage, t(`impMediaStage_${stage}`)]))) : ''}
       <div class="a-blocks">
         ${block({ title: t('ctDetails'), body: kv([
-          { key: t('ctFactSource'), value: source.url || t('ctUpload'), mono: Boolean(source.url) },
+          { key: t('ctFactSource'), value: source.original_url || source.url || t('ctUpload'), mono: Boolean(source.original_url || source.url) },
           { key: t('ctFactSegments'), value: num(facts.segment_count, ui) },
           { key: t('ctFactDuration'), value: facts.duration_ms ? latency(facts.duration_ms, ui) : '—' },
           { key: t('ctFactLanguage'), value: t(record.language === 'zh' ? 'langZh' : 'langEn') },
