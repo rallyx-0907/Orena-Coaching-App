@@ -109,11 +109,13 @@ def reading_source_credits(sources: Iterable[Mapping[str, Any]]) -> list[dict[st
     list (its texts are still credited one by one in `reading_text_credits`) (D-18X, proposed)."""
     rows = []
     for source in sources:
-        if not (_text(source.get("state")) == "active" and source.get("can_republish") and _text(source.get("license_note"))):
+        # The registry returns the rights nested under `rights`; a flat mapping is accepted too.
+        rights = source.get("rights") if isinstance(source.get("rights"), Mapping) else source
+        if not (_text(source.get("state")) == "active" and rights.get("can_republish") and _text(rights.get("license_note"))):
             continue
         title = _text(source.get("public_name")) or host_name(source.get("base_url"))
         if title:
-            rows.append({"title": title, "creator": "", "licence": _text(source.get("license_note")),
+            rows.append({"title": title, "creator": "", "licence": _text(rights.get("license_note")),
                          "source_url": _text(source.get("base_url"))})
     return rows
 

@@ -184,3 +184,11 @@ def test_the_source_credit_row_uses_the_public_name_or_the_host():
     ])
     assert [row["title"] for row in rows] == ["NASA", "esa.int"]
 
+
+
+def test_the_source_credit_row_reads_the_rights_the_registry_nests():
+    nested = {"name": INTERNAL, "public_name": "NASA", "state": "active", "base_url": "https://www.nasa.gov",
+              "rights": {"can_republish": True, "license_note": "CC BY 4.0"}}
+    assert [row["title"] for row in reading_source_credits([nested])] == ["NASA"]
+    denied = {**nested, "rights": {"can_republish": False, "license_note": "CC BY 4.0"}}
+    assert reading_source_credits([denied]) == []
