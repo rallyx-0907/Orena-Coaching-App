@@ -78,10 +78,10 @@ def upgrade() -> None:
     op.create_index("ix_billing_orders_refund_reference", "billing_orders", ["gateway", "refund_reference"],
                     unique=True, postgresql_where=sa.text("refund_reference IS NOT NULL"))
     # The reconciler's pull set: every order whose provider outcome is not settled, a locally expired one too,
-    # and a webhook-paid one until its confirming lookup.
+    # and a webhook-paid one until its confirming lookup, refunded or not.
     op.create_index("ix_billing_orders_pull", "billing_orders", ["gateway", "next_lookup_at"],
                     postgresql_where=sa.text("provider_settled_at IS NULL "
-                                             "AND state IN ('created', 'pending', 'expired', 'paid')"))
+                                             "AND state IN ('created', 'pending', 'expired', 'paid', 'refunded')"))
     op.create_index("ix_billing_orders_open_expiry", "billing_orders", ["state", "expires_at"],
                     postgresql_where=sa.text("state IN ('created', 'pending')"))
     op.create_index("ix_billing_orders_paid", "billing_orders", ["incarnation_id", "paid_sequence"],
@@ -142,6 +142,9 @@ def upgrade() -> None:
         sa.CheckConstraint("kind <> 'entitlement_unsynced' OR state = 'open' "
                            "OR (resolution_outcome = 'entitlement_synced' AND resolved_by = 'reconciler')",
                            name="ck_billing_item_unsynced"),
+        # "The payment is recorded" is the system's statement, never an administrator's (review P1-2).
+        sa.CheckConstraint("resolution_outcome IS DISTINCT FROM 'payment_recorded' OR resolved_by = 'reconciler'",
+                           name="ck_billing_item_payment_recorded"),
         # Waiving an obligation is an auditable financial reason.
         sa.CheckConstraint("resolution_outcome IS DISTINCT FROM 'obligation_waived' OR resolution_note IS NOT NULL",
                            name="ck_billing_item_waiver_reason"),
@@ -168,6 +171,12 @@ def upgrade() -> None:
             END IF;
             IF {links_changed} THEN
                 RAISE EXCEPTION 'a reconciliation item''s matched link never changes' USING ERRCODE = 'restrict_violation';
+            END IF;
+            -- "payment_recorded" only when the order it names really holds the payment (review P1-2).
+            IF OLD.state = 'open' AND NEW.state = 'resolved' AND NEW.resolution_outcome = 'payment_recorded'
+                    AND NOT EXISTS (SELECT 1 FROM billing_orders o WHERE o.id = NEW.billing_order_id
+                                    AND o.state IN ('paid', 'refunded')) THEN
+                RAISE EXCEPTION 'payment_recorded needs the order to hold the payment' USING ERRCODE = 'check_violation';
             END IF;
             IF OLD.state <> 'open' THEN
                 IF NEW.state = 'open' THEN

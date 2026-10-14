@@ -238,7 +238,9 @@ def test_a_resolved_item_only_counts_repeats_and_only_a_critical_one_reopens(wor
             connection.execute(world.text("UPDATE billing_reconciliation_items SET state = 'open', resolved_at = NULL, "
                                           "reopened = reopened + 1 WHERE id = :id"), {"id": undecided["id"]})
 
-    critical = world.items.record(kind="provider_paid_unrecorded", gateway="payos", dedupe_key="100002")
+    placed = world.order(world.account())  # the reconciler always names the order payOS reported paid
+    critical = world.items.record(kind="provider_paid_unrecorded", gateway="payos", dedupe_key="100002",
+                                  billing_order_id=placed["id"])
     world.items.resolve(critical["id"], resolution="resolved", outcome="refund_confirmed", reference="FT77",
                         note="returned by transfer", actor="admin-1")  # fmt: skip
     seen_again = world.items.record(kind="provider_paid_unrecorded", gateway="payos", dedupe_key="100002")
@@ -541,3 +543,158 @@ def test_a_payment_for_a_deleted_account_is_kept_as_a_refund_owed(world):
     [owed] = world.items.items(kind="paid_deleted_account")
     assert str(owed["incarnation_id"]) == incarnation and owed["state"] == "open"
     assert world.reconciler(lookups={}).tick().get("entitlement_unsynced", 0) == 0  # not an access gap: no access owed
+
+
+# ---- implementation review P1s (2026-10-14) -------------------------------------------------------------------
+
+class FlakyItems:
+    """The reconciliation items, failing the first `failures` records (the database refused the write)."""
+
+    def __init__(self, inner, failures=1):
+        self.inner = inner
+        self.failures = failures
+
+    def __getattr__(self, name):
+        return getattr(self.inner, name)
+
+    def record(self, **kwargs):
+        if self.failures:
+            self.failures -= 1
+            raise RuntimeError("the item write failed")
+        return self.inner.record(**kwargs)
+
+
+def webhook_client(monkeypatch, service):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from writing_coach import billing_api
+
+    app = FastAPI()
+    app.include_router(billing_api.router)
+    monkeypatch.setattr(billing_api, "_service", service)
+    return TestClient(app)
+
+
+def test_p1_1_a_refund_owed_for_a_deleted_account_survives_a_failed_first_record(world, monkeypatch):
+    from writing_coach.billing.service import BillingService
+
+    service = BillingService(orders=world.orders, commerce=world.commerce, gateways={"payos": PAYOS}, prices={},
+                             now=world.clock, reconciliation=FlakyItems(world.items))  # fmt: skip
+    incarnation = world.account(status="deleted")
+    code = int(world.order(incarnation)["order_code"])
+    client = webhook_client(monkeypatch, service)
+    assert client.post("/api/billing/webhooks/payos", content=payos_body(order=code)).status_code == 503
+    assert world.orders.order(order_code=code)["state"] == "paid" and world.items.items() == []
+    retried = client.post("/api/billing/webhooks/payos", content=payos_body(order=code))  # the same event again
+    assert retried.status_code == 200 and retried.json()["status"] == "paid_deleted_account"
+    [owed] = world.items.items(kind="paid_deleted_account")
+    assert owed["reported_order_code"] == code and str(owed["incarnation_id"]) == incarnation
+    again = client.post("/api/billing/webhooks/payos", content=payos_body(order=code))
+    assert again.json()["status"] == "paid_deleted_account"
+    assert world.items.items(kind="paid_deleted_account")[0]["occurrences"] == 2  # stable, never a second item
+
+
+def test_p1_1_a_payment_made_before_the_account_was_deleted_owes_no_refund_on_redelivery(world):
+    incarnation = world.account()
+    code = int(world.order(incarnation)["order_code"])
+    assert world.service.handle_webhook("payos", {}, payos_body(order=code)).status == "apply"
+    with world.engine.begin() as connection:
+        connection.execute(world.text("UPDATE account_incarnations SET status = 'deleted', deleted_at = :at "
+                                      "WHERE id = :id"), {"at": T0 + timedelta(days=1), "id": incarnation})
+    assert world.service.handle_webhook("payos", {}, payos_body(order=code)).status != "paid_deleted_account"
+    assert world.items.items(kind="paid_deleted_account") == []
+
+
+def unrecordable_paid(world):
+    """payOS reports PAID for an order Orena cannot record (another payment link): a critical item opens."""
+    placed = world.order(world.account())
+    code = int(placed["order_code"])
+    with world.engine.begin() as connection:
+        connection.execute(world.text("UPDATE billing_orders SET external_reference = 'another-link' WHERE id = :id"),
+                           {"id": placed["id"]})
+    world.answers[code] = paid_answer(code)
+    world.clock.now = T0 + timedelta(hours=1)
+    assert world.reconciler().tick()["paid_unrecorded"] == 1
+    [item] = world.items.open_items(kind="provider_paid_unrecorded")
+    return placed, code, item
+
+
+def test_p1_2_payment_recorded_is_the_reconcilers_statement_and_needs_the_paid_order(world):
+    from sqlalchemy.exc import DBAPIError
+
+    from writing_coach.persistence.billing_reconciliation_repository import ResolutionRefused
+
+    placed, code, item = unrecordable_paid(world)
+    with pytest.raises(ResolutionRefused) as refused:
+        world.items.resolve(item["id"], resolution="resolved", outcome="payment_recorded", reference="FT9",
+                            note="I think it is recorded", actor="admin-1")  # fmt: skip
+    assert refused.value.code == "outcome_not_allowed"
+    with pytest.raises(DBAPIError):  # an administrator's write around the repository is refused too
+        with world.engine.begin() as connection:
+            connection.execute(world.text(
+                "UPDATE billing_reconciliation_items SET state = 'resolved', resolution_outcome = 'payment_recorded', "
+                "resolved_by = 'admin-1', resolved_at = :now WHERE id = :id"), {"now": T0, "id": item["id"]})
+    with pytest.raises(DBAPIError, match="payment_recorded needs the order"):  # the reconciler, order unpaid
+        world.items.auto_resolve(kind="provider_paid_unrecorded", gateway="payos", dedupe_key=str(code),
+                                 outcome="payment_recorded", note="not yet", now=T0)  # fmt: skip
+    assert world.items.open_items(kind="provider_paid_unrecorded")[0]["id"] == item["id"]
+
+
+def test_p1_2_a_confirmed_refund_settles_the_order_so_the_next_paid_lookup_does_not_reopen_it(world):
+    placed, code, item = unrecordable_paid(world)
+    world.items.resolve(item["id"], resolution="resolved", outcome="refund_confirmed", reference="FT-RETURN-1",
+                        note="returned to the payer by bank transfer", actor="admin-1")  # fmt: skip
+    after = world.orders.order(order_code=code)
+    assert after["provider_settled_at"] is not None and after["next_lookup_at"] is None
+    world.clock.now = T0 + timedelta(days=2)  # past any backoff; payOS still says PAID
+    counts = world.reconciler().tick()
+    assert counts.get("looked_up", 0) == 0 and counts.get("paid_unrecorded", 0) == 0
+    closed = world.row("SELECT state, reopened, resolution_outcome FROM billing_reconciliation_items WHERE id = :id",
+                       id=item["id"])  # fmt: skip
+    assert dict(closed) == {"state": "resolved", "reopened": 0, "resolution_outcome": "refund_confirmed"}
+    assert world.service.critical_by_gateway() == {}
+
+
+def test_p1_3_a_webhook_during_the_lookup_is_never_overwritten_by_cancelled(world):
+    incarnation = world.account()
+    code = int(world.order(incarnation)["order_code"])
+
+    def webhook_then_cancelled(order_code):
+        # while payOS is being asked, the webhook arrives and records the payment
+        assert world.service.handle_webhook("payos", {}, payos_body(order=order_code)).status == "apply"
+        return paid_answer(order_code, status="CANCELLED", paid=0, reference=None)
+
+    world.answers[code] = webhook_then_cancelled
+    world.clock.now = T0 + timedelta(hours=1)
+    counts = world.reconciler().tick()
+    after = world.orders.order(order_code=code)
+    assert after["state"] == "paid" and after["provider_settled_at"] is None  # not settled as CANCELLED
+    assert counts.get("cancelled", 0) == 0 and access(world, incarnation)["state"] == "active"
+    assert world.items.items(kind="provider_state_unresolved")[0]["reason"].startswith("payOS reports cancelled")
+
+
+def test_p1_3_a_refund_before_the_confirming_lookup_keeps_that_lookup(world):
+    placed = world.order(world.account())
+    code = int(placed["order_code"])
+    assert world.service.handle_webhook("payos", {}, payos_body(order=code)).status == "apply"
+    assert world.service.record_refund(order_code=code, note="returned by transfer").status == "apply"
+    assert world.orders.order(order_code=code)["state"] == "refunded"
+    world.answers[code] = paid_answer(code, paid=2 * AMOUNT, reference=None)  # a second transfer was made
+    world.clock.now = T0 + timedelta(hours=1)
+    assert world.reconciler().tick()["payment_mismatch"] == 1
+    assert world.orders.order(order_code=code)["provider_settled_at"] is not None
+    [item] = world.items.items(kind="payment_mismatch")
+    assert item["reported_amount_minor"] == 2 * AMOUNT
+
+
+def test_p1_3_a_refunded_order_confirmed_paid_is_settled_without_a_false_anomaly(world):
+    placed = world.order(world.account())
+    code = int(placed["order_code"])
+    world.service.handle_webhook("payos", {}, payos_body(order=code))
+    world.service.record_refund(order_code=code, note="returned by transfer")
+    world.answers[code] = paid_answer(code)
+    world.clock.now = T0 + timedelta(hours=1)
+    assert world.reconciler().tick()["paid_confirmed"] == 1
+    assert world.orders.order(order_code=code)["provider_settled_at"] is not None
+    assert world.items.summary()["open"] == 0

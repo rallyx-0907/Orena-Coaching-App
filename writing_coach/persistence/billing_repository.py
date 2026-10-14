@@ -110,8 +110,10 @@ class PostgresBillingRepository:
             incarnation = found[0]
             # NO KEY UPDATE: serializes this account's payments, refunds and deletion (mark_deleted's UPDATE,
             # record_event's FOR SHARE) without blocking inserts that only reference the row.
-            status = connection.execute(text(
-                "SELECT status FROM account_incarnations WHERE id = :inc FOR NO KEY UPDATE"), {"inc": incarnation}).scalar_one()
+            owner = connection.execute(text(
+                "SELECT status, deleted_at FROM account_incarnations WHERE id = :inc FOR NO KEY UPDATE"),
+                {"inc": incarnation}).one()  # fmt: skip
+            status = owner[0]
             order = connection.execute(text(f"SELECT {_ORDER_COLUMNS} FROM billing_orders WHERE order_code = :code "
                                             "FOR UPDATE"), {"code": order_code}).mappings().one()
             result = {"incarnation_id": str(incarnation), "order_code": order_code, "order_id": order["id"]}
@@ -119,9 +121,13 @@ class PostgresBillingRepository:
             same_money = amount_minor == int(order["amount_minor"]) and (currency or "").upper() == order["currency"]
             same_link = not (payment_link_id and order["external_reference"]
                              and payment_link_id != order["external_reference"])  # fmt: skip
+            # A payment recorded for an account already deleted stays that on every retry (review P1-1): the
+            # refund it owes is recorded again (idempotently) when the first record of it could not be written.
+            repeat = ("paid_deleted_account" if owner[1] is not None and order["paid_at"] is not None
+                      and order["paid_at"] >= owner[1] else "duplicate")  # fmt: skip
+            if order["state"] in ("paid", "refunded") and order["paid_event_id"] == event_id:
+                return {**result, "status": repeat}  # a redelivery of the payment already recorded
             if order["state"] == "paid":
-                if order["paid_event_id"] == event_id:
-                    return {**result, "status": "duplicate"}
                 if not (same_money and same_link) or (reference and order["paid_reference"]
                                                       and reference != order["paid_reference"]):
                     return {**result, "status": "not_payable"}  # another payment for an order already paid
@@ -130,7 +136,7 @@ class PostgresBillingRepository:
                     "UPDATE billing_orders SET paid_reference = COALESCE(paid_reference, :ref), "
                     "provider_settled_at = CASE WHEN :settled THEN :now ELSE provider_settled_at END, updated_at = :now "
                     "WHERE order_code = :code"), {"ref": reference, "settled": settled, "now": moment, "code": order_code})
-                return {**result, "status": "duplicate"}
+                return {**result, "status": repeat}
             if order["state"] not in ("created", "pending", "expired", "cancelled"):
                 return {**result, "status": "not_payable"}
             if not same_money:
@@ -183,14 +189,15 @@ class PostgresBillingRepository:
 
     def pull_candidates(self, gateway: str, *, now: datetime, limit: int, min_age: timedelta) -> list[dict[str, Any]]:
         """The orders whose provider outcome is not settled and are due a lookup: unpaid ones older than `min_age`
-        (a locally expired one too), and a webhook-paid one awaiting its confirming lookup."""
+        (a locally expired one too), and a webhook-paid one awaiting its confirming lookup - also once refunded,
+        since the refund does not confirm what payOS received (review P1-3)."""
 
         with self._engine.connect() as connection:
             rows = connection.execute(text(
                 f"SELECT {_ORDER_COLUMNS} FROM billing_orders WHERE gateway = :gateway AND provider_settled_at IS NULL "
-                "AND state IN ('created', 'pending', 'expired', 'paid') "
+                "AND state IN ('created', 'pending', 'expired', 'paid', 'refunded') "
                 "AND (next_lookup_at IS NULL OR next_lookup_at <= :now) "
-                "AND (state = 'paid' OR created_at <= :cutoff) "
+                "AND (state IN ('paid', 'refunded') OR created_at <= :cutoff) "
                 "ORDER BY COALESCE(next_lookup_at, created_at) LIMIT :limit"),
                 {"gateway": gateway, "now": now, "cutoff": now - min_age, "limit": int(limit)}).mappings().all()  # fmt: skip
         return [dict(row) for row in rows]

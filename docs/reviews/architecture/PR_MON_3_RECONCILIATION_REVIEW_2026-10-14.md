@@ -616,3 +616,42 @@ No operator confirmation was given, so 0027 is **not** changed in place. The app
 proposed revision, `migrations/proposed/20261014_0031_billing_reconciliation.py` (`down_revision = "20261005_0027"`),
 as design §5 provides. If the operator later confirms all three conditions, folding it into 0027 is a
 source-control change only and needs no new architecture review.
+
+---
+
+# PR-MON-3 implementation review
+
+Recorded verbatim from the reviewer's verdict (relayed by the human, 2026-10-14).
+
+PR-MON-3 implementation review on frozen HEAD 49505ca0:
+
+VERDICT: REQUEST CHANGES
+No P0. Three P1s.
+
+P1-1 paid_deleted_account retry durability:
+mark_paid can commit paid_deleted_account, item write fails -> 503; retry sees paid/same event as duplicate and never recreates the refund-obligation item. Add focused regression and make the anomaly recoverable/stable across retry.
+
+P1-2 provider_paid_unrecorded resolution:
+- Admin must not close it as payment_recorded without the order actually becoming paid.
+- payment_recorded must be system/reconciler-only and DB-backed.
+- refund_confirmed/reversal_confirmed must leave a durable disposition so subsequent payOS PAID lookups do not reopen the same resolved obligation forever.
+Add focused tests.
+
+P1-3 payOS confirmation state race:
+- _settle uses a pre-HTTP order snapshot for state-sensitive decisions.
+- Race: pending -> HTTP -> webhook makes paid -> lookup says CANCELLED; mark_cancelled returns false but code still settles CANCELLED.
+- Also a webhook-paid order refunded before its required confirming lookup drops out of pull_candidates because refunded is excluded, so overpayment confirmation is lost.
+Use a fresh/conditional state decision after the HTTP call and keep the required confirmation across refund.
+Add both race regressions.
+
+Approved:
+- same-version gap escalation;
+- per-gateway critical blocking;
+- one-payment-per-order model in principle;
+- implementation deviations 1,2,3,4,6,7,8.
+Deviation 5 policy approved after P1-3 implementation is fixed.
+
+Do not redesign PR-MON-3.
+Do not promote/apply 0027/0031.
+Return fixing SHA + focused diffs + focused PG tests.
+No full architecture re-review after these three P1s unless semantics materially change.

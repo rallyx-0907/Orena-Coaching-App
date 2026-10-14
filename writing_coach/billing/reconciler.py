@@ -251,8 +251,12 @@ class BillingReconciler:
     def _past_horizon(self, order: Mapping[str, Any], now: datetime) -> bool:
         return now - order["created_at"] > self._settings.horizon
 
-    def _settle(self, order: Mapping[str, Any], answer: Lookup, now: datetime, counts: Counter[str]) -> None:
-        code, amount, gateway = int(order["order_code"]), int(order["amount_minor"]), "payos"
+    def _settle(self, claimed: Mapping[str, Any], answer: Lookup, now: datetime, counts: Counter[str]) -> None:
+        code, amount, gateway = int(claimed["order_code"]), int(claimed["amount_minor"]), "payos"
+        # Decided on the order as it is now, not as it was before the provider call: a webhook or a refund may have
+        # changed it meanwhile (review P1-3).
+        order = self._orders.order(order_code=code) or claimed
+        recorded = order["state"] in ("paid", "refunded")
         facts = {"reported_order_code": code, "reported_amount_minor": answer.amount_paid, "reported_currency": order["currency"],
                  "provider_state": answer.status or None, "billing_order_id": order["id"],
                  "incarnation_id": str(order["incarnation_id"])}  # fmt: skip
@@ -265,18 +269,18 @@ class BillingReconciler:
             self._orders.record_lookup(order["id"], status=status, now=now, next_at=None, settled=True)
 
         if answer.status == "PAID" and answer.amount_paid == amount:
-            if order["state"] != "paid":
+            if not recorded:
                 self._service.record_payment(order_code=code, gateway=gateway, event_id=f"payos:order:{code}",
                                              amount_minor=answer.amount_paid, currency=order["currency"],
                                              payment_link_id=answer.payment_link_id, paid_reference=answer.reference,
                                              settled=True, provider_state="PAID")  # fmt: skip
-            if (self._orders.order(order_code=code) or {}).get("state") == "paid":
+            if (self._orders.order(order_code=code) or {}).get("state") in ("paid", "refunded"):
                 settle("PAID")
                 if self._items.auto_resolve(kind="provider_paid_unrecorded", gateway=gateway, dedupe_key=str(code),
                                             outcome="payment_recorded", note="the payment is recorded on its order",
                                             now=now):  # fmt: skip
                     counts["paid_unrecorded_resolved"] += 1
-                counts["paid_confirmed" if order["state"] == "paid" else "paid_recovered"] += 1
+                counts["paid_confirmed" if recorded else "paid_recovered"] += 1
             else:
                 # payOS says paid and Orena holds no payment for it: critical until it is recorded or refunded.
                 self._items.record(kind="provider_paid_unrecorded", gateway=gateway, dedupe_key=str(code),
@@ -294,14 +298,14 @@ class BillingReconciler:
             counts["payment_mismatch"] += 1
             return
         if answer.status == "CANCELLED" and not answer.amount_paid:
-            if order["state"] == "paid":
+            # Cancelled only if the order is still unpaid when it is written (a conditional update).
+            if not recorded and self._orders.mark_cancelled(order["id"], now=now):
+                settle("CANCELLED")
+                counts["cancelled"] += 1
+            else:
                 self._items.record(kind="provider_state_unresolved", gateway=gateway, dedupe_key=str(code),
                                    reason="payOS reports cancelled for an order Orena recorded paid", now=now, **facts)
                 keep_asking("CANCELLED")
-            else:
-                self._orders.mark_cancelled(order["id"], now=now)
-                settle("CANCELLED")
-                counts["cancelled"] += 1
             return
         # Not terminal: PENDING, PROCESSING, PAID without a readable amount, or a status payOS does not document.
         keep_asking(answer.status or "UNKNOWN")

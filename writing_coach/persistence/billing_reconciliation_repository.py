@@ -27,20 +27,25 @@ MONEY = frozenset({"paid_deleted_account", "payment_unknown_order", "payment_mis
 DISMISSABLE = frozenset({"event_undecided", "provider_refund", "provider_state_unresolved"})
 KINDS = CRITICAL | MONEY | DISMISSABLE
 RECONCILER = "reconciler"
+# An administrator's disposition of money payOS reports paid and Orena never recorded: it answers that PAID for good,
+# so the order leaves the lookup set and the same obligation is not reopened by the next lookup (review P1-2).
+_SETTLING = {"provider_paid_unrecorded": frozenset({"refund_confirmed", "reversal_confirmed"})}
 
 # What closes each kind (design §4.2): the outcomes an administrator may give, and whether a reference is required
 # with them. `entitlement_unsynced` has none: only the reconciler closes it, once access was really granted.
+# `payment_recorded` is never an administrator's: the reconciler states it once the order holds the payment, and
+# the database refuses it otherwise (review P1-2).
 _MONEY_OUTCOMES = {"payment_matched": True, "refund_confirmed": True, "obligation_waived": False}
 RESOLUTION_RULES: dict[str, dict[str, bool]] = {
     "entitlement_unsynced": {},
-    "provider_paid_unrecorded": {"payment_recorded": True, "refund_confirmed": True, "reversal_confirmed": True},
+    "provider_paid_unrecorded": {"refund_confirmed": True, "reversal_confirmed": True},
     "paid_deleted_account": {"refund_confirmed": True, "obligation_waived": False},
     "payment_unknown_order": dict(_MONEY_OUTCOMES),
     "payment_mismatch": dict(_MONEY_OUTCOMES),
     "payment_not_payable": dict(_MONEY_OUTCOMES),
     "event_undecided": {"recorded": False},
     "provider_refund": {"recorded": False, "refund_confirmed": True},
-    "provider_state_unresolved": {"recorded": False, "payment_recorded": True, "refund_confirmed": True},
+    "provider_state_unresolved": {"recorded": False, "refund_confirmed": True},
 }
 
 _COLUMNS = (
@@ -137,8 +142,15 @@ class PostgresReconciliationRepository:
             if row["state"] != "open":
                 raise ResolutionRefused("not_open")
             check_resolution(row["kind"], resolution=resolution, outcome=outcome, reference=reference, note=note)
+            moment = now or datetime.now(UTC)
+            if resolution == "resolved" and outcome in _SETTLING.get(row["kind"], ()):
+                if row["billing_order_id"] is None:
+                    raise ResolutionRefused("order_unknown")
+                connection.execute(text(
+                    "UPDATE billing_orders SET provider_settled_at = :now, next_lookup_at = NULL, updated_at = :now "
+                    "WHERE id = :order"), {"now": moment, "order": row["billing_order_id"]})  # fmt: skip
             return self._close(connection, item_id, state=resolution, outcome=outcome if resolution == "resolved" else None,
-                               reference=reference, note=note, actor=actor, now=now or datetime.now(UTC))  # fmt: skip
+                               reference=reference, note=note, actor=actor, now=moment)  # fmt: skip
 
     def auto_resolve(self, *, kind: str, gateway: str, dedupe_key: str, outcome: str, note: str,
                      now: datetime | None = None) -> bool:

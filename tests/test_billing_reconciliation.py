@@ -146,6 +146,8 @@ def test_paid_without_access_is_closed_only_by_the_reconciler():
 
 @pytest.mark.parametrize(("kind", "outcome", "reference", "code"), [
     ("provider_paid_unrecorded", "obligation_waived", "x", "outcome_not_allowed"),
+    ("provider_paid_unrecorded", "payment_recorded", "FT9", "outcome_not_allowed"),  # the reconciler's only (P1-2)
+    ("provider_state_unresolved", "payment_recorded", "FT9", "outcome_not_allowed"),
     ("provider_paid_unrecorded", "refund_confirmed", "", "reference_required"),
     ("paid_deleted_account", "payment_matched", "x", "outcome_not_allowed"),
     ("paid_deleted_account", "refund_confirmed", None, "reference_required"),
