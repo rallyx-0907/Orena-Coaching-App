@@ -1255,18 +1255,39 @@ def _billing_service():
 
     if not billing_enabled(os.environ) or _persistence_runtime.engine is None or not _account_backbone.is_active:
         return None
+    from writing_coach.persistence.billing_reconciliation_repository import PostgresReconciliationRepository
     from writing_coach.persistence.billing_repository import PostgresBillingRepository
     from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
 
     return BillingService(orders=PostgresBillingRepository(_persistence_runtime.engine),
                           commerce=PostgresCommerceRepository(_persistence_runtime.engine),
-                          gateways=build_gateways(os.environ), prices=load_prices(os.environ))
+                          gateways=build_gateways(os.environ), prices=load_prices(os.environ),
+                          reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine))
+
+
+def _billing_reconciler(service):
+    """PR-MON-3: the reconciler runs only where billing does; payOS lookups only with payOS's keys (H3)."""
+
+    if service is None:
+        return None
+    from writing_coach.billing.reconciler import (
+        BillingReconciler, BillingReconcileSchedule, PostgresTickLock, Settings, build_lookups,
+    )
+
+    settings = Settings.from_env(os.environ)
+    reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
+                                   lock=PostgresTickLock(_persistence_runtime.engine),
+                                   lookups=build_lookups(service.gateways), settings=settings)
+    return BillingReconcileSchedule(reconciler, interval=settings.interval)
 
 
 from writing_coach.billing_api import configure_billing, router as billing_router  # noqa: E402
 
 _billing = _billing_service()
+_billing_reconcile = _billing_reconciler(_billing)
 configure_billing(service=_billing, backbone=_account_backbone, admin_guard=require_admin,
+                  reconciliation=_billing.reconciliation if _billing is not None else None,
+                  reconcile=_billing_reconcile.tick if _billing_reconcile is not None else None,
                   public_base_url=os.getenv("PUBLIC_BASE_URL", ""))
 
 
@@ -1288,7 +1309,7 @@ _billing_readiness.configure(_billing_readiness.RuntimeFacts(
     backend=str(_persistence_runtime.backend or ""),
     backbone=_account_backbone.state,
     commerce_schema=lambda: _schema_state(_COMMERCE_TABLES),
-    orders_schema=lambda: _schema_state(("billing_orders",)),
+    orders_schema=lambda: _schema_state(("billing_orders", "billing_reconciliation_items")),
     entitlement_source=lambda: _billing_source.state if _billing_source is not None else "absent",
     service=_billing,
     public_base_url=os.getenv("PUBLIC_BASE_URL", ""),
@@ -1971,6 +1992,8 @@ def startup() -> None:
         _quota_reconciler.start()
     if _media_intents is not None:
         _media_intents.start()
+    if _billing_reconcile is not None:
+        _billing_reconcile.start()
 
 
 @app.on_event("shutdown")
@@ -1981,6 +2004,8 @@ def _stop_feedback_retention() -> None:
         _quota_reconciler.stop()
     if _media_intents is not None:
         _media_intents.stop()
+    if _billing_reconcile is not None:
+        _billing_reconcile.stop()
 
 
 def _page(*parts: str) -> HTMLResponse:
