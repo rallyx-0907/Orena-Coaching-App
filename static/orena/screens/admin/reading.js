@@ -178,7 +178,10 @@ export async function mountReading(shell, ctx) {
           if (!(needed.acknowledgeWarnings && !confirmed.acknowledgeWarnings) && !(needed.qualityOverride && !confirmed.qualityOverride)) throw error;
           reason = await confirmWarnings(listed);
           if (reason === null) return;
-          confirmed = needed;
+          confirmed = {
+            acknowledgeWarnings: confirmed.acknowledgeWarnings || needed.acknowledgeWarnings,
+            qualityOverride: confirmed.qualityOverride || needed.qualityOverride,
+          };
           done = await changeArticle(api, id, 'publish', reason, confirmed.acknowledgeWarnings, confirmed.qualityOverride);
         }
         host.toast(done.publication_warnings?.length ? t('rdPublishedOver') : t('rdPublished'));

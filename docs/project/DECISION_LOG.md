@@ -6131,17 +6131,17 @@ Readiness" item P0-A.
   override), P2-5 (the admin audit row is written after the review-event transaction). The reader's licence and
   original-link line was decided by the human on 2026-10-14 and is a separate change.
 
-## D-191 - Reading quality admission: non-articles cannot be published (PROPOSED, 2026-10-14)
+## D-191 - Reading quality admission: non-articles are not published without a reasoned override (2026-10-14)
 
-**Status: PROPOSED.** Changes the Reading publish lifecycle, so it needs an independent
-architecture review before it is accepted (`AGENTS.md`, "Architecture review authority"). No schema or migration change.
+**Status: ACCEPTED** (independent review, re-review after the merge with D-190, merged once CI was green). Changes the
+Reading publish lifecycle. No schema or migration change.
 Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-E, D-189).
 
 1. **One definition.** `writing_coach/reading_page_quality.py` owns every quality signal, threshold and code. The
    extractor stores raw-page facts (`analysis.extraction.page_facts`); `quality_flags` turns them, the cleaned body and
    the extraction confidence into stable codes appended to `analysis.quality_issues`.
 2. **Hard codes** (the page is not an article): `empty_body`, `media_page`, `index_page`, `bot_challenge`,
-   `special_page`. `reading_admin_api.publication_blockers` returns them as `{code, gate: "quality"}`, and a reviewer's
+   `special_page`. `reading_admin_api.quality_blockers` returns them as `{code, gate: "quality"}`, and a reviewer's
    publish is refused `409 reading_quality_not_cleared`. An explicit `quality_override: true` with a reason publishes
    anyway and is audited (`admin.reading_article_quality_override`). **The two confirmations are independent:**
    `quality_override` never stands in for D-190's `acknowledge_warnings`, nor the reverse; an article with both kinds needs
@@ -6171,3 +6171,6 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    5.5). Conditions P1-1, P1-2 and P1-4 are addressed in the commit that records this line; P1-3 (merge with the
    provenance gate) is settled at merge. Follow-ups, not done: recompute body-derived codes when a body is edited, and a
    separate permission for the override.
+   Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
+   implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
+   confirmations are proven independent by route-level tests.

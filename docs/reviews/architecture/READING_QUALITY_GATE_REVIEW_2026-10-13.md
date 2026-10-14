@@ -74,3 +74,44 @@ None.
 - P2-7 D-191 stays PROPOSED until reviewer line and commit are recorded in the entry.
 
 Reviewer: Delegated Architecture Reviewer, Claude Opus 5.5, independent of the implementer. Commit reviewed: ae8b96db.
+
+# Review addendum: PR #159 reading quality gate, post-merge with D-190
+
+Reviewer: Claude Opus 5.5, Delegated Architecture Reviewer (independent; did not write this code)
+Date: 2026-10-14
+Commits reviewed: 30ab15ff (merge of origin/main 9c947602 + D-191 renumber + composed UI), 3d5a948f (integration tests)
+Prior review: READING_QUALITY_GATE_REVIEW_2026-10-13.md (6a8d0a74). Main's D-190 reviewed in READING_PROVENANCE_REVIEW_2026-10-13.md.
+Method: read-only git diff/show. No tests were re-run by me. CI: `gh pr checks 159` at review time: changes pass, node-gates pass, python-gates / pytest / docker-build pending.
+
+## Verdict: APPROVED WITH CONDITIONS (no P0, no P1; two P2s and one process condition)
+
+## Findings by check
+
+1. Conflict resolution. Diff 9c947602..30ab15ff for reading_admin_api.py and reading_content_repository.py is additive only. Nothing of main's is removed or altered:
+   provenance_blockers, build_provenance, _provenance_map, published_missing_provenance, overlay/revision bump, `acknowledge_warnings`, `reading_rights_not_cleared`, the "published_over_warnings" event key, the `acknowledged_warnings` audit field and the D-189 docstring are all intact. The merge dropped the earlier pre-merge quality-in-publication_blockers design (`quality_override` mixed into blockers, "D-18X" tag) in favour of a separate quality_blockers(); the pre-merge gate behaviour is preserved (hard codes, reasoned override, repository QualityRefused, audit action name admin.reading_article_quality_override). Rights warning text and the 409 message are main's.
+2. Route semantics (reading_admin_api.py set_article_status, ~L797-865). Correct:
+   - Precedence: quality 409 when quality_open, else rights 409; both carry all blockers plus `override_fields`; `override_field` retained only when rights_open (main's contract).
+   - Each flag only clears its own kind (`rights_open`/`quality_open` computed independently). `quality_override` does not clear rights; `acknowledge_warnings` does not clear quality.
+   - One reason, 422 reading_reason_required when either kind exists and the reason is blank.
+   - Audit: publish_refused records the full blocker list; quality_override audit is written only after all gates pass (no audit of an override that then fails on rights); the published audit carries warnings + acknowledged_warnings.
+   - Repository never refuses for rights. QualityRefused is raised only from hard_issues(). The review event writes `warnings`/`published_over_warnings` and `quality_override`/`quality_codes`/`quality_version` in one dict inside one transaction: atomic.
+   - A quality-only override leaves no `published_over_warnings`, so published_missing_provenance / the provenance checker report such an article as "NO RECORDED OVERRIDE". The property the human required holds.
+3. Other paths. set_status("published") has exactly one production caller (the route); automatic admission (reading_admission.py L67) refuses any flagged item (D-111). scripts/agent_e2e/harness.py L206 calls the repository directly and would now raise QualityRefused on a hard-flagged article (fail closed; not a bypass). No other publish path found. Known and recorded limitations, not new: legacy articles without page_facts are not blocked (listed by check_reading_quality_backlog.py); a body edit does not recompute body-derived codes (recorded follow-up). A script that calls the repository with quality_override=True and a reason publishes an incomplete credit with no rights override: this is intended by the policy (repository never refuses rights) and is now pinned by a test and the checker.
+4. Tests. 3d5a948f adds seven tests through the real route (call(setup.app, ...)) and the real repository/sqlite engine: quality-only does not pass rights (409, no quality audit), ack-only does not pass quality, neither flag lists both fields quality-first, both-no-reason 422, both-with-reason records both key sets and audits, repository-level quality override leaves no rights override and the real checker module flags it (exit 1, "NO RECORDED OVERRIDE"), auto-admission still refuses. These prove the required property. The diff vs main of existing tests shows no removed or loosened assertion; changes to existing rights tests in 30ab15ff are main's D-190 semantics (rights are warnings needing acknowledge_warnings), applied consistently.
+5. UI and copy. reading.js builds one dialog from qualityBlockers + publicationBlockers + publicationAdvice, one reason, and sends the two flags separately via confirmationsFor (quality items by `gate:'quality'`). The 409 retry only re-asks for a confirmation not yet given; otherwise rethrows (no loop). EN/VI/ZH have rdIssue_* labels for all hard/soft codes and err_reading_quality_not_cleared; the quality copy says "does not look like an article ... confirm and give a reason to publish anyway". No copy says rights block publishing; rdPublishRisk/rdWarn_*/err_reading_rights_not_cleared are main's warning wording. UI_BACKEND_GAPS entry correctly records that the design draws no distinct quality control.
+6. Decision log. D-189 and D-190 are byte-intact vs main (the DECISION_LOG diff is a pure append of D-191, no removed lines). D-191 is accurate on the independence, precedence, repository-as-last-gate and checker points. It is stale in one sentence (P2-1).
+7. CI and the media failure. The PR diff touches no media-fallback code (no media path in the 9c947602..30ab15ff file list). tests/test_media_fallback_poll_claim.py::test_completed_transition_is_atomic_under_concurrency is a concurrency test that passed alone and failed only under xdist: plausibly a pre-existing flake/timing sensitivity, unrelated to this PR. Condition: confirm on the CI pytest job (pending now) and, if it fails there, reproduce on origin/main before attributing.
+
+## Findings
+
+P0: none.
+P1: none.
+
+P2-1 (docs): DECISION_LOG.md D-191 point 2 says "`reading_admin_api.publication_blockers` returns them as `{code, gate: "quality"}`". After the merge it is `quality_blockers()` (publication_blockers is rights-only). Fix the sentence. Also the stated status "PROPOSED" must be updated to record this addendum's reviewer, commits and outcome in Git when accepted (point 9 currently cites only the pre-merge review).
+P2-2 (UI robustness): static/orena/screens/admin/reading.js, 409 retry branch: on the second dialog the flags sent come from `needed` computed on the full blocker list, so a quality-only retry after the first pass re-sends only the fields still missing instead of the union with `confirmed`. Today this is safe because the server lists all blockers in every 409, but `confirmed = needed` should be `{...confirmed OR needed}` to survive a future server that lists only the open kind.
+P2-3 (carried from prior review, still open): a separate permission for quality_override and recomputing body-derived codes on body edit remain follow-ups.
+
+## Conditions for acceptance
+1. CI aggregate `test` job green on 3d5a948f (python-gates, pytest, docker-build pending at review time). Do not claim CI PASS before that.
+2. If the media poll-claim test fails in CI, show it also fails on main before treating it as unrelated.
+3. Apply P2-1 and record this review in D-191 (can be in the merge commit or a follow-up docs commit).
