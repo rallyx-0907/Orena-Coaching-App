@@ -698,6 +698,8 @@ def extract_article(html: str, base_url: str = "") -> ExtractedArticle:
             # Structure, not content: no article element and no prose paragraphs (a listing, not a story).
             "no_article_structure": "few_prose_paragraphs" in reasons
             and bool({"no_article_or_main_element", "fallback_to_whole_page"} & set(reasons)),
+            # Structure again: the body came from a plain container, not an article or main element.
+            "no_semantic_container": "no_article_or_main_element" in reasons,
         },
         media=_media_candidates(
             _article_scope(container), figure_info, meta_images, document_base

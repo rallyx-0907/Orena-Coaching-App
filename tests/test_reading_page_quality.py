@@ -188,3 +188,51 @@ def test_a_dated_timeline_and_a_poem_are_not_hard_flagged_as_an_index():
     for body in (timeline, poem):
         flags = quality_flags(body=body, language="en", title="A history", facts={"no_article_structure": False})
         assert "index_page" not in flags and not HARD_ISSUES & set(flags)
+
+
+# ---- 2026-10-14 tightening: real pages from the live dry run (extractor article-extract/4) -------------------
+from pathlib import Path  # noqa: E402
+
+_LIVE = Path(__file__).parent / "fixtures" / "reading_quality"
+
+
+def _live(name: str, url: str, language: str) -> list[str]:
+    return _flags((_LIVE / name).read_text(encoding="utf-8"), url, language)
+
+
+def test_voa_topic_page_is_a_hard_index_page():
+    flags = _live("voa_zh_topic_page_p6197.html", "https://www.voachinese.com/p/6197.html", "zh")
+    assert "index_page" in flags
+
+
+def test_voa_player_page_without_an_article_is_a_hard_media_page():
+    flags = _live("voa_zh_player_page_p9647.html", "https://www.voachinese.com/p/9647.html", "zh")
+    assert "media_page" in flags
+
+
+def test_voa_section_page_is_still_a_hard_index_page():
+    assert "index_page" in _live("voa_zh_section_z1741.html", "https://www.voachinese.com/z/1741", "zh")
+
+
+@pytest.mark.parametrize(
+    ("name", "url", "language"),
+    [
+        ("voa_zh_article_8210116.html", "https://www.voachinese.com/a/x/8210116.html", "zh"),
+        ("voa_zh_article_8208799.html", "https://www.voachinese.com/a/y/8208799.html", "zh"),
+        ("nasa_news_release.html", "https://www.nasa.gov/news-release/nuclear/", "en"),
+        ("global_voices_article.html", "https://globalvoices.org/2026/09/28/calypso/", "en"),
+    ],
+)
+def test_real_articles_stay_clean_under_the_tightened_rules(name, url, language):
+    assert _live(name, url, language) == []
+
+
+def test_the_tightened_rules_read_structure_and_size_only():
+    # A short player page that has an article element keeps the older, lower media limit.
+    assert "media_page" not in quality_flags(
+        body="字" * 400, language="zh", facts={"media_player": True, "no_semantic_container": False})
+    assert "media_page" in quality_flags(
+        body="字" * 400, language="zh", facts={"media_player": True, "no_semantic_container": True})
+    # A long body on a structureless page is never an index by size alone.
+    assert "index_page" not in quality_flags(body="字" * 900, language="zh", facts={"no_article_structure": True})
+    assert "index_page" in quality_flags(body="字" * 200, language="zh", facts={"no_article_structure": True})

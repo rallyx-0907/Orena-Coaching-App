@@ -6174,3 +6174,13 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
+
+   Tightened 2026-10-14 (`claude/reading-quality-voa`, `reading-quality/3`): a live dry run found two VOA 中文 pages that
+   point 7 let through. `voachinese.com/p/6197` (topic page: no article element, one prose paragraph, 193 Hanzi of
+   teasers) is now a hard `index_page` through the generic rule "no article structure and a body under 400 Hanzi / 150
+   words". `voachinese.com/p/9647` (player page with a programme rundown, 302 Hanzi) is now a hard `media_page` through
+   "player markup, no article or main element (`no_semantic_container`) and a body under 600 Hanzi / 200 words". No source
+   name is used; the limits sit below the shortest genuine article of the evidence set. Real VOA 中文, NASA and Global
+   Voices articles stay clean (fixtures in `tests/fixtures/reading_quality/`). This changes the publish lifecycle, so it
+   **requires an independent re-review** before the entry returns to ACCEPTED; items stored before this change are not
+   re-evaluated.

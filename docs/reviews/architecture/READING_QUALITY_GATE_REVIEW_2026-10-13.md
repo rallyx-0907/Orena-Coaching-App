@@ -115,3 +115,12 @@ P2-3 (carried from prior review, still open): a separate permission for quality_
 1. CI aggregate `test` job green on 3d5a948f (python-gates, pytest, docker-build pending at review time). Do not claim CI PASS before that.
 2. If the media poll-claim test fails in CI, show it also fails on main before treating it as unrelated.
 3. Apply P2-1 and record this review in D-191 (can be in the merge commit or a follow-up docs commit).
+
+## Addendum 2026-10-14: tightened rules, re-review required
+
+`claude/reading-quality-voa` (`QUALITY_VERSION` reading-quality/3) adds two hard rules to `reading_page_quality`:
+`index_page` for a structureless page whose body is under 400 Hanzi / 150 words, and `media_page` for a player page with
+no article or main element and a body under 600 Hanzi / 200 words (new extractor fact `no_semantic_container`). This
+changes the publish lifecycle (more items refused without an override), so a fresh independent architecture review of
+the PR is required before D-191 returns to ACCEPTED. Review points: false-positive risk of the size limits on short
+genuine pages that lack an article element, and that stored items are not re-evaluated.
