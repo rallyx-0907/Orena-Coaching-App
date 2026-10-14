@@ -6580,7 +6580,8 @@ router capability (D-195) is not used.
 
 ## D-200 - Translate ahead when a Reading article opens; a router answer keeps its label (2026-10-14)
 
-**Status: PROPOSED** (amends D-195; needs an independent architecture review before it is ACCEPTED). Owner decision of
+**Status: ACCEPTED** (amends D-195). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5:
+APPROVE WITH CONDITIONS on 1f3c63c5, re-review APPROVE on a358feac; P2-A/P2-B fixed in 58ac8c58; merged once CI was green. Owner decision of
 2026-10-14: "translate ahead when an article opens", so the first tap on a word shows its support-language meaning at
 once. No schema, no migration, no UI change, no new endpoint. The capability stays off until the owner enables
 `word_translation`; with it off nothing here calls anyone.
