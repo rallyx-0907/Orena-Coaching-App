@@ -254,11 +254,24 @@ def _safe_chinese_senses(word: str) -> tuple[str, ...]:
     return ()
 
 
+def _is_polyphone(char: str) -> bool:
+    try:
+        from pypinyin import Style, pinyin
+
+        return len({r for group in pinyin(char, style=Style.TONE, heteronym=True) for r in group}) > 1
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def _chinese_reading(word: str) -> str:
     """Tone-marked pinyin of exactly `word`, from deterministic sources only: the vendored CC-CEDICT reading, else pypinyin.
 
     The pronunciation of a Chinese word does not depend on which layer gave its meaning (the sentence tagger, the
     catalogue, a translation or the `word_translation` seam), so it is filled here when none of them gave one."""
+    if len(word) == 1 and _is_polyphone(word):
+        # One character with several readings (了, 重, 行, 长, 还...) is read by its sentence; without the tagger's
+        # contextual reading, no reading is shown rather than a confident, possibly wrong one.
+        return ""
     try:
         reading = chinese_lexicon.reading(word)
     except chinese_lexicon.LexiconUnavailable:

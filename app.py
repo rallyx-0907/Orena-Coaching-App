@@ -2690,6 +2690,27 @@ def _english_dictionary_eligible(term: str) -> bool:
     return letters > 0
 
 
+def _dictionary_reading(data: list) -> tuple[str, str]:
+    """The reading (IPA) and its recording from dictionaryapi.dev entries of one word.
+
+    The first entry's own `phonetic` wins, then its `phonetics[].text`, then the same from later entries. The audio is
+    taken from the entry the reading came from when it has one, else from the first entry that has any."""
+
+    def facts(item: Any) -> tuple[str, str]:
+        if not isinstance(item, dict):
+            return "", ""
+        listed = [p for p in (item.get("phonetics") or []) if isinstance(p, dict)]
+        reading = str(item.get("phonetic") or "") or next((str(p["text"]) for p in listed if p.get("text")), "")
+        sound = next((str(p["audio"]) for p in listed if p.get("audio")), "")
+        return reading, ("https:" + sound if sound.startswith("//") else sound)
+
+    parsed = [facts(item) for item in data]
+    reading, sound = next(((r, a) for r, a in parsed if r), ("", ""))
+    if not sound:
+        sound = next((a for _r, a in parsed if a), "")
+    return reading, sound
+
+
 def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool = True, persist: bool = True, timeout: float = 8, cache_only: bool = False) -> dict[str, Any]:
     clean = normalise_lookup_word(word)
     cache_key = clean.casefold()
@@ -2734,24 +2755,7 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                 data = response.json()
                 if isinstance(data, list) and data:
                     entry = data[0]
-                    phonetic = str(entry.get("phonetic") or "")
-                    audio = ""
-                    if not phonetic:
-                        # The first entry may carry no reading while a later entry of the same word does.
-                        for candidate in data:
-                            if not isinstance(candidate, dict):
-                                continue
-                            phonetic = str(candidate.get("phonetic") or "") or next(
-                                (str(p["text"]) for p in candidate.get("phonetics") or [] if isinstance(p, dict) and p.get("text")), ""
-                            )
-                            if phonetic:
-                                break
-                    for p in entry.get("phonetics", []):
-                        if p.get("audio"):
-                            audio = str(p["audio"])
-                            if audio.startswith("//"):
-                                audio = "https:" + audio
-                            break
+                    phonetic, audio = _dictionary_reading(data)
                     definitions = []
                     for meaning in entry.get("meanings", []):
                         pos = str(meaning.get("partOfSpeech") or "")
