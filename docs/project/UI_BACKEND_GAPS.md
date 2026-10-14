@@ -6105,3 +6105,14 @@ publisher. Update 2026-10-14: the human decided to show them on the Reader. The 
 end of the article text: publisher, author when distinct, an "Original article" link and the licence name linked when
 the backend determined it. Built in `screens/reader/` (EN/VI/ZH). Content Detail is unchanged.
 Also open: `provenance.text` is English-only (a fallback sentence); no client draws it, so no EN/VI/ZH copy was added.
+
+## Reading quality gate: no pre-click state or override control in Admin Reading (D-191, 2026-10-14)
+
+The server refuses a reviewer's publish of a page flagged with a hard quality code (`media_page`, `index_page`,
+`bot_challenge`, `special_page`, `empty_body`) with `409 reading_quality_not_cleared` unless the request carries
+`quality_override: true` and a reason; the codes are listed with translated labels in the existing "Quality" evidence row.
+The pinned `Orena Admin.dc.html` draws no disabled-publish state for quality and no quality override control. Publish
+reuses the existing confirm dialog drawn for the rights warnings (D-190): the hard quality codes are added to its list
+(labels `rdIssue_*`), the one reason serves both, and the client sends `quality_override` and `acknowledge_warnings`
+as separate flags, each only for the kind it lists. No new control was added; whether the design should draw a distinct
+quality confirmation is a decision for the human.

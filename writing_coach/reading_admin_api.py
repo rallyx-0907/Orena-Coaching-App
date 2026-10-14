@@ -38,6 +38,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.reading_page_quality import QualityRefused, hard_issues
 from writing_coach.persistence.reading_content_repository import (
     CONTENT_KINDS,
     MAX_ARTICLE_PAGE,
@@ -221,6 +222,18 @@ def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
     return blockers
 
 
+def quality_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
+    """Hard quality failures (`reading_page_quality.HARD_ISSUES`): the page is not an article (D-191).
+
+    Unlike the rights warnings these are a real gate. They clear only with `quality_override`
+    and a reason, and that override never touches the rights confirmation (D-190).
+    """
+    return [
+        {"code": code, "gate": "quality"}
+        for code in hard_issues((article.get("analysis") or {}).get("quality_issues"))
+    ]
+
+
 def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
     """Advice recorded beside the decision: an unanswered attribution question.
 
@@ -340,6 +353,9 @@ class ArticleStatusBody(BaseModel):
     # Publishing while rights or attribution are unclear is the administrator's
     # deliberate act: this flag and a non-empty reason, recorded with the warnings.
     acknowledge_warnings: bool = False
+    # A separate, explicit decision to publish despite a hard quality failure (D-191). It does
+    # not stand in for `acknowledge_warnings`, nor the other way round.
+    quality_override: bool = False
 
 
 class ArticleRightsBody(BaseModel):
@@ -756,6 +772,16 @@ def set_article_status(
 
     Automatic admission happens atomically during candidate creation, not through
     this operator transition route. Changes here retain the administrator's actor.
+
+    Publishing has two independent confirmations, each explicit and each recorded:
+    `acknowledge_warnings` for unclear rights or attribution (D-190) and `quality_override`
+    for a hard quality failure, "not an article" (D-191). One non-empty `reason` serves both.
+    Neither stands in for the other. Precedence of the 409s: if the quality override is
+    missing, `reading_quality_not_cleared` (quality first); otherwise, if the warnings are
+    not acknowledged, `reading_rights_not_cleared`. Both carry every blocker in
+    `context.blockers` and the fields still to send in `context.override_fields`, so one
+    refusal shows an administrator everything to confirm. With both given and no reason,
+    422 `reading_reason_required`.
     """
     admin = _admin(request)
     _same_origin(request)
@@ -768,35 +794,74 @@ def set_article_status(
             422, "reading_reason_required", "A rejection keeps its reason - say why."
         )
     warnings: list[dict[str, str]] = []
+    overriding = False
     if status == "published":
         current = _guarded(lambda: _content().get_article(article_id))
         if current is None:
             raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
         warnings = [{**item, "level": "warning"} for item in publication_blockers(current)]
         warnings += publication_warnings(current)
-        if warnings and not payload.acknowledge_warnings:
+        quality = quality_blockers(current)
+        rights_open = bool(warnings) and not payload.acknowledge_warnings
+        quality_open = bool(quality) and not payload.quality_override
+        if rights_open or quality_open:
+            everything = [*quality, *warnings]
             _audit(
                 admin,
                 "admin.reading_article_publish_refused",
                 entity_type="reading_article",
                 entity_id=article_id,
-                payload={"blockers": warnings},
+                payload={"blockers": everything},
             )
+            fields = [
+                *(["quality_override"] if quality_open else []),
+                *(["acknowledge_warnings"] if rights_open else []),
+            ]
+            context: dict[str, Any] = {"blockers": everything, "override_fields": fields}
+            if rights_open:
+                context["override_field"] = "acknowledge_warnings"
+            if quality_open:
+                raise orena_http_error(
+                    409,
+                    "reading_quality_not_cleared",
+                    "This page does not look like an article. Confirm that to publish it anyway.",
+                    context=context,
+                )
             raise orena_http_error(
                 409,
                 "reading_rights_not_cleared",
                 "Rights or attribution for this text are unclear. Confirm the warnings and give a reason to publish anyway.",
-                context={"blockers": warnings, "override_field": "acknowledge_warnings"},
+                context=context,
             )
-        if warnings and not payload.reason.strip():
+        if (warnings or quality) and not payload.reason.strip():
             raise orena_http_error(
-                422, "reading_reason_required", "Publishing over a warning keeps its reason - say why."
+                422, "reading_reason_required", "Publishing over a warning or a quality failure keeps its reason - say why."
             )
-    article = _guarded(
-        lambda: _content().set_status(
-            article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings
+        if quality:
+            overriding = True
+            _audit(
+                admin,
+                "admin.reading_article_quality_override",
+                entity_type="reading_article",
+                entity_id=article_id,
+                payload={"codes": [item["code"] for item in quality], "reason": payload.reason.strip()},
+            )
+    try:
+        article = _guarded(
+            lambda: _content().set_status(
+                article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings,
+                quality_override=overriding,
+            )
         )
-    )
+    except QualityRefused as exc:  # the repository is the last gate; the route only translates it
+        if exc.reason_missing:
+            raise orena_http_error(
+                422, "reading_reason_required", "Publishing past a quality failure keeps its reason - say why."
+            ) from exc
+        raise orena_http_error(
+            409, "reading_quality_not_cleared", "This page does not look like an article, so it cannot be published.",
+            context={"blockers": [{"code": code, "gate": "quality"} for code in exc.codes]},
+        ) from exc
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
     audit_payload: dict[str, Any] = {"status": status, "reason": payload.reason.strip()}

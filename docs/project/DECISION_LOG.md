@@ -6130,3 +6130,47 @@ Readiness" item P0-A.
   write), P2-2 (the repository accepts warnings without a reason; the route enforces it, the checker treats it as no
   override), P2-5 (the admin audit row is written after the review-event transaction). The reader's licence and
   original-link line was decided by the human on 2026-10-14 and is a separate change.
+
+## D-191 - Reading quality admission: non-articles are not published without a reasoned override (2026-10-14)
+
+**Status: ACCEPTED** (independent review, re-review after the merge with D-190, merged once CI was green). Changes the
+Reading publish lifecycle. No schema or migration change.
+Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-E, D-189).
+
+1. **One definition.** `writing_coach/reading_page_quality.py` owns every quality signal, threshold and code. The
+   extractor stores raw-page facts (`analysis.extraction.page_facts`); `quality_flags` turns them, the cleaned body and
+   the extraction confidence into stable codes appended to `analysis.quality_issues`.
+2. **Hard codes** (the page is not an article): `empty_body`, `media_page`, `index_page`, `bot_challenge`,
+   `special_page`. `reading_admin_api.quality_blockers` returns them as `{code, gate: "quality"}`, and a reviewer's
+   publish is refused `409 reading_quality_not_cleared`. An explicit `quality_override: true` with a reason publishes
+   anyway and is audited (`admin.reading_article_quality_override`). **The two confirmations are independent:**
+   `quality_override` never stands in for D-190's `acknowledge_warnings`, nor the reverse; an article with both kinds needs
+   both flags and one reason. 409 precedence: `reading_quality_not_cleared` while the quality override is missing, else
+   `reading_rights_not_cleared`; both list every blocker in `context.blockers` and the fields still to send in
+   `context.override_fields`. The repository enforces only the quality gate (rights never refuse there), so the rights
+   confirmation is a route-level, audited requirement; a quality override is not counted as a rights override by
+   `scripts/check_published_reading_provenance.py`.
+3. **Soft codes** (uncertain, still reviewable): `body_below_minimum`, `extraction_medium_confidence`, `generic_title`,
+   plus the existing `too_short`, `too_long`, `language_*`, `repetitive`, `extraction_low_confidence`.
+4. **D-111 is unchanged:** any quality issue, hard or soft, means `review`; automatic admission never publishes a
+   flagged item.
+5. **Empty body** keeps the existing refusal (`empty_source`, "no readable article"); the flag covers other entry paths.
+6. **The repository is the last gate.** `ReadingContentRepository.set_status` refuses a publish over a hard code
+   (`QualityRefused`) unless `quality_override=True` and a reason are given; the override, its codes and
+   `QUALITY_VERSION` are recorded on the article's own status event. The route only translates the refusal, so
+   `scripts/agent_e2e/harness.py` and any direct caller are stopped too.
+7. **Tightened after review.** `media_page` is hard for ZH only under 260 Hanzi (trial non-articles: 216-245).
+   `bot_challenge` needs a short page and a near-exact challenge phrase in the title (or a page under 40 units).
+   `index_page` is hard only on a listing title, a listing address, or a listing-shaped body on a page with no
+   article element and no prose; a dated listing alone is the soft `index_like`.
+8. **Known limitation.** Fact-based codes exist only for URL-extracted pages. Pasted and uploaded text get only the
+   body-derived codes, and articles stored before this change have no `page_facts`, so they are not blocked. The
+   read-only `scripts/check_reading_quality_backlog.py` lists them; it cannot backfill, so a human decides each one.
+9. **Review.** Independent architecture review of `ae8b96db`: APPROVED WITH CONDITIONS
+   (`docs/reviews/architecture/READING_QUALITY_GATE_REVIEW_2026-10-13.md`, Delegated Architecture Reviewer, Claude Opus
+   5.5). Conditions P1-1, P1-2 and P1-4 are addressed in the commit that records this line; P1-3 (merge with the
+   provenance gate) is settled at merge. Follow-ups, not done: recompute body-derived codes when a body is edited, and a
+   separate permission for the override.
+   Re-review after the merge with D-190 (2026-10-14): Delegated Architecture Reviewer, Claude Opus 5.5, independent of the
+   implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
+   confirmations are proven independent by route-level tests.
