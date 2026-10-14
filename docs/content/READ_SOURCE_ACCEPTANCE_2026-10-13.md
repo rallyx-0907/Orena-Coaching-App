@@ -198,5 +198,6 @@ D-200 and its prefetch sizing were reworded to this.
 
 **:8000 is not deployed.** Deploying needs the owner's authorisation (and, per D-177, migration 0026).
 
-**Pending owner action on :8021:** unpublish the 8 trial samples of 2026-10-13 (15:07 UTC batch) and return the 2 learner test
-accounts to Free; decision pending on de4c636c (published 2026-10-13 02:44) and the 3 earlier E2E articles of 2026-10-14.
+**:8021 cleanup:** owner performing the cleanup in Admin: unpublish the 8 trial samples of 2026-10-13 (15:07 UTC batch) and
+return the 2 learner test accounts to Free. Kept published by owner decision: de4c636c (Ice Ages) and the 3 earlier E2E
+articles of 2026-10-14 (c8162a0c NASA Koch, ac4c76de GV Nepal, ffbf707a VOA 佳全). Not verified by this document.
