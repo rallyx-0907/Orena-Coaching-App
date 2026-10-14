@@ -55,6 +55,7 @@ from writing_coach.reading_images import (
 from writing_coach.reading_provenance import (
     PUBLIC_NAME_KEY, build_provenance, provenance_blockers, public_name_of, resolve_publisher,
 )
+from writing_coach.reading_rights_refinement import refine_item_rights
 from writing_coach.persistence.models import (
     ReadingArticle,
     ReadingArticleTarget,
@@ -1863,6 +1864,46 @@ class ReadingContentRepository:
                 "id": str(row.id), "title": row.title, "language": row.language,
                 "missing": [item["field"] for item in provenance_blockers(credits.get(row.id) or {})],
                 "overridden": row.id in overridden,
+            })
+        return found
+
+    def published_staff_only_rights_candidates(self, *, limit: int = 5000) -> list[dict[str, Any]]:
+        """Published articles from a source whose public-domain status holds only for its own staff
+        output (D-193), that show wire copy or no byline - judged now, from the stored snapshot,
+        because items ingested before the refinement carry no record of it. `asserted` says the
+        article's effective rights still answer "can republish" yes. Read-only."""
+        with self.engine.connect() as connection:
+            rows = connection.execute(
+                select(
+                    ReadingArticle.id, ReadingArticle.title, ReadingArticle.language,
+                    ReadingSourceItem.original_author, ReadingSourceItem.canonical_url,
+                    ReadingSourceItem.original_content.label("body"),
+                    ReadingSourceItem.metadata_json.label("item_metadata"),
+                    ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
+                    ReadingSource.base_url.label("source_base_url"),
+                    ReadingSource.automation_allowed.label("source_automation"),
+                )
+                .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
+                .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
+                .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+                .order_by(ReadingArticle.language, ReadingArticle.title, ReadingArticle.id)
+                .limit(max(1, int(limit)))
+            ).all()
+            decisions = self._rights_decisions(connection, [row.id for row in rows])
+        found = []
+        for row in rows:
+            refinement = refine_item_rights(
+                source_base_url=row.source_base_url, canonical_url=row.canonical_url,
+                author=row.original_author, body=row.body, metadata=row.item_metadata or {})
+            if not refinement or refinement["outcome"] != "withheld":
+                continue
+            answered = [entry["answers"] for entry in decisions.get(row.id, [])]
+            effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            found.append({
+                "id": str(row.id), "title": row.title, "language": row.language,
+                "reasons": refinement["reasons"], "evidence": refinement["evidence"],
+                "asserted": rights_state(effective)["can_republish"] == "allowed",
+                "licence": build_provenance(publisher="", url="", author="", rights=effective)["license"]["name"],
             })
         return found
 

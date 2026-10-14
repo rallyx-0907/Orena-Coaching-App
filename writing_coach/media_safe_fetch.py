@@ -190,10 +190,17 @@ def fetch_bounded(
         chunks: list[bytes] = []
         total = 0
         started = time.monotonic()
+        # With a wall-clock bound the body is read in small pieces that return as soon as any bytes
+        # arrive (`read1`), so the deadline is checked per piece and a server that drips one byte at a time
+        # cannot hold the caller inside a single large blocking read. Without it nothing changes.
+        read_piece = getattr(response, "read1", None) if total_timeout is not None else None
         while True:
             if total_timeout is not None and time.monotonic() - started > total_timeout:
                 raise _unsafe("The media address took too long to answer.")
-            chunk = response.read(min(1024 * 1024, max_bytes + 1))
+            if read_piece is not None:
+                chunk = read_piece(min(8192, max_bytes + 1 - total))
+            else:
+                chunk = response.read(min(1024 * 1024, max_bytes + 1))
             if not chunk:
                 break
             total += len(chunk)

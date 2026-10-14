@@ -587,12 +587,24 @@ def test_a_drip_feeding_server_is_cut_off_by_the_total_deadline(monkeypatch):
             return False
 
         def read(self, size):
+            """Like a socket: blocks until `size` bytes have arrived (one byte per 30 ms), capped at 50 bytes
+            so a regression finishes slowly rather than never."""
+            time.sleep(0.03 * min(size, 50))
+            return b"x" * min(size, 50)
+
+        def read1(self, size):
             time.sleep(0.03)
             return b"x"
 
     monkeypatch.setattr(media_safe_fetch, "_open", lambda *a, **k: Slow())
+    started = time.monotonic()
     with pytest.raises(UnsafeMediaFetch):
         media_safe_fetch.fetch_bounded("https://photos.example.org/a.png", total_timeout=0.1)
+    assert time.monotonic() - started < 0.5, "cut off by the deadline, not after a whole blocking read"
+    # without a deadline nothing changes: the one-megabyte read is used, as before
+    import inspect
+
+    assert inspect.signature(media_safe_fetch.fetch_bounded).parameters["total_timeout"].default is None
 
 
 def test_an_ipv4_mapped_loopback_is_refused_with_the_real_guard(monkeypatch):

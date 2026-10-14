@@ -28,6 +28,7 @@ traceback.
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
@@ -851,19 +852,22 @@ def set_article_rights(
 _PREVIEW_TTL_SECONDS = 120.0
 _PREVIEW_MAX_ENTRIES = 8
 _preview_cache: dict[tuple[str, int, str], tuple[float, dict[str, Any]]] = {}
+_preview_lock = threading.Lock()
 
 
 def _cached_preview(article_id: str, index: int, url: str) -> dict[str, Any]:
     now = time.monotonic()
-    for key in [key for key, (stamp, _) in _preview_cache.items() if now - stamp > _PREVIEW_TTL_SECONDS]:
-        del _preview_cache[key]
     key = (article_id, index, url)
-    if key in _preview_cache:
-        return _preview_cache[key][1]
-    fetched = fetch_image(url, fetcher=_state.image_fetcher)
-    while len(_preview_cache) >= _PREVIEW_MAX_ENTRIES:
-        del _preview_cache[min(_preview_cache, key=lambda item: _preview_cache[item][0])]
-    _preview_cache[key] = (now, fetched)
+    with _preview_lock:
+        for stale in [item for item, (stamp, _) in _preview_cache.items() if now - stamp > _PREVIEW_TTL_SECONDS]:
+            del _preview_cache[stale]
+        if key in _preview_cache:
+            return _preview_cache[key][1]
+    fetched = fetch_image(url, fetcher=_state.image_fetcher)  # outside the lock: a slow fetch blocks nobody
+    with _preview_lock:
+        while len(_preview_cache) >= _PREVIEW_MAX_ENTRIES:
+            del _preview_cache[min(_preview_cache, key=lambda item: _preview_cache[item][0])]
+        _preview_cache[key] = (now, fetched)
     return fetched
 
 
