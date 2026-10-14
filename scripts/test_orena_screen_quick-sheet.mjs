@@ -107,6 +107,14 @@ assert.deepEqual(highlightExample('No match here.', 'settled'), [{ value: 'No ma
   assert.equal(card.saved, false);
 }
 
+/* --- the reading is the field of the word's own script: pinyin for hanzi, IPA for latin, never the other --- */
+{
+  const zh = mapWordCard('政府', { detail: { headword: '政府', script: 'hanzi', pinyin: 'zhèng fǔ', ipa: null, contextMeaning: 'chính phủ', meaningSource: 'word_translation' } });
+  assert.equal(zh.reading, 'zhèng fǔ');
+  const en = mapWordCard('aid', { detail: { headword: 'aid', script: 'latin', pinyin: null, ipa: '/eɪd/', contextMeaning: 'viện trợ', meaningSource: 'word_translation' } });
+  assert.equal(en.reading, '/eɪd/');
+}
+
 /* --- mapWordCard, the "available" branch: built from word_detail.py#project_word_detail's own
    keys (never captured - this sandbox has no AI provider), never shipped as a fixture --- */
 {
