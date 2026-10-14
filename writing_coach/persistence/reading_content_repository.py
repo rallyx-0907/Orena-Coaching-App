@@ -1515,7 +1515,7 @@ class ReadingContentRepository:
 
     def published_staff_only_rights_candidates(self, *, limit: int = 5000) -> list[dict[str, Any]]:
         """Published articles from a source whose public-domain status holds only for its own staff
-        output (D-192), that show wire copy or no byline - judged now, from the stored snapshot,
+        output (D-193), that show wire copy or no byline - judged now, from the stored snapshot,
         because items ingested before the refinement carry no record of it. `asserted` says the
         article's effective rights still answer "can republish" yes. Read-only."""
         with self.engine.connect() as connection:

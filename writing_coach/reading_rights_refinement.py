@@ -1,4 +1,4 @@
-"""Per-item rights refinement at ingest (D-192, proposed).
+"""Per-item rights refinement at ingest (D-193, proposed).
 
 A source's rights are a default for everything it publishes. For some publishers
 the default is only true of the work they produced themselves: VOA's own staff
@@ -38,10 +38,23 @@ SOURCE_RIGHTS_RULES: dict[str, dict[str, bool]] = {
 WITHHELD_KEYS = ("can_republish", "can_adapt", "license_note")
 
 _AGENCY = (
-    r"(?<![A-Za-z])(?:路透社?|美联社|法新社|德新社|美国联合通讯社|彭博(?:社|新闻社?|资讯|通讯社)"
+    r"(?<![A-Za-z])(?:路透社?|美联社|法新社|德新社|新华社|中央社|共同社|韩联社|纽约时报|美国联合通讯社|彭博(?:社|新闻社?|资讯|通讯社)"
     r"|Reuters|Associated\s+Press|Agence\s+France[- ]Presse|AFP|Deutsche\s+Presse-Agentur|dpa"
-    r"|Bloomberg(?:\s+News)?|(?-i:AP))(?![A-Za-z])"
+    r"|Bloomberg(?:\s+News)?|Kyodo(?:\s+News)?|Yonhap(?:\s+News)?|Xinhua|The\s+New\s+York\s+Times|(?-i:AP|CNA))(?![A-Za-z])"
 )
+_LIST = rf"{_AGENCY}(?:(?:\s*,\s*(?:and\s+)?|\s+and\s+|\s*&\s*){_AGENCY})*"
+# English credit forms. A credit ENDS the line on the agency ("... came from AP, Reuters and AFP."), so a
+# sentence of prose that merely names one ("Reuters reported that ...", "according to a Reuters report") never matches.
+_CREDIT_EN = re.compile(
+    rf"(?:{_LIST}\s+(?:also\s+)?(?:contributed\s+to|provided\s+(?:information|reporting)\s+for)\s+this\s+(?:report|story)"
+    r"|(?:(?:some|additional)\s+)?(?:information|reporting|material|video|photos?)\s+(?:for\s+this\s+(?:report|story)\s+)?"
+    rf"(?:came|comes|was\s+provided|provided|supplied)\s+(?:from|by)\s+{_LIST}"
+    rf"|(?:reported|reporting|written|supplied|provided|photographed)\s+(?:by|from)\s+{_LIST}"
+    rf"|(?:based\s+on|adapted\s+from|compiled\s+from|with)\s+(?:(?:wire\s+)?(?:reporting|reports|information|material)\s+)?(?:from|by)\s+{_LIST}"
+    r")\W*$",
+    re.IGNORECASE,
+)
+_MAX_EN_CREDIT_LINE = 160
 _AGENCY_RE = re.compile(_AGENCY, re.IGNORECASE)
 # The agency named as the owner of the line: bracketed, or after a credit verb / label.
 _BRACKETED = re.compile(r"[（(\[][^）)\]\n]{0,30}?" + _AGENCY + r"[^）)\]\n]{0,30}[）)\]]", re.IGNORECASE)
@@ -82,6 +95,8 @@ def detect_wire_credit(
             continue
         if _DATELINE.search(line):
             found.append({"kind": "dateline", "text": line[:120]})
+        elif len(line) <= _MAX_EN_CREDIT_LINE and _CREDIT_EN.search(line):
+            found.append({"kind": "credit_line", "text": line[:120]})
         elif len(line) <= _MAX_CREDIT_LINE and (
             _BRACKETED.search(line) or _DERIVATION_ZH.search(line) or _CREDIT_LABEL.search(line)
             or (_DERIVATION_AFTER.fullmatch(line.strip("()（）[] 。.")))

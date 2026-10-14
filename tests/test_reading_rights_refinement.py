@@ -1,4 +1,4 @@
-"""Per-item rights refinement (D-192, proposed): staff-only public domain for VOA.
+"""Per-item rights refinement (D-193, proposed): staff-only public domain for VOA.
 
 Fixtures are trimmed real voachinese.com pages (2026-10-14): a staff-bylined report, and two
 VOA rewrites that end with the agency derivation note ("本文依据了美联社的报道").

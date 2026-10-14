@@ -6175,7 +6175,7 @@ Closes D10 of `docs/content/READ_SOURCE_TRIAL_2026-10-13.md` (milestone item P0-
    implementer, on 30ab15ff and 3d5a948f: APPROVED WITH CONDITIONS (CI green before merge; this entry's wording). The two
    confirmations are proven independent by route-level tests.
 
-## D-192 - Per-item rights: a staff-only public-domain source does not vouch for wire copy (2026-10-14)
+## D-193 - Per-item rights: a staff-only public-domain source does not vouch for wire copy (2026-10-14)
 
 **Status: PROPOSED.** Changes how rights are recorded at ingest for Reading, which is a lifecycle/rights change, so it needs
 independent architecture review before it is ACCEPTED; the implementer does not approve it. No schema or migration change.

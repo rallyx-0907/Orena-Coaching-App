@@ -94,7 +94,7 @@ filters; step 19 is only needed for Wikipedia.
    until the human has looked, then undo (they were published with `can_republish = true` for a local trial only). They
    do not affect :8000 or :8010. Also open: Q1 (third-party media inside open-licensed articles) and Q6 (wire copy), which
    decide whether a source-level `automation_allowed` is ever enough.
-6. **VOA wire copy (Q6), update 2026-10-14.** Implemented as D-192 (PROPOSED, review pending). A source flagged
+6. **VOA wire copy (Q6), update 2026-10-14.** Implemented as D-193 (PROPOSED, review pending). A source flagged
    `public_domain_requires_staff_authorship` (VOA 中文 and Learning English hosts) no longer hands its "public domain"
    answer to an item that shows a wire credit or derivation note (for example "本文依据了美联社的报道") or has no byline: the
    item's republish, adapt and licence answers become unknown, so an administrator must publish it over D-190's warning with a

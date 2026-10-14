@@ -1,4 +1,4 @@
-"""Read-only check: published Reading articles that assert staff-only public domain but show wire copy (D-192).
+"""Read-only check: published Reading articles that assert staff-only public domain but show wire copy (D-193).
 
 Some sources (VOA) are public domain only for what their own staff produced. This lists every
 `published` article from such a source whose stored text carries a wire credit or derivation note

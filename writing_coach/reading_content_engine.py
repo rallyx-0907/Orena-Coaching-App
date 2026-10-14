@@ -270,7 +270,7 @@ class ReadingContentEngine:
                         and (submitted.kind != "url" or source_origin_matches(source, item.canonical_url))):
                     inherited = {key: value for key, value in source["rights"].items() if key != "automation_allowed"}
                     origins = {key: "article" if key in item.rights else "source" for key in inherited}
-                    # D-192: a source whose public-domain status holds only for its own staff output
+                    # D-193: a source whose public-domain status holds only for its own staff output
                     # does not hand that answer to an item showing wire copy or no byline.
                     refinement = refine_item_rights(
                         source_base_url=source.get("base_url") or "", canonical_url=item.canonical_url,
