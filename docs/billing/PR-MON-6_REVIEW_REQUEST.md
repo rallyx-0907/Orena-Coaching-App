@@ -123,3 +123,28 @@ voice suites 1254 passed.
   `media_transcript_pipeline.py` are kept together with the backstops. Full SQLite and every PostgreSQL file were
   re-run (see `BILLING_STATUS.md`).
 
+## Re-review of `4a9d94b3`: REQUEST CHANGES (one P1), and the fix
+
+The re-review closed P1-2 (real timeouts) and P2 (reconciler isolation), and found CI run `38677271820` green. One
+P1 remained: audio `billable_attempt` was always true, even for a failure before any outbound request.
+
+**Fix:** billability is now explicit at the transport boundary, never inferred from an outcome or an exception type.
+- `ai/audio_telemetry.py` adds `provider_attempt()`, `mark_sent()` and `attempt_sent()`.
+- `record_audio_operation` and `record_token_operation` take `billable_attempt`. It defaults to false, so a caller
+  must declare it.
+- Callers:
+  - **Groq ASR:** both `session.post` boundaries are marked. A failure is billable only if marked; a success is
+    billable.
+  - **Azure pronunciation:** `prepare_audio` (local ffmpeg) is never billable. `assess_bytes` is billable only once
+    the `session.post` boundary is marked.
+  - **Supadata:** the request boundary is marked; a deadline already spent sends nothing.
+  - **Media translation:** every record follows `requests.post`, so all are billable.
+  - **Word TTS:** every event follows the request.
+- Tests (`tests/test_funding_evidence.py`):
+  - Groq with empty or oversize audio: zero requests, no cost row;
+  - Azure with a local decoding failure, in both prepare and assess: zero requests, no cost row;
+  - an HTTP failure after sending, for Groq and Azure: one request, one billable row;
+  - a malformed response after sending: still one billable row. For Azure, a 200 is billed as the seconds it
+    received, as before.
+  - The earlier tests are kept.
+

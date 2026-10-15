@@ -27,6 +27,33 @@ _log = logging.getLogger(__name__)
 # of an operator's shared import with no origin (it is neither a learner's request nor an operator's test).
 _ORIGIN: contextvars.ContextVar[str | None] = contextvars.ContextVar("orena_telemetry_origin", default="learner")
 
+# PR-MON-6 §8 (re-review of `4a9d94b3`): whether the provider request of the attempt in progress was actually sent. A
+# client marks it at its transport boundary (immediately before `session.post` / `urlopen`), never inferred from an
+# outcome or an exception type: local validation, decoding or a refused payload before transport is never billable.
+_SENT: contextvars.ContextVar[list[bool] | None] = contextvars.ContextVar("orena_provider_request_sent", default=None)
+
+
+@contextmanager
+def provider_attempt() -> Iterator[None]:
+    """One provider attempt: `mark_sent()` inside it records that its request left Orena."""
+    token = _SENT.set([False])
+    try:
+        yield
+    finally:
+        _SENT.reset(token)
+
+
+def mark_sent() -> None:
+    """Call at the transport boundary, immediately before the outbound request begins."""
+    cell = _SENT.get()
+    if cell is not None:
+        cell[0] = True
+
+
+def attempt_sent() -> bool:
+    cell = _SENT.get()
+    return bool(cell and cell[0])
+
 
 @contextmanager
 def telemetry_origin(origin: str | None) -> Iterator[None]:
@@ -53,6 +80,7 @@ def record_token_operation(
     latency_ms: int | None,
     usage: dict[str, Any] | None = None,
     error: BaseException | None = None,
+    billable_attempt: bool = False,
 ) -> None:
     """One row for a text-model call made outside the AI platform (the media pre-translation, D-168): capability,
     provider, model, the provider-reported prompt/completion tokens and the cost from the token catalog. No prompt,
@@ -77,7 +105,7 @@ def record_token_operation(
             {"state": "unknown", "currency": None, "amount": None,
              "provenance": {"provider": provider, "model": model, "reason": "request_failed"}},
             "quota_available": "unknown",
-            "billable_attempt": True,   # recorded only around a request that was sent
+            "billable_attempt": bool(billable_attempt),   # the caller's transport boundary says so, never a default
         }
         _persist_operation_telemetry(event)
     except Exception:  # telemetry never costs the learner the answer
@@ -93,6 +121,7 @@ def record_audio_operation(
     latency_ms: int | None,
     audio_seconds: float | None,
     error: BaseException | None = None,
+    billable_attempt: bool = False,
 ) -> None:
     try:
         from writing_coach.ai.platform import _persist_operation_telemetry
@@ -114,7 +143,7 @@ def record_audio_operation(
             {"state": "unknown", "currency": None, "amount": None,
              "provenance": {"provider": provider, "model": model, "reason": "request_failed"}},
             "quota_available": "unknown",
-            "billable_attempt": True,   # recorded only around a request that was sent
+            "billable_attempt": bool(billable_attempt),   # the caller's transport boundary says so, never a default
         }
         _persist_operation_telemetry(event)
     except Exception:  # telemetry never costs the learner the answer

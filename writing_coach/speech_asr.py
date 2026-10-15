@@ -240,19 +240,21 @@ class GroqSpeechAsrProvider:
         require_paid(capability="speech_asr", provider=str(getattr(self, "provider_id", "") or "groq"),
                      timeout_seconds=self._timeout_seconds)   # the timeout every Groq request uses
 
-        from writing_coach.ai.audio_telemetry import record_audio_operation
+        from writing_coach.ai.audio_telemetry import attempt_sent, provider_attempt, record_audio_operation
 
         started = time.perf_counter()
-        try:
-            result = call(*args, **kwargs)
-        except Exception as exc:
-            record_audio_operation("speech_asr", provider=self.provider_id, model=self.model, outcome="failure",
-                                   latency_ms=int((time.perf_counter() - started) * 1000), audio_seconds=None,
-                                   error=exc)  # fmt: skip
-            raise
+        with provider_attempt():
+            try:
+                result = call(*args, **kwargs)
+            except Exception as exc:
+                # billable only when the request reached the transport (empty or oversize audio never does)
+                record_audio_operation("speech_asr", provider=self.provider_id, model=self.model, outcome="failure",
+                                       latency_ms=int((time.perf_counter() - started) * 1000), audio_seconds=None,
+                                       error=exc, billable_attempt=attempt_sent())  # fmt: skip
+                raise
         record_audio_operation("speech_asr", provider=self.provider_id, model=self.model, outcome="success",
                                latency_ms=int((time.perf_counter() - started) * 1000),
-                               audio_seconds=result.duration_seconds)  # fmt: skip
+                               audio_seconds=result.duration_seconds, billable_attempt=True)  # fmt: skip
         return result
 
     @classmethod
@@ -291,6 +293,9 @@ class GroqSpeechAsrProvider:
             fields.append(("language", language))
 
         try:
+            from writing_coach.ai.audio_telemetry import mark_sent
+
+            mark_sent()   # the transport boundary: from here the request is a billable attempt
             response = self._session.post(
                 "https://api.groq.com/openai/v1/audio/transcriptions",
                 headers={"Authorization": f"Bearer {self._api_key}"},
@@ -351,6 +356,9 @@ class GroqSpeechAsrProvider:
             fields.append(("language", language))
 
         try:
+            from writing_coach.ai.audio_telemetry import mark_sent
+
+            mark_sent()   # the transport boundary: from here the request is a billable attempt
             response = self._session.post(
                 "https://api.groq.com/openai/v1/audio/transcriptions",
                 headers={"Authorization": f"Bearer {self._api_key}"},

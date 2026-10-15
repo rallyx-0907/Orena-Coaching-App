@@ -345,16 +345,17 @@ class AzureSpeechPronunciationProvider:
                 raise SpeechPronunciationPayloadTooLarge()
             normalized = self._normalizer(audio_bytes, timeout_seconds=min(self._timeout_seconds, 20.0))
         except Exception as exc:
-            self._record("failure", started, None, exc)
+            self._record("failure", started, None, exc, sent=False)   # local decoding: no provider call
             raise
         return PreparedAudio(data=normalized, seconds=wav_seconds(normalized))
 
-    def _record(self, outcome: str, started: float, seconds: float | None, error: BaseException | None = None) -> None:
+    def _record(self, outcome: str, started: float, seconds: float | None, error: BaseException | None = None,
+                *, sent: bool) -> None:
         from writing_coach.ai.audio_telemetry import record_audio_operation
 
         record_audio_operation("pronunciation_evaluator", provider=self.provider_id, model="pronunciation-assessment",
                                outcome=outcome, latency_ms=int((time.perf_counter() - started) * 1000),
-                               audio_seconds=seconds, error=error)  # fmt: skip
+                               audio_seconds=seconds, error=error, billable_attempt=sent)  # fmt: skip
 
     def assess_bytes(
         self, audio_bytes: bytes, *, prepared: PreparedAudio | None = None, **kwargs: Any
@@ -368,18 +369,22 @@ class AzureSpeechPronunciationProvider:
         require_paid(capability="pronunciation_evaluator", provider=str(getattr(self, "provider_id", "") or "azure"),
                      timeout_seconds=self._timeout_seconds)   # the timeout of the Azure request below
 
+        from writing_coach.ai.audio_telemetry import attempt_sent, provider_attempt
+
         meter: dict[str, float] = {}
         started = time.perf_counter()
-        try:
-            result = self._assess(audio_bytes, meter=meter, prepared=prepared, **kwargs)
-        except Exception as exc:
-            billed = meter.get("seconds")
-            if isinstance(exc, SpeechPronunciationError):
-                exc.billed_seconds = billed
-            self._record("success" if billed is not None else "failure", started, billed,
-                         None if billed is not None else exc)
-            raise
-        self._record("success", started, meter.get("seconds"))
+        with provider_attempt():
+            try:
+                result = self._assess(audio_bytes, meter=meter, prepared=prepared, **kwargs)
+            except Exception as exc:
+                billed = meter.get("seconds")
+                if isinstance(exc, SpeechPronunciationError):
+                    exc.billed_seconds = billed
+                # billable only when the request reached the transport (local validation never does)
+                self._record("success" if billed is not None else "failure", started, billed,
+                             None if billed is not None else exc, sent=attempt_sent())
+                raise
+        self._record("success", started, meter.get("seconds"), sent=True)
         return replace(result, audio_seconds=meter.get("seconds"))
 
     def _assess(
@@ -439,6 +444,9 @@ class AzureSpeechPronunciationProvider:
             headers["EnableProsodyAssessment"] = "True"
 
         try:
+            from writing_coach.ai.audio_telemetry import mark_sent
+
+            mark_sent()   # the transport boundary: from here the request is a billable attempt
             response = self._session.post(
                 f"https://{self._region}.stt.speech.microsoft.com/"
                 "speech/recognition/conversation/cognitiveservices/v1",

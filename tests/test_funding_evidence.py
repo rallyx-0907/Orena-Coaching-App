@@ -230,3 +230,108 @@ def test_the_platform_backstop_uses_the_clients_own_timeout_when_the_call_names_
         assert seen == [180.0]   # Paid.timeout, the client's default
     finally:
         fc._runtime.mode, fc._runtime.live, fc._runtime.dispatch = previous
+
+
+# ---- re-review of `4a9d94b3`: an audio request is billable only once it reached the transport ------------------------
+
+class Resp:
+    def __init__(self, status=200, body: Any = ValueError("not json")):
+        self.status_code, self.headers, self.text, self._body = status, {}, "", body
+        self.content = b""
+
+    def json(self):
+        if isinstance(self._body, BaseException):
+            raise self._body
+        return self._body
+
+
+class Transport:
+    def __init__(self, response: Resp | None = None) -> None:
+        self.response, self.posts = response or Resp(500, {}), 0
+
+    def post(self, url, **kwargs):
+        self.posts += 1
+        return self.response
+
+
+class Ledger:
+    def __init__(self) -> None:
+        self.operations: list[dict[str, Any]] = []
+
+    def record_ai_operation(self, telemetry: dict[str, Any]) -> None:
+        self.operations.append(telemetry)
+
+
+@pytest.fixture
+def ledger(monkeypatch):
+    costs, operations = Costs(), Ledger()
+    account_costs.install(costs)
+    monkeypatch.setattr(platform, "_platform_repository", operations)
+    monkeypatch.setattr("writing_coach.core.request_context.current_user_key", lambda: "learner-1")
+    previous = (fc._runtime.mode, fc._runtime.live, fc._runtime.dispatch)
+    fc.configure(mode="off")
+    yield costs, operations
+    fc._runtime.mode, fc._runtime.live, fc._runtime.dispatch = previous
+    account_costs.install(None)
+
+
+def groq_asr(transport, **kwargs):
+    from writing_coach.speech_asr import GroqSpeechAsrProvider
+
+    return GroqSpeechAsrProvider("key", timeout_seconds=120, session=transport, **kwargs)
+
+
+def azure(transport, normalizer=lambda audio, **_: b"RIFFwav"):
+    from writing_coach.speech_pronunciation import AzureSpeechPronunciationProvider
+
+    return AzureSpeechPronunciationProvider("key", "eastus", timeout_seconds=30, session=transport,
+                                            normalizer=normalizer)
+
+
+@pytest.mark.parametrize("audio", [b"", b"x" * 64], ids=["empty", "oversize"])
+def test_groq_audio_refused_before_transport_is_not_a_billable_attempt(ledger, audio):
+    costs, operations = ledger
+    transport = Transport()
+    with contextlib.suppress(Exception):
+        groq_asr(transport, max_bytes=16).transcribe_bytes(audio, filename="a.webm", content_type="audio/webm",
+                                                           language="en")
+    assert transport.posts == 0 and costs.rows == []
+    assert [op.get("billable_attempt") for op in operations.operations] == [None]   # telemetry, never cost
+
+
+def failing_normalizer(audio, **_):
+    raise RuntimeError("ffmpeg could not decode the take")
+
+
+def test_azure_local_decoding_failure_is_not_a_billable_attempt(ledger):
+    costs, operations = ledger
+    transport = Transport()
+    provider = azure(transport, normalizer=failing_normalizer)
+    with contextlib.suppress(Exception):
+        provider.prepare_audio(b"audio")                       # prepare: local ffmpeg only
+    with contextlib.suppress(Exception):
+        provider.assess_bytes(b"audio", filename="a.webm", content_type="audio/webm", language="en",
+                              reference_text="hello")           # assess: decodes before any request
+    assert transport.posts == 0 and costs.rows == []
+    assert len(operations.operations) == 2 and not any(op.get("billable_attempt") for op in operations.operations)
+
+
+@pytest.mark.parametrize("response", [Resp(500, {}), Resp(200, ValueError("not json"))],
+                         ids=["http_error_after_send", "malformed_after_send"])
+@pytest.mark.parametrize("client", ["groq", "azure"])
+def test_a_failure_after_the_request_was_sent_is_one_billable_attempt(ledger, response, client):
+    costs, _operations = ledger
+    transport = Transport(response)
+    with contextlib.suppress(Exception):
+        if client == "groq":
+            groq_asr(transport).transcribe_bytes(b"audio", filename="a.webm", content_type="audio/webm",
+                                                 language="en")
+        else:
+            azure(transport).assess_bytes(b"audio", filename="a.webm", content_type="audio/webm", language="en",
+                                          reference_text="hello")
+    assert transport.posts == 1
+    assert len(costs.rows) == 1 and costs.rows[0]["billable_attempt"] is True
+    # Azure bills the seconds it received once it answered 200 (its result unreadable or not): that row is a priced
+    # success; every other case here is a failure with no amount - an incomplete operation, never USD 0
+    billed_by_azure = client == "azure" and response.status_code == 200
+    assert costs.rows[0]["outcome"] == ("success" if billed_by_azure else "failure")
