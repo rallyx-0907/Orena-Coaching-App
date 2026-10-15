@@ -122,6 +122,39 @@ def test_captions_only_is_kept_when_the_item_is_reprocessed(tmp_path):
     assert store.get(entry.media_id).processing["reason"] == "captions_unavailable" and audio.calls == 0
 
 
+def test_a_captions_only_reprocess_of_an_item_with_stored_captions_keeps_them(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEDIA_PIPELINE_INLINE", "1")
+    # D-214 P2-1: the item has a good caption transcript; the provider now refuses the captions; the policy says no ASR.
+    store, entry, pipeline = _world(tmp_path, ingestion=Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_FAILURE)))
+    audio, ledger = Audio(), SpyLedger()
+    pipeline._youtube_audio, pipeline._ledger = audio, ledger
+    store.upsert(replace(entry, source={**entry.source, mtp.SOURCE_TRANSCRIPT_POLICY: mtp.POLICY_CAPTIONS_ONLY}))
+    before = store.get(entry.media_id)
+    assert pipeline.retry(store, None, entry.media_id) is True  # inline: the whole re-run
+    after = store.get(entry.media_id)
+    assert after.lesson == before.lesson and after.lesson["payload"]["transcript_origin"] == mtp.ORIGIN_CAPTION
+    assert after.processing["state"] == "held" and after.processing["reprocess_reason"] == "captions_unavailable"
+    assert audio.calls == 0 and ledger.recorded == []
+
+
+def test_the_429_and_the_continuation_log_lines_carry_the_media_id_and_no_secret(tmp_path, caplog):
+    import logging
+
+    def meanings(_entry, _target):
+        return SimpleNamespace(status="partial", meanings=[object()], provider_calls=1, reason="rate_limited", retry_after=40.0)
+
+    store, entry, pipeline = _world(tmp_path, meanings=meanings)
+    pipeline._schedule = lambda *_a: None
+    pipeline._sleep = lambda _s: None
+    with caplog.at_level(logging.INFO, logger=mtp.__name__):
+        stop: dict = {}
+        outcome, _counts = pipeline._translate(store, entry, "b1", False, stop=stop)
+        pipeline._defer_translation(store, entry, outcome, stop)
+    text = " | ".join(r.getMessage() for r in caplog.records)
+    assert text.count(entry.media_id) >= 2 and "rate limited" in text and "continuation" in text
+    assert "bearer" not in text.lower() and "authorization" not in text.lower()
+
+
 # -- 1b. the API carries the option ----------------------------------------------------------------------------------
 
 
