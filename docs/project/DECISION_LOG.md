@@ -6892,7 +6892,7 @@ visibility policy.
 
 ## D-207 - Line translation completes within a bounded continuation and a partial one says why (2026-10-15)
 
-Status: PROPOSED — pending independent review. Video Sources milestone, PR-A. No schema or migration change: the new value lives
+Status: ACCEPTED (merged as #215 once CI was green; independent review APPROVE on f870aacf, re-review APPROVE on fc3b24e9, no open P0/P1). Video Sources milestone, PR-A. No schema or migration change: the new value lives
 in the existing `processing` JSON beside `translation_counts`.
 
 1. **Root cause (from the code; the trial left no log line to confirm the provider's answer).** Translation is one call per
@@ -6910,6 +6910,9 @@ in the existing `processing` JSON beside `translation_counts`.
    (`spend_cap`, `provider_auth`, `not_configured`, `too_large`, `request_too_large`) stops at once. Every round is checked
    against the AI spend cap with an estimate for the missing share only, so the cap is unchanged and no worker or provider is
    added. A long transcript is translated in windows of at most 192 lines across rounds instead of being refused.
+   Two more stops end a run early: a `Retry-After` over 60 s stops at once with `rate_limited` instead of sleeping into the
+   same refusal, and a round that adds no line and names no reason stops. Refused provider calls (HTTP 429, 401, 403) are
+   still recorded once in the quota telemetry before the error is raised.
 3. **Honest stop.** When it still ends partial or failed, `processing.translation_reason` holds the stable code (`rate_limited`,
    `provider_error`, `spend_cap`, `incomplete`, ...), cleared on success and on re-run; the admin `outcome.translation` returns
    `{state, reason, counts}`.
