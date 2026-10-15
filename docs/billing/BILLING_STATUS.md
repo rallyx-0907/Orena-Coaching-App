@@ -5,15 +5,15 @@
 
 | | |
 | --- | --- |
-| Branch | `feature/monetization-billing-v1` |
-| Main | `6b3f53d1` (merged into the lane); PR-MON-6 #223 `8abab02f`; PR-MON-5 #207 `2aa3bd04` |
-| Last completed slice | PR-MON-6 cost-aware entitlement / funding admissions: design and migration gate APPROVED, implementation re-reviewed, CI green, merged as #223 (`8abab02f`). 0034 still proposed (not promoted, not applied); everything off by default |
-| Active PR | #231 PR-MON-7A-first (draft): **APPROVED at `94f96a8f`**, CI green (run 38705847249); merge is the human's decision |
-| Current slice | **PR-MON-7A-first APPROVED** (`94f96a8f`, #231): reviewed capability routing infrastructure for `writing_evaluator`, `writing_improver`, `text_discussion`, all off by default. **PR-MON-7D1 APPROVED** (#233): Reading cache isolation by account incarnation. H7 decisions: H7-3, H7-4, H7-5, H7-6 and H7-7 **CLOSED** (D-MON-025, D-MON-026); H7-8 **CLOSED, runtime-verified** on :8000: `gemini` / `gemini-3.5-flash-lite` for the three capabilities (D-MON-027, D-MON-028); H7-2 (benchmark) **OPEN**, the one remaining activation decision |
-| Exact next action | Owner merge authorization: #231 first; then #233 (7D1, APPROVED) retargeted onto the new `main`, diff only 7D1, CI rerun, merged only on the owner's word. Draft PRs for CI and independent review: #236 PR-MON-7B1 (plan meters) and #238 PR-MON-7D2 (speech/TTS meters), both from `main` `4327250d`. Then 7B2, 7C. H7-8 closed on runtime evidence (D-MON-028). H7-2 (benchmark) open. Separately, the operator gate for 0027 -> 0033 on each runtime |
-| Blockers | none for the design. 0034 stays proposed (promotion and application are human gates); every PostgreSQL runtime is at its old head until the operator applies 0027 -> 0033. `CREDITS_ENABLED` off; quota and funding enforcement off; R-MON-014 not run |
-| Test status | PR-MON-7A-first on main `6b3f53d1`, local (not CI): full SQLite 7008 passed; every PostgreSQL file 426 passed + 1 INHERITED #160; `tests/test_capability_routing.py` 49 passed |
-| Next human checkpoint | The owner's merge authorization: #231 first, then #233 retargeted onto the new `main` (diff only 7D1, CI rerun), then #233. the H7-2 benchmark report. Issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
+| Branch | `feature/monetization-billing-v1` (lane); docs and slices land on `main` through their own PRs |
+| Main | `56921b0d` (#238 merged); #236 `2a2fff2c`, #233 `53dddafd`, #231 `5b20d5ff`, PR-MON-6 #223 `8abab02f` |
+| Last completed slice | Merged 2026-10-15: #231 (routing infrastructure, off), #233 (Reading cache isolation), #236 (plan meters `word.assist` / `reading.assist` / `writing.task` in the catalogue), #238 (pending speech/TTS meters). Reclassified by D-MON-029: Plan & Entitlements and AI Economics work, not Billing |
+| Active PR | none in Billing. This docs PR records the D-MON-029 boundary |
+| Current slice | **Billing / Commerce only** (D-MON-029): the production payment-ready list below. **Billing handles money. Plan & Entitlements handle access and usage limits. AI Economics handles provider/model selection and profit-quality optimization. No provider or model is globally fixed for Orena. Benchmark qualifies models per capability and is not a Billing completion gate.** (D-MON-029) |
+| Exact next action | The owner chooses the next Billing step from "Production payment-ready: what Billing still needs" (PR-MON-8 SePay + E2E first by the existing order). Plan & Entitlements backlog: 7B2a meter wiring, the Plan & Usage UI rows before enforcement. AI Economics backlog: 7B2b, 7C, H7-2 qualification. Separately, the operator gate for 0027 -> 0033 on each runtime |
+| Blockers | none for Billing engineering. Runtime: every PostgreSQL runtime is at its old head until the operator applies 0027 -> 0033; 0034 stays proposed; R-MON-014 not run; `CREDITS_ENABLED`, quota and funding enforcement off. H7-2 is **not** a Billing blocker (D-MON-029) |
+| Test status | CI green on each merged PR (#231, #233, #236, #238); local focused suites green. Issue #160 is inherited (quota/test-infra lane) |
+| Next human checkpoint | The next Billing slice to start (PR-MON-8 by default); the 0027 -> 0033 operator step; the human gates listed under "Production payment-ready" |
 
 ## Revised sequence (human, 2026-10-13)
 
@@ -25,13 +25,50 @@
 | PR-MON-4 | **Prepaid Credit Ledger.** Credit account, append-only ledger, idempotent credit/debit/reversal, deterministic balance, never negative. No commercial credit prices. | MERGED (#193, `985691c7`) |
 | PR-MON-5 | **payOS Credit Top-up.** Configured top-up products, checkout, verified webhook, credit exactly once, balance and recent-transactions API. | MERGED (#207, `2aa3bd04`); runtimes await the 0027 -> 0033 operator step |
 | PR-MON-6 | **Cost-aware entitlement / Free trial / credits fallback.** `included allowance → prepaid credits → refuse`; reserve → dispatch → settle/release for expensive work; no funded entitlement means no paid provider call; configurable new-user promotional allowances (quantities not invented). | MERGED (#223, `8abab02f`); 0034 proposed, not promoted |
-| PR-MON-7 | **Cost-tiered AI routing** on the existing D-195 router and capability chain: every learner AI operation metered (`word.assist`, `reading.assist`, `writing.task`, `writing.review`, `orena.message`); private input → reviewed Ollama Cloud covered-credit primary → reviewed cheap paid; published input → reviewed OpenRouter free → Ollama Cloud / cheap paid; no local production tier; Intelligence separately (7C). | DESIGN APPROVED (revision 2.1, `7e83c4b9`); 7A-first APPROVED (`94f96a8f`, #231) |
+| PR-MON-7 | **Reclassified (D-MON-029): not Billing.** Merged as infrastructure, all off: #231 routing infrastructure, #233 cache isolation, #236 plan meters, #238 pending speech/TTS meters. Remaining work moved out: **7B2a** meter wiring -> Plan & Entitlements; **7B2b** provider pool / routing / fallback, **7C** Intelligence routing and **H7-2** per-capability model qualification -> AI Economics. None gates Billing | MOVED |
 | PR-MON-8 | **Billing runtime / sandbox / E2E.** Separate Billing sandbox (`:8031` if free), env/compose, E2E in gateway test modes. **Domestic gateway validation and E2E (D-MON-024):** `SePayGateway` beside the existing `PayOSGateway` and Polar, behind the normalized `PaymentFact` (gaps G1-G4 in `DOMESTIC_GATEWAY_SEPAY_ASSESSMENT.md`): learner transfer -> VietinBank -> SePay detects it -> signed webhook -> Orena matches the order -> exact amount/order -> paid -> credit top-up exactly once; SePay test mode first, then one human-gated live small-value transfer. Activation is a human gate | PLANNED |
 | PR-MON-9 | **Learner Billing UI integration.** Wire the existing Billing Sheet, no redesign; coordinated with the UI lane. | PLANNED |
 | PR-MON-10 | **Polar lifecycle completion.** Launch-critical gaps only. | PLANNED |
 | — | Admin Orders UI | DEFERRED unless launch safety requires it; an auditable API/operator workflow comes first |
 
 Order holds unless a discovered dependency proves it unsafe; record any such change here.
+
+## Domain boundary (D-MON-029)
+
+| Domain | Owns | Backlog moved here |
+| --- | --- | --- |
+| **Billing / Commerce** (this lane) | checkout, subscription and payment, SePay / payOS / Polar, credit top-up (if Credits), transactions, webhook/IPN, refund and reversal, reconciliation, payment status, pricing and packs, production payment rollout | PR-MON-8, PR-MON-9, PR-MON-10 |
+| **Plan & Entitlements** | feature access, entitlements, quota, semantic meters, usage, Free/Plus/Pro limits, Plan & Usage UI | 7B2a (wire `word.assist` / `reading.assist` / `writing.task`, deterministic/stored/safe cache first); Plan & Usage rows before any enforcement (`UI_BACKEND_GAPS.md`); speech/TTS limits (owner); R-MON-003; R-MON-005 meter/quota admission (cross-domain, see the risk register) |
+| **AI Economics / Routing Optimization** (Admin > AI & Models) | provider/model registry, capability routing, model qualification, quality, latency, provider cost and credits, per-tier routing, spend caps, fallback, margin, quality floor | 7B2b, 7C, H7-2 (per-capability qualification, no single winner, never auto-promoted); the D-MON-026 covered-credit allowance; the Gemini backup caps (D-MON-026/028) at activation |
+
+Contract: Billing records/settles payment and grants the purchased commercial product or credits -> Plan &
+Entitlements resolves the effective plan, feature access and quota -> AI Economics chooses the provider/model -> the provider call returns usage/cost/latency evidence. Cost accounting receives `operation_id,
+capability, provider, model, usage, estimated/actual cost` only.
+
+## Production payment-ready: what Billing still needs
+
+Definition: a user pays -> the payment is confirmed -> the right plan or credits are granted -> the transaction can be
+reconciled and refunded safely. Engineering (E) and human/operator gates (H):
+
+1. **(H) Apply 0027 -> 0033 on each runtime** (orders, reconciliation, credit ledger). Until then every runtime reports
+   not ready and R-MON-002's mitigation is not in effect. Runbook: `RUNBOOK_MIGRATION_0027_0033.md`.
+2. **(E) PR-MON-8 Billing sandbox + E2E.** `SePayGateway` behind `PaymentFact` (gaps G1-G4,
+   `DOMESTIC_GATEWAY_SEPAY_ASSESSMENT.md`): transfer -> VietinBank -> SePay webhook -> exact order match -> paid ->
+   grant exactly once; SePay test mode, then **(H)** one live small-value transfer. Polar sandbox E2E with captured
+   payloads (R-MON-009) and Polar-side price verification (R-MON-011). payOS lookup validation (R-MON-013) only if
+   payOS is used. Billing env names in `.env.example` / `compose.yaml` (gap 7).
+3. **(E) PR-MON-10 Polar lifecycle.** Cancel/manage, return URLs (gap 6), renewal/grace behaviour (R-MON-006).
+4. **(E) PR-MON-9 learner Billing UI wiring.** The designed Billing Sheet calls checkout; coordinated with the UI lane;
+   no redesign.
+5. **If Credits are sold:** **(H)** R-MON-014 (runtime role separation) before Credits; **(H)** promote/apply 0034;
+   **(H)** credit packs and prices; **(E)** R-MON-015 follow-up.
+6. **(H) Commercial and legal:** final Plus/Pro prices, refund/renewal/grace policy (`docs/legal` placeholders),
+   production provider credentials (SePay, Polar), business registration, online.gov.vn notification, tax/VAT and
+   invoices.
+7. **(H) Production payment activation** (`BILLING_ENABLED` on a production runtime).
+
+Not on this list, by D-MON-029: quota enforcement, meter wiring, Plan & Usage rows (Plan & Entitlements); model
+routing, Ollama Cloud, benchmark, H7-2 (AI Economics).
 
 ## PR-MON-2 — design (pinned before code)
 
