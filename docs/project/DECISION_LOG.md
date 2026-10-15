@@ -6932,7 +6932,7 @@ in the existing `processing` JSON beside `translation_counts`.
 
 ## D-209 - `/api/media/files` serves a file only through the stored entry that owns it (2026-10-15)
 
-Status: PROPOSED - pending independent review. Fixes #216 (P2-2 of the #214 review). No schema or migration change, no new
+Status: ACCEPTED (merged as #219 once CI was green; independent review APPROVE on e8105b2f, no open P0/P1). Fixes #216 (P2-2 of the #214 review). No schema or migration change, no new
 role, no change to the publish or visibility policy: this enforces the existing rule that held content is not learner-visible.
 
 1. **Problem.** The file route looked up `upload-<segment>` only. Direct-URL (including Wikimedia Commons) imports store under
@@ -6942,9 +6942,11 @@ role, no change to the publish or visibility policy: this enforces the existing 
    published shared is everyone's (as before); held or unpublished shared is an administrator's only, learner and anonymous get
    404; personal is its owner's (same language), as before. If several entries claim a directory, all must allow the caller.
 3. **No owner, no file.** A key no entry owns, and any key outside `media/`, is 404, administrators included. Checked first:
-   thumbnails (recorded in the entry), model clips (`media/<token>/model-clip/`, under the entry's prefix, read through the
-   speaking routes) and playback URLs all live under an entry's directory; speaking-prefix clips are read by their own routes
-   from the asset store, not through this one. Nothing legitimate relied on serving an orphan.
+   thumbnails (recorded in the entry) and playback URLs live under an entry's directory. Model clips live under
+   `speaking/model-clip/` (a private upload's under its own `media/<token>/model-clip/`) and are read through the speaking
+   routes from the asset store, not through this one. Nothing legitimate relied on serving an orphan.
+   Cache: only published shared files keep `public, max-age=31536000, immutable`; every other file is `private, no-store`, so a
+   CDN cannot hold a held or personal file and hand it to someone else (the previous personal `private, max-age=3600` is now no-store).
 4. **Traversal.** Every segment must match `[A-Za-z0-9_.-]+` and not be `.` or `..` before any lookup; the asset store's key
    validation is unchanged behind it. Tests: `tests/test_media_files_gate.py`.
 5. **Left open.** `_remove_personal_entry` deletes `media/<provider_media_id>`, which is not a direct import's directory

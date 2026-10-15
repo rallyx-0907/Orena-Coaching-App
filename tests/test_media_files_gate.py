@@ -192,3 +192,17 @@ def test_a_dot_segment_cannot_borrow_a_published_items_ownership(gate):
     _put(assets, "upload")
     path = "/api/media/files/media/direct-bbbb2222/../aaaa1111/original.wav"
     assert _get(app, path, LEARNER).status_code == 404
+
+
+@pytest.mark.parametrize("source", sorted(SOURCES))
+def test_only_a_published_shared_file_is_publicly_cacheable(gate, source):
+    """A CDN fronts the app: a held or personal file must never be stored by a shared cache."""
+    app, store, assets = gate
+    path = _put(assets, source)
+    store.upsert(_shared(source, published=True))
+    assert _get(app, path, LEARNER).headers["cache-control"] == "public, max-age=31536000, immutable"
+    store.upsert(_shared(source, published=False))
+    held = _get(app, path, ADMIN)
+    assert held.status_code == 200 and held.headers["cache-control"] == "private, no-store"
+    store.upsert(replace(_shared(source, published=True), status="unpublished"))
+    assert _get(app, path, ADMIN).headers["cache-control"] == "private, no-store"

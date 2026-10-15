@@ -269,7 +269,8 @@ def stored_media_file(request: Request, key: str, variant: str = "") -> Any:
     owners = _owning_entries(store, segments)
     if not owners or not all(_may_read_file(entry, request) for entry in owners):
         raise orena_http_error(404, "media_asset_not_found", "This media file is not available.")
-    private = any(entry.library == "personal" for entry in owners)
+    # Only published shared bytes may be cached by a shared cache (a CDN fronts the app); anything else is per-caller.
+    private = not all(entry.library == "shared" and entry.status == "published" for entry in owners)
     try:
         payload = asset_store.get(key)
     except (AssetNotFound, InvalidAssetKey):
@@ -284,7 +285,7 @@ def stored_media_file(request: Request, key: str, variant: str = "") -> Any:
         content=payload,
         media_type=content_type,
         headers={
-            "Cache-Control": "private, max-age=3600" if private else "public, max-age=31536000, immutable",
+            "Cache-Control": "private, no-store" if private else "public, max-age=31536000, immutable",
             "X-Content-Type-Options": "nosniff",
             "Content-Security-Policy": "default-src 'none'; sandbox",
             "Content-Disposition": "inline; filename=media" + (suffix if suffix in _SERVED_TYPES else ".bin"),
