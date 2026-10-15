@@ -71,7 +71,7 @@ export function creditsMarkup({ packs, selectedKey, strip, pending, filter, rows
           <div class="${cls('s-cr-strip__cell', strip && 's-cr-strip__cell--sep')}">${spark(16)}<span>${t('planStripSep')}</span></div>
         </div>
       </section>
-      ${pending ? html`<div class="s-cr-pending" role="status"><span class="s-cr-dot"><span></span><span data-cr-anim="1"></span></span><span class="s-cr-pending__text">${t(pending.stillWaiting ? 'statusStillWaiting' : 'statusWaiting')} · ${pending.price}</span><button type="button" class="s-cr-pending__show" data-cr-show>${t('showQr')}</button></div>` : ''}
+      ${pending ? html`<div class="s-cr-pending" role="status"><span class="s-cr-dot"><span></span><span data-cr-anim="1"></span></span><span class="s-cr-pending__text">${t('statusWaiting')} · ${pending.price}${pending.stillWaiting ? html`<span class="s-cr-pending__sub">${t('statusStillWaiting')}</span>` : ''}</span><button type="button" class="s-cr-pending__show" data-cr-show>${t('showQr')}</button></div>` : ''}
       <div class="s-cr__grid">
         <section class="s-cr-card s-cr-packs" data-cr-packs>
           <div class="s-cr-card__head"><h2 class="s-cr-card__title">${t('addCredits')}</h2><div class="s-cr-card__sub">${t('packsSub')}</div></div>
@@ -242,7 +242,8 @@ export default async function credits(element, ctx) {
       return;
     }
     if (refusal.action === 'sign_in' || refusal.action === 'none') { closeSheet(); return; }
-    if (refusal.refetch || refusal.action === 'new_intent' || refusal.action === 'refetch') { closeSheet(); await reloadOffers(); return; }
+    if (refusal.refetch || refusal.action === 'new_intent' || refusal.action === 'refetch') { closeSheet(); await reloadOffers();
+      sheetReturnTarget(element)?.focus({ preventScroll: true }); return; }
     paintSheet('confirm', false);
   }
 
@@ -279,7 +280,7 @@ export default async function credits(element, ctx) {
       paint();
       element.querySelector(`[data-cr-pack="${key}"]`)?.focus({ preventScroll: true });
     });
-    element.querySelectorAll('[data-cr-filter]').forEach((button) => button.addEventListener('click', () => { view.filter = button.dataset.crFilter; paint(); }));
+    element.querySelectorAll('[data-cr-filter]').forEach((button) => button.addEventListener('click', () => { view.filter = button.dataset.crFilter; paint(); element.querySelector(`[data-cr-filter="${view.filter}"]`)?.focus({ preventScroll: true }); }));
     element.querySelector('[data-cr-continue]')?.addEventListener('click', () => {
       const resumable = purchase.order && purchase.order.packKey === view.selectedKey && ['waiting', 'received'].includes(purchase.state);
       if (resumable) { openPayment('qr'); return; }

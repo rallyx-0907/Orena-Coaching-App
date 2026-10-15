@@ -111,6 +111,14 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   const pending = String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111' } })));
   ok(pending.includes('data-cr-show') && pending.includes('22.222 ₫') && pending.includes('Waiting for payment confirmation') && !pending.includes('Waiting for your transfer'), 'pending banner from the order in hand, in the owner wording');
   ok(String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111', stillWaiting: true } }))).includes('Still waiting.'), 'pending banner after the cap');
+  const stillBanner = String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111', stillWaiting: true } })));
+  ok(stillBanner.includes('Waiting for payment confirmation') && stillBanner.includes('s-cr-pending__sub') && stillBanner.indexOf('Waiting for payment confirmation') < stillBanner.indexOf('Still waiting.'), 'after the cap the still-waiting sentence is the secondary line, the owner wording stays the lead');
+  ok(!String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111' } }))).includes('s-cr-pending__sub'), 'no secondary line before the cap');
+  copy.setLanguages({ ui: 'zh', support: 'zh' });
+  ok(String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111', stillWaiting: true } }))).includes('正在等待付款确认'), 'zh banner keeps the owner wording after the cap');
+  copy.setLanguages({ ui: 'vi', support: 'vi' });
+  ok(String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111', stillWaiting: true } }))).includes('Đang chờ xác nhận thanh toán'), 'vi banner keeps the owner wording after the cap');
+  copy.setLanguages({ ui: 'en', support: 'en' });
   copy.setLanguages({ ui: 'vi', support: 'vi' });
   ok(String(creditsMarkup(base({ pending: { price: '22.222 ₫', total: '1,111' } }))).includes('Đang chờ xác nhận thanh toán'), 'vi pending wording is the owner-mandated one');
   copy.setLanguages({ ui: 'en', support: 'en' });
@@ -126,7 +134,7 @@ copy.setLanguages({ ui: 'en', support: 'en' });
     { labelKey: 'historyRefund', change: 25, at: '' },
     { labelKey: 'historyAdjust', change: -5, at: 'not a date' },
   ];
-  const words = { en: ['Buy credits', 'Use credits', 'Refund credits', 'Adjust credits'], zh: ['购买 Credits', '使用 Credits', '退还 Credits', '调整 Credits'], vi: ['Mua Credits', 'Dùng Credits', 'Hoàn Credits', 'Điều chỉnh Credits'] };
+  const words = { en: ['Buy Credits', 'Use Credits', 'Refund Credits', 'Adjust Credits'], zh: ['购买 Credits', '使用 Credits', '退还 Credits', '调整 Credits'], vi: ['Mua Credits', 'Dùng Credits', 'Hoàn Credits', 'Điều chỉnh Credits'] };
   for (const locale of ['en', 'vi', 'zh']) {
     copy.setLanguages({ ui: locale, support: locale });
     const all = String(creditsMarkup(base({ rows: fixture })));
@@ -231,6 +239,9 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   ok(/purchase\.order && !purchase\.cancelled[^\n]*\n?\s*[^\n]*watch\(\);/.test(src), 'returning to the route re-watches an open order');
   ok(/function clearPurchase/.test(src) && /refusal\.action === 'sign_in'\) clearPurchase\(\)/.test(src) && /reason === 'auth'\) \{ clearPurchase/.test(src), 'a purchase does not outlive the signed-in session');
   ok(new RegExp('onClose: \\(\\) => \\{[^}]*paint\\(\\);[^}]*sheetReturnTarget\\(element\\)\\?\\.focus').test(src), 'closing the sheet returns focus to the opener after the re-mount');
+  ok(/data-cr-filter\]'\)\.forEach\(\(button\) => button\.addEventListener\('click', \(\) => \{[^}]*paint\(\);[^}]*\[data-cr-filter="\$\{[^}]*\}"\]`\)\?\.focus/.test(src), 'a history filter keeps the focus after the re-mount');
+  ok(/closeSheet\(\); await reloadOffers\(\);\s*sheetReturnTarget\(element\)\?\.focus/.test(src), 'a checkout error that re-reads the offers returns focus to Continue');
+  ok(!/Huỷ/.test(readFileSync(new URL('../static/orena/copy/credit-topup.js', import.meta.url), 'utf8')), 'VI uses one spelling: hủy');
   ok(/watchEndsStillWaiting\(result\)/.test(src), 'every non-terminal end of the watcher shows the still-waiting line');
   ok(/keydown/.test(src) && /nextPackKey/.test(src), 'the pack group answers the arrow keys');
   ok(/refusal\.action === 'resume'/.test(src), 'checkout_already_started is handled without looping on the pay button');

@@ -201,7 +201,7 @@ const err = (category, status = 409, extra = {}) => Object.assign(new Error('raw
   for (const locale of ['en', 'vi', 'zh']) {
     for (const [key, text] of Object.entries(pack[locale])) ok(!banned.test(text), `${locale}.${key} has no backend term`);
   }
-  eq([pack.en.historyBuy, pack.en.historyUse, pack.en.historyRefund, pack.en.historyAdjust], ['Buy credits', 'Use credits', 'Refund credits', 'Adjust credits']);
+  eq([pack.en.historyBuy, pack.en.historyUse, pack.en.historyRefund, pack.en.historyAdjust], ['Buy Credits', 'Use Credits', 'Refund Credits', 'Adjust Credits']);
   eq([pack.vi.historyBuy, pack.vi.historyUse, pack.vi.historyRefund, pack.vi.historyAdjust], ['Mua Credits', 'Dùng Credits', 'Hoàn Credits', 'Điều chỉnh Credits']);
 }
 
