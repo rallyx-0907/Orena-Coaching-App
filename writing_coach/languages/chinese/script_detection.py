@@ -42,6 +42,11 @@ def _table() -> tuple[frozenset[str], frozenset[str]]:
         return frozenset(), frozenset()
 
 
+def is_traditional_only(char: str) -> bool:
+    """Whether the character exists only in Traditional writing (evidence that the text around it is Traditional)."""
+    return char in _table()[1]
+
+
 def script_counts(text: str) -> tuple[int, int]:
     """(simplified-only characters, traditional-only characters) in the text."""
     simplified, traditional = _table()

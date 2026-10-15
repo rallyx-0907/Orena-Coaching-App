@@ -7044,6 +7044,91 @@ free number and is renumbered at merge if they land first.
    `media_too_large` (D-207 §4). Whether to raise the cap or to move to streaming / chunked processing is decided after the Phase 2
    size distribution of the Video Sources milestone is known, not before.
 
+## D-211 - ZH Traditional to Simplified is completed from Unihan; a long transcript finishes translating by a bounded deferred continuation (2026-10-15)
+
+Status: ACCEPTED (merged as #224 once CI was green; independent review APPROVE WITH CONDITIONS on 60b0e32b, re-review APPROVE on 11b6ee06, no open P0/P1). Video Sources milestone, mini-trial rerun blockers N1 and P1-2. No schema or migration
+change: the new value lives in the existing `processing` JSON beside `translation_counts`. No learner UI, no new provider, no new
+worker, the AI spend cap unchanged.
+
+**A. Script normalisation (extends D-208 §1 and §6a).**
+1. **Why each survivor survived (found by running the shipped converter on the trial's own character list).** At this commit
+   `勵` already converts to `励` (it is in the CC-CEDICT one-to-one table), so the `勵` in the trial's VOA note is not reproducible
+   from the code; the only character of the trial's list that the converter left was `麼`. `麼` is skipped on purpose by D-208: CC-CEDICT
+   lists it as the traditional form of two Simplified entries (`么` and the variant `麽`), so the dictionary alone cannot choose.
+   The other known leftovers are the characters that are Traditional and still Simplified: `著` (着 in 看著, 著 in 著名), `乾` (干 in
+   乾淨, 乾 in 乾坤), `覆` (复 in 回覆, 覆 in 覆蓋), `徵` (征 in 徵求, 徵 the musical note), `瞭`, `藉`, `摺`, `夥`, `於`, `剋`,
+   `苧`, `衹`, `麴`, and `餘` (余 or the variant 馀). D-208 left all of them as written; none is "missing from CC-CEDICT".
+2. **Source and licence.** The Unicode Unihan `kSimplifiedVariant` field (Unicode 18.0.0, `Unihan_Variants.txt`, 2026-07-31), under the
+   Unicode License v3 that already covers the Unihan data vendored in `lexicon_data/` (`UNICODE-LICENSE.txt`). OpenCC `STCharacters`
+   (Apache 2.0) was not needed. Recorded in `THIRD_PARTY_NOTICES.md` and the `lexicon_data/README.md`. A generated data file, no runtime
+   dependency: `lexicon_data/unihan_simplified_variants.json` (7,291 characters, the one field kept, with the source archive's SHA-256)
+   is refreshed by `build_chinese_script_table.py --unihan-zip Unihan.zip`; the default run reads it offline, so the build is deterministic.
+3. **Rule (all in `scripts/build_chinese_script_table.py`, `derive_variant_maps`).** A Traditional character that the CC-CEDICT table
+   does not convert and for which Unihan names exactly one Simplified form in the original block (U+4E00 to U+9FA5, a glyph in every
+   font) that no standard CC-CEDICT word uses as written is converted everywhere (64 characters: `麼` to `么`, `參` to `参`, `噁` to
+   `恶`, `錄` to `录`, ...). Where the Simplified form depends on the word (Unihan names several, or the character is still Simplified
+   in some words; 15 characters), the default is the form CC-CEDICT writes most often at that position for that Traditional character
+   (the documented basis; `餘` is `余` in far more entries than `馀`), and the standard CC-CEDICT words of 2 to 4 characters that contain
+   the character are kept as written (`著名`, `显著`, `乾坤`, `乾隆`, `覆盖`, `颠覆`, `狼藉`, `瞭望`). A word that CC-CEDICT also
+   lists with the default form (`回覆` beside `回复`, `藉口` beside `借口`) is a variant spelling and does not protect the character. A
+   character with no evidence or a tie (17, `unresolved` in the table: `阪`, `奬`, `藴`, ...) is left as written: a wrong character is
+   worse than a script left mixed. The choice is made on the converted text, so `顯著` is found as `显著`; the recogniser's word array is
+   converted as one running text so a word it splits (`著|名`) is judged whole.
+4. **Still one character to one character.** Lengths, word timings and tap offsets are unchanged (tests). Simplified to Traditional is
+   unchanged. `script_map.json` is now `orena.zh-script-map.v2` (a new `contextual_to_simplified` and `unresolved`); the reader
+   tolerates a v1 file.
+5. **Simplified text is never altered (independent review of #224, P1-1).** The context layer acts only near Traditional evidence:
+   a character is judged only when a Traditional-only character (`script_detection`, the same table that classifies a text) lies in
+   the same clause (stops and line breaks end a clause) within 30 characters. Text with none is returned as written, so 鲁迅著,
+   乾卦, 宫商角徵羽 and 覆水 stay. The evidence is measured on the text before any conversion. Words and cues are judged by the same
+   rule, so an item with a stray Traditional character does not change its Simplified clauses. A Traditional sentence with no
+   Traditional-only character at all (看著我) is also left as written: with no evidence it cannot be told from Simplified.
+   **Accepted limit (re-review P2-5):** the evidence is clause-scoped, so a context character in a Traditional cue whose clause has no
+   Traditional-only character stays unconverted (他看著我 keeps 著). This is the accepted cost of never altering Simplified text; re-check it
+   on VOA.
+6. **Known limits.** The context judgement uses CC-CEDICT's words only: near Traditional evidence, any word CC-CEDICT does not list
+   takes the default (a name written with `乾` or `著` can change; `於` is converted to `于`, right outside a surname). Not converted,
+   with the reason: 諮 (Unihan gives 谘, the standard form is 咨) and 讎 (Unihan gives 雠, the standard is 仇), listed in the build
+   script's `EXCLUDED`; 戱 is dropped because its target 戯 is itself converted. A conversion is a single step and the build fails if
+   any target is also a key. Compatibility ideographs (U+F900 to U+FAFF, U+2F800 to U+2FA1F) are written as their unified form
+   first (NFC of each is exactly one code point, tested), so 豈 and 龜 in compatibility form convert. "Length" here is code
+   points: five astral keys map to a basic-block character, which changes the UTF-16 length, harmless because conversion runs before
+   any offset is computed. `--check` fails when the table is stale or when a sentinel word (the trial survivors and the kept
+   words, after a Traditional marker) does not convert as stated.
+
+**B. Long transcripts finish translating (N1; extends D-207 §2).**
+1. **Which limit (from the code and the repository's measurements; no provider call was made).** Groq answered the key with 1,000
+   requests (per day) and **8,000 tokens per minute** (`ORENA_AI_COST_REDUCTION_PLAN.md`, read from its headers). A 24-line request
+   reserves its prompt plus 2,048 completion tokens, about 2.8k of the 8k, so two or three requests fit in a minute: exactly the
+   24/47, 24/69, 48/113 and 24/78 shapes, and `0/78` when the minute was already spent. Requests per minute (30 on the free tier) are
+   not reached. The per-minute window refills within about a minute, so the right behaviour is to wait for it, not to give up after
+   five rounds. D-207's in-job rounds also stop at once on a `Retry-After` over 60 s, which is where a long transcript was lost. A
+   daily token allowance would show as a much longer wait; it cannot be told from the code, so a 429 now logs the response's
+   `x-ratelimit-*` headers (counts and durations, no credential), and a wait over 300 s is never scheduled. I designed for both.
+2. **Design.** After the existing bounded in-job rounds, a run that ends `rate_limited` records
+   `processing.translation_continuation = {attempt, max_attempts, next_at, deadline, retry_after}`, sets `translation` to `deferred`,
+   keeps `translation_reason = rate_limited` and the `translation_counts` so far, and arms a one-shot timer for the provider's own
+   `Retry-After` (at least 20 s, 65 s when it gave none, at most 300 s). The timer only hands the job to the **existing single pool**
+   (`workers=1`): no new worker, no concurrency. The continuation asks for only the lines the persisted cache lacks, in at most two
+   rounds that do not sleep (the schedule is the wait), and either finishes (`ready`, continuation cleared), or defers again.
+   Bounds: at most 6 attempts, 30 minutes from the first deferral, one wait at most 300 s. When a bound is reached, or the stop is
+   anything but `rate_limited` (`spend_cap`, `provider_auth`, `provider_error`, ...), the continuation is cleared and the item ends
+   `partial` or `failed` with the stable reason, as before. Every round checks the AI spend cap with an estimate for the missing
+   share only (unchanged), so the cap holds across continuations.
+3. **State is honest while it is pending.** The item's own state is untouched (a held item stays held, a learner import stays ready):
+   a continuation never writes `state`, `stage` or `status`. `processing.translation` is `deferred`, the one existing value for "not
+   complete yet"; it is distinguished from its other use (translation not configured) by the presence of `translation_continuation`
+   and non-empty counts. The admin `outcome.translation` returns it as `continuation` only while pending. Lines already translated are
+   readable at once (the cache). A re-run (reprocess) clears the continuation at its start and wins over a pending timer; a restart
+   re-arms it from the record (`recover()`), so it survives the process. A timer honours `next_at`: one that fires early (its record
+   was replaced by a later deferral) does nothing, the proper timer being armed. Before every provider round of a continuation the
+   item is read again; archived, removed, cancelled, re-run or a different continuation stops the attempt before the call (review
+   P2-1, P2-2).
+4. **Owner decisions left open.** The 6 / 30 min / 300 s bounds suit one minute's allowance; a measured real batch should confirm them.
+   No admin control to continue by hand and no learner-facing "translating" wording are added (no UI change; the admin Details row
+   shows the state through `outcome.translation`). Smaller request windows were not adopted: the completion reservation (2,048) guards
+   a reasoning model against `finish_reason=length`, and halving the window would only change how many requests share the minute.
+
 ## D-212 - The local annotate tagger answers any supported language (2026-10-15)
 
 Status: ACCEPTED (merged as #222 once CI was green; independent review on 855d52c4: design approved, P1 test fixed in this commit). No schema or migration change. D-211 is reserved by the parallel normaliser/translation PR.
@@ -7059,3 +7144,20 @@ P1-5, still open after #209 and #214).
 2. The Listening room asks the tagger through `taggerAllowed`: in a preview for any supported language, otherwise only in the
    learner's language, as before. The Reader is unchanged.
 3. The preview entry page (Content Detail) draws no Save and no "..." (D-210).
+
+## D-213 - The caption path keeps what it was given: reprocess never swaps captions for ASR, the fallback is visible, translation can be retried alone (2026-10-15)
+
+Status: ACCEPTED (merged as #226 once CI was green; independent review APPROVE on 1aec46a8, no open P0/P1). No schema or migration change (`processing` and `source` are free-form records); no new provider; no cookie or proxy; the spend caps are unchanged; items stay held.
+
+Evidence: the 2026-10-15 EN caption batch on the sandbox. Eight YouTube items imported on the provider-caption path at $0. Translation then ended `rate_limited`, and the only way to continue was admin `reprocess`, which re-ran the transcript step, fell back to Groq Whisper without saying so and replaced the human captions on all eight ($0.034). A reprocess that failed at the audio step turned items with a good transcript `failed`. YouTube probably answered the caption fetch with HTTP 429 from that IP (unproven). D-211's automatic continuation covers a translation that is rate limited; it does not cover one whose budget is exhausted, and nothing let an operator continue by hand.
+
+1. **Reprocess keeps provider captions.** Before a re-run of an item that is `ready` or `held` with a transcript that passes the checks, `retry()` keeps a snapshot of its processing and status (`processing.previous`). If the stored transcript came from provider captions and the caption fetch now fails or yields nothing (a 429, a timeout, no track) or the captions fail the quality checks, the run stops with the stable reason `captions_unavailable` or `captions_unusable` before any ASR call, and the item is put back exactly as it was. The reason is recorded as `processing.reprocess_reason` (+ `reprocess_message`). An item that never had captions keeps today's fallback to ASR.
+2. **The first-import fallback is visible.** The production YouTube adapter defers transcript recovery, so a refused caption fetch returned "no transcript" and looked identical to a video with no captions. The adapter now says so in its provenance (`caption_status: unavailable`), the importer stores it on the item's `source`, and the pipeline records `processing.caption_fallback` (`captions_unavailable` when the provider refused, `captions_unusable` when captions arrived but failed the checks) when it listens to the audio instead. A source with simply no captions records none. The admin media Details shows it as "Transcript source", in EN/VI/ZH, beside Translation (no new UI element).
+3. **Manual versus auto is recorded.** The caption client already preferred a manual track; the track now carries `kind` (`manual` | `auto`), the provenance passes it on, and the item records `source.caption_kind` and `processing.caption_kind`. Only-auto is recorded as `auto`.
+4. **The player payload origin is the real one.** `processing.origin` was written at the end of a run and the payload's `transcript_origin` when the lesson was stored, so a run that stopped between them left `provider_caption` beside `generated_asr`; the learner header then called human captions an automatic transcript. `_store_lesson` now writes both in one update.
+5. **A failed reprocess does not destroy a good item.** Any stop of a re-run (transcript step, a transcript that fails its checks, a crash, too many interruptions) restores the snapshot instead of writing `failed`; the lesson was never replaced, so the transcript and the translation stand. A first import with no snapshot fails as before.
+6. **Translate only.** `POST /api/admin/console/content/media/{id}/reprocess?scope=translation` (same `require_admin`, same-origin and audit as reprocess; `scope=all` is the default) asks again for the lines without a meaning and nothing else: no caption fetch, no ASR, no write to the lesson, the item's state or status. It restarts D-211's continuation budget, runs under the item's batch spend cap (unchanged), and answers 409 while the item is being processed or has no transcript. The admin media page enables the design's own "Translation only" option of the Reprocess block (`Orena-Admin.dc.html`: "keeps transcript"); "Keep manual transcript edits" stays disabled.
+7. **The translation `source` label.** `listening_api` reported `curated-editorial` whenever the request itself made no provider call, so a generated translation read from the cache was labelled editorial. The source is now `media-translation` whenever any shown meaning is generated (now or earlier), and `curated-editorial` only for editorial meanings.
+8. **Review follow-ups (same PR).** A restore re-arms the continuation timer it brings back (P2-1); a run cancelled by archive clears its snapshot (P2-3); D-211's continuation job runs under `system_funding("media_pipeline")` like `_job`.
+9. **Accepted, known limits.** P2-2: a non-stop exception after `_store_lesson` (a store outage in the later writes) restores the old `processing` beside the new lesson, the one remaining way origin and payload can disagree; narrow, accepted. P2-4: any categorised import error from the caption fetch is recorded as `captions_unavailable` (safe, broader than "the provider refused"); a malformed-transcript mapping to `captions_unusable` is left for later.
+10. **Owner decisions left open.** Whether a manual track already stored should also be protected against a reprocess that finds only an auto track (today the fresh captions replace it). Whether a held item with `captions_unavailable` should be retried automatically later (not added: it would be a new scheduler). Whether the 8 ASR-converted items of the batch are kept or re-imported.

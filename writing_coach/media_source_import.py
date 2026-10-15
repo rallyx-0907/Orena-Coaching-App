@@ -617,6 +617,9 @@ class MediaSourceImporter:
                 "original_url": asset.source_url,
                 "creator": acquisition.provenance.get("author", ""),
                 "creator_url": acquisition.provenance.get("author_url", ""),
+                # Which caption track the transcript is (manual or auto), or that the provider refused the captions (D-213).
+                "caption_kind": acquisition.provenance.get("caption_kind", ""),
+                "caption_status": acquisition.provenance.get("caption_status", ""),
             }),
             library="shared",
             created_at=_now(),

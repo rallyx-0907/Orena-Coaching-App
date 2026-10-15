@@ -1272,14 +1272,29 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
 
 
 @router.post("/content/media/{media_id}/reprocess")
-def reprocess_media(media_id: str, request: Request, response: Response) -> dict[str, Any]:
+def reprocess_media(media_id: str, request: Request, response: Response, scope: str = "all") -> dict[str, Any]:
     admin = _admin(request)
     _same_origin(request)
     _no_store(response)
+    if scope not in {"all", "translation"}:
+        raise orena_http_error(422, "media_reprocess_scope_invalid", "The scope is all or translation.")
     store = _state.media_store
     entry = store.get(media_id) if store is not None else None
     if entry is None or entry.library != "shared":
         raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    if scope == "translation":
+        # Translation only (D-213): the lines still without a meaning are asked for again; the transcript, its origin
+        # and the item's state are not touched.
+        outcome = media_library_api.retry_translation(media_id)
+        if outcome == "missing":
+            raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+        if outcome == "busy":
+            raise orena_http_error(409, "media_busy", "This media is being processed. Try again when it has finished.")
+        if outcome == "no_transcript":
+            raise orena_http_error(409, "media_transcript_required", "There is no usable transcript to translate.")
+        _audit(admin, "admin.content.reprocess", entity_type="media", entity_id=media_id,
+               payload={"outcome": "queued", "scope": "translation"})
+        return {"item": {"status": "ok", "media_id": media_id}, "record": media_record(store.get(media_id))}
     if media_library_api.retry_transcript(media_id):
         refreshed = store.get(media_id)
         _audit(admin, "admin.content.reprocess", entity_type="media", entity_id=media_id,
