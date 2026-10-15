@@ -120,3 +120,257 @@
 .s-discover__hint {
   margin: 4px 0 0;
 }
+
+/* ---- The "Create lesson" card (design 2026-10-15, [data-screen-label="Create lesson"], measured) ----
+   Replaces the header's "+ Import". Every colour is a tokens.css token; the design's grey 1px / 1.5px outlines and its
+   dashed drop edge are the thin light edge instead (D-147), and the button's second gradient stop and the three hint hues
+   are the nearest tokens (the design's literals #C26BD9 and the file-type hexes are not tokens). */
+.s-ic {
+  container-type: inline-size;
+  position: relative;
+  overflow: hidden;
+  margin-top: 24px;
+  padding: clamp(18px, 2.4vw, 24px);
+  border-radius: 24px;
+  background: linear-gradient(115deg, var(--surface) 52%, color-mix(in oklab, var(--accent) 16%, var(--surface)) 100%);
+  box-shadow: var(--edge-light);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.s-ic__watermark {
+  position: absolute;
+  right: -28px;
+  top: -34px;
+  width: 190px;
+  height: 190px;
+  opacity: 0.16;
+  color: var(--accent-text);
+  pointer-events: none;
+}
+.s-ic__head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.s-ic__tile {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 15px;
+  background: linear-gradient(145deg, color-mix(in oklab, var(--amber) 22%, var(--surface)), color-mix(in oklab, var(--amber) 8%, var(--surface)));
+  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--amber) 30%, transparent), 0 6px 18px -8px color-mix(in oklab, var(--amber) 55%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-ic__spark {
+  display: block;
+  overflow: visible;
+  flex: none;
+}
+.s-ic__spark-a { fill: var(--amber); }
+.s-ic__spark-b { fill: color-mix(in oklab, var(--amber) 60%, white); }
+.s-ic__spark-c { fill: color-mix(in oklab, var(--amber) 80%, white); }
+.s-ic__titles {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.s-ic__titlerow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.s-ic__title {
+  margin: 0;
+  font-size: clamp(18px, 1.6vw, 21px);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+.s-ic__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.s-ic__sub {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--muted);
+  text-wrap: pretty;
+}
+.s-ic__tabs {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--ic-cols, 4), minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--surface2);
+}
+@container (max-width: 560px) {
+  .s-ic__tabs { --ic-cols: 2; }
+}
+.s-ic__tab {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+}
+.s-ic__tab > svg { flex: none; }
+.s-ic__tab > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-ic__tab[aria-selected='true'] {
+  background: var(--surface);
+  box-shadow: var(--sh1);
+  color: var(--text);
+}
+.s-ic__row {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+.s-ic__field,
+.s-ic__text,
+.s-ic__drop {
+  flex: 1 1 300px;
+  min-width: 0;
+  border-radius: 14px;
+  border: 0;
+  background: var(--bg);
+  box-shadow: var(--edge-light);
+  font-size: 15px;
+}
+.s-ic__field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 16px;
+  color: var(--muted);
+}
+.s-ic__field > svg { flex: none; }
+.s-ic__field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 15px;
+}
+.s-ic__field input::placeholder,
+.s-ic__text::placeholder { color: var(--text3); }
+.s-ic__text {
+  resize: vertical;
+  color: var(--text);
+  line-height: 1.55;
+  padding: 13px 16px;
+  outline: 0;
+  font-family: inherit;
+}
+.s-ic__field:focus-within,
+.s-ic__text:focus,
+.s-ic__drop:focus-visible {
+  box-shadow: 0 0 0 2px var(--text3);
+}
+.s-ic__drop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 16px;
+  color: var(--muted);
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s, box-shadow 0.15s;
+}
+.s-ic__drop > svg { flex: none; }
+.s-ic__drop:hover { color: var(--text); box-shadow: var(--sh2); }
+.s-ic__create {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 52px;
+  padding: 0 22px;
+  border-radius: 14px;
+  border: 0;
+  background: linear-gradient(135deg, var(--accent-fill), color-mix(in oklab, var(--accent-fill) 70%, var(--skill-write)));
+  color: var(--accent-ink);
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 8px 22px -10px var(--accent-fill);
+  cursor: pointer;
+  transition: transform 0.15s, filter 0.15s;
+}
+.s-ic__create:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.s-ic__create:active { transform: scale(0.97); }
+.s-ic__spark--btn { width: 20px; height: 20px; }
+.s-ic__hints {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.s-ic__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 28px;
+  padding: 0 11px 0 5px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.s-ic__hint-mark {
+  width: 19px;
+  height: 19px;
+  border-radius: 6px;
+  color: var(--accent-ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+/* iOS Safari zooms the page when a text field under 16px takes focus: on a phone the field is 16px. */
+:root[data-device='mobile'] .s-ic__field input,
+:root[data-device='mobile'] .s-ic__text { font-size: 16px; }
+.s-discover [data-lesson-host] + .o-search {
+  margin-top: 16px;
+}

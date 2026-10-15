@@ -6304,3 +6304,22 @@ Not fixed, logged (the balance "—" is no longer open: owner decision of 2026-1
 ## Caption-only import has no place in the Import media form (D-214 proposed, 2026-10-15)
 
 `POST /api/admin/console/imports/media` and `POST /api/media-learning/admin/import` accept `transcript_policy` (`captions_or_asr`, the default, or `captions_only`) on the batch and on each item. With `captions_only`, a refused or empty caption fetch ends the item `failed` with `captions_unavailable` before any audio download or speech recognition. The pinned `Orena-Admin.dc.html` "Import media" form (A11) draws a URL field, Preview and Import only, so the option is API-only and no control was added. Needs a design decision: a toggle or select on the form (and whether the Reprocess block should offer the same choice for an item imported as `captions_only`).
+
+## Create lesson card on Discover (design pin 2026-10-15)
+
+The 2026-10-15 design replaces Discover's header "+ Import" with a "Create lesson" card (`screens/discover/create-lesson.js`)
+that hands what was entered to the unchanged Import sheet. Recorded, not resolved:
+
+- **CL-1 Document import (PDF, EPUB, DOCX).** The design draws the Document tab and its drop zone but its own handler toasts
+  "not built in this round", and the backend has no document import route (`/api/media-learning/upload` takes audio and video
+  only). The tab and the drop zone are drawn; Create and the zone say so in a toast ("Documents cannot be imported yet").
+  Needs: a document-to-lesson route and its rights policy (a human decision), then the tab can send the file.
+- **CL-2 No preview step.** The design sends a valid link to the Import sheet's preview step. There is no cheap
+  title/thumbnail endpoint (already recorded for the sheet), so a valid link goes straight to processing; a link that is not
+  a supported media URL is said on the sheet's link step.
+- **CL-3 Pasted text is not analysed.** The card hands the text to the sheet's text step (device memory, then the Reader),
+  not to an AI "lesson" pipeline: Orena Intelligence authoring of a lesson from text does not exist on the backend.
+- **CL-4 Colour literals.** The design writes the Create button's second gradient stop (#C26BD9) and the file-type chip hues
+  (#E5484D, #3E8CF0, #8B5CF6, #2FB57C, #E5933A, #D9488F) as literals that are not tokens. They are the nearest tokens
+  (`--skill-write`, `--skill-speak`, `--skill-grammar`, `--gcat-2`, `--gcat-4`, `--skill-read`), and the gold of the spark mark
+  is `--amber` (the design's #F5B544); a human may prefer new tokens.

@@ -119,6 +119,14 @@ NAMES = sorted(
         "expand",
         "x",
         "zap",
+        "file",
+        "file-text",
+        "film",
+        "globe",
+        "mail",
+        "music",
+        "notepad-text",
+        "book",
     }
 )
 
