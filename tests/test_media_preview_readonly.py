@@ -271,6 +271,11 @@ class CountingStore(MemoryStore):
             return None  # what FileMediaLibraryStore answers: an empty index and the reason
         return super().get(media_id)
 
+    def lookup(self, media_id):
+        """One read, the entry and the read's own issue together (FileMediaLibraryStore.lookup)."""
+        issue = self.last_read_issue
+        return self.get(media_id), issue
+
 
 def _counting(monkeypatch, issue=""):
     store = CountingStore(list(listening_api._media_store.entries.values()), issue)
@@ -287,11 +292,54 @@ def test_the_guard_reads_the_store_at_most_once_per_write(world, monkeypatch, ci
     assert store.reads <= 1, (cid, store.reads)
 
 
-@pytest.mark.parametrize("cid", ["reading:14", "book:b1:c2", "text:9f3a", "url:abc123", "conversation:x", ""])
-def test_an_id_that_is_not_media_shaped_costs_no_store_read(world, monkeypatch, cid):
+@pytest.mark.parametrize("cid", ["", "   ", "has space", "x" * 300, "-leading-dash", "semi;colon"])
+def test_an_id_the_store_could_never_hold_costs_no_store_read(world, monkeypatch, cid):
     store = _counting(monkeypatch)
     assert listening_api.media_state_writable(cid) is True
     assert store.reads == 0
+
+
+@pytest.mark.parametrize("cid", ["reading:14", "book:b1:c2", "text:9f3a", "url:abc123", "conversation:x"])
+def test_any_id_the_store_could_hold_is_media_shaped_and_costs_one_read(world, monkeypatch, cid):
+    """The store allows ':' in an id (media_library_store._ID), so `reading:14` is one it could hold: one read, no more."""
+    store = _counting(monkeypatch)
+    assert listening_api.media_state_writable(cid) is True
+    assert store.reads == 1
+
+
+def test_a_stored_id_containing_a_colon_is_guarded(world, monkeypatch):
+    odd = "odd:held-id"
+    store = _counting(monkeypatch)
+    store.entries[odd] = _shared(odd, "review")
+    assert listening_api.media_state_writable(odd) is False
+    assert listening_api.media_state_writable(f"media:{odd}") is False
+    assert listening_api.media_state_writable(f"media:preview:{odd}") is False
+
+
+def test_a_read_that_another_request_interleaves_with_cannot_make_a_corrupt_index_look_empty(tmp_path, monkeypatch):
+    """The issue travels with the read's own result, not through an attribute every read resets."""
+    from writing_coach.media_library_store import FileMediaLibraryStore
+
+    store = FileMediaLibraryStore(tmp_path)
+    store.upsert(_shared(PUBLISHED, "published"))
+    (tmp_path / "index.json").write_text("{not json", encoding="utf-8")
+    assert store.lookup(PUBLISHED) == (None, "index_corrupt")
+
+    original = FileMediaLibraryStore._read_checked
+
+    def interleaved(self):
+        result = original(self)
+        self.last_read_issue = ""  # a concurrent request's read finished here and reset the shared attribute
+        return result
+
+    monkeypatch.setattr(FileMediaLibraryStore, "_read_checked", interleaved)
+    monkeypatch.setattr(listening_api, "_media_store", store)
+    assert listening_api.media_state_writable(f"media:{PUBLISHED}") is False
+    assert listening_api.media_state_writable("reading:14") is False  # store-shaped, unverifiable: refused
+    # A healthy index with no such entry is a plain "no entry", and a missing index is a fresh start.
+    (tmp_path / "index.json").unlink()
+    assert store.lookup("whatever") == (None, "index_missing")
+    assert listening_api.media_state_writable("media:curated-lesson-1") is True
 
 
 @pytest.mark.parametrize("issue", ["index_corrupt", "index_unreadable"])
@@ -302,9 +350,9 @@ def test_an_unreadable_index_refuses_a_media_shaped_write_and_spares_the_rest(wo
     assert _continue(client, f"media:preview:{HELD}").status_code == 404
     assert _continue(client, f"media:{PUBLISHED}").status_code == 404
     assert recorder.writes == []
-    # An id that is not media is not this rule's business, whatever state the index is in.
-    assert _continue(client, "reading:14").status_code == 200
-    assert len(recorder.writes) == 1
+    # An id the store could never hold is not this rule's business, whatever state the index is in.
+    assert listening_api.media_state_writable("") is True
+    assert listening_api.media_state_writable("has space") is True
 
 
 def test_a_missing_index_is_a_fresh_start_not_a_failure(world, monkeypatch):

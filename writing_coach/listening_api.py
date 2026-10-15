@@ -23,6 +23,7 @@ from writing_coach.listening_catalog import (
     lesson_metadata,
     translated_media_object,
 )
+from writing_coach.media_library_store import _ID as _MEDIA_STORE_ID
 from writing_coach.media_library_store import MediaLibraryEntry, MediaLibraryStore, visible_to
 from writing_coach.media_source_import import (
     PROVIDER_LABELS,
@@ -146,7 +147,7 @@ def stored_media_entry(media_id: str, *, allow_unpublished: bool = False) -> Med
 
 
 _CONTENT_PREFIXES = ("media:", "preview:", "upload:")
-_MEDIA_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$")  # the store's id shape, without ':'
+_STORE_ID = _MEDIA_STORE_ID  # exactly the shape the store accepts for a media id, ':' included
 
 
 def media_state_writable(content_id: str) -> bool:
@@ -162,11 +163,13 @@ def media_state_writable(content_id: str) -> bool:
     The id is read in every spelling a client gives it: bare, `media:<id>`, `upload:<id>`, `preview:<id>`
     and any prefixed form of those. The spellings are peeled to the one bare id the store is keyed by, so a
     write costs at most ONE store read, and the entry read is checked with `visible_to`, the one visibility
-    rule. An id that is not media-shaped (`reading:14`, `book:..`, `text:..`, `url:..`, empty) costs none.
+    rule. Media-shaped means any id the store could hold (its own id pattern, ':' included, so `reading:14` is one);
+    an id it could never hold (empty, spaces, over-long) costs no read.
 
     Media-shaped ids fail closed: if the store cannot be read or verified (a corrupt or unreadable index, an
-    error), the write is refused, because nothing can show the item is visible. A missing index is a fresh
-    start, not a failure. Ids that are not media-shaped are unaffected whatever the index's state."""
+    error), the write is refused, because nothing can show the item is visible. The read's issue comes back
+    with the read (`lookup`), never through the store's shared `last_read_issue`. A missing index is a fresh
+    start, not a failure. Ids the store could never hold are unaffected whatever the index's state."""
     if _media_store is None:
         return True
     value = str(content_id or "").strip()
@@ -175,13 +178,15 @@ def media_state_writable(content_id: str) -> bool:
         if not prefix:
             break
         value = value[len(prefix):]
-    if not value or ":" in value or not _MEDIA_ID.fullmatch(value):
-        return True
+    if not _STORE_ID.fullmatch(value):
+        return True  # an id the store could never hold
     try:
-        entry = _media_store.get(value)
+        lookup = getattr(_media_store, "lookup", None)
+        # `lookup` returns the read's own issue; `last_read_issue` is shared and reset by every concurrent read.
+        entry, issue = lookup(value) if lookup else (_media_store.get(value), getattr(_media_store, "last_read_issue", ""))
         if entry is None:
-            # The file store answers "no entry" for a corrupt or unreadable index too; its issue says which.
-            return getattr(_media_store, "last_read_issue", "") not in {"index_corrupt", "index_unreadable"}
+            # The file store answers "no entry" for a corrupt or unreadable index too; the issue says which.
+            return issue not in {"index_corrupt", "index_unreadable"}
         return visible_to(entry, user_key=current_user_key(), language=current_language_code())
     except Exception:
         return False

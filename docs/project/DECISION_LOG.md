@@ -6988,7 +6988,7 @@ role, no change to the publish or visibility policy: this enforces the existing 
 
 ## D-210 - Admin preview of held media is read-only; Credits balance shows "—"; the 64 MiB media cap stays (2026-10-15)
 
-Status: PROPOSED — pending independent review. Owner decisions of 2026-10-15; the first closes D-206 §5. No schema or
+Status: ACCEPTED (merged as #220 once CI was green; independent review APPROVE WITH CONDITIONS on caee5b01, re-review APPROVE on 1b34281d, no open P0/P1). Owner decisions of 2026-10-15; the first closes D-206 §5. No schema or
 migration change, no new role, no change to the publish or visibility policy. D-208 and D-209 are in flight; this is the next
 free number and is renumbered at merge if they land first.
 
@@ -7021,9 +7021,12 @@ free number and is renumbered at merge if they land first.
      non-GET `/api/agent/*` and `/api/conversations/*`. This is the learner wall only; the Intelligence lane's server code is unchanged.
      A preview opened elsewhere in the shell (the Orena panel itself) therefore cannot take a turn while the address is a preview.
    - **Guard cost and failure (review #220 P2-3, P2-5).** The id spellings are peeled to the one bare id the store is keyed by: at most one
-     store read per write, then `visible_to` on that entry. An id that is not media-shaped (`reading:`, `book:`, `text:`, `url:`, empty)
-     costs no read. For a media-shaped id the guard fails closed: a corrupt or unreadable index (`last_read_issue`) or an error refuses
-     the write; a missing index is a fresh start. Non-media ids are unaffected.
+     store read per write, then `visible_to` on that entry. Media-shaped means any id the store could hold (its own `_ID` pattern, ':'
+     included, so `reading:14` is one and costs a read); an id it could never hold (empty, spaces, over-long) costs none. For a
+     media-shaped id the guard fails closed: a corrupt or unreadable index or an error refuses the write (so a write against a
+     store-shaped non-media id is refused too while the index is unreadable); a missing index is a fresh start. The read's issue
+     travels with the read (`FileMediaLibraryStore.lookup` returns `(entry, issue)`), not through the shared `last_read_issue`
+     that every concurrent read resets (re-review P2-A, P2-B).
    - **An item unpublished or archived while a learner is on it (review #220 P2-4).** Writes against it now answer 404
      `media_not_available`. The place write is already best effort and silent. The Dictation save treats that 404 as "not kept": no
      note, no retry, nothing loops, and the room stays usable (the line is still checked and shown). Reopening the item gives the
