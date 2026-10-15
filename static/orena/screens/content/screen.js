@@ -22,7 +22,7 @@ import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
-import { openMedia } from '../../product/media-source.js';
+import { openMedia, mediaRef } from '../../product/media-source.js';
 import { mapLesson } from '../listening/model.js';
 import { t } from './copy.js';
 import { bookPlace } from '../../product/place-progress.js';
@@ -173,6 +173,8 @@ export default async function content(element, ctx) {
   const parsed = parseContentId(ctx.params?.id);
   if (!parsed.kind) throw new Error(`Unknown content id: ${ctx.params?.id}`);
   const { kind, id, chapterId } = parsed;
+  /* The administrator's preview of a held import is read-only (D-210): the page keeps its look and loses what writes. */
+  const preview = kind === 'media' && mediaRef(id).kind === 'preview';
   const contentId = kind === 'book' && chapterId ? contentIdFor('book', `${id}:${chapterId}`) : contentIdFor(kind, id);
   const language = ctx.context.language;
   const libKind = libraryKindFor(kind);
@@ -224,8 +226,8 @@ export default async function content(element, ctx) {
     ? ctx.href('listening', { id: kind === 'upload' ? uploadMediaId(id) : id })
     : ctx.href('reader', { id: place.chapter ? contentIdFor('book', `${id}:${place.chapter}`) : contentId });
   // Shadowing is a secondary action behind "..." (X-10, HX-4 C): the frame draws no button for it, D-119 keeps the route.
-  const shadowHref = destination === 'listening' && detail.canShadow ? ctx.href('shadow', { id: kind === 'upload' ? uploadMediaId(id) : id }) : '';
-  const hasMore = own || Boolean(shadowHref);
+  const shadowHref = destination === 'listening' && detail.canShadow && !preview ? ctx.href('shadow', { id: kind === 'upload' ? uploadMediaId(id) : id }) : '';
+  const hasMore = !preview && (own || Boolean(shadowHref));
   const menuItems = [...(shadowHref ? [{ key: 'shadow', label: shellCopy('shadowing') }] : []), ...(own ? [{ key: 'delete', label: t('deleteFromOrena') }] : [])];
   const isMedia = Boolean(detail.segments && detail.segments.length);
   const transcriptLabel = isMedia
@@ -256,7 +258,7 @@ export default async function content(element, ctx) {
           <div class="s-content__actions">
             <a class="o-btn o-btn--primary s-content__primary" href="${primaryHref}">${primaryLabel}</a>
             ${hasPractice ? html`<a class="s-content__ai" href="${ctx.href('reader', { id: contentId }, { mode: 'practice' })}">${t('practiceThisText')}</a>` : ''}
-            <button type="button" class="s-content__secondary" data-save aria-pressed="${state.saved ? 'true' : 'false'}">${state.saved ? t('saved') : t('save')}</button>
+            ${preview ? '' : html`<button type="button" class="s-content__secondary" data-save aria-pressed="${state.saved ? 'true' : 'false'}">${state.saved ? t('saved') : t('save')}</button>`}
             ${hasMore ? html`<span data-more-slot>${moreButton({ label: t('more'), open: false, dataset: memberId || 'more' })}</span>` : ''}
           </div>
           ${hasMore ? html`<div data-menu-slot></div>` : ''}
@@ -293,7 +295,8 @@ export default async function content(element, ctx) {
   // Related rows carry data-go, the shell's own delegated navigation (shell/router.js onClick) -
   // no listener of this screen's own is needed for them.
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
-  element.querySelector('[data-save]').addEventListener('click', async (event) => {
+  element.querySelector('[data-save]')?.addEventListener('click', async (event) => {
+    if (preview) return;
     const button = event.currentTarget;
     button.disabled = true;
     if (!libKind) {

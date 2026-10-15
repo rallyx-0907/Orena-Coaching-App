@@ -21,7 +21,7 @@ import { useStyles } from '../../kit/styles.js';
 import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { api } from '../../infrastructure/api.js';
-import { annotateWithPolicy, annotateAllowed } from '../../infrastructure/annotate-policy.js';
+import { annotateWithPolicy } from '../../infrastructure/annotate-policy.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
@@ -48,7 +48,7 @@ import { createLinePractice } from '../dictation/line-practice.js';
 import { t as dictT } from '../dictation/copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
-  wordTokens, hanTokens, createLineTagger, widenHanTap, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
+  wordTokens, hanTokens, createLineTagger, widenHanTap, taggerAllowed, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
   previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, keyWordsFrom, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
   phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
@@ -639,7 +639,7 @@ export default async function listening(element, ctx) {
      tagger does not answer in time the character stands. */
   const TAP_ANNOTATE_WAIT_MS = 1500;
   const lineTagger = createLineTagger({
-    allowed: () => annotateAllowed(language, c.language),
+    allowed: () => taggerAllowed({ preview, language, learning: c.language }),
     request: async (text) => (await annotateWithPolicy(api.annotateMediaText, { text, source_language: language }, { scope: routeId }))?.annotations,
   });
   const wholeWordAt = (seg, word, tokIndex) => (isZh
@@ -843,7 +843,7 @@ export default async function listening(element, ctx) {
     if (!curated) {
       try {
         // A lesson in another language than the one being learned is never sent (the tagger answers 409).
-        if (!annotateAllowed(language, c.language)) throw new Error('not the learning language');
+        if (!taggerAllowed({ preview, language, learning: c.language })) throw new Error('not the learning language');
         const res = await annotateWithPolicy(api.annotateMediaText, { text: seg.original_text, source_language: language }, { scope: routeId });
         terms = keyWordsFrom(res?.annotations, language);
       } catch {

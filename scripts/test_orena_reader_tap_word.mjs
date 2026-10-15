@@ -80,3 +80,45 @@ for (const [index, item] of trial.lines.entries()) {
 }
 assert.ok(groupedTaps / wordsTapped >= 0.6, `most taps on new ZH lines name a word (${groupedTaps}/${wordsTapped})`);
 console.log('new ZH import tap gate: ok');
+
+// The REAL route (P1-5, live): the admin preview of a held Chinese item, opened by an administrator whose learning
+// language is English. The fixture gate above hard-codes `allowed: () => true`, which is why it passed while the live
+// player left the tap on one character: the room asked "is this the learning language?", the server answered 409 for
+// the same reason, and `widenHanTap` fell back to the character. This replays the room's own wiring: its `allowed`
+// predicate (`taggerAllowed`, the one the screen calls), the real `annotateWithPolicy` and the real `api.annotateMediaText`
+// over a stubbed fetch. (The server half is tests/test_media_annotate_any_language.py.)
+{
+  const { taggerAllowed } = await import('../static/orena/screens/listening/model.js');
+  const { annotateWithPolicy, resetAnnotatePolicy } = await import('../static/orena/infrastructure/annotate-policy.js');
+  const sample = trial.lines.find((item) => item.spans.some(([s, e]) => e - s > 1));
+  const spans = sample.spans.map(([start, end]) => ({ start, end }));
+  const wide = spans.find((span) => span.end - span.start > 1);
+  const seen = [];
+  globalThis.fetch = async (url) => {
+    seen.push(String(url));
+    return { ok: true, status: 200, headers: { get: () => 'application/json' }, json: async () => ({ annotations: spans }), text: async () => '{}' };
+  };
+  const { api } = await import('../static/orena/infrastructure/api.js');
+  const run = async (inputs) => {
+    resetAnnotatePolicy();
+    seen.length = 0;
+    const token = hanTokens(sample.text, null).find((tok) => tok.start === wide.start);
+    const tagger = createLineTagger({
+      allowed: () => taggerAllowed(inputs),
+      request: async (text) => (await annotateWithPolicy(api.annotateMediaText, { text, source_language: inputs.language }, { scope: 'preview:held' }))?.annotations,
+    });
+    return widenHanTap({ text: sample.text, token, word: token.core, tags: () => tagger('seg', sample.text) });
+  };
+  const word = sample.text.slice(wide.start, wide.end);
+  assert.equal(await run({ preview: true, language: 'zh', learning: 'en' }), word, 'a preview of a Chinese item names the word for an English learner');
+  assert.equal(seen.length, 1, 'one tagger request');
+  assert.equal(await run({ preview: true, language: 'zh', learning: 'zh' }), word);
+  assert.equal(await run({ preview: false, language: 'zh', learning: 'en' }), sample.text[wide.start], "a learner's own room still never asks for another language");
+  assert.equal(seen.length, 0);
+  assert.equal(await run({ preview: true, language: 'es', learning: 'en' }), sample.text[wide.start], 'a language the tagger cannot segment is not asked');
+  assert.equal(taggerAllowed({ preview: true, language: 'zh-Hans', learning: 'en' }), true);
+  // The screen uses this very predicate for both tagger calls, with the preview flag it derives from the address.
+  assert.equal((listening.match(/taggerAllowed\(\{ preview, language, learning: c\.language \}\)/g) || []).length, 2, 'the line tagger and the Vocabulary Focus share one predicate');
+  assert.ok(!/annotateAllowed\(/.test(listening), 'the room no longer gates the tagger on the learning language directly');
+}
+console.log('preview ZH tap route gate: ok');
