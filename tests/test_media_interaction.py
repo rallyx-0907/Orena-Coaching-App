@@ -101,15 +101,28 @@ def test_english_annotations_use_contextual_local_pos_tags(monkeypatch) -> None:
     assert tags == {"They": "pronoun", "can": "auxiliary", "fish": "verb", "near": "preposition", "the": "determiner", "light": "noun"}
 
 
-def test_media_interaction_rejects_cross_language_annotation(monkeypatch) -> None:
+def test_annotation_is_local_and_answers_any_supported_language(monkeypatch) -> None:
+    # The tagger stores nothing and spends no AI (D-212), so a Chinese line is tagged for an English learner.
     monkeypatch.setattr(media_interaction, "current_language_code", lambda: "en")
+
+    payload = media_interaction.annotate_media_text(
+        media_interaction.MediaAnnotateIn(text="你好", source_language="zh")
+    )
+    assert payload["source_language"] == "zh" and payload["annotations"]
 
     with pytest.raises(HTTPException) as exc:
         media_interaction.annotate_media_text(
-            media_interaction.MediaAnnotateIn(
-                text="你好",
-                source_language="zh",
-            )
+            media_interaction.MediaAnnotateIn(text="hola", source_language="es")
+        )
+    assert exc.value.status_code == 422
+
+
+def test_ai_endpoints_still_require_the_learning_language(monkeypatch) -> None:
+    monkeypatch.setattr(media_interaction, "current_language_code", lambda: "en")
+
+    with pytest.raises(HTTPException) as exc:
+        media_interaction.explain_media_text(
+            media_interaction.MediaExplainIn(text="你好", source_language="zh", target_language="en")
         )
 
     assert exc.value.status_code == 409

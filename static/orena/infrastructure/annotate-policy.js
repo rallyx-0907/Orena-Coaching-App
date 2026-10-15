@@ -2,7 +2,7 @@
 
    The tagger is an aid, never a requirement: a failure leaves the text plain. So the policy is small:
 
-   - 409 (the text's language is not the learner's current learning language), 403 and 401 are about the
+   - 409 (only an older server; the tagger now answers any supported language, D-212), 403 and 401 are about the
      learner and the text, not the paragraph: the first one closes that (scope, language) pair for the
      session. Calls already in flight finish, so at most the worker count (6 in the Reader) is sent.
    - Any other 4xx (400, 413, 422) is about that one payload: it fails once, never retried, and the

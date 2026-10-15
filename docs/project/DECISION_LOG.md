@@ -7043,3 +7043,19 @@ free number and is renumbered at merge if they land first.
 3. **The 64 MiB media cap is unchanged (owner 2026-10-15).** A file over the cap keeps failing with the stable code
    `media_too_large` (D-207 §4). Whether to raise the cap or to move to streaming / chunked processing is decided after the Phase 2
    size distribution of the Video Sources milestone is known, not before.
+
+## D-212 - The local annotate tagger answers any supported language (2026-10-15)
+
+Status: ACCEPTED (merged as #222 once CI was green; independent review on 855d52c4: design approved, P1 test fixed in this commit). No schema or migration change. D-211 is reserved by the parallel normaliser/translation PR.
+
+`POST /api/media-learning/annotate` is local, stateless and spends no AI, yet it answered 409 unless `source_language` was the
+learner's current learning language. The administrator's preview of a held item (D-206, read-only by D-210) shows a language that
+is not the viewer's, so a Chinese tap there could not be widened to the lexical word and stayed on one character (Video Sources
+P1-5, still open after #209 and #214).
+
+1. `/annotate` answers `en` and `zh` whoever asks; any other language is 422. The endpoints that call the AI provider (explain,
+   register, conversation and the rest of `_validated_source_language`'s callers) keep the learning-language match, pinned by
+   `tests/test_media_interaction.py`.
+2. The Listening room asks the tagger through `taggerAllowed`: in a preview for any supported language, otherwise only in the
+   learner's language, as before. The Reader is unchanged.
+3. The preview entry page (Content Detail) draws no Save and no "..." (D-210).
