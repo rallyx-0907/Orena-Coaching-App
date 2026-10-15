@@ -203,15 +203,26 @@ class FileMediaLibraryStore:
         self.last_read_issue = ""
 
     def _read(self) -> dict[str, MediaLibraryEntry]:
-        self.last_read_issue = ""
+        entries, issue = self._read_checked()
+        self.last_read_issue = issue
+        return entries
+
+    def lookup(self, media_id: str) -> tuple[MediaLibraryEntry | None, str]:
+        """One read: the entry (or None) together with THIS read's own issue ("" when the index was read cleanly).
+
+        `last_read_issue` is shared by every request and reset by each read, so a caller that must tell "no such
+        entry" from "the index could not be read" under concurrency (the learner-state guard) uses this."""
+        entries, issue = self._read_checked()
+        self.last_read_issue = issue
+        return entries.get(media_id), issue
+
+    def _read_checked(self) -> tuple[dict[str, MediaLibraryEntry], str]:
         try:
             raw = self._index.read_text(encoding="utf-8")
         except FileNotFoundError:
-            self.last_read_issue = "index_missing"
-            return {}
+            return {}, "index_missing"
         except OSError:
-            self.last_read_issue = "index_unreadable"
-            return {}
+            return {}, "index_unreadable"
         try:
             payload = json.loads(raw)
             body = payload["entries"]
@@ -222,10 +233,9 @@ class FileMediaLibraryStore:
             entries = [validate_entry(MediaLibraryEntry(**item)) for item in body]
             if len({item.media_id for item in entries}) != len(entries):
                 raise ValueError("duplicate")
-            return {item.media_id: item for item in entries}
+            return {item.media_id: item for item in entries}, ""
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
-            self.last_read_issue = "index_corrupt"
-            return {}
+            return {}, "index_corrupt"
 
     def _write(self, entries: Mapping[str, MediaLibraryEntry]) -> None:
         ordered = [asdict(entries[key]) for key in sorted(entries)]

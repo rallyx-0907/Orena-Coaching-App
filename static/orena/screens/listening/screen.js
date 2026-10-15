@@ -34,7 +34,8 @@ import {
 import { activeCanonicalSegment } from '../../capabilities/transcript-timeline.js';
 import { readStage, writeStage, transcriptDefaults } from '../../product/transcript-stage.js';
 import { encounter } from '../../product/encounter.js';
-import { openMedia, rememberMedia } from '../../product/media-source.js';
+import { openMedia, rememberMedia, mediaRef } from '../../product/media-source.js';
+import { enterPreview } from '../../infrastructure/preview-mode.js';
 import { processingProgressMarkup } from '../../kit/states.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
@@ -58,6 +59,12 @@ export default async function listening(element, ctx) {
   const c = ctx.context;
   const support = languages().support;
   const lessonId = ctx.params.id;
+  /* The administrator's preview of a held import (`preview:<id>`, D-206) is read-only (D-210): it leaves no place, no
+     progress, no attempt and nothing saved on the item. This room draws no control that would write and tells the line
+     practice, the word sheet and the Vocabulary Focus the same; infrastructure/preview-mode.js refuses whatever
+     writer is left, and the server refuses a held id whoever sends it. */
+  const preview = mediaRef(lessonId).kind === 'preview';
+  let leavePreview = () => {};
 
   /* A curated lesson, a stored upload or a pasted link: one resolver, one payload shape
      (product/media-source.js). A source with no transcript still opens and plays. */
@@ -66,6 +73,7 @@ export default async function listening(element, ctx) {
   });
   if (!ctx.isCurrent()) return undefined;
   if (!payload?.asset || !payload.playback) throw new Error('This media is unavailable.');
+  if (preview) leavePreview = enterPreview();
 
   const lesson = mapLesson(payload, { fallbackLanguage: c.language });
   const language = lesson.language;
@@ -149,6 +157,7 @@ export default async function listening(element, ctx) {
     byId: dictById,
     priorRead: () => dictPriorRead,
     memory: c.memory || null,
+    readOnly: preview,
     onCheck: (line) => {
       if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
       paintVeil();
@@ -196,6 +205,8 @@ export default async function listening(element, ctx) {
     // line's words are the answer, so only its id is shared, never its text.
     const line = segOf(currentId);
     if (line && mode !== 'dictation') setViewSelection({ type: 'sentence', id: line.segment_id, text: line.original_text });
+    // A preview leaves no place on the item: not on the device, not on the server (D-210).
+    if (preview) return;
     try {
       /* How far into the clip this line is, so a card and the detail page say the same percent (LEX-082). Only
          with a real line start and a real duration; otherwise the place carries none. */
@@ -648,6 +659,7 @@ export default async function listening(element, ctx) {
       lang: language,
       sentence: seg?.original_text || '',
       source: { kind: 'listening', content_id: routeId, segment: segId, title: lesson.title },
+      readOnly: preview,
     });
   }
 
@@ -673,14 +685,14 @@ export default async function listening(element, ctx) {
       </div>
       <div class="s-listening__selected-actions" data-scroll-region>
         ${playbackOk ? pill({ id: 'play-seg', label: t('playSegment'), iconName: 'play', variant: 'primary' }) : ''}
-        <button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>
+        ${preview ? '' : html`<button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>`}
         ${pill({ id: 'vocab', label: t('vocabularyFocus') })}
-        <button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>
+        ${preview ? '' : html`<button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>`}
         <span class="s-listening__extra-acts${moreActs ? ' is-open' : ''}" role="group" aria-label="${t('practiseLine')}">
           <span class="s-listening__practise-label">${t('practiseLine')}</span>
           ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
-          ${lesson.modes.shadowing ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
-          ${pill({ id: 'react', label: s('reactReuse'), title: `${s('reactReuse')}: ${t('reactHint')}` })}
+          ${lesson.modes.shadowing && !preview ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
+          ${preview ? '' : pill({ id: 'react', label: s('reactReuse'), title: `${s('reactReuse')}: ${t('reactHint')}` })}
           <span class="s-listening__practise-hint">${s('reactReuse')} · ${t('reactHint')}</span>
         </span>
       </div>
@@ -801,6 +813,7 @@ export default async function listening(element, ctx) {
   }
 
   async function togglePhrase(seg) {
+    if (preview) return;
     const text = seg.original_text;
     if (!phraseSaveable(text)) { toast(t('phraseTooLong')); return; }
     try {
@@ -846,6 +859,7 @@ export default async function listening(element, ctx) {
       support,
       context: seg.original_text,
       source: { kind: 'listening', content_id: routeId, segment: id },
+      readOnly: preview,
       onPlay: () => playLine(id),
     });
   }
@@ -912,7 +926,7 @@ export default async function listening(element, ctx) {
             <div class="s-listening__end-tile"><div class="s-listening__end-value">${dictCount}</div><div class="s-listening__end-label">${t.plural('dictationLinesLabel', dictCount)}</div></div>
             <div class="s-listening__end-tile"><div class="s-listening__end-value">${listened || '0:00'}</div><div class="s-listening__end-label">${t('listened')}</div></div>
           </div>
-          <button type="button" class="o-btn o-btn--secondary o-btn--block s-listening__end-respond" data-act="respond">${t('writeResponse')}</button>
+          ${preview ? '' : html`<button type="button" class="o-btn o-btn--secondary o-btn--block s-listening__end-respond" data-act="respond">${t('writeResponse')}</button>`}
           ${nextRec ? html`<button type="button" class="s-listening__end-next" data-act="next">
             <span class="s-listening__end-next-thumb" style="${nextRec.posterUrl ? `background-image:url('${posterUrl(nextRec.posterUrl)}')` : ''}"></span>
             <span class="s-listening__end-next-body">
@@ -1004,6 +1018,7 @@ export default async function listening(element, ctx) {
     playerEl.removeEventListener('pointermove', revealPlayerChrome);
     playerEl.removeEventListener('pointerdown', revealPlayerChrome);
     clearTimeout(processingTimer);
+    leavePreview();
     releasePlayModel();
     paneObserver?.disconnect();
     if (playbackOk) {
