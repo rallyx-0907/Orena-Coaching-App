@@ -280,3 +280,12 @@ authority; no new table for learner-derived cache in 7D1. The tests that locked 
 persistence are replaced by authority-boundary tests. | Learner-derived answers stay with the account incarnation
 that produced them. | `PR-MON-7_DESIGN.md` §14.7, §14.8; `PR-MON-7D1_REVIEW_REQUEST.md`.
 
+
+D-MON-028 | 2026-10-15 | H7-8 runtime verification (operator, read-only). On the :8000 runtime database a read-only
+transaction read `platform_settings`: `ai.active_selection`, `ai.capability.writing_evaluator`,
+`ai.capability.writing_improver` and `ai.capability.text_discussion` are all `gemini` / `gemini-3.5-flash-lite`, with
+no backup provider or model. No row was modified. H7-8 is therefore closed on runtime evidence: that exact pair is the
+reviewed paid backup of the three 7A-first capabilities, to be entered into their allowlists only by the activation
+change (with the D-MON-026 caps), never automatically. | D-MON-027 required the live row, not documentation. |
+`PR-MON-7_DESIGN.md` §12, §14.7.
+

@@ -430,7 +430,7 @@ and does not touch 0034.
 | H7-5 | **APPROVED (closed 2026-10-15, D-MON-025):** the cache-isolation architecture of §14.3. A dedicated cache-isolation slice comes immediately after 7A-first. |
 | H7-6 | **APPROVED (closed 2026-10-15, D-MON-025):** Ollama Cloud is approved at the provider/privacy-policy level for `learner_text`, under its documented privacy and retention terms. Model-level allowlisting stays mandatory (§14.1); no model is populated automatically. |
 | H7-7 | **APPROVED (closed 2026-10-15, D-MON-026):** the owner-configured covered-credit allowance of §14.6 (USD of estimated economic cost, monthly, explicit configuration, default 0/disabled). Exhausted or unknown: the Ollama Cloud primary is skipped, never paid as you go. |
-| H7-8 | **DECIDED (D-MON-026, D-MON-027):** the exact existing Gemini baseline is selected as the backup strategy; daily caps `writing_evaluator` $0.50, `writing_improver` $0.50, `text_discussion` $1.00, Admin-editable (§14.7). **Pending** one operator verification of the live `ai.active_selection` / `ai.capability.*` rows before the exact provider/model is admitted into a production reviewed backup allowlist. |
+| H7-8 | **DECIDED (D-MON-026, D-MON-027):** the exact existing Gemini baseline is selected as the backup strategy; daily caps `writing_evaluator` $0.50, `writing_improver` $0.50, `text_discussion` $1.00, Admin-editable (§14.7). **Runtime verified 2026-10-15 (D-MON-028):** on :8000 `ai.active_selection` and `ai.capability.{writing_evaluator,writing_improver,text_discussion}` are all `gemini` / `gemini-3.5-flash-lite`, no backup set. The exact pair may now enter a reviewed backup allowlist in the activation PR (not before). |
 
 ## 13. Contradictions and findings
 
@@ -563,6 +563,11 @@ selection is runtime database state (`ai.active_selection` / `ai.capability.*`, 
 repository cannot prove. H7-8 is therefore **DECIDED, pending one operator verification of those live rows** before
 the exact provider/model enters any production reviewed backup allowlist. Repository documentation is not treated as
 proof of the runtime row. This does not block 7D1.
+
+**Verified (D-MON-028).** A read-only query (read-only transaction) on the :8000 runtime database on 2026-10-15
+returned `gemini` / `gemini-3.5-flash-lite` for `ai.active_selection`, `ai.capability.writing_evaluator`,
+`ai.capability.writing_improver` and `ai.capability.text_discussion`, with no backup provider or model. No row was
+changed. `reviewed_backup` allowlists stay empty in code until the activation PR.
 
 ### 14.8 PR-MON-7D1: cache authority, before and after
 
