@@ -610,6 +610,10 @@ a.a-btn--primary:hover {
 }
 
 /* Rows */
+.a-rows-scroll {
+  max-height: 480px;
+  overflow-y: auto;
+}
 .a-rows {
   display: flex;
   flex-direction: column;

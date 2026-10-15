@@ -818,9 +818,16 @@ class MediaPipeline:
                     progressed = len(getattr(result, "meanings", ()) or ()) > done
                     done = max(done, len(getattr(result, "meanings", ()) or ()))
                     counts[target] = {"done": done, "total": total_lines}
-                    stop_reason = str(getattr(result, "reason", "") or "") or ("incomplete" if progressed else "provider_error")
+                    given = str(getattr(result, "reason", "") or "")
+                    stop_reason = given or ("incomplete" if progressed else "provider_error")
                     retry_after = float(getattr(result, "retry_after", 0.0) or 0.0)
+                    # A partial that did not grow and says nothing would be asked for again with no new information.
+                    if not progressed and not given:
+                        break
                 if stop_reason in TRANSLATION_TERMINAL_REASONS or attempt == TRANSLATION_MAX_ROUNDS - 1:
+                    break
+                # The provider asked for longer than one wait may be: asking again now meets the same limit.
+                if stop_reason == "rate_limited" and retry_after > TRANSLATION_MAX_WAIT:
                     break
                 # A rate limit is waited out as the provider asked (capped); otherwise a short fixed pause. A round that
                 # made progress needs none.

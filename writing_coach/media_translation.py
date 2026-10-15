@@ -450,12 +450,18 @@ class GroqTranslationProvider:
                 for key, value in response.headers.items()
                 if key.lower().startswith("x-ratelimit-")
             }
-            if response.status_code == 429:
-                raise TranslationProviderError(
-                    "Groq translation is rate limited.", reason="rate_limited", retry_after=_retry_after_seconds(response.headers)
+            if response.status_code == 429 or response.status_code in {401, 403}:
+                refused = (
+                    TranslationProviderError(
+                        "Groq translation is rate limited.", reason="rate_limited",
+                        retry_after=_retry_after_seconds(response.headers),
+                    )
+                    if response.status_code == 429
+                    else TranslationProviderError("Groq refused the credentials.", reason="provider_auth")
                 )
-            if response.status_code in {401, 403}:
-                raise TranslationProviderError("Groq refused the credentials.", reason="provider_auth")
+                # A refused call is still a provider call: it reaches the quota telemetry like any other failure.
+                self._record(started, "failure", None, refused)
+                raise refused
             if response.status_code == 413 and _is_request_too_large(response):
                 raise _RequestTooLarge()
             if response.status_code == 400:

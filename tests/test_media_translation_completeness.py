@@ -43,6 +43,18 @@ def test_groq_failures_carry_a_stable_reason(monkeypatch, status, headers, reaso
     assert raised.value.reason == reason and raised.value.retry_after == retry
 
 
+@pytest.mark.parametrize("status", [429, 401, 403])
+def test_refused_groq_calls_still_reach_the_quota_telemetry(monkeypatch, status):
+    from writing_coach.ai import audio_telemetry
+
+    seen = []
+    monkeypatch.setattr(audio_telemetry, "record_token_operation", lambda *a, **k: seen.append((a, k)))
+    install(monkeypatch, FakeResponse({}, status=status))
+    with pytest.raises(mt.TranslationProviderError):
+        _groq().translate_batch("en", "vi", segments("One."))
+    assert len(seen) == 1 and seen[0][1]["outcome"] == "failure" and seen[0][0] == ("media_translation",)
+
+
 def test_a_timeout_is_its_own_reason(monkeypatch):
     def boom(*_a, **_k):
         raise requests.Timeout("slow")
@@ -195,11 +207,34 @@ def test_a_wait_is_capped_and_the_total_wait_is_bounded(tmp_path, monkeypatch):
     from writing_coach.media_transcript_pipeline import TRANSLATION_MAX_TOTAL_WAIT, TRANSLATION_MAX_WAIT
 
     monkeypatch.setenv("MEDIA_PRETRANSLATE_LANGUAGES", "vi")
-    meanings, _calls = _meanings_script(5, [(1, "rate_limited", 9999.0)])
+    meanings, _calls = _meanings_script(5, [(1, "rate_limited", TRANSLATION_MAX_WAIT - 10)])
     store, entry, pipeline = _world(tmp_path, lines=5, meanings=meanings)
     waits = _slept(pipeline)
     pipeline._translate(store, entry, "b1", False)
     assert waits and max(waits) <= TRANSLATION_MAX_WAIT and sum(waits) <= TRANSLATION_MAX_TOTAL_WAIT
+
+
+def test_a_retry_after_longer_than_one_wait_stops_with_rate_limited_instead_of_sleeping_into_it(tmp_path, monkeypatch):
+    from writing_coach.media_transcript_pipeline import TRANSLATION_MAX_WAIT
+
+    monkeypatch.setenv("MEDIA_PRETRANSLATE_LANGUAGES", "vi")
+    meanings, calls = _meanings_script(5, [(1, "rate_limited", TRANSLATION_MAX_WAIT + 1)])
+    store, entry, pipeline = _world(tmp_path, lines=5, meanings=meanings)
+    waits = _slept(pipeline)
+    assert pipeline._translate(store, entry, "b1", False) == ("partial", {"vi": {"done": 1, "total": 5}})
+    assert len(calls) == 1 and waits == []
+    assert store.get(entry.media_id).processing["translation_reason"] == "rate_limited"
+
+
+def test_a_partial_that_does_not_grow_and_names_no_reason_stops_at_once(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEDIA_PRETRANSLATE_LANGUAGES", "vi")
+    meanings, calls = _meanings_script(5, [(2, "", 0.0)])
+    store, entry, pipeline = _world(tmp_path, lines=5, meanings=meanings)
+    waits = _slept(pipeline)
+    assert pipeline._translate(store, entry, "b1", False) == ("partial", {"vi": {"done": 2, "total": 5}})
+    # Round 1 grew 0 -> 2 and continues; round 2 returned the same 2 with no reason, so it stops: 2 calls, not 5.
+    assert len(calls) == 2 and waits == []
+    assert store.get(entry.media_id).processing["translation_reason"] == "provider_error"
 
 
 def test_a_terminal_reason_is_not_retried(tmp_path, monkeypatch):

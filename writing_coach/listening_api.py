@@ -120,8 +120,11 @@ def configure_listening_media_library(store: MediaLibraryStore | None) -> None:
     _media_store = store
 
 
-def stored_media_entry(media_id: str) -> MediaLibraryEntry | None:
-    """One persisted entry, or None when nothing is stored under that id."""
+def stored_media_entry(media_id: str, *, allow_unpublished: bool = False) -> MediaLibraryEntry | None:
+    """One persisted entry, or None when nothing is stored under that id.
+
+    `allow_unpublished` is for the administrator's review preview only (its caller has passed the admin
+    guard): it opens a shared entry in any state, never a personal one, and no learner route sets it."""
     if _media_store is None:
         return None
     cleaned = str(media_id or "").strip()
@@ -129,6 +132,8 @@ def stored_media_entry(media_id: str) -> MediaLibraryEntry | None:
         return None
     try:
         entry = _media_store.get(cleaned)
+        if allow_unpublished:
+            return entry if entry is not None and entry.library == "shared" else None
         # A personal import is its owner's, in its own learning language: anyone
         # else gets what an unknown id gets.
         if entry is not None and not visible_to(
@@ -140,7 +145,7 @@ def stored_media_entry(media_id: str) -> MediaLibraryEntry | None:
         return None
 
 
-def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, Any] | None:
+def stored_media_payload(media_id: str, target_language: str = "", *, allow_unpublished: bool = False) -> dict[str, Any] | None:
     """The learner-facing payload for one persisted entry.
 
     Same shape `open_listening_library_lesson` answers with, because the
@@ -149,7 +154,7 @@ def stored_media_payload(media_id: str, target_language: str = "") -> dict[str, 
     `translations` and a `catalog` block that carries what the card and the
     practice modes need.
     """
-    entry = stored_media_entry(media_id)
+    entry = stored_media_entry(media_id, allow_unpublished=True) if allow_unpublished else stored_media_entry(media_id)
     if entry is None:
         return None
     target = resolve_support_language(get_learner_profile().get("native_language"), target_language)
