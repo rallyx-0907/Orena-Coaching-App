@@ -1,284 +1,357 @@
 # PR-MON-7: cost-tiered AI routing (design)
 
-**Status: DESIGNING, revision 1.** For independent architecture review. No product code. Migration 0034 is untouched
-(proposed, not promoted, not applied). Credits, quota enforcement and funding enforcement stay off, and no meter price,
-credit pack or promotional grant is configured.
+**Status: DESIGNING, revision 2 (docs only).** It revises revision 1 (`2bdfdbb1`) after the independent review (3 P1)
+and the owner's decisions of 2026-10-15. There is no product code. Migration 0034 is untouched: proposed, not
+promoted, not applied. Credits, quota enforcement and funding enforcement stay off. No meter price, credit pack or
+promotional grant is configured.
 
 - **Base:** `main` at `8abab02f43f15c286654ffc43511396cef356ea7` (PR-MON-6 merged as #223).
-- **Goal (Billing roadmap):** for learner-facing AI, `deterministic/cache → local → free → cheap paid → premium`,
-  keeping I-1: **no funded entitlement, no paid-provider request.**
-- **Constraint:** one AI routing system. This design extends the D-195 router and the capability chain that already
-  exist (`writing_coach/ai/router/`, `ai/platform.py`, `ai/routing.py`, `ai/config.py`, `ai/capabilities.py`) and
-  PR-MON-6's backstop. It builds no new router layer.
+- **Goal:** cheaper learner-facing AI with I-1 intact: **no funded entitlement, no paid-provider request**.
+- **One AI routing system.** This design extends the existing D-195 router and capability chain
+  (`writing_coach/ai/router/`, `ai/platform.py`, `ai/routing.py`, `ai/config.py`, `ai/capabilities.py`) and PR-MON-6's
+  backstop. It does not add config v2, N-model pools, a persistent AI cache, a new result table or a marketplace.
 
-## 1. What exists today (code map)
+## 0. How revision 2 closes the review's P1s
 
-| Piece | Where | Facts that shape this design |
-| --- | --- | --- |
-| **Tiers** | `ai/routing.py:141` `provider_tier`; `ai/pricing.py:154` `is_free_model`; price catalogue `pricing.py:30-80` (`2026-10-14.v7`) | Only `local` (Ollama), `free` (zero-rate catalogue entry or a pinned `:free` OpenRouter id) and `paid` exist. There is **no `cheap` or `premium`** in code. |
-| **Capability chain** | `platform.generate_structured` capability mode, `:700-824`; `routing.build_chain` `:222` / `run_chain` `:241` | `[primary, backup?]` in operator order. Per-rung timeout and deadline. The validator runs inside the chain, with re-asks for invalid output, and each paid re-ask is admitted again. `_budget_gate`, then PR-MON-6's `_funded_gate`, per paid rung; all-unfunded raises `FundingRequired`. Rung telemetry carries `billable_attempt`. |
-| **Router (D-195)** | `ai/router/router.py:132-279`, `contract.py`, `cache.py`, `policy.py`, `tap.py` | Contract (input model, normalize, prompt, validator, TTL) → deterministic tier → **L1 cache, shared across accounts, in-process LRU 4096** → negative cache → single flight → the chain above. The cache key has no account or model in it. Only `word_translation` is routed. |
-| **Capabilities** | `ai/capabilities.py:110-262` | `input_class` defaults to `learner_text`; only `word_translation` is `public_reference`. Nothing uses `published_content`. Tier rules are expressed only through `free_primary_only`, `paid_standby_cap_policy` and `paid_standby_models`. `agent_turn_fast` / `agent_turn_deep` are `configurable=False, implemented=False` (human ruling 2026-09-27). |
-| **Config** | `ai/config.py:48-259` | `CapabilityConfig` v1 is primary + backup, timeout, temperature, fallback_policy. **The privacy rule** (`:244-254`): a `learner_text` capability may not use a free tier or a provider that may log prompts. It is checked when a config is saved or loaded and on every capability-mode call. |
-| **Runtime mode** | `platform.py:79-91, 679-697` | `AI_RUNTIME_MODE` defaults to `legacy`: **every caller except the router uses the single Admin `active_selection()`**, with no chain, no backup and no `input_class` check. Only the router passes `capability_mode=True`. |
-| **Providers** | `ai/providers.py` | `may_log_prompts` is set for OpenRouter only. Ollama is `kind="local"`, structured text only. Agent-turn streaming is cloud providers only (spec D2). |
-| **Funding (PR-MON-6)** | `billing/funding_context.py`, `product/quota.py` | A FundingContext exists only inside a funded quota admission (`writing.review`, `orena.message`, `pronunciation.audio`, `media.import`). The backstop modes are off, log and enforce. With enforce, every paid call outside an admission or `SystemFunding` is refused. |
-
-## 2. Capability matrix: current learner AI paths
-
-**Legend.**
-- **Mode:** L = legacy single selection; C = capability mode.
-- **Input class** is what the prompt really carries, not the catalogue's label.
-- **Cache scope:** S = shared across learners; P = per learner; none = no cache.
-
-| # | Path (entry) | Key used | Mode | Input really sent | Bypass / cache in front | Local could serve the contract? | Free/OpenRouter privacy-allowed? | Quota meter / PR-MON-6 admission | Fallback today | Proposed slice |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | `POST /api/evaluate` (app.py:3319 → `evaluate_with_ai` :1708) | `writing_evaluator` | L | learner essay + task (learner_text) | per-learner stored review + `_review_gate` single flight; feature access first (PR-MON-6) | uncertain: 2200-token rubric JSON; needs the benchmark (§6) | **no** | `writing.review` admitted (funded when on) | heuristic only if `ALLOW_FALLBACK`, else 502/503 | **7A** |
-| 1b | `POST /api/essays/{id}/review/refresh` (:3535) | `writing_evaluator` | L | same | none | same | no | **none** (deliberately unmetered, D-161) | none | 7A (needs a funding answer, H7-3) |
-| 2 | `POST /api/improve` (:2903 → `improve_with_ai` :2505) | `writing_improver` | L | learner text ≤ 20,000 | none | likely (bounded schema); benchmark | **no** | `writing.review` admitted | none (502/503) | **7A** |
-| 3 | `POST /api/texts/discussion/turns` (text_discussion.py:174) | `text_discussion` | L | learner question + passage + history | stored repeat by request id | possible; benchmark | **no** | `orena.message` admitted | none (503) | **7A** |
-| 4 | Reading translate (reading_translation.py:87) | `learner_translation` | L (or a direct Groq/local engine by env) | sentences of a published article, a book, **or the learner's own import** | DerivedCache S (memory), persistent only for `article:` ids **asserted by the client** | yes: local Marian already exists as an engine | only for a **server-verified** published source | **none** | none (503) | **7B** (published) / **7A** (learner import) |
-| 5 | Reading summary (reading_summary.py:47) | `text_discussion` (reused) | L | published article, book chapter, **or raw learner text** | DerivedCache S; persistent for article ids | possible | only for a verified published source | **none** | none (503) | **7B** / **7A** |
-| 6 | Dictionary `GET /api/dictionary` (app.py:2802) | `learner_dictionary` | L | **one word or short phrase** (public reference) | shared learning-cache SQLite (S, 30 days); dictionaryapi.dev first for English | yes | **yes** (public_reference), but needs its own capability key | **none** | 503 | **7B** |
-| 7 | Word detail / sentence sheet / contextual / registers / spoken-response / media explain / conversation turn (media_interaction.py, word_detail.py, conversation.py) | `learner_dictionary` (`contextual_dictionary` for conversation, **not in the catalogue**) | L | selection + sentence context (published or learner import), **learner questions, learner speech transcripts** | DerivedCache S on the gloss/explanation variants (persistent for client-asserted `article:` ids); none on the others | possible for short gloss; doubtful for tutoring | no (learner_text), except a gloss of a verified published sentence | **none** | sheet answers from the dictionary; others 502/503 | **7A**; gloss of verified published text **7B** |
-| 8 | Word deep `GET …/vocabulary/{w}/deep` (word_deep.py) | `learner_dictionary` | L | catalogue example, else **the learner's saved fragment** | shared asset store keyed **without the context** | possible | only with the catalogue example | **none** | `{}` | **7B** (catalogue example only); learner-fragment variant 7A |
-| 9 | Word translation tap / prefetch (ai/router/tap.py) | `word_translation` | **C (router)** | word only (public_reference) | deterministic sheet first, router L1 S, single flight | — | **yes** (free primary, capped Groq standby) | **none**; the paid standby is skipped under enforce | sheet stands (miss) | **unchanged** (already the target shape) |
-| 10 | Task generation `/api/tasks/generate`, `/api/practice/next` (app.py:2392) | `writing_task_generator` | L | task type, level, word target, **free-text topic ≤ 120** | none | yes | only if the topic is an enumerated value (a free-text topic is learner-typed) | **none** | always the built-in task (it also hides `FundingRequired`) | **7B** if topics are enumerated, else **7A** |
-| 11 | Orena Intelligence `POST /api/agent/turn` (agent/turn.py → `stream_agent_turn`) | telemetry `agent_turn_fast` | L, cloud only | learner message + personal context + tool results | none (stored repeat by turn) | **no** (spec D2: never local) | **no** | `orena.message` admitted, funded per round (PR-MON-6) | error event, no failover | **7C** |
-| 11b | Agent opening greeting, rolling-summary compaction (turn.py:457, :1092) | — | L | snapshot / conversation | opening limiter, snapshot greeting | no | no | **none** | snapshot greeting; compaction failure swallowed | 7C |
-| 12 | Live voice mint, ASR, pronunciation, media pipeline, word TTS | (non-text) | — | audio / transcript | — | — | — | `orena.message` (voice), `pronunciation.audio`, `media.import`; system funding for media | — | **out of scope** (not structured text) |
-| 13 | Reading comprehension generation (admin) | `reading_generator` | L | published article | — | possible | published_content | admin, no learner meter | one retry | **7B**, later (admin) |
-
-## 3. Findings that bear on the design (reported, not resolved here)
-
-| # | Finding | Why it matters |
-| --- | --- | --- |
-| F-1 | **Legacy mode bypasses the privacy rule.** Every path except the router uses the single Admin selection, and `input_class` is never checked in legacy mode. If the operator selected an OpenRouter free model as the active selection, learner text would reach it. | The D-195/D-104 privacy rule holds today only by operator discipline. PR-MON-7A moves learner capabilities into capability mode, where the rule is checked on every call. A guard in legacy mode belongs in 7A too (§5.1). |
-| F-2 | **Shared caches hold learner-derived content.** The DerivedCache's memory layer is shared, and its persistent layer trusts a client-supplied `content_id` starting with `article:`. The word-deep cache key ignores its context, but that context can be the learner's saved fragment. | Learner-derived explanations can be served to other learners. PR-MON-7 must not widen this, and needs a cache-scope rule (§5.3). Fixing the existing leak belongs to the Reading/Dictionary owners; flagged as H7-5. |
-| F-3 | **`contextual_dictionary` is not a catalogued capability.** In capability mode `require_capability` raises, so that path would fail with 503. | 7A must give it a catalogued key (or `learner_dictionary`) before moving it. |
-| F-4 | **One key per meaning is missing.** `learner_dictionary` covers both a public word lookup (#6) and learner tutoring (#7). `text_discussion` is reused for summaries (#5). | A privacy class is per capability. Public and learner uses need separate keys, decided by the server, before either can be routed differently (7B). |
-| F-5 | **Many paid learner paths have no meter.** Dictionary, word detail and the sheets, contextual, registers, spoken response, media explain, reading translate and summary, task generation, word deep and review refresh are all unmetered. | Under `FUNDING_ENFORCEMENT=enforce` their paid rungs are refused, and task generation silently falls back. PR-MON-7 cannot fund them; this is PR-MON-6's own precondition (§6 meters, H-2). Until then a paid rung on those paths stays legacy-ungated (enforcement off) or skipped (enforce). See H7-3. |
-| F-6 | **Agent turns ignore capability configs.** `stream_agent_turn` uses the legacy selection, cloud only, with no chain, and `agent_turn_*` are not configurable by human ruling. | 7C needs that ruling revisited; it is not something a design can assume. |
-
-## 4. Tiers: definitions from existing sources only
-
-| Tier | Definition (no new pricing source) |
+| Review finding | Closed by |
 | --- | --- |
-| `deterministic` | A contract's `deterministic(inp)`, or a stored or derived result produced without a model call (stored review, CC-CEDICT, catalogue, dictionaryapi.dev, local Marian MT). |
-| `cache` | The router's L1 (shared, only for public/published capabilities), or a per-learner stored result. |
-| `local` | `provider_tier == "local"`: Ollama on Orena's own machine. A **trusted local** provider is one whose `ProviderDefinition` is `kind="local"` and `may_log_prompts=False`. Local is privacy-allowed for `learner_text`. |
-| `free` | `provider_tier == "free"`: a zero-rate catalogue entry or a pinned `:free` OpenRouter id (`check_model_allowed`). **Never for `learner_text`** (`config.py:244-254`). |
-| `cheap paid` | `provider_tier == "paid"`, **and** the model is in that capability's reviewed `paid_standby_models`, with a priced catalogue entry and a `paid_standby_cap_policy` cap. That is the existing D-195 mechanism; no price threshold is invented. |
-| `premium` | Any other `paid` model. **Not used by 7A or 7B.** The D-195 amendment keeps escalation and premium tiers refused in v1. 7C proposes it for agent turns only, behind a human decision (H7-4). |
+| **P1-1:** free provider calls on paths with no quota or brake | Every learner-triggered remote AI operation is admitted under a real semantic meter (`word.assist`, `reading.assist`, `writing.task`, `writing.review`, `orena.message`; §3). A cache miss cannot create unlimited OpenRouter or Ollama Cloud requests. Order: access → deterministic/stored → safe cache → **admission** → chain → settle once (§5). |
+| **P1-2:** "local primary" could not be enforced, and production depended on a local GPU | **Local models are removed as a production tier** (owner decision). The covered-credit primary is a **cloud** provider (Ollama Cloud), and static validation proves it is in the capability's **reviewed primary allowlist** (§4.2). A random primary entered by an operator is refused. Until a primary is approved, the capability stays unlisted and off. |
+| **P1-3:** learner shared-cache paths were silently included in 7A | Paths whose cache crosses learner boundaries are **blocked** from routing until they are isolated (§6, H7-5 decision). 7A-first contains only capabilities whose stored results are account-scoped. |
 
-## 5. Design
+## 1. Code map (what exists at `8abab02f`)
 
-### 5.1 One routing system: capability mode per capability
+| Piece | Where | Facts |
+| --- | --- | --- |
+| **Tiers** | `ai/routing.py:141` `provider_tier`; `ai/pricing.py:154` `is_free_model`; price catalogue `pricing.py:30-80` | `local` = the `ollama` provider id, `free` = a zero-rate catalogue entry or a pinned `:free` OpenRouter id, `paid` = everything else. |
+| **Capability chain** | `platform.generate_structured`, capability mode `:700-824`; `routing.build_chain` / `run_chain` | `[primary, backup?]`; the validator runs inside the chain, with re-asks for invalid output (a paid re-ask is admitted again); `_budget_gate`, then PR-MON-6's `_funded_gate` per paid rung; rung telemetry with `billable_attempt`. |
+| **D-195 router** | `ai/router/` | A contract → deterministic tier → L1 cache (in-process, **shared**, the key has no account) → negative cache → single flight → the chain. Only `word_translation` is routed. |
+| **Capabilities** | `ai/capabilities.py:110-262` | `input_class` defaults to `learner_text`; tier rules exist only as `free_primary_only`, `paid_standby_cap_policy`, `paid_standby_models`. Nothing says which primary is reviewed. |
+| **Config** | `ai/config.py:48-259` | v1 is primary + backup. The privacy rule (`:244-254`): `learner_text` never goes to a free tier or a provider that may log prompts. It is checked when a config is saved or loaded and on every capability-mode call. |
+| **Runtime mode** | `platform.py:79-91, 679-697` | `AI_RUNTIME_MODE=legacy` by default. **Every caller except the router uses the single Admin `active_selection()`**, and its save route (`PUT /api/admin/ai/config`, `platform.py:1254`) checks neither the free tier nor prompt logging (F-1). |
+| **Providers** | `ai/providers.py` | `ollama` is `kind="local"`, the dev adapter. OpenRouter sets `may_log_prompts`. Agent-turn streaming is cloud only (spec D2). **There is no Ollama Cloud provider.** |
+| **Meters** | `product/catalog.py:69` | Catalogued: `orena.message`, `writing.review`, `pronunciation.audio`, `media.import`, `languages.target`. `word.assist` (request), `reading.assist` (request) and `writing.task` (request) have their units frozen by PR-MON-6 H-2, but **no Free/Plus/Pro limits** yet (a human gate). |
+| **Funding** | `billing/funding_context.py`, `product/quota.py` | A FundingContext exists inside a funded admission. The backstop modes are off, log and enforce; with enforce, every paid call outside an admission or `SystemFunding` is refused. |
 
-- **One routing system.** Routing is the existing capability chain (`generate_structured` capability mode). The D-195
-  router sits in front of that chain where a contract and a shared cache are wanted (7B).
-- **No global flip.** A capability moves out of the legacy single selection only when its key is listed in a new
-  switch, `ORENA_CAPABILITY_ROUTING` (empty by default), **and** it has a saved, valid capability config. The call
-  sites keep their capability keys and pass `capability_mode=routed(key)`; no feature names a model.
-- **Legacy guard (F-1).** In legacy mode, a `learner_text` capability whose active selection is a free tier or a
-  prompt-logging provider is refused (503 `capability_unavailable`), instead of sending the text. This is the same
-  rule as `config.py:244-254`, applied at call time. It changes nothing for a correctly configured deployment.
+## 2. Tiers (revision 2)
 
-### 5.2 Order of work for a routed call
+| Tier | Definition | Production use |
+| --- | --- | --- |
+| `deterministic` / `stored` | No model call: a stored review, a discussion repeat, CC-CEDICT, the catalogue, dictionaryapi.dev, local Marian MT, a contract's `deterministic()`. | Yes, always first. |
+| `shared cache` | The router L1, **only** for server-verified `public_reference` / `published_content`. | Yes, for public or published input. |
+| `free` | `provider_tier == "free"`: a reviewed OpenRouter `:free` id (the D-195 catalogue). | **Only for public or published input.** Never for `learner_text`. |
+| `covered-credit cloud` | A **cloud** provider whose bill is currently covered by provider credits the owner holds: **Ollama Cloud** (a new provider id, e.g. `ollama_cloud`, `kind="cloud"`). It is **paid** in the pricing model, with its real estimated cost, never $0. | The primary, where reviewed (§4). |
+| `cheap paid` | A paid `(provider, model)` in the capability's **reviewed paid-backup allowlist**, priced in the catalogue, under the capability's reviewed spend-cap policy, passing capability and privacy validation (**H7-1, approved**). No global price threshold. | The backup. |
+| `premium` | Any other paid model. | **Not used in 7A or 7B.** 7C only, if ever approved. |
+| `local` (`ollama`) | The local or dev adapter, unchanged in the repository. | **Not a PR-MON-7 production tier** (owner decision). It is never configured as a learner primary, and no production path depends on a local GPU. |
 
-The order is deterministic/stored, then cache, then the chain:
+## 3. Semantic meters: no learner AI path stays unmetered (H7-3, approved)
+
+Every learner-triggered remote AI operation is admitted under one of these meters. Deterministic, stored and cache
+hits happen **before** admission and consume nothing.
+
+| Meter | Unit | Operations |
+| --- | --- | --- |
+| `word.assist` | request | `word_translation` miss needing a model; dictionary AI; contextual word/sentence gloss; registers / usage explanation; word detail AI; word-deep AI; similar word/phrase explanation |
+| `reading.assist` | request | reading translation; reading summary; passage, article and media-transcript explanation (content comprehension, not chat) |
+| `writing.task` | request | AI task / exercise generation (the built-in task may answer before admission) |
+| `writing.review` | request | writing evaluation; writing improvement; **review refresh** (no longer deliberately unmetered when it calls remote AI) |
+| `orena.message` | request | `text_discussion`; conversational tutor turns; Orena Intelligence turns |
+
+- **No second charge inside one operation.** Model rounds, retries, rungs and the rolling-summary compaction of an
+  admitted Intelligence turn consume no extra unit. Compaction stays attributed to that turn's operation where
+  technically possible.
+- **Agent opening greeting.** The order is a stored greeting, then a deterministic/template greeting. AI generation
+  before a learner message needs its own separately reviewed funding and meter policy; it never becomes an unmetered
+  paid call.
+- **`SystemFunding`** stays for genuine system, operator or background work under its USD caps. It is never used to
+  avoid metering a learner-triggered feature.
+- **The meters are the per-account brake.** No second quota system is introduced. The `word_translation`
+  application brake (`tap.py`, 20 per 60 s) may stay as defence in depth while `word.assist` becomes the quota source.
+- **Limits are a human gate.** `word.assist`, `reading.assist` and `writing.task` need their Free/Plus/Pro limits and
+  granularity before they are enforced (PR-MON-6 H-2). Until enforced, their paths are not listed for routing in a
+  way that could spend without a bound (§8, rollout).
+
+## 4. Capability policy and validation
+
+### 4.1 Routing shapes
+
+**Learner-authored or private input:**
 
 ```
-feature access (PR-MON-6 require_feature, unchanged, before any bypass)
- -> deterministic / stored result (per capability, unchanged)
- -> cache (7B: router L1 shared - public/published only; 7A: per-learner stored results only)
- -> chain rung 1 (primary: local, or free when the input class allows)
- -> chain rung 2 (backup: cheap paid under the capability's reviewed models + cap + I-1 backstop)
+feature access -> deterministic / stored / safe (account-scoped) result
+  -> meter admission
+  -> primary: reviewed privacy-safe Ollama Cloud (covered credit)
+  -> backup: reviewed cheap paid
+  -> stop
 ```
 
-- **v1 config already expresses this.** The primary is local or free, and the backup is cheap paid. **No config v2
-  and no N-model pool.** A third rung (local, then free, then paid) is possible only for public/published capabilities,
-  and it is not needed for 7A or 7B. If a capability ever needs one, `build_chain` is documented to take one config
-  field and no code; that would be its own reviewed change.
-- **Validation before falling through.** Each rung's answer goes through the capability's validator (the router
-  contract's `validate`, or the existing schema validators `validate_result` and the improver's schema checks). An
-  invalid answer is retried `retry_invalid` times, then the next rung is tried. The local rung counts as answered only
-  when its output passes the same validator a paid answer must pass. Quality for the learner is protected by the
-  validator plus the benchmark acceptance of §6. A paid retry is admitted again by both gates.
+**Server-verified public or published input:**
 
-### 5.3 Cache scope by input class
+```
+feature access -> deterministic / shared cache
+  -> meter admission
+  -> primary: reviewed OpenRouter free
+  -> backup: reviewed Ollama Cloud (covered credit)  [or a reviewed cheap paid, per capability]
+  -> stop
+```
 
-The router contract gains one field, `cache_scope`:
-- `shared` is allowed only for `public_reference` and `published_content`;
-- `none` is the only value for `learner_text`. The router's L1 is never used for it.
+- **v1 config is not extended.** It gives two rungs. Where a capability would want three (free, then covered credit,
+  then cheap paid), revision 2 picks the **two most useful** per capability (§6) and defers the third rung.
+- **No premium tier** in 7A or 7B.
 
-This enforces in code proposal §2.4 ("shared cache only for public/published"), which today is documentation.
+### 4.2 Static enforcement of the reviewed primary (closes P1-2)
 
-Per-learner results stay where they already are, in the feature's own store (the stored review, the discussion
-repeat). No new cache table is added (non-goal). A capability is `published_content` only when the server has
-verified the source: an article id that the server resolves to a published article, never a client-asserted
-`content_id` (F-2).
+The capability metadata in `ai/capabilities.py` is extended conceptually. These are new fields of the existing
+definition, not config v2:
 
-### 5.4 Funding and attribution
+- **`reviewed_primary_models`:** the `(provider, model)` pairs accepted as that capability's primary. Empty means the
+  capability cannot be routed (it stays legacy and unlisted).
+- **`paid_standby_models`** and **`paid_standby_cap_policy`:** the existing reviewed paid-backup allowlist and spend
+  cap.
+- **`input_class`:** as today.
 
-The routed call runs inside the operation's existing context, so every rung inherits the same `FundingContext` and
-operation id. In order:
+`validate_capability_config` refuses, when a config is saved or loaded and on every capability-mode call:
+- a primary not in `reviewed_primary_models`;
+- a backup not in `paid_standby_models`, unpriced, or without a readable cap above zero;
+- any `local` provider as primary or backup of a learner production capability;
+- for `learner_text`: a free tier, a provider that may log prompts, and an Ollama Cloud model **unless its
+  privacy/retention classification is explicitly reviewed** (a per-model flag, H7-6).
 
-1. **Local and free rungs** need no prepaid funding (§7 of PR-MON-6: free rungs are not gated).
-2. **The paid rung** is admitted by `_budget_gate` (a daily cap, if the capability has one), then by `_funded_gate`.
-   That gate makes the live database check of PR-MON-6 §2.1: the admission is funded or dispatched, the backing is
-   open, and a credit hold outlives the rung's real timeout.
-3. **Funding runs out between rungs or retries.** The re-ask is refused (`unfunded`) and no request is sent.
-4. **Settlement happens once per operation, never per rung.** The quota or credits ticket is settled by the feature
-   after the chain returns:
-   - `writing.review` settles 1 per review, whatever rung served it (H-3: credits pay for metered work);
-   - the heuristic fallback settles 0, as today.
+No model ids and no cap numbers are chosen here. Until H7-2 names a primary, `reviewed_primary_models` is empty and
+the capability cannot be listed.
 
-   A rung failure or an invalid retry never settles, so the chain cannot charge twice.
-5. **Attribution.** Every billable attempt (`billable_attempt`, PR-MON-6 formal review) is written with the
-   operation's `operation_id` and meter, so local, free and paid tries all aggregate into one operation's cost
-   evidence.
-6. **Quota units do not change.** A routed operation consumes exactly what it consumes today.
+### 4.3 Ollama Cloud as a cloud provider (covered credit)
 
-### 5.5 Slice boundaries
+- **A distinct provider id** (e.g. `ollama_cloud`), `kind="cloud"`, with its own credential (an environment variable
+  name only, value a human gate), reviewed model ids, the normal timeout and failure semantics, structured-text
+  support, and a `may_log_prompts` / retention classification set from the provider's documented terms.
+- The local `ollama` adapter is **not** pointed at a cloud URL.
+- **Pricing.** Each reviewed model has a catalogue entry with its real price. If Ollama Cloud publishes no per-token
+  price, the owner supplies a reviewed reference price with its source and date (like PR-MON-6's FX: configured,
+  auditable, never fetched live) (H7-7).
+- **It is never priced at $0** because credits currently cover it, and `provider_tier` classifies it as `paid`.
 
-**PR-MON-7A: structured learner workloads.** The route is deterministic/stored → trusted local → funded cheap paid.
-- **Capabilities:**
-  - `writing_evaluator` (#1);
-  - `writing_improver` (#2);
-  - `text_discussion` (#3);
-  - `learner_dictionary` for its learner uses (#7);
-  - the learner-import variants of #4, #5 and #8.
-- **Changes:**
-  - the `ORENA_CAPABILITY_ROUTING` switch;
-  - the legacy guard (F-1);
-  - `cache_scope` on contracts;
-  - a catalogued key for the conversation turn (F-3);
-  - configs that put a trusted local primary in front of a reviewed cheap paid backup;
-  - benchmark acceptance per capability before it is listed.
-- **Funding:**
-  - Metered paths (#1, #2, #3) get the paid rung inside their existing admission.
-  - Unmetered paths (#7, the learner variants of #4, #5 and #8, and the review refresh) stay local-first. Their paid
-    rung follows H7-3.
-- **Never:** OpenRouter or any free tier for these inputs.
+### 4.4 Cost accounting for covered credits
 
-**PR-MON-7B: public and published workloads.** The route is deterministic/cache → reviewed free pool → cheap funded
-paid standby.
-- **New public keys, decided by the server:**
-  - a dictionary entry capability (#6, `public_reference`);
-  - published reading translation and summary (#4, #5, `published_content`, only for server-verified published
-    sources);
-  - a catalogue-example word deep (#8);
-  - task generation when its topic is an enumerated value (#10).
-- **Each gets a router contract** (validator, normalize, shared L1, TTL), reusing the D-195 free catalogue as it
-  stands. No new free model id.
-- **Unchanged:** `word_translation` is already this shape.
+Every billable attempt is recorded with:
+- its estimated economic cost from the catalogue;
+- provider and model;
+- the operation id and meter (PR-MON-6 attribution);
+- **`cost_coverage`**: `provider_credit` while an owner-configured covered-credit allowance for that provider is not
+  exhausted according to Orena's own accounting, else `cash`.
 
-**PR-MON-7C: Orena Intelligence.** It is not routed through the structured router: it streams, uses native tool calls
-and has its own Agent Contract.
+No external "remaining credits" API is assumed. If one is ever officially documented, adopting it is a later reviewed
+change. Admin can then show the estimated compute cost against the cash cost currently covered by provider credits.
 
-The proposal is a reviewed agent routing adapter in `stream_agent_turn`:
-- configs for `agent_turn_fast` / `agent_turn_deep` (this needs H7-4: the 2026-09-27 ruling made them
-  non-configurable);
-- a two-rung chain of cloud agent-capable providers (cheap paid, then premium paid);
-- failover only **before the first streamed token** of a round, never mid-stream;
-- tool-call semantics and memory/context unchanged;
-- the per-round FundingContext and the live check as today;
-- per-round attribution.
+When the configured allowance is exhausted:
+- the covered-credit rung keeps its real cost and becomes `cash`;
+- whether it may then still serve is an activation decision (H7-7). The safe default is to treat the provider like
+  any other paid rung: admitted, capped, funded.
 
-Not proposed: a local or free tier (spec D2, and agent input is `learner_text`).
+## 5. Order and settlement invariant (every PR-MON-7 learner capability)
 
-The adapter would also give the opening greeting and the rolling-summary compaction (#11b) an explicit funding
-answer: `SystemFunding` with a USD cap, or the turn's admission. That is H7-3.
+```
+feature access -> deterministic / stored result -> safe cache -> meter/funding admission -> provider chain
+  -> settle once for the learner operation
+```
 
-### 5.6 Failure behaviour
+- **Cache and deterministic hits** spend no provider money and settle no AI meter.
+- **Every fresh model call is quota-controlled:** free-provider, Ollama Cloud covered-credit and paid calls alike.
+- **The paid backup is already inside the same admission.** I-1's live check applies at the paid rung, including
+  Ollama Cloud, which is priced as paid. No paid request is sent after the funding expires.
+- **Retries and rungs** never add a learner charge. Every billable attempt keeps the operation id and the meter. The
+  feature settles **once**.
+- **PR-MON-6 H-3 is preserved.** Once credits fund an operation, the result settles from the immutable funding
+  snapshot. Routing never re-selects a funding source because a cheaper provider answered.
+
+## 6. Capability and meter matrix (revision 2)
+
+Key. Input = what the prompt really carries. Cache = shared (S), per learner (P), or none.
+
+| # | Path | Capability key | Input | Meter | Cache before admission | Rung 1 → Rung 2 | Slice |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `POST /api/evaluate` | `writing_evaluator` | learner essay | `writing.review` | P: stored review (account + language, last 60 essays) | Ollama Cloud (reviewed) → cheap paid | **7A-first** |
+| 1b | review refresh | `writing_evaluator` | learner essay | `writing.review` (**now metered**) | P | same | **7A-first** |
+| 2 | `POST /api/improve` | `writing_improver` | learner text | `writing.review` | none | Ollama Cloud (reviewed) → cheap paid | **7A-first** |
+| 3 | `POST /api/texts/discussion/turns` | `text_discussion` | learner question + passage | `orena.message` | P: repeat by `request_id` inside the learner's own discussion (`discussion_repository._scope()` = user + language; **confirmed account-scoped**) | Ollama Cloud (reviewed) → cheap paid | **7A-first** |
+| 4a | Reading translate, learner import | `learner_translation` | learner-imported text | `reading.assist` | **S, unsafe** (shared DerivedCache memory; client-asserted `article:`) | Ollama Cloud → cheap paid | **blocked** until isolated → 7A-follow-up |
+| 4b | Reading translate, verified published | new public key (e.g. `published_translation`) | published content | `reading.assist` | S (server-verified source only) | OpenRouter free → Ollama Cloud | **7B** |
+| 5a | Reading summary, learner import / raw text | new learner key (split from `text_discussion`, F-4) | learner text | `reading.assist` | **S, unsafe** | Ollama Cloud → cheap paid | **blocked** → 7A-follow-up |
+| 5b | Reading summary, verified published | new public key | published content | `reading.assist` | S (verified) | OpenRouter free → Ollama Cloud | **7B** |
+| 6 | `GET /api/dictionary` AI | new public key (split from `learner_dictionary`, F-4) | one word / short phrase | `word.assist` | S: learning-cache dictionary | OpenRouter free → Ollama Cloud | **7B** |
+| 7 | Word detail / sentence sheet / contextual / registers / spoken response / media explain / conversation turn | `learner_dictionary`; `contextual_dictionary` must be catalogued (F-3) | learner selection or question or speech, or published sentence | `word.assist` (gloss, registers, word detail); `reading.assist` (passage or media explanation); `orena.message` (conversation turn, spoken-response tutor) | **S, unsafe** on the gloss and explanation variants | Ollama Cloud → cheap paid | **blocked** → 7A-follow-up. A gloss of a server-verified published sentence → **7B** |
+| 8a | Word deep, catalogue example | new public key | catalogue example | `word.assist` | S | OpenRouter free → Ollama Cloud | **7B** |
+| 8b | Word deep, learner fragment | `learner_dictionary` | learner's saved fragment | `word.assist` | **S, unsafe** (key ignores context) | Ollama Cloud → cheap paid | **blocked** → 7A-follow-up |
+| 9 | `word_translation` tap / prefetch | `word_translation` | word only | `word.assist` on a model miss (prefetch is system work: `SystemFunding`, free pool only, no learner charge) | S: router L1, deterministic sheet first | free → capped paid standby (today) | **7B** (meter wiring; routing shape already in place) |
+| 10 | Task generation | `writing_task_generator` | parameters + free-text topic | `writing.task` | none (built-in task before admission) | free → Ollama Cloud only if the topic becomes an enumerated value; otherwise learner_text: Ollama Cloud → cheap paid | **7B** |
+| 11 | Orena Intelligence turn | (legacy, telemetry `agent_turn_fast`) | learner message + personal context | `orena.message` | none | unchanged | **7C** |
+| 11b | Opening greeting / compaction | — | — | greeting: none (stored or template); compaction: the turn's own `orena.message` operation | — | — | **7C** |
+| 12 | ASR, pronunciation, TTS, live voice, media pipeline | non-text | — | existing meters / `SystemFunding` | — | — | out of scope |
+
+## 7. Slice boundaries (revision 2)
+
+### PR-MON-7A-first (narrow, all off by default)
+
+**Capabilities:** `writing_evaluator`, `writing_improver`, `text_discussion`. All three have account-scoped stored
+results and existing meters (`writing.review`, `orena.message`).
+
+**What it adds:**
+- **Meter plumbing for these capabilities only.** It adds metering to the review refresh under `writing.review`.
+- **`ORENA_CAPABILITY_ROUTING`,** empty by default. A capability is routed only when listed **and** its config is
+  valid. A listed capability with a missing config answers 503 and never falls back to legacy silently.
+- **The legacy privacy guard (F-1).** In legacy mode a `learner_text` capability is refused (503) when the active
+  selection is a free tier or a prompt-logging provider.
+- **Reviewed-primary validation (§4.2)** and the local-provider refusal for learner production capabilities.
+- **The Ollama Cloud provider and covered-credit accounting (§4.3, §4.4)**, only as far as these capabilities need.
+- **A benchmark harness** that compares a proposed Ollama Cloud model with the current paid baseline. It reports:
+  - schema-valid rate;
+  - semantic correctness and task quality;
+  - critical failure rate;
+  - latency;
+  - estimated cost.
+
+  It extends the existing `writing_evaluation_benchmark_runner.py` and adds golden sets for the improver and the
+  discussion.
+
+**Gates:**
+- **The benchmark is an activation gate, not an implementation gate.** The code lands with routing off. A capability
+  is listed for learners only after H7-2 accepts its primary.
+- **No local model** and no OpenRouter free for these capabilities.
+
+### PR-MON-7A-follow-up (after cache isolation)
+
+**Paths:** learner dictionary and contextual paths (#7), learner-import reading translation and summary (#4a, #5a),
+learner-fragment word deep (#8b), each under its semantic meter.
+
+**Blocked until** their caches no longer cross learner boundaries: account-scoped keys, or bypassing the shared
+cache. A client-provided `article:` prefix is never proof of publication.
+
+### PR-MON-7B (public and published)
+
+**Meters and paths:**
+- `word.assist`: dictionary entry (#6), catalogue-example word deep (#8a), and `word_translation` meter wiring (#9);
+- `reading.assist`: server-verified published translation and summary (#4b, #5b);
+- `writing.task` (#10).
+
+**Shape:**
+- new public capability keys decided by the server (F-4);
+- router contracts with `cache_scope=shared` (shared only for public or published classes);
+- the reviewed OpenRouter free primary, with Ollama Cloud covered credit or a reviewed cheap paid backup as the second
+  rung, chosen per capability;
+- no new free model id.
+
+### PR-MON-7C (Orena Intelligence only)
+
+**Not routed through the structured router.** It is a separately reviewed agent adapter for `agent_turn_fast` /
+`agent_turn_deep`, which needs H7-4 because the 2026-09-27 ruling made them non-configurable.
+
+**Rules for the adapter:**
+- failover only before the first streamed token of a round;
+- tool calling, streaming, Agent Contract semantics and memory unchanged;
+- per-round FundingContext and live check;
+- per-round attribution;
+- the greeting and compaction policy of §3.
+
+**Ollama Cloud** *may* be evaluated as a cloud agent provider only if a specific model proves native tool calling,
+streaming, Agent Contract semantics, privacy, latency and quality. That is not assumed.
+
+**No change to Intelligence** in 7A or 7B.
+
+## 8. Failure behaviour
 
 | Situation | Result |
 | --- | --- |
-| The local rung is down or slow | It is skipped, or times out within its own deadline; the next rung follows the existing health cooldown. |
-| The local answer is invalid | It is retried, then the paid rung is tried if funded; otherwise the existing error (502/503) or the existing fallback (heuristic review, built-in task). |
-| The paid rung is unfunded under enforce | It is skipped (`unfunded`). If no unpaid rung answered: `FundingRequired`, answered 503 `funding_required`. Task generation keeps its built-in fallback, so its unfunded case is logged. |
-| The paid rung is over budget | It is skipped (`budget`), as today. |
-| The capability is listed but its config is missing or invalid | 503 `capability_not_configured`. It never silently falls back to legacy. |
-| Legacy mode with a `learner_text` capability on a free or prompt-logging selection | 503, nothing sent (F-1). |
+| Primary (Ollama Cloud) down, slow or invalid after retries | The reviewed backup, if funded and within its cap. Otherwise the existing error (502/503) or the existing fallback (heuristic review when `ALLOW_FALLBACK`, built-in task). |
+| Paid rung unfunded under enforce | Skipped (`unfunded`). With no other rung: 503 `funding_required`. |
+| Paid rung over its cap | Skipped (`budget`). |
+| Meter exhausted | 429 `quota_exhausted` before any provider call. A cache or deterministic hit is still served. |
+| Capability listed but config missing or invalid | 503 `capability_not_configured`, never a silent legacy fallback. |
+| Primary not in the reviewed allowlist, or a local provider configured | Refused when the config is saved or loaded, and on the call. |
+| Legacy mode, `learner_text` capability, free or prompt-logging selection | 503, nothing sent. |
+| Covered-credit allowance exhausted | The rung's cost becomes `cash`; whether it still serves follows H7-7. |
 
-## 6. Test plan
+## 9. Test plan
 
 - **Routing switch:**
-  - unlisted capabilities behave exactly as today (legacy);
+  - an unlisted capability behaves as today;
   - a listed capability without a config answers 503;
   - a listed capability with a config uses its chain.
-- **Privacy:**
-  - a `learner_text` capability never reaches a free or prompt-logging rung, in capability mode or legacy mode;
-  - `cache_scope=shared` is refused for `learner_text`;
-  - a client-asserted `article:` id is never treated as published.
-- **Order:**
-  - feature access first (403 before any bypass);
-  - a stored or deterministic hit sends nothing;
-  - local before paid;
-  - an invalid local answer falls through only after retries;
-  - a valid local answer never reaches paid.
-- **Funding:**
-  - a paid rung inside an admission passes the live check;
-  - an expired hold between rungs gives no paid request;
-  - an unfunded paid rung on an unmetered path is skipped (enforce) or logged (log);
+- **Static policy:**
+  - an unreviewed primary is refused, and so is a local provider for a learner production capability;
+  - an unreviewed, unpriced or uncapped backup is refused;
+  - a `learner_text` capability never reaches a free tier, a prompt-logging provider, or an Ollama Cloud model whose
+    privacy is not reviewed;
+  - the same refusals hold in legacy mode (F-1).
+- **Meters and order:**
+  - feature access comes first;
+  - deterministic, stored and cache hits create no admission and no spend;
+  - a free or covered-credit call consumes the meter;
   - one settlement per operation across rungs and retries;
-  - every billable attempt is attributed to the same operation id.
-- **Units:** `writing.review` and `orena.message` consumption is unchanged per operation, for every rung that serves
-  it.
-- **Telemetry:** rung, tier, fallback reason and `billable_attempt` per attempt; the router rollup counts unchanged
-  for `word_translation`.
-- **Benchmark acceptance (offline, before listing a capability):** `writing_evaluation_benchmark_runner.py` and
-  equivalent golden sets for the improver and discussion. They compare the local model's validated-output rate and
-  quality against the paid baseline. The threshold is human decision H7-2.
-- **7C (when approved):**
-  - streaming unchanged;
-  - failover only before the first token;
-  - tool calls intact;
-  - per-round funding;
-  - no local or free rung for agent turns.
+  - the review refresh is now metered;
+  - an exhausted meter is refused before any provider call.
+- **Funding:**
+  - the paid and covered-credit rungs pass the live check inside the admission;
+  - an expired hold sends nothing;
+  - credits-funded operations settle from the snapshot, whatever rung answered;
+  - every billable attempt carries the same operation id and meter.
+- **Cost accounting:**
+  - an Ollama Cloud call is recorded at its catalogue price, never $0;
+  - `cost_coverage` reads `provider_credit` until the configured allowance is used, then `cash`.
+- **Cache isolation:**
+  - blocked paths are not routable;
+  - a client-asserted `article:` id is never treated as published;
+  - `cache_scope=shared` is refused for `learner_text`.
+- **Benchmark harness:** it produces the five measurements per proposed model. Acceptance is not a CI gate.
+- **7C (when approved):** streaming and tools intact, failover only before the first token, per-round funding.
 
-## 7. Rollout (everything off by default)
+## 10. Rollout (everything off by default)
 
-1. **7A code** behind `ORENA_CAPABILITY_ROUTING` (empty), with the legacy guard. Configs saved only by the operator.
-2. **List one capability at a time** after its benchmark acceptance. Watch the cost-model report (PR-MON-6 §8)
+1. **7A-first code**, with `ORENA_CAPABILITY_ROUTING` empty, no reviewed primary configured and the Ollama Cloud
+   credential absent. Nothing changes for learners.
+2. **Activation, per capability,** after H7-2 (primary accepted), H7-6 (privacy classification) and H7-7 (reference
+   price and covered allowance). The owner lists one capability at a time and watches the PR-MON-6 cost-model report
    per operation.
-3. **7B contracts.** Each is off until its capability config is saved and listed.
-4. **7C** only after H7-4.
+3. **7A-follow-up** only after cache isolation. **7B** only once `word.assist`, `reading.assist` and `writing.task`
+   have their plan limits. **7C** only after H7-4.
 
-Nothing here enables credits, quota enforcement or funding enforcement. It adds no price, pack or grant, and does
-not touch 0034.
+This rollout does not enable credits, quota enforcement or funding enforcement, configures no price, pack or grant,
+and does not touch 0034.
 
-## 8. Non-goals
+## 11. Non-goals
 
+- Local models as a production tier.
 - Config v2 and N-model pools.
 - An Admin pool editor redesign.
 - A persistent AI cache, a migration, or a new AI result table.
-- A new provider marketplace.
+- A provider marketplace.
 - Production activation.
 - New free model ids.
+- An assumed provider-credit API.
 - Any change to quota units.
-- Routing agent turns through the structured router.
-- Non-text paid paths (ASR, pronunciation, TTS, live voice, media pipeline).
-- Fixing the existing shared-cache leaks of F-2, which belong to their owners (flagged, H7-5).
+- Routing Intelligence through the structured router.
+- Non-text paid paths.
+- Fixing the shared-cache leaks themselves (owned by Reading and Dictionary; they block their paths, §7).
 
-## 9. Open human decisions
+## 12. Decisions
 
-| Id | Decision |
+| Id | State |
 | --- | --- |
-| H7-1 | **What "cheap paid" means.** This design uses the existing per-capability reviewed `paid_standby_models` allowlist, with a cap. The alternative would be a price threshold, which would be a new number. |
-| H7-2 | **Benchmark acceptance for a local primary,** per capability: the validated-output rate and quality versus the paid baseline. |
-| H7-3 | **Unmetered paid learner paths** (dictionary, the sheets, reading translate and summary, review refresh, agent greeting and compaction). Options: give them meters (PR-MON-6 H-2 limits), run them as `SystemFunding` under a USD cap, or keep them local- and free-only once funding is enforced. |
-| H7-4 | **Lift the 2026-09-27 ruling for agent turns,** making `agent_turn_fast` / `agent_turn_deep` configurable, for 7C. |
-| H7-5 | **The shared-cache leaks of F-2:** which lane owns the fix, and whether it blocks 7B. |
+| H7-1 | **APPROVED:** cheap paid is a per-capability reviewed `(provider, model)` allowlist, priced in the catalogue, under a reviewed spend cap and normal validation. No global price threshold. |
+| H7-2 | **OPEN (activation):** which Ollama Cloud model is accepted as the covered-credit primary for each capability, judged on the benchmark (schema-valid rate, quality, critical failures, latency, cost) against the paid baseline. |
+| H7-3 | **APPROVED:** no learner AI path stays unmetered. The semantic meters are in §3. **OPEN:** the Free/Plus/Pro limits and granularity of `word.assist`, `reading.assist` and `writing.task` (PR-MON-6 H-2), needed before 7B and 7A-follow-up are enforced. |
+| H7-4 | **OPEN:** making `agent_turn_fast` / `agent_turn_deep` configurable for 7C (revisits the 2026-09-27 ruling). |
+| H7-5 | **DECIDED:** learner-boundary cache leaks block only their own paths (§7); public/published shared cache needs server-verified classification. **OPEN:** which lane fixes the isolation, and when. |
+| H7-6 | **OPEN:** Ollama Cloud's privacy and retention classification per model, needed before it may receive `learner_text`. |
+| H7-7 | **OPEN:** Ollama Cloud reference prices (if no per-token price is published) and the owner-configured covered-credit allowance, including whether a rung keeps serving as `cash` once the allowance is used. |
+| H7-8 | **OPEN:** the reviewed paid-backup `(provider, model)` and spend cap for each 7A-first capability. |
 
-## 10. Contradictions found
+## 13. Contradictions and findings
 
-- **D-195:** none with the decision itself. The proposal's §2.4 cache-scope rule is not enforced in code; 7A makes
-  it code (§5.3). The legacy runtime mode bypasses the D-195/D-104 privacy rule (F-1); 7A closes that.
-- **PR-MON-6:** none. F-5 (unmetered paid paths are refused under enforce) is PR-MON-6's own documented
-  precondition. PR-MON-7 does not change it and raises the choice as H7-3.
-- **Agent Contract and spec D2:** "local first" for Intelligence contradicts spec D2 (never a local model for agent
-  turns), and agent input is `learner_text`. So 7C tiers agent turns only within paid cloud providers (H7-4).
-- **Capability configuration:** `contextual_dictionary` is used but not catalogued (F-3). `learner_dictionary` and
-  `text_discussion` each carry two input classes (F-4).
+| Area | Finding |
+| --- | --- |
+| **D-195** | The decision itself is consistent. Its cache-scope rule (shared cache only for public or published input) is not in code; 7A-first adds it to contracts. The legacy runtime mode bypasses the D-195/D-104 privacy rule (F-1); 7A-first closes that. |
+| **PR-MON-6** | Consistent. The unmetered paid paths (F-5) are resolved by H7-3's semantic meters, whose limits stay a human gate (H-2). |
+| **Agent Contract / spec D2** | No local model for agent turns; revision 2 has no local production tier at all. 7C may evaluate Ollama Cloud as a cloud agent provider only under its own review. |
+| **Capability configuration** | `contextual_dictionary` is used but not catalogued (F-3). `learner_dictionary` and `text_discussion` each carry two input classes, so the public uses get their own keys (F-4). Capabilities have no notion of a reviewed primary yet; 7A-first adds `reviewed_primary_models` (§4.2). |
+| **Shared caches** | Shared caches serve learner-derived content across accounts (F-2): the DerivedCache trusts a client-asserted `article:` id, and the word-deep cache key ignores context. The affected paths are blocked (§7). |
