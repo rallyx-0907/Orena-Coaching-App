@@ -7,6 +7,7 @@ is a 404 - the answer an identity nothing holds gets - so existence is not leake
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -51,6 +52,14 @@ def env(monkeypatch: pytest.MonkeyPatch, tmp_path: Path):
     store.upsert(_entry(f"upload-{TOKEN}", library="personal", owner="alice"))
     store.upsert(_entry("upload-" + "b" * 32, library="personal", owner=None, token="b" * 32))  # written before owners existed
     store.upsert(_entry("shared-one", library="shared", token="c" * 32))
+    # The shared file is owned by a published shared direct import (#216: a file no entry owns is not served).
+    shared_direct = replace(
+        _entry("direct-shared", library="shared", token="shared"),
+        provider="direct",
+        playback={"provider": "orena", "kind": "audio", "url": "/api/media/files/media/direct-shared/original.wav"},
+        thumbnail={"kind": "none", "ref": ""},
+    )
+    store.upsert(shared_direct)
     monkeypatch.setattr(media_library_api, "_store", store)
     monkeypatch.setattr(media_library_api, "_asset_store", assets)
     monkeypatch.setattr(listening_api, "_media_store", store)
