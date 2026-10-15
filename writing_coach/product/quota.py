@@ -937,12 +937,12 @@ def _fund(meter: str, units: int, op: str, incarnation: str, bucket: Any, *, pla
     if outcome.status == "operation_conflict":
         raise orena_http_error(409, "operation_conflict", "This request key was used for another request.",
                                retryable=False)
-    if outcome.status == "operation_completed":
-        raise orena_http_error(409, "operation_completed",
-                               "This request was already processed. Send it again as a new request.", retryable=False)
-    if outcome.status == "operation_closed":
-        raise orena_http_error(409, "operation_closed",
-                               "This request ended without a result. Send it again as a new request.", retryable=False)
+    if outcome.status in ("operation_completed", "operation_closed"):
+        # Design §5.4's two terminal answers, under the gate's existing category (the agent contract's §2.1 rows):
+        # `context.state` says which - completed (settled) or closed (released / refused).
+        raise orena_http_error(409, "operation_finished",
+                               "This request was already processed. Send it again as a new request.",
+                               retryable=False, context={"state": outcome.status.removeprefix("operation_")})
     refusal = outcome.refusal
     allowance = refusal.facts.get("allowance") or {}
     used = int(allowance.get("consumed") or 0) + int(allowance.get("reserved") or 0)

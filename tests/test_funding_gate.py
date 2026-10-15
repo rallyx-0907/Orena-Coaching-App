@@ -161,16 +161,18 @@ def test_a_refusal_is_429_quota_exhausted_with_the_reason_and_the_options():
     assert context["used"] == 2   # the existing envelope keys stay
 
 
-@pytest.mark.parametrize(("status", "category"), [("operation_conflict", "operation_conflict"),
-                                                  ("operation_completed", "operation_completed"),
-                                                  ("operation_closed", "operation_closed")])
-def test_a_decided_operation_answers_409(status, category):
+@pytest.mark.parametrize(("status", "category", "state"), [("operation_conflict", "operation_conflict", None),
+                                                           ("operation_completed", "operation_finished", "completed"),
+                                                           ("operation_closed", "operation_finished", "closed")])
+def test_a_decided_operation_answers_409(status, category, state):
     enforced_runtime()
     quota.configure_funding(FakeFunding(AdmissionOutcome(status)))
     with pytest.raises(HTTPException) as refused:
         with quota.admit("writing.review", request_digest="x"):
             pass
     assert refused.value.status_code == 409 and refused.value.detail["category"] == category
+    if state is not None:
+        assert refused.value.detail["context"]["state"] == state
 
 
 def test_without_funding_attached_the_gate_is_unchanged():
