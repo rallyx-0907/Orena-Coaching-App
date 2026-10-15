@@ -44,7 +44,10 @@ def _platform_generate(**kwargs: Any) -> dict[str, Any]:
     from writing_coach.ai.platform import generate_structured
 
     try:
-        result = generate_structured(capability_key="text_discussion", temperature=0.2, seed=42, **kwargs)
+        # Not routed with `text_discussion` (PR-MON-7A-first): the summary's shared cache keeps it out of the routed
+        # slice until its own key and cache isolation (design revision 2.1, F-2/F-4).
+        result = generate_structured(capability_key="text_discussion", temperature=0.2, seed=42, routable=False,
+                                     **kwargs)
     except (AIProviderError, AICapabilityError) as exc:
         raise SummaryUnavailable(type(exc).__name__) from exc
     return result.data if isinstance(result.data, dict) else {}

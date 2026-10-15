@@ -61,6 +61,10 @@ class AICapabilityDefinition:
     paid_standby_cap_policy: str = ""
     # The only paid (provider, model) pairs that standby may be: cheap, non-reasoning and priced in the catalogue.
     paid_standby_models: frozenset[tuple[str, str]] = frozenset()
+    # PR-MON-7 (design revision 2.1 §4.2): the (provider, model) pairs reviewed as this capability's primary when it is
+    # routed (`ORENA_CAPABILITY_ROUTING`). Empty = the capability cannot be routed; it stays on the legacy selection.
+    # No model is reviewed yet (human decisions H7-2, H7-8).
+    reviewed_primary_models: frozenset[tuple[str, str]] = frozenset()
 
 
 INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
@@ -80,6 +84,7 @@ def _definition(
     free_primary_only: bool = False,
     paid_standby_cap_policy: str = "",
     paid_standby_models: frozenset[tuple[str, str]] = frozenset(),
+    reviewed_primary_models: frozenset[tuple[str, str]] = frozenset(),
 ) -> AICapabilityDefinition:
     if input_class not in INPUT_CLASSES:
         raise ValueError(f"Invalid input class for {key!r}: {input_class!r}")
@@ -101,6 +106,7 @@ def _definition(
         free_primary_only=free_primary_only,
         paid_standby_cap_policy=paid_standby_cap_policy,
         paid_standby_models=paid_standby_models,
+        reviewed_primary_models=reviewed_primary_models,
     )
 
 

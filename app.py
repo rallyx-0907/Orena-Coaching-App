@@ -1829,6 +1829,12 @@ def heuristic_fallback(payload: EssayIn) -> dict[str, Any]:
     return validate_result({**raw, "__learner_text": text, "__support_language": support_code})
 
 
+def _funding_required_error() -> type[Exception]:
+    from writing_coach.billing.funding_context import FundingRequired
+
+    return FundingRequired
+
+
 def evaluate(
     payload: EssayIn,
     *,
@@ -1858,6 +1864,14 @@ def evaluate(
             502,
             "evaluation_provider_failure",
             "AI evaluation could not produce a usable result.",
+        ) from exc
+    except AICapabilityError as exc:
+        # PR-MON-7: a routed capability without a valid reviewed configuration. Never a silent legacy fallback and
+        # never a 500; the heuristic is not used for a configuration fault.
+        raise orena_http_error(
+            503,
+            "evaluation_unavailable",
+            "AI evaluation is temporarily unavailable. Please try again.",
         ) from exc
 
 # N-36 point 1 (docs/project/UI_BACKEND_GAPS.md): the list route strips the
@@ -2915,6 +2929,11 @@ def api_improve(payload: ImproveIn) -> dict[str, Any]:
             result = improve_with_ai(payload)
         except requests.RequestException as exc:
             raise HTTPException(503, "AI engine is unavailable for writing improvement.") from exc
+        except AICapabilityError as exc:
+            # PR-MON-7: a routed capability without a valid reviewed configuration is unavailable, never a 502.
+            raise HTTPException(503, "AI engine is unavailable for writing improvement.") from exc
+        except _funding_required_error():
+            raise   # I-1 (PR-MON-6): answered 503 funding_required by its own handler
         except Exception as exc:
             raise HTTPException(502, "The improvement model returned invalid structured output.") from exc
         ticket.settle(1, "improve")
@@ -3572,45 +3591,57 @@ def essay_review_refresh(essay_id: int) -> dict[str, Any]:
     )
     if same_review(new_identity, stored):
         return _refresh_answer(essay_id, "current")
-    # Not metered (D-161, default pending the human): a refresh is Orena repairing its own contract change, at most
-    # one per essay per change - the learner did not ask for a new review.
+    # PR-MON-7 (H7-3, owner decision 2026-10-15): a refresh that calls remote AI is one `writing.review`, admitted after
+    # the stored-review checks (a current review costs nothing) and before any provider call. A refresh that cannot be
+    # earned settles 0.
     with _review_gate(f"refresh:{essay_id}:{prior}"):
         fresh = _learning_repository.get_essay(essay_id)
         if not fresh or identity_of_stored(row_to_dict(fresh, detail=True).get("module_data")).get("fingerprint") != prior:
             return _refresh_answer(essay_id, "current")
-        try:
-            result, evaluator = evaluate(
-                EssayIn(
-                    text=str(detail.get("text") or ""),
-                    prompt=str(detail.get("prompt") or ""),
-                    target_cefr=(str(detail.get("target_cefr") or "") or None),
-                ),
-                support=(support_code, definition.translation_label),
-                allow_fallback=False,
-            )
-            if evaluator == "fallback-demo":
-                raise RuntimeError("a fallback evaluation is never stored")
-            result = _bounded_review(result)
-        except Exception:  # noqa: BLE001 - a refresh that cannot be earned writes nothing and can be retried
-            logging.getLogger(__name__).warning("essay review refresh unavailable", exc_info=True)
-            return _refresh_answer(essay_id, "unavailable")
-        outcome = _specialized_learning_repository.refresh_essay_review(
-            essay_id,
-            prior,
-            {
-                **{name: result[name] for name in ("grammar", "vocabulary", "coherence", "task_achievement", "naturalness")},
-                "overall": weighted_overall(result),
-                "cefr_estimate": result["cefr_estimate"],
-                "evaluator": evaluator,
-                "summary_vi": result["summary_vi"],
-                "strengths": result["strengths_vi"],
-                "strength_evidence": result["strength_evidence"],
-                "priorities": result["priorities_vi"],
-                "errors": result["errors"],
-            },
-            new_identity,
-            datetime.now().astimezone().isoformat(timespec="seconds"),
+        digest = _quota.request_digest(f"refresh:{essay_id}:{prior}:{new_identity['fingerprint']}")
+        with _quota.admit("writing.review", request_digest=digest) as ticket:
+            return _refresh_with(ticket, essay_id, prior, detail, support_code, definition, new_identity)
+
+
+def _refresh_with(ticket: Any, essay_id: int, prior: str, detail: dict[str, Any], support_code: str, definition: Any,
+                  new_identity: dict[str, str]) -> dict[str, Any]:
+    """The refresh's provider work inside its `writing.review` admission: dispatched before the call, settled once."""
+    ticket.dispatch(f"refresh:{essay_id}")
+    try:
+        result, evaluator = evaluate(
+            EssayIn(
+                text=str(detail.get("text") or ""),
+                prompt=str(detail.get("prompt") or ""),
+                target_cefr=(str(detail.get("target_cefr") or "") or None),
+            ),
+            support=(support_code, definition.translation_label),
+            allow_fallback=False,
         )
+        if evaluator == "fallback-demo":
+            raise RuntimeError("a fallback evaluation is never stored")
+        result = _bounded_review(result)
+    except Exception:  # noqa: BLE001 - a refresh that cannot be earned writes nothing and can be retried
+        logging.getLogger(__name__).warning("essay review refresh unavailable", exc_info=True)
+        ticket.settle(0, "refresh_unavailable")
+        return _refresh_answer(essay_id, "unavailable")
+    outcome = _specialized_learning_repository.refresh_essay_review(
+        essay_id,
+        prior,
+        {
+            **{name: result[name] for name in ("grammar", "vocabulary", "coherence", "task_achievement", "naturalness")},
+            "overall": weighted_overall(result),
+            "cefr_estimate": result["cefr_estimate"],
+            "evaluator": evaluator,
+            "summary_vi": result["summary_vi"],
+            "strengths": result["strengths_vi"],
+            "strength_evidence": result["strength_evidence"],
+            "priorities": result["priorities_vi"],
+            "errors": result["errors"],
+        },
+        new_identity,
+        datetime.now().astimezone().isoformat(timespec="seconds"),
+    )
+    ticket.settle(1, "refresh")
     return _refresh_answer(essay_id, "refreshed" if outcome["status"] == "refreshed" else "current")
 
 

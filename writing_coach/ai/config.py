@@ -186,6 +186,86 @@ def _check_tiers(definition: AICapabilityDefinition, config: CapabilityConfig, *
             )
 
 
+# PR-MON-7A-first: the only capabilities `ORENA_CAPABILITY_ROUTING` may list. Each has an account-scoped stored result
+# (or none) and an existing learner meter (`writing.review`, `orena.message`). Every other capability stays on the
+# legacy selection until its own slice (7A-follow-up after cache isolation, 7B, 7C).
+ROUTABLE_CAPABILITIES = frozenset({"writing_evaluator", "writing_improver", "text_discussion"})
+# The daily cap of each routed capability's reviewed paid backup (a `writing_coach.policies` key; default 0 = no paid
+# backup, H7-8). It applies only while the capability is routed: on the legacy path nothing changes.
+ROUTED_BACKUP_CAP_POLICY = {
+    "writing_evaluator": "writing_evaluator.daily_spend_cap_usd",
+    "writing_improver": "writing_improver.daily_spend_cap_usd",
+    "text_discussion": "text_discussion.daily_spend_cap_usd",
+}
+assert set(ROUTED_BACKUP_CAP_POLICY) == ROUTABLE_CAPABILITIES
+
+
+def routed_definition(capability_key: str) -> AICapabilityDefinition:
+    """The capability's definition as a routed call sees it: with its routed backup cap policy."""
+    import dataclasses
+
+    definition = require_capability(capability_key)
+    cap = ROUTED_BACKUP_CAP_POLICY.get(definition.key)
+    return dataclasses.replace(definition, paid_standby_cap_policy=cap) if cap else definition
+
+
+def validate_routed_policy(capability_key: str, config: CapabilityConfig, *, enforce_cap: bool = True) -> None:
+    """The static policy of a routed capability (PR-MON-7 design revision 2.1, §4.2), on top of
+    `validate_capability_config`. Refused:
+    - a capability that is not routable in this build;
+    - a primary outside the capability's reviewed primary allowlist;
+    - a local provider anywhere in the chain (production has no local-model tier);
+    - for learner text: a free tier, a prompt-logging provider, or a model whose provider requires a per-model privacy
+      review that has not been given (Ollama Cloud, H7-6);
+    - a backup outside the capability's reviewed paid-backup allowlist, an unpriced paid model, or (when saving) a
+      paid backup without a readable daily cap above zero."""
+
+    definition = require_capability(capability_key)
+    if definition.key not in ROUTABLE_CAPABILITIES:
+        raise AICapabilityConfigInvalid(f"{definition.key!r} cannot be routed in this build (PR-MON-7A-first).")
+    pool = [("primary", config.provider, config.model)]
+    if config.backup_provider is not None:
+        pool.append(("backup", config.backup_provider, config.backup_model or ""))
+    if (config.provider, config.model) not in definition.reviewed_primary_models:
+        raise AICapabilityConfigInvalid(
+            f"{definition.key!r} accepts only a reviewed primary: {config.provider!r} / {config.model!r} is not one."
+        )
+    for role, provider_id, model in pool:
+        provider = get_provider_definition(provider_id)
+        if provider is None or provider.kind == "local":
+            raise AICapabilityConfigInvalid(
+                f"{definition.key!r} has no local-model production tier: {role} {provider_id!r} is refused."
+            )
+        if definition.input_class == "learner_text":
+            if provider.may_log_prompts or is_free_model(provider_id, model):
+                raise AICapabilityConfigInvalid(
+                    f"{definition.key!r} carries learner text: {role} {provider_id!r} / {model!r} is refused."
+                )
+            if provider.learner_text_models is not None and model not in provider.learner_text_models:
+                raise AICapabilityConfigInvalid(
+                    f"{definition.key!r} carries learner text: {provider_id!r} / {model!r} has no reviewed privacy "
+                    "classification for it."
+                )
+        if provider_tier(provider_id, model) == "paid" and resolve_token_pricing(provider_id, model) is None:
+            raise AICapabilityConfigInvalid(f"{definition.key!r}: {role} {provider_id!r} / {model!r} is unpriced.")
+    if config.backup_provider is not None:
+        label = f"{config.backup_provider!r} / {config.backup_model!r}"
+        if (config.backup_provider, config.backup_model) not in definition.paid_standby_models:
+            raise AICapabilityConfigInvalid(f"{definition.key!r} accepts only a reviewed backup: {label} is not one.")
+        if enforce_cap:
+            from writing_coach import policies
+
+            cap_key = ROUTED_BACKUP_CAP_POLICY.get(definition.key, "")
+            try:
+                cap = float(policies.value_strict(cap_key) or 0) if cap_key else 0.0
+            except Exception as exc:  # noqa: BLE001 - an unreadable cap is not a cap
+                raise AICapabilityConfigInvalid(f"{definition.key!r}: the backup's daily cap is unreadable.") from exc
+            if not cap > 0:
+                raise AICapabilityConfigInvalid(
+                    f"{definition.key!r} accepts a paid backup only with a daily spend cap above zero ({cap_key})."
+                )
+
+
 def validate_capability_config(
     capability_key: str,
     config: CapabilityConfig,

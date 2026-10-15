@@ -155,6 +155,14 @@ POLICIES: tuple[Policy, ...] = (
     # cap, or at 0, the capability falls back to its free pool only; an unreadable ledger counts as the cap reached.
     _p("word_translation.daily_spend_cap_usd", "spend", "float", 0.5, unit="usd", low=0, high=100,
        env="WORD_TRANSLATION_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
+    # PR-MON-7A-first: the daily cap of each routed capability's reviewed paid backup. 0 (the default) = no paid
+    # backup: the chain stops at its reviewed primary. The numbers are the owner's (H7-8), never chosen here.
+    _p("writing_evaluator.daily_spend_cap_usd", "spend", "float", 0.0, unit="usd", low=0, high=100,
+       env="WRITING_EVALUATOR_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
+    _p("writing_improver.daily_spend_cap_usd", "spend", "float", 0.0, unit="usd", low=0, high=100,
+       env="WRITING_IMPROVER_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
+    _p("text_discussion.daily_spend_cap_usd", "spend", "float", 0.0, unit="usd", low=0, high=100,
+       env="TEXT_DISCUSSION_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
 )
 
 BY_KEY: dict[str, Policy] = {item.key: item for item in POLICIES}
