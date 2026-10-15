@@ -470,6 +470,9 @@ class MediaSourceImporter:
             if tags:
                 lesson["tags"] = tags
             changes["lesson"] = lesson
+        if item.get("transcript_policy") == "captions_only" and entry.provider == "youtube":
+            # Only a provider with captions has a policy; the default is stored as nothing (D-214).
+            changes["source"] = {**entry.source, "transcript_policy": "captions_only"}
         requested_poster = item.get("thumbnail_url")
         if isinstance(requested_poster, str) and requested_poster.strip() and entry.provider == "youtube":
             poster = provider_poster_url("youtube", entry.provider_media_id, requested_poster.strip())
