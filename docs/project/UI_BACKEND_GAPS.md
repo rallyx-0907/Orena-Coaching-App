@@ -6300,3 +6300,7 @@ Not fixed, logged (the balance "—" is no longer open: owner decision of 2026-1
   cover a word save from a preview.
 - **64 MiB media cap, owner decision.** Unchanged; `media_too_large` is reported. Raise the cap or move to streaming / chunked
   processing: decided after the Phase 2 size distribution (D-207 §4, D-210 §3).
+
+## Caption-only import has no place in the Import media form (D-214 proposed, 2026-10-15)
+
+`POST /api/admin/console/imports/media` and `POST /api/media-learning/admin/import` accept `transcript_policy` (`captions_or_asr`, the default, or `captions_only`) on the batch and on each item. With `captions_only`, a refused or empty caption fetch ends the item `failed` with `captions_unavailable` before any audio download or speech recognition. The pinned `Orena-Admin.dc.html` "Import media" form (A11) draws a URL field, Preview and Import only, so the option is API-only and no control was added. Needs a design decision: a toggle or select on the form (and whether the Reprocess block should offer the same choice for an item imported as `captions_only`).

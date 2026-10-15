@@ -87,6 +87,14 @@ STATE_FAILED = "failed"  # no usable transcript; retryable
 ORIGIN_CAPTION = "provider_caption"
 ORIGIN_ASR = "generated_asr"
 
+# What an import may do when the provider's captions cannot be had (D-214). `captions_or_asr` (the default, and what an
+# item with no policy means) listens to the audio instead; `captions_only` stops there, before any audio download or
+# speech recognition, so nothing is spent. Stored on the item's `source`, so a re-run keeps it.
+SOURCE_TRANSCRIPT_POLICY = "transcript_policy"
+POLICY_DEFAULT = "captions_or_asr"
+POLICY_CAPTIONS_ONLY = "captions_only"
+TRANSCRIPT_POLICIES = (POLICY_DEFAULT, POLICY_CAPTIONS_ONLY)
+
 CHUNK_SECONDS = 600
 MAX_ATTEMPTS = 3
 AUDIO_FORMAT_TIMEOUT = 600
@@ -111,7 +119,10 @@ CONTINUATION_MAX_ATTEMPTS = 6
 CONTINUATION_BUDGET_SECONDS = 1800.0
 CONTINUATION_MIN_DELAY = 20.0
 CONTINUATION_DEFAULT_DELAY = 65.0
-CONTINUATION_MAX_DELAY = 300.0
+# One wait may be as long as the provider asked, up to this. D-211 set 300 s; the 2026-10-15 trial's 429 asked for 521 s (the
+# per-minute token bucket resets in about 58 s, so the longer ask is another allowance) and no continuation was armed. 900 s
+# fits the 1800 s budget; a wait beyond it (a daily allowance asks for hours) is still never promised (D-214).
+CONTINUATION_MAX_DELAY = 900.0
 CONTINUATION_ROUNDS = 2
 
 
@@ -136,8 +147,8 @@ REASON_MESSAGES: dict[str, str] = {
     "duration_mismatch": "The audio is longer than the length reserved when it was imported.",
     "pipeline_interrupted": "Processing was interrupted too many times.",
     "pipeline_error": "The transcript pipeline failed unexpectedly. The server log has the details.",
-    "captions_unavailable": "The provider's captions could not be fetched this time. The stored caption transcript was kept and speech recognition was not run.",
-    "captions_unusable": "The provider's captions were not good enough to use. The stored caption transcript was kept and speech recognition was not run.",
+    "captions_unavailable": "The provider's captions could not be fetched this time. Speech recognition was not run; any stored captions were kept.",
+    "captions_unusable": "The provider's captions were not good enough to use. Speech recognition was not run; any stored captions were kept.",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
     "spend_cap_batch_ai": "The AI spend limit for this batch was reached.",
@@ -777,6 +788,10 @@ class MediaPipeline:
             if self._keeps_captions(entry):
                 # The stored transcript is the provider's own captions and they cannot be had now: it stays, and the
                 # audio is not listened to in its place (D-213). The item is restored by the caller.
+                raise PipelineStop(fallback or "captions_unavailable", captions_error)
+            if entry.source.get(SOURCE_TRANSCRIPT_POLICY) == POLICY_CAPTIONS_ONLY:
+                # The operator asked for captions or nothing (D-214): no audio is downloaded, no recognition runs, nothing
+                # is spent. The item fails with the stable reason and can be re-run once the provider answers.
                 raise PipelineStop(fallback or "captions_unavailable", captions_error)
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_fallback=fallback)
         try:

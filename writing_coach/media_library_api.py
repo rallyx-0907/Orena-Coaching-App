@@ -26,7 +26,7 @@ import re
 from pathlib import Path
 from urllib.parse import urlsplit
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, Request, UploadFile
 from starlette.concurrency import run_in_threadpool
@@ -125,11 +125,24 @@ class MediaImportItemIn(BaseModel):
     media_id: str | None = Field(default=None, max_length=255)
     thumbnail_url: str | None = Field(default=None, max_length=1024)
     rights_cleared: bool | None = None
+    # `captions_only`: when the provider's captions cannot be had, stop before any audio download or speech recognition
+    # (D-214). Unset takes the batch's value, then `captions_or_asr`, today's behaviour.
+    transcript_policy: Literal["captions_or_asr", "captions_only"] | None = None
 
 
 class MediaImportIn(BaseModel):
     language: str = Field(default="en", max_length=16)
     items: list[MediaImportItemIn] = Field(default_factory=list, max_length=MAX_IMPORT_URLS)
+    # The default for every item that names none.
+    transcript_policy: Literal["captions_or_asr", "captions_only"] | None = None
+
+
+def _items_with_policy(payload: MediaImportIn) -> list[dict[str, Any]]:
+    """The items as the importer reads them, each with its own transcript policy or the batch's."""
+    items = [item.model_dump() for item in payload.items]
+    for item in items:
+        item["transcript_policy"] = item.get("transcript_policy") or payload.transcript_policy
+    return items
 
 
 class LearnerSourceIn(BaseModel):
@@ -488,7 +501,7 @@ def admin_import(request: Request, payload: MediaImportIn) -> dict[str, Any]:
     _, _, importer = _installed()
     language = _require_language(payload.language)
     imported_by = str(user.get("email") or user.get("name") or "admin")[:120]
-    items = [item.model_dump() for item in payload.items]
+    items = _items_with_policy(payload)
     try:
         report = importer.import_urls(items, language=language, imported_by=imported_by)
     except Exception as exc:
