@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Callable
 from typing import Any
 from urllib.parse import urlsplit
@@ -17,6 +18,16 @@ from writing_coach.media_timing import (
 )
 
 _logger = logging.getLogger(__name__)
+
+_URL = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://\S*")
+
+
+def scrubbed_error(exc: BaseException) -> str:
+    """`Class: message` for a log line, with every URL removed: a provider's exception text can carry a signed,
+    short-lived googlevideo URL (expiry, signature, client address), which is a capability and not for a log."""
+    message = _URL.sub("<url>", " ".join(str(exc).split()))
+    return f"{type(exc).__name__}: {message}"[:200]
+
 
 # googlevideo serves a plain GET of an audio URL at about 30 KiB/s (no `ratebypass`), and the same URL in `Range` pieces at
 # full speed; this is the piece size yt-dlp itself uses. The whole download is also bounded in wall-clock time.
@@ -62,7 +73,7 @@ def download_audio(source_url, work, *, max_seconds):
         with YoutubeDL(options) as ydl:
             info = ydl.extract_info(source_url, download=False)
     except Exception as exc:  # noqa: BLE001 - one reason to the caller, but the cause is findable
-        _logger.warning("youtube audio metadata failed: %s: %s", type(exc).__name__, " ".join(str(exc).split())[:200])
+        _logger.warning("youtube audio metadata failed: %s", scrubbed_error(exc))
         raise PipelineStop("audio_unavailable") from exc
     duration = info.get("duration") if isinstance(info, dict) else None
     if not isinstance(duration, (int, float)) or duration <= 0:

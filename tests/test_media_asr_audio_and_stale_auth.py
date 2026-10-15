@@ -110,18 +110,163 @@ def test_a_host_that_ignores_range_cannot_exceed_the_cap(tmp_path, monkeypatch):
 def test_a_download_that_drips_is_stopped_by_the_wall_clock_not_the_socket(tmp_path, monkeypatch):
     now = [0.0]
 
+    reads = [0]
+
     class _Slow(_Body):
         status, headers = 200, {}
 
         def read(self, size=-1):
+            reads[0] += 1
             now[0] += 10.0  # each read "returns" within the socket timeout, ten seconds later
+            if reads[0] > 1000:
+                raise AssertionError("the wall clock did not stop the download")
             return b"x"
 
     monkeypatch.setattr(media_safe_fetch.time, "monotonic", lambda: now[0])
     monkeypatch.setattr(media_safe_fetch, "_open", lambda url, **kwargs: _Slow(b""))
-    with pytest.raises(UnsafeMediaFetch):
+    with pytest.raises(UnsafeMediaFetch, match="took too long") as raised:
         download_bounded("https://media.example/a.m4a", tmp_path / "s.bin", range_chunk_bytes=400, total_timeout=30)
+    assert raised.value.too_large is False and reads[0] <= 5
     assert not (tmp_path / "s.bin").exists()
+
+
+# -- 1b. the pieces must be contiguous and add up --------------------------------------------------------------------
+
+
+class _Scripted:
+    """Answers each request with the next prepared reply; a reply may be an exception to raise."""
+
+    def __init__(self, *replies) -> None:
+        self.replies, self.requests = list(replies), []
+
+    def __call__(self, url, *, headers=None, **_kwargs):
+        self.requests.append(dict(headers or {}))
+        reply = self.replies.pop(0)
+        if isinstance(reply, BaseException):
+            raise reply
+        return reply
+
+
+def _partial(first: int, last: int, total: str, body: bytes | None = None) -> _Reply:
+    return _Reply(206, body if body is not None else b"x" * (last - first + 1), {"Content-Range": f"bytes {first}-{last}/{total}"})
+
+
+def _run(tmp_path: Path, monkeypatch, server, **kwargs) -> Path:
+    monkeypatch.setattr(media_safe_fetch, "_open", server)
+    destination = tmp_path / "s.bin"
+    download_bounded("https://media.example/a.m4a", destination, range_chunk_bytes=400, **kwargs)
+    return destination
+
+
+def test_a_piece_that_does_not_start_where_the_last_one_ended_fails_the_download(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "1000"), _partial(0, 399, "1000"), _partial(0, 399, "1000"))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+    assert not (tmp_path / "s.bin").exists()
+
+
+def test_a_total_smaller_than_the_bytes_received_fails_the_download(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "10"))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+    assert not (tmp_path / "s.bin").exists()
+
+
+def test_a_total_that_changes_between_pieces_fails_the_download(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "1000"), _partial(400, 799, "900"))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+
+
+def test_a_host_that_stops_short_of_the_advertised_total_fails_the_download(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "1000"), _Reply(206, b"", {"Content-Range": "bytes 400-799/1000"}))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+    assert not (tmp_path / "s.bin").exists()
+
+
+def test_a_200_after_a_206_fails_the_download(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "800"), _Reply(200, b"y" * 800, {}))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+    assert not (tmp_path / "s.bin").exists()
+
+
+def test_a_piece_without_a_content_range_after_the_first_fails_the_download(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "*"), _Reply(206, b"x" * 400, {}))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+
+
+def test_a_file_of_an_exact_multiple_with_a_known_total_needs_no_extra_request(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "800"), _partial(400, 799, "800"))
+    assert _run(tmp_path, monkeypatch, server).stat().st_size == 800 and len(server.requests) == 2
+
+
+def test_a_file_of_an_exact_multiple_with_an_unknown_total_ends_at_the_416(tmp_path, monkeypatch):
+    unsatisfiable = media_safe_fetch._unsafe("The media address could not be fetched.", 416)
+    server = _Scripted(_partial(0, 399, "*"), _partial(400, 799, "*"), unsatisfiable)
+    assert _run(tmp_path, monkeypatch, server).stat().st_size == 800
+
+
+def test_a_416_before_any_byte_is_a_failure(tmp_path, monkeypatch):
+    server = _Scripted(media_safe_fetch._unsafe("The media address could not be fetched.", 416))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+
+
+def test_a_416_with_a_known_total_not_yet_reached_fails_the_download(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "1000"), media_safe_fetch._unsafe("The media address could not be fetched.", 416))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+    assert not (tmp_path / "s.bin").exists()
+
+
+def test_a_piece_that_fails_midway_leaves_no_partial_file(tmp_path, monkeypatch):
+    server = _Scripted(_partial(0, 399, "1000"), media_safe_fetch._unsafe("The media address could not be fetched."))
+    with pytest.raises(UnsafeMediaFetch):
+        _run(tmp_path, monkeypatch, server)
+    assert not (tmp_path / "s.bin").exists()
+
+
+@pytest.mark.parametrize("failure", [RuntimeError("boom"), KeyboardInterrupt()])
+def test_any_exception_while_reading_leaves_no_partial_file(tmp_path, monkeypatch, failure):
+    class _Breaks(_Reply):
+        def read(self, size=-1):
+            if self._at:
+                raise failure
+            return super().read(100)
+
+    server = _Scripted(_Breaks(200, b"x" * 500, {}))
+    with pytest.raises(type(failure)):
+        _run(tmp_path, monkeypatch, server)
+    assert not (tmp_path / "s.bin").exists()
+
+
+# -- 1c. the failure logs carry no URL --------------------------------------------------------------------------------
+
+SIGNED = "https://rr1---sn-8pxuuxa.googlevideo.com/videoplayback?expire=1&sig=SECRETSIG&ip=1.2.3.4"
+
+
+def test_the_audio_failure_logs_carry_no_url_or_query(tmp_path, monkeypatch, caplog):
+    from writing_coach.media_transcript_pipeline import PipelineStop
+
+    monkeypatch.setattr(youtube_audio, "YoutubeDL", lambda options: _Ydl(OSError(f"unable to download {SIGNED}: timed out")))
+    with caplog.at_level(logging.WARNING):
+        with pytest.raises(PipelineStop):
+            youtube_audio.download_audio("https://www.youtube.com/watch?v=D_IcGTgWoZY", tmp_path, max_seconds=3600)
+        store, entry, pipeline = _world(tmp_path / "w", ingestion=Ingestion())
+
+        def fails(url, work, max_seconds):
+            raise OSError(f"HTTP Error 403 for url ({SIGNED}) 'quoted {SIGNED}'")
+
+        pipeline._youtube_audio = fails
+        with pytest.raises(PipelineStop):
+            pipeline._audio_source(None, entry, tmp_path, 3600)
+    text = " ".join(record.getMessage() for record in caplog.records)
+    assert "OSError" in text and "timed out" in text and "403" in text
+    for leaked in ("googlevideo", "SECRETSIG", "expire=", "1.2.3.4", "videoplayback"):
+        assert leaked not in text
 
 
 def test_a_ranged_download_checks_every_piece_through_the_same_boundary(tmp_path, monkeypatch):

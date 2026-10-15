@@ -231,10 +231,13 @@ def fetch_bounded(
 _READ_PIECE_BYTES: Final[int] = 64 * 1024
 
 
-def _content_range_total(value: str) -> int | None:
-    """The full length in a `Content-Range: bytes 0-99/1234` header, or None when it is absent or `*`."""
-    _, _, total = (value or "").partition("/")
-    return int(total) if total.strip().isdigit() else None
+def _content_range(value: str) -> tuple[int | None, int | None]:
+    """(first byte, full length) of a `Content-Range: bytes 0-99/1234` header; None for what is absent, `*` or malformed."""
+    unit, _, rest = (value or "").strip().partition(" ")
+    span, _, total = rest.partition("/")
+    first, _, last = span.partition("-")
+    start = int(first) if unit.casefold() == "bytes" and first.strip().isdigit() and last.strip().isdigit() else None
+    return start, (int(total) if start is not None and total.strip().isdigit() else None)
 
 
 def download_bounded(
@@ -298,25 +301,45 @@ def download_bounded(
             while known_length is None or total < known_length:
                 check_clock()
                 span = f"bytes={total}-{total + range_chunk_bytes - 1}"
-                with _open(url, timeout=timeout, max_redirects=max_redirects, allowed_hosts=allowed_hosts,
-                           user_agent=user_agent, headers={"Range": span}) as response:
-                    status = getattr(response, "status", 200)
-                    if status != 206:
+                try:
+                    response_cm = _open(url, timeout=timeout, max_redirects=max_redirects, allowed_hosts=allowed_hosts,
+                                        user_agent=user_agent, headers={"Range": span})
+                except UnsafeMediaFetch as refused:
+                    # 416 after bytes were written: the file ended exactly on a piece boundary (a total of `*`). With a
+                    # known total the check after the loop decides whether that was the end.
+                    if total and getattr(refused, "status_code", None) == 416:
+                        break
+                    raise
+                with response_cm as response:
+                    if getattr(response, "status", 200) != 206:
                         if total:
                             raise _unsafe("The media address could not be fetched.")
                         total += copy(response, output, max_bytes + 1)  # the host ignored Range: the whole body, same budget
                         return total
-                    known_length = _content_range_total(response.headers.get("Content-Range", ""))
-                    if known_length is not None and known_length > max_bytes:
-                        fail_too_large(output)
+                    start, advertised = _content_range(response.headers.get("Content-Range", ""))
+                    if start is None and total:
+                        raise _unsafe("The media address could not be fetched.")  # cannot prove this piece follows the last
+                    if start is not None and start != total:
+                        raise _unsafe("The media address could not be fetched.")  # not the piece asked for: corrupt audio
+                    if advertised is not None:
+                        if advertised > max_bytes:
+                            fail_too_large(output)
+                        if known_length is not None and advertised != known_length:
+                            raise _unsafe("The media address could not be fetched.")
+                        known_length = advertised
                     got = copy(response, output, range_chunk_bytes)
                     total += got
+                    if known_length is not None and total > known_length:
+                        raise _unsafe("The media address could not be fetched.")  # the advertised total was a lie
                     if got == 0 or (known_length is None and got < range_chunk_bytes):
                         break
-    except UnsafeMediaFetch:
-        destination.unlink(missing_ok=True)
-        raise
+            if known_length is not None and total != known_length:
+                raise _unsafe("The media address could not be fetched.")  # stopped short: truncated audio
     except OSError as exc:
         destination.unlink(missing_ok=True)
         raise _unsafe("The media address could not be fetched.") from exc
+    except BaseException:
+        # Whatever ended it - a refusal, a bug, an interrupt - no partial file stays behind.
+        destination.unlink(missing_ok=True)
+        raise
     return total

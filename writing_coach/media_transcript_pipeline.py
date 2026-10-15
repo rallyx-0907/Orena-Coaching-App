@@ -904,12 +904,14 @@ class MediaPipeline:
         if entry.provider == "youtube":
             if self._youtube_audio is None:
                 raise PipelineStop("audio_unavailable")
+            from writing_coach.media_providers.youtube_audio import scrubbed_error
+
             try:
                 return Path(self._youtube_audio(entry.canonical_url, work, max_seconds=max_seconds))
             except PipelineStop:
                 raise
             except Exception as exc:  # noqa: BLE001 - the provider refused or timed out; reported as one reason
-                _logger.warning("audio download failed for %s: %s: %s", entry.media_id, type(exc).__name__, " ".join(str(exc).split())[:200])
+                _logger.warning("audio download failed for %s: %s", entry.media_id, scrubbed_error(exc))
                 raise PipelineStop("audio_unavailable") from exc
         url = str((entry.playback or {}).get("url") or "")
         prefix = "/api/media/files/"
