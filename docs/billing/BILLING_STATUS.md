@@ -8,7 +8,7 @@
 | Branch | `feature/monetization-billing-v1` (lane); docs and slices land on `main` through their own PRs |
 | Main | `56921b0d` (#238 merged); #236 `2a2fff2c`, #233 `53dddafd`, #231 `5b20d5ff`, PR-MON-6 #223 `8abab02f` |
 | Last completed slice | Merged 2026-10-15: #231 (routing infrastructure, off), #233 (Reading cache isolation), #236 (plan meters `word.assist` / `reading.assist` / `writing.task` in the catalogue), #238 (pending speech/TTS meters). Reclassified by D-MON-029: Plan & Entitlements and AI Economics work, not Billing |
-| Active PR | PR-MON-8 design (docs only, `docs/billing/PR-MON-8_DESIGN.md`), draft for independent review |
+| Active PR | #242 PR-MON-8 design revision 2 (docs only: `PR-MON-8_DESIGN.md`, `BILLING_STATUS.md`), draft for re-review |
 | Current slice | **Billing / Commerce only** (D-MON-029): the production payment-ready list below. **Billing handles money. Plan & Entitlements handle access and usage limits. AI Economics handles provider/model selection and profit-quality optimization. No provider or model is globally fixed for Orena. Benchmark qualifies models per capability and is not a Billing completion gate.** (D-MON-029) |
 | Exact next action | Independent review of the PR-MON-8 design (Q1-Q5). Then the SePay adapter, gateway selection, feed reconciler and hermetic E2E. Sandbox `:8031` and SePay test mode after; public URL and live transfer are human gates. Separately, the operator gate for 0027 -> 0033 on each runtime |
 | Blockers | none for Billing engineering. Runtime: every PostgreSQL runtime is at its old head until the operator applies 0027 -> 0033; 0034 stays proposed; R-MON-014 not run; `CREDITS_ENABLED`, quota and funding enforcement off. H7-2 is **not** a Billing blocker (D-MON-029) |
