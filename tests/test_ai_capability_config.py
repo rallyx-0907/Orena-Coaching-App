@@ -173,6 +173,7 @@ def test_static_validation_and_provider_id_parity_require_no_network(monkeypatch
         "azure-speech": frozenset({AIOperation.PRONUNCIATION_EVALUATION}),
         "azure-openai": frozenset({text}),
         "ollama": frozenset({text}),
+        "ollama-cloud": frozenset({text}),  # PR-MON-7: structured text only; agent turns are a separate 7C review
         "openai": frozenset({text, agent}),
         "deepseek": frozenset({text, agent}),
         "groq": frozenset({text, agent}),

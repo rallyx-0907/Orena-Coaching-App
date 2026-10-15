@@ -159,6 +159,12 @@ export const en = {
   polHelp_word_tts_spend_cap_usd: 'The most generated word pronunciation may cost in total; at the cap no new audio is made.',
   pol_word_translation_daily_spend_cap_usd: 'Word translation daily cap',
   polHelp_word_translation_daily_spend_cap_usd: 'The most the paid standby of word translation may spend in a UTC day; at the cap, or at 0, only the free models are asked.',
+  pol_writing_evaluator_daily_spend_cap_usd: 'Writing review backup daily cap',
+  polHelp_writing_evaluator_daily_spend_cap_usd: 'The most the reviewed paid backup of writing review may spend in a UTC day while the capability is routed; at the cap, or at 0, only its reviewed primary is asked.',
+  pol_writing_improver_daily_spend_cap_usd: 'Writing improvement backup daily cap',
+  polHelp_writing_improver_daily_spend_cap_usd: 'The most the reviewed paid backup of writing improvement may spend in a UTC day while the capability is routed; at the cap, or at 0, only its reviewed primary is asked.',
+  pol_text_discussion_daily_spend_cap_usd: 'Text discussion backup daily cap',
+  polHelp_text_discussion_daily_spend_cap_usd: 'The most the reviewed paid backup of text discussion may spend in a UTC day while the capability is routed; at the cap, or at 0, only its reviewed primary is asked.',
 };
 
 export const vi = {
@@ -314,6 +320,12 @@ export const vi = {
   polHelp_word_tts_spend_cap_usd: 'Tổng chi phí tối đa cho phát âm từ do máy tạo; chạm mức trần thì không tạo thêm âm thanh mới.',
   pol_word_translation_daily_spend_cap_usd: 'Mức trần hằng ngày của dịch từ',
   polHelp_word_translation_daily_spend_cap_usd: 'Số tiền tối đa mô hình dự phòng tính phí của dịch từ được chi trong một ngày (UTC); chạm mức này, hoặc để 0, thì chỉ hỏi các mô hình miễn phí.',
+  pol_writing_evaluator_daily_spend_cap_usd: 'Mức trần hằng ngày của dự phòng chấm bài viết',
+  polHelp_writing_evaluator_daily_spend_cap_usd: 'Số tiền tối đa mô hình dự phòng tính phí đã duyệt của chấm bài viết được chi trong một ngày (UTC) khi tính năng đang được định tuyến; chạm mức này, hoặc để 0, thì chỉ hỏi mô hình chính đã duyệt.',
+  pol_writing_improver_daily_spend_cap_usd: 'Mức trần hằng ngày của dự phòng cải thiện bài viết',
+  polHelp_writing_improver_daily_spend_cap_usd: 'Số tiền tối đa mô hình dự phòng tính phí đã duyệt của cải thiện bài viết được chi trong một ngày (UTC) khi tính năng đang được định tuyến; chạm mức này, hoặc để 0, thì chỉ hỏi mô hình chính đã duyệt.',
+  pol_text_discussion_daily_spend_cap_usd: 'Mức trần hằng ngày của dự phòng thảo luận văn bản',
+  polHelp_text_discussion_daily_spend_cap_usd: 'Số tiền tối đa mô hình dự phòng tính phí đã duyệt của thảo luận văn bản được chi trong một ngày (UTC) khi tính năng đang được định tuyến; chạm mức này, hoặc để 0, thì chỉ hỏi mô hình chính đã duyệt.',
 };
 
 export const zh = {
@@ -469,4 +481,10 @@ export const zh = {
   polHelp_word_tts_spend_cap_usd: '生成单词发音累计最多可花费的金额；达到上限后不再生成新的音频。',
   pol_word_translation_daily_spend_cap_usd: '单词翻译每日上限',
   polHelp_word_translation_daily_spend_cap_usd: '单词翻译的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问免费模型。',
+  pol_writing_evaluator_daily_spend_cap_usd: '写作批改备用模型每日上限',
+  polHelp_writing_evaluator_daily_spend_cap_usd: '写作批改在启用路由时，已审核的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问已审核的主模型。',
+  pol_writing_improver_daily_spend_cap_usd: '写作润色备用模型每日上限',
+  polHelp_writing_improver_daily_spend_cap_usd: '写作润色在启用路由时，已审核的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问已审核的主模型。',
+  pol_text_discussion_daily_spend_cap_usd: '文本讨论备用模型每日上限',
+  polHelp_text_discussion_daily_spend_cap_usd: '文本讨论在启用路由时，已审核的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问已审核的主模型。',
 };
