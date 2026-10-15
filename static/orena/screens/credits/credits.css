@@ -361,6 +361,7 @@
   color: var(--muted);
 }
 .s-cr-note__badge {
+  flex: none; /* a longer note (vi) must not squeeze the pill below its text */
   padding: 3px 7px;
   border-radius: 6px;
   background: var(--surface2);
@@ -513,6 +514,10 @@
 .s-cr-sheet .o-sheet__foot {
   gap: 10px;
   padding: 16px 24px 22px;
+}
+/* A phone sheet's foot: kit.css keeps its bottom at 20px; the Credits Payment frame draws 22px (measured on the phone frame). */
+:root[data-device='mobile'] .s-cr-sheet .o-sheet__foot {
+  padding-bottom: max(22px, env(safe-area-inset-bottom, 0px));
 }
 .s-cr-sheet .o-sheet__foot > .s-cr-btn--sec {
   flex: 1;
