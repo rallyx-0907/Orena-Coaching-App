@@ -304,8 +304,11 @@ class MediaSourceImporter:
     def __init__(
         self, ingestion: MediaIngestionService, store: MediaLibraryStore, asset_store: BookAssetStore, *,
         pipeline: Any = None, duration_probe: Callable[[str], float | None] | None = None,
+        admin_ingestion: MediaIngestionService | None = None,
     ) -> None:
         self._ingestion = ingestion
+        # The acquisition service an operator's import and preview use (D-215); a learner's never does.
+        self._admin_ingestion = admin_ingestion
         self._store = store
         self._asset_store = asset_store
         self.pipeline = pipeline
@@ -593,7 +596,8 @@ class MediaSourceImporter:
 
     def _from_youtube(self, url: str, *, language: str, imported_by: str) -> MediaLibraryEntry:
         """The provider owns this source; Orena stores the reference, not the video."""
-        acquisition = self._ingestion.import_media(url, "en", language)
+        service = self._admin_ingestion if self._admin_ingestion is not None and imported_by != "learner" else self._ingestion
+        acquisition = service.import_media(url, "en", language)
         asset = acquisition.media_object.asset
         video_id = asset.asset_id.rsplit(":", 1)[-1]
         media_id = f"youtube-{video_id}"
@@ -623,6 +627,10 @@ class MediaSourceImporter:
                 # Which caption track the transcript is (manual or auto), or that the provider refused the captions (D-213).
                 "caption_kind": acquisition.provenance.get("caption_kind", ""),
                 "caption_status": acquisition.provenance.get("caption_status", ""),
+                # Captions that came from another provider than YouTube, and the language it returned (D-215).
+                "caption_provider": acquisition.provenance.get("caption_provider", ""),
+                "caption_language": acquisition.provenance.get("caption_language", ""),
+                "caption_error": acquisition.provenance.get("caption_error", ""),
             }),
             library="shared",
             created_at=_now(),

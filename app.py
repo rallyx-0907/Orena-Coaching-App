@@ -62,6 +62,8 @@ from writing_coach.media_fallback import SupadataMediaFallbackService
 from writing_coach.media_ingestion import MediaIngestionService
 from writing_coach.media_providers.supadata import SupadataTranscriptClient
 from writing_coach.media_recovery_policy import build_youtube_adapter
+from writing_coach.media_providers.caption_source import PolicyCaptionClient
+from writing_coach.media_providers.youtube import PublicYouTubeCaptionClient
 from writing_coach.media_providers.youtube_audio import YtDlpYouTubeAudioUrlResolver
 from writing_coach.media_timing import MediaTimingService
 from writing_coach.media_translation import (
@@ -597,6 +599,15 @@ _media_ingestion_service = MediaIngestionService(
     adapters=(build_youtube_adapter(),),
     source_language_supported=is_enabled,
 )
+# D-215: the ADMIN importer and pipeline have their own acquisition service, whose YouTube caption client follows
+# `media.caption_source` (default: YouTube, as before). A learner's import and preview never reach it, so they never call
+# Supadata. Native mode only, capped per day in the media spend ledger the pipeline below owns (read when first needed).
+_admin_media_ingestion_service = MediaIngestionService(
+    adapters=(build_youtube_adapter(caption_client=PolicyCaptionClient(
+        PublicYouTubeCaptionClient(), SupadataTranscriptClient.from_env(capability="media_caption_supadata"),
+        lambda: _media_pipeline.ledger)),),
+    source_language_supported=is_enabled,
+)
 configure_media_ingestion(_media_ingestion_service)
 # Which engine translates shared media, resolved once here and never re-decided
 # per request. Groq is the default because it answers in about a second where
@@ -835,6 +846,7 @@ _media_pipeline = MediaPipeline(
     ledger=SpendLedger(_media_library_root / "processing-spend.json"),
     asr=_speech_asr_provider,
     ingestion=_media_ingestion_service,
+    admin_ingestion=_admin_media_ingestion_service,
     youtube_audio=download_audio,
     meanings=prepare_media_meanings,
     # D-204: import never makes a network call per word; local CMUdict IPA, empty on a miss.
@@ -844,7 +856,8 @@ _media_pipeline = MediaPipeline(
 configure_media_library(
     _media_library_store,
     _media_library_assets,
-    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets, pipeline=_media_pipeline),
+    MediaSourceImporter(_media_ingestion_service, _media_library_store, _media_library_assets, pipeline=_media_pipeline,
+                        admin_ingestion=_admin_media_ingestion_service),
     admin_guard=require_admin,
     language_supported=is_enabled,
 )
