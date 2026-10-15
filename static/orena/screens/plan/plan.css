@@ -483,3 +483,75 @@
 .s-plan__scroll > .o-banner {
   width: 100%;
 }
+
+/* Plan & usage: the Credits card (screens/plan) */
+.s-plan-credits {
+  background: radial-gradient(100% 120% at 0% 0%, color-mix(in oklab, var(--spark) 10%, transparent), transparent 60%), var(--surface);
+  border-radius: 24px;
+  box-shadow: var(--sh1), inset 0 0 0 1px color-mix(in oklab, var(--spark-line) 60%, transparent);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.s-plan-credits__top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.s-plan-credits__id {
+  flex: 1;
+  min-width: 0;
+}
+.s-plan-credits__eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.s-plan-credits__bal {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.s-plan-credits__num {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+.s-plan-credits__unit {
+  font-size: 14px;
+  color: var(--muted);
+}
+.s-plan-credits__text {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+.s-plan-credits__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.s-plan-credits__add {
+  height: 42px;
+  padding: 0 18px;
+  border-radius: 13px;
+  border: 0;
+  background: var(--spark);
+  color: var(--spark-on);
+  font-weight: 650;
+  font-size: 14px;
+}
+.s-plan-credits__history {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 13px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+}

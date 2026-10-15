@@ -26,9 +26,10 @@ sys.path.insert(0, str(ROOT))
 from writing_coach.languages.chinese import lexicon  # noqa: E402
 
 OUT = ROOT / "writing_coach" / "languages" / "chinese" / "script_chars.json"
+MAP_OUT = ROOT / "writing_coach" / "languages" / "chinese" / "script_map.json"
 
 
-def derive() -> dict[str, str]:
+def derive(pairs_out: dict[str, set[str]] | None = None) -> dict[str, str]:
     pairs: dict[str, set[str]] = {}
     shared: set[str] = set()  # a headword some entry writes the same in both scripts (后, 台, 干)
     for char in lexicon._index()["offsets"]:
@@ -41,6 +42,8 @@ def derive() -> dict[str, str]:
                 shared.add(char)
             else:
                 pairs.setdefault(char, set()).add(entry.traditional)
+    if pairs_out is not None:
+        pairs_out.update(pairs)
     simplified_heads = set(pairs)
     traditional_forms = {form for forms in pairs.values() for form in forms}
     return {
@@ -54,19 +57,47 @@ def derive() -> dict[str, str]:
     }
 
 
+def derive_map() -> dict[str, object]:
+    """One-to-one character conversion tables, only where the dictionary is unambiguous.
+
+    `to_simplified`: a Traditional-only character that is the traditional form of exactly one Simplified headword.
+    `to_traditional`: a Simplified-only character with exactly one traditional form (发 -> 發 and 髮 is ambiguous,
+    so it is left alone: a wrong character is worse than a script left mixed, and the check then flags it).
+    """
+    pairs: dict[str, set[str]] = {}
+    table = derive(pairs)
+    simplified_only, traditional_only = set(table["simplified"]), set(table["traditional"])
+    sources: dict[str, set[str]] = {}
+    for simp, forms in pairs.items():
+        for form in forms:
+            sources.setdefault(form, set()).add(simp)
+    return {
+        "format": "orena.zh-script-map.v1",
+        "source": "CC-CEDICT",
+        "release": table["release"],
+        "licence": "CC BY-SA 4.0",
+        "notice": table["notice"],
+        "to_simplified": {t: next(iter(s)) for t, s in sorted(sources.items()) if t in traditional_only and len(s) == 1},
+        "to_traditional": {s: next(iter(f)) for s, f in sorted(pairs.items()) if s in simplified_only and len(f) == 1},
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     table = derive()
     text = json.dumps(table, ensure_ascii=False, indent=0) + "\n"
+    map_text = json.dumps(derive_map(), ensure_ascii=False, indent=0) + "\n"
     if args.check:
         current = OUT.read_text(encoding="utf-8") if OUT.is_file() else ""
-        if current != text:
-            print("script_chars.json is stale; run scripts/build_chinese_script_table.py")
+        current_map = MAP_OUT.read_text(encoding="utf-8") if MAP_OUT.is_file() else ""
+        if current != text or current_map != map_text:
+            print("script_chars.json or script_map.json is stale; run scripts/build_chinese_script_table.py")
             return 1
         return 0
     OUT.write_text(text, encoding="utf-8", newline="\n")
+    MAP_OUT.write_text(map_text, encoding="utf-8", newline="\n")
     print(f"simplified-only {len(table['simplified'])}, traditional-only {len(table['traditional'])}")
     return 0
 

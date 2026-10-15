@@ -6170,6 +6170,91 @@ distinct "built-in" origin mark on the row; (2) the Republish confirm body says 
 is immediate (pre-existing, shared with imported media); (3) Speaking's own authored catalogue is empty and has no Admin list, so
 it has no switch yet (the kind is added where its learner paths filter).
 
+
+## Credit top-up client (PR-MON-5 contract layer, 2026-10-14)
+
+The learner-side layer is `static/orena/product/credit-topup.js` (offers parsing, checkout with one operation id per
+purchase intent and a double-submit guard, error-code map, order watcher, history labels), `copy/credit-topup.js`
+(keys) and `api.billingOffers` / `api.billingCheckout`. Gate: `scripts/test_orena_credit_topup.mjs`. Credits are a
+one-time purchase, never a plan. Everything stays behind the backend's `ready` and `credit_packs`; migrations 0027-0033
+and `CREDITS_ENABLED` are not live. Missing backend data, no workaround written:
+
+- **CT-1 learner order status.** No learner endpoint reads an order. `GET /api/billing/offers` and
+  `POST /api/billing/checkout` are the only learner billing routes; the order code returned by checkout cannot be
+  looked up. Needed: `GET /api/billing/orders/{order_code}` (the caller's own order only) returning
+  `{ state: created|pending|paid|expired|cancelled|failed|refunded, credited: boolean, credit_units, amount_minor,
+  currency, expires_at }`. The watcher confirms only on `state == paid` and `credited == true`; `paid` alone is waiting.
+  Without it a payment can never be shown as confirmed, and the return URL is never trusted.
+  **GO-LIVE BLOCKER (independent review of PR #213, P1-1).** `CREDITS_ENABLED` and `credit_packs` must stay off until
+  this route ships: with the route absent the first poll answers 404, the watcher stops and the sheet can only say
+  "waiting for payment confirmation", never confirm. The route serves only the caller's own order (another learner's code
+  answers 404, not 403, so codes are not probed), and its `state` and `credited` must match what `orderStateFrom` reads.
+  The client has no kill switch of its own: `credit_packs` is the only runtime gate that hides the screen.
+  Client side (PR #213 design review P1-A): when the order route answers 404, or the watcher ends without a terminal state,
+  the sheet and the pending banner show the existing "Still waiting" line instead of staying silent; the route itself is still open.
+- **CT-2 learner balance.** Balance and ledger are admin-only (`/api/admin/billing/credits/{incarnation}`). Needed: a
+  learner read of the caller's own balance (posted, available) and a page of entries. Owner decision 2026-10-15 (D-210):
+  until it exists the balance shows "—" with its unit, not hidden and never a fake 0.
+- **CT-3 learner history shape.** Needed: only learner-meaningful entries (topup, settle, refund, reversal, adjustment),
+  each with `kind`, signed `posted_delta` and `created_at`, and no reason, actor, source or hold entries. The client maps
+  kinds to Buy/Use/Refund/Adjust credits and drops reserve, release and reserve_expire rows; it never shows backend terms.
+- **CT-4 resume an order.** `checkout_already_started` (409) returns no payment link. Needed: the pending order's
+  `redirect_url` and `qr` (or the order read in CT-1 carrying them) so a returning learner can resume.
+  Client behaviour until then: on `checkout_already_started` the client follows the order it already holds in this
+  session, otherwise shows the mapped friendly line and closes the sheet (no dead end, no resume possible).
+- **CT-5 pack display data.** A pack carries only `pack_id`, `credit_units`, `currency`, `amount_minor`, `gateway`.
+  Needed if a frame shows them: a display name, a bonus/base split and a "popular" flag, or the frame must not draw them.
+- **CT-6 QR expiry and return URL.** Checkout returns `qr` and `redirect_url` but no `expires_at`; the return URL is fixed
+  to `/#/profile` and carries no order code, so the app cannot tell which order a return belongs to. Needed: `expires_at`
+  in the checkout answer, and a return/cancel URL carrying the order code (or the last order via CT-1).
+- **CT-7 copy.** Strings in `copy/credit-topup.js` are placeholders until a frame confirms them.
+
+## Credits, Credits Payment, Plan & usage Credits card (2026-10-14 export; built on the CT-1..CT-7 client layer)
+
+Built from `Orena.dc.html` pinned by `SYNC_2026-10-14.md`: `screens/credits/` (Credits, `credits.css`, the payment sheet),
+the Credits card in `screens/plan/`, the Profile row, route `credits` (focus). Credits are never styled as a plan.
+Packs, price and units come only from `GET /api/billing/offers`; the sheet moves only on the backend's order state.
+Measured against the served design at 1920x1080 (desktop, Credits frame): font size, weight, letter spacing, radius,
+padding, gap and box size are equal for the title, hero, tile, balance, buttons, pack card, summary, filter, badges and
+"How Credits work". Differences, each a decision for the human:
+
+- **CT-8 no payment-string renderer, no transfer note.** The design draws a sample QR matrix and a "Transfer note" with
+  Copy. The backend returns the payOS payment string (`qr`) and describes the transfer as `OR<order_code>` internally.
+  The QR is rendered from the string with the vendored `qrcode-generator@1.4.4` (MIT, `static/orena/vendor/`): a new
+  dependency, for the human to accept. The transfer note and Copy are not drawn (the client must not invent the
+  `OR<code>` format); needed: `transfer_note` in the checkout answer.
+- **Unavailable state.** The design draws none for `credit_packs = []` or gated-off billing. Nothing is invented: the
+  Credits route returns to Plan & usage, and the Profile row and the Plan & usage card are not drawn. Decision: whether
+  the design should draw an "unavailable" Credits state (a learner holding a balance while packs are off sees no entry).
+- **Balance.** No learner endpoint (CT-2): the hero and card read "—" with the unit, never 0; the "Balance after" row,
+  the new-balance figure and the count-up animation are not drawn.
+- **Bonus and tag (CT-5).** The pack card has no benefit line or "Most chosen" tag, so a pack card is 29px shorter than
+  the design's.
+- **History (CT-3).** The card renders given rows (tile, Buy/Use/Refund/Adjust Credits label, signed amount, short date;
+  gate fixture in `test_orena_screen_credits.mjs`), but nothing serves them, so the list is empty and the design's empty
+  state shows. No data is faked. The design's per-feature icon, sub line and day groups need a feature per entry.
+- **Timer and expiry (CT-6).** The "Valid 15:00" countdown is not drawn (no `expires_at`). Expired is reached only from the
+  backend's `expired`/`cancelled`/`failed`/`refunded` order state.
+- **Receipt.** "Receipt sent to ..." is not drawn: the backend sends none.
+- **Prototype affordances not shipped:** "Let this QR expire", the "Prototype: the transfer is detected about 8 seconds
+  after" note, "Payments are simulated in this prototype", the simulated detection. No "I have paid" control exists in the
+  design or the app.
+- **Cancel payment.** The design toasts "Payment cancelled. Nothing was charged." The backend has no cancel call (CT-1):
+  the button closes the sheet and stops watching; the toast is not shown (an unpaid order expires by itself, and a payment
+  that still arrives is credited once).
+- **Checkout refusals.** The design draws no failure state; the refusal message (placeholder copy, CT-7) shows in the
+  existing toast, never the backend's words.
+- **Spark glyph.** The `cr-spark` mark is the design's own artwork, not a Lucide icon; rendered from a sprite
+  (`screens/credits/spark.js`) with its colours as tokens. Kit request: name it a brand mark beside `ol-mark`.
+- **Icons.** Lucide 0.525.0 added: `plus`, `qr-code`, `message-square-text`, `undo-2`, `loader`, `expand` (the design's
+  hand-typed "How Credits work" paths identified as `loader`, `expand`, `clock`, `pen-line`, `undo-2`).
+- **Tokens.** `--spark`, `--spark-ink`, `--spark-soft`, `--spark-line` are the design's (both themes); `--spark-on`,
+  `--spark-g0..2`, `--spark-tile-*`, `--spark-glow*`, `--qr-*` are scoped additions for values the frame writes inline.
+- **Pin.** The export carries a 12 KB `data-omelette-injected` editor block the earlier pin lacked; pinned as exported.
+- **Not measured:** the Plan & usage Credits card and the payment sheet were checked in a browser for layout, flow, the
+  three languages and both themes, but their computed styles were not diffed against the design's frame item by item;
+  touch (a `hasTouch` context) was not run (one shared tab only, resized to 390x844 and 360x740).
+
 ## Partial translation in the Admin media record (D-205 proposed, 2026-10-14)
 
 The pinned `Orena Admin.dc.html` draws no state for a media item whose line translation reached only some lines. The backend now
@@ -6180,3 +6265,37 @@ Details list, and the failure reason on a failed item that kept lines, using the
 open for the human: a control to retry only the missing lines, and whether the design should draw this row.
 
 - **Media licence link on the public credits page (D-205 follow-up).** Commons items now carry `license_name` and `license_url` through the credits rows and the listening payload, but no credits renderer shows the licence link, so CC attribution links stay invisible. Needs the design's credits row to place it.
+
+- **ASR screen counts in the Admin media record (D-208 proposed, 2026-10-15).** `processing.asr_filtered` (segments removed as hallucination or silence) and `processing.asr_flagged` (long segments with few words, kept) are in the API but not drawn. The review step should show them beside the transcript, with the note that key-term recognition errors are not machine-corrected. Needs a place in the design's Admin media record.
+
+- **Traditional Chinese media is not reachable (D-208 proposed, 2026-10-15).** Imports store only the language `zh`, so every Chinese ASR item is normalised to Simplified, including genuinely Traditional (Taiwan, Hong Kong) audio. Needs an owner decision on a script choice at import (not added in D-208).
+
+## Credits top-up client: follow-ups from the independent review of PR #213 (2026-10-15)
+
+Fixed in the client: pending wording (owner-mandated "Đang chờ xác nhận thanh toán" via `statusWaiting`/`statusStillWaiting`;
+the design's "waiting for your transfer" lines are sample copy, D-068, and are no longer rendered), watcher tied to the
+route, purchase cleared on sign-in refusal / auth stop / nothing on sale, closed-order steps use their own status line,
+`qrMatrix` no longer throws, `checkout_already_started` no longer loops.
+
+Not fixed, logged (the balance "—" is no longer open: owner decision of 2026-10-15, below):
+
+- **P2-7 plan strip.** The only plan-derived text in the sheet comes from `/api/product/commerce`; keep Credits and
+  subscription state separate in any refactor.
+- **P2-8 offers read.** `GET /api/billing/offers` is read on each Plan and Profile load; share one cached read per route
+  entry when it matters.
+- **Reduced motion.** `data-cr-anim` hooks exist; the CSS honouring `prefers-reduced-motion` was not confirmed by the
+  reviewer and is not measured here (browser check belongs to the design-reviewer lane).
+- **A purchase survives a sign-out within one page session** only until the next Credits entry, auth stop or sign-in
+  refusal; a full-page sign-out reloads the module state. A session-scoped key would need an account id on the client.
+
+## Owner decisions of 2026-10-15 (D-210 proposed)
+
+- **Credits balance (CT-2), owner decision.** There is still no learner balance endpoint (balance and ledger are admin-only). The
+  balance shows "—" beside its unit until one exists: more honest than hiding it or a fake 0 (owner 2026-10-15). CT-2 is marked
+  "owner decision: show —" and the review's P2-6 is closed by it.
+- **Admin preview of a held item is read-only (D-206 §5 closed by D-210).** The design draws no disabled state for Save, so the
+  controls that would keep something are not drawn in a preview and nothing replaces them. A learner-visible cue that this is a
+  preview is not drawn either (the design has none). `POST /api/library/vocabulary` carries no media id, so only the client walls
+  cover a word save from a preview.
+- **64 MiB media cap, owner decision.** Unchanged; `media_too_large` is reported. Raise the cap or move to streaming / chunked
+  processing: decided after the Phase 2 size distribution (D-207 §4, D-210 §3).

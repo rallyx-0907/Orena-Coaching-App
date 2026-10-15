@@ -1,5 +1,6 @@
 import { isTransientRequestError, retryOnce } from './retry.js';
 import { navigationSignal } from './navigation.js';
+import { previewRefuses, previewRefusal } from './preview-mode.js';
 import { deviceTimezone, newIdempotencyKey, quotaHeaders as quotaHeadersFor } from './quota-headers.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
@@ -16,6 +17,8 @@ let onUnauthorized=()=>{location.href='/#/welcome';};
 export function setUnauthorizedHandler(handler){onUnauthorized=typeof handler==='function'?handler:()=>{};}
 
 export async function request(url, options={}){
+  /* An administrator's preview of a held item stores nothing (D-210, infrastructure/preview-mode.js). */
+  if(previewRefuses(options.method,url))throw previewRefusal();
   const response = await fetch(url,{
     credentials:'same-origin',
     cache:'no-store',
@@ -64,6 +67,13 @@ export const api={
   productCommerce:()=>request('/api/product/commerce',{headers:{'X-Orena-Timezone':deviceTimezone()}}),
   // The plan catalogue (Free, Plus, Pro with prices and entitlements); `billing_ready` is false.
   productPlans:()=>request('/api/product/plans'),
+  /* Credit top-up (PR-MON-5): the packs on sale (`credit_packs`, empty unless the backend's gates all pass) and one
+     checkout. The body is built by product/credit-topup.js from the offer just read, never here. */
+  billingOffers:()=>request('/api/billing/offers'),
+  /* PROPOSED (UI_BACKEND_GAPS CT-1): the caller's own order. Not served yet; until it is the call answers 404 and the
+     watcher stops, so a payment is never shown as confirmed. */
+  billingOrder:(orderCode)=>request(`/api/billing/orders/${encodeURIComponent(orderCode)}`),
+  billingCheckout:(body)=>request('/api/billing/checkout',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
   /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
   feedbackSend:(body)=>request('/api/feedback',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
   feedbackMine:()=>request('/api/feedback/mine'),

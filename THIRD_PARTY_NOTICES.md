@@ -11,7 +11,7 @@ itself, not here.
 
 | Id | What | Licence | Where in the repository | Attribution |
 | --- | --- | --- | --- | --- |
-| `cc-cedict` | CC-CEDICT Chinese-English dictionary (2026-10-03 export) | CC BY-SA 4.0 | `writing_coach/languages/chinese/lexicon_data/` (repacked; licence text and modification notice there); also `writing_coach/languages/chinese/script_chars.json`, a list of Simplified-only and Traditional-only characters derived from its headwords by `scripts/build_chinese_script_table.py` (CC BY-SA 4.0, release 2026-10-03) | MDBG and CC-CEDICT contributors; CEDICT © 1997, 1998 Paul Andrew Denisowski |
+| `cc-cedict` | CC-CEDICT Chinese-English dictionary (2026-10-03 export) | CC BY-SA 4.0 | `writing_coach/languages/chinese/lexicon_data/` (repacked; licence text and modification notice there); also `writing_coach/languages/chinese/script_chars.json` and `script_map.json`, a list of Simplified-only and Traditional-only characters derived from its headwords by `scripts/build_chinese_script_table.py` (CC BY-SA 4.0, release 2026-10-03) | MDBG and CC-CEDICT contributors; CEDICT © 1997, 1998 Paul Andrew Denisowski |
 | `unihan` | Unicode Unihan database 18.0.0 (`kMandarin`, `kVietnamese`, `kDefinition`) | Unicode License v3 | same folder | © Unicode, Inc. |
 | `make-me-a-hanzi` | Hanzi stroke data (hanzi-writer-data 2.0.1) | Arphic Public License | `writing_coach/languages/chinese/stroke_data/` | Shaunak Kishore (Make Me a Hanzi); Arphic Technology Co., Ltd. |
 | `open-dsl-dict` | open-dsl-dict `en-vi-enwiktionary` (from English Wiktionary translation tables, 2015) | CC BY-SA 3.0 / GFDL | `writing_coach/localization_data/vi_glosses.json.gz` (subset) | Wiktionary contributors; Open DSL Dictionary Project |
@@ -41,6 +41,8 @@ copyright Meta Platforms, Inc. and affiliates), the unmodified npm production bu
 `static/orena/public/vendor/` with their licence texts (`LICENSE.react.txt`, `LICENSE.react-dom.txt`) and verified
 against the npm registry's integrity hashes. The design's page runtime (`static/orena/public/support.js`) is the
 design project's own file.
+
+Browser software served inside the learner app: qrcode-generator 1.4.4 (MIT, copyright (c) 2009 Kazuhiko Arase), vendored in `static/orena/vendor/qrcode-generator/qrcode.js` with its licence text (`LICENSE.qrcode-generator`). It is the upstream file with only an ES-module export added, and draws the payment QR of Credits locally (no network image, no third-party request). New dependency recorded in `UI_BACKEND_GAPS.md` CT-8.
 
 The application image installs FFmpeg (`ffmpeg`, `ffprobe`) from Debian packages (LGPL-2.1+ /
 GPL-2+ depending on build); Orena invokes it as a separate program and does not link it.

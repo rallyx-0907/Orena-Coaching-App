@@ -54,7 +54,8 @@ from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.media_learning import MediaTranscript, TranscriptSegment
 from writing_coach.media_library_store import MediaLibraryEntry
-from writing_coach.media_zh_cleanup import clean_asr_cues
+from writing_coach.media_asr_filter import screen_segments
+from writing_coach.media_zh_cleanup import clean_asr_cues, normalise_words
 from writing_coach.media_segmentation import Cue, first_failure, primary_language, segment_lines, validate_lines
 from writing_coach.media_spend import KIND_AI, KIND_ASR, SpendCapReached, SpendLedger
 from writing_coach.speech_asr import (
@@ -62,6 +63,7 @@ from writing_coach.speech_asr import (
     SpeechAsrPayloadTooLarge,
     SpeechAsrRequestFailed,
     SpeechAsrResult,
+    SpeechAsrSegment,
     SpeechAsrTimedOut,
     SpeechAsrWord,
 )
@@ -251,23 +253,31 @@ class Candidate:
     detected_language: str = ""
 
 
-def _asr_cues(results: list[tuple[SpeechAsrResult, float]]) -> tuple[list[Cue], list[SpeechAsrWord], str]:
-    cues: list[Cue] = []
+def _asr_cues(results: list[tuple[SpeechAsrResult, float]], language: str = "") -> tuple[list[Cue], list[SpeechAsrWord], str, dict[str, int]]:
+    """(cues, words, detected language, {"filtered", "flagged"}): the recogniser's segments joined across chunks,
+    with hallucinated segments and the words inside them removed (media_asr_filter)."""
+    segments: list[SpeechAsrSegment] = []
     words: list[SpeechAsrWord] = []
     detected = ""
     for result, offset in results:
         shift = round(offset * 1000)
         detected = detected or result.language
-        segments = result.segments
-        for segment in segments:
-            cues.append(Cue(segment.start_ms + shift, segment.end_ms + shift, segment.text))
-        if not segments and result.text.strip():
+        for segment in result.segments:
+            segments.append(replace(segment, start_ms=segment.start_ms + shift, end_ms=segment.end_ms + shift))
+        if not result.segments and result.text.strip():
             # A provider that returned text without segments: one cue spanning the chunk's words, if it has them.
             if result.words:
-                cues.append(Cue(result.words[0].start_ms + shift, result.words[-1].end_ms + shift, result.text))
+                segments.append(SpeechAsrSegment(result.text, result.words[0].start_ms + shift, result.words[-1].end_ms + shift))
         for word in result.words:
             words.append(SpeechAsrWord(word.word, word.start_ms + shift, word.end_ms + shift))
-    return cues, words, detected
+    screen = screen_segments(segments, words, language or detected)
+    cues = [Cue(segment.start_ms, segment.end_ms, segment.text) for segment in screen.segments]
+    return cues, list(screen.words), detected, {"filtered": screen.filtered, "flagged": screen.flagged}
+
+
+def _screen_fields(screen: dict[str, int]) -> dict[str, int]:
+    """What the ASR screen removed or doubted, recorded so a reviewer sees it (empty for a caption transcript)."""
+    return {"asr_filtered": int(screen["filtered"]), "asr_flagged": int(screen["flagged"])} if screen else {}
 
 
 def _stable_segment_id(asset_id: str, start_ms: int, end_ms: int, text: str, occurrence: int) -> str:
@@ -544,9 +554,9 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
-                                           translation="", translation_counts={}, translation_reason="")
+                                           translation="", translation_counts={}, translation_reason="", asr_filtered=0, asr_flagged=0)
             self._dispatch_quota(entry)
-            lines, origin, cost, asr_seconds, detected, words = self._transcript(store, assets, entry, batch_id, candidate)
+            lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
             self._hold_failed(store, media_id, stop)
             return
@@ -562,14 +572,15 @@ class MediaPipeline:
             # A transcript was made and it is not usable. Keep what was made so an operator can see it; do not publish.
             entry = self._store_lesson(store, entry, lines, origin, duration, status="review", words=words)
             self._write_processing(store, entry, state=STATE_FAILED, stage=STAGE_SEGMENT, reason=reason,
-                                   detail="", checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1))
+                                   detail="", checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
+                                   **_screen_fields(screen))
             return
         entry = self._store_lesson(store, entry, lines, origin, duration, status="processing", words=words)
         translation, translation_counts = self._translate(store, entry, batch_id, personal)
         entry = store.get(media_id) or entry
         rights = str(entry.source.get("rights") or RIGHTS_UNKNOWN)
         common = dict(checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
-                      translation=translation, translation_counts=translation_counts, rights=rights)
+                      translation=translation, translation_counts=translation_counts, rights=rights, **_screen_fields(screen))
         if personal or rights == RIGHTS_CLEARED:
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
             self._prepare_model_clips(assets, entry)
@@ -643,7 +654,7 @@ class MediaPipeline:
 
     def _transcript(
         self, store: Any, assets: BookAssetStore, entry: MediaLibraryEntry, batch_id: str, candidate: Candidate | None
-    ) -> tuple[list[Cue], str, float, float, str, list[SpeechAsrWord]]:
+    ) -> tuple[list[Cue], str, float, float, str, list[SpeechAsrWord], dict[str, int]]:
         language = entry.language
         cues: list[Cue] = []
         detected = ""
@@ -657,11 +668,11 @@ class MediaPipeline:
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
                 if not first_failure(validate_lines(lines, language=language, duration_ms=duration)):
-                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", []
+                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], {}
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE)
         try:
-            raw, words, detected, cost, seconds = self._speech(store, assets, entry, batch_id)
+            raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
         except PipelineStop as stop:
             # Captions were refused by the provider (not merely absent) and the audio route is closed too: that is the
             # cause an operator can act on, with the audio failure kept in the detail.
@@ -670,8 +681,9 @@ class MediaPipeline:
             raise
         # Chinese recognition output is repaired (no spaces between Hanzi, sentence marks, no leading silence) before it is cut.
         raw = clean_asr_cues(raw, words, language or detected)
+        words = normalise_words(words, language or detected)  # the same script as the lines, so taps stay aligned
         lines = segment_lines(raw, language)
-        return lines, ORIGIN_ASR, cost, seconds, detected, words
+        return lines, ORIGIN_ASR, cost, seconds, detected, words, screen
 
     def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str]:
         """(cues, why-none): the provider's category when it failed, "" when there were simply no captions."""
@@ -688,7 +700,7 @@ class MediaPipeline:
 
     def _speech(
         self, store: Any, assets: BookAssetStore, entry: MediaLibraryEntry, batch_id: str
-    ) -> tuple[list[Cue], list[SpeechAsrWord], str, float, float]:
+    ) -> tuple[list[Cue], list[SpeechAsrWord], str, float, float, dict[str, int]]:
         if self._asr is None:
             raise PipelineStop("asr_unconfigured")
         max_seconds = max_asr_seconds()
@@ -733,10 +745,10 @@ class MediaPipeline:
                 self._ledger.record(KIND_ASR, estimate, batch_id=batch_id, media_id=entry.media_id, units=_probe_seconds(path), provider="groq")
                 cost += estimate
                 results.append((result, offset))
-        cues, words, detected = _asr_cues(results)
+        cues, words, detected, screen = _asr_cues(results, entry.language)
         if not cues:
-            raise PipelineStop("empty_transcript")
-        return cues, words, detected, cost, total
+            raise PipelineStop("empty_transcript", f"{screen['filtered']} filtered" if screen["filtered"] else "")
+        return cues, words, detected, cost, total, screen
 
     def _audio_source(self, assets: BookAssetStore, entry: MediaLibraryEntry, work: Path, max_seconds: int) -> Path:
         if entry.provider == "youtube":

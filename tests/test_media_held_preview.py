@@ -106,7 +106,10 @@ def test_an_unknown_id_and_another_learners_personal_file_are_404(held):
 
 def test_the_held_items_own_file_plays_for_an_administrator_only(held):
     app, store, assets = held
-    store.upsert(_held("upload-held-file"))
+    store.upsert(_held(
+        "upload-held-file", provider_media_id="held-file",
+        playback={"provider": "orena", "kind": "audio", "url": "/api/media/files/media/held-file/original.wav"},
+    ))
     assets.put("media/held-file/original.wav", b"RIFFxxxx")
     path = "/api/media/files/media/held-file/original.wav"
     assert _get(app, path, LEARNER).status_code == 404

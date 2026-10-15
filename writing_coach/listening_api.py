@@ -23,6 +23,7 @@ from writing_coach.listening_catalog import (
     lesson_metadata,
     translated_media_object,
 )
+from writing_coach.media_library_store import _ID as _MEDIA_STORE_ID
 from writing_coach.media_library_store import MediaLibraryEntry, MediaLibraryStore, visible_to
 from writing_coach.media_source_import import (
     PROVIDER_LABELS,
@@ -143,6 +144,71 @@ def stored_media_entry(media_id: str, *, allow_unpublished: bool = False) -> Med
         return entry
     except Exception:  # a broken index must not take the library down with it
         return None
+
+
+_CONTENT_PREFIXES = ("media:", "preview:", "upload:")
+# The content-id namespaces that are not media, as the code that mints them names them: the content kinds
+# `article`, `book`, `text` (static/orena/screens/content/model.js KINDS), a saved link `url` and the library's
+# `reading` kind (account_records_api._source_candidates, library_api place kinds), and the work ids of
+# static/orena/product/intent.js (`conversation`, `voice`, `expression`, `essay`, `grammar`). `media`, `upload` and
+# `preview` are the media namespaces and are peeled above, never listed here.
+_NON_MEDIA_NAMESPACES = frozenset({
+    "article", "book", "text", "url", "reading", "conversation", "voice", "expression", "essay", "grammar",
+})
+_STORE_ID = _MEDIA_STORE_ID  # exactly the shape the store accepts for a media id, ':' included
+
+
+def media_state_writable(content_id: str) -> bool:
+    """Whether learner state (a place, progress, a note, a response, where a word was met) may be written
+    against this id (D-210).
+
+    An id that names a stored media entry is writable only while that entry is visible to this learner:
+    a published shared item, or the learner's own personal import. A held, unpublished or archived shared
+    item, and another learner's import, are not - whoever sends the write, whatever the client believes
+    it is doing (the administrator's preview of a held item must leave nothing behind). An id that no
+    stored entry names (a curated lesson, a text, a book) is not this rule's business.
+
+    The id is read in every spelling a client gives it: bare, `media:<id>`, `upload:<id>`, `preview:<id>`
+    and any prefixed form of those. The spellings are peeled to the one bare id the store is keyed by, so a
+    write costs at most ONE store read, and the entry read is checked with `visible_to`, the one visibility
+    rule. Media-shaped means any id the store could hold (its own id pattern, ':' included) that is not in a
+    known non-media namespace (`reading:`, `book:`, `text:`, `url:`, ... see `_NON_MEDIA_NAMESPACES`); those, and
+    an id the store could never hold (empty, spaces, over-long), cost no read and are never refused here.
+
+    Media-shaped ids fail closed: if the store cannot be read or verified (a corrupt or unreadable index, an
+    error), the write is refused, because nothing can show the item is visible. The read's issue comes back
+    with the read (`lookup`), never through the store's shared `last_read_issue`. A missing index is a fresh
+    start, not a failure. Ids the store could never hold are unaffected whatever the index's state."""
+    if _media_store is None:
+        return True
+    value = str(content_id or "").strip()
+    while True:
+        prefix = next((p for p in _CONTENT_PREFIXES if value.startswith(p)), "")
+        if not prefix:
+            break
+        value = value[len(prefix):]
+    if not _STORE_ID.fullmatch(value):
+        return True  # an id the store could never hold
+    if ":" in value and value.split(":", 1)[0] in _NON_MEDIA_NAMESPACES:
+        return True  # Reading, books, texts, links, conversations, grammar: not media, never read or refused here
+    try:
+        lookup = getattr(_media_store, "lookup", None)
+        # `lookup` returns the read's own issue; `last_read_issue` is shared and reset by every concurrent read.
+        entry, issue = lookup(value) if lookup else (_media_store.get(value), getattr(_media_store, "last_read_issue", ""))
+        if entry is None:
+            # The file store answers "no entry" for a corrupt or unreadable index too; the issue says which.
+            return issue not in {"index_corrupt", "index_unreadable"}
+        return visible_to(entry, user_key=current_user_key(), language=current_language_code())
+    except Exception:
+        return False
+
+
+def require_media_state_writable(content_id: str) -> None:
+    """404 for learner state aimed at a media id the learner cannot see. (Held, unpublished and another learner's ids
+    answer alike; an id nothing names is not refused, so a write is a faint existence check for a hidden id. Media ids
+    are digest-shaped and the listings already hide them at the same level: accepted, D-210.)"""
+    if not media_state_writable(content_id):
+        raise orena_http_error(404, "media_not_available", "This media is not available.")
 
 
 def stored_media_payload(media_id: str, target_language: str = "", *, allow_unpublished: bool = False) -> dict[str, Any] | None:
@@ -755,6 +821,7 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
+    require_media_state_writable(values["asset_id"])
     if values["presentation"] == "revealed":
         values["revealed"] = True
     if values["revealed"] and values["presentation"] == "prompt":
@@ -801,6 +868,7 @@ def save_shadowing_progress(payload: ShadowingProgressIn) -> dict[str, Any]:
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
+    require_media_state_writable(values["asset_id"])
     values["updated_at"] = datetime.now(UTC).isoformat()
     _require_progress_line(values["asset_id"], values["segment_id"])
     try:

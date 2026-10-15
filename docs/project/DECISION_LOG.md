@@ -6929,3 +6929,117 @@ in the existing `processing` JSON beside `translation_counts`.
 7. **Owner decisions left open.** Raising the 64 MiB cap (not done). A control to retry only the missing lines of a finished item
    (reprocess still redoes everything). Whether the 5-round / 150 s bound suits the provider's real limits once a real batch is
    measured (no live provider was called; tests use fakes).
+
+## D-208 - ASR transcripts: one Chinese script per item, and hallucinated segments removed (2026-10-15)
+
+Status: ACCEPTED (merged as #218 once CI was green; independent review APPROVE-WITH-FOLLOWUPS on b2742791, re-review APPROVE on 2be1537e, no open P0/P1). Video Sources milestone, PR-B. No schema or migration change: the counts live in
+`processing` (an existing JSON field) and the recogniser signals are optional fields on an in-memory dataclass.
+
+1. **Script.** ASR cue text and the stored word arrays of a Chinese item are converted to the item's script before lines are cut:
+   Simplified by default, Traditional for a `zh-Hant`/`zh-TW`/`zh-HK` language tag (`languages/chinese/script_conversion.py`).
+   The table (`script_map.json`) is derived from the vendored CC-CEDICT pack by `scripts/build_chinese_script_table.py`, one
+   character to one character, so lengths, timings and tap alignment are unchanged. No new dependency. Simplified to
+   Traditional skips a character with more than one Traditional form (发, 后): it is left as written, never guessed.
+   The provider already receives the language hint (`zh`); a Whisper language code cannot name a script, and a prompt hint
+   would need a provider-interface change, so it is not added.
+2. **Filter.** `media_asr_filter.screen_segments` runs on the joined segments of every ASR item (EN and ZH, one contract),
+   never on captions. It always drops a subtitle-credit line or a bare sound tag, and a segment the recogniser doubts
+   (`no_speech_prob` > 0.6 with `avg_logprob` < -1.0, or `compression_ratio` > 2.4; the Whisper skip thresholds). A stock
+   sign-off ("Thank you", "The End", "I'm sorry", 谢谢) is dropped when it is long for its few words or the recogniser doubts
+   it (`no_speech_prob` >= 0.3, `avg_logprob` < -1.0 or `compression_ratio` > 2.0). Context alone (10 s of silence beside it,
+   an adjacent repeat) and a lone word at the tail after 2 s of silence drop only when the provider gave no confidence signal;
+   when it did and shows no doubt, the segment is kept and flagged, so a real "Bye. Bye." or closing 好的 survives. A long
+   segment with few words that matches nothing is kept and flagged. Words inside a dropped segment are removed with it. The
+   phrase lists are `writing_coach/media_asr_hallucinations.json`, with a stated basis and a line per language.
+3. **Recorded.** `processing.asr_filtered` and `processing.asr_flagged` are written on ready, held and failed outcomes of an ASR
+   item (0 for captions). If everything is filtered the item fails `empty_transcript` with the count as the detail.
+4. **ZH cut.** A recogniser cut with under 500 ms of silence after it is mid-sentence and no longer receives a full stop; a
+   question particle still closes it.
+5. **Known limits, review step.** Key-term recognition errors (大国空潮 for 大国空巢, BOA for VOA) and wrong-but-fluent
+   mishearings cannot be found by rules and are not corrected; a transcript still needs a human read before rights are
+   confirmed. A stock sign-off beside a long silence, an adjacent repeat, or a lone tail word is dropped only when the provider gave no confidence signal; with signals and no doubt it is kept and counted in `asr_flagged`. Real speech can still be lost where the recogniser itself doubts a stock phrase or the segment is long for its few words (a true "Thank you" given with low confidence). `asr_filtered` and `asr_flagged` let a reviewer see both. The admin does not yet render `asr_filtered`/`asr_flagged` (API only; `UI_BACKEND_GAPS.md`).
+6. **More known limits.** (a) Ambiguous characters stay unconverted by design (麼, 著, 乾, 徵, 餘 and the like: 什麼 and 那麼 can
+   remain Traditional inside a Simplified item), so a line can still mix scripts at those characters. (b) The Traditional
+   path is currently unreachable: imports store only `zh`, so every Chinese ASR item is normalised to Simplified, including
+   genuinely Traditional audio. No import option is added here; recorded as a gap in `UI_BACKEND_GAPS.md`. (c) The screen counts
+   are cleared at the start of every run, so a caption-path re-run or an early stop shows 0.
+
+## D-209 - `/api/media/files` serves a file only through the stored entry that owns it (2026-10-15)
+
+Status: ACCEPTED (merged as #219 once CI was green; independent review APPROVE on e8105b2f, no open P0/P1). Fixes #216 (P2-2 of the #214 review). No schema or migration change, no new
+role, no change to the publish or visibility policy: this enforces the existing rule that held content is not learner-visible.
+
+1. **Problem.** The file route looked up `upload-<segment>` only. Direct-URL (including Wikimedia Commons) imports store under
+   `media/direct-<sha256(url)>/`, so a held direct import was served to anyone who knew the path.
+2. **Rule.** The route resolves the entry that owns `media/<directory>/...` by id candidates (`<directory>`, `upload-<directory>`)
+   and, failing that, by the directory its recorded playback URL or thumbnail names, in either library. One rule then applies:
+   published shared is everyone's (as before); held or unpublished shared is an administrator's only, learner and anonymous get
+   404; personal is its owner's (same language), as before. If several entries claim a directory, all must allow the caller.
+3. **No owner, no file.** A key no entry owns, and any key outside `media/`, is 404, administrators included. Checked first:
+   thumbnails (recorded in the entry) and playback URLs live under an entry's directory. Model clips live under
+   `speaking/model-clip/` (a private upload's under its own `media/<token>/model-clip/`) and are read through the speaking
+   routes from the asset store, not through this one. Nothing legitimate relied on serving an orphan.
+   Cache: only published shared files keep `public, max-age=31536000, immutable`; every other file is `private, no-store`, so a
+   CDN cannot hold a held or personal file and hand it to someone else (the previous personal `private, max-age=3600` is now no-store).
+4. **Traversal.** Every segment must match `[A-Za-z0-9_.-]+` and not be `.` or `..` before any lookup; the asset store's key
+   validation is unchanged behind it. Tests: `tests/test_media_files_gate.py`.
+5. **Left open.** `_remove_personal_entry` deletes `media/<provider_media_id>`, which is not a direct import's directory
+   (`media/direct-<token>`); personal uploads are unaffected. Not changed here.
+
+## D-210 - Admin preview of held media is read-only; Credits balance shows "—"; the 64 MiB media cap stays (2026-10-15)
+
+Status: ACCEPTED (merged as #220 once CI was green; independent review APPROVE WITH CONDITIONS on caee5b01, re-review APPROVE on 1b34281d, no open P0/P1). Owner decisions of 2026-10-15; the first closes D-206 §5. No schema or
+migration change, no new role, no change to the publish or visibility policy. D-208 and D-209 are in flight; this is the next
+free number and is renumbered at merge if they land first.
+
+1. **Preview of a held item writes nothing (owner 2026-10-15).** `#/listening/preview:<id>` (D-206, `GET /api/media/admin/player/{id}`)
+   opens the real learner player, and the administrator is not a learner on that item: no place, progress, completion, streak,
+   activity, practice or dictation attempt, saved word, note, highlight, response, review scheduling or record of where a word was met.
+   Three independent walls, so the rule does not rest on one:
+   - **Client, the room.** The Listening room derives "preview" from the address (`mediaRef(...).kind === 'preview'`). It does not
+     remember a place (device or server), passes `readOnly` to the line practice (a check still marks the line; no draft, no attempt is
+     stored), the word sheet and the Vocabulary Focus, and does not draw what would keep something: the word sheet's save icon and
+     button and its link to the word page, the Vocabulary Focus "Save", the selected line's "Save phrase", and the links into Shadowing,
+     React and Respond, which save. The design has no disabled state for these, so they are hidden, not greyed; nothing is added.
+   - **Client, the request.** `infrastructure/preview-mode.js`: while the room is a preview, `request` refuses every call that stores
+     learner state (a list of path prefixes, with the gate that lists them), whichever code makes it. Reads, lookups, tagging and
+     translation are not on the list. The wall is open only while the address is still a preview, so a room that fails cannot leave the
+     app read-only.
+   - **Server.** `listening_api.media_state_writable` / `require_media_state_writable`, reusing `stored_media_entry` (the one
+     visibility check): an id that names a stored media entry takes learner state only while that entry is visible to this learner,
+     that is a published shared item or the learner's own personal import. A held, unpublished or archived shared item and another
+     learner's import answer 404 `media_not_available`, whoever sends the write, in every spelling (`<id>`, `media:<id>`, `upload:<id>`,
+     `preview:<id>` and prefixed forms). An id no stored entry names (a curated lesson, a text, a book) is unaffected. Applied to:
+     `PUT /api/continue/{id}`, `POST /api/listening/progress`, `POST /api/listening/shadowing-progress`, `PUT /api/annotations/{id}`,
+     `PUT /api/responses/{key}` (its `sourceId`), `POST /api/library/vocabulary/{word}/provenance` (its `sourceId`) and
+     `POST /api/library/items` (its `source_id`). The owner's own personal import keeps writing (tested).
+   - **Gap, stated (review #220 P2-2).** `POST /api/library/vocabulary` (save a word) and its review, restore and delete carry no media
+     id (a word is the learner's, not the item's), so the server cannot tell a preview from a learner there: only the two client walls
+     cover it. Accepted risk: it needs an administrator session and a client defect, and costs one word in the administrator's own library.
+   - **Orena in a preview (review #220 P2-1, owner rule "no learner activity").** The room does not draw Explain; the word sheet does not
+     draw "Ask deeper" (nor the save row) and shows the "why here" line as text, not a way into Orena. The request wall also refuses
+     non-GET `/api/agent/*` and `/api/conversations/*`. This is the learner wall only; the Intelligence lane's server code is unchanged.
+     A preview opened elsewhere in the shell (the Orena panel itself) therefore cannot take a turn while the address is a preview.
+   - **Guard cost and failure (review #220 P2-3, P2-5).** The id spellings are peeled to the one bare id the store is keyed by: at most one
+     store read per write, then `visible_to` on that entry. Media-shaped means any id the store could hold (its own `_ID` pattern, ':'
+     included) outside the known non-media namespaces. Those namespaces (`article`, `book`, `text`, `url`, `reading`,
+     `conversation`, `voice`, `expression`, `essay`, `grammar`, taken from the content kinds, the account-record source forms and
+     `intent.js`) cost no read and are never refused by this guard, so Reading and Book writes do not depend on the media
+     index's health; neither does an id the store could never hold (empty, spaces, over-long). For every other id the guard fails
+     closed: a corrupt or unreadable index or an error refuses the write; a missing index is a fresh start. The read's issue
+     travels with the read (`FileMediaLibraryStore.lookup` returns `(entry, issue)`), not through the shared `last_read_issue`
+     that every concurrent read resets (re-review P2-A, P2-B).
+   - **An item unpublished or archived while a learner is on it (review #220 P2-4).** Writes against it now answer 404
+     `media_not_available`. The place write is already best effort and silent. The Dictation save treats that 404 as "not kept": no
+     note, no retry, nothing loops, and the room stays usable (the line is still checked and shown). Reopening the item gives the
+     normal unavailable state. A learner's earlier progress stays stored, unreachable until the item is republished.
+   - **Existence oracle (review #220 P2-6), accepted low risk.** A write to a hidden id is a 404 while a write to an id nothing names
+     succeeds, so a write is a faint existence check for a hidden media id. Closing it would refuse curated lesson and text ids that no
+     store names. Media ids are digest-shaped and the listings already hide them at the same level.
+   - Progress and streak are derived from the records above, so blocking the records blocks the derived figures.
+2. **Credits balance shows "—" until a balance API exists (owner 2026-10-15).** More honest than hiding it or a fake 0. This confirms
+   the Credits top-up client's `UI_BACKEND_GAPS.md` CT-2 handling (balance and ledger are admin-only; the hero and card read "—" beside
+   the unit, never 0) and closes its P2-6 question: the glyph the design does not draw is accepted.
+3. **The 64 MiB media cap is unchanged (owner 2026-10-15).** A file over the cap keeps failing with the stable code
+   `media_too_large` (D-207 §4). Whether to raise the cap or to move to streaming / chunked processing is decided after the Phase 2
+   size distribution of the Video Sources milestone is known, not before.

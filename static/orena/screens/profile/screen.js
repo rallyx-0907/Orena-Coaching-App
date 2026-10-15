@@ -39,6 +39,7 @@ import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { listRow } from '../../kit/components.js';
 import { useStyles } from '../../kit/styles.js';
+import { loadOffers } from '../../product/credit-topup.js';
 import { api } from '../../infrastructure/api.js';
 import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
@@ -154,6 +155,7 @@ const ACTION_LABEL = (id) => ({
   history: t('actionHistory'),
   progress: shellCopy('progress'),
   plan: t('actionPlan'),
+  credits: t('actionCredits'),
   privacy: t('actionPrivacy'),
   feedback: t('actionFeedback'),
   signout: t('actionSignOut'),
@@ -168,6 +170,7 @@ function actionSub(action) {
     history: t('actionHistorySub'),
     progress: t('actionProgressSub'),
     plan: t('actionPlanSub'),
+    credits: t('actionCreditsSub'),
     privacy: t('actionPrivacySub'),
     feedback: t('actionFeedbackSub'),
   }[action.id] || '';
@@ -180,6 +183,7 @@ function actionHref(id, ctx) {
     history: ctx.href('progress', {}, { tab: 'history' }),
     progress: ctx.href('progress'),
     plan: ctx.href('billing'),
+    credits: ctx.href('credits'),
     // Settings' Plan & privacy tab holds the microphone and learner-audio rows (no separate Privacy tab yet).
     privacy: ctx.href('settings', {}, { tab: 'privacy' }),
     feedback: ctx.href('feedback'),
@@ -216,14 +220,15 @@ async function signOut() {
 export default async function profile(element, ctx) {
   await useStyles('screens/profile/profile.css');
   const context = ctx.context;
-  const [vocabulary, commerce] = await Promise.all([
+  const [vocabulary, commerce, offers] = await Promise.all([
     api.libraryVocabularySummary().catch(() => null),
     api.productCommerce().catch(() => null),
+    loadOffers(api),
   ]);
   if (!ctx.isCurrent()) return undefined;
 
   const model = buildProfileModel({ context, vocabulary, commerce });
-  const actions = profileActions({ isAdmin: model.isAdmin });
+  const actions = profileActions({ isAdmin: model.isAdmin, credits: offers.available });
 
   mount(
     element,

@@ -47,6 +47,11 @@
   --ai-soft: #221D3D;
   --ai-ink: #B9A6FF;
   --ai-line: #3A2F6B;
+  /* Credits (design 2026-10-14): the gold of the Credits spark; never a plan colour. */
+  --spark: #F7BE5E;
+  --spark-ink: #FFD58A;
+  --spark-soft: #2A2215;
+  --spark-line: #4B3B1C;
   --scrim: rgba(0, 0, 0, .6);
   --sh1: 0 1px 2px rgba(0, 0, 0, .3);
   --sh2: 0 8px 24px rgba(0, 0, 0, .45);
@@ -90,6 +95,10 @@
   --ai-soft: #F5F0FF;
   --ai-ink: #6A4FE0;
   --ai-line: #D6C8FD;
+  --spark: #EFAE45;
+  --spark-ink: #8A5300;
+  --spark-soft: #FFF5E2;
+  --spark-line: #F0D7A6;
   --scrim: rgba(24, 22, 48, .38);
   --sh1: 0 1px 2px rgba(23, 23, 50, .07), 0 3px 12px rgba(23, 23, 50, .07); /* D-151 (design .04/.04) */
   --sh2: 0 2px 6px rgba(40, 36, 110, .05), 0 12px 32px rgba(40, 36, 110, .10);
@@ -260,6 +269,25 @@
 }
 :root:not([data-theme='dark']) {
   --edge-light: inset 0 0 0 1px rgba(255, 255, 255, .6), var(--sh1);
+}
+
+/* The ink on a --spark fill (Credits buttons and check): the design writes it as #241803 in both themes. */
+:root[data-theme='dark'],
+:root:not([data-theme='dark']) {
+  --spark-on: #241803;
+  /* The spark glyph's gradient and its dark tile (design `cr-g` and the tile gradient), the glow of a spark button, and
+     the paper and ink of a payment QR (a QR is dark on white in both themes so a camera can read it). */
+  --spark-g0: #FFF1CC;
+  --spark-g1: #FFC768;
+  --spark-g2: #F08A2E;
+  --spark-tile-a: #3D2C12;
+  --spark-tile-b: #16110A;
+  --spark-tile-edge: rgba(255, 214, 140, .16);
+  --spark-glow: rgba(245, 170, 60, .18);
+  --spark-glow-strong: rgba(245, 170, 60, .3);
+  --qr-paper: #FFFFFF;
+  --qr-ink: #121218;
+  --qr-shadow: 0 14px 40px rgba(0, 0, 0, .22);
 }
 
 /* The backdrop (PUB-4, D-166), human 2026-10-09: "make it like the design". Orena.dc.html body[data-backdrop=on] draws a

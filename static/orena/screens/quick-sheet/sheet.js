@@ -126,8 +126,12 @@ async function fetchSavedItem(word) {
 /* `source.title` is optional (measured live against the source: "Source sentence · {{title}}" is
    the article/lesson title the word was met in, not a timestamp as the frame's own template
    placeholder name suggested) - a caller that knows it passes it; one that does not just gets the
-   bare "Source sentence" label, never a guessed one. */
-export async function openWordSheet(ctx = {}, { word, lang, sentence = '', context = '', source = null, onOpen, onClose } = {}) {
+   bare "Source sentence" label, never a guessed one.
+
+   `readOnly` is the administrator's preview of a held item (D-210): the word is looked up and played as ever, and
+   everything that would keep something - the save icon and button, and the link to the word page, which saves - is
+   not drawn. The design has no disabled state for them, so there is none. */
+export async function openWordSheet(ctx = {}, { word, lang, sentence = '', context = '', source = null, readOnly = false, onOpen, onClose } = {}) {
   await useStyles('screens/quick-sheet/quick-sheet.css');
   const target = String(word || '').trim();
   if (!target) return null;
@@ -197,7 +201,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         </div>
         <div class="s-qs__icons">
           <button type="button" class="s-qs__iconbtn" data-play aria-label="${audioMissing ? t('noAudioSource') : t('playWord')}" aria-busy="${audioBusy}"${audioMissing ? raw(' aria-disabled="true" data-missing="1"') : ''}${audioBusy ? raw(' disabled') : ''}>${audioBusy ? html`<span class="o-spinner"></span>` : raw(icon(audioMissing ? 'ban' : 'volume-2', { size: 19 }))}</button>
-          <button type="button" class="s-qs__iconbtn" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t('saveWord')}" aria-pressed="${card.saved ? 'true' : 'false'}">${raw(icon('bookmark-check', { size: 19 }))}</button>
+          ${readOnly ? '' : html`<button type="button" class="s-qs__iconbtn" data-save style="background:${card.savedBg};color:${card.savedColor}" aria-label="${t('saveWord')}" aria-pressed="${card.saved ? 'true' : 'false'}">${raw(icon('bookmark-check', { size: 19 }))}</button>`}
         </div>
       </div>
       <div class="s-qs__card">
@@ -247,6 +251,8 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   /* "Why here?": this sentence's own reason (D-130). While it is being asked for, a short status;
      without one, the row is not shown - never an "ask Orena" stand-in for an answer the sheet offers. */
   function whyMarkup() {
+    // A preview opens no Orena conversation (D-210): the same row, read-only.
+    if (card.whyHere && readOnly) return html`<div class="s-qs__why">${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere}</span></div>`;
     if (card.whyHere) return html`<button type="button" class="s-qs__why" data-why>${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere}</span></button>`;
     if (contextualPending && !loading) return html`<div class="s-qs__why" role="status">${t('whyHere')} — <span class="s-qs__why-text"><span class="o-spinner"></span> ${t('whyHereLoading')}</span></div>`;
     if (contextualFailed) return html`<div class="s-qs__why">${t('whyHere')} — <span class="s-qs__why-text">${t('translationFailed')} <button type="button" class="s-qs__retry" data-why-retry>${t('retry')}</button></span></div>`;
@@ -265,12 +271,12 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     return html`
       ${loading ? html`<div class="s-qs__word" lang="${langAttr(lang)}">${target}</div><div role="status"><span class="o-spinner"></span> ${t('lookupLoading')}</div>` : card.hasContent ? contentMarkup() : fallbackMarkup()}
       ${audioBusy ? html`<progress class="o-loading__progress" aria-label="${t('playWord')}"></progress>` : ''}
-      <div class="s-qs__actions">
+      ${readOnly ? '' : html`<div class="s-qs__actions">
         <button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-cta aria-pressed="${card.saved ? 'true' : 'false'}"${loading ? raw(' disabled') : ''}>${card.saved ? t('savedWordCta') : t('saveWordCta')}</button>
         <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
-      </div>
+      </div>`}
       ${loading ? '' : whyMarkup()}
-      ${loading ? '' : html`<button type="button" class="s-qs__detail" data-detail>${t('fullWordDetail')} ${raw(icon('arrow-right', { size: 16 }))}</button>`}
+      ${loading || readOnly ? '' : html`<button type="button" class="s-qs__detail" data-detail>${t('fullWordDetail')} ${raw(icon('arrow-right', { size: 16 }))}</button>`}
     `;
   }
 
@@ -336,7 +342,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   }
 
   async function toggleSave() {
-    if (busy) return;
+    if (busy || readOnly) return;
     busy = true;
     try {
       if (card.saved) {

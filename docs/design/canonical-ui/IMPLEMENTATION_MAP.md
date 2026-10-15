@@ -74,6 +74,9 @@ shape).
 | 51 | Coming soon | `#/coming/:key` | shell | `screens/coming/` | reviewable |
 | 26 | Settings | `#/settings` (`?tab=` per Profile's own links) | focus | `screens/settings/` | reviewable |
 | 27 | Search | `#/search` | focus | `screens/search/` | reviewable |
+| 40 | Credits (2026-10-14 pin) | `#/credits` | focus | `screens/credits/` | building (shown only while the backend offers packs; see `UI_BACKEND_GAPS.md` CT-1..CT-8) |
+| 41 | Credits Payment (sheet over Credits) | sheet of `#/credits` | focus | `screens/credits/sheet.js` | building (QR and balance await the backend) |
+| 42 | Plan & usage: Credits card (2026-10-14 pin) | `#/plan` | focus | `screens/plan/screen.js` | building |
 | 14 | Reader | `#/read/:id` | focus | `screens/reader/` | reviewable |
 | 14+ | Reader source line (addendum, pending export: `brief/READER_SOURCE_LINE_2026-10-14.md`) | `#/read/:id` | focus | `screens/reader/` (`sourceMarkup`, `product/provenance.js` `creditOf`) | built 2026-10-14; end-of-text footnote |
 | 14+ | Reading thumbnail and credit (addendum, pending export: `brief/READING_THUMBNAIL_2026-10-14.md`) | Discover card, Content Detail hero, Reader footnote | shell, focus | `product/provenance.js` `imageOf`, `screens/discover/model.js` `entryFromArticle`, `screens/content/model.js` `normalizeArticle`, `screens/reader/` `sourceMarkup`; admin `screens/admin/reading-pages.js` `imagesBlock` and `sourcePage` | built 2026-10-14; browser measurement pending |

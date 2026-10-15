@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
+from writing_coach.languages.chinese.script_conversion import convert_script, target_script
 from writing_coach.media_segmentation import Cue, primary_language
 from writing_coach.speech_asr import SpeechAsrWord
 
@@ -105,7 +106,16 @@ def _align(text: str, spoken: Sequence[SpeechAsrWord]) -> list[int] | None:
     return ends
 
 
-def _clean_cue(cue: Cue, spoken: Sequence[SpeechAsrWord]) -> list[Cue]:
+def _gap_after(cue: Cue, following: Cue | None, words: Sequence[SpeechAsrWord]) -> int | None:
+    """Silence between this cue's last word and the next cue's first, None for the last cue."""
+    if following is None:
+        return None
+    here = _cue_words(cue, words)
+    there = _cue_words(following, words)
+    return (there[0].start_ms if there else following.start_ms) - (here[-1].end_ms if here else cue.end_ms)
+
+
+def _clean_cue(cue: Cue, spoken: Sequence[SpeechAsrWord], gap_after: int | None = None) -> list[Cue]:
     text = _compact(cue.text)
     start = cue.start_ms
     if spoken and cue.start_ms < spoken[0].start_ms < cue.end_ms:
@@ -134,15 +144,34 @@ def _clean_cue(cue: Cue, spoken: Sequence[SpeechAsrWord]) -> list[Cue]:
     if tail and not _TERMINAL.search(tail):
         if tail[-1] in "，、；：":
             tail = tail[:-1]
-        tail += _sentence_mark(tail)
+        # A recogniser cut with no pause after it is mid-sentence: a full stop there is wrong, so the line is
+        # left open (a question particle still closes it, and the last cue always ends).
+        if gap_after is not None and gap_after < COMMA_PAUSE_MS and not _is_question(tail):
+            pass
+        else:
+            tail += _sentence_mark(tail)
     pieces.append((tail, piece_start, cue.end_ms))
     return [Cue(a, max(b, a + 1), t) for t, a, b in pieces if t]
+
+
+def normalise_words(words: Sequence[SpeechAsrWord], language: str) -> list[SpeechAsrWord]:
+    """The recogniser's words written in the item's script (one character to one character, so timings and the
+    word-to-text alignment are unchanged). Anything that is not Chinese is returned untouched."""
+    if primary_language(language) != "zh":
+        return list(words)
+    target = target_script(language)
+    return [SpeechAsrWord(convert_script(word.word, target), word.start_ms, word.end_ms) for word in words]
 
 
 def clean_asr_cues(cues: Sequence[Cue], words: Sequence[SpeechAsrWord], language: str) -> list[Cue]:
     if primary_language(language) != "zh":
         return list(cues)
+    # Whisper picks a script per phrase, so one line can hold both. The item's script is the standard (D-208).
+    target = target_script(language)
+    cues = [Cue(cue.start_ms, cue.end_ms, convert_script(cue.text, target)) for cue in cues]
+    words = normalise_words(words, language)
     cleaned: list[Cue] = []
-    for cue in cues:
-        cleaned.extend(_clean_cue(cue, _cue_words(cue, words)))
+    for index, cue in enumerate(cues):
+        following = cues[index + 1] if index + 1 < len(cues) else None
+        cleaned.extend(_clean_cue(cue, _cue_words(cue, words), _gap_after(cue, following, words)))
     return cleaned

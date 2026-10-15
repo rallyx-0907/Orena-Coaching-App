@@ -176,3 +176,26 @@ def test_zh_asr_output_is_cleaned_before_it_becomes_lesson_lines(tmp_path, monke
     text = "".join(segment["original_text"] for segment in segments)
     assert " " not in text and text.endswith("？")
     assert segments[0]["start_ms"] == 6000
+
+
+def test_zh_asr_is_one_script_and_hallucinations_are_filtered_and_counted(tmp_path, monkeypatch):
+    from writing_coach import media_thumbnail
+    from writing_coach.speech_asr import SpeechAsrResult, SpeechAsrSegment, SpeechAsrWord
+    monkeypatch.setenv("MEDIA_PIPELINE_INLINE", "1")
+    monkeypatch.setattr(media_thumbnail, "_TEMP_ROOT", tmp_path)
+    spoken = "這是 第一次 我 去 市场 买菜"
+    words = tuple(SpeechAsrWord(text, 500 + index * 400, 500 + index * 400 + 300) for index, text in enumerate(spoken.split()))
+    segments = (SpeechAsrSegment(spoken, 0, 3500), SpeechAsrSegment("优优独播剧场", 4000, 9000))
+    class Asr:
+        def transcribe_bytes(self, body, **kwargs):
+            return SpeechAsrResult("test", "fixture", "zh", spoken, segments, words)
+    store = FileMediaLibraryStore(tmp_path / "index")
+    pipeline = MediaPipeline(ledger=SpendLedger(tmp_path / "spend.json"), asr=Asr())
+    importer = MediaSourceImporter(None, store, FilesystemBookAssetStore(tmp_path / "assets"), pipeline=pipeline)
+    path = tmp_path / "voice.wav"
+    path.write_bytes(_tone(10))
+    entry = importer.import_upload(path, filename=path.name, language="zh", imported_by="learner", library="personal", owner_key="learner-a")
+    stored = store.get(entry.media_id)
+    text = "".join(segment["original_text"] for segment in stored.lesson["payload"]["transcript"]["segments"])
+    assert "這" not in text and "这是第一次" in text and "独播" not in text
+    assert stored.processing["asr_filtered"] == 1 and stored.processing["asr_flagged"] == 0
