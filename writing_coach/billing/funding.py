@@ -288,15 +288,25 @@ class FundingService:
         def bump(name: str) -> None:
             counts[name] = counts.get(name, 0) + 1
 
-        for row in self._repository.closed_backing_rows(older_than=now - timedelta(minutes=1), limit=limit):
+        def each(rows: list[dict[str, Any]], step: Callable[[dict[str, Any]], None], what: str) -> None:
+            # One corrupt or transiently failing row is logged and skipped; the rest of the tick still runs (formal
+            # review P2). Nothing is written for a failed row: its own transaction rolled back.
+            for row in rows:
+                try:
+                    step(row)
+                except Exception:  # noqa: BLE001 - retried at the next tick
+                    bump(f"{what}_failed")
+                    _log.warning("funding reconciler: %s %s failed", what, row.get("operation_id"), exc_info=True)
+
+        def complete(row: dict[str, Any]) -> None:
             outcome = self._repository.complete_from_backing(row["operation_id"])
             if outcome in ("settled", "released", "inconsistent"):
                 bump(f"completed_{outcome}")
-        for row in self._repository.open_rows(states=("admitting",), older_than=now - admitting_after, limit=limit):
-            exact = self._repository.exact_backing(row)
-            if exact is not None:
+
+        def settle_admitting(row: dict[str, Any]) -> None:
+            if self._repository.exact_backing(row) is not None:
                 bump("admitting_with_exact_backing")   # adopted by the next retry of the operation, never orphaned
-                continue
+                return
             stray = self._repository.stray_open(row["operation_id"])
             if self._repository.refuse(row["operation_id"], reason="non_exact_backing" if stray else "unbacked") \
                     == "refused":
@@ -304,10 +314,17 @@ class FundingService:
                 if stray:
                     self._repository.open_conflict(row, reason="a non-exact reservation keyed fund:<op> is open")
                     bump("conflict_opened")
-        for item in self._repository.open_conflicts(limit=limit):
+
+        def close_conflict(item: dict[str, Any]) -> None:
             if not self._repository.stray_open(item["operation_id"]):
                 self._repository.resolve_conflict(item["id"])
                 bump("conflict_resolved")
+
+        each(self._repository.closed_backing_rows(older_than=now - timedelta(minutes=1), limit=limit), complete,
+             "complete")
+        each(self._repository.open_rows(states=("admitting",), older_than=now - admitting_after, limit=limit),
+             settle_admitting, "admitting")
+        each(self._repository.open_conflicts(limit=limit), close_conflict, "conflict")
         return counts
 
 

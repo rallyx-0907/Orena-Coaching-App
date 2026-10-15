@@ -54,7 +54,11 @@ class AccountCostRecorder:
     def record(self, user_key: str, event: dict[str, Any]) -> bool:
         """Record one telemetry event for this account, if it was a provider call that answered."""
 
-        if user_key in _NOT_AN_ACCOUNT or event.get("outcome") != "success" or not event.get("provider"):
+        # A success, or any request actually sent (PR-MON-6 §8): a failed call that was sent may have cost money;
+        # its cost state (unknown / unpriced / partial) makes its operation incomplete, never USD 0. A rung skipped
+        # before sending is not a billable attempt and is never a cost row.
+        billable = event.get("outcome") == "success" or event.get("billable_attempt") is True
+        if user_key in _NOT_AN_ACCOUNT or not billable or not event.get("provider"):
             return False
         if event.get("origin") in _NOT_SPEND:
             return False

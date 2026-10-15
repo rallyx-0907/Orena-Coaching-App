@@ -25,6 +25,7 @@ from typing import Any
 from sqlalchemy import text
 
 COMPLETE_STATES = ("estimated",)
+ZERO_PRICE_TIERS = ("local", "free")
 
 
 @dataclass(frozen=True)
@@ -117,14 +118,16 @@ def meter_stats(operations: Iterable[OperationCost]) -> dict[str, MeterStats]:
         if op.settled_units <= 0:
             continue
         entry.settled += 1
-        # no attributed call at all is missing evidence, not a free operation
-        complete = bool(op.calls) and all(state in COMPLETE_STATES and cost is not None
-                                          for state, _tier, cost in op.calls)
+        # no attributed call at all is missing evidence, not a free operation; a local or free-model call is
+        # zero-price whatever its recorded state (§8), a paid one needs an estimated price
+        complete = bool(op.calls) and all((state in COMPLETE_STATES and cost is not None) or tier in ZERO_PRICE_TIERS
+                                          for state, tier, cost in op.calls)
         if not complete:
             entry.incomplete += 1
             continue
         entry.complete += 1
-        total = sum((cost for _state, _tier, cost in op.calls), Decimal(0))
+        total = sum((cost for _state, tier, cost in op.calls if tier not in ZERO_PRICE_TIERS and cost is not None),
+                    Decimal(0))
         per_unit = total / Decimal(op.settled_units)
         complete_all.setdefault(op.meter, []).append(per_unit)
         if any(tier == "paid" for _state, tier, _cost in op.calls):

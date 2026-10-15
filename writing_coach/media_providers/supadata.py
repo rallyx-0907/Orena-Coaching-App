@@ -264,7 +264,8 @@ class SupadataTranscriptClient:
         from writing_coach.ai.audio_telemetry import record_audio_operation
         from writing_coach.billing.funding_context import require_paid
 
-        require_paid(capability="media_transcript_fallback", provider="supadata")  # I-1's backstop (PR-MON-6 §2)
+        require_paid(capability="media_transcript_fallback", provider="supadata",
+                     timeout_seconds=self._request_timeout_seconds)  # I-1's backstop; each request's upper bound
         started = time.perf_counter()
         try:
             payload = self._request(url, params=params, deadline=deadline, allow_206=allow_206)

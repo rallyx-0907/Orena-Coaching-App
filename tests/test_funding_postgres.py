@@ -352,3 +352,28 @@ def test_a_deleted_account_is_never_admitted(world):
     with pytest.raises(Exception) as caught:
         svc.admit(intent(incarnation), plan=plan(window(limit=5)))
     assert isinstance(caught.value, AccountDeleted) or "deleted account is never admitted" in str(caught.value)
+
+
+def test_one_bad_reconciler_row_never_stops_the_rest(world, monkeypatch):
+    """Formal review P2: a corrupt or failing row is logged and skipped; a repairable row after it is still repaired."""
+    incarnation, _ = credits(world, units=100)
+    svc = service(world)
+    win = window(limit=1)
+    exhaust(world, svc, incarnation, win)
+    first = svc.admit(intent(incarnation), plan=plan(win))
+    second = svc.admit(intent(incarnation), plan=plan(win))
+    for funded in (first, second):
+        world.repository.expire_reserve(incarnation, reserve_entry_id=funded.row["credit_reserve_entry_id"])
+    real = svc.repository.complete_from_backing
+
+    def flaky(operation_id):
+        if operation_id == first.row["operation_id"]:
+            raise RuntimeError("corrupt row")
+        return real(operation_id)
+
+    monkeypatch.setattr(svc.repository, "complete_from_backing", flaky)
+    counts = svc.reconcile(now=datetime.now(UTC) + timedelta(hours=1))
+    assert counts.get("complete_failed") == 1 and counts.get("completed_released") == 1
+    assert svc.repository.get(first.row["operation_id"])["state"] == "funded"
+    assert svc.repository.get(second.row["operation_id"])["state"] == "released"
+    no_drift(world)

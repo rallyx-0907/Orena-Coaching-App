@@ -77,6 +77,7 @@ def record_token_operation(
             {"state": "unknown", "currency": None, "amount": None,
              "provenance": {"provider": provider, "model": model, "reason": "request_failed"}},
             "quota_available": "unknown",
+            "billable_attempt": True,   # recorded only around a request that was sent
         }
         _persist_operation_telemetry(event)
     except Exception:  # telemetry never costs the learner the answer
@@ -113,6 +114,7 @@ def record_audio_operation(
             {"state": "unknown", "currency": None, "amount": None,
              "provenance": {"provider": provider, "model": model, "reason": "request_failed"}},
             "quota_available": "unknown",
+            "billable_attempt": True,   # recorded only around a request that was sent
         }
         _persist_operation_telemetry(event)
     except Exception:  # telemetry never costs the learner the answer

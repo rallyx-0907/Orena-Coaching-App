@@ -387,6 +387,22 @@ def _funded_gate(capability_key: str, budget: Callable[[ProviderTarget], str | N
     return admit
 
 
+def _provider_timeout(provider_id: str) -> float | None:
+    """The provider client's own request timeout (its default when a call names none)."""
+    item = providers().get(provider_id)
+    value = getattr(item, "timeout", None)
+    return float(value) if isinstance(value, (int, float)) and value > 0 else None
+
+
+def _effective_timeout(requested: float | None, default: float | None) -> float | None:
+    """The upper bound the outbound request will really use: the per-call timeout when one is given (capped by the
+    client's own), else the client's default. None when neither is known - the backstop then refuses."""
+    values = [float(v) for v in (requested, default) if isinstance(v, (int, float)) and v > 0]
+    if not values:
+        return None
+    return min(values) if requested else values[0]
+
+
 def _require_paid_funding(capability: str, provider: str | None, model: str | None, timeout: float | None) -> None:
     """The backstop for a single paid request with no other rung (legacy selection, agent rounds)."""
     from writing_coach.billing import funding_context
@@ -395,7 +411,8 @@ def _require_paid_funding(capability: str, provider: str | None, model: str | No
         funding_context.require_paid(capability=capability, provider=provider, timeout_seconds=timeout or 0.0)
 
 
-def _record_attempt(capability_key: str | None, router_version: str | None = None) -> Callable[[Attempt], None]:
+def _record_attempt(capability_key: str | None, router_version: str | None = None,
+                    sent: Callable[[], bool] | None = None) -> Callable[[Attempt], None]:
     """Every rung is logged, not only the one that answered.
 
     Without this a fallback is invisible: the operator sees one success and
@@ -408,6 +425,9 @@ def _record_attempt(capability_key: str | None, router_version: str | None = Non
 
     def record(attempt: Attempt) -> None:
         counter["n"] += 1
+        # PR-MON-6 §8: did this rung's request leave Orena? A skipped rung never did; a failed one did only if the
+        # attempt reached the provider call (`sent`), not when it failed before (an unconfigured provider).
+        was_sent = attempt.outcome == "failure" and (sent() if sent is not None else False)
         if attempt.outcome == "success":
             return
         model_display, model_redacted = safe_model_display(attempt.model)
@@ -437,6 +457,7 @@ def _record_attempt(capability_key: str | None, router_version: str | None = Non
                 "rate_limit": normalized_rate_limit(None),
                 "cost": estimate_token_cost(attempt.provider, model_display, None),
                 "quota_available": "unknown",
+                "billable_attempt": was_sent,
                 **_router_fields(router_version, attempt.provider, model_display, attempt=counter["n"],
                                  reason=attempt.reason, status_class=attempt.status_class),
             }
@@ -469,6 +490,7 @@ def _record_invalid_output(capability_key: str | None, target: ProviderTarget, r
             "rate_limit": normalized_rate_limit(None),
             "cost": estimate_token_cost(target.provider, model_display, usage),
             "quota_available": "unknown",
+            "billable_attempt": True,   # the provider answered: the call was made and may have cost tokens
             **_router_fields(router_version, target.provider, model_display, attempt=attempt, reason="invalid_output"),
         }
     )
@@ -500,6 +522,7 @@ def stream_agent_turn(
     started = perf_counter()
     provider_id: str | None = None
     model: str | None = None
+    sent = {"request": False}   # PR-MON-6 §8: the round's request left Orena
 
     def record(
         outcome: str,
@@ -529,6 +552,7 @@ def stream_agent_turn(
                 "rate_limit": normalized_rate_limit(rate_limit),
                 "cost": estimate_token_cost(provider_id, model_display, usage if finished else None),
                 "quota_available": "unknown",
+                "billable_attempt": sent["request"],
             }
         )
 
@@ -544,7 +568,10 @@ def stream_agent_turn(
         if definition is None or not definition.supports(AIOperation.AGENT_TURN) or not callable(stream_chat):
             raise AIProviderUnavailable(f"{item.name} cannot stream agent turns.")
         # I-1's backstop, per model round: a stream whose funding closed (TTL, settlement) stops at its next round.
-        _require_paid_funding(AGENT_TURN_CAPABILITY, provider_id, model, timeout_seconds)
+        # The effective bound is the provider's own read timeout, capped by the turn's remaining time.
+        _require_paid_funding(AGENT_TURN_CAPABILITY, provider_id, model,
+                              _effective_timeout(timeout_seconds, getattr(item, "timeout", None)))
+        sent["request"] = True
         events = stream_chat(
             messages=messages,
             tools=tools,
@@ -619,6 +646,8 @@ def generate_structured(
     provider_id: str | None = None
     model: str | None = None
     attempts_made = {"calls": 0}
+    # PR-MON-6 §8: a request that left Orena and got no accounted answer (finish / invalid output record their own).
+    unaccounted = {"legacy": False, "rung": False}
 
     def finish(result: AIResult, attempts: list[Attempt] | None = None) -> AIResult:
         runtime = dict(result.runtime or {})
@@ -637,6 +666,7 @@ def generate_structured(
             "rate_limit": normalized_rate_limit(runtime.get("rate_limit")),
             "cost": estimate_token_cost(provider_id, model_display, normalized_usage(runtime)),
             "quota_available": "unknown",
+            "billable_attempt": True,
             **_router_fields(router_version, provider_id, model_display, attempt=len(attempts or ()) or 1),
         }
         if router_version is not None:
@@ -653,15 +683,19 @@ def generate_structured(
                 raise AIProviderUnavailable(f"{item.name} is not configured.")
 
             # Do not silently fail over to a paid provider.
-            _require_paid_funding(capability_key or "legacy", provider_id, model, attempt_timeout)
-            return finish(item.generate_json(
+            _require_paid_funding(capability_key or "legacy", provider_id, model,
+                                  _effective_timeout(attempt_timeout, getattr(item, "timeout", None)))
+            unaccounted["legacy"] = True
+            answer = item.generate_json(
                 messages=messages,
                 schema=schema,
                 model=model,
                 max_output_tokens=max_output_tokens,
                 temperature=temperature,
                 seed=seed,
-            ))
+            )
+            unaccounted["legacy"] = False
+            return finish(answer)
 
         if capability_key is None:
             raise AICapabilityUnsupported("Capability mode requires an explicit AI capability.")
@@ -703,7 +737,8 @@ def generate_structured(
                 limit = remaining if limit is None else min(limit, remaining)
             return limit
 
-        gate = _funded_gate(definition.key, _budget_gate(definition, paid_ok=paid_standby), _timeout_for)
+        gate = _funded_gate(definition.key, _budget_gate(definition, paid_ok=paid_standby),
+                            lambda target: _effective_timeout(_timeout_for(target), _provider_timeout(target.provider)))
 
         def _ask(target: ProviderTarget) -> AIResult:
             nonlocal provider_id, model
@@ -725,6 +760,7 @@ def generate_structured(
                 if timeout is not None:
                     options["timeout"] = timeout
                 attempts_made["calls"] += 1
+                unaccounted["rung"] = True
                 result = generate_once(
                     messages=messages,
                     schema=schema,
@@ -734,6 +770,7 @@ def generate_structured(
                     seed=seed,
                     **options,
                 )
+                unaccounted["rung"] = False   # answered: its cost is recorded by finish() or as invalid output
                 if validate is None:
                     return result
                 try:
@@ -747,7 +784,9 @@ def generate_structured(
 
         try:
             routed = run_chain(
-                chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline,
+                chain, _ask, on_attempt=_record_attempt(capability_key, router_version,
+                                                        sent=lambda: unaccounted.pop("rung", False)),
+                deadline=deadline,
                 health=health, admit=gate,
             )
         except AllProvidersUnavailable as error:
@@ -776,6 +815,8 @@ def generate_structured(
             "rate_limit": normalized_rate_limit(getattr(exc, "rate_limit", None)),
             "cost": estimate_token_cost(provider_id, model_display, None),
             "quota_available": "unknown",
+            # the legacy call that raised was sent; a chain's rungs were each recorded already (never twice)
+            "billable_attempt": unaccounted["legacy"],
             **_router_fields(router_version, provider_id, model_display, attempt=len(getattr(exc, "attempts", ())) or 1,
                              reason=fallback_reason(exc) if isinstance(exc, AIProviderError) else None,
                              status_class=http_status_class(getattr(exc, "status_code", None))),

@@ -225,7 +225,7 @@ class GroqSpeechAsrProvider:
         from writing_coach.billing.funding_context import require_paid
 
         require_paid(capability="speech_asr", provider=str(getattr(self, "provider_id", "") or "groq"),
-                     timeout_seconds=float(getattr(self, "_timeout", 0) or 0))
+                     timeout_seconds=self._timeout_seconds)   # the timeout every Groq request uses
 
         from writing_coach.ai.audio_telemetry import record_audio_operation
 

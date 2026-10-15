@@ -83,8 +83,8 @@ def test_a_context_is_a_pointer_the_live_check_decides_and_the_first_paid_reques
 def test_an_unreadable_live_check_fails_closed():
     configure("enforce", Live(raises=True))
     with fc.funded(CONTEXT):
-        assert fc.check_paid(capability="c", provider="p") == "live_check_failed"
-        assert fc.paid_allowed(capability="c", provider="p") is False
+        assert fc.check_paid(capability="c", provider="p", timeout_seconds=30) == "live_check_failed"
+        assert fc.paid_allowed(capability="c", provider="p", timeout_seconds=30) is False
 
 
 def test_system_funding_is_separate_and_passes_without_a_learner_admission():

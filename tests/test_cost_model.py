@@ -131,3 +131,15 @@ def test_meter_prices_come_only_from_the_humans_file_and_never_for_media_import(
         path.write_text(json.dumps(bad), encoding="utf-8")
         with pytest.raises(ValueError):
             load_meter_prices({"BILLING_METER_PRICES_FILE": str(path)})
+
+
+def test_a_free_or_local_call_is_zero_price_whatever_its_recorded_state():
+    """A failed free-model call is recorded with an unknown cost; it costs nothing and never makes the operation
+    incomplete. A paid call with an unknown cost does."""
+    stats = meter_stats([
+        op("a", "writing.review", 1, ("unknown", "free", None), paid("0.010")),
+        op("b", "writing.review", 1, ("unknown", "local", None)),
+        op("c", "writing.review", 1, ("unknown", "paid", None)),
+    ])["writing.review"]
+    assert (stats.complete, stats.incomplete, stats.zero_cost) == (2, 1, 1)
+    assert stats.max_paid == D("0.010")

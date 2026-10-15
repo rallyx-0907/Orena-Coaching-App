@@ -365,7 +365,8 @@ class AzureSpeechPronunciationProvider:
         Azure billed (`audio_seconds`, `billed_seconds`). I-1's backstop runs first (PR-MON-6 §2)."""
         from writing_coach.billing.funding_context import require_paid
 
-        require_paid(capability="pronunciation_evaluator", provider=str(getattr(self, "provider_id", "") or "azure"))
+        require_paid(capability="pronunciation_evaluator", provider=str(getattr(self, "provider_id", "") or "azure"),
+                     timeout_seconds=self._timeout_seconds)   # the timeout of the Azure request below
 
         meter: dict[str, float] = {}
         started = time.perf_counter()

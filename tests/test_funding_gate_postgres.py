@@ -133,7 +133,7 @@ def test_a_paid_request_needs_a_live_funded_admission(world, monkeypatch):
         assert service.repository.get(ticket.operation_id)["state"] == "dispatched"   # the first paid request
         stale = fc.current()
     with fc.funded(stale):     # an old context, after settlement: not authorization by itself
-        assert fc.check_paid(capability="writing_evaluator", provider="openai") == "admission_settled"
+        assert fc.check_paid(capability="writing_evaluator", provider="openai", timeout_seconds=30) == "admission_settled"
 
 
 def test_an_expired_or_short_credit_hold_blocks_the_paid_dispatch(world, monkeypatch):

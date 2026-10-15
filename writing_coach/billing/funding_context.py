@@ -149,6 +149,9 @@ def check_paid(*, capability: str = "", provider: str = "", timeout_seconds: flo
         return None   # bounded by the existing USD caps, which the callers already check
     if not isinstance(context, FundingContext):
         return "no_funding_context"
+    if not timeout_seconds or float(timeout_seconds) <= 0:
+        # The hold must outlive the request's real timeout (§2.1); an unknown timeout cannot be proven, so it fails.
+        return "timeout_unknown"
     if _runtime.live is None:
         return "funding_unavailable"
     try:
