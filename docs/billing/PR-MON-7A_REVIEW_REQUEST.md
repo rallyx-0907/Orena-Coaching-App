@@ -88,3 +88,8 @@ Full-suite results are recorded in `BILLING_STATUS.md` with this commit.
 | **P1-3:** the review refresh swallowed `FundingRequired` | It is re-raised before the generic catch and answered as the canonical 503 `funding_required`. Test: the live check refuses, nothing is sent, the response is 503 `funding_required`, the admission settles 0 and there is no charge. |
 | **P1-4:** the backup cap counted the primary's spend | The routed backup gate asks `spend_gate.paid_refused(capability, cap, provider, model)`, which reads `ai_spend_since_for_capability(..., provider, model)`: only the reviewed backup's own spend. The primary's cost stays in the normal ledger, and the capability-wide behaviour of `word_translation` is unchanged. Test: the primary is past the cap and the backup has spent 0, so the backup is still eligible; once the backup reaches its cap, it is skipped and the primary is still asked. |
 
+## Re-review of `94f96a8ffb78ac51a09a351a00c3566c14b2ede8`: APPROVED (2026-10-15)
+
+**APPROVED at `94f96a8f`** for implementation and CI. No focused P0 or P1 remains. CI run `38705847249` is green.
+Merging is the human's decision. Activation still needs H7-2, H7-6, H7-7 and H7-8. Nothing is enabled.
+
