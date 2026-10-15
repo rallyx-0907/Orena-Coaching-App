@@ -441,7 +441,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.match(screenSource, /openTab\(button\.dataset\.seeAll\)/, 'See all opens the tab through the same openTab the tab bar uses');
   assert.match(screenSource, /button\.addEventListener\('click', \(\) => openTab\(button\.dataset\.tab\)\)/, 'the tab bar keeps its own switch');
   assert.match(screenSource, /TAB_LABEL_KEY = \{ all: 'tabAll', listen: 'tabListen', read: 'tabRead', collections: 'tabCollections', imported: 'tabImported' \}/, 'the tab bar runs in the skill order (D-152)');
-  assert.match(screenSource, /mountCreateLesson\(lessonHost, \{ t, language, open: \(initial\) => openImportFlow\(initial\) \}\)/, 'the Create lesson card opens the import flow with what was entered');
+  assert.match(screenSource, /mountCreateLesson\(lessonHost, \{ t, language, tabs: lessonTabsFor\(practice\), open: \(initial\) => openImportFlow\(initial\) \}\)/, 'the Create lesson card opens the import flow with what was entered');
   assert.match(screenSource, /querySelector\('\[data-import-cta\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(\)\)/, 'the call to action opens the same import flow');
 }
 
@@ -549,7 +549,22 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.equal(isAcceptedLessonFile({ type: 'application/pdf' }), false);
   assert.equal(isAcceptedLessonFile(null), false);
   // The card is Discover's alone: not in the practice choosers.
-  assert.match(fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8'), /\$\{practice \? '' : html`<div data-lesson-host><\/div>`\}/, 'drawn on Discover only');
+  assert.match(fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8'), /<div data-lesson-host><\/div>/, 'the card is drawn on Discover and in its practice choosers');
+  assert.match(fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8'), /tabs: lessonTabsFor\(practice\)/, 'the chooser selects the kinds');
+  // Owner decision on CL-7: a practice chooser offers only the kinds that practice can use; plain Discover keeps all four.
+  const { lessonTabsFor } = await import('../static/orena/screens/discover/create-lesson.js');
+  assert.deepEqual(lessonTabsFor(''), ['link', 'text', 'file', 'audio'], 'plain Discover: four kinds');
+  assert.deepEqual(lessonTabsFor('nonsense'), ['link', 'text', 'file', 'audio']);
+  for (const practice of ['listening', 'dictation', 'shadowing', 'pronunciation']) assert.deepEqual(lessonTabsFor(practice), ['link', 'audio'], `${practice}: link / video and audio only`);
+  for (const ui of ['en', 'vi', 'zh']) {
+    const two = String(createLessonMarkup({ tab: 'link', url: '', text: '' }, { t: (key) => packs[ui][key], language: 'en', tabs: ['link', 'audio'] }));
+    assert.equal((two.match(/role="tab"/g) || []).length, 2, `${ui}: two tabs in a chooser`);
+    assert.match(two, /--ic-cols:2/, `${ui}: the track lays out in two columns`);
+    assert.equal((two.match(/class="s-ic__hint"/g) || []).length, 3, `${ui}: hints follow the visible tab`);
+    assert.ok(!two.includes('data-lesson-tab="text"') && !two.includes('data-lesson-tab="file"'), `${ui}: no text or document tab in a chooser`);
+  }
+  assert.ok(!/--ic-cols:/.test(String(createLessonMarkup({ tab: 'link', url: '', text: '' }, { t, language: 'en' }))), 'four tabs keep the design\'s own 4 / 2 columns');
+  assert.deepEqual(['ArrowRight', 'End', 'ArrowLeft'].map((key) => nextLessonTab('link', key, ['link', 'audio'])), ['audio', 'audio', 'audio'], 'arrows wrap inside the visible tabs');
   const sheet = fs.readFileSync('static/orena/screens/import/sheet.js', 'utf8');
   assert.match(sheet, /initial\.source === 'file'[\s\S]*initial\.source === 'text'[\s\S]*initial\.source === 'url'/, 'the sheet starts from what the card entered');
 }

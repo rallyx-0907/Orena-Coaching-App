@@ -21,9 +21,18 @@ export const LESSON_TABS = Object.freeze([
   { id: 'audio', labelKey: 'lessonTabAudio', icon: 'audio-lines' },
 ]);
 
+/* Which kinds each place offers (owner decision on CL-7, 2026-10-15). Plain Discover offers all four. A practice chooser
+   offers only what that practice can consume: Listening, Dictation and Speaking (pronunciation, shadowing) all work from
+   media with audio, so they take a link or video and an audio file; pasted text and documents become a Reader text, which
+   none of them can use. */
+const MEDIA_TABS = Object.freeze(['link', 'audio']);
+const TABS_FOR_PRACTICE = Object.freeze({ listening: MEDIA_TABS, dictation: MEDIA_TABS, shadowing: MEDIA_TABS, pronunciation: MEDIA_TABS });
+export function lessonTabsFor(practice = '') {
+  return TABS_FOR_PRACTICE[practice] || LESSON_TABS.map((tab) => tab.id);
+}
+
 /* WAI-ARIA tabs: Left/Right move (and wrap), Home/End jump; any other key is not ours. */
-export function nextLessonTab(current, key) {
-  const ids = LESSON_TABS.map((tab) => tab.id);
+export function nextLessonTab(current, key, ids = LESSON_TABS.map((tab) => tab.id)) {
   const at = ids.indexOf(current);
   if (key === 'ArrowRight') return ids[(at + 1) % ids.length];
   if (key === 'ArrowLeft') return ids[(at - 1 + ids.length) % ids.length];
@@ -71,8 +80,9 @@ const SPARK = '<svg width="30" height="30" viewBox="0 0 32 32" class="s-ic__spar
   + '<path class="s-ic__spark-c" d="M25 19.5c.3 2.2 1.3 3.2 3.5 3.5-2.2.3-3.2 1.3-3.5 3.5-.3-2.2-1.3-3.2-3.5-3.5 2.2-.3 3.2-1.3 3.5-3.5z"></path></svg>';
 const SPARK_SMALL = SPARK.replace('width="30" height="30"', 'width="20" height="20"').replace('s-ic__spark"', 's-ic__spark s-ic__spark--btn"');
 
-export function createLessonMarkup(state, { t, language }) {
+export function createLessonMarkup(state, { t, language, tabs = LESSON_TABS.map((item) => item.id) }) {
   const tab = state.tab;
+  const shown = LESSON_TABS.filter((item) => tabs.includes(item.id));
   const field = tab === 'link'
     ? html`<label class="s-ic__field">${raw(icon('link', { size: 18 }))}<input type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" data-lesson-url value="${state.url}" placeholder="${t('lessonLinkPlaceholder')}" aria-label="${t('lessonTabLink')}"></label>`
     : tab === 'text'
@@ -87,8 +97,8 @@ export function createLessonMarkup(state, { t, language }) {
         <p class="s-ic__sub">${t('lessonSub')}</p>
       </div>
     </div>
-    <div class="s-ic__tabs" role="tablist" aria-label="${t('groupType')}">
-      ${LESSON_TABS.map((item) => html`<button type="button" class="s-ic__tab" role="tab" id="s-ic-tab-${item.id}" aria-controls="s-ic-panel" tabindex="${tab === item.id ? '0' : '-1'}" aria-selected="${tab === item.id ? 'true' : 'false'}" data-lesson-tab="${item.id}">${raw(icon(item.icon, { size: 16 }))}<span>${t(item.labelKey)}</span></button>`)}
+    <div class="s-ic__tabs" role="tablist" aria-label="${t('groupType')}"${shown.length < LESSON_TABS.length ? raw(` style="--ic-cols:${shown.length}"`) : ''}>
+      ${shown.map((item) => html`<button type="button" class="s-ic__tab" role="tab" id="s-ic-tab-${item.id}" aria-controls="s-ic-panel" tabindex="${tab === item.id ? '0' : '-1'}" aria-selected="${tab === item.id ? 'true' : 'false'}" data-lesson-tab="${item.id}">${raw(icon(item.icon, { size: 16 }))}<span>${t(item.labelKey)}</span></button>`)}
     </div>
     <div class="s-ic__panel" role="tabpanel" id="s-ic-panel" aria-labelledby="s-ic-tab-${tab}">
     <div class="s-ic__row">
@@ -104,8 +114,8 @@ export function createLessonMarkup(state, { t, language }) {
 }
 
 /* Mounts the card into `host`. `open(initial)` opens the Import sheet with what was entered. */
-export function mountCreateLesson(host, { t, language, open }) {
-  const state = { tab: 'link', url: '', text: '' };
+export function mountCreateLesson(host, { t, language, open, tabs = LESSON_TABS.map((item) => item.id) }) {
+  const state = { tab: tabs[0], url: '', text: '' };
 
   function chooseFile() {
     host.querySelector('[data-lesson-file]')?.click();
@@ -128,14 +138,14 @@ export function mountCreateLesson(host, { t, language, open }) {
   }
 
   function paint(focus = '') {
-    mount(host, createLessonMarkup(state, { t, language }));
+    mount(host, createLessonMarkup(state, { t, language, tabs }));
     host.querySelectorAll('[data-lesson-tab]').forEach((button) => {
       button.addEventListener('click', () => {
         state.tab = button.dataset.lessonTab;
         paint(`[data-lesson-tab="${state.tab}"]`);
       });
       button.addEventListener('keydown', (event) => {
-        const next = nextLessonTab(state.tab, event.key);
+        const next = nextLessonTab(state.tab, event.key, tabs);
         if (!next) return;
         event.preventDefault();
         state.tab = next;

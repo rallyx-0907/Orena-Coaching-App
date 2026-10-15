@@ -60,7 +60,7 @@ shape).
 | # | Frame | Route | Shell | Code | Status |
 | --- | --- | --- | --- | --- | --- |
 | 10 | Today | `#/today` | shell | `screens/today/` | reviewable |
-| 04 | Discover (with the Create lesson card, 2026-10-15 pin) | `#/discover` | shell | `screens/discover/` (`create-lesson.js`) | reviewable |
+| 04 | Discover (with the Create lesson card, 2026-10-15 pin) | `#/discover` | shell | `screens/discover/` (`create-lesson.js`; also drawn in the practice choosers with only the kinds that practice can use, owner decision on CL-7, 2026-10-15, `UI_BACKEND_GAPS.md`) | reviewable |
 | 05 | Content Detail | `#/content/:id` | shell | `screens/content/` | reviewable |
 | 11 | Orena Home | `#/orena` | shell | `screens/orena/` | reviewable |
 | 08 | Practice Hub | `#/practice` | shell | `screens/practice/` | reviewable |

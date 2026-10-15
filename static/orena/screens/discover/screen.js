@@ -17,7 +17,7 @@ import { sourceFromLesson } from '../../product/speaking-source.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
-import { mountCreateLesson } from './create-lesson.js';
+import { mountCreateLesson, lessonTabsFor } from './create-lesson.js';
 import { overviewMarkup } from './overview.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
@@ -77,7 +77,7 @@ export default async function discover(element, ctx) {
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
         </div>
       </div>
-      ${practice ? '' : html`<div data-lesson-host></div>`}
+      <div data-lesson-host></div>
       <div class="o-search">
         ${raw(icon('search', { size: 18 }))}
         <input type="search" autocomplete="off" placeholder="${t(practice ? 'practiceSearch' : 'searchPlaceholder')}" data-query>
@@ -245,7 +245,7 @@ export default async function discover(element, ctx) {
     return openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening', initial });
   }
   const lessonHost = root.querySelector('[data-lesson-host]');
-  if (lessonHost) mountCreateLesson(lessonHost, { t, language, open: (initial) => openImportFlow(initial) });
+  if (lessonHost) mountCreateLesson(lessonHost, { t, language, tabs: lessonTabsFor(practice), open: (initial) => openImportFlow(initial) });
 
   let searchTimer = null;
   queryInput.addEventListener('input', () => {
