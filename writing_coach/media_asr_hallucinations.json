@@ -1,0 +1,23 @@
+{
+"format": "orena.asr-hallucinations.v1",
+"basis": "Phrases a Whisper-family recogniser is known to emit over silence, music or noise because its training subtitles carried them: subtitle-credit lines, sign-offs and sound tags. Seeded from the 2026-10-14 mini trial (Umu, Tears of Steel, Hina) and kept deliberately small and generic; nothing here is the text of one test item. A phrase list is the weaker signal: the recogniser's own no_speech_prob, avg_logprob and compression_ratio, and the segment's length against its word count, decide first (writing_coach/media_asr_filter.py). Add a line only with the case that produced it.",
+"any": {
+  "credits": [
+    "字幕(由|志愿者|志願者|组|組|制作|製作|提供|翻译|翻譯)",
+    "中文字幕",
+    "独播剧场|獨播劇場",
+    "subtitles?\\s+(by|provided|created|made)",
+    "(closed\\s+)?captions?\\s+(by|provided)",
+    "television\\s+series\\s+exclusive",
+    "amara\\.org",
+    "请不吝点赞|請不吝點贊|订阅.{0,6}(频道|頻道)|訂閱.{0,6}頻道"
+  ],
+  "tags": ["foreign", "music", "applause", "laughter", "silence", "inaudible", "音乐", "音樂", "掌声", "掌聲", "笑声", "笑聲", "外语", "外語"]
+},
+"en": {
+  "stock": ["thank you", "thanks", "thank you for watching", "thanks for watching", "the end", "i'm sorry", "i am sorry", "bye"]
+},
+"zh": {
+  "stock": ["谢谢", "謝謝", "谢谢观看", "謝謝觀看", "谢谢大家", "謝謝大家", "再见", "再見", "对不起", "對不起", "完"]
+}
+}
