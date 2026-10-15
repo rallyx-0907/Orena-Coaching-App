@@ -1,6 +1,6 @@
 # PR-MON-8: SePay domestic gateway, Billing sandbox and E2E (design)
 
-**Status: DESIGNING, revision 3 (docs only).** Revision 2 answered the review of revision 1 (`b01e2f5f`: 2 P1, Q1-Q5). Revision 3 answers the owner's review of revision 2 (`c5d2ed47`): the cursor loop, cancelled orders, the feed's fail-safe, secrets, the late-payment grace (1 hour) and the activation gates. See §0. Billing / Commerce scope (D-MON-029). Base: `main` `d42c9261`. Input:
+**Status: DESIGNING, revision 4 (docs only).** Revision 2 answered the review of revision 1 (`b01e2f5f`: 2 P1, Q1-Q5). Revision 3 answers the owner's review of revision 2 (`c5d2ed47`): the cursor loop, cancelled orders, the feed's fail-safe, secrets, the late-payment grace (1 hour) and the activation gates. Revision 4 answers the independent architecture review of revision 3 (`d4b66c01`, 1 P1): late-payment eligibility no longer depends on the expiry reconciler. See §0. Billing / Commerce scope (D-MON-029). Base: `main` `d42c9261`. Input:
 `DOMESTIC_GATEWAY_SEPAY_ASSESSMENT.md` (D-MON-024). This is a payment change, so it needs independent review
 before code, and again before merge. Nothing is enabled: `BILLING_ENABLED` stays off, no credential is configured, and
 SePay is not approved for production.
@@ -37,6 +37,14 @@ SePay is not approved for production.
 | **Gateway selection, VietQR** | Approved (§5, §4, §8). |
 | **Grace: owner decision** | `billing.domestic_late_payment_grace_hours = 1`, an explicit configuration with no implicit default (§4.1). |
 | **Activation gates** | **§12**, all thirteen. |
+
+**Revision 4: independent architecture review of `d4b66c01`.** Reviewer: ChatGPT / GPT-5.6 Sol (independent
+architecture review). Verdict: REQUEST CHANGES, 1 P1. The earlier P2 fixes were confirmed, and no new issue was found
+in the cursor loop, cross-source dedupe, secrets or gates.
+
+| Finding | Revision 4 |
+| --- | --- |
+| **P1: late-payment eligibility depended on the order's state being updated on time.** `created` / `pending` were paid unconditionally, and only `expired` compared against `expires_at` + grace. The expiry reconciler may run late, stop or be down, so an order past `expires_at` + 1 h could still read `pending`, and an old QR paid then would be granted on old terms. | **§4.1 rewritten.** First, closed states (`cancelled`, `refunded`, or ended on purpose) give `payment_order_closed`. Then, for every payable state (`created`, `pending`, timeout-`expired`), the transfer is compared directly: `transactionDate <= expires_at + grace` is paid; anything later is `payment_late`, **whatever the stored state**. Time eligibility is independent of whether the expiry reconciler has run. Tests are added for each case (§9). |
 
 The file count of revision 1 was two docs files (`PR-MON-8_DESIGN.md`, `BILLING_STATUS.md`), not one.
 
@@ -158,17 +166,25 @@ apply.
 
 ### 4.1 Late payments (review Q5, owner decision)
 
-A static QR can be paid long after checkout, after a price or promotion has changed. For SePay, the state of the
-order decides. The SePay path checks it before `record_payment`; `mark_paid` is unchanged for payOS.
+A static QR can be paid long after checkout, after a price or promotion has changed. For SePay, the decision is made
+in the SePay path before `record_payment`, in this order. `mark_paid` is unchanged for payOS.
 
-| Order state when the transfer arrives | Result |
-| --- | --- |
-| `created` / `pending` | Paid and granted, as today. |
-| `expired` by checkout timeout (the reconciler's expiry) **and** the transfer is within `expires_at` + grace | Paid and granted. |
-| `expired` and the transfer is after `expires_at` + grace | `payment_late` reconciliation item. The money is recorded, nothing is granted, and the operator refunds or honours it by hand. |
-| `cancelled`, `refunded`, or any state ended on purpose by an operator or the system | `payment_order_closed` reconciliation item. Never auto-granted, whatever the grace. |
-| `paid` by this payment event | `duplicate`, as today. |
-| `paid` by another event | As today, plus the §6.3 `payment_source_ambiguous` rule. |
+1. **A repeat of a payment already recorded.** The order is `paid` by this payment event: `duplicate`, as today. The
+   order is `paid` by another event: as today, plus the §6.3 `payment_source_ambiguous` rule.
+2. **A closed order.** The order is `cancelled`, `refunded`, or in any state an operator or the system ended on
+   purpose: `payment_order_closed` reconciliation item. Never auto-granted, whatever the time.
+3. **A payable order** (`created`, `pending`, or `expired` by checkout timeout). Compare the transfer directly with the
+   order:
+
+   | Transfer time (`transactionDate`) | Result, **whatever the stored state** |
+   | --- | --- |
+   | `<= expires_at + grace` | Paid and granted. |
+   | `> expires_at + grace` | `payment_late` reconciliation item. The money is recorded, nothing is granted, and the operator refunds or honours it by hand. |
+
+   **Time eligibility never depends on whether the expiry reconciler has already moved the order to `expired`.** A
+   `pending` order past `expires_at` + grace is late, exactly as an `expired` one is.
+4. **Fail closed.** An order with no `expires_at`, an unreadable or unset grace when the payment arrives, or an
+   unparseable `transactionDate` all produce `payment_late`: recorded, nothing granted, and the operator decides.
 
 "Within the grace" is judged on the transfer's own `transactionDate` (Vietnam time, converted to UTC), not on Orena's
 arrival time. A delayed webhook therefore does not turn an on-time transfer into a late one.
@@ -314,9 +330,13 @@ in one of two ways:
   - a 429 back-off;
   - rows for another account skipped but counted.
 - Late payment:
-  - expired by timeout, inside the grace: paid;
-  - expired, after the grace: `payment_late`, nothing granted;
-  - `cancelled` / `refunded`, whatever the grace: `payment_order_closed`, nothing granted;
+  - `pending` with `transactionDate > expires_at + grace`: `payment_late`, nothing granted;
+  - `created` with `transactionDate > expires_at + grace`: `payment_late`, nothing granted;
+  - `pending`, webhook arriving late, `transactionDate <= expires_at + grace`: paid and granted;
+  - `expired` by timeout with the transfer inside the grace: paid and granted;
+  - `expired` with the transfer after the grace: `payment_late`;
+  - `cancelled` / `refunded`: always `payment_order_closed`, inside or outside the grace;
+  - no `expires_at`, the grace unset when the payment arrives, or an unparseable `transactionDate`: `payment_late`;
   - the grace judged on `transactionDate`;
   - grace unset: checkout not ready.
 - Cursor loop:
@@ -354,7 +374,7 @@ the generated QR.
 ## 12. Activation gates (owner, all required)
 
 Production stays off until every one of these passes:
-1. Independent review of revision 3: APPROVED.
+1. Independent review of revision 4: APPROVED.
 2. Hermetic tests pass.
 3. PostgreSQL integration tests pass.
 4. SePay test mode passes.
