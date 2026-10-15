@@ -264,9 +264,26 @@ migration**:
 | `late` | `payment_not_payable` | `late_payment` |
 | `source_ambiguous` | `payment_not_payable` | `source_ambiguous` |
 
-- `dedupe_key` is the payment event id of the event being processed (§3.1).
-- The item keeps every fact the design requires: external event id (source id), order code, amount, currency,
-  provider state, the billing order and incarnation when known, the bank reference and the transaction time.
+- What is persisted, exactly the columns the existing `billing_reconciliation_items` schema has (no schema change):
+
+  | Column | Value |
+  | --- | --- |
+  | `kind` | `payment_not_payable` |
+  | `reason` | the stable constant |
+  | `dedupe_key` | the payment event id of the event being processed (§3.1) |
+  | `external_event_id` | the source event id (`sepay:wh:<id>` or `sepay:v2:<uuid>`) |
+  | `reported_order_code`, `reported_amount_minor`, `reported_currency` | as reported |
+  | `provider_state` | as reported |
+  | `payload_digest` | the webhook body's digest (for the feed, the row's digest) |
+  | `billing_order_id`, `incarnation_id` | when known |
+
+- **Bank reference.** It has no column of its own. When one exists, the payment event id is
+  `sepay:ref:<account>:<reference>`, so the reference is preserved through `dedupe_key`.
+- **Transaction time.** `transaction_at` is parsed and used inside `mark_paid_domestic` for the locked late-payment
+  decision. It is **not** stored in `billing_reconciliation_items`; the operator finds the provider transaction by
+  `external_event_id`.
+- A locally persisted bank transaction timestamp or bank-reference column, if Orena ever needs one for audit, is a
+  separate schema proposal with its own migration review, outside PR-MON-8.
 - The three `reason` values are code constants. Business logic branches on the locked outcome and on these constants,
   never on free text.
 - Admin may show a friendly label from `reason`; the database kind stays `payment_not_payable`.
@@ -364,7 +381,8 @@ When enabled, a row is applied only when:
 The applied row's payment event id follows §3.1. With a bank reference, a later manual replay of the webhook is a
 `duplicate`. Without one, a later webhook (only a manual replay can arrive after the settle delay) for an order the
 feed already paid is **not** a second payment and is **not** applied. It becomes a `payment_not_payable`
-(`reason = source_ambiguous`) reconciliation item (both source ids, amount, order) for the operator. The same holds the other way round. This
+(`reason = source_ambiguous`) reconciliation item for the operator. It holds this event's source id in
+`external_event_id`; the order's existing `paid_event_id` names the other. The same holds the other way round. This
 decision is step 6 of the locked operation (§4.2), not a pre-check.
 
 ### 6.4 Recovery outside the cursor
@@ -440,6 +458,12 @@ in one of two ways:
 - **Locked snapshot:** a second transaction changes `expires_at` (or expires the order) between the service's read and
   the locked operation. The grace decision follows the value read under the lock, never the earlier snapshot.
 - **Recorded before acknowledging:** when recording the item fails, the webhook answers 503 and no `ack()` is sent.
+- **Item contents (revision 6):** every SePay item asserts exactly the supported columns: `kind =
+  payment_not_payable`, the correct stable `reason`, `dedupe_key` = the payment event id (`sepay:ref:...` when a bank
+  reference exists), `external_event_id` = the source id, order code, amount, currency, provider state, payload digest,
+  and order/incarnation when known. No test asserts a transaction-time or bank-reference column.
+- **The late decision uses the provider time:** a separate test proves the locked late decision compares the provider's
+  `transaction_at` (not the arrival time) with the locked `expires_at` + grace.
 - The credit top-up through `sepay:<code>` (G5) and a full operator refund reversing it.
 - Selection: payOS-only, SePay-only, both configured without a choice (not ready), the choice made.
 - VietQR: known-answer vectors, the CRC and the length cap.
