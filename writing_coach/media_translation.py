@@ -525,6 +525,12 @@ class GroqTranslationProvider:
                         "groq translation rate limited: retry_after=%s quota=%s lines=%d detail=%s",
                         response.headers.get("retry-after", ""), self.last_quota, len(segments), _error_detail(response),
                     )
+                else:
+                    # An auth refusal is the one that used to leave no trace: its status and sentence, never a credential.
+                    _logger.warning(
+                        "groq translation refused: status=%s lines=%d detail=%s",
+                        response.status_code, len(segments), _error_detail(response),
+                    )
                 refused = (
                     TranslationProviderError(
                         "Groq translation is rate limited.", reason="rate_limited",

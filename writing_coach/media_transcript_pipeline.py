@@ -909,6 +909,7 @@ class MediaPipeline:
             except PipelineStop:
                 raise
             except Exception as exc:  # noqa: BLE001 - the provider refused or timed out; reported as one reason
+                _logger.warning("audio download failed for %s: %s: %s", entry.media_id, type(exc).__name__, " ".join(str(exc).split())[:200])
                 raise PipelineStop("audio_unavailable") from exc
         url = str((entry.playback or {}).get("url") or "")
         prefix = "/api/media/files/"
@@ -1054,7 +1055,10 @@ class MediaPipeline:
                 return "busy"
             self._inflight.add(media_id)
         try:
-            self._write_processing(store, entry, translation_continuation={})
+            # The previous run's outcome and refusal are cleared as the retry is queued: until it has run, the item must not
+            # present an old `provider_auth` or `rate_limited` as the result of this request (D-217). The lines already
+            # translated (`translation_counts`) stay; the job writes the new outcome and reason when it ends.
+            self._write_processing(store, entry, translation_continuation={}, translation="", translation_reason="", translation_retry_after=0)
         except PipelineStop:
             with self._guard:
                 self._inflight.discard(media_id)

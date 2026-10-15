@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import Any
 from urllib.parse import urlsplit
@@ -14,6 +15,13 @@ from writing_coach.media_timing import (
     MediaAudioResolutionFailed,
     MediaAudioSource,
 )
+
+_logger = logging.getLogger(__name__)
+
+# googlevideo serves a plain GET of an audio URL at about 30 KiB/s (no `ratebypass`), and the same URL in `Range` pieces at
+# full speed; this is the piece size yt-dlp itself uses. The whole download is also bounded in wall-clock time.
+AUDIO_RANGE_CHUNK_BYTES = 10 * 1024 * 1024
+AUDIO_DOWNLOAD_TOTAL_SECONDS = 240.0
 
 
 def probe_youtube_duration(source_url: str, *, ydl_factory: Callable[[dict[str, Any]], Any] = YoutubeDL,
@@ -50,8 +58,12 @@ def download_audio(source_url, work, *, max_seconds):
         "quiet": True, "no_warnings": True, "skip_download": True,
         "noplaylist": True, "socket_timeout": 15, "js_runtimes": {"node": {}},
     }
-    with YoutubeDL(options) as ydl:
-        info = ydl.extract_info(source_url, download=False)
+    try:
+        with YoutubeDL(options) as ydl:
+            info = ydl.extract_info(source_url, download=False)
+    except Exception as exc:  # noqa: BLE001 - one reason to the caller, but the cause is findable
+        _logger.warning("youtube audio metadata failed: %s: %s", type(exc).__name__, " ".join(str(exc).split())[:200])
+        raise PipelineStop("audio_unavailable") from exc
     duration = info.get("duration") if isinstance(info, dict) else None
     if not isinstance(duration, (int, float)) or duration <= 0:
         raise PipelineStop("audio_unavailable")
@@ -59,7 +71,7 @@ def download_audio(source_url, work, *, max_seconds):
         raise PipelineStop("too_long")
     audio = YtDlpYouTubeAudioUrlResolver().resolve(source_url)
     destination = Path(work) / "source.bin"
-    download_bounded(audio.url, destination)
+    download_bounded(audio.url, destination, range_chunk_bytes=AUDIO_RANGE_CHUNK_BYTES, total_timeout=AUDIO_DOWNLOAD_TOTAL_SECONDS)
     return destination
 
 
