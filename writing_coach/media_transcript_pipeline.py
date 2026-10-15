@@ -87,6 +87,14 @@ STATE_FAILED = "failed"  # no usable transcript; retryable
 ORIGIN_CAPTION = "provider_caption"
 ORIGIN_ASR = "generated_asr"
 
+# What an import may do when the provider's captions cannot be had (D-214). `captions_or_asr` (the default, and what an
+# item with no policy means) listens to the audio instead; `captions_only` stops there, before any audio download or
+# speech recognition, so nothing is spent. Stored on the item's `source`, so a re-run keeps it.
+SOURCE_TRANSCRIPT_POLICY = "transcript_policy"
+POLICY_DEFAULT = "captions_or_asr"
+POLICY_CAPTIONS_ONLY = "captions_only"
+TRANSCRIPT_POLICIES = (POLICY_DEFAULT, POLICY_CAPTIONS_ONLY)
+
 CHUNK_SECONDS = 600
 MAX_ATTEMPTS = 3
 AUDIO_FORMAT_TIMEOUT = 600
@@ -111,7 +119,12 @@ CONTINUATION_MAX_ATTEMPTS = 6
 CONTINUATION_BUDGET_SECONDS = 1800.0
 CONTINUATION_MIN_DELAY = 20.0
 CONTINUATION_DEFAULT_DELAY = 65.0
-CONTINUATION_MAX_DELAY = 300.0
+# One wait may be as long as the provider asked, up to this. D-211 set 300 s; the 2026-10-15 trial's 429 asked for 521 s (the
+# per-minute token bucket resets in about 58 s, so the longer ask is another allowance) and no continuation was armed. 900 s
+# fits the 1800 s budget; a wait beyond it (a daily allowance asks for hours) is still never promised (D-214).
+CONTINUATION_MAX_DELAY = 900.0
+# The stable reason recorded when the provider asked for longer than that (`processing.translation_retry_after` has the ask).
+REASON_LONG_WAIT = "rate_limited_long_wait"
 CONTINUATION_ROUNDS = 2
 
 
@@ -136,8 +149,8 @@ REASON_MESSAGES: dict[str, str] = {
     "duration_mismatch": "The audio is longer than the length reserved when it was imported.",
     "pipeline_interrupted": "Processing was interrupted too many times.",
     "pipeline_error": "The transcript pipeline failed unexpectedly. The server log has the details.",
-    "captions_unavailable": "The provider's captions could not be fetched this time. The stored caption transcript was kept and speech recognition was not run.",
-    "captions_unusable": "The provider's captions were not good enough to use. The stored caption transcript was kept and speech recognition was not run.",
+    "captions_unavailable": "The provider's captions could not be fetched this time. Speech recognition was not run; any stored captions were kept.",
+    "captions_unusable": "The provider's captions were not good enough to use. Speech recognition was not run; any stored captions were kept.",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
     "spend_cap_batch_ai": "The AI spend limit for this batch was reached.",
@@ -638,7 +651,7 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
-                                           translation="", translation_counts={}, translation_reason="", translation_continuation={}, asr_filtered=0, asr_flagged=0,
+                                           translation="", translation_counts={}, translation_reason="", translation_retry_after=0, translation_continuation={}, asr_filtered=0, asr_flagged=0,
                                            caption_kind="", caption_fallback="", reprocess_reason="", reprocess_detail="", reprocess_message="")
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
@@ -777,6 +790,10 @@ class MediaPipeline:
             if self._keeps_captions(entry):
                 # The stored transcript is the provider's own captions and they cannot be had now: it stays, and the
                 # audio is not listened to in its place (D-213). The item is restored by the caller.
+                raise PipelineStop(fallback or "captions_unavailable", captions_error)
+            if entry.source.get(SOURCE_TRANSCRIPT_POLICY) == POLICY_CAPTIONS_ONLY:
+                # The operator asked for captions or nothing (D-214): no audio is downloaded, no recognition runs, nothing
+                # is spent. The item fails with the stable reason and can be re-run once the provider answers.
                 raise PipelineStop(fallback or "captions_unavailable", captions_error)
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_fallback=fallback)
         try:
@@ -972,6 +989,9 @@ class MediaPipeline:
                     stop_reason = given or ("incomplete" if progressed else "provider_error")
                     retry_after = float(getattr(result, "retry_after", 0.0) or 0.0)
                     last_retry_after = retry_after
+                    if stop_reason == "rate_limited":
+                        _logger.warning("media translation rate limited for %s (%s): retry_after=%.0f s, %d of %d lines",
+                                        entry.media_id, target, retry_after, done, total_lines)
                     # A partial that did not grow and says nothing would be asked for again with no new information.
                     if not progressed and not given:
                         break
@@ -1095,6 +1115,17 @@ class MediaPipeline:
         attempt = int(previous.get("attempt") or 0) + 1
         deadline = self._epoch(previous.get("deadline")) or now + CONTINUATION_BUDGET_SECONDS
         asked = float(stop.get("retry_after") or 0.0)
+        if asked > CONTINUATION_MAX_DELAY and attempt <= CONTINUATION_MAX_ATTEMPTS:
+            # Not dropped silently (D-214): the item stays as it is (held, partial), and says why nothing is scheduled.
+            _logger.warning("translation continuation not scheduled for %s: the provider asked for %.0f s (limit %.0f s)",
+                            entry.media_id, asked, CONTINUATION_MAX_DELAY)
+            try:
+                self._write_processing(store, entry, translation_reason=REASON_LONG_WAIT, translation_retry_after=round(asked, 1))
+            except PipelineStop:
+                raise
+            except Exception:  # noqa: BLE001 - the reason is a convenience; the lesson stands without it
+                _logger.warning("long-wait reason not written for %s", entry.media_id, exc_info=True)
+            return outcome
         if asked > CONTINUATION_MAX_DELAY or attempt > CONTINUATION_MAX_ATTEMPTS:
             return outcome
         delay = min(max(asked or CONTINUATION_DEFAULT_DELAY, CONTINUATION_MIN_DELAY), CONTINUATION_MAX_DELAY)
@@ -1111,6 +1142,7 @@ class MediaPipeline:
         except Exception:  # noqa: BLE001 - not recording it means not promising it
             _logger.warning("translation continuation not recorded for %s", entry.media_id, exc_info=True)
             return outcome
+        _logger.info("translation continuation %d of %d armed for %s in %.0f s", attempt, CONTINUATION_MAX_ATTEMPTS, entry.media_id, delay)
         self._schedule(delay, lambda: self._continuation_due(store, entry.media_id))
         return "deferred"
 

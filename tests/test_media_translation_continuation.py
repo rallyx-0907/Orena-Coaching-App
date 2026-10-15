@@ -123,7 +123,10 @@ def test_a_wait_longer_than_one_window_is_not_scheduled_at_all(tmp_path, monkeyp
     outcome, counts = _first_run(store, entry, pipeline)
     assert outcome == "partial" and scheduled == []
     stored = store.get(entry.media_id).processing
-    assert stored["translation_reason"] == "rate_limited" and not stored.get("translation_continuation")
+    # Not dropped silently (D-214 P2-3): the item stays held and partial, the reason says why no continuation, the ask is kept.
+    assert stored["translation_reason"] == "rate_limited_long_wait" and not stored.get("translation_continuation")
+    assert stored["translation_retry_after"] == mtp.CONTINUATION_MAX_DELAY + 1
+    assert stored["state"] == "held" and stored["translation"] == "partial"
 
 
 def test_an_unknown_wait_uses_one_window_and_a_short_one_is_raised_to_the_floor(tmp_path, monkeypatch):
