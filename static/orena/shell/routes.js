@@ -41,6 +41,8 @@ export const ROUTES = Object.freeze([
   // The 2026-10-08 export's Plan & usage and Pricing frames (both in its focus list).
   { id: 'billing', path: 'plan', design: 'billing', screen: 'plan', focus: true, crumb: 'planUsage' },
   { id: 'pricing', path: 'plan/pricing', design: 'pricing', screen: 'plan', focus: true, crumb: 'plans' },
+  // The 2026-10-14 export's Credits frame (in its focus list).
+  { id: 'credits', path: 'credits', design: 'credits', screen: 'credits', focus: true, crumb: 'credits' },
   // The 2026-10-08 export's Feedback frame (in its focus list).
   { id: 'feedback', path: 'feedback', design: 'feedback', screen: 'feedback', focus: true, crumb: 'feedback' },
   { id: 'search', path: 'search', design: 'search', screen: 'search', focus: true, crumb: 'search' },

@@ -42,6 +42,8 @@ copyright Meta Platforms, Inc. and affiliates), the unmodified npm production bu
 against the npm registry's integrity hashes. The design's page runtime (`static/orena/public/support.js`) is the
 design project's own file.
 
+Browser software served inside the learner app: qrcode-generator 1.4.4 (MIT, copyright (c) 2009 Kazuhiko Arase), vendored in `static/orena/vendor/qrcode-generator/qrcode.js` with its licence text (`LICENSE.qrcode-generator`). It is the upstream file with only an ES-module export added, and draws the payment QR of Credits locally (no network image, no third-party request). New dependency recorded in `UI_BACKEND_GAPS.md` CT-8.
+
 The application image installs FFmpeg (`ffmpeg`, `ffprobe`) from Debian packages (LGPL-2.1+ /
 GPL-2+ depending on build); Orena invokes it as a separate program and does not link it.
 

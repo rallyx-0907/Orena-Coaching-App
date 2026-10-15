@@ -22,6 +22,9 @@ import { shellCopy, planName, planDescription } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { planView, usageRows, featureCopyKey, formatNumber } from './model.js';
 import pricing from './pricing.js';
+import { t as creditCopy } from '../../copy/credit-topup.js';
+import { loadOffers } from '../../product/credit-topup.js';
+import { ensureSpark, sparkTile } from '../credits/spark.js';
 
 const STATUS_TONE = { status_active: 'green', status_past_due: 'red', status_trialing: 'amber', status_pending: 'amber', status_paused: 'amber' };
 
@@ -60,7 +63,17 @@ function usageRowMarkup(row) {
   </div>`;
 }
 
-export function billingMarkup(commerce) {
+/* The Credits card (2026-10-14 design): drawn only while the backend offers credit packs. The balance has no learner
+   endpoint yet (CT-2), so it reads "—". Credits are separate from the plan: this card never touches the plan above. */
+function creditsCard() {
+  return html`<section class="s-plan-credits">
+    <div class="s-plan-credits__top">${sparkTile(48, 26, { radius: 14 })}<div class="s-plan-credits__id"><div class="s-plan-credits__eyebrow">${creditCopy('credits')}</div><div class="s-plan-credits__bal"><span class="s-plan-credits__num">—</span><span class="s-plan-credits__unit">${creditCopy('left')}</span></div></div></div>
+    <div class="s-plan-credits__text">${creditCopy('cardText')}</div>
+    <div class="s-plan-credits__actions"><button type="button" class="s-plan-credits__add" data-open-credits>${creditCopy('addCredits')}</button><button type="button" class="s-plan-credits__history" data-open-credits>${creditCopy('viewHistory')}</button></div>
+  </section>`;
+}
+
+export function billingMarkup(commerce, { credits = false } = {}) {
   const view = planView(commerce);
   const rows = usageRows(commerce);
   const tone = STATUS_TONE[view.statusKey] || 'neutral';
@@ -94,6 +107,7 @@ export function billingMarkup(commerce) {
           </section>
         </div>
         <div class="s-plan__col">
+          ${credits ? creditsCard() : ''}
           <section class="s-plan-card s-plan-pay">
             <h2 class="s-plan-card__title">${t('paymentMethod')}</h2>
             <div class="s-plan-pay__row">
@@ -116,11 +130,16 @@ export default async function plan(element, ctx) {
   await useStyles('screens/plan/plan.css');
   // One folder serves both frames: Plans is its own route and its own module.
   if (ctx.route?.id === 'pricing') return pricing(element, ctx);
-  const commerce = await api.productCommerce().catch(() => null);
+  const [commerce, offers] = await Promise.all([api.productCommerce().catch(() => null), loadOffers(api)]);
   if (!ctx.isCurrent()) return undefined;
   if (!commerce) throw new Error('plan_unavailable');
+  if (offers.available) {
+    await useStyles('screens/credits/credits.css');
+    ensureSpark();
+  }
 
-  mount(element, billingMarkup(commerce));
+  mount(element, billingMarkup(commerce, { credits: offers.available }));
+  element.querySelectorAll('[data-open-credits]').forEach((button) => button.addEventListener('click', () => ctx.go(ctx.href('credits'))));
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
   element.querySelectorAll('[data-open-plans]').forEach((button) => button.addEventListener('click', () => ctx.go(ctx.href('pricing'))));
   return undefined;
