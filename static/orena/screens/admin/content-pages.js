@@ -127,7 +127,9 @@ export function bookPage({ detail, view, t, ui, href }) {
 function failureReason(record, t) {
   const outcome = record.outcome || {};
   if (outcome.state !== 'failed' || !outcome.reason) return '';
-  return t.has(`impErr_${outcome.reason}`) ? t(`impErr_${outcome.reason}`) : outcome.message || '';
+  const text = t.has(`impErr_${outcome.reason}`) ? t(`impErr_${outcome.reason}`) : outcome.message || '';
+  /* The failing check and its counts (ids and numbers, no copy), when the pipeline recorded them (D-218). */
+  return outcome.detail ? `${text} (${outcome.detail})` : text;
 }
 
 /* The pipeline's translation state beside its counts and, when it stopped short, the stable reason. */
@@ -146,7 +148,7 @@ function captionSummary(record, t) {
   const transcript = record.outcome?.transcript || {};
   const reason = (code) => (t.has(`impErr_${code}`) ? t(`impErr_${code}`) : code);
   if (transcript.origin === 'provider_caption') return transcript.caption_kind === 'manual' ? t('ctCapManual') : transcript.caption_kind === 'auto' ? t('ctCapAuto') : t('ctCapProvider');
-  if (transcript.origin === 'generated_asr') return transcript.caption_fallback ? `${t('ctCapAsr')} · ${reason(transcript.caption_fallback)}` : t('ctCapAsr');
+  if (transcript.origin === 'generated_asr') return transcript.caption_fallback ? `${t('ctCapAsr')} · ${reason(transcript.caption_fallback)}${transcript.caption_fallback_detail ? ` (${transcript.caption_fallback_detail})` : ''}` : t('ctCapAsr');
   return '—';
 }
 

@@ -122,12 +122,15 @@ def media_outcome(entry: Any) -> dict[str, Any]:
             "caption_language": str(processing.get("caption_language") or ""),
             "caption_fallback": fallback,
             "caption_fallback_message": reason_message(fallback),
+            "caption_fallback_detail": str(processing.get("caption_fallback_detail") or ""),
             "reprocess_reason": reprocess_reason,
             "reprocess_message": str(processing.get("reprocess_message") or "") or reason_message(reprocess_reason),
         },
         "stage": str(processing.get("stage") or ""),
         "reason": reason,
         "message": str(processing.get("message") or "") or reason_message(reason),
+        # The failing check and its counts for a reason that has one (`captions_unusable`), ids and numbers only (D-218).
+        "detail": str(processing.get("detail") or "") if reason == "captions_unusable" else "",
         "translation": {
             "state": translation, "reason": str(processing.get("translation_reason") or ""),
             "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)},

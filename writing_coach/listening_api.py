@@ -632,10 +632,12 @@ def _curated_translator(media_object: Any):
         # A transcript longer than one call's batch bound is taken in windows that fit it; the caller asks again for
         # what is still missing (the persisted cache makes that continuation cost only the missing lines).
         window = tuple(segments)[: MAX_TRANSLATION_BATCHES * MAX_TRANSLATION_BATCH_SEGMENTS]
-        batches = build_translation_batches(window)
+        # A provider with an output-token limit gets batches that fit it (D-218): one request, one decision.
+        ceiling = service.output_ceiling()
+        batches = build_translation_batches(window, max_output_tokens=ceiling)
         while batches is None and window:
             window = window[: len(window) // 2]
-            batches = build_translation_batches(window) if window else None
+            batches = build_translation_batches(window, max_output_tokens=ceiling) if window else None
         if batches is None:
             return TranslatedLines(reason="too_large")
         generated = TranslatedLines()

@@ -124,6 +124,11 @@ POLICIES: tuple[Policy, ...] = (
     # or YouTube first and Supadata native when YouTube gives none. Supadata is never asked to generate or translate.
     _p("media.caption_source", "media", "enum", "youtube", env="MEDIA_CAPTION_SOURCE",
        choices=("youtube", "supadata_native", "youtube_then_supadata_native")),
+    # Which Chinese script a provider caption track may be in (D-218, owner decision 2026-10-15: "skip Traditional content;
+    # for now only Simplified learning content is accepted"). `simplified` refuses a track tagged zh-Hant / zh-TW / zh-HK /
+    # zh-MO with the stable reason `zh_traditional_not_accepted`; `any` takes the provider's track as it is. Speech
+    # recognition output is not affected: it is converted to Simplified (D-208).
+    _p("media.zh_scripts_accepted", "media", "enum", "simplified", choices=("simplified", "any")),
     # --- vocabulary (D-188): the operator's switch for the derived General catalogue; on by default
     _p("vocabulary.general_catalogue_enabled", "vocabulary", "bool", True),
     # --- request rates on the other paid routes (per account, per 10 minutes)
@@ -176,6 +181,20 @@ POLICIES: tuple[Policy, ...] = (
     _p("billing.domestic_late_payment_grace_hours", "billing", "int", 0, unit="hours", low=0, high=168,
        danger="charging"),
 )
+
+# What the media AI spend ledger rates a model at when the flat `media.ai_usd_per_million_tokens` would be wrong for it
+# (D-218): published (input, output) USD per million tokens. A model not listed here is rated at the flat default, never at
+# 0, so a spend cap always bites; a free-plan entry of the pricing catalogue does not zero the media ledger.
+#   qwen/qwen3.8-27b: Groq model page https://console.groq.com/docs/model/qwen/qwen3.8-27b, read 2026-10-15 (input $0.80,
+#   output $4.00 per million tokens; a "Preview" model, so the price may change; https://groq.com/pricing does not list it).
+MEDIA_AI_MODEL_RATES: Mapping[str, tuple[float, float]] = {
+    "qwen/qwen3.8-27b": (0.80, 4.00),
+}
+
+
+def media_ai_model_rate(model: object) -> tuple[float, float] | None:
+    return MEDIA_AI_MODEL_RATES.get(str(model or "").strip())
+
 
 BY_KEY: dict[str, Policy] = {item.key: item for item in POLICIES}
 assert len(BY_KEY) == len(POLICIES), "a policy key is declared twice"

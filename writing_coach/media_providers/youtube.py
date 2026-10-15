@@ -93,6 +93,29 @@ class YouTubeSourceMetadata:
     author_url: str = ""
 
 
+REASON_ZH_TRADITIONAL = "zh_traditional_not_accepted"
+
+
+class TraditionalChineseNotAccepted(ProviderRequestFailed):
+    """The only Chinese track offered is tagged Traditional and the policy accepts Simplified only (D-218)."""
+
+    reason = REASON_ZH_TRADITIONAL
+
+
+def is_traditional_chinese_tag(language_code: object) -> bool:
+    """`zh-Hant`, `zh-TW`, `zh-HK`, `zh-MO` (any case, `-` or `_`): a track the provider says is Traditional Chinese."""
+    from writing_coach.languages.chinese.script_conversion import TRADITIONAL, target_script
+
+    code = str(language_code or "").strip().replace("_", "-")
+    return primary_language(code) == "zh" and target_script(code) == TRADITIONAL
+
+
+def traditional_chinese_refused() -> bool:
+    from writing_coach import policies
+
+    return str(policies.value("media.zh_scripts_accepted")) == "simplified"
+
+
 class YouTubeCaptionClient(Protocol):
     def fetch_track(
         self,
@@ -209,6 +232,13 @@ class PublicYouTubeCaptionClient:
             )
             if not language_candidates:
                 return None
+            if source_language.casefold() == "zh" and traditional_chinese_refused():
+                # Simplified only (D-218): a Traditional-tagged track is not taken, and a Simplified or untagged one is
+                # preferred when the video offers both. Nothing has been fetched or paid for yet.
+                accepted = [code for code in language_candidates if not is_traditional_chinese_tag(code)]
+                if not accepted:
+                    raise TraditionalChineseNotAccepted()
+                language_candidates = accepted
             kind = "manual"
             try:
                 selected = transcript_list.find_manually_created_transcript(
@@ -267,6 +297,12 @@ def recognizes_youtube_url(source_url: str) -> bool:
     return hostname == "youtu.be" or hostname == "youtube.com" or hostname.endswith(
         ".youtube.com"
     )
+
+
+def is_youtube_video_id(video_id: object) -> bool:
+    """YouTube's real id shape: 11 characters of [A-Za-z0-9_-]. A leading "-" is valid (`-anLfV9mZJY`); that is why the id is
+    only ever placed in a URL or after "--", never passed bare as a command-line argument (D-218)."""
+    return isinstance(video_id, str) and bool(_VIDEO_ID.fullmatch(video_id))
 
 
 def parse_youtube_video_id(source_url: str) -> str:
@@ -484,7 +520,7 @@ class YouTubeMediaProviderAdapter:
             except ProviderTranscriptMalformed:
                 native_malformed = True
 
-        if transcript is None:
+        if transcript is None and not isinstance(native_caption_error, TraditionalChineseNotAccepted):
             fallback_track = self._fallback_track(
                 canonical_url,
                 source_language,

@@ -47,7 +47,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from writing_coach import media_quota, media_translation
+from writing_coach import media_quota, media_translation, policies
+from writing_coach.media_providers.youtube import REASON_ZH_TRADITIONAL
 from writing_coach.ai.audio_telemetry import telemetry_origin
 from writing_coach.billing.funding_context import system_funding
 from writing_coach.ai.pricing import estimate_token_cost
@@ -126,6 +127,10 @@ CONTINUATION_MAX_DELAY = 900.0
 # The stable reason recorded when the provider asked for longer than that (`processing.translation_retry_after` has the ask).
 REASON_LONG_WAIT = "rate_limited_long_wait"
 CONTINUATION_ROUNDS = 2
+# How long one continuation may hold the worker waiting inside the provider for an output-token window to clear (D-218). A
+# provider with an output-tokens-per-minute limit admits a few lines a minute; the schedule alone would make a long item
+# take one window per attempt and run out of attempts. Bounded like the first run's waits (TRANSLATION_MAX_TOTAL_WAIT).
+CONTINUATION_PACING_SECONDS = 150.0
 
 
 # The stable reason codes an item can be held or failed with, each with the English sentence stored beside it
@@ -151,6 +156,7 @@ REASON_MESSAGES: dict[str, str] = {
     "pipeline_error": "The transcript pipeline failed unexpectedly. The server log has the details.",
     "captions_unavailable": "The provider's captions could not be fetched this time. Speech recognition was not run; any stored captions were kept.",
     "captions_unusable": "The provider's captions were not good enough to use. Speech recognition was not run; any stored captions were kept.",
+    "zh_traditional_not_accepted": "The only Chinese captions offered are Traditional; only Simplified is accepted for now. Nothing was translated.",
     "caption_quota": "Today's limit of caption requests to the caption provider was reached; none was sent.",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
@@ -160,6 +166,16 @@ REASON_MESSAGES: dict[str, str] = {
 
 def reason_message(code: str) -> str:
     return REASON_MESSAGES.get(str(code or ""), "")
+
+
+def caption_check_detail(checks: Any, captions: int, lines: int) -> str:
+    """The first failing quality check of fetched captions, by its stable id and its own count, and how many captions and
+    lines there were: `segments: 242 lines; 242 captions, 242 lines`. Language-neutral on purpose (ids and numbers), so the
+    admin shows it beside the translated reason without new copy (D-218)."""
+    failed = next((check for check in checks if not check.get("pass")), None)
+    if failed is None:
+        return ""
+    return f"{failed.get('id')}: {failed.get('detail')}; {captions} captions, {lines} lines"[:200]
 
 
 class PipelineStop(Exception):
@@ -656,7 +672,7 @@ class MediaPipeline:
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
                                            translation="", translation_counts={}, translation_reason="", translation_retry_after=0, translation_continuation={}, asr_filtered=0, asr_flagged=0,
-                                           caption_kind="", caption_provider="", caption_language="", caption_fallback="", reprocess_reason="", reprocess_detail="", reprocess_message="")
+                                           caption_kind="", caption_provider="", caption_language="", caption_fallback="", caption_fallback_detail="", reprocess_reason="", reprocess_detail="", reprocess_message="")
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
@@ -787,14 +803,21 @@ class MediaPipeline:
             if cues:
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
-                if not first_failure(validate_lines(lines, language=language, duration_ms=duration)):
+                checks = validate_lines(lines, language=language, duration_ms=duration)
+                if not first_failure(checks):
                     self._write_processing(store, entry, caption_kind=kind, caption_provider=provider,
-                                           caption_language=caption_language, caption_fallback="")
+                                           caption_language=caption_language, caption_fallback="", caption_fallback_detail="")
                     return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], {}
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
                 fallback = "captions_unusable"
+                # Which check refused them, with its own count, so an operator is not left to guess (D-218).
+                captions_error = caption_check_detail(checks, len(cues), len(lines))
             elif captions_error:
-                fallback = "caption_quota" if captions_error == "caption_quota" else "captions_unavailable"
+                fallback = captions_error if captions_error in {"caption_quota", REASON_ZH_TRADITIONAL} else "captions_unavailable"
+            if captions_error == REASON_ZH_TRADITIONAL:
+                # Owner decision 2026-10-15: only Simplified Chinese is accepted. The track is refused whatever the
+                # transcript policy says: no audio is downloaded, no recognition runs, nothing is translated or spent (D-218).
+                raise PipelineStop(REASON_ZH_TRADITIONAL, "")
             if self._keeps_captions(entry):
                 # The stored transcript is the provider's own captions and they cannot be had now: it stays, and the
                 # audio is not listened to in its place (D-213). The item is restored by the caller.
@@ -804,7 +827,8 @@ class MediaPipeline:
                 # is spent. The item fails with the stable reason and can be re-run once the provider answers.
                 raise PipelineStop(fallback or "captions_unavailable", captions_error)
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_provider="",
-                               caption_language="", caption_fallback=fallback)
+                               caption_language="", caption_fallback=fallback,
+                               caption_fallback_detail=captions_error if fallback == "captions_unusable" else "")
         try:
             raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
         except PipelineStop as stop:
@@ -829,6 +853,9 @@ class MediaPipeline:
         try:
             acquisition = service.import_media(entry.canonical_url, "en", entry.language)
         except Exception as exc:  # noqa: BLE001 - no captions is a normal answer; audio is the next source
+            cause = getattr(getattr(exc, "__cause__", None), "reason", "")
+            if cause == REASON_ZH_TRADITIONAL:
+                return [], REASON_ZH_TRADITIONAL, "", "", ""
             return [], str(getattr(getattr(exc, "category", None), "value", "") or ""), "", "", ""
         provenance = getattr(acquisition, "provenance", None) or {}
         transcript = acquisition.media_object.transcript
@@ -931,7 +958,7 @@ class MediaPipeline:
     def _translate(
         self, store: Any, entry: MediaLibraryEntry, batch_id: str, personal: bool, *, stop: dict[str, Any] | None = None,
         resume: bool = False, max_rounds: int = TRANSLATION_MAX_ROUNDS, max_total_wait: float = TRANSLATION_MAX_TOTAL_WAIT,
-        guard: Callable[[], None] | None = None,
+        guard: Callable[[], None] | None = None, pacing_seconds: float | None = None,
     ) -> tuple[str, dict[str, dict[str, int]]]:
         """Materialize configured optional meanings before admission; workspace reads never generate them.
 
@@ -957,6 +984,9 @@ class MediaPipeline:
         stop_reason = ""
         last_retry_after = 0.0
         waited = 0.0
+        # The one budget of seconds the provider may wait inside a call for its output-token window (D-218): shared by all
+        # the rounds of this run, so a stuck window cannot hold the worker beyond it.
+        pace = media_translation.PacingBudget(max_total_wait if pacing_seconds is None else pacing_seconds)
         for target in languages:
             done = 0
             for attempt in range(max_rounds):
@@ -978,11 +1008,12 @@ class MediaPipeline:
                 usage: list[tuple[str, Any]] = []
                 retry_after = 0.0
                 try:
-                    if self._translation_sink is not None:
-                        with self._translation_sink(lambda model, value, captured=usage: captured.append((model, value))):
+                    with media_translation.translation_pacing(pace):
+                        if self._translation_sink is not None:
+                            with self._translation_sink(lambda model, value, captured=usage: captured.append((model, value))):
+                                result = self._meanings(entry, target)
+                        else:
                             result = self._meanings(entry, target)
-                    else:
-                        result = self._meanings(entry, target)
                 except Exception:  # noqa: BLE001 - translation is enrichment; the lesson stands without it
                     _logger.warning("pre-translation failed for %s", entry.media_id, exc_info=True)
                     stop_reason = "provider_error"
@@ -1252,7 +1283,7 @@ class MediaPipeline:
         stop: dict[str, Any] = {}
         outcome, counts = self._translate(
             store, entry, batch_id, entry.library == "personal", stop=stop, resume=True,
-            max_rounds=CONTINUATION_ROUNDS, max_total_wait=0.0, guard=guard,
+            max_rounds=CONTINUATION_ROUNDS, max_total_wait=0.0, guard=guard, pacing_seconds=CONTINUATION_PACING_SECONDS,
         )
         fresh = store.get(entry.media_id) or entry
         outcome = self._defer_translation(store, fresh, outcome, stop)
@@ -1272,8 +1303,16 @@ class MediaPipeline:
 
     def _ai_cost(self, model: str, usage: Any) -> float:
         usage = usage if isinstance(usage, Mapping) else {}
+        # A model with a published media rate is rated at it (D-218), before the catalogue, whose free-plan zero entries
+        # (qwen/qwen3.8-27b) would book 0 and leave every spend cap unreachable.
+        rate = policies.media_ai_model_rate(model)
+        prompt, completion = usage.get("prompt_tokens"), usage.get("completion_tokens")
+        if rate is not None and type(prompt) is int and type(completion) is int and prompt >= 0 and completion >= 0:
+            return (prompt * rate[0] + completion * rate[1]) / 1_000_000
         priced = estimate_token_cost("groq", model, usage)
-        if priced.get("state") == "estimated" and isinstance(priced.get("amount"), (int, float)):
+        # A zero from the catalogue is a free-plan fact about another capability, not a price for this ledger: it falls
+        # through to the flat rate below.
+        if priced.get("state") == "estimated" and isinstance(priced.get("amount"), (int, float)) and float(priced["amount"]) > 0:
             return float(priced["amount"])
         tokens = sum(int(usage.get(key) or 0) for key in ("prompt_tokens", "completion_tokens", "total_tokens") if isinstance(usage.get(key), int))
         if usage.get("total_tokens") and usage.get("prompt_tokens") is not None:
