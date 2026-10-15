@@ -158,3 +158,32 @@ credits enabled, and no R-MON-014, without separate human authorization.
 
 **Answered by** `docs/billing/PR-MON-6_MIGRATION_GATE_REVIEW_REQUEST.md` and the proposed
 `migrations/proposed/20261015_0034_funding_admissions.py` (this lane's next commit).
+
+---
+
+# Migration-gate review of `5a2f5fd5d81ff62961072e5700b16d1476fe620c` (proposed 0034), 2026-10-15
+
+## VERDICT
+
+**REQUEST CHANGES — two focused P1s.** The migration architecture is otherwise accepted.
+
+Accepted, not to be redesigned:
+1. promotional usage reuses 0007's quota bucket and reservations (no `promotional_grant_usage` table);
+2. the admission source may be `promotional`, the exact grant derived through the backing bucket;
+3. `users.id` is the v1 anti-reclaim identity while the deletion model preserves that row. Purging `users` would
+   require a separate human-approved migration to a durable keyed identity.
+
+- **P1-1:** the exact credit backing must include the reserve request digest, using PR-MON-4's exact reserve digest
+  contract (no second format). Tests: a canonical reserve funds; a reserve correct in account/key/meter/ref/amount but
+  with a wrong digest can neither fund nor be adopted; retry/adoption never treats it as exact. A mutation removing
+  the digest predicate must be killed.
+- **P1-2:** `stray_released` must prove no open `fund:<op>` credit reserve in **any** account, not only the
+  admission's incarnation. Regression: A admitted; B holds `fund:<op>`; A refused; conflict opened; resolution fails
+  while B's hold is open, succeeds after it is released or expired. A mutation restoring the same-incarnation
+  restriction must be killed.
+
+Promotion prerequisite: the lane on current `main` (#212 at `d0261230`); one Alembic head; 0034 still the next free
+revision; rerun the 0034 suite, the billing PostgreSQL batch, all 0034 mutations and the up/down-to-0033/up
+rehearsal. No promotion or application of 0034, no feature code, no quota/funding/credits enabled, no R-MON-014.
+
+**Answered by** revision 2 of the proposal (this lane's next commit); `PR-MON-6_MIGRATION_GATE_REVIEW_REQUEST.md` §10.

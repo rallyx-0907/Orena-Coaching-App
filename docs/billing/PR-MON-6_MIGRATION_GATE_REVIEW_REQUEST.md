@@ -1,6 +1,6 @@
 # PR-MON-6 migration gate: review request for the proposed 0034
 
-**Status: PROPOSED.** Not promoted and not applied to any runtime. Credits, quota enforcement and funding stay off.
+**Status: PROPOSED; revision 2 answers the review of `5a2f5fd5` (REQUEST CHANGES, P1-1 and P1-2).** Not promoted and not applied to any runtime. Credits, quota enforcement and funding stay off.
 R-MON-014 has not been run. Promoting, applying and enabling are human gates.
 
 ## What is under review
@@ -96,11 +96,11 @@ Each transition is checked against its backing reservation:
 
 | Transition | Credits (hold) | Allowance / promotional (quota reservation) |
 | --- | --- | --- |
-| `→ funded` | The incarnation is taken FOR SHARE and must be active. The hold must be exact (`fund:<op>`, this incarnation's account, meter, `operation_ref`, `amount = amount_reserved`), unexpired and not closed. | The incarnation is taken FOR SHARE and must be active. The reservation must be exact (`fund:<op>`, `admitted_units = units`, `reserved`, the bucket's incarnation and meter), and `promotional` exactly when the bucket is a grant's. |
+| `→ funded` | The incarnation is taken FOR SHARE and must be active. The hold must be exact (`fund:<op>`, this incarnation's account, meter, `operation_ref`, `amount = amount_reserved`, and `request_digest` = PR-MON-4's reserve digest of that intent with the snapshot's `hold_ttl_seconds`), unexpired and not closed. | The incarnation is taken FOR SHARE and must be active. The reservation must be exact (`fund:<op>`, `admitted_units = units`, `reserved`, the bucket's incarnation and meter), and `promotional` exactly when the bucket is a grant's. |
 | `→ dispatched` | The hold is still unexpired and open. | The reservation is still `reserved` or `dispatched`. |
 | `→ settled` | The hold's settle charged exactly `settled_amount`. | The reservation is settled with `actual_units = settled_units`. |
 | `→ released` | The hold's release or expiry exists (or a settle that charged 0). | The reservation is released, or settled at 0. |
-| `→ refused` | No open, exact hold keyed `fund:<op>` exists. | No open, exact reservation keyed `fund:<op>` exists. |
+| `→ refused` | No open, exact hold keyed `fund:<op>` exists (exact includes the canonical digest of the hold's own amount and TTL). | No open, exact reservation keyed `fund:<op>` exists. |
 
 - A non-exact stray does not block a refusal. It becomes a `funding_admission_conflict` item.
 - An exact backing must be adopted, never orphaned. This is the crash table of §5.6.
@@ -150,7 +150,7 @@ Each transition is checked against its backing reservation:
 
 ## 7. Evidence (local execution, throwaway PostgreSQL 16, not CI)
 
-- `tests/test_funding_admission_migration_postgres.py`: **18 passed**. Mutants: §9.
+- `tests/test_funding_admission_migration_postgres.py`: **20 passed** (revision 2). The billing PostgreSQL batch (ledger, top-up, top-up migration, 0034, reconciliation, AI costs, billing, effective entitlement): **179 passed**. The up → down to 0033 → up rehearsal is part of the 0034 suite. Mutants: §9.
 
 ## 8. Decisions for the reviewer or the human
 
@@ -167,8 +167,48 @@ Each transition is checked against its backing reservation:
 
 ## 9. Mutation results
 
-**36/36 caught** (local execution, throwaway PostgreSQL 16). Each mutant removes one database guard, CHECK, grant or ownership step from the proposal, and at least one 0034 test fails:
+**39/39 caught** on revision 2 (local execution, throwaway PostgreSQL 16). Each mutant removes one database guard, CHECK, grant or ownership step from the proposal, and at least one 0034 test fails:
 
-`forward_transition`, `snapshot_immutable`, `identity_immutable`, `same_state_frozen`, `hold_key`, `hold_open`, `hold_expiry`, `dispatch_open`, `quota_units`, `quota_meter`, `quota_promotional`, `funded_deleted`, `funded_lock`, `settle_charge`, `quota_settle_units`, `credit_release_close`, `quota_release`, `refused_credit`, `refused_quota`, `insert_admitting`, `insert_deleted`, `never_deleted`, `grant_unique`, `grant_owner`, `grant_immutable`, `bucket_window`, `bucket_frozen`, `bucket_check`, `attribution_check`, `stray_released_fact`, `conflict_scope`, `runtime_column_grants`, `owner_transfer`, `downgrade_guard`, `zero_settle_check`, `refused_reason_check`.
+`forward_transition`, `snapshot_immutable`, `identity_immutable`, `same_state_frozen`, `hold_key`, `hold_open`, `hold_expiry`, `dispatch_open`, `quota_units`, `quota_meter`, `quota_promotional`, `funded_deleted`, `funded_lock`, `settle_charge`, `quota_settle_units`, `credit_release_close`, `quota_release`, `refused_credit`, `refused_quota`, `insert_admitting`, `insert_deleted`, `never_deleted`, `grant_unique`, `grant_owner`, `grant_immutable`, `bucket_window`, `bucket_frozen`, `bucket_check`, `attribution_check`, `stray_released_fact`, `conflict_scope`, `runtime_column_grants`, `owner_transfer`, `downgrade_guard`, `zero_settle_check`, `refused_reason_check`, and for the review of `5a2f5fd5`: `reserve_digest_funded`, `reserve_digest_refused`, `stray_same_incarnation` (killed by the P1-1 and P1-2 regressions).
 
-A first run left four survivors: `snapshot_immutable`, `hold_open`, `quota_units` and `quota_meter`. Each wrong-backing case had also carried a wrong key, so the key clause masked the others. The tests now give each case its own admission, with an exact key and one wrong attribute. They also cover a hold that is closed but unexpired, and a snapshot change made together with a transition. All 36 are caught on the re-run.
+A first run left four survivors: `snapshot_immutable`, `hold_open`, `quota_units` and `quota_meter`. Each wrong-backing case had also carried a wrong key, so the key clause masked the others. The tests now give each case its own admission, with an exact key and one wrong attribute. They also cover a hold that is closed but unexpired, and a snapshot change made together with a transition. All 36 were caught on the re-run.
+
+## 10. Revision 2: the review of `5a2f5fd5`
+
+The verdict was REQUEST CHANGES with two focused P1s. Deviations 1 and 2 were accepted, and so was `users.id` as the
+v1 anti-reclaim identity. Purging `users` would need its own human-approved migration to a durable keyed identity.
+
+**P1-1: the exact hold includes the reserve request digest.**
+- **The digest contract.** The digest is PR-MON-4's own, from `credit_repository.reserve`:
+  `digest(kind="reserve", account, amount, meter, operation_ref, ttl)`. It is recomputed with 0033's `_digest_sql`;
+  there is no second format.
+- **The snapshot.** It gains `hold_ttl_seconds`:
+  - credits require it, at 1..1800 seconds;
+  - the allowance has none.
+  - With it, the expected intent is durable and can be recomputed.
+- **Charsets.** `meter` and `operation_ref` are restricted (CHECK) to characters that canonical JSON leaves
+  unescaped, so the SQL recomputation stays exact.
+- **Refusal.** An open hold counts as exact only if its digest is canonical for its own amount and TTL
+  (`expires_at − created_at`, as the repository writes it). A hold that is otherwise exact but has another digest
+  cannot fund and does not block a refusal: it is a stray, never adopted.
+- **Tests:**
+  - a hold made by the real `PostgresCreditRepository.reserve` funds the admission, and blocks a refusal;
+  - an otherwise exact hold with a wrong digest is refused, and the admission can then be refused;
+  - the wrong-digest case is also in the exact-hold matrix.
+
+**P1-2: the stray proof is global.**
+- `stray_released` now searches every credit account for an open `fund:<op>` hold, served by the new partial index
+  `ix_credit_ledger_fund_key`.
+- The regression follows the review's seven steps:
+  1. A is admitted;
+  2. B holds an open reserve under A's key;
+  3. A is refused as non-exact;
+  4. the conflict item is opened;
+  5. resolving it fails while B's hold is open;
+  6. B's hold expires;
+  7. resolving then succeeds.
+
+**Rebased topology.**
+- The lane now includes `main` at `d0261230` (#212).
+- The Alembic chain still has the single head `20261015_0033`.
+- No branch other than this lane's holds a revision 0034.

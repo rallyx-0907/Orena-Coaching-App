@@ -10,6 +10,8 @@ APPROVED FOR IMPLEMENTATION / MIGRATION GATE 2026-10-15 on `418e937e`; D-MON-023
   reservation, so a row is `funded` only over its own open, exact hold or quota reservation (key `fund:<operation>`),
   `settled` only over the backing's settle with the snapshot's charge, `released` only over its release or expiry,
   and `refused` only while no open, exact backing exists (§5.6, crash table). A deleted account is never admitted.
+  An exact hold carries PR-MON-4's reserve digest of the admission's intent (account, amount, meter, operation_ref and
+  the snapshot's `hold_ttl_seconds`), recomputed with 0033's `_digest_sql` (migration-gate review P1-1).
 - `promotional_grants`: the claimed instance of a configured grant (H-8: no grant is configured). Unique
   `(grant_id, user_id)`: `users` is the account row that survives delete-and-re-register (the incarnation barrier,
   D-054/D-055), so a grant is claimed once per person, ever (R-MON-003). Immutable and never deleted. Its usage is not
@@ -20,7 +22,8 @@ APPROVED FOR IMPLEMENTATION / MIGRATION GATE 2026-10-15 on `418e937e`; D-MON-023
   record keeps its 13-month sweep and account deletion, and a system-funded call has no admission.
 - `billing_reconciliation_items` gains `funding_admission_conflict` (critical, reconciler-only), for a non-exact
   reservation keyed `fund:<operation>` that was never adopted (§5.6). It closes only as `stray_released`, which the
-  guard checks: the admission is `refused` and nothing keyed `fund:<operation>` is still open.
+  guard checks: the admission is `refused` and nothing keyed `fund:<operation>` is still open, in any credit account
+  (review P1-2) or in the quota reservations.
 
 Topology (the one-transaction precondition of §5.6): the quota tables, the credit tables and the new tables must be in
 one PostgreSQL database and schema; the foreign keys make that structural, and the upgrade refuses before any DDL if a
@@ -75,7 +78,7 @@ TERMINAL = ("settled", "released", "refused")
 SOURCES = ("allowance", "promotional", "credits")
 IDENTITY = ("id", "operation_id", "incarnation_id", "meter", "units", "operation_ref", "feature", "unit_granularity",
             "request_digest", "created_at")
-SNAPSHOT = ("source", "price_per_unit", "amount_reserved", "policy_version", "cost_gate_id", "quota_reservation_id",
+SNAPSHOT = ("source", "price_per_unit", "amount_reserved", "hold_ttl_seconds", "policy_version", "cost_gate_id", "quota_reservation_id",
             "credit_reserve_entry_id", "funded_at")
 LIFECYCLE = ("state", "dispatched_at", "settled_units", "settled_amount", "refusal_reason", "closed_at")
 REQUIRED_TABLES = ("account_incarnations", "users", "commerce_quota_buckets", "commerce_quota_reservations",
@@ -85,17 +88,22 @@ ADMISSION_CHECKS = [
     ("ck_funding_state", f"state IN ({_in(STATES)})"),
     ("ck_funding_source", f"source IS NULL OR source IN ({_in(SOURCES)})"),
     # the backing key `fund:<operation>` fits 0007's operation_id (200) and the ledger's idempotency key (250)
+    # meter and operation_ref enter the reserve digest, recomputed in SQL without JSON escaping (0033's
+    # `_digest_sql`), so they are restricted to characters canonical JSON leaves as they are
     ("ck_funding_identity", "length(operation_id) BETWEEN 1 AND 190 AND units > 0 AND unit_granularity > 0 "
-                            "AND request_digest ~ '^[0-9a-f]{64}$'"),
+                            "AND request_digest ~ '^[0-9a-f]{64}$' AND meter ~ '^[a-z0-9_.]{1,80}$' "
+                            "AND operation_ref ~ '^[A-Za-z0-9_.:/-]{1,200}$'"),
     ("ck_funding_unfunded",
      "state NOT IN ('admitting', 'refused') OR (" + " AND ".join(f"{c} IS NULL" for c in SNAPSHOT + (
          "dispatched_at", "settled_units", "settled_amount")) + ")"),
     ("ck_funding_snapshot",
      "state IN ('admitting', 'refused') OR (source IS NOT NULL AND policy_version IS NOT NULL AND funded_at IS NOT NULL "
      "AND ((source = 'credits' AND credit_reserve_entry_id IS NOT NULL AND quota_reservation_id IS NULL "
-     "      AND price_per_unit > 0 AND amount_reserved = price_per_unit * units AND cost_gate_id IS NOT NULL) "
+     "      AND price_per_unit > 0 AND amount_reserved = price_per_unit * units AND cost_gate_id IS NOT NULL "
+     "      AND hold_ttl_seconds BETWEEN 1 AND 1800) "
      "  OR (source IN ('allowance', 'promotional') AND quota_reservation_id IS NOT NULL "
      "      AND credit_reserve_entry_id IS NULL AND price_per_unit IS NULL AND amount_reserved IS NULL "
+     "      AND hold_ttl_seconds IS NULL "
      "      AND cost_gate_id IS NULL)))"),
     ("ck_funding_dispatched",
      "state IN ('settled', 'released') OR (state = 'dispatched') = (dispatched_at IS NOT NULL)"),
@@ -132,9 +140,8 @@ _STRAY_RELEASED = f"""
             IF OLD.state = 'open' AND NEW.state = 'resolved' AND NEW.resolution_outcome = '{CONFLICT_OUTCOME}'
                     AND NOT EXISTS (SELECT 1 FROM funding_admissions f WHERE f.id = NEW.funding_admission_id
                         AND f.state = 'refused'
-                        AND NOT EXISTS (SELECT 1 FROM credit_ledger l JOIN credit_accounts a ON a.id = l.credit_account_id
-                            WHERE a.incarnation_id = f.incarnation_id AND l.kind = 'reserve'
-                              AND l.idempotency_key = 'fund:' || f.operation_id
+                        AND NOT EXISTS (SELECT 1 FROM credit_ledger l  -- every account: a wrong-account hold is a stray
+                            WHERE l.kind = 'reserve' AND l.idempotency_key = 'fund:' || f.operation_id
                               AND NOT EXISTS (SELECT 1 FROM credit_ledger c WHERE c.ref_entry_id = l.id
                                               AND c.kind IN ('settle', 'release', 'reserve_expire')))
                         AND NOT EXISTS (SELECT 1 FROM commerce_quota_reservations r
@@ -152,6 +159,17 @@ def _item_guard_0034() -> str:
     return base.replace(marker, facts, 1)
 
 
+# PR-MON-4's reserve digest (`credit_repository.reserve`): digest(kind, account, amount, meter, operation_ref, ttl),
+# recomputed with 0033's `_digest_sql` - the one canonical format, not a second one (migration-gate review P1-1).
+def _reserve_digest(amount: str, ttl: str) -> str:
+    return M33._digest_sql([("account", "NEW.incarnation_id"), ("amount", amount), ("kind", "'reserve'"),
+                            ("meter", "NEW.meter"), ("operation_ref", "NEW.operation_ref"), ("ttl", ttl)])
+
+
+# the hold's own TTL, as the repository writes it: expires_at = created_at + ttl
+_OWN_TTL = "round(extract(epoch FROM l.expires_at - l.created_at))::bigint"
+
+
 def _changed(columns) -> str:
     return " OR ".join(f"NEW.{c} IS DISTINCT FROM OLD.{c}" for c in columns)
 
@@ -161,7 +179,8 @@ def _admission_guard(q: str) -> str:
     hold = (f"SELECT 1 FROM {q}.credit_ledger l WHERE l.id = NEW.credit_reserve_entry_id AND l.kind = 'reserve' "
             f"AND l.credit_account_id = (SELECT id FROM {q}.credit_accounts WHERE incarnation_id = NEW.incarnation_id) "
             "AND l.idempotency_key = fund_key AND l.meter = NEW.meter AND l.operation_ref = NEW.operation_ref "
-            "AND l.amount = NEW.amount_reserved")
+            "AND l.amount = NEW.amount_reserved AND l.request_digest = "
+            + _reserve_digest("NEW.amount_reserved", "NEW.hold_ttl_seconds"))
     open_hold = (f"NOT EXISTS (SELECT 1 FROM {q}.credit_ledger c WHERE c.ref_entry_id = NEW.credit_reserve_entry_id "
                  "AND c.kind IN ('settle', 'release', 'reserve_expire'))")
     reservation = (f"SELECT r.state, r.actual_units, r.admitted_units, r.operation_id, b.incarnation_id, b.meter, "
@@ -278,6 +297,7 @@ def _admission_guard(q: str) -> str:
                                                         WHERE incarnation_id = NEW.incarnation_id)
                              AND l.kind = 'reserve' AND l.idempotency_key = fund_key AND l.meter = NEW.meter
                              AND l.operation_ref = NEW.operation_ref
+                             AND l.request_digest = {_reserve_digest("l.amount", _OWN_TTL)}
                              AND NOT EXISTS (SELECT 1 FROM {q}.credit_ledger c WHERE c.ref_entry_id = l.id
                                              AND c.kind IN ('settle', 'release', 'reserve_expire')))
                         OR EXISTS (SELECT 1 FROM {q}.commerce_quota_reservations r
@@ -403,6 +423,7 @@ def upgrade() -> None:
         sa.Column("source", sa.String(12), nullable=True),
         sa.Column("price_per_unit", sa.BigInteger(), nullable=True),
         sa.Column("amount_reserved", sa.BigInteger(), nullable=True),
+        sa.Column("hold_ttl_seconds", sa.Integer(), nullable=True),
         sa.Column("policy_version", sa.String(120), nullable=True),
         sa.Column("cost_gate_id", sa.String(80), nullable=True),
         sa.Column("quota_reservation_id", sa.Uuid(),
@@ -444,6 +465,9 @@ def upgrade() -> None:
     for name, condition in ITEM_CHECKS_0034 + CONFLICT_ITEM_CHECKS:
         op.create_check_constraint(name, "billing_reconciliation_items", condition)
     op.execute(_item_guard_0034())
+    # the global stray search (review P1-2): an open `fund:<op>` hold in any account
+    op.create_index("ix_credit_ledger_fund_key", "credit_ledger", ["idempotency_key"],
+                    postgresql_where=sa.text("kind = 'reserve' AND idempotency_key LIKE 'fund:%'"))
 
     # ---- guards ---------------------------------------------------------------------------------------------------
     op.execute(_admission_guard(q))
@@ -493,6 +517,7 @@ def downgrade() -> None:
     for name, condition in M33.ITEM_CHECKS_0033:
         op.create_check_constraint(name, "billing_reconciliation_items", condition)
     op.drop_column("billing_reconciliation_items", "funding_admission_id")
+    op.drop_index("ix_credit_ledger_fund_key", table_name="credit_ledger")
     op.drop_index("ix_ai_cost_records_operation", table_name="ai_cost_records")
     op.drop_constraint("ck_ai_cost_attribution", "ai_cost_records", type_="check")
     op.drop_column("ai_cost_records", "meter")

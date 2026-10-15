@@ -62,13 +62,28 @@ def credits(gate, units=100):
     return incarnation, account
 
 
-def hold(gate, account, key, amount, *, meter="writing.review", ref="ref-1", minutes=10, engine=None, conn=None):
+TTL = 600
+
+
+def reserve_digest(gate, account, amount, meter="writing.review", ref="ref-1", ttl=TTL):
+    """PR-MON-4's own reserve digest (`credit_repository.reserve`), for the hold's incarnation."""
+    from writing_coach.persistence.credit_repository import digest
+
+    incarnation = gate.sql("SELECT incarnation_id FROM credit_accounts WHERE id = :a", a=account)[0]["incarnation_id"]
+    return digest(kind="reserve", account=str(incarnation), amount=amount, meter=meter, operation_ref=ref, ttl=ttl)
+
+
+def hold(gate, account, key, amount, *, meter="writing.review", ref="ref-1", minutes=None, request_digest=None,
+         engine=None, conn=None):
+    """A hold inserted directly, as the repository writes one: created_at = now, expires_at = now + ttl (or `minutes`
+    from now), with the canonical digest unless `request_digest` overrides it."""
     statement = ("INSERT INTO credit_ledger (id, credit_account_id, kind, posted_delta, reserved_delta, amount, "
                  "idempotency_key, request_digest, meter, operation_ref, expires_at, actor, created_at) VALUES "
-                 "(gen_random_uuid(), :a, 'reserve', 0, :n, :n, :key, 'd', :meter, :ref, :exp, 'system', now()) "
-                 "RETURNING id")
+                 "(gen_random_uuid(), :a, 'reserve', 0, :n, :n, :key, :d, :meter, :ref, "
+                 "now() + make_interval(secs => :secs), 'system', now()) RETURNING id")
     values = dict(a=account, n=amount, key=key, meter=meter, ref=ref,
-                  exp=datetime.now(UTC) + timedelta(minutes=minutes))
+                  secs=TTL if minutes is None else minutes * 60,
+                  d=request_digest or reserve_digest(gate, account, amount, meter, ref))
     if conn is not None:
         return conn.execute(gate.text(statement), values).scalar()
     return gate.sql(statement, engine=engine or gate.runtime, **values)[0]["id"]
@@ -106,12 +121,13 @@ def reservation(gate, bucket_id, key, units=2):
 def fund(gate, op, *, source="credits", hold_id=None, quota=None, price=PRICE, amount=None, units=2, gate_id="gate-1",
          match=None):
     statement = ("UPDATE funding_admissions SET state = 'funded', source = :source, price_per_unit = :price, "
-                 "amount_reserved = :amount, policy_version = 'catalog-1/prices-1', cost_gate_id = :gate_id, "
+                 "amount_reserved = :amount, hold_ttl_seconds = :ttl, policy_version = 'catalog-1/prices-1', "
+                 "cost_gate_id = :gate_id, "
                  "credit_reserve_entry_id = :hold, quota_reservation_id = :quota, funded_at = now() WHERE operation_id = :op")
     credit = source == "credits"
     values = dict(op=op, source=source, price=price if credit else None,
                   amount=(amount if amount is not None else price * units) if credit else None,
-                  gate_id=gate_id if credit else None, hold=hold_id, quota=quota)
+                  gate_id=gate_id if credit else None, hold=hold_id, quota=quota, ttl=TTL if credit else None)
     if match:
         refused(gate, statement, engine=gate.runtime, match=match, **values)
     else:
@@ -243,7 +259,8 @@ def test_one_operation_id_reserves_one_source_even_concurrently(gate):
                 reserve = hold(gate, account, f"fund:{op}", PRICE * 2, conn=connection)
                 connection.execute(gate.text(
                     "UPDATE funding_admissions SET state = 'funded', source = 'credits', price_per_unit = :p, "
-                    "amount_reserved = :a, policy_version = 'v', cost_gate_id = 'g', credit_reserve_entry_id = :h, "
+                    "amount_reserved = :a, hold_ttl_seconds = 600, policy_version = 'v', cost_gate_id = 'g', "
+                    "credit_reserve_entry_id = :h, "
                     "funded_at = now() WHERE operation_id = :op"), dict(p=PRICE, a=PRICE * 2, h=reserve, op=op))
             results.append(connection.execute(gate.text(
                 "SELECT credit_reserve_entry_id FROM funding_admissions WHERE operation_id = :op"), {"op": op}).scalar())
@@ -291,13 +308,14 @@ def test_a_credits_admission_is_funded_only_over_its_own_open_exact_hold(gate):
     _, other_account = credits(gate)
     exact = "its own open, exact hold"
     cases = [dict(key="fund:not-{op}"), dict(meter="orena.message"), dict(account=other_account),
-             dict(ref="other-ref"), dict(amount=PRICE * 2 - 1), dict(minutes=-1), dict(closed=True)]
+             dict(ref="other-ref"), dict(amount=PRICE * 2 - 1), dict(minutes=-1), dict(closed=True),
+             dict(request_digest="0" * 64)]
     for case in cases:
         op = admit(gate, incarnation)
         held = PRICE * 2 if "amount" not in case else case["amount"]
         reserve = hold(gate, case.get("account", account), case.get("key", "fund:{op}").format(op=op), held,
                        meter=case.get("meter", "writing.review"), ref=case.get("ref", "ref-1"),
-                       minutes=case.get("minutes", 10))
+                       minutes=case.get("minutes"), request_digest=case.get("request_digest"))
         if case.get("closed"):
             close(gate, account, reserve, held, "release")  # closed while unexpired
         fund(gate, op, hold_id=reserve, match=exact)
@@ -568,3 +586,44 @@ def test_the_new_tables_belong_to_the_credit_owner_and_the_runtime_writes_only_l
                             p=privilege)[0]["can"] is False
     assert gate.sql("SELECT has_table_privilege(:r, 'promotional_grants', 'UPDATE') AS can",
                     r=gate.role)[0]["can"] is False
+
+
+# ---- migration-gate review of `5a2f5fd5` -----------------------------------------------------------------------------
+
+def test_p1_1_the_exact_hold_carries_pr_mon_4s_reserve_digest(gate):
+    """A hold made by PR-MON-4's own `reserve` with the admission's intent funds it; the same hold with any other
+    digest is not exact: it cannot fund, and it does not block a refusal (it is a stray, never adopted)."""
+    incarnation, account = credits(gate)
+    op = admit(gate, incarnation)
+    outcome = gate.repository.reserve(incarnation, amount=PRICE * 2, operation_id=f"fund:{op}", meter="writing.review",
+                                      operation_ref="ref-1", ttl=timedelta(seconds=TTL))
+    assert outcome.status == "applied", outcome
+    move(gate, op, "refused", reason="unbacked", match="adopted, never refused")  # canonical: adopt it
+    fund(gate, op, hold_id=outcome.entry["id"])
+    assert row(gate, op)["state"] == "funded"
+
+    forged = admit(gate, incarnation)
+    wrong = hold(gate, account, f"fund:{forged}", PRICE * 2, request_digest=reserve_digest(gate, account, PRICE * 2,
+                                                                                            ttl=TTL + 1))
+    fund(gate, forged, hold_id=wrong, match="its own open, exact hold")
+    assert row(gate, forged)["state"] == "admitting"
+    move(gate, forged, "refused", reason="non_exact_backing")  # not exact: never adopted
+    assert row(gate, forged)["state"] == "refused"
+    no_drift(gate)
+
+
+def test_p1_2_a_stray_in_another_account_keeps_the_conflict_open(gate):
+    incarnation_a, _ = credits(gate)
+    _, account_b = credits(gate)
+    op = admit(gate, incarnation_a)
+    stray = hold(gate, account_b, f"fund:{op}", PRICE * 2)  # B's open hold under A's key: a valid non-exact stray
+    move(gate, op, "refused", reason="non_exact_backing")
+    admission_id = conflict_item(gate, op)
+    resolve = ("UPDATE billing_reconciliation_items SET state = 'resolved', resolution_outcome = 'stray_released', "
+               "resolved_by = 'reconciler', resolved_at = now() WHERE funding_admission_id = :f")
+    refused(gate, resolve, engine=gate.runtime, match="nothing still open", f=admission_id)
+    close(gate, account_b, stray, PRICE * 2, "reserve_expire")
+    gate.sql(resolve, engine=gate.runtime, f=admission_id)
+    assert gate.sql("SELECT state FROM billing_reconciliation_items WHERE funding_admission_id = :f",
+                    f=admission_id)[0]["state"] == "resolved"
+    no_drift(gate)
