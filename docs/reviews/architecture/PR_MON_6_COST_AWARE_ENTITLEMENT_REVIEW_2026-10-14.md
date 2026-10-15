@@ -187,3 +187,16 @@ revision; rerun the 0034 suite, the billing PostgreSQL batch, all 0034 mutations
 rehearsal. No promotion or application of 0034, no feature code, no quota/funding/credits enabled, no R-MON-014.
 
 **Answered by** revision 2 of the proposal (this lane's next commit); `PR-MON-6_MIGRATION_GATE_REVIEW_REQUEST.md` §10.
+
+---
+
+# Re-review of `945299206d80259532ce14d521a91bc1dd0700f7` (0034 revision 2), 2026-10-15
+
+## VERDICT
+
+**APPROVED: PR-MON-6 design revision 2 and the migration gate.** 0034 stays proposed: not promoted, not applied.
+Before implementation the lane syncs to the latest `main` and re-proves the topology (one live head
+`20261015_0033`, 0034 unclaimed, no conflict from #214) and the evidence (0034 suite, billing PostgreSQL batch, 0034
+mutations, Alembic rehearsal). Then PR-MON-6 feature implementation per design revision 2, everything off by default;
+no promotion or application, no R-MON-014, no credits or enforcement enabled, no merge without independent review and
+CI.
