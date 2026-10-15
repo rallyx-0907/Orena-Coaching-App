@@ -630,6 +630,12 @@ def media_library_installed() -> bool:
     return _store is not None and _asset_store is not None and _importer is not None
 
 
+def retry_translation(media_id: str) -> str:
+    """Translate only the lines still missing a meaning (D-213): `queued`, `busy`, `missing` or `no_transcript`."""
+    store, _assets, importer = _installed()
+    return importer.pipeline.retry_translation(store, media_id) if importer.pipeline else "missing"
+
+
 def retry_transcript(media_id: str) -> bool:
     store, assets, importer = _installed()
     return bool(importer.pipeline and importer.pipeline.retry(store, assets, media_id))

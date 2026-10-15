@@ -104,7 +104,7 @@ export const adminApi = {
   restoreBook: (id) => request(`/api/admin/console/content/book/${encodeURIComponent(id)}/restore`, { method: 'POST' }),
   setCollectionStatus: (id, status) =>
     request(`/api/admin/console/content/vocabulary/${encodeURIComponent(id)}/status`, json('POST', { status })),
-  reprocessMedia: (id) => request(`/api/admin/console/content/media/${encodeURIComponent(id)}/reprocess`, { method: 'POST' }),
+  reprocessMedia: (id, scope = 'all') => request(`/api/admin/console/content/media/${encodeURIComponent(id)}/reprocess${scope === 'translation' ? '?scope=translation' : ''}`, { method: 'POST' }),
   importBook: (file, language) => {
     const form = files('files', [file]);
     form.append('learning_language', language);

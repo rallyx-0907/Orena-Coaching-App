@@ -113,14 +113,16 @@ export async function mountContent(shell, ctx) {
     if (view.busy) return;
     const intent = dataset.intent;
     const [title, body, danger] = CONFIRM[intent];
-    const answer = await host.confirm({ title: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishTitle' : title), body: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishBody' : body), cancel: t('actCancel'), confirm: t(`ctAct_${intent}`), danger });
+    // "Translation only" (the design's second option): the lines still without a meaning are asked for again, the transcript stays.
+    const scope = kind === 'media' && intent === 'reprocess' && data.form.reprocessOpt === 'tr' ? 'translation' : 'all';
+    const answer = await host.confirm({ title: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishTitle' : title), body: t(kind === 'media' && intent === 'publish' ? 'ctMediaPublishBody' : scope === 'translation' ? 'ctReprocessTrBody' : body), cancel: t('actCancel'), confirm: t(`ctAct_${intent}`), danger });
     if (!answer.confirmed) return;
     view.error = '';
     view.busy = true;
     host.paint();
     try {
-      await applyLifecycle(api, kind, ctx.params.id, intent);
-      host.toast(t(DONE[intent]));
+      await applyLifecycle(api, kind, ctx.params.id, intent, { scope });
+      host.toast(t(scope === 'translation' ? 'ctDone_reprocessTr' : DONE[intent]));
       data.detail = await api.contentDetail(kind, ctx.params.id);
       watchProcessing();
     } catch (error) {
