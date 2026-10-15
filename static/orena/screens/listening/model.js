@@ -13,6 +13,7 @@ import { wordSpans, activeWordIndex } from '../../capabilities/word-timeline.js'
 import { primaryLanguage } from '../../kit/lang.js';
 import { wordSpanAt } from '../../product/word-span.js';
 import { playbackAvailable } from '../../capabilities/media-player.js';
+import { annotateAllowed } from '../../infrastructure/annotate-policy.js';
 export { primaryLanguage } from '../../kit/lang.js';
 
 export function transcriptState(payload) {
@@ -484,4 +485,12 @@ export async function widenHanTap({ text, token, word, tags, waitMs = 1500 }) {
   const found = await Promise.race([tags(), new Promise((resolve) => { timer = setTimeout(() => resolve(null), waitMs); })]);
   clearTimeout(timer);
   return wordSpanAt(text, found, token.start, word)?.text || word;
+}
+
+/* Whether the local tagger may be asked about a line of `language`. A learner's own room asks only in the language
+   being learned (a learner is never shown another language). An administrator's preview of a held item (D-206) is
+   the one room that shows a language that is not the viewer's learning language, and the tagger is local and
+   stateless, so it answers there for any language it can segment: otherwise a Chinese tap stays on one character. */
+export function taggerAllowed({ preview, language, learning }) {
+  return preview ? ['en', 'zh'].includes(primaryLanguage(language)) : annotateAllowed(language, learning);
 }

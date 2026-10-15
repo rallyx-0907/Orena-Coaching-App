@@ -203,7 +203,12 @@ def _run_structured(
 @router.post("/annotate")
 def annotate_media_text(payload: MediaAnnotateIn) -> dict[str, Any]:
     """Annotate a visible transcript segment without persisting media/learner state."""
-    language = _validated_source_language(payload.source_language)
+    # The tagger is local, stateless and spends no AI: it needs only a language it can segment. It does not
+    # require the learner's own language, because an administrator previewing a held item in another language
+    # (D-206) taps its words too, and answering 409 left a Chinese tap on one character (P1-5).
+    language = _primary_language(payload.source_language)
+    if language not in {"en", "zh"}:
+        raise HTTPException(422, "Transcript language must be English or Chinese.")
     source = payload.text.strip()
     if not source:
         raise HTTPException(422, "Transcript text is required.")
