@@ -1,5 +1,12 @@
 # PR-MON-7: cost-tiered AI routing (design)
 
+> **Reclassified by D-MON-029 (2026-10-15).** This design is not Billing work. Its meters and quota (7B1, 7D2, 7B2a)
+> belong to **Plan & Entitlements**; its routing, provider pool, model qualification and H7-2 benchmark (7A-first's
+> routing, 7B2b, 7C) belong to **AI Economics / Routing Optimization** (Admin > AI & Models). No provider or model is
+> globally fixed: Ollama Cloud is one provider in the pool, and a benchmark qualifies a model per capability, never a
+> single winner. H7-2 is not a Billing completion gate. The `PR-MON-7*` names are kept only as references to merged
+> history (#231, #233, #236, #238).
+
 **Status: DESIGNING, revision 2.1 (docs only).** Revision 2 revised revision 1 (`2bdfdbb1`) after the independent
 review (3 P1) and the owner's decisions of 2026-10-15. Revision 2.1 answers the focused review of revision 2
 (`c2fbafb6`: P1-1 truth table, P1-2 writing-task split, P2 estimated coverage) without redesigning it. There is no product code. Migration 0034 is untouched: proposed, not

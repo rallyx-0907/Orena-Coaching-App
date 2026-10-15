@@ -35,6 +35,24 @@ guarantees: a payment is recorded once, and entitlement or credits change once. 
 unlimited-cost Free user, and never dispatches expensive compute without entitlement, quota or reserved credits. No
 enterprise billing rewrite.
 
+## Domain boundary (D-MON-029, owner 2026-10-15)
+
+**Billing handles money. Plan & Entitlements handle access and usage limits. AI Economics handles provider/model
+selection and profit-quality optimization. No provider or model is globally fixed for Orena. Benchmark qualifies
+models per capability and is not a Billing completion gate.** (D-MON-029)
+
+```text
+Billing                -> confirms plan / credits
+Plan & Entitlements    -> decides feature access and quota
+AI Economics           -> chooses provider and model per capability
+Provider call          -> returns usage / cost / latency evidence
+```
+
+This lane is **Billing / Commerce**. It is complete when a user pays, the payment is confirmed, the right plan or
+credits are granted, and the transaction can be reconciled and refunded safely. Plan & Entitlements work (meters,
+quota, Plan & Usage) and AI Economics work (routing, model qualification, H7-2) may still be delivered from this
+worktree when the owner asks, but they are labelled by their own domain and never gate Billing.
+
 ## Product model (stable)
 
 **Four economic modes**
