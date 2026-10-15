@@ -7219,7 +7219,7 @@ Evidence: the 2026-10-15 Supadata trial on :8021 (`SUPADATA_TRIAL_2026-10-15.md`
 
 ## D-217 - The ASR audio download is taken in Range pieces under a wall-clock bound; a translate-only retry clears the previous run's refusal (2026-10-15)
 
-Status: PROPOSED - independent review APPROVE on 3243b9ab (see review239/REVIEW.md); owner acceptance pending. P2 follow-ups of that review are addressed in this PR (below). No schema or migration change, no new provider, no spend-cap change, no cookies or proxies.
+Status: ACCEPTED (owner confirmed 2026-10-15; independent review APPROVE on 3243b9ab, re-review APPROVE on b6674e2b, no open P0/P1; merged as #239 once CI was green). Follow-ups in #240. P2 follow-ups of that review are addressed in this PR (below). No schema or migration change, no new provider, no spend-cap change, no cookies or proxies.
 
 Evidence: the 2026-10-15 Supadata trial on :8021 (`SUPADATA_TRIAL_2026-10-15.md`), two P1s, reproduced read-only in the worker container (3 attempts of the app's own download, no import, no write).
 
