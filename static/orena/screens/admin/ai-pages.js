@@ -102,6 +102,7 @@ function tokenUsage({ state, usage, t, ui }) {
   const tout = llm.reduce((sum, row) => sum + row.completion_tokens, 0);
   const total = tin + tout;
   const cost = features.reduce((sum, row) => sum + (row.usd || 0), 0);
+  const costFree = features.reduce((sum, row) => sum + (row.usd_free || 0), 0);
   const share = (value, of) => (of ? Math.round((value / of) * 100) : 0);
   const byProvider = new Map();
   for (const row of features) {
@@ -143,7 +144,7 @@ function tokenUsage({ state, usage, t, ui }) {
       { label: t('tkTotal'), value: compact(total), note: t('tkPeriodNote', { period: periodLabel }) },
       { label: t('tkIn'), value: compact(tin), note: t('tkShare', { pct: share(tin, total) }) },
       { label: t('tkOut'), value: compact(tout), note: t('tkShare', { pct: share(tout, total) }) },
-      { label: t('costTotal'), value: money(cost), note: t('tkCostNote') },
+      { label: t('costReal'), value: money(features.reduce((sum, row) => sum + (row.usd_real || 0), 0)), note: costFree > 0 ? t('costFreeAt', { amount: money(costFree) }) : t('tkCostNote') },
     ], { columns: 4 }) })}
     ${block({ title: t('tkByProvider'), sub: t('tkByProviderSub'), body: rowList(providerRows, empty) })}
     ${block({ title: t('tkByCap'), sub: t('tkByCapSub'), body: capabilityBars.length ? bars(capabilityBars) : rowList([], empty) })}

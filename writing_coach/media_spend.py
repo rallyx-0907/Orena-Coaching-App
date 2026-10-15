@@ -20,6 +20,14 @@ Costs are estimates from what the provider exposes: speech providers report the
 audio duration they billed, token providers report token usage, and each is
 priced from a configurable rate. A provider that reports nothing is charged at
 the conservative estimate made before the call.
+
+Free tier (D-219, owner decision 2026-10-16). Every event is stamped when it is recorded with the provider and the
+`cost.free_tier.<provider>` flag in force then (`free_tier: true|false`, writing_coach/cost_tier.py). The amount is
+ALWAYS the public price, free or not, and the caps above sum it either way, so a free plan never turns a cap off: the
+flag only decides whether an amount is reported as real spend or as free-tier value. Toggling the flag never rewrites a
+stored event. An event written before this change has no `free_tier` field: it is reported as "unknown" tier, apart
+from both real spend and free-tier value, and still counts toward every cap. The file keeps `schema_version` 1: an
+added field is ignored by an older reader.
 """
 from __future__ import annotations
 
@@ -33,7 +41,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from writing_coach import policies
+from writing_coach import cost_tier, policies
 
 _LOCKS: dict[str, threading.Lock] = {}
 _LOCKS_GUARD = threading.Lock()
@@ -170,7 +178,8 @@ class SpendLedger:
             if used >= cap:
                 raise SpendCapReached("caption_quota", limit=float(cap), spent=float(used), scope="day")
             events.append({"at": _now().isoformat(), "kind": kind, "usd": 0.0, "batch_id": "captions",
-                           "media_id": media_id, "units": 1.0, "provider": provider[:40]})
+                           "media_id": media_id, "units": 1.0, "provider": provider[:40],
+                           "free_tier": cost_tier.is_free_tier(provider, self._env)})
             self._write(events)
 
     def check_requests(self, cap: int, kind: str = KIND_SUPADATA) -> None:
@@ -190,6 +199,7 @@ class SpendLedger:
             "media_id": media_id,
             "units": round(float(units), 3),
             "provider": provider[:40],
+            "free_tier": cost_tier.is_free_tier(provider, self._env),
         }
         with self._lock:
             events = self._read()
@@ -204,6 +214,8 @@ class SpendLedger:
         now = _now()
         day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today = self._sum(events, since=day_start.isoformat())
+        today_events = [event for event in events if str(event.get("at") or "") >= day_start.isoformat()]
+        today_tiers = cost_tier.split(today_events)
         recent = [event for event in events if event.get("kind") in KINDS
                   and str(event.get("at") or "") >= (now - timedelta(days=1)).isoformat()]
         batches: dict[str, dict[str, float]] = {}
@@ -213,11 +225,51 @@ class SpendLedger:
         return {
             "limits_usd": limits,
             "today_usd": round(today, 6),
+            # The same total by tier (D-219): caps use `today_usd`; only `today_real_usd` is money actually spent.
+            "today_real_usd": round(today_tiers[cost_tier.TIER_REAL], 6),
+            "today_free_tier_usd": round(today_tiers[cost_tier.TIER_FREE], 6),
+            "today_unknown_tier_usd": round(today_tiers[cost_tier.TIER_UNKNOWN], 6),
             "today_by_kind": {kind: round(self._sum(events, kind=kind, since=day_start.isoformat()), 6) for kind in KINDS},
             "batches_24h": len(batches),
             "largest_batch_usd": {
                 kind: round(max((row.get(kind, 0.0) for row in batches.values()), default=0.0), 6) for kind in KINDS
             },
             "supadata_requests_today": self.requests_today(KIND_SUPADATA),
+            "estimated": True,
+        }
+
+    def totals(self, days: int = 30) -> dict[str, Any]:
+        """Spend over the last `days` UTC days split by tier, for the Admin cost page (D-219).
+
+        `real_usd` sums only events stamped `free_tier: false`; `free_tier_usd` is the list-price value of the
+        free-plan events; `unknown_tier_usd` is events with no stamp. `requests` counts the credit-priced Supadata rows,
+        which have no dollar amount."""
+        bounded = max(1, min(int(days), 365))
+        today = _now().replace(hour=0, minute=0, second=0, microsecond=0)
+        since = (today - timedelta(days=bounded - 1)).isoformat()
+        with self._lock:
+            events = [event for event in self._read() if str(event.get("at") or "") >= since]
+        providers: dict[str, dict[str, Any]] = {}
+        for event in events:
+            name = str(event.get("provider") or "") or "unknown"
+            row = providers.setdefault(name, {"provider": name, "real_usd": 0.0, "free_tier_usd": 0.0,
+                                              "unknown_tier_usd": 0.0, "events": 0, "requests": 0})
+            tier = cost_tier.tier_of(event)
+            key = {cost_tier.TIER_REAL: "real_usd", cost_tier.TIER_FREE: "free_tier_usd",
+                   cost_tier.TIER_UNKNOWN: "unknown_tier_usd"}[tier]
+            row[key] += float(event.get("usd") or 0)
+            row["events"] += 1
+            if event.get("kind") == KIND_SUPADATA:
+                row["requests"] += int(event.get("units") or 0)
+        for row in providers.values():
+            for key in ("real_usd", "free_tier_usd", "unknown_tier_usd"):
+                row[key] = round(row[key], 6)
+        tiers = cost_tier.split(events)
+        return {
+            "days": bounded, "since": since, "currency": "USD",
+            "real_usd": round(tiers[cost_tier.TIER_REAL], 6),
+            "free_tier_usd": round(tiers[cost_tier.TIER_FREE], 6),
+            "unknown_tier_usd": round(tiers[cost_tier.TIER_UNKNOWN], 6),
+            "by_provider": sorted(providers.values(), key=lambda r: (-(r["real_usd"] + r["free_tier_usd"]), r["provider"])),
             "estimated": True,
         }

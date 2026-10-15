@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-14.v7"
+PRICING_CATALOG_VERSION = "2026-10-16.v8"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -25,6 +25,17 @@ class TokenPricing:
     output_per_million: float
     # Why a rate is what it is, when that is a fact about the account rather than the model (a free plan).
     note: str = ""
+    # The public price of a model the account gets free (D-219): what the call is WORTH, and what a spend cap counts.
+    # `input_per_million`/`output_per_million` stay the rate actually billed (0 on a free plan), which is what makes
+    # `is_free_model` true; the list rates are what every cost report and spend cap computes with. None: the billed
+    # rate is also the list rate.
+    list_input_per_million: float | None = None
+    list_output_per_million: float | None = None
+
+    @property
+    def list_rates(self) -> tuple[float, float]:
+        return (self.input_per_million if self.list_input_per_million is None else self.list_input_per_million,
+                self.output_per_million if self.list_output_per_million is None else self.list_output_per_million)
 
 
 _CATALOG = MappingProxyType({
@@ -51,6 +62,9 @@ _CATALOG = MappingProxyType({
     ("groq", "qwen/qwen3.8-27b"): TokenPricing(
         "groq", "qwen/qwen3.8-27b", "USD", 0.0, 0.0,
         note="owner-confirmed Groq free plan (no billing), 2026-10-14; same revisit rule as llama-3.1-8b-instant",
+        # Groq model page https://console.groq.com/docs/model/qwen/qwen3.8-27b, read 2026-10-15 (a "Preview" model, so
+        # the price may change): the value of a free-plan call and the rate the media spend ledger caps with (D-218).
+        list_input_per_million=0.80, list_output_per_million=4.00,
     ),
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
@@ -151,6 +165,19 @@ def resolve_token_pricing(provider: object, model: object) -> TokenPricing | Non
     return _CATALOG.get(key)
 
 
+def list_rate(provider: object, model: object) -> tuple[float, float] | None:
+    """The public (input, output) USD per million tokens of a catalogued model that has a real price, else None.
+
+    A model whose list rate is zero (a free-plan model with no published price, an OpenRouter ":free" id) has none: a
+    caller falls back to its own estimate rather than book 0, which would make a spend cap unreachable."""
+
+    pricing = resolve_token_pricing(provider, model)
+    if pricing is None:
+        return None
+    rates = pricing.list_rates
+    return rates if rates[0] > 0 or rates[1] > 0 else None
+
+
 def is_free_model(provider: object, model: object) -> bool:
     """A model that costs nothing and may log prompts: a zero-rate catalogue entry, or an OpenRouter ":free" id."""
 
@@ -187,7 +214,8 @@ def estimate_token_cost(provider: object, model: object, usage: object) -> dict[
     else:
         usage_state = "complete"
         reason = None
-    free = pricing is not None and pricing.input_per_million == 0 and pricing.output_per_million == 0
+    list_in, list_out = pricing.list_rates if pricing is not None else (0.0, 0.0)
+    free = pricing is not None and list_in == 0 and list_out == 0
     if pricing is None:
         state = "unpriced"
         reason = "model_not_cataloged"
@@ -210,13 +238,13 @@ def estimate_token_cost(provider: object, model: object, usage: object) -> dict[
             "catalog_version": PRICING_CATALOG_VERSION,
             "provider": pricing.provider if pricing is not None else provider_id,
             "model": pricing.model if pricing is not None else model_id,
-            "input_per_million": pricing.input_per_million if pricing is not None else None,
-            "output_per_million": pricing.output_per_million if pricing is not None else None,
+            "input_per_million": list_in if pricing is not None else None,
+            "output_per_million": list_out if pricing is not None else None,
             "reason": reason,
         },
     }
     if state == "estimated" and pricing is not None:
-        amount = (prompt * pricing.input_per_million + completion * pricing.output_per_million) / 1_000_000
+        amount = (prompt * list_in + completion * list_out) / 1_000_000
         result["amount"] = round(amount, 8) if math.isfinite(amount) else None
     return result
 

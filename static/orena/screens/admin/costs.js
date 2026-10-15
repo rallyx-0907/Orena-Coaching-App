@@ -10,6 +10,7 @@ import { adminApi } from '../../capabilities/admin-api.js';
 import { t } from './copy.js';
 import { block, formBlock, metrics, pageHead, rowList, skeleton } from './blocks.js';
 import { createHost } from './host.js';
+import { tierParts, tierRow } from './cost-tier.js';
 
 const DAYS = [7, 30, 90];
 
@@ -27,31 +28,51 @@ export function costsPage({ report, accounts, days, failed, ui, href }) {
   const head = pageHead({ back: { href: href('adminAi'), label: t('aiTitle') }, title: t('costTitle'), sub: t('costSub') });
   if (failed) return html`<section class="a-page" data-screen-label="AI cost">${head}${block({ body: t('opUnavailable') })}</section>`;
   if (!report) return html`<section class="a-page" data-screen-label="AI cost">${head}${skeleton(t('loading'))}</section>`;
-  const total = (report.by_day || []).reduce((sum, day) => sum + (day.usd || 0), 0);
+  const totals = report.totals || {};
+  const real = totals.usd_real ?? 0;
+  const free = totals.usd_free ?? 0;
+  const unknown = totals.usd_unknown ?? 0;
   const calls = (report.by_day || []).reduce((sum, day) => sum + (day.calls || 0), 0);
   const unpriced = (report.by_day || []).reduce((sum, day) => sum + (day.unpriced_calls || 0), 0);
+  const money = (value) => usd(value, ui);
+  const tier = (row) => tierRow(row, { money, t });
   const range = formBlock({ span: true, fields: [{ id: 'days', kind: 'seg', label: t('costRange'), options: DAYS.map((n) => ({ id: String(n), label: t('costDays', { n }), on: days === n })) }] });
   return html`<section class="a-page" data-screen-label="AI cost">
     ${head}
     <div class="a-blocks">
       ${range}
       ${block({ span: true, body: metrics([
-        { label: t('costTotal'), value: usd(total, ui) },
+        { label: t('costReal'), value: money(real), note: unknown > 0 ? t('costUnknownTier', { amount: money(unknown) }) : '' },
+        { label: t('costFreeValue'), value: money(free), note: t('costFreeValueNote'), tone: 'mute' },
         { label: t('costCalls'), value: new Intl.NumberFormat(ui).format(calls) },
         { label: t('costUnpriced'), value: new Intl.NumberFormat(ui).format(unpriced), tone: unpriced ? 'warn' : '' },
-      ], { columns: 3 }) })}
-      ${block({ span: true, title: t('costByFeature'), body: rowList((report.by_feature || []).map((row) => ({
-        title: capabilityLabel(row.capability),
-        meta: [row.provider, row.model].filter(Boolean).join(' · ') || t('costNoProvider'),
-        right: usd(row.usd, ui),
-        pills: [{ label: row.usd_per_unit == null ? t('costNoUnit') : t(row.unit === 'audio_minute' ? 'costPerMinute' : 'costPerCall', { amount: usd(row.usd_per_unit, ui) }), tone: 'mute' }],
-      })), { title: t('opNone'), text: '' }) })}
-      ${block({ span: true, title: t('costByDay'), body: rowList((report.by_day || []).map((day) => ({
-        title: day.day, meta: t('costDayMeta', { calls: day.calls, unpriced: day.unpriced_calls }), right: usd(day.usd, ui),
-      })), { title: t('opNone'), text: '' }) })}
+      ], { columns: 4 }) })}
+      ${block({ span: true, title: t('costByFeature'), body: rowList((report.by_feature || []).map((row) => {
+        const view = tier(row);
+        return {
+          title: capabilityLabel(row.capability),
+          meta: [[row.provider, row.model].filter(Boolean).join(' · ') || t('costNoProvider'), ...view.meta].join(' · '),
+          right: view.right,
+          pills: [{ label: row.usd_per_unit == null ? t('costNoUnit') : t(row.unit === 'audio_minute' ? 'costPerMinute' : 'costPerCall', { amount: usd(row.usd_per_unit, ui) }), tone: 'mute' }, ...view.pills],
+        };
+      }), { title: t('opNone'), text: '' }) })}
+      ${block({ span: true, title: t('costByDay'), body: rowList((report.by_day || []).map((day) => {
+        const view = tier(day);
+        return { title: day.day, meta: [t('costDayMeta', { calls: day.calls, unpriced: day.unpriced_calls }), ...view.meta].join(' · '), right: view.right, pills: view.pills };
+      }), { title: t('opNone'), text: '' }) })}
+      ${report.media ? block({ span: true, title: t('costMedia'), sub: t('costMediaSub'), body: rowList((report.media.by_provider || []).map((row) => {
+        const view = tier(row);
+        const parts = [t('costMediaEvents', { n: row.events }), ...(row.requests ? [t('costMediaRequests', { n: row.requests })] : []), ...view.meta];
+        const amounts = tierParts(row);
+        const credits = row.requests > 0 && amounts.real + amounts.free + amounts.unknown === 0;
+        return { title: row.provider, meta: parts.join(' · '), right: credits ? '' : view.right, pills: view.pills };
+      }), { title: t('opNone'), text: '' }) }) : ''}
       ${accounts ? block({ span: true, title: t('costByAccount'), body: accounts.available
         ? rowList([
-          ...(accounts.accounts || []).map((row) => ({ title: row.name || row.email, meta: [row.email, t('costAccountMeta', { calls: row.calls })].filter(Boolean).join(' · '), right: usd(row.usd, ui) })),
+          ...(accounts.accounts || []).map((row) => {
+            const view = tier(row);
+            return { title: row.name || row.email, meta: [row.email, t('costAccountMeta', { calls: row.calls }), ...view.meta].filter(Boolean).join(' · '), right: view.right, pills: view.pills };
+          }),
           ...(accounts.truncated ? [{ title: t('costAccountsTop') }] : []),
         ], { title: t('opNone'), text: '' })
         : t('costAccountsOff') }) : ''}

@@ -169,6 +169,9 @@ export const en = {
   polHelp_writing_improver_daily_spend_cap_usd: 'The most the reviewed paid backup of writing improvement may spend in a UTC day while the capability is routed; at the cap, or at 0, only its reviewed primary is asked.',
   pol_text_discussion_daily_spend_cap_usd: 'Text discussion backup daily cap',
   polHelp_text_discussion_daily_spend_cap_usd: 'The most the reviewed paid backup of text discussion may spend in a UTC day while the capability is routed; at the cap, or at 0, only its reviewed primary is asked.',
+  pol_cost_free_tier_groq: 'Groq is on the free plan', polHelp_cost_free_tier_groq: 'While on, Groq calls are recorded as free tier: shown at list price apart from real spend. Turn it off when the account moves to a paid plan; calls from then on count as real spend. Spend caps always use the list price.',
+  pol_cost_free_tier_supadata: 'Supadata is on the free plan', polHelp_cost_free_tier_supadata: 'While on, Supadata caption requests are recorded as free tier. Turn it off when the account moves to a paid plan; requests from then on count as real spend.',
+  pol_cost_free_tier_gemini: 'Gemini is on the free plan', polHelp_cost_free_tier_gemini: 'While on, Gemini calls are recorded as free tier: shown at list price apart from real spend. Off by default; turn it on only if the key is on the free plan.',
 };
 
 export const vi = {
@@ -334,6 +337,9 @@ export const vi = {
   polHelp_writing_improver_daily_spend_cap_usd: 'Số tiền tối đa mô hình dự phòng tính phí đã duyệt của cải thiện bài viết được chi trong một ngày (UTC) khi tính năng đang được định tuyến; chạm mức này, hoặc để 0, thì chỉ hỏi mô hình chính đã duyệt.',
   pol_text_discussion_daily_spend_cap_usd: 'Mức trần hằng ngày của dự phòng thảo luận văn bản',
   polHelp_text_discussion_daily_spend_cap_usd: 'Số tiền tối đa mô hình dự phòng tính phí đã duyệt của thảo luận văn bản được chi trong một ngày (UTC) khi tính năng đang được định tuyến; chạm mức này, hoặc để 0, thì chỉ hỏi mô hình chính đã duyệt.',
+  pol_cost_free_tier_groq: 'Groq đang dùng gói miễn phí', polHelp_cost_free_tier_groq: 'Khi bật, các lượt gọi Groq được ghi là gói miễn phí: hiện theo giá niêm yết, tách khỏi chi tiêu thực. Tắt khi tài khoản chuyển sang gói trả phí; các lượt gọi từ lúc đó được tính là chi tiêu thực. Mức trần chi tiêu luôn dùng giá niêm yết.',
+  pol_cost_free_tier_supadata: 'Supadata đang dùng gói miễn phí', polHelp_cost_free_tier_supadata: 'Khi bật, các yêu cầu phụ đề Supadata được ghi là gói miễn phí. Tắt khi tài khoản chuyển sang gói trả phí; các yêu cầu từ lúc đó được tính là chi tiêu thực.',
+  pol_cost_free_tier_gemini: 'Gemini đang dùng gói miễn phí', polHelp_cost_free_tier_gemini: 'Khi bật, các lượt gọi Gemini được ghi là gói miễn phí: hiện theo giá niêm yết, tách khỏi chi tiêu thực. Mặc định tắt; chỉ bật nếu khóa đang ở gói miễn phí.',
 };
 
 export const zh = {
@@ -499,4 +505,7 @@ export const zh = {
   polHelp_writing_improver_daily_spend_cap_usd: '写作润色在启用路由时，已审核的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问已审核的主模型。',
   pol_text_discussion_daily_spend_cap_usd: '文本讨论备用模型每日上限',
   polHelp_text_discussion_daily_spend_cap_usd: '文本讨论在启用路由时，已审核的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问已审核的主模型。',
+  pol_cost_free_tier_groq: 'Groq 使用免费套餐', polHelp_cost_free_tier_groq: '开启时，Groq 调用记为免费额度：按公开价格显示，与实际支出分开。账户升级为付费套餐时请关闭；此后的调用计为实际支出。支出上限始终按公开价格计算。',
+  pol_cost_free_tier_supadata: 'Supadata 使用免费套餐', polHelp_cost_free_tier_supadata: '开启时，Supadata 字幕请求记为免费额度。账户升级为付费套餐时请关闭；此后的请求计为实际支出。',
+  pol_cost_free_tier_gemini: 'Gemini 使用免费套餐', polHelp_cost_free_tier_gemini: '开启时，Gemini 调用记为免费额度：按公开价格显示，与实际支出分开。默认关闭；仅当密钥处于免费套餐时才开启。',
 };
