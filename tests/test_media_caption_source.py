@@ -422,3 +422,204 @@ def test_a_merged_chunk_keeps_its_words_and_its_order():
     _cues, lines, _checks = _observe([chunk], 24000)
     assert " ".join(line.text for line in lines).split() == " ".join(SPOKEN).split()
     assert all(a.end_ms <= b.start_ms for a, b in zip(lines, lines[1:], strict=False))
+
+
+# -- 6. scope: Supadata is the admin pipeline's only (review of #229, P1-2) --------------------------------------------
+
+
+def _two_services(tmp_path):
+    """The learner's acquisition service (today's YouTube-only adapter) and the admin one (the policy client)."""
+    supadata = FakeSupadata(transcript())
+    ledger = SpendLedger(tmp_path / "spend.json")
+
+    def languages(code):
+        return code in {"en", "zh"}
+
+    learner_captions = FakeCaptionClient(youtube_track())
+    learner = MediaIngestionService(adapters=(build_youtube_adapter(
+        metadata_client=FakeMetadataClient(), caption_client=learner_captions),), source_language_supported=languages)
+    admin = MediaIngestionService(adapters=(build_youtube_adapter(
+        metadata_client=FakeMetadataClient(),
+        caption_client=PolicyCaptionClient(FakeCaptionClient(None), supadata, lambda: ledger)),),
+        source_language_supported=languages)
+    return learner, admin, supadata, ledger, learner_captions
+
+
+def _importer(tmp_path, learner, admin):
+    from writing_coach.book_asset_store import FilesystemBookAssetStore
+    from writing_coach.media_library_store import FileMediaLibraryStore
+    from writing_coach.media_source_import import MediaSourceImporter
+    return MediaSourceImporter(learner, FileMediaLibraryStore(tmp_path / "index"), FilesystemBookAssetStore(tmp_path / "assets"),
+                               admin_ingestion=admin)
+
+
+def test_a_learner_import_makes_zero_supadata_calls_and_an_admin_import_makes_one(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEDIA_CAPTION_SOURCE", "supadata_native")
+    learner, admin, supadata, ledger, learner_captions = _two_services(tmp_path)
+    importer = _importer(tmp_path, learner, admin)
+    entry, _ = importer._from_url(URL, language="en", imported_by="learner", persist_media=True)
+    assert supadata.calls == [] and ledger.requests_today() == 0 and learner_captions.calls  # YouTube's own client
+    assert entry.source.get("caption_provider", "") == ""
+    admin_entry, _ = importer._from_url(URL, language="en", imported_by="admin@example.test", persist_media=True)
+    assert len(supadata.calls) == 1 and supadata.modes == {"native"} and ledger.requests_today() == 1
+    assert admin_entry.source["caption_provider"] == "supadata" and admin_entry.source["caption_kind"] == "unknown"
+
+
+def test_a_learner_path_never_previews_through_supadata_but_the_admin_preview_does(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEDIA_CAPTION_SOURCE", "supadata_native")
+    learner, admin, supadata, _ledger, _captions = _two_services(tmp_path)
+    importer = _importer(tmp_path, learner, admin)
+    importer._from_youtube(URL, language="en", imported_by="learner")
+    assert supadata.calls == []
+    importer.preview(URL, language="en")   # the admin console's preview
+    assert len(supadata.calls) == 1
+
+
+def test_the_pipeline_asks_the_admin_service_for_shared_items_and_the_learner_one_for_personal_items(tmp_path, monkeypatch):
+    monkeypatch.setenv("MEDIA_CAPTION_SOURCE", "supadata_native")
+    learner, admin, supadata, _ledger, _captions = _two_services(tmp_path)
+    store, entry, pipeline = _world(tmp_path, ingestion=learner, asr=Asr(), admin_ingestion=admin)
+    cues, _error, kind, provider, _language = pipeline._captions(replace(entry, library="personal"))
+    assert cues and provider == "" and kind == "manual" and supadata.calls == []
+    cues, _error, kind, provider, language = pipeline._captions(replace(entry, library="shared"))
+    assert cues and provider == "supadata" and kind == "unknown" and language == "en" and len(supadata.calls) == 1
+
+
+def test_app_builds_the_learner_adapter_plain_and_gives_only_the_admin_importer_the_policy_adapter():
+    app_source = (Path(__file__).resolve().parents[1] / "app.py").read_text(encoding="utf-8")
+    assert "adapters=(build_youtube_adapter(),)" in app_source
+    assert app_source.count("PolicyCaptionClient(") == 1
+    assert "admin_ingestion=_admin_media_ingestion_service" in app_source
+    assert 'capability="media_caption_supadata"' in app_source
+
+
+# -- 7. concurrency, memo, definitive answers, telemetry, env -------------------------------------------------------------
+
+
+def test_concurrent_callers_cannot_overshoot_the_cap_or_double_pay(tmp_path):
+    import threading
+    import time as _time
+
+    class Slow(FakeSupadata):
+        def fetch(self, url, language, *, mode="auto"):
+            _time.sleep(0.02)
+            return super().fetch(url, language, mode=mode)
+
+    supadata = Slow(transcript())
+    client, _y, ledger = client_for(tmp_path, "supadata_native", supadata=supadata, cap=3)
+    refused = []
+
+    def run(video):
+        try:
+            client.fetch_track(video, "en")
+        except CaptionQuotaReached:
+            refused.append(video)
+
+    videos = [chr(97 + i % 8) * 11 for i in range(24)]     # 8 videos, each asked for by 3 threads at once
+    threads = [threading.Thread(target=run, args=(video,)) for video in videos]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(supadata.calls) == 3 == ledger.requests_today()   # the cap, exactly
+    assert len({url for url, _lang, _mode in supadata.calls}) == 3     # one paid call per video: no double-pay
+
+
+def test_reserve_request_is_check_and_record_in_one_step(tmp_path):
+    import threading
+    ledger = SpendLedger(tmp_path / "spend.json")
+    granted = []
+
+    def take():
+        try:
+            ledger.reserve_request(5)
+            granted.append(1)
+        except Exception:  # noqa: BLE001
+            pass
+
+    threads = [threading.Thread(target=take) for _ in range(20)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(granted) == 5 == ledger.requests_today()
+
+
+def test_the_memo_evicts_the_oldest_answer_not_all_of_them(tmp_path):
+    supadata = FakeSupadata(None)
+    client, _y, _l = client_for(tmp_path, "supadata_native", supadata=supadata, cap=1000)
+    ids = [f"v{n:010d}" for n in range(caption_source.MEMO_MAX + 1)]
+    for video in ids:
+        client.fetch_track(video, "en")
+    assert len(client._memo) == caption_source.MEMO_MAX
+    paid = len(supadata.calls)
+    client.fetch_track(ids[-1], "en")   # the newest is still remembered
+    assert len(supadata.calls) == paid
+    client.fetch_track(ids[0], "en")    # the oldest was evicted, so it is asked again
+    assert len(supadata.calls) == paid + 1
+
+
+def _session(status):
+    class Response:
+        status_code = status
+
+        @staticmethod
+        def json():
+            return {}
+
+    class Session:
+        calls = 0
+
+        def get(self, *_a, **_k):
+            Session.calls += 1
+            return Response()
+
+    return Session
+
+
+@pytest.mark.parametrize("status", [206, 404, 422])
+def test_supadata_saying_no_transcript_is_a_definitive_no_track_that_is_not_paid_for_again(tmp_path, status):
+    session = _session(status)
+    client, _y, ledger = client_for(tmp_path, "supadata_native", supadata=SupadataTranscriptClient("a-test-key", session=session()))
+    assert client.fetch_track(VIDEO_ID, "en") is None and client.fetch_track(VIDEO_ID, "en") is None
+    assert session.calls == 1 and ledger.requests_today() == 1   # a Reprocess does not re-spend
+
+
+@pytest.mark.parametrize("status", [401, 403, 429, 500, 503])
+def test_real_errors_are_not_remembered_and_not_retried(tmp_path, status):
+    session = _session(status)
+    client, _y, _l = client_for(tmp_path, "supadata_native", supadata=SupadataTranscriptClient("a-test-key", session=session()))
+    with pytest.raises(ProviderRequestFailed):
+        client.fetch_track(VIDEO_ID, "en")
+    assert session.calls == 1          # no automatic retry
+    assert client._memo == {}          # and not remembered: the operator's Reprocess asks again
+
+
+def test_native_caption_calls_are_logged_under_their_own_capability(monkeypatch):
+    from writing_coach.ai import audio_telemetry
+    seen = []
+    monkeypatch.setattr(audio_telemetry, "record_audio_operation", lambda capability, **kwargs: seen.append(capability))
+
+    class Response:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"lang": "en", "content": [{"text": "Hello there everyone.", "offset": 0, "duration": 2000}]}
+
+    class Session:
+        def get(self, *_a, **_k):
+            return Response()
+
+    SupadataTranscriptClient("k", session=Session(), capability="media_caption_supadata").fetch(URL, "en", mode="native")
+    SupadataTranscriptClient("k", session=Session()).fetch(URL, "en", mode="native")
+    assert seen == ["media_caption_supadata", "media_transcript_fallback"]
+
+
+def test_a_bad_caption_source_value_logs_one_warning_then_uses_the_default(monkeypatch, caplog):
+    monkeypatch.setenv("MEDIA_CAPTION_SOURCE", "supadata-native")
+    policies._WARNED_ENV.discard("MEDIA_CAPTION_SOURCE")
+    with caplog.at_level("WARNING", logger="writing_coach.policies"):
+        assert [caption_source.caption_source() for _ in range(3)] == ["youtube"] * 3
+    warnings = [r for r in caplog.records if "MEDIA_CAPTION_SOURCE" in r.getMessage()]
+    assert len(warnings) == 1

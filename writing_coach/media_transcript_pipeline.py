@@ -367,6 +367,7 @@ class MediaPipeline:
         ledger: SpendLedger,
         asr: Any = None,
         ingestion: Any = None,
+        admin_ingestion: Any = None,
         youtube_audio: Callable[..., Path] | None = None,
         meanings: Callable[[MediaLibraryEntry, str], Any] | None = None,
         english_reading: Callable[[str], str] | None = None,
@@ -376,6 +377,7 @@ class MediaPipeline:
         self._ledger = ledger
         self._asr = asr
         self._ingestion = ingestion
+        self._admin_ingestion = admin_ingestion   # an operator's (shared) item may take captions from Supadata (D-215)
         self._youtube_audio = youtube_audio
         self._meanings = meanings
         self._english_reading = english_reading
@@ -820,10 +822,11 @@ class MediaPipeline:
         """(cues, why-none, kind, provider, language): the provider's category when it failed, "" when there were simply no
         captions; `kind` is `manual`, `auto` or `unknown` for the track that was used; `provider` is empty for YouTube's own
         captions and `supadata` for a track from there, with the language it returned (D-215)."""
-        if self._ingestion is None or not entry.canonical_url:
+        service = self._admin_ingestion if self._admin_ingestion is not None and entry.library == "shared" else self._ingestion
+        if service is None or not entry.canonical_url:
             return [], "", "", "", ""
         try:
-            acquisition = self._ingestion.import_media(entry.canonical_url, "en", entry.language)
+            acquisition = service.import_media(entry.canonical_url, "en", entry.language)
         except Exception as exc:  # noqa: BLE001 - no captions is a normal answer; audio is the next source
             return [], str(getattr(getattr(exc, "category", None), "value", "") or ""), "", "", ""
         provenance = getattr(acquisition, "provenance", None) or {}

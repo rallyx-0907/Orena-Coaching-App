@@ -206,6 +206,9 @@ def _env_mapping(env: Mapping[str, str] | None) -> Mapping[str, str]:
     return os.environ if env is None else env
 
 
+_WARNED_ENV: set[str] = set()   # one warning per variable, not one per read
+
+
 def _env_value(policy: Policy, env: Mapping[str, str] | None) -> Any:
     """`_INVALID` when the variable is unset or empty (the policy is not pinned); else its parsed value, or
     `policy.default` when it is set but cannot be read (the old behaviour of each variable)."""
@@ -218,7 +221,13 @@ def _env_value(policy: Policy, env: Mapping[str, str] | None) -> Any:
         lowered = text.casefold()
         return True if lowered in _TRUE else False if lowered in _FALSE else policy.default
     if policy.kind == "enum":
-        return text if text in policy.choices else policy.default
+        if text in policy.choices:
+            return text
+        if policy.env not in _WARNED_ENV:
+            _WARNED_ENV.add(policy.env)
+            _log.warning("platform.policies: %s=%r is not one of %s; using the default %r", policy.env, text,
+                         ", ".join(policy.choices), policy.default)
+        return policy.default
     try:
         number = float(text)
     except ValueError:

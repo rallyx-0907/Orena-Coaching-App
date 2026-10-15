@@ -160,6 +160,19 @@ class SpendLedger:
             events = self._read()
         return sum(1 for event in events if event.get("kind") == kind and str(event.get("at") or "") >= day_start)
 
+    def reserve_request(self, cap: int, *, media_id: str = "", kind: str = KIND_SUPADATA, provider: str = "") -> None:
+        """Check today's count against `cap` and record one request, under one lock: callers cannot both pass the check
+        (D-215). Raises `SpendCapReached("caption_quota")` and records nothing at the cap."""
+        day_start = _now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        with self._lock:
+            events = self._read()
+            used = sum(1 for event in events if event.get("kind") == kind and str(event.get("at") or "") >= day_start)
+            if used >= cap:
+                raise SpendCapReached("caption_quota", limit=float(cap), spent=float(used), scope="day")
+            events.append({"at": _now().isoformat(), "kind": kind, "usd": 0.0, "batch_id": "captions",
+                           "media_id": media_id, "units": 1.0, "provider": provider[:40]})
+            self._write(events)
+
     def check_requests(self, cap: int, kind: str = KIND_SUPADATA) -> None:
         """Raise `SpendCapReached("caption_quota")` when today's requests of `kind` have reached `cap` (no call is made)."""
         used = self.requests_today(kind)

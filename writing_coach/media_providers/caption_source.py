@@ -10,7 +10,7 @@ Native mode returns the captions the video already has, at one credit a request.
 a minute) and translation costs thirty, so neither is ever requested here: the one call below passes `NATIVE_MODE`, a constant.
 A day's requests are counted in the media spend ledger (kind `supadata`, one unit, no dollars) and refused past
 `media.supadata_daily_requests` with the stable reason `caption_quota` before any call is made. A call is never repeated by this
-code; a definitive answer (a track, or none) is remembered briefly so the import and the pipeline step that follows it do not
+code; a definitive answer (a track, or none, which includes Supadata's own "no transcript" 206/404/422) is remembered briefly so the import and the pipeline step that follows it do not
 pay twice for one video.
 """
 from __future__ import annotations
@@ -27,6 +27,7 @@ from writing_coach.media_ingestion import ProviderRequestFailed, ProviderTimedOu
 from writing_coach.media_providers.supadata import (
     SupadataTranscriptError,
     SupadataTranscriptMalformed,
+    SupadataTranscriptNotFound,
     SupadataTranscriptTimedOut,
 )
 from writing_coach.media_providers.youtube import (
@@ -35,7 +36,7 @@ from writing_coach.media_providers.youtube import (
     YouTubeCaptionTrack,
     canonical_youtube_url,
 )
-from writing_coach.media_spend import KIND_SUPADATA, SpendCapReached
+from writing_coach.media_spend import SpendCapReached
 
 _log = logging.getLogger(__name__)
 
@@ -52,6 +53,7 @@ REASON_UNCONFIGURED = "caption_unconfigured"
 
 MEMO_SECONDS = 900.0
 MEMO_MAX = 64
+_MISS = object()
 
 
 class CaptionQuotaReached(ProviderRequestFailed):
@@ -90,6 +92,7 @@ class PolicyCaptionClient:
         self._daily_cap = daily_cap or (lambda: int(policies.value("media.supadata_daily_requests")))
         self._clock = clock
         self._memo: dict[tuple[str, str], tuple[float, YouTubeCaptionTrack | None]] = {}
+        self._inflight: dict[tuple[str, str], threading.Lock] = {}
         self._lock = threading.Lock()
 
     def fetch_track(self, video_id: str, source_language: str) -> YouTubeCaptionTrack | None:
@@ -113,24 +116,51 @@ class PolicyCaptionClient:
     def _native(self, video_id: str, source_language: str) -> YouTubeCaptionTrack | None:
         key = (video_id, source_language.casefold())
         with self._lock:
+            flight = self._inflight.setdefault(key, threading.Lock())
+        with flight:   # one caller per video and language at a time: the second reads the first's answer from the memo
+            kept = self._remembered(key)
+            if kept is not _MISS:
+                return kept
+            try:
+                return self._ask(key, video_id, source_language)
+            finally:
+                with self._lock:
+                    if len(self._inflight) > 1024:
+                        self._inflight = {k: v for k, v in self._inflight.items() if v.locked()}
+
+    def _remembered(self, key: tuple[str, str]) -> Any:
+        with self._lock:
             kept = self._memo.get(key)
             if kept is not None and kept[0] > self._clock():
                 return kept[1]
+            self._memo.pop(key, None)
+            return _MISS
+
+    def _remember(self, key: tuple[str, str], track: YouTubeCaptionTrack | None) -> None:
+        with self._lock:
+            self._memo.pop(key, None)
+            self._memo[key] = (self._clock() + MEMO_SECONDS, track)
+            while len(self._memo) > MEMO_MAX:
+                self._memo.pop(next(iter(self._memo)))   # the oldest answer goes, not all of them
+
+    def _ask(self, key: tuple[str, str], video_id: str, source_language: str) -> YouTubeCaptionTrack | None:
         client = self._supadata
         if client is None:
             raise CaptionNotConfigured()
         ledger = self._ledger()
         try:
-            ledger.check_requests(max(0, self._daily_cap()))
+            # Check and record are one step under the ledger's lock, before the call, so a request that dies in flight
+            # still counts and two callers cannot both pass the cap.
+            ledger.reserve_request(max(0, self._daily_cap()), media_id=f"youtube-{video_id}", provider=PROVIDER)
         except SpendCapReached as refused:
             raise CaptionQuotaReached() from refused
-        # Recorded before the call, so a request that dies in flight still counts against the day.
-        ledger.record(KIND_SUPADATA, 0.0, batch_id="captions", media_id=f"youtube-{video_id}", units=1, provider=PROVIDER)
         try:
             with system_funding("media_captions"):
                 result = client.fetch(canonical_youtube_url(video_id), source_language, mode=NATIVE_MODE)
         except SupadataTranscriptTimedOut as error:
             raise ProviderTimedOut() from error
+        except SupadataTranscriptNotFound:
+            track = None   # 206, 404, 422: Supadata has no captions for this video, a definitive answer
         except SupadataTranscriptMalformed:
             # Supadata answered in a language other than the one asked for, or in a shape that is not a transcript: there
             # is no usable track for this language.
@@ -151,8 +181,5 @@ class PolicyCaptionClient:
                     kind=KIND_UNKNOWN,
                     provider=PROVIDER,
                 )
-        with self._lock:
-            if len(self._memo) >= MEMO_MAX:
-                self._memo.clear()
-            self._memo[key] = (self._clock() + MEMO_SECONDS, track)
+        self._remember(key, track)
         return track
