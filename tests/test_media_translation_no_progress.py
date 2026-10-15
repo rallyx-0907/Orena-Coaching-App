@@ -205,6 +205,106 @@ def test_a_49_line_item_completes_when_the_allowance_left_fits_the_reservation_i
     assert sum(admitted) == 49
 
 
+def test_the_old_fixed_2048_reservation_stalls_in_the_same_world(monkeypatch):
+    """The negative case of the test above: with the same 2300 tokens of room, a fixed 2048 reservation is refused for
+    every batch, so nothing is translated."""
+    room = 2300
+    admitted = []
+
+    def post(url, **kwargs):
+        body = kwargs["json"]
+        prompt_tokens = len(body["messages"][0]["content"] + body["messages"][1]["content"]) // 3
+        if prompt_tokens + body["max_completion_tokens"] > room:
+            return FakeResponse({"error": {"message": "tokens per day (TPD)"}}, status=429, headers={"retry-after": "300"})
+        admitted.append(len(_ids(body)))
+        return FakeResponse(_ok(_ids(body)))
+
+    monkeypatch.setattr(mt.requests, "post", post)
+    rows = segments(*[f"(line {i}) " + "This is a caption of about eighty characters, said by a narrator in a film." for i in range(49)])
+    provider = mt.GroqTranslationProvider("key", model="m")
+    monkeypatch.setattr(provider, "_completion_budget", lambda _wire: 2048)
+    refused = 0
+    for batch in mt.build_translation_batches(rows):
+        with pytest.raises(mt.TranslationProviderError) as stalled:
+            provider.translate_batch("en", "vi", batch)
+        assert stalled.value.reason == "rate_limited"
+        refused += 1
+    assert refused >= 2 and admitted == []
+
+
+# -- the usage sink -----------------------------------------------------------------------------------------------
+
+USAGE = {"prompt_tokens": 900, "completion_tokens": 300, "total_tokens": 1200}
+
+
+def test_usage_captured_before_meanings_raises_is_still_booked(tmp_path, monkeypatch):
+    world = _World(tmp_path, monkeypatch, lambda _n, body: FakeResponse(_ok(_ids(body), usage=USAGE)))
+    inner = world.pipeline._meanings
+
+    def meanings(entry, target):
+        inner(entry, target)
+        raise RuntimeError("after the provider billed")
+
+    world.pipeline._meanings = meanings
+    world.run()
+    count, spent = world.booked()
+    assert count == 1 and spent == pytest.approx(world.pipeline._ai_cost("openai/gpt-oss-120b", USAGE))
+
+
+def test_an_explicit_translation_sink_is_honoured(tmp_path, monkeypatch):
+    from contextlib import contextmanager
+
+    world = _World(tmp_path, monkeypatch, lambda _n, body: FakeResponse(_ok(_ids(body), usage=USAGE)))
+    opened = []
+    held = {}
+
+    @contextmanager
+    def sink(callback):
+        opened.append(True)
+        held["callback"] = callback
+        yield
+
+    world.pipeline._translation_sink = sink
+    world.pipeline._meanings = lambda entry, target: (
+        held["callback"]("openai/gpt-oss-120b", USAGE),
+        SimpleNamespace(status="ready", meanings=[object()] * 5, provider_calls=1, reason="", retry_after=0.0))[1]
+    world.run()
+    assert opened == [True]
+    count, spent = world.booked()
+    assert count == 1 and spent == pytest.approx(world.pipeline._ai_cost("openai/gpt-oss-120b", USAGE))
+
+
+def test_the_usage_sink_does_not_leak_into_another_thread_or_past_its_block(monkeypatch):
+    import threading
+
+    monkeypatch.setattr(mt.requests, "post", lambda url, **kw: FakeResponse(_ok(_ids(kw["json"]), usage=USAGE)))
+    provider = mt.GroqTranslationProvider("key", model="m")
+    seen = []
+
+    def call():
+        provider.translate_batch("en", "vi", segments("One."))
+
+    with mt.usage_sink(lambda model, usage: seen.append(model)):
+        worker = threading.Thread(target=call)
+        worker.start()
+        worker.join()
+        assert seen == [], "a new thread starts with an empty context"
+        call()
+        assert seen == ["m"]
+    call()
+    assert seen == ["m"], "nothing is reported after the block"
+
+
+def test_an_organisation_id_in_a_429_sentence_is_not_logged(monkeypatch, caplog):
+    message = "Rate limit reached for model `m` in organization `org_01abcdEFGH23` on tokens per day (TPD): Limit 200000."
+    install(monkeypatch, FakeResponse({"error": {"message": message}}, status=429, headers={"retry-after": "5"}))
+    with caplog.at_level(logging.WARNING, logger="writing_coach.media_translation"):
+        with pytest.raises(mt.TranslationProviderError):
+            mt.GroqTranslationProvider("key", model="m").translate_batch("en", "vi", segments("One."))
+    text = " ".join(record.getMessage() for record in caplog.records)
+    assert "org_01abcdEFGH23" not in text and "tokens per day" in text
+
+
 # -- the reason is findable ---------------------------------------------------------------------------------------
 
 def test_a_429_log_names_the_allowance_that_refused_and_no_credential(monkeypatch, caplog):

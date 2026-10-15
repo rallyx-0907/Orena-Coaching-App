@@ -1,14 +1,11 @@
-"""An import writes only to the data paths it is configured with, in every language (D-216, PROPOSED).
+"""A guard: an import writes nothing under the repository, in any language (D-216).
 
-Trial evidence (2026-10-15, :8021): the first Chinese YouTube import was reported as `media_library_write_failed`
-("Read-only file system") within 1.2 s while English imports minutes earlier worked. The code path was suspected of
-writing under the repository (`/app`, read-only in the worker) for Chinese only. This test makes that claim checkable:
-the whole import and its transcript pipeline run for `en` and `zh` with the library, the assets and the spend ledger in a
-temporary directory, and any attempt to write anywhere under the repository is a failure, as a read-only mount would be.
-
-(The 2026-10-15 request is not in the :8021 web access log at all, and the shared browser tab that sent it had lost its
-session to another origin, so the refusal came from a server that was not this one; nothing in the import path is
-language-specific.)"""
+Background: on 2026-10-15 a first Chinese YouTube import was reported as `media_library_write_failed` ("Read-only file
+system"), and a language-specific write under the repository (read-only in the worker) was suspected. This is a
+regression guard against that class of defect, not a proof of what happened in production: the import and its transcript
+pipeline run for `en` and `zh` with the library, assets and spend ledger in a temporary directory, and any attempt to
+write under the repository fails as a read-only mount would. It passes today for both languages. (The reported request
+is not in the :8021 access log; the likely cause is that it went to a read-only review container.)"""
 from __future__ import annotations
 
 import errno
@@ -62,7 +59,7 @@ sys.addaudithook(_hook)  # audit hooks cannot be removed; it is inert unless a t
     ("en", "Every morning I walk to the market. The vegetables are fresh."),
     ("zh", "每天早上我都去附近的市场买菜。阿姨总是很热情。"),
 ])
-def test_an_import_writes_only_under_its_configured_paths(tmp_path, monkeypatch, language, text):
+def test_an_import_writes_nothing_under_the_repository(tmp_path, monkeypatch, language, text):
     monkeypatch.setenv("MEDIA_PIPELINE_INLINE", "1")
     monkeypatch.setenv("MEDIA_PRETRANSLATE_LANGUAGES", "vi")
     store = FileMediaLibraryStore(tmp_path / "index")

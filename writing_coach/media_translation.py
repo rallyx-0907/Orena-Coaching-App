@@ -59,6 +59,8 @@ class _RequestTooLarge(Exception):
 # Who is listening for the tokens a provider answer billed. A caller that books spend (the media pipeline) opens
 # `usage_sink` around its translation call; every answer the provider returned with `usage` reports it there, and a
 # refused call (401/403/429), a timeout or an answer without `usage` reports nothing, so nothing is booked for it (#228).
+# It is a ContextVar: moving translation to another thread or executor needs `contextvars.copy_context().run(...)`, or
+# usage arrives empty there and the spend cap stops biting (nothing is booked).
 _USAGE_SINK: ContextVar[Callable[[str, dict], None] | None] = ContextVar("media_translation_usage_sink", default=None)
 
 
@@ -89,6 +91,9 @@ def _output_chars(wire: tuple[TranslatableSegment, ...]) -> int:
     return sum(len(s.segment_id) + 2 * len(s.original_text) + 64 for s in wire)
 
 
+_ORG_ID = re.compile(r"org_[A-Za-z0-9]+")
+
+
 def _error_detail(response: object) -> str:
     """The provider's own sentence about a refusal (which allowance, how much was left), short and on one line.
     It names limits and counts, never a credential; empty when the answer carries none."""
@@ -98,7 +103,9 @@ def _error_detail(response: object) -> str:
         message = error.get("message", "") if isinstance(error, dict) else ""
     except Exception:  # noqa: BLE001 - a log line never fails the call
         return ""
-    return " ".join(str(message).split())[:240]
+    text = " ".join(str(message).split())
+    # An organisation id is an account identifier, not a limit: it stays out of the log.
+    return _ORG_ID.sub("org_<redacted>", text)[:240]
 
 
 @dataclass(frozen=True)
