@@ -77,7 +77,8 @@ def test_prices_follow_the_design_tiers():
 def test_the_meters_are_the_designs_pricing():
     """D-161: the design's BILL_PLANS `lim` - messages/day, reviews/month, minutes (stored as seconds), languages."""
     free, plus, pro = (plan.entitlement_map() for plan in (FREE, PLUS, PRO))
-    assert list(free) == ["orena.message", "writing.review", "pronunciation.audio", "media.import", "languages.target"]
+    assert list(free) == ["orena.message", "writing.review", "pronunciation.audio", "media.import", "languages.target",
+                          "word.assist", "reading.assist", "writing.task"]
     assert [m["orena.message"].limit for m in (free, plus, pro)] == [20, 200, 1000]
     assert [m["writing.review"].limit for m in (free, plus, pro)] == [2, 10, 50]
     assert [m["pronunciation.audio"].limit for m in (free, plus, pro)] == [300, 1800, 7200]
@@ -91,6 +92,60 @@ def test_the_meters_are_the_designs_pricing():
     row = free["pronunciation.audio"].as_dict()
     assert (row["unit"], row["display_unit"], row["scale"], row["monthly_limit"]) == ("second", "minute", 60, 300)
     assert free["orena.message"].as_dict()["monthly_limit"] is None, "the native field names only monthly limits"
+
+
+def test_the_semantic_ai_meters_are_daily_requests_with_the_approved_bootstrap_limits():
+    """PR-MON-7B1 (H7-3, D-MON-025): requests per day, Free/Plus/Pro, in the catalogue - defaults an admin edits."""
+    from writing_coach.billing.funding import NEW_METER_UNITS
+    from writing_coach.product.catalog import METERS
+
+    free, plus, pro = (plan.entitlement_map() for plan in (FREE, PLUS, PRO))
+    assert [m["word.assist"].limit for m in (free, plus, pro)] == [30, 300, 1500]
+    assert [m["reading.assist"].limit for m in (free, plus, pro)] == [10, 100, 500]
+    assert [m["writing.task"].limit for m in (free, plus, pro)] == [5, 30, 100]
+    for key in ("word.assist", "reading.assist", "writing.task"):
+        meter = METERS[key]
+        assert (meter.window, meter.unit, meter.display_unit, meter.scale) == ("day", "request", "request", 1)
+        assert meter.unit == NEW_METER_UNITS[key], "the frozen H-2 unit"
+        assert free[key].enabled and free[key].as_dict()["monthly_limit"] is None
+
+
+def test_the_semantic_ai_meters_activate_nothing():
+    """In the catalogue only: not wired, so never enforceable, never admitted, never credit-funded."""
+    from writing_coach.billing.funding import CREDIT_ELIGIBLE_V1
+    from writing_coach.product import quota
+
+    for key in ("word.assist", "reading.assist", "writing.task"):
+        assert key not in quota.WIRED_METERS and key not in quota.ENFORCEABLE
+        assert key not in CREDIT_ELIGIBLE_V1
+
+
+def test_a_stored_catalogue_without_the_new_meters_reads_their_defaults():
+    """A catalogue saved before PR-MON-7B1 (version 2, no new keys) still reads: the new meters take the code
+    defaults, the stored limits stay."""
+    store = MemoryStore()
+    configure_plan_store(store)
+    old = document()
+    new_keys = {"word.assist", "reading.assist", "writing.task"}
+    for row in old["plans"]:
+        row["entitlements"] = [item for item in row["entitlements"] if item["key"] not in new_keys]
+        for item in row["entitlements"]:
+            if row["id"] == "plus" and item["key"] == "writing.review":
+                item["limit"] = 12
+    save_catalog(old, updated_by="admin")
+    plus = plan_by_id("plus").entitlement_map()
+    assert plus["writing.review"].limit == 12 and plus["word.assist"].limit == 300
+
+
+def test_an_admin_edits_a_semantic_ai_meter_like_any_other_limit():
+    store = MemoryStore()
+    configure_plan_store(store)
+    edited = document()
+    for item in edited["plans"][0]["entitlements"]:
+        if item["key"] == "word.assist":
+            item["limit"] = 40
+    save_catalog(edited, updated_by="admin")
+    assert plan_by_id("free").entitlement_map()["word.assist"].limit == 40
 
 
 def test_an_admin_change_applies_from_the_moment_it_is_saved():

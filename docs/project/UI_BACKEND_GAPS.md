@@ -6304,3 +6304,9 @@ Not fixed, logged (the balance "—" is no longer open: owner decision of 2026-1
 ## Caption-only import has no place in the Import media form (D-214 proposed, 2026-10-15)
 
 `POST /api/admin/console/imports/media` and `POST /api/media-learning/admin/import` accept `transcript_policy` (`captions_or_asr`, the default, or `captions_only`) on the batch and on each item. With `captions_only`, a refused or empty caption fetch ends the item `failed` with `captions_unavailable` before any audio download or speech recognition. The pinned `Orena-Admin.dc.html` "Import media" form (A11) draws a URL field, Preview and Import only, so the option is API-only and no control was added. Needs a design decision: a toggle or select on the form (and whether the Reprocess block should offer the same choice for an item imported as `captions_only`).
+
+## Plan & usage has no rows for the semantic AI meters (PR-MON-7B1, 2026-10-15)
+
+PR-MON-7B1 adds `word.assist`, `reading.assist` and `writing.task` to the plan catalogue: requests per day, Free/Plus/Pro 30/300/1500, 10/100/500 and 5/30/100 (H7-3, D-MON-025). Admin can edit them in the existing Plans & pricing editor, which lists every catalogue meter, with names in EN/VI/ZH. The pinned `Orena.dc.html` Pricing (`BILL_PLANS.lim`) and Plan & usage frames draw only messages, writing reviews, pronunciation minutes, media import minutes and target languages. The learner screens therefore keep `FEATURE_ORDER` / `USAGE_ORDER` unchanged and show none of the three.
+
+Before any of these meters is enforced, a separate fast UI slice needs the design's rows: a card line, a compare row and a usage row with its daily reset, plus the "limit reached" notice for each meter. The open question is whether the design draws them, and how. Nothing is enforced and no meter is admitted until then.
