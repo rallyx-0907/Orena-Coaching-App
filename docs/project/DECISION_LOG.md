@@ -6864,7 +6864,7 @@ migration change: everything lives in existing JSON fields (`creator`, the `sour
 
 ## D-206 - Admin preview of held media in the learner player; full admin transcript; ZH tap verified (2026-10-15)
 
-Status: PROPOSED — pending independent review. (Number to be renumbered if it collides at merge.) Video Sources
+Status: ACCEPTED (merged as #214 once CI was green; independent review APPROVE on 9f9f5a6b, no open P0/P1). Video Sources
 mini-trial P1-5, P1-6 and P2-10 (part). No schema or migration change, no new role, no change to the publish or
 visibility policy.
 
@@ -6889,6 +6889,46 @@ visibility policy.
 5. **Not done / for the owner.** Opening a preview in the learner player writes the administrator's own continuation (and
    any practice progress) like any learner session; the player does not know it is a preview. Whether to suppress that is a
    product decision. The player's own tap-through was checked by gate and fixture, not in a browser on a real held item.
+
+## D-207 - Line translation completes within a bounded continuation and a partial one says why (2026-10-15)
+
+Status: ACCEPTED (merged as #215 once CI was green; independent review APPROVE on f870aacf, re-review APPROVE on fc3b24e9, no open P0/P1). Video Sources milestone, PR-A. No schema or migration change: the new value lives
+in the existing `processing` JSON beside `translation_counts`.
+
+1. **Root cause (from the code; the trial left no log line to confirm the provider's answer).** Translation is one call per
+   language into `prepare_media_meanings`. The shared translator split the transcript into 24-line provider batches and stopped
+   at the first batch that did not return (`break`), the service dropped the provider's reason, the pipeline recorded a log
+   warning and never asked again, and Groq's HTTP 429 was folded into a generic `TranslationProviderError`. That reproduces every
+   observed shape: the first batch(es) landed and the next was refused (24/47, 24/69, 48/113), or the first was refused (0/47, 0/130).
+   A transcript over 8 batches (192 lines) was refused outright with an empty answer and no reason.
+2. **Fix.** The provider error carries a stable `reason` (`rate_limited` with the provider's `Retry-After` /
+   `x-ratelimit-reset-*` wait, `provider_error`, `provider_timeout`, `provider_auth`, `request_too_large`, `not_configured`,
+   `malformed_result`); the service and the translator pass it up (`MediaTranslationResult.reason`, `TranslatedLines`,
+   `MeaningOutcome.reason`). The pipeline continues the missing lines for at most `TRANSLATION_MAX_ROUNDS` (5) rounds per
+   language: finished lines come from the persisted cache so a round requests only what is missing, a wait is the provider's
+   own (capped at 60 s, 150 s in total, else 5 s), a round that progressed does not wait, and a terminal reason
+   (`spend_cap`, `provider_auth`, `not_configured`, `too_large`, `request_too_large`) stops at once. Every round is checked
+   against the AI spend cap with an estimate for the missing share only, so the cap is unchanged and no worker or provider is
+   added. A long transcript is translated in windows of at most 192 lines across rounds instead of being refused.
+   Two more stops end a run early: a `Retry-After` over 60 s stops at once with `rate_limited` instead of sleeping into the
+   same refusal, and a round that adds no line and names no reason stops. Refused provider calls (HTTP 429, 401, 403) are
+   still recorded once in the quota telemetry before the error is raised.
+3. **Honest stop.** When it still ends partial or failed, `processing.translation_reason` holds the stable code (`rate_limited`,
+   `provider_error`, `spend_cap`, `incomplete`, ...), cleared on success and on re-run; the admin `outcome.translation` returns
+   `{state, reason, counts}`.
+4. **Oversize file.** A file over the 64 MiB cap now fails with the stable code `media_too_large` and one sentence on every host
+   (direct, archive.org, Commons), not `commons_unavailable` / "try again later". The cap is unchanged.
+5. **Transcoded upload URL.** An `upload.wikimedia.org/.../commons/transcoded/...` rendition imports as a direct file without the
+   Commons File lookup; the download stays pinned to the upload host with the project User-Agent. Original uploads and File:
+   pages still resolve through Commons for provenance.
+6. **Admin item page.** The failure reason is shown whenever the item failed, also with stored lines (Umu: `language_mismatch`),
+   and the existing Details list gains a "Translation" row (state, per-language counts, stop reason). This reuses the page's
+   banner and key/value patterns and adds no new component; D-205's open question (whether and where to show it) is answered
+   by the human request that scoped this PR and recorded in `UI_BACKEND_GAPS.md`. Copy is EN/VI/ZH. `content-pages.js` called
+   `banner` without importing it, so the processing banner threw on a queued item; the import is added.
+7. **Owner decisions left open.** Raising the 64 MiB cap (not done). A control to retry only the missing lines of a finished item
+   (reprocess still redoes everything). Whether the 5-round / 150 s bound suits the provider's real limits once a real batch is
+   measured (no live provider was called; tests use fakes).
 
 ## D-208 - ASR transcripts: one Chinese script per item, and hallucinated segments removed (2026-10-15)
 

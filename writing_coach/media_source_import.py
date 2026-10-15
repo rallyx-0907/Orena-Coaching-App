@@ -283,6 +283,9 @@ def failure_reason(exc: BaseException) -> tuple[str, str]:
     if isinstance(exc, UnsupportedMediaAddress):
         return exc.code, exc.message
     if isinstance(exc, UnsafeMediaFetch):
+        if getattr(exc, "too_large", False):
+            # The same code and sentence for every host, direct or Commons: retrying cannot make the file smaller.
+            return "media_too_large", str(exc)
         # Authored constants from `media_safe_fetch`, written to be shown.
         return "unsafe_source", str(exc)
     return "import_failed", "This source could not be imported. The server log has the details."
@@ -569,8 +572,14 @@ class MediaSourceImporter:
         host = (parsed.hostname or "").casefold()
         if host in {"youtu.be", "youtube.com"} or host.endswith(".youtube.com"):
             return self._from_youtube(url, language=language, imported_by=imported_by), None
-        from writing_coach.media_commons import is_commons_address, resolve
+        from writing_coach.media_commons import is_commons_address, is_derivative_upload, resolve
 
+        if is_derivative_upload(url):
+            # A transcoded rendition on the upload host is a plain media file: no File: page to look up. The download is
+            # still pinned to that host and identifies itself, as a Commons import does.
+            return self._from_direct_url(
+                url, language=language, imported_by=imported_by, persist_media=persist_media, pinned_upload_host=True
+            )
         if is_commons_address(url):
             validate_public_http_url(url)
             found = resolve(url)
@@ -615,7 +624,8 @@ class MediaSourceImporter:
         )
 
     def _from_direct_url(
-        self, url: str, *, language: str, imported_by: str, persist_media: bool, commons: Any = None
+        self, url: str, *, language: str, imported_by: str, persist_media: bool, commons: Any = None,
+        pinned_upload_host: bool = False,
     ) -> tuple[MediaLibraryEntry, MediaAcquisition | None]:
         """A media file on a public host: bounded, SSRF-guarded, probed locally."""
         validate_public_http_url(url)
@@ -628,12 +638,14 @@ class MediaSourceImporter:
         token = hashlib.sha256(url.encode("utf-8")).hexdigest()[:32]
         asset_key = f"media/direct-{token}/original{suffix}"
         with TempMediaFile(suffix=suffix) as temp:
-            if commons is not None:
+            if commons is not None or pinned_upload_host:
                 from writing_coach.media_commons import UPLOAD_HOSTS, USER_AGENT, refusal
 
                 try:
                     download_bounded(url, temp.path, allowed_hosts=UPLOAD_HOSTS, user_agent=USER_AGENT)
                 except UnsafeMediaFetch as exc:
+                    if getattr(exc, "too_large", False):
+                        raise  # a file over the cap is "too large", not "Commons is unavailable"
                     raise refusal(exc) from exc
             else:
                 download_bounded(url, temp.path)

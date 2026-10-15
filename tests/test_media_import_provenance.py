@@ -212,7 +212,7 @@ def test_outcome_tells_processing_held_failed_and_ready_apart_and_keeps_partial_
     assert failed["state"] == "failed" and failed["message"] == "The audio of this source could not be downloaded."
     partial = state(state="held", reason="rights_unknown", translation="partial",
                     translation_counts={"vi": {"done": 48, "total": 113}})
-    assert partial["state"] == "held" and partial["translation"] == {"state": "partial", "counts": {"vi": {"done": 48, "total": 113}}}
+    assert partial["state"] == "held" and partial["translation"] == {"state": "partial", "reason": "", "counts": {"vi": {"done": 48, "total": 113}}}
     stored = state(state="failed", reason="captions_blocked", message="kept as stored")
     assert stored["message"] == "kept as stored"
 
