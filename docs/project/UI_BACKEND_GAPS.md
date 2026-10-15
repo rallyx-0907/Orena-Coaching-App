@@ -6304,3 +6304,36 @@ Not fixed, logged (the balance "—" is no longer open: owner decision of 2026-1
 ## Caption-only import has no place in the Import media form (D-214 proposed, 2026-10-15)
 
 `POST /api/admin/console/imports/media` and `POST /api/media-learning/admin/import` accept `transcript_policy` (`captions_or_asr`, the default, or `captions_only`) on the batch and on each item. With `captions_only`, a refused or empty caption fetch ends the item `failed` with `captions_unavailable` before any audio download or speech recognition. The pinned `Orena-Admin.dc.html` "Import media" form (A11) draws a URL field, Preview and Import only, so the option is API-only and no control was added. Needs a design decision: a toggle or select on the form (and whether the Reprocess block should offer the same choice for an item imported as `captions_only`).
+
+## Create lesson card on Discover (design pin 2026-10-15)
+
+The 2026-10-15 design replaces Discover's header "+ Import" with a "Create lesson" card (`screens/discover/create-lesson.js`)
+that hands what was entered to the unchanged Import sheet. Recorded, not resolved:
+
+- **CL-1 Document import (PDF, EPUB, DOCX).** The design draws the Document tab and its drop zone but its own handler toasts
+  "not built in this round", and the backend has no document import route (`/api/media-learning/upload` takes audio and video
+  only). The tab and the drop zone are drawn; Create and the zone say so in a toast ("Documents cannot be imported yet").
+  Needs: a document-to-lesson route and its rights policy (a human decision), then the tab can send the file.
+- **CL-2 No preview step.** The design sends a valid link to the Import sheet's preview step. There is no cheap
+  title/thumbnail endpoint (already recorded for the sheet), so a valid link goes straight to processing; a link that is not
+  a supported media URL is said on the sheet's link step.
+- **CL-3 Pasted text is not analysed.** The card hands the text to the sheet's text step (device memory, then the Reader),
+  not to an AI "lesson" pipeline: Orena Intelligence authoring of a lesson from text does not exist on the backend.
+- **CL-4 Colour literals.** The design writes the Create button's second gradient stop (#C26BD9) and the file-type chip hues
+  (#E5484D, #3E8CF0, #8B5CF6, #2FB57C, #E5933A, #D9488F) as literals that are not tokens. They are the nearest tokens
+  (`--skill-write`, `--skill-speak`, `--skill-grammar`, `--gcat-2`, `--gcat-4`, `--skill-read`), and the gold of the spark mark
+  is `--amber` (the design's #F5B544); a human may prefer new tokens.
+- **CL-4 (update, review of PR #232).** The spark mark's three fills are `--spark` (the Credits gold, dark #F7BE5E, light #EFAE45), the second and third at 85% opacity, not `--amber`: `--amber` is #A16000 in light and measured about 1.1:1 on the Create button. `--spark` stays visible on the violet button and on the tile in both themes; no colour was invented. The tile's wash still mixes `--amber`.
+- **CL-5 Link hints.** The Link / Video tab's chips say "YouTube", "Website" and "MP4" (the design's copy), but `isSupportedMediaUrl` accepts only https YouTube links; any other link is refused on the sheet's link step with the supported-provider error. Recorded next to CL-2 rather than inventing UI; the chips follow the backend when it accepts more.
+- **CL-6 Phone input size.** The card's link field and text area are 16px on a phone (the design draws 15px): iOS Safari zooms the page when a field under 16px takes focus. Same precedent as `import.css` and `.o-search`.
+- **CL-7 Scope: resolved by owner decision (2026-10-15).** The design draws the card on plain Discover only, and the old header "+ Import" had also been offered in the Dictation and Speaking choosers. Owner, verbatim: "thay đổi nó giống nút create lesson và hiện những dạng nguồn giống như vị trí bài học đang đứng" (change it to be like the Create lesson button and show the kinds of source that match where the learner is in the lesson). An explicit owner instruction outranks the design (AGENTS.md precedence), so the same card (`create-lesson.js`, no second component) is drawn in every practice chooser, with only the kinds that practice can consume (`lessonTabsFor`):
+
+  | Place | Kinds offered | Why |
+  | --- | --- | --- |
+  | Plain Discover | Link / Video, Text, Document, Audio | the design: all four |
+  | Listening (`practice=listening`) | Link / Video, Audio | media only; the lesson opens in Listening |
+  | Dictation (`practice=dictation`) | Link / Video, Audio | needs a recording; opens in Dictation (the sheet admits only media with model audio) |
+  | Speaking: Pronunciation, Shadowing | Link / Video, Audio | needs a model recording; opens in Shadow (same admission) |
+
+  Text and Document are not offered in a chooser: they become a Reader text (or have no route, CL-1), which none of these practices can use. Hint chips follow the visible tab; two tabs lay out in two columns at every width. The result lands where the learner is: the import sheet already takes the chooser's `mediaRoute` (`listening`, `dictation`, `shadow`), so a created lesson opens in that practice room, not back in the chooser. Reading and Writing have no Discover chooser, so no mapping exists for them.
+- **CL-8 Text cap.** The card's text area and the Import sheet's text area both cap at 12000 characters, so a hand-over is never cut.
