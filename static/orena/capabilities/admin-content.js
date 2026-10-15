@@ -86,6 +86,9 @@ export async function contentCounts(api = adminApi) {
    no use here): books at their first chapter, media as a lesson. Vocabulary has no learner page of
    its own in the new UI - it is reached through My Library. */
 export function learnerLink(record, detail) {
+  /* A shared import that is not published is opened through the admin player (`preview:`), so a
+     reviewer can judge the transcript in the real learner player before deciding rights. */
+  if (record.kind === 'media' && record.origin === 'imported' && record.status !== 'published') return learnerAddress('media', `preview:${record.id}`);
   if (record.status !== 'published') return '';
   if (record.kind === 'book') {
     const first = (detail?.book?.chapters || [])[0];

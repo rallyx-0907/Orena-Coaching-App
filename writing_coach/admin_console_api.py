@@ -94,7 +94,6 @@ def publication_warnings(rights: str, completeness: str) -> list[dict[str, str]]
     elif not completeness:
         warnings.append({"code": "completeness_unknown", "level": "warning"})
     return warnings
-TRANSCRIPT_PREVIEW_SEGMENTS = 12
 VOCABULARY_PREVIEW_ENTRIES = 25
 
 
@@ -815,7 +814,7 @@ def content_detail(kind: str, content_id: str, request: Request, response: Respo
                     "segment_count": len(segments),
                     "segments": [
                         {"start_ms": int(segment.get("start_ms") or 0), "text": str(segment.get("original_text") or "")}
-                        for segment in segments[:TRANSCRIPT_PREVIEW_SEGMENTS]
+                        for segment in segments
                     ],
                 },
                 "source": {
@@ -844,7 +843,7 @@ def content_detail(kind: str, content_id: str, request: Request, response: Respo
             "transcript": {
                 "segment_count": len(segments),
                 "segments": [{"start_ms": segment.start_ms, "text": segment.original_text}
-                             for segment in segments[:TRANSCRIPT_PREVIEW_SEGMENTS]],
+                             for segment in segments],
             },
             "source": {
                 "url": source.source_url, "provider": source.source_provider, "license": source.license_name,

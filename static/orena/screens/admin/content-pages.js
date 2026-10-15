@@ -122,6 +122,12 @@ export function bookPage({ detail, view, t, ui, href }) {
   };
 }
 
+/* The address as a person reads it: the percent-encoding of a title or a comma is shown decoded. */
+function readableUrl(url) {
+  const value = String(url || '');
+  try { return decodeURI(value); } catch { return value; }
+}
+
 export function mediaPage({ detail, view, t, ui, href, form = {} }) {
   const record = detail.record;
   const facts = record.facts || {};
@@ -140,7 +146,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
       ${['queued', 'running'].includes(record.processing?.state) ? processingProgressMarkup(record.processing.stage, Object.fromEntries(['fetch', 'transcribe', 'segment', 'translate', 'ready'].map((stage) => [stage, t(`impMediaStage_${stage}`)]))) : ''}
       <div class="a-blocks">
         ${block({ title: t('ctDetails'), body: kv([
-          { key: t('ctFactSource'), value: source.original_url || source.url || t('ctUpload'), mono: Boolean(source.original_url || source.url) },
+          { key: t('ctFactSource'), value: readableUrl(source.original_url || source.url) || t('ctUpload'), mono: Boolean(source.original_url || source.url) },
           { key: t('ctFactSegments'), value: num(facts.segment_count, ui) },
           { key: t('ctFactDuration'), value: facts.duration_ms ? latency(facts.duration_ms, ui) : '—' },
           { key: t('ctFactLanguage'), value: t(record.language === 'zh' ? 'langZh' : 'langEn') },
@@ -149,7 +155,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
           { key: t('ctFactProvider'), value: facts.provider || '—' },
           { key: t('ctFactLicense'), value: [source.license_name, source.license].filter(Boolean).join(' · ') || '—' },
         ]) })}
-        ${block({ title: t('ctLearnerView'), body: html`${link ? html`<a class="a-btn a-btn--md" href="${link}">${t('ctOpenAsLearner')}</a>` : html`<div class="a-hint">${t('ctNotLive')}</div>`}<div class="a-hint">${t('ctPlaysGap')}</div>` })}
+        ${block({ title: t('ctLearnerView'), body: html`${link ? html`<a class="a-btn a-btn--md" href="${link}">${t('ctOpenAsLearner')}</a>` : ''}${!link || record.status !== 'published' ? html`<div class="a-hint">${t('ctNotLive')}</div>` : ''}<div class="a-hint">${t('ctPlaysGap')}</div>` })}
         ${record.origin === 'imported' ? formBlock({ span: true, title: t('ctRightsOrigin'), sub: t('ctMediaRightsHelp'), fields: [
           { id: 'rights', kind: 'seg', label: t('ctRightsStatus'), span: true, options: ['unknown', 'cleared', 'denied'].map((id) => ({ id, label: t(`ctMediaRights_${id}`), on: (form.rights || source.rights || 'unknown') === id })) },
           { id: 'license', label: t('ctFactLicense'), value: form.license ?? source.license ?? '', span: true },
@@ -161,7 +167,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
             { id: 'keep', label: t('ctRedoKeep'), sub: '', on: false, disabled: true, tip: t('ctRedoUnsupported') },
           ] },
         ], actions: reprocess ? [{ label: t('ctAct_reprocess'), a: 'lifecycle', data: { intent: 'reprocess' } }] : [] })}
-        ${block({ span: true, title: t('ctTranscript'), body: transcript.segments?.length ? html`${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}${transcript.segment_count > transcript.segments.length ? html`<div class="a-hint">${t('ctSegmentsShown', { shown: transcript.segments.length, total: num(transcript.segment_count, ui) })}</div>` : ''}` : html`<div class="a-hint">${t('ctNoTranscript')}</div>` })}
+        ${block({ span: true, title: t('ctTranscript'), body: transcript.segments?.length ? html`<div class="a-rows-scroll" tabindex="0">${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}</div>` : html`<div class="a-hint">${t('ctNoTranscript')}</div>` })}
       </div>
     </section>`,
   };

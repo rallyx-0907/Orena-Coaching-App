@@ -51,6 +51,9 @@ _language_supported: Callable[[str], bool] | None = None
 # language resolution and the meaning cache), so this route asks for it rather
 # than growing a second serializer.
 _learner_payload: Callable[[str, str], dict[str, Any] | None] | None = None
+# The same resolver, allowed to open an unpublished shared entry. Only the admin
+# preview route calls it, after the admin guard.
+_preview_payload: Callable[[str, str], dict[str, Any] | None] | None = None
 
 MAX_IMPORT_URLS = 50
 MEDIA_TYPES = {"video/*", "audio/*"}
@@ -73,10 +76,14 @@ def configure_media_library(
     _language_supported = language_supported
 
 
-def configure_media_library_payload(builder: Callable[[str, str], dict[str, Any] | None]) -> None:
-    """Install the stored-entry → learner payload resolver."""
-    global _learner_payload
+def configure_media_library_payload(
+    builder: Callable[[str, str], dict[str, Any] | None],
+    preview_builder: Callable[[str, str], dict[str, Any] | None] | None = None,
+) -> None:
+    """Install the stored-entry → learner payload resolver (and the admin preview's)."""
+    global _learner_payload, _preview_payload
     _learner_payload = builder
+    _preview_payload = preview_builder
 
 
 def _installed() -> tuple[Any, BookAssetStore, MediaSourceImporter]:
@@ -183,8 +190,17 @@ _SERVED_TYPES = {
 }
 
 
+def _is_admin(request: Request) -> bool:
+    """Whether the caller passes the admin guard, without turning a refusal into an error."""
+    try:
+        _require_admin(request)
+    except HTTPException:
+        return False
+    return True
+
+
 @router.get("/files/{key:path}")
-def stored_media_file(key: str, variant: str = "") -> Any:
+def stored_media_file(request: Request, key: str, variant: str = "") -> Any:
     """Serve bytes this application stores under an opaque, validated key.
 
     A key is never a path and never a URL: `BookAssetStore` validates every
@@ -202,7 +218,8 @@ def stored_media_file(key: str, variant: str = "") -> Any:
         personal = store.get(f"upload-{segments[1]}")
         if personal is not None and not visible_to(
             personal, user_key=current_user_key(), language=current_language_code()
-        ):
+        ) and not (personal.library == "shared" and _is_admin(request)):
+            # An administrator reviewing a held shared import may play its own bytes; no one else may.
             raise orena_http_error(404, "media_asset_not_found", "This media file is not available.")
         private = personal is not None and personal.library == "personal"
     try:
@@ -324,6 +341,25 @@ def delete_my_media(media_id: str) -> dict[str, Any]:
     if not delete_owned_media(media_id, user_key=current_user_key(), language=current_language_code()):
         raise orena_http_error(404, "media_not_found", "This media is not available.")
     return {"deleted": True}
+
+
+@router.get("/admin/player/{media_id}")
+def admin_player(request: Request, media_id: str, target_language: str = Query(default="", max_length=32)) -> dict[str, Any]:
+    """A shared import in any state, as the learner player receives it, for an administrator's review.
+
+    The learner routes answer 404 for anything not published; this one answers the same payload shape to
+    an administrator only. It reads and never writes: publish and rights state are not touched, and the
+    item stays out of every learner listing. A personal file is never opened here.
+    """
+    _require_admin(request)
+    _installed()
+    if _preview_payload is None:
+        raise orena_http_error(503, "media_library_unavailable", "The Media Library is not configured for this environment.")
+    cleaned = media_id.strip()
+    payload = _preview_payload(cleaned, target_language) if cleaned and "/" not in cleaned else None
+    if payload is None:
+        raise orena_http_error(404, "media_not_found", "This media is not available.")
+    return payload
 
 
 @router.get("/admin/library")
