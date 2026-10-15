@@ -425,10 +425,10 @@ and does not touch 0034.
 | --- | --- |
 | H7-1 | **APPROVED:** cheap paid is a per-capability reviewed `(provider, model)` allowlist, priced in the catalogue, under a reviewed spend cap and normal validation. No global price threshold. |
 | H7-2 | **OPEN (activation):** which Ollama Cloud model is accepted as the covered-credit primary for each capability, judged on the benchmark (schema-valid rate, quality, critical failures, latency, cost) against the paid baseline. |
-| H7-3 | **APPROVED:** no learner AI path stays unmetered. The semantic meters are in §3. **OPEN:** the Free/Plus/Pro limits and granularity of `word.assist`, `reading.assist` and `writing.task` (PR-MON-6 H-2), needed before 7B and 7A-follow-up are enforced. |
-| H7-4 | **OPEN:** making `agent_turn_fast` / `agent_turn_deep` configurable for 7C (revisits the 2026-09-27 ruling). |
-| H7-5 | **DECIDED:** learner-boundary cache leaks block only their own paths (§7); public/published shared cache needs server-verified classification. **OPEN:** which lane fixes the isolation, and when. |
-| H7-6 | **OPEN:** Ollama Cloud's privacy and retention classification per model, needed before it may receive `learner_text`. |
+| H7-3 | **APPROVED (closed 2026-10-15, D-MON-025):** no learner AI path stays unmetered (§3). The request meters use a daily window with the bootstrap limits of §14.2, held in the plan catalogue and Admin-editable, never hardcoded at a route. The limits of `speech.transcribe`, `speech.evaluate` and `audio.tts` are not chosen: those meters are wired with enforcement off until their limits are approved. |
+| H7-4 | **APPROVED (closed 2026-10-15, D-MON-025):** for 7C, `agent_turn_fast` may have a configurable reviewed cloud model and `agent_turn_deep` a configurable reviewed stronger cloud model, through a separate Agent adapter, never the structured router (§14.4). |
+| H7-5 | **APPROVED (closed 2026-10-15, D-MON-025):** the cache-isolation architecture of §14.3. A dedicated cache-isolation slice comes immediately after 7A-first. |
+| H7-6 | **APPROVED (closed 2026-10-15, D-MON-025):** Ollama Cloud is approved at the provider/privacy-policy level for `learner_text`, under its documented privacy and retention terms. Model-level allowlisting stays mandatory (§14.1); no model is populated automatically. |
 | H7-7 | **OPEN (activation gate):** Ollama Cloud reference prices (if no per-token price is published), and the covered-credit allowance: the budget, its window/start/reset, shared-ledger accounting, and the behaviour when it is exhausted or unknown. Until then `cost_coverage` is `unknown`. |
 | H7-8 | **OPEN:** the reviewed paid-backup `(provider, model)` and spend cap for each 7A-first capability. |
 
@@ -441,3 +441,67 @@ and does not touch 0034.
 | **Agent Contract / spec D2** | No local model for agent turns; revision 2 has no local production tier at all. 7C may evaluate Ollama Cloud as a cloud agent provider only under its own review. |
 | **Capability configuration** | `contextual_dictionary` is used but not catalogued (F-3). `learner_dictionary` and `text_discussion` each carry two input classes, so the public uses get their own keys (F-4). Capabilities have no notion of a reviewed primary yet; 7A-first adds `reviewed_primary_models` (§4.2). |
 | **Shared caches** | Shared caches serve learner-derived content across accounts (F-2): the DerivedCache trusts a client-asserted `article:` id, and the word-deep cache key ignores context. The affected paths are blocked (§7). |
+
+## 14. Owner decisions of 2026-10-15 (D-MON-025)
+
+### 14.1 H7-6: Ollama Cloud privacy
+
+The provider is approved for `learner_text`, subject to its documented privacy and retention terms. A model enters
+`learner_text_models` (and a capability's reviewed allowlist) only when all four hold:
+
+1. its commercial/production licence is acceptable for Orena;
+2. it passes the H7-2 benchmark for the intended capability;
+3. its pricing or reference pricing is known (H7-7);
+4. its exact model id is entered explicitly in the reviewed allowlist.
+
+Provider privacy is no longer a blocker. `learner_text_models` stays empty in code until a model meets all four; no
+production learner model is ever filled in automatically, and the live catalogue never becomes an allowlist.
+
+### 14.2 H7-3: limits of the request meters
+
+Units stay frozen (D-MON-023 H-2): `word.assist`, `reading.assist` and `writing.task` count requests;
+`speech.transcribe` and `speech.evaluate` count seconds; `audio.tts` counts characters.
+
+The three request meters use a **daily** window with these bootstrap product limits:
+
+| Meter | Free | Plus | Pro |
+| --- | ---: | ---: | ---: |
+| `word.assist` | 30/day | 300/day | 1500/day |
+| `reading.assist` | 10/day | 100/day | 500/day |
+| `writing.task` | 5/day | 30/day | 100/day |
+
+They live in the plan catalogue and entitlement system and are Admin-editable through the normal plan catalogue. No
+route hardcodes them. `speech.transcribe`, `speech.evaluate` and `audio.tts` get no invented limit: they are wired,
+and their enforcement stays off until their numeric limits are approved separately. Quota enforcement as a whole is
+still off (an activation gate, not part of this decision).
+
+### 14.3 H7-5: cache isolation
+
+```text
+learner_text                          -> account/incarnation-scoped cache, or no persistent/shared cache
+server-verified public/published content -> shared cache allowed
+```
+
+Public or published scope is derived by the server from authoritative stored content. A client-provided id, prefix,
+flag or field is never proof: not `article:...`, not a client `published=true`, not a client content type or name,
+not a user-supplied source id. A dedicated cache-isolation slice follows 7A-first immediately; PR-MON-7A-follow-up
+and the published paths of 7B route only after it.
+
+### 14.4 H7-4: Intelligence routing (7C)
+
+- `agent_turn_fast` may have a configurable reviewed cloud model; `agent_turn_deep` a configurable reviewed stronger
+  cloud model.
+- Not through the structured-response router. The Agent adapter preserves native streaming, native tool calling,
+  Agent Contract behaviour, memory/context semantics, per-round FundingContext and per-round cost attribution.
+- Failover may occur before the first streamed token of a round; after it, no provider switch for that round.
+- One learner turn consumes one `orena.message`; internal model/tool rounds create no extra learner quota units.
+- Ollama Cloud may be evaluated for 7C; it is not assumed.
+
+### 14.5 Still open
+
+- **H7-2:** the accepted primary model per capability (benchmark).
+- **H7-7:** reference prices and the covered-credit allowance.
+- **H7-8:** the reviewed paid backup and spend cap per 7A-first capability.
+
+Activation of any learner routing still needs these. Nothing here enables routing, credits, quota or funding
+enforcement.

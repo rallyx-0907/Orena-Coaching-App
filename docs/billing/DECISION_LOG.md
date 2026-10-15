@@ -229,3 +229,21 @@ approved refund and reversal semantics). International stays Polar. SePay is not
 activation, credentials and the live test are human gates. PR-MON-6 is unchanged. | The available bank path decides
 the domestic provider; the core must not depend on any one of them. | Assessment and PR-MON-8 scope in
 `DOMESTIC_GATEWAY_SEPAY_ASSESSMENT.md`.
+
+
+D-MON-025 | 2026-10-15 | PR-MON-7 owner decisions closing H7-6, H7-3, H7-5 and H7-4 (after PR-MON-7A-first was
+approved at `94f96a8f`). H7-6: Ollama Cloud is approved at the provider/privacy-policy level for `learner_text` under
+its documented privacy and retention terms; a model is allowlisted only with an acceptable commercial licence, an H7-2
+benchmark pass for the capability, known (reference) pricing and its exact id entered explicitly; nothing is
+populated automatically. H7-3: `word.assist`, `reading.assist`, `writing.task` count requests per day with bootstrap
+limits Free/Plus/Pro 30/300/1500, 10/100/500 and 5/30/100, in the Admin-editable plan catalogue, never hardcoded at a
+route; `speech.transcribe`, `speech.evaluate` (seconds) and `audio.tts` (characters) are wired with enforcement off
+until their limits are approved. H7-5: learner text uses an account/incarnation-scoped cache or none; a shared cache
+only for content the server verifies as public/published from authoritative stored data, never from a client id,
+prefix, flag, type or source id; a dedicated cache-isolation slice follows 7A-first. H7-4: 7C may configure a reviewed
+cloud model for `agent_turn_fast` and a reviewed stronger one for `agent_turn_deep`, through a separate Agent adapter
+(native streaming and tool calling, Agent Contract and memory semantics, per-round funding and attribution), failover
+only before the first streamed token, one `orena.message` per learner turn; Ollama Cloud evaluated, not assumed. H7-2,
+H7-7 and H7-8 stay open; no routing, credit, quota or funding enforcement is enabled. | Provider privacy no longer
+blocks, while each learner model still earns its place; limits stay data, not code; no learner result crosses an
+account. | `PR-MON-7_DESIGN.md` §12 and §14.
