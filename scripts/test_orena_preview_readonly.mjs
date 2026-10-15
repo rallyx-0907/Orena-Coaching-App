@@ -149,4 +149,13 @@ assert.match(wordSheet, /card\.whyHere && readOnly\) return html`<div class="s-q
 /* An item unpublished while a learner is on it: the attempt is not kept, quietly (no note, no retry that cannot work). */
 assert.match(practice, /error\?\.status === 404 && \/media_not_available\/[\s\S]{0,300}return;/, 'a 404 media_not_available ends the save without a note');
 
+/* The preview entry page (Content Detail, `#/content/media:preview:<id>`) draws no Save and no "..." (D-210):
+   hidden, not disabled, and nothing behind "..." that writes (Shadowing saves; Delete is the learner's own import). */
+const content = read('static/orena/screens/content/screen.js');
+assert.match(content, /const preview = kind === 'media' && mediaRef\(id\)\.kind === 'preview'/, 'the entry page knows it is a preview from the address');
+assert.match(content, /\$\{preview \? '' : html`<button[^`]*data-save\b/, 'no Save control is drawn in a preview');
+assert.match(content, /\[data-save\]'\)\?\.addEventListener\('click', async \(event\) => \{\s*\n\s*if \(preview\) return;/, 'and its handler is closed too');
+assert.match(content, /detail\.canShadow && !preview/, 'no way into Shadowing, which saves, from a preview');
+assert.match(content, /const hasMore = !preview && \(/, 'no "..." button in a preview');
+
 console.log('preview read-only gate: ok');

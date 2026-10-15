@@ -7110,3 +7110,19 @@ worker, the AI spend cap unchanged.
    No admin control to continue by hand and no learner-facing "translating" wording are added (no UI change; the admin Details row
    shows the state through `outcome.translation`). Smaller request windows were not adopted: the completion reservation (2,048) guards
    a reasoning model against `finish_reason=length`, and halving the window would only change how many requests share the minute.
+
+## D-212 - The local annotate tagger answers any supported language (2026-10-15)
+
+Status: ACCEPTED (merged as #222 once CI was green; independent review on 855d52c4: design approved, P1 test fixed in this commit). No schema or migration change. D-211 is reserved by the parallel normaliser/translation PR.
+
+`POST /api/media-learning/annotate` is local, stateless and spends no AI, yet it answered 409 unless `source_language` was the
+learner's current learning language. The administrator's preview of a held item (D-206, read-only by D-210) shows a language that
+is not the viewer's, so a Chinese tap there could not be widened to the lexical word and stayed on one character (Video Sources
+P1-5, still open after #209 and #214).
+
+1. `/annotate` answers `en` and `zh` whoever asks; any other language is 422. The endpoints that call the AI provider (explain,
+   register, conversation and the rest of `_validated_source_language`'s callers) keep the learning-language match, pinned by
+   `tests/test_media_interaction.py`.
+2. The Listening room asks the tagger through `taggerAllowed`: in a preview for any supported language, otherwise only in the
+   learner's language, as before. The Reader is unchanged.
+3. The preview entry page (Content Detail) draws no Save and no "..." (D-210).

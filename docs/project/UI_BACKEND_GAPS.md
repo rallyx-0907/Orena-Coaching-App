@@ -3403,8 +3403,8 @@ endpoint the other Speaking/Listening rooms already read serves it.
 - **RT-3. Nothing is recorded.** There is no Reading Transfer evidence contract: a check writes
   nothing to the learner's record, Progress does not count it, and "Finish" only leaves. (Check
   Understanding is the one Reading activity that writes evidence.)
-- **RT-4. The text must be in the learning language.** The endpoint answers 409 unless
-  `source_language` is the learner's _current learning language_; the screen passes it from the
+- **RT-4. The text must be in the learning language.** The AI endpoints answer 409 unless
+  `source_language` is the learner's _current learning language_ (the local `/annotate` tagger no longer does, D-212); the screen passes it from the
   learner's context, never from the text. A text in another language fails with the generic
   "Coaching isn't available right now" toast - the frame draws no distinct state for it.
 - **RT-5. Which sentence.** No "where I stopped reading" signal reaches this screen, so it starts at
@@ -4167,7 +4167,8 @@ backend cannot yet serve:
   one. (Finish pass, 2026-09-29: the two files had drifted into two copies of `plainWordAt` - the
   no-tagger word-span rule both use for a tap. Moved to one shared, DOM-free module,
   `product/word-span.js`, imported by both; no behaviour change.)
-- **Not a defect: word roles/pinyin 409 on the one Chinese article unless the learning language is
+- **(Superseded by D-212 for `/annotate`: it no longer answers 409 on a language mismatch; the rest of this note is history.)
+  Not a defect: word roles/pinyin 409 on the one Chinese article unless the learning language is
   zh.** `POST /api/media-learning/annotate` enforces the same rule as Reading Transfer's RT-4 above:
   `source_language` must equal the learner's _current_ learning language (`current_language_code()`,
   set from `POST /api/platform/language`), not merely the text's own language. Discover/Library only
@@ -6152,8 +6153,8 @@ read as unlabelled until re-analysed (the detail payload detects from the body o
 
 ## Reader tagger needs a text language (2026-10-14)
 
-`POST /api/media-learning/annotate` answers only for the learner's current learning language (409 otherwise), so
-the Reader and Listening send nothing for a text in another language (`annotate-policy.js#annotateAll`,
+`POST /api/media-learning/annotate` answers en and zh for any learning language since D-212 (it is local and stateless;
+the AI endpoints still answer 409 on a mismatch), but the Reader and the learner's own Listening room still send nothing for a text in another language (`annotate-policy.js#annotateAll`,
 `annotateAllowed`; region and script subtags are ignored: `zh-Hans` is `zh`). `reader/source.js` maps a missing
 article, chapter (then book `learning_language`) or imported-text language to `''`; such a text is not tagged
 (plain text, zero requests). Open for the backend: guarantee `language` on every reading source so none is left

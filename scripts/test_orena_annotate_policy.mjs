@@ -159,6 +159,6 @@ assert.equal(annotateAllowed('en-US', 'en'), true);
 assert.equal(annotateAllowed('en', 'zh-Hans'), false);
 for (const f of ['reader', 'listening']) {
   const src = readFileSync(new URL(`../static/orena/screens/${f}/screen.js`, import.meta.url), 'utf8');
-  assert.ok(src.includes(f === 'reader' ? 'annotateAll(' : 'annotateAllowed('), `${f} preflights the language`);
+  assert.ok(src.includes(f === 'reader' ? 'annotateAll(' : 'taggerAllowed('), `${f} preflights the language`);
 }
 console.log('annotate policy: ok');
