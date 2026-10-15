@@ -528,6 +528,7 @@ def test_public_caption_selection_is_language_explicit_and_order_independent(
     assert track == YouTubeCaptionTrack(
         source_language=selected_language,
         snippets=(YouTubeCaptionSnippet(expected_text, 0.25, 1.5),),
+        kind="manual" if source_language == "en" else "auto",  # the manual track is preferred; only auto existed for zh
     )
     assert transcript_list.selection_calls[0] == ("manual", (selected_language,))
     if source_language == "en":

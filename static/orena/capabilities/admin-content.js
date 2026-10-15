@@ -33,12 +33,12 @@ export function lifecycleIntents(record) {
 
 /* Run one lifecycle intent. `archive` means two different things to two catalogues, so the kind
    decides, not the word: a book has its own archive route, media moves between states. */
-export async function applyLifecycle(api = adminApi, kind, id, intent) {
+export async function applyLifecycle(api = adminApi, kind, id, intent, { scope = 'all' } = {}) {
   if (intent === 'archive' && kind === 'book') return api.archiveBook(id);
   if (intent === 'restore' && kind === 'book') return api.restoreBook(id);
   if (kind === 'vocabulary' && COLLECTION_STATES[intent]) return api.setCollectionStatus(id, COLLECTION_STATES[intent]);
   if (kind === 'media' && MEDIA_STATES[intent]) return api.setMediaStatus(id, MEDIA_STATES[intent]);
-  if (intent === 'reprocess') return api.reprocessMedia(id);
+  if (intent === 'reprocess') return scope === 'translation' ? api.reprocessMedia(id, 'translation') : api.reprocessMedia(id);
   throw new Error(`Unknown lifecycle intent: ${kind} ${intent}`);
 }
 

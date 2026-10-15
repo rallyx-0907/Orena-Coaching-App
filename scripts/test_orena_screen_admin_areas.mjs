@@ -451,6 +451,10 @@ fixtureFor = () => ({ body: { ok: true, id: 'J', items: [], results: [{ status: 
   for (const intent of ['archive', 'restore']) await content.applyLifecycle(adminApi, 'book', 'B', intent);
   for (const intent of ['unpublish', 'archive', 'republish']) await content.applyLifecycle(adminApi, 'media', 'M', intent);
   await content.applyLifecycle(adminApi, 'media', 'M', 'reprocess');
+  assert.ok(!String(requests.at(-1).path).includes('scope='), 'a plain reprocess carries no scope');
+  await content.applyLifecycle(adminApi, 'media', 'M', 'reprocess', { scope: 'translation' });
+  assert.equal(requests.at(-1).method, 'POST');
+  assert.ok(String(requests.at(-1).path).startsWith('/api/admin/console/content/media/M/reprocess'), 'translation-only goes through the reprocess route');
   for (const intent of ['unpublish', 'archive', 'restore']) await content.applyLifecycle(adminApi, 'vocabulary', 'V', intent);
   await content.publishCollection(adminApi, 'V', { rights: 'licensed', completeness: 'complete', attested: true });
   await content.loadContent(adminApi, { kind: 'book' });

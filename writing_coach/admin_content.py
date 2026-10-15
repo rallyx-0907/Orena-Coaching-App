@@ -109,8 +109,20 @@ def media_outcome(entry: Any) -> dict[str, Any]:
     translation = str(processing.get("translation") or "")
     counts = processing.get("translation_counts") if isinstance(processing.get("translation_counts"), Mapping) else {}
     continuation = processing.get("translation_continuation")
+    reprocess_reason = str(processing.get("reprocess_reason") or "")
+    fallback = str(processing.get("caption_fallback") or "")
     return {
         "state": state,
+        # Where the transcript came from (D-213): the provider's captions (manual or auto) or speech recognition, why
+        # recognition ran where captions were the first choice, and why the last re-run kept the stored item instead.
+        "transcript": {
+            "origin": str(processing.get("origin") or ""),
+            "caption_kind": str(processing.get("caption_kind") or ""),
+            "caption_fallback": fallback,
+            "caption_fallback_message": reason_message(fallback),
+            "reprocess_reason": reprocess_reason,
+            "reprocess_message": str(processing.get("reprocess_message") or "") or reason_message(reprocess_reason),
+        },
         "stage": str(processing.get("stage") or ""),
         "reason": reason,
         "message": str(processing.get("message") or "") or reason_message(reason),

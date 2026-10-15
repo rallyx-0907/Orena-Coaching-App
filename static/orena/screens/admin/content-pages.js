@@ -140,6 +140,22 @@ function translationSummary(record, t) {
   return parts.join(' · ');
 }
 
+/* Where the transcript came from, in the operator's words: the provider's captions (a person's track or the provider's own
+   automatic one), or speech recognition and, when captions were the first choice, why recognition ran instead. */
+function captionSummary(record, t) {
+  const transcript = record.outcome?.transcript || {};
+  const reason = (code) => (t.has(`impErr_${code}`) ? t(`impErr_${code}`) : code);
+  if (transcript.origin === 'provider_caption') return transcript.caption_kind === 'manual' ? t('ctCapManual') : transcript.caption_kind === 'auto' ? t('ctCapAuto') : t('ctCapProvider');
+  if (transcript.origin === 'generated_asr') return transcript.caption_fallback ? `${t('ctCapAsr')} · ${reason(transcript.caption_fallback)}` : t('ctCapAsr');
+  return '—';
+}
+
+/* Why the last re-run kept the stored item instead of replacing it, or '' when it did not. */
+function keptSummary(record, t) {
+  const code = record.outcome?.transcript?.reprocess_reason || '';
+  return code ? `${t('ctRerunKept')} · ${t.has(`impErr_${code}`) ? t(`impErr_${code}`) : code}` : '';
+}
+
 /* The address as a person reads it: the percent-encoding of a title or a comma is shown decoded. */
 function readableUrl(url) {
   const value = String(url || '');
@@ -174,6 +190,8 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
           { key: t('ctFactProvider'), value: facts.provider || '—' },
           { key: t('ctFactLicense'), value: [source.license_name, source.license].filter(Boolean).join(' · ') || '—' },
           { key: t('ctFactTranslation'), value: translationSummary(record, t) },
+          { key: t('ctFactCaptions'), value: captionSummary(record, t) },
+          ...(keptSummary(record, t) ? [{ key: t('ctFactLastRerun'), value: keptSummary(record, t) }] : []),
         ]) })}
         ${block({ title: t('ctLearnerView'), body: html`${link ? html`<a class="a-btn a-btn--md" href="${link}">${t('ctOpenAsLearner')}</a>` : ''}${!link || record.status !== 'published' ? html`<div class="a-hint">${t('ctNotLive')}</div>` : ''}<div class="a-hint">${t('ctPlaysGap')}</div>` })}
         ${record.origin === 'imported' ? formBlock({ span: true, title: t('ctRightsOrigin'), sub: t('ctMediaRightsHelp'), fields: [
@@ -183,7 +201,8 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
         ], actions: [{ label: t('ctRightsSave'), a: 'media-rights-save', kind: 'primary', disabled: view.busy || (form.rights === 'cleared' && (['queued', 'running'].includes(record.processing?.state) || !form.attested || !String(form.license || '').trim())) }] }) : ''}
         ${formBlock({ span: true, title: t('ctReprocess'), sub: t('ctReprocessSub'), fields: [
           { id: 'reprocessOpt', kind: 'seg', label: t('ctRedo'), span: true, hint: t('ctRedoGap'), options: [
-            { id: 'all', label: t('ctRedoAll'), sub: t('ctRedoAllSub'), on: true },
+            { id: 'all', label: t('ctRedoAll'), sub: t('ctRedoAllSub'), on: (form.reprocessOpt || 'all') === 'all' },
+            { id: 'tr', label: t('ctRedoTr'), sub: t('ctRedoTrSub'), on: form.reprocessOpt === 'tr', disabled: missing },
             { id: 'keep', label: t('ctRedoKeep'), sub: '', on: false, disabled: true, tip: t('ctRedoUnsupported') },
           ] },
         ], actions: reprocess ? [{ label: t('ctAct_reprocess'), a: 'lifecycle', data: { intent: 'reprocess' } }] : [] })}

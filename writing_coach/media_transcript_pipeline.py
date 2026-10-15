@@ -136,6 +136,8 @@ REASON_MESSAGES: dict[str, str] = {
     "duration_mismatch": "The audio is longer than the length reserved when it was imported.",
     "pipeline_interrupted": "Processing was interrupted too many times.",
     "pipeline_error": "The transcript pipeline failed unexpectedly. The server log has the details.",
+    "captions_unavailable": "The provider's captions could not be fetched this time. The stored caption transcript was kept and speech recognition was not run.",
+    "captions_unusable": "The provider's captions were not good enough to use. The stored caption transcript was kept and speech recognition was not run.",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
     "spend_cap_batch_ai": "The AI spend limit for this batch was reached.",
@@ -408,8 +410,54 @@ class MediaPipeline:
         with self._guard:
             if media_id in self._inflight:
                 return True
+        self._remember_previous(store, entry)
         self.enqueue(store, assets, media_id, batch_id=batch_id or self.new_batch())
         return True
+
+    # -- a reprocess never destroys a good item ---------------------------------------------
+
+    @staticmethod
+    def _remember_previous(store: Any, entry: MediaLibraryEntry) -> None:
+        """Before a re-run starts: keep what a good item looked like (ready or held, with a transcript that passed), so a
+        re-run that fails at any step puts it back instead of leaving `failed` beside a transcript that is fine."""
+        processing = dict(entry.processing or {})
+        if processing.get("state") not in {STATE_READY, STATE_HELD} or not usable_transcript(entry)[0]:
+            return
+
+        def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
+            current = dict(fresh.processing or {})
+            if current.get("state") not in {STATE_READY, STATE_HELD}:
+                return fresh
+            snapshot = {key: value for key, value in current.items() if key not in {"previous", "attempts", "updated_at"}}
+            snapshot["_status"] = fresh.status
+            return replace(fresh, processing={**current, "previous": snapshot})
+        try:
+            store.update_if_present(entry.media_id, change)
+        except Exception:  # noqa: BLE001 - without the snapshot a failed re-run behaves as it always did
+            _logger.warning("previous state not kept for %s", entry.media_id, exc_info=True)
+
+    @staticmethod
+    def _restore_previous(store: Any, media_id: str, reason: str, detail: str = "") -> bool:
+        """A re-run of a good item failed: put the item back as it was and record why the re-run did not happen.
+        False when the item has no snapshot (a first import), so the caller fails it as before."""
+        restored: list[bool] = []
+
+        def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
+            current = dict(fresh.processing or {})
+            snapshot = current.get("previous")
+            if fresh.status == "archived" or current.get("state") == "cancelled" or not isinstance(snapshot, Mapping) or not snapshot:
+                return fresh
+            kept = {key: value for key, value in snapshot.items() if key != "_status"}
+            kept.update(attempts=current.get("attempts", 0), updated_at=_now(), reprocess_reason=reason, reprocess_detail=detail,
+                        reprocess_message=reason_message(reason), previous={})
+            restored.append(True)
+            return replace(fresh, processing=kept, status=str(snapshot.get("_status") or fresh.status))
+        try:
+            store.update_if_present(media_id, change)
+        except Exception:  # noqa: BLE001
+            _logger.warning("previous state not restored for %s", media_id, exc_info=True)
+            return False
+        return bool(restored)
 
     def recover(self, store: Any, assets: BookAssetStore) -> int:
         """Re-queue what a restart interrupted. An item that keeps being interrupted stops after MAX_ATTEMPTS.
@@ -434,6 +482,9 @@ class MediaPipeline:
                 self._rearm_continuation(store, entry)
                 continue
             if int(processing.get("attempts") or 0) >= MAX_ATTEMPTS:
+                if self._restore_previous(store, entry.media_id, "pipeline_interrupted"):
+                    self._settle_quota(store, entry.media_id, media_quota.hold_of(entry))
+                    continue
                 self._write_processing(store, entry, state=STATE_FAILED, stage=processing.get("stage") or STAGE_FETCH,
                                        reason="pipeline_interrupted", detail="Processing was interrupted too many times.",
                                        status="review")
@@ -513,7 +564,7 @@ class MediaPipeline:
             _logger.exception("media pipeline crashed for %s", media_id)
             try:
                 entry = store.get(media_id)
-                if entry is not None:
+                if entry is not None and not self._restore_previous(store, media_id, "pipeline_error"):
                     self._write_processing(store, entry, state=STATE_FAILED, reason="pipeline_error",
                                            detail="The transcript pipeline failed unexpectedly. The server log has the details.",
                                            status="review")
@@ -571,7 +622,8 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
-                                           translation="", translation_counts={}, translation_reason="", translation_continuation={}, asr_filtered=0, asr_flagged=0)
+                                           translation="", translation_counts={}, translation_reason="", translation_continuation={}, asr_filtered=0, asr_flagged=0,
+                                           caption_kind="", caption_fallback="", reprocess_reason="", reprocess_detail="", reprocess_message="")
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
@@ -586,6 +638,8 @@ class MediaPipeline:
         reason = first_failure(checks)
         public_checks = [{"id": check["id"], "pass": bool(check["pass"])} for check in checks]
         if reason:
+            if self._restore_previous(store, media_id, reason):
+                return  # the item had a good transcript; the new one is not kept over it
             # A transcript was made and it is not usable. Keep what was made so an operator can see it; do not publish.
             entry = self._store_lesson(store, entry, lines, origin, duration, status="review", words=words)
             self._write_processing(store, entry, state=STATE_FAILED, stage=STAGE_SEGMENT, reason=reason,
@@ -598,7 +652,7 @@ class MediaPipeline:
         translation = self._defer_translation(store, entry, translation, stop)
         entry = store.get(media_id) or entry
         rights = str(entry.source.get("rights") or RIGHTS_UNKNOWN)
-        common = dict(checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
+        common = dict(previous={}, checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
                       translation=translation, translation_counts=translation_counts, rights=rights, **_screen_fields(screen))
         if personal or rights == RIGHTS_CLEARED:
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
@@ -645,7 +699,9 @@ class MediaPipeline:
         entry = store.get(media_id)
         if entry is None or entry.status == "archived" or stop.code == "cancelled":
             return
-        self._write_processing(store, entry, state=STATE_FAILED, reason=stop.code, detail=stop.detail, status="review")
+        if self._restore_previous(store, media_id, stop.code, stop.detail):
+            return
+        self._write_processing(store, entry, state=STATE_FAILED, reason=stop.code, detail=stop.detail, status="review", previous={})
 
     def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
@@ -663,7 +719,9 @@ class MediaPipeline:
         def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
             if fresh.status == "archived" or (fresh.processing or {}).get("state") == "cancelled":
                 raise PipelineStop("cancelled")
-            return replace(fresh, lesson=lesson, duration_ms=int(fresh.duration_ms or 0) or duration, status=status)
+            # The origin is recorded with the payload that carries it, in one write, so the two never disagree (D-213).
+            processing = {**dict(fresh.processing or {}), "origin": origin} if fresh.processing is not None else fresh.processing
+            return replace(fresh, lesson=lesson, processing=processing, duration_ms=int(fresh.duration_ms or 0) or duration, status=status)
         updated = store.update_if_present(entry.media_id, change)
         if updated is None:
             raise PipelineStop("cancelled")
@@ -678,18 +736,30 @@ class MediaPipeline:
         cues: list[Cue] = []
         detected = ""
         captions_error = ""
+        fallback = ""  # why the audio is used where captions were the first choice (D-213), a stable code
         if entry.provider == "youtube":
+            kind = str(entry.source.get("caption_kind") or "")
             if candidate is not None and candidate.cues:
                 cues = list(candidate.cues)
             else:
-                cues, captions_error = self._captions(entry)
+                cues, captions_error, kind = self._captions(entry)
+                if not cues and not captions_error and entry.source.get("caption_status") == "unavailable":
+                    captions_error = "provider_failure"  # the importer was refused by the provider and said so
             if cues:
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
                 if not first_failure(validate_lines(lines, language=language, duration_ms=duration)):
+                    self._write_processing(store, entry, caption_kind=kind, caption_fallback="")
                     return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], {}
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
-        self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE)
+                fallback = "captions_unusable"
+            elif captions_error:
+                fallback = "captions_unavailable"
+            if self._keeps_captions(entry):
+                # The stored transcript is the provider's own captions and they cannot be had now: it stays, and the
+                # audio is not listened to in its place (D-213). The item is restored by the caller.
+                raise PipelineStop(fallback or "captions_unavailable", captions_error)
+        self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_fallback=fallback)
         try:
             raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
         except PipelineStop as stop:
@@ -704,18 +774,30 @@ class MediaPipeline:
         lines = segment_lines(raw, language)
         return lines, ORIGIN_ASR, cost, seconds, detected, words, screen
 
-    def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str]:
-        """(cues, why-none): the provider's category when it failed, "" when there were simply no captions."""
+    def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str, str]:
+        """(cues, why-none, kind): the provider's category when it failed, "" when there were simply no captions; `kind` is
+        `manual` or `auto` for the track that was used."""
         if self._ingestion is None or not entry.canonical_url:
-            return [], ""
+            return [], "", ""
         try:
             acquisition = self._ingestion.import_media(entry.canonical_url, "en", entry.language)
         except Exception as exc:  # noqa: BLE001 - no captions is a normal answer; audio is the next source
-            return [], str(getattr(getattr(exc, "category", None), "value", "") or "")
+            return [], str(getattr(getattr(exc, "category", None), "value", "") or ""), ""
+        provenance = getattr(acquisition, "provenance", None) or {}
         transcript = acquisition.media_object.transcript
         if transcript is None:
-            return [], ""
-        return [Cue(int(segment.start_ms), int(segment.end_ms), segment.original_text) for segment in transcript.segments], ""
+            return [], ("provider_failure" if provenance.get("caption_status") == "unavailable" else ""), ""
+        return ([Cue(int(segment.start_ms), int(segment.end_ms), segment.original_text) for segment in transcript.segments], "",
+                str(provenance.get("caption_kind") or ""))
+
+    @staticmethod
+    def _keeps_captions(entry: MediaLibraryEntry) -> bool:
+        """A re-run of an item whose stored transcript is the provider's captions (it was snapshotted as good)."""
+        previous = (entry.processing or {}).get("previous")
+        if not isinstance(previous, Mapping) or not previous:
+            return False
+        payload = (entry.lesson or {}).get("payload") or {}
+        return (payload.get("transcript_origin") or previous.get("origin")) == ORIGIN_CAPTION
 
     def _speech(
         self, store: Any, assets: BookAssetStore, entry: MediaLibraryEntry, batch_id: str
@@ -899,6 +981,70 @@ class MediaPipeline:
         if not incomplete:
             return "ready", counts
         return ("partial" if any_done else "failed"), counts
+
+    # -- translation only (D-213) ---------------------------------------------------------------------
+
+    def retry_translation(self, store: Any, media_id: str) -> str:
+        """Ask again for the lines still without a meaning, and nothing else: the transcript, its origin, the item's state
+        and its status are not touched. Returns `queued`, `busy` (the item is being worked), `missing` or `no_transcript`.
+        A restarted budget: the automatic continuation of D-211 may have ended, and this is the operator starting it over."""
+        entry = store.get(media_id)
+        if entry is None or entry.status == "archived" or (entry.processing or {}).get("state") == "cancelled":
+            return "missing"
+        if (entry.processing or {}).get("state") in {STATE_QUEUED, STATE_RUNNING}:
+            return "busy"
+        if not usable_transcript(entry)[0]:
+            return "no_transcript"
+        with self._guard:
+            if media_id in self._inflight:
+                return "busy"
+            self._inflight.add(media_id)
+        try:
+            self._write_processing(store, entry, translation_continuation={})
+        except PipelineStop:
+            with self._guard:
+                self._inflight.discard(media_id)
+            return "missing"
+        if os.getenv("MEDIA_PIPELINE_INLINE", "").strip() in {"1", "true", "yes"}:
+            self._translation_only_job(store, media_id)
+        else:
+            self._pool.submit(self._translation_only_job, store, media_id)
+        return "queued"
+
+    def _translation_only_job(self, store: Any, media_id: str) -> None:
+        try:
+            entry = store.get(media_id)
+            if entry is None:
+                return
+            with telemetry_origin("learner" if entry.library == "personal" else None), system_funding("media_pipeline"):
+                def guard() -> None:
+                    fresh = store.get(media_id)
+                    current = dict(fresh.processing or {}) if fresh is not None else {}
+                    if fresh is None or fresh.status == "archived" or current.get("state") in {STATE_QUEUED, STATE_RUNNING, "cancelled"}:
+                        raise PipelineStop("cancelled")
+
+                batch_id = str((entry.processing or {}).get("batch_id") or self.new_batch())
+                stop: dict[str, Any] = {}
+                outcome, counts = self._translate(store, entry, batch_id, entry.library == "personal", stop=stop, resume=True, guard=guard)
+                fresh = store.get(media_id) or entry
+                outcome = self._defer_translation(store, fresh, outcome, stop)
+                fields: dict[str, Any] = {"translation": outcome, "translation_counts": counts}
+                if outcome != "deferred":
+                    fields["translation_continuation"] = {}
+                self._write_processing(store, fresh, **fields)
+        except PipelineStop:
+            pass  # archived or removed while it ran
+        except Exception:  # noqa: BLE001 - the lesson stands; the lines already translated stay
+            _logger.exception("translation-only retry crashed for %s", media_id)
+            try:
+                fresh = store.get(media_id)
+                if fresh is not None:
+                    self._write_processing(store, fresh, translation=self._short_outcome(fresh), translation_reason="provider_error")
+            except Exception:  # noqa: BLE001
+                _logger.exception("translation-only retry could not record its own failure for %s", media_id)
+        finally:
+            with self._guard:
+                self._inflight.discard(media_id)
 
     # -- deferred translation continuation (D-211) ----------------------------------------------------
 

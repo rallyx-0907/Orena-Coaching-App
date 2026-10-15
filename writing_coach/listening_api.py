@@ -33,7 +33,13 @@ from writing_coach.media_source_import import (
 )
 from writing_coach.becoming_memory import get_learner_profile
 from writing_coach.core.support_languages import resolve_support_language
-from writing_coach.media_meaning import TranslatedLines, pinyin_for_segments, resolve_segment_meanings
+from writing_coach.media_meaning import (
+    PROVENANCE_CACHED_GENERATED,
+    PROVENANCE_GENERATED,
+    TranslatedLines,
+    pinyin_for_segments,
+    resolve_segment_meanings,
+)
 from writing_coach.pinyin_alignment import align_readings
 from writing_coach.media_learning import (
     MediaLearningAsset,
@@ -256,8 +262,8 @@ def stored_media_payload(media_id: str, target_language: str = "", *, allow_unpu
             "target_language": target,
             "source": {
                 "capability_key": None,
-                "provider": "curated-editorial" if meanings_outcome.provider_calls == 0 else "media-translation",
-                "model": _translation_provider_model() if meanings_outcome.provider_calls else None,
+                "provider": translation_source_provider(meanings_outcome),
+                "model": _translation_provider_model() if meanings_outcome.provider_calls or _generated_meanings(meanings_outcome) else None,
                 "request_count": meanings_outcome.provider_calls,
             },
             "failure_kind": meanings_outcome.failure_kind,
@@ -592,6 +598,21 @@ def _cached_source_readings(segments: Any) -> dict[str, Any]:
     return positions
 
 
+def _generated_meanings(outcome: Any) -> bool:
+    """True when any shown meaning was made by the translation provider, now or earlier (a cached one is still generated)."""
+    return any(getattr(meaning, "provenance", "") in {PROVENANCE_GENERATED, PROVENANCE_CACHED_GENERATED}
+               for meaning in getattr(outcome, "meanings", ()) or ())
+
+
+def translation_source_provider(outcome: Any) -> str:
+    """The real source of the meanings shown: editorial only when nothing was generated, whether this request called the
+    provider or an earlier one did and the line was cached (D-213; a media translation read from the cache used to read
+    as `curated-editorial`)."""
+    if getattr(outcome, "provider_calls", 0) or _generated_meanings(outcome):
+        return "media-translation"
+    return "curated-editorial"
+
+
 def _translation_provider_model() -> str:
     """Identity of whatever will translate, so a provider change misses the cache."""
 
@@ -718,8 +739,8 @@ def open_listening_library_lesson(
         "source": {
             "capability_key": None,
             # Editorial when nothing had to be generated for this learner.
-            "provider": "curated-editorial" if outcome.provider_calls == 0 else "media-translation",
-            "model": _translation_provider_model() if outcome.provider_calls else None,
+            "provider": translation_source_provider(outcome),
+            "model": _translation_provider_model() if outcome.provider_calls or _generated_meanings(outcome) else None,
             "request_count": outcome.provider_calls,
         },
         "failure_kind": outcome.failure_kind,
