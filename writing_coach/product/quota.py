@@ -205,6 +205,9 @@ class QuotaRuntime:
     reason: str = ""                    # why the store is missing, for the admin read
     env: Any = None
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
+    # PR-MON-6: the funding service, set only when funding admissions are switched on and 0034's tables exist. None
+    # (the default) keeps every admission on the plan bucket exactly as before.
+    funding: Any | None = None
 
 
 _runtime = QuotaRuntime()
@@ -224,6 +227,11 @@ def configure_quota(**fields: Any) -> QuotaRuntime:
 
 def runtime() -> QuotaRuntime:
     return _runtime
+
+
+def configure_funding(service: Any | None) -> None:
+    """Attach (or detach) PR-MON-6 funding admissions to the gate. Off by default (`ORENA_FUNDING_ADMISSIONS`)."""
+    _runtime.funding = service
 
 
 def _env() -> Any:
@@ -550,6 +558,72 @@ class Ticket:
             _log.warning("quota release failed for %s; left to the reconciler", self.operation_id, exc_info=True)
 
 
+class FundingTicket:
+    """The ticket of a funded admission (PR-MON-6): the same contract as `Ticket`, kept by `funding_admissions`.
+
+    `dispatch`, `settle` and `release` go through the funding service, which closes the backing reservation and the
+    admission in one transaction and charges only from the snapshot. `context` is the `FundingContext` the paid-provider
+    backstop checks; it is a pointer, never authorization by itself."""
+
+    enforced = True
+
+    def __init__(self, service: Any, operation_id: str, units: int, usage: dict[str, Any], context: Any,
+                 source: str) -> None:
+        self._service = service
+        self.operation_id = operation_id
+        self.units = units
+        self.usage = usage
+        self.context = context
+        self.source = source
+        self.dispatched = False
+        self.finished = False
+        self.max_seconds: int | None = None
+        self.seconds_per_unit = 0
+
+    def dispatch(self, ref: str = "") -> None:
+        if self.dispatched or self.finished:
+            return
+        try:
+            status = self._service.dispatch(self.operation_id, (ref or "dispatch")[:200])
+        except Exception as error:
+            self.release()
+            raise _unavailable("store") from error
+        if status == "dispatched":
+            self.dispatched = True
+            return
+        self.release()
+        if "denied" in status:
+            raise orena_http_error(403, "account_deleted", "This account was deleted.", retryable=False)
+        raise _unavailable(f"dispatch_{status}")
+
+    def settle(self, actual: int, outcome_ref: str | None = None) -> None:
+        if self.finished:
+            return
+        self.finished = True
+        actual = max(0, min(int(actual), self.units))
+        try:
+            self._service.settle(self.operation_id, actual, (outcome_ref or None) and outcome_ref[:200])
+        except Exception:
+            _log.warning("funding settle failed for %s; left to the reconciler", self.operation_id, exc_info=True)
+
+    def release(self) -> None:
+        if self.finished:
+            return
+        self.finished = True
+        try:
+            self._service.release(self.operation_id)
+        except Exception:
+            _log.warning("funding release failed for %s; left to the reconciler", self.operation_id, exc_info=True)
+
+    @contextmanager
+    def funding_scope(self) -> Iterator[Any]:
+        """The `FundingContext` of this operation, for code that runs it outside `admit()` (a worker thread)."""
+        from writing_coach.billing import funding_context
+
+        with funding_context.funded(self.context):
+            yield self.context
+
+
 def account_id(user_key: str) -> str:
     from writing_coach.persistence.ids import stable_uuid
 
@@ -657,6 +731,20 @@ def _require_bucket_meter(meter: str) -> None:
         raise ValueError(f"{meter!r} is a count entitlement, not a bucket meter; it is not admitted through the gate")
 
 
+def require_feature(meter: str) -> None:
+    """PR-MON-6 §4 step 1, feature access, before any bypass: a plan-disabled meter is 403 `feature_not_in_plan`
+    whether or not a cached, stored or deterministic answer exists, and whatever allowance or credits remain (credits
+    never unlock a feature, H-4). Nothing when the meter is not enforced (no behaviour change while enforcement is off),
+    503 when enforcement cannot be read. Reads only the effective entitlement; reserves nothing."""
+    _require_bucket_meter(meter)
+    state = switch()
+    if meter not in state["meters"]:
+        return
+    if state["state"] == "unavailable":
+        raise _unavailable(state["reason"] or "store")
+    _context(meter)
+
+
 def check_available(meter: str, units: int = 1) -> None:
     """Read-only: 429 `quota_exhausted` when fewer than `units` of `meter` remain in the learner's window, 503 when
     enforcement cannot be read, nothing when the meter is not enforced or enough remain. It reserves nothing and writes
@@ -706,7 +794,11 @@ def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = 
         # A voice reservation's size depends on what the learner has left, so a repeat of the request is not the same
         # size as the original: the repository would call it another request. Ask what this key already is first.
         try:
-            existing = repository.get_reservation(op)
+            if _runtime.funding is not None:
+                admission = _runtime.funding.repository.get(op)
+                existing = None if admission is None else {"state": _FUNDING_STATE.get(admission["state"], "settled")}
+            else:
+                existing = repository.get_reservation(op)
         except Exception as error:
             raise _unavailable("store") from error
         if existing is not None:
@@ -724,7 +816,20 @@ def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = 
             wanted = max(1, math.ceil(chunk_seconds / per_unit))
             units = wanted if entitlement.limit is None else min(wanted, max(0, entitlement.limit - spent))
             if units < 1:
-                raise exhausted_error(_facts(meter, entitlement, plan, used=spent, window=window), now=now)
+                if _runtime.funding is None:
+                    raise exhausted_error(_facts(meter, entitlement, plan, used=spent, window=window), now=now)
+                units = wanted   # PR-MON-6: the allowance is spent; credits may fund the whole chunk
+        if _runtime.funding is not None:
+            funded = _fund(meter, units, op, incarnation,
+                           BucketWindow(window.window_id, window.start, window.end, policy_version(plan.id, revision),
+                                        entitlement.limit),
+                           plan=plan, revision=revision, entitlement=entitlement, window=window, now=now)
+            if funded is None:
+                continue   # the window moved between the read and the lock: read it again
+            if voice is not None:
+                funded.seconds_per_unit = per_unit
+                funded.max_seconds = min(chunk_seconds, units * per_unit)
+            return funded
         try:
             outcome = repository.reserve(
                 incarnation_id=incarnation, meter=meter, operation_id=op, requested_units=units,
@@ -780,6 +885,90 @@ def _reserve(meter: str, units: int, digest: str, idempotency_key: str | None = 
     raise _unavailable(str(status))
 
 
+_FUNDING_STATE = {"admitting": "reserved", "funded": "reserved", "dispatched": "dispatched"}
+
+
+def _upgrade_offers_more(meter: str, plan: Plan, entitlement: Entitlement) -> bool:
+    """Section 9 `upgrade`: listed only while another plan includes more of the meter."""
+    try:
+        plans, _revision = current_catalog(strict=True)
+    except Exception:
+        return False
+    for other in plans.values():
+        if other.id == plan.id:
+            continue
+        candidate = other.entitlement_map().get(meter)
+        if candidate is None or not candidate.enabled:
+            continue
+        if entitlement.limit is not None and (candidate.limit is None or candidate.limit > entitlement.limit):
+            return True
+    return False
+
+
+def _fund(meter: str, units: int, op: str, incarnation: str, bucket: Any, *, plan: Plan, revision: str,
+          entitlement: Entitlement, window: Window, now: datetime) -> Any:
+    """PR-MON-6: one funding admission for this operation (promotional -> plan -> credits -> refuse), mapped to the
+    gate's answers. None when the plan window moved (the caller reads it again)."""
+    from writing_coach.billing import funding as funding_module
+    from writing_coach.billing.funding_context import FundingContext
+    from writing_coach.persistence.funding_repository import FundingIntent
+
+    service = _runtime.funding
+    intent = FundingIntent(incarnation_id=str(incarnation), operation_id=op, meter=meter, units=int(units),
+                           operation_ref=op, feature=meter)
+    try:
+        outcome = service.admit(intent, plan=funding_module.PlanAllowance(bucket),
+                                policy_label=policy_version(plan.id, revision))
+    except funding_module.WindowMoved:
+        return None
+    except funding_module.AccountDeleted:
+        raise orena_http_error(403, "account_deleted", "This account was deleted.", retryable=False) from None
+    except HTTPException:
+        raise
+    except Exception as error:
+        if "deleted account is never admitted" in str(error):
+            raise orena_http_error(403, "account_deleted", "This account was deleted.", retryable=False) from None
+        raise _unavailable("funding") from error
+    if outcome.status == "funded" and outcome.replayed:
+        # Another request holds this operation (a retry or a concurrent twin): one live ticket per admission, so
+        # this one gets the gate's in-progress answer, never a second ticket that could run, settle or release the
+        # same funding (independent code review P1-2). A crashed holder's admission is closed by the reconciler.
+        raise _duplicate_error(_FUNDING_STATE.get(str(outcome.row["state"]), "settled"))
+    if outcome.status == "funded":
+        row = outcome.row
+        facts = _facts(meter, entitlement, plan, used=units, window=window)
+        context = FundingContext(operation_id=op, meter=meter, admission_digest=intent.request_digest)
+        return FundingTicket(service, op, int(row["units"]), facts, context, str(row["source"]))
+    if outcome.status == "operation_conflict":
+        raise orena_http_error(409, "operation_conflict", "This request key was used for another request.",
+                               retryable=False)
+    if outcome.status in ("operation_completed", "operation_closed"):
+        # Design §5.4's two terminal answers, under the gate's existing category (the agent contract's §2.1 rows):
+        # `context.state` says which - completed (settled) or closed (released / refused).
+        raise orena_http_error(409, "operation_finished",
+                               "This request was already processed. Send it again as a new request.",
+                               retryable=False, context={"state": outcome.status.removeprefix("operation_")})
+    refusal = outcome.refusal
+    allowance = refusal.facts.get("allowance") or {}
+    used = int(allowance.get("consumed") or 0) + int(allowance.get("reserved") or 0)
+    facts = _facts(meter, entitlement, plan, used=used, window=window)
+    options = []
+    if _upgrade_offers_more(meter, plan, entitlement):
+        options.append("upgrade")
+    if refusal.reason == "insufficient_credits" and service.offers_available(meter):
+        options.append("buy_credits")
+    remaining = None if entitlement.limit is None else max(0, entitlement.limit - used)
+    facts.update({
+        "meter": meter, "reason": refusal.reason, "options": options,
+        "allowance": {"remaining": remaining, "limit": entitlement.limit, "window_resets_at": _iso(window.end)},
+        "promotional": [{key: (value.isoformat() if isinstance(value, datetime) else value)
+                         for key, value in grant.items()} for grant in refusal.facts.get("promotional", [])],
+    })
+    if "credits" in refusal.facts:
+        facts["credits"] = refusal.facts["credits"]
+    raise exhausted_error(facts, now=now)
+
+
 # The owner of an async meter's work tells the backstop what a job it finds abandoned actually decided: `fn(operation_id)`
 # returns (units, outcome_ref), None when the job is still in play (the backstop then settles as admitted, below), and
 # raises when the owner cannot tell (the row is left for the next tick, never guessed).
@@ -806,6 +995,9 @@ def dispatch_operation(operation_id: str, ref: str = "") -> str:
     Returns the repository's verdict (`dispatch`, `duplicate` for a job re-queued after a restart, `denied` for a
     deleted account, `unknown_operation`, ...). Raises on a store failure. The caller decides what each verdict
     means for its job; paid work starts only on `dispatch` or `duplicate`."""
+    if _admission(operation_id) is not None:
+        status = _runtime.funding.dispatch(operation_id, (ref or "dispatch")[:200])
+        return "dispatch" if status == "dispatched" else ("denied" if "denied" in status else status)
     outcome = _store_repository().dispatch(operation_id=operation_id, dispatch_ref=(ref or "dispatch")[:200])
     return str(outcome.get("status"))
 
@@ -815,6 +1007,9 @@ def settle_operation(operation_id: str, actual: int, outcome_ref: str | None = N
 
     Used by a background job, which cannot hold the request's `Ticket`: the id was kept with the work, so the
     settlement survives a process restart. `actual` can never exceed what was reserved (`exceeds_admitted`)."""
+    if _admission(operation_id) is not None:
+        state = _runtime.funding.settle(operation_id, max(0, int(actual)), (outcome_ref or None) and outcome_ref[:200])
+        return "settle" if state in ("settled", "released") else state
     outcome = _store_repository().settle(operation_id=operation_id, actual_units=max(0, int(actual)),
                                          outcome_ref=(outcome_ref or None) and outcome_ref[:200])
     return str(outcome.get("status"))
@@ -822,6 +1017,9 @@ def settle_operation(operation_id: str, actual: int, outcome_ref: str | None = N
 
 def release_operation(operation_id: str) -> str:
     """Give back a reservation that never reached a provider (by id, idempotent)."""
+    if _admission(operation_id) is not None:
+        state = _runtime.funding.release(operation_id)
+        return "release" if state == "released" else state
     return str(_store_repository().release(operation_id=operation_id).get("status"))
 
 
@@ -912,8 +1110,10 @@ def admit(meter: str, *, units: int = 1, request_digest: str = "", idempotency_k
             _TICKET.reset(token)
         return
     token = _TICKET.set(ticket)
+    scope = ticket.funding_scope() if isinstance(ticket, FundingTicket) else _no_scope()
     try:
-        yield ticket
+        with scope:
+            yield ticket
     except BaseException:
         if not ticket.finished:
             if ticket.dispatched:
@@ -926,6 +1126,11 @@ def admit(meter: str, *, units: int = 1, request_digest: str = "", idempotency_k
             ticket.settle(units, "completed")
     finally:
         _TICKET.reset(token)
+
+
+@contextmanager
+def _no_scope() -> Iterator[None]:
+    yield None
 
 
 # --- usage read (Plan & usage) ------------------------------------------------------------------------------
@@ -991,6 +1196,20 @@ def abandoned_settles() -> str:
     return str(policies.value("quota.abandoned_settles"))
 
 
+def _funded_operation(reservation_operation_id: str) -> str | None:
+    """The admission's operation id when this quota reservation backs one (`fund:<op>`) and funding is attached."""
+    if _runtime.funding is None or not str(reservation_operation_id).startswith("fund:"):
+        return None
+    return str(reservation_operation_id)[len("fund:"):]
+
+
+def _admission(operation_id: str) -> dict[str, Any] | None:
+    """The funding admission of a gate operation id, when funding is attached and the operation was funded."""
+    if _runtime.funding is None:
+        return None
+    return _runtime.funding.repository.get(operation_id)
+
+
 def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int = 200) -> dict[str, int]:
     """Open reservations older than their meter's threshold: a dispatched one is settled (ABANDONED_SETTLES), a
     reserved one (never handed to a provider) is released. Idempotent; several processes may run it.
@@ -1001,12 +1220,15 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
     done = {"settled": 0, "released": 0}
     for meters, after in ((SYNC_METERS, RECONCILE_AFTER), (ASYNC_METERS, ASYNC_RECONCILE_AFTER)):
         for row in repository.stale_dispatched(now - after, limit, states=("reserved", "dispatched"), meters=meters):
+            # PR-MON-6: a reservation backing a funding admission (`fund:<op>`) is closed through the admission, so
+            # both close in one transaction; the owner's decision is asked by the owner's own operation id.
+            funded = _funded_operation(row["operation_id"])
             if row["state"] == "dispatched":
                 actual = int(row["admitted_units"]) if abandoned_settles() == "admitted" else 0
                 ref = "reconciled:abandoned"
                 if meters is ASYNC_METERS and _async_decision is not None:
                     try:
-                        decided = _async_decision(row["operation_id"])
+                        decided = _async_decision(funded or row["operation_id"])
                     except Exception:  # noqa: BLE001 - the owner cannot tell now: not guessed, retried next tick
                         _log.warning("quota reconciler: no decision for %s yet", row["operation_id"], exc_info=True)
                         continue
@@ -1014,10 +1236,24 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
                         actual, ref = min(max(0, int(decided[0])), int(row["admitted_units"])), f"reconciled:{decided[1]}"[:200]
                     elif row.get("updated_at") is None or row["updated_at"] > now - ASYNC_IN_PLAY_CEILING:
                         continue  # in play on a live entry: its worker settles it; the ceiling is the last resort
+                if funded is not None:
+                    try:
+                        state = _runtime.funding.settle(funded, actual, ref)
+                    except Exception:  # noqa: BLE001 - this row is retried next tick; the others still run
+                        _log.warning("quota reconciler: funded %s not settled", funded, exc_info=True)
+                        continue
+                    done["settled" if state == "settled" else "released"] += state in ("settled", "released")
+                    continue
                 outcome = repository.settle(operation_id=row["operation_id"], actual_units=actual,
                                             outcome_ref=ref)
                 done["settled"] += outcome.get("status") == "settle"
             else:
+                if funded is not None:
+                    try:
+                        done["released"] += _runtime.funding.release(funded, "reconciled:abandoned") == "released"
+                    except Exception:  # noqa: BLE001 - retried next tick
+                        _log.warning("quota reconciler: funded %s not released", funded, exc_info=True)
+                    continue
                 outcome = repository.release(operation_id=row["operation_id"])
                 done["released"] += outcome.get("status") == "release"
     if any(done.values()):
@@ -1037,10 +1273,19 @@ class QuotaReconcileSchedule:
 
     def tick(self) -> dict[str, int] | None:
         try:
-            return reconcile_once(self._repository)
+            counts = reconcile_once(self._repository)
         except Exception:
             _log.warning("quota reconciler failed; retried at the next tick", exc_info=True)
             return None
+        # PR-MON-6 §5.6: after the quota backstop has closed abandoned reservations, the admissions they backed are
+        # completed from them (never re-settled), and rows a crash left `admitting` are adopted or refused.
+        if _runtime.funding is not None:
+            try:
+                for name, value in _runtime.funding.reconcile().items():
+                    counts[f"funding_{name}"] = value
+            except Exception:
+                _log.warning("funding reconciler failed; retried at the next tick", exc_info=True)
+        return counts
 
     def _loop(self) -> None:
         while not self._stop.is_set():

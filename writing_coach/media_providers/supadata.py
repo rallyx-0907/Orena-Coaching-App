@@ -261,19 +261,23 @@ class SupadataTranscriptClient:
         again."""
         if params is None:
             return self._request(url, params=params, deadline=deadline, allow_206=allow_206)
-        from writing_coach.ai.audio_telemetry import record_audio_operation
+        from writing_coach.ai.audio_telemetry import attempt_sent, provider_attempt, record_audio_operation
+        from writing_coach.billing.funding_context import require_paid
 
+        require_paid(capability="media_transcript_fallback", provider="supadata",
+                     timeout_seconds=self._request_timeout_seconds)  # I-1's backstop; each request's upper bound
         started = time.perf_counter()
-        try:
-            payload = self._request(url, params=params, deadline=deadline, allow_206=allow_206)
-        except Exception as exc:
-            record_audio_operation("media_transcript_fallback", provider="supadata", model="transcript",
-                                   outcome="failure", latency_ms=int((time.perf_counter() - started) * 1000),
-                                   audio_seconds=None, error=exc)
-            raise
+        with provider_attempt():
+            try:
+                payload = self._request(url, params=params, deadline=deadline, allow_206=allow_206)
+            except Exception as exc:
+                record_audio_operation("media_transcript_fallback", provider="supadata", model="transcript",
+                                       outcome="failure", latency_ms=int((time.perf_counter() - started) * 1000),
+                                       audio_seconds=None, error=exc, billable_attempt=attempt_sent())
+                raise
         record_audio_operation("media_transcript_fallback", provider="supadata", model="transcript",
                                outcome="success", latency_ms=int((time.perf_counter() - started) * 1000),
-                               audio_seconds=None)
+                               audio_seconds=None, billable_attempt=True)
         return payload
 
     def _request(
@@ -289,6 +293,9 @@ class SupadataTranscriptClient:
             raise SupadataTranscriptTimedOut()
         timeout = min(self._request_timeout_seconds, remaining)
         try:
+            from writing_coach.ai.audio_telemetry import mark_sent
+
+            mark_sent()   # the transport boundary (a deadline already spent above sends nothing)
             response = self._session.get(
                 url,
                 params=params,

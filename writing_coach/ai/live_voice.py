@@ -32,10 +32,13 @@ class VoiceUnavailable(RuntimeError):
 Post = Callable[[str, Mapping[str, str], bytes], tuple[int, bytes]]
 
 
+# The mint request's timeout; the paid-provider backstop proves the funding outlives it (PR-MON-6 §2.1).
+MINT_TIMEOUT_SECONDS = 20
+
 def _post(url: str, headers: Mapping[str, str], body: bytes) -> tuple[int, bytes]:
     request = urllib.request.Request(url, data=body, method="POST", headers=dict(headers))
     try:
-        with urllib.request.urlopen(request, timeout=20) as response:
+        with urllib.request.urlopen(request, timeout=MINT_TIMEOUT_SECONDS) as response:
             return response.status, response.read()
     except urllib.error.HTTPError as error:
         return error.code, error.read() or b""
@@ -58,6 +61,10 @@ class GeminiLiveTokens:
         key = self.key()
         if not key:
             raise VoiceUnavailable("no Gemini key is configured")
+        from writing_coach.billing.funding_context import require_paid
+
+        require_paid(capability="agent_voice", provider="gemini",
+                     timeout_seconds=MINT_TIMEOUT_SECONDS)  # I-1's backstop (PR-MON-6 §2)
         iso = "%Y-%m-%dT%H:%M:%SZ"
         expires = (now + timedelta(seconds=seconds)).strftime(iso)
         body = {

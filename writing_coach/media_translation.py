@@ -394,9 +394,12 @@ class GroqTranslationProvider:
         from writing_coach.ai.audio_telemetry import record_token_operation
 
         reported = usage if isinstance(usage, dict) else {}
+        # Every call of this recorder follows `requests.post` (an answer, a refusal, or the post's own failure):
+        # the request reached the transport, so it is a billable attempt (PR-MON-6 §8).
         record_token_operation(
             "media_translation", provider=self.engine_id, model=self._model, outcome=outcome,
             latency_ms=int((time.perf_counter() - started) * 1000), usage=reported, error=error,
+            billable_attempt=True,
         )
 
     def _request_batch(

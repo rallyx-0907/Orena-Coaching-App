@@ -23,6 +23,7 @@ from __future__ import annotations
 import hashlib
 import json
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -178,11 +179,22 @@ class PostgresCreditRepository:
             ":reserved, :amount, :ref, :req, :key, :digest, :stype, :sref, :meter, :opref, :expires, :uncharged, "
             f":actor, :reason, :now) RETURNING {_ENTRY_COLUMNS}"), values).mappings().one())
 
-    def _mutate(self, incarnation_id: str, decide, *, allow_deleted: bool) -> CreditOutcome:
+    @contextmanager
+    def _tx(self, connection: Any = None):
+        """Its own transaction, or a savepoint inside the caller's (PR-MON-6 §5.6: an admission writes its hold in
+        the transaction that holds its own row; a refused write rolls back to the savepoint only)."""
+        if connection is None:
+            with self._engine.begin() as own:
+                yield own
+        else:
+            with connection.begin_nested():
+                yield connection
+
+    def _mutate(self, incarnation_id: str, decide, *, allow_deleted: bool, connection: Any = None) -> CreditOutcome:
         """Lock, refuse a deleted or under-review account where needed, then let `decide` look up and insert."""
 
         try:
-            with self._engine.begin() as connection:
+            with self._tx(connection) as connection:
                 account, status = self._lock(connection, incarnation_id)
                 if status is None or account is None:
                     return CreditOutcome("not_found", detail="no credit account")
@@ -229,7 +241,7 @@ class PostgresCreditRepository:
         return self._mutate(incarnation_id, decide, allow_deleted=False)
 
     def reserve(self, incarnation_id: str, *, amount: int, operation_id: str, meter: str, operation_ref: str = "",
-                ttl: timedelta | None = None, actor: str = "system") -> CreditOutcome:
+                ttl: timedelta | None = None, actor: str = "system", connection: Any = None) -> CreditOutcome:
         if amount <= 0 or (ttl is not None and not timedelta(0) < ttl <= HOLD_TTL):
             return CreditOutcome("invalid", detail="amount or ttl")
         request_digest = digest(kind="reserve", account=incarnation_id, amount=amount, meter=meter,
@@ -248,7 +260,7 @@ class PostgresCreditRepository:
                                  opref=operation_ref or None, expires=now + (ttl or HOLD_TTL))  # fmt: skip
             return CreditOutcome("applied", entry=entry)
 
-        return self._mutate(incarnation_id, decide, allow_deleted=False)
+        return self._mutate(incarnation_id, decide, allow_deleted=False, connection=connection)
 
     @staticmethod
     def _hold(connection, account_id, reserve_entry_id) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
@@ -263,7 +275,7 @@ class PostgresCreditRepository:
         return dict(hold), (dict(close) if close else None)
 
     def settle(self, incarnation_id: str, *, reserve_entry_id: Any, actual: int, operation_id: str,
-               actor: str = "system") -> CreditOutcome:
+               actor: str = "system", connection: Any = None) -> CreditOutcome:
         """Charge `min(actual, hold)` and close the hold; the rest is `uncharged`, never collected (C3). A settle of
         a hold already released or expired charges nothing and is recorded as `credit_late_settle`."""
 
@@ -289,13 +301,13 @@ class PostgresCreditRepository:
                                  uncharged=actual - charged)  # fmt: skip
             return CreditOutcome("applied", entry=entry, extra={"charged": charged, "uncharged": actual - charged})
 
-        return self._mutate(incarnation_id, decide, allow_deleted=False)
+        return self._mutate(incarnation_id, decide, allow_deleted=False, connection=connection)
 
     def release(self, incarnation_id: str, *, reserve_entry_id: Any, operation_id: str, actor: str = "system",
-                reason: str = "") -> CreditOutcome:
+                reason: str = "", connection: Any = None) -> CreditOutcome:
         request_digest = digest(kind="release", reserve=reserve_entry_id)
         return self._close(incarnation_id, "release", reserve_entry_id, operation_id, request_digest, actor,
-                           reason or None)  # fmt: skip
+                           reason or None, connection=connection)  # fmt: skip
 
     def expire_reserve(self, incarnation_id: str, *, reserve_entry_id: Any) -> CreditOutcome:
         """The reconciler closes a hold past its `expires_at`, or any hold of a deleted account. Idempotent: the key
@@ -305,7 +317,8 @@ class PostgresCreditRepository:
         return self._close(incarnation_id, "reserve_expire", reserve_entry_id, str(reserve_entry_id), request_digest,
                            "reconciler", None)  # fmt: skip
 
-    def _close(self, incarnation_id, kind, reserve_entry_id, key, request_digest, actor, reason) -> CreditOutcome:
+    def _close(self, incarnation_id, kind, reserve_entry_id, key, request_digest, actor, reason,
+               connection: Any = None) -> CreditOutcome:
         def decide(connection, account, now):
             replay = self._replay(self._existing(connection, account["id"], kind, key), request_digest)
             if replay is not None:
@@ -320,7 +333,7 @@ class PostgresCreditRepository:
                                  now=now, ref=hold["id"], reason=reason)  # fmt: skip
             return CreditOutcome("applied", entry=entry)
 
-        return self._mutate(incarnation_id, decide, allow_deleted=True)
+        return self._mutate(incarnation_id, decide, allow_deleted=True, connection=connection)
 
     @staticmethod
     def _late_settle(connection, account, hold, close, actual, operation_id, now) -> None:

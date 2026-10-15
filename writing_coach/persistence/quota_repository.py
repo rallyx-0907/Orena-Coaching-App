@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
@@ -126,6 +127,17 @@ class PostgresQuotaRepository:
         # Server time decides windows; a controlled clock is for the
         # period-boundary proofs only.
         self._clock = clock or (lambda: datetime.now(UTC))
+
+    @contextmanager
+    def _tx(self, connection: Any = None):
+        """Its own transaction, or a savepoint inside the caller's (PR-MON-6 §5.6: a funding admission chooses its
+        source and writes the reservation in one transaction, with its own row locked first)."""
+        if connection is None:
+            with self._engine.begin() as own:
+                yield own
+        else:
+            with connection.begin_nested():
+                yield connection
 
     def get_bucket(self, incarnation_id: str, meter: str, window_id: str) -> dict[str, Any] | None:
         with self._engine.connect() as connection:
@@ -218,7 +230,8 @@ class PostgresQuotaRepository:
                 text(
                     'SELECT DISTINCT ON (meter) id, meter, window_id, window_start, window_end, '
                     'policy_version, unit_limit, consumed, reserved FROM commerce_quota_buckets '
-                    'WHERE incarnation_id = :inc AND meter = ANY(:meters) '
+                    # a promotional grant's bucket (0034, `promo:<grant>`) is not a plan window
+                    "WHERE incarnation_id = :inc AND meter = ANY(:meters) AND left(window_id, 6) <> 'promo:' "
                     'ORDER BY meter, window_end DESC, window_start ASC'
                 ),
                 {'inc': incarnation_id, 'meters': list(meters)},
@@ -250,7 +263,7 @@ class PostgresQuotaRepository:
     def reserve(
         self, *, incarnation_id: str, meter: str, window: BucketWindow,
         operation_id: str, requested_units: int, entitlement: str = 'allowed',
-        limit_policy: str = 'frozen',
+        limit_policy: str = 'frozen', connection: Any = None,
     ) -> QuotaOutcome:
         """One admission attempt, or one idempotent replay of a prior one.
 
@@ -282,7 +295,7 @@ class PostgresQuotaRepository:
         # 'admit' here only means "entitlement allows asking".
         asked = reserve_decision(Quota(None, 0, 0), requested_units, entitlement=entitlement)
         now = self._clock()
-        with self._engine.begin() as connection:
+        with self._tx(connection) as connection:
             owner = connection.execute(
                 text('SELECT status FROM account_incarnations WHERE id = :inc FOR SHARE'),
                 {'inc': incarnation_id},
@@ -315,6 +328,7 @@ class PostgresQuotaRepository:
                     text(
                         'SELECT window_id FROM commerce_quota_buckets '
                         'WHERE incarnation_id = :inc AND meter = :meter AND window_id <> :window_id '
+                        "AND left(window_id, 6) <> 'promo:' "  # a grant's bucket never supersedes a plan window
                         'AND ((window_start <= :now AND :now < window_end) '
                         'OR (window_start < :end AND :start < window_end)) LIMIT 1'
                     ),
@@ -426,12 +440,13 @@ class PostgresQuotaRepository:
                 admitted_units=requested_units, state='reserved',
             )
 
-    def dispatch(self, *, operation_id: str, dispatch_ref: str | None = None) -> QuotaOutcome:
+    def dispatch(self, *, operation_id: str, dispatch_ref: str | None = None,
+                 connection: Any = None) -> QuotaOutcome:
         """The reservation's work has been handed to a provider: from now on
         it can only be settled, never released. Writes nothing unless the
         verdict is 'dispatch'; a deleted incarnation's work is not dispatched."""
         now = self._clock()
-        with self._engine.begin() as connection:
+        with self._tx(connection) as connection:
             # Incarnation first, then the reservation - the global order. Taking
             # the reservation first and the incarnation second deadlocks behind
             # a queued mark_deleted() (review round 2 stress).
@@ -476,12 +491,13 @@ class PostgresQuotaRepository:
             )
             return QuotaOutcome(status='dispatch')
 
-    def settle(self, *, operation_id: str, actual_units: int, outcome_ref: str | None = None) -> QuotaOutcome:
+    def settle(self, *, operation_id: str, actual_units: int, outcome_ref: str | None = None,
+               connection: Any = None) -> QuotaOutcome:
         """Idempotent per settle_decision(). Writes nothing at all unless the
         verdict is 'settle' — a duplicate, conflicting or otherwise invalid
         settle call touches neither the reservation nor its bucket."""
         now = self._clock()
-        with self._engine.begin() as connection:
+        with self._tx(connection) as connection:
             if not self._lock_bucket_of(connection, operation_id):
                 return QuotaOutcome(status='unknown_operation')
             reservation = connection.execute(
@@ -524,11 +540,11 @@ class PostgresQuotaRepository:
             )
             return QuotaOutcome(status='settle')
 
-    def release(self, *, operation_id: str) -> QuotaOutcome:
+    def release(self, *, operation_id: str, connection: Any = None) -> QuotaOutcome:
         """Idempotent per release_decision(). Writes nothing unless the
         verdict is 'release' — dispatched work keeps its reservation."""
         now = self._clock()
-        with self._engine.begin() as connection:
+        with self._tx(connection) as connection:
             if not self._lock_bucket_of(connection, operation_id):
                 return QuotaOutcome(status='unknown_operation')
             reservation = connection.execute(
