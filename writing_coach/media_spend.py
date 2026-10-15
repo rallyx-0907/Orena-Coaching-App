@@ -41,6 +41,10 @@ _LOCKS_GUARD = threading.Lock()
 KIND_ASR = "asr"
 KIND_AI = "ai"
 KINDS = (KIND_ASR, KIND_AI)
+# Supadata captions are paid in credits, not dollars (D-215): each request is one row of this kind (units=1, usd=0), counted
+# against a daily request cap. It is not in KINDS: it has no dollar cap and takes no part in the batch and day USD sums.
+KIND_SUPADATA = "supadata"
+RECORDED_KINDS = (*KINDS, KIND_SUPADATA)
 MAX_EVENTS = 20_000
 
 
@@ -150,8 +154,33 @@ class SpendLedger:
         if day_spent + estimate_usd > limits["day"] + 1e-12:
             raise SpendCapReached("spend_cap_day", limit=limits["day"], spent=day_spent, scope="day")
 
+    def requests_today(self, kind: str = KIND_SUPADATA) -> int:
+        day_start = _now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        with self._lock:
+            events = self._read()
+        return sum(1 for event in events if event.get("kind") == kind and str(event.get("at") or "") >= day_start)
+
+    def reserve_request(self, cap: int, *, media_id: str = "", kind: str = KIND_SUPADATA, provider: str = "") -> None:
+        """Check today's count against `cap` and record one request, under one lock: callers cannot both pass the check
+        (D-215). Raises `SpendCapReached("caption_quota")` and records nothing at the cap."""
+        day_start = _now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        with self._lock:
+            events = self._read()
+            used = sum(1 for event in events if event.get("kind") == kind and str(event.get("at") or "") >= day_start)
+            if used >= cap:
+                raise SpendCapReached("caption_quota", limit=float(cap), spent=float(used), scope="day")
+            events.append({"at": _now().isoformat(), "kind": kind, "usd": 0.0, "batch_id": "captions",
+                           "media_id": media_id, "units": 1.0, "provider": provider[:40]})
+            self._write(events)
+
+    def check_requests(self, cap: int, kind: str = KIND_SUPADATA) -> None:
+        """Raise `SpendCapReached("caption_quota")` when today's requests of `kind` have reached `cap` (no call is made)."""
+        used = self.requests_today(kind)
+        if used >= cap:
+            raise SpendCapReached("caption_quota", limit=float(cap), spent=float(used), scope="day")
+
     def record(self, kind: str, usd: float, *, batch_id: str, media_id: str = "", units: float = 0.0, provider: str = "") -> None:
-        if kind not in KINDS:
+        if kind not in RECORDED_KINDS:
             raise ValueError("unknown spend kind")
         event = {
             "at": _now().isoformat(),
@@ -175,7 +204,8 @@ class SpendLedger:
         now = _now()
         day_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
         today = self._sum(events, since=day_start.isoformat())
-        recent = [event for event in events if str(event.get("at") or "") >= (now - timedelta(days=1)).isoformat()]
+        recent = [event for event in events if event.get("kind") in KINDS
+                  and str(event.get("at") or "") >= (now - timedelta(days=1)).isoformat()]
         batches: dict[str, dict[str, float]] = {}
         for event in recent:
             row = batches.setdefault(str(event.get("batch_id") or ""), {KIND_ASR: 0.0, KIND_AI: 0.0})
@@ -188,5 +218,6 @@ class SpendLedger:
             "largest_batch_usd": {
                 kind: round(max((row.get(kind, 0.0) for row in batches.values()), default=0.0), 6) for kind in KINDS
             },
+            "supadata_requests_today": self.requests_today(KIND_SUPADATA),
             "estimated": True,
         }

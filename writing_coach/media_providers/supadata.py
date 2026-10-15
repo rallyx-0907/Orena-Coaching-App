@@ -30,6 +30,11 @@ class SupadataTranscriptRequestFailed(SupadataTranscriptError):
     pass
 
 
+class SupadataTranscriptNotFound(SupadataTranscriptRequestFailed):
+    """Supadata answered 206, 404 or 422: it has no transcript for this video. A definitive answer, not a failure of the
+    request (a subclass, so every caller that treats it as a failed request still does)."""
+
+
 class SupadataTranscriptMalformed(SupadataTranscriptError):
     pass
 
@@ -79,6 +84,7 @@ class SupadataTranscriptClient:
         max_wait_seconds: float = 150.0,
         poll_interval_seconds: float = 1.0,
         session: requests.Session | None = None,
+        capability: str = "media_transcript_fallback",
     ) -> None:
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("Supadata API key is required.")
@@ -89,14 +95,17 @@ class SupadataTranscriptClient:
         self._max_wait_seconds = float(max_wait_seconds)
         self._poll_interval_seconds = float(poll_interval_seconds)
         self._session = session or requests.Session()
+        # The name its calls carry in funding and AI cost telemetry; the native caption source uses its own (D-215).
+        self._capability = capability
 
     @classmethod
-    def from_env(cls) -> "SupadataTranscriptClient | None":
+    def from_env(cls, *, capability: str = "media_transcript_fallback") -> "SupadataTranscriptClient | None":
         api_key = os.getenv("SUPADATA_API_KEY", "").strip()
         if not api_key:
             return None
         return cls(
             api_key,
+            capability=capability,
             request_timeout_seconds=float(
                 os.getenv("SUPADATA_REQUEST_TIMEOUT_SECONDS", "20")
             ),
@@ -264,18 +273,18 @@ class SupadataTranscriptClient:
         from writing_coach.ai.audio_telemetry import attempt_sent, provider_attempt, record_audio_operation
         from writing_coach.billing.funding_context import require_paid
 
-        require_paid(capability="media_transcript_fallback", provider="supadata",
+        require_paid(capability=self._capability, provider="supadata",
                      timeout_seconds=self._request_timeout_seconds)  # I-1's backstop; each request's upper bound
         started = time.perf_counter()
         with provider_attempt():
             try:
                 payload = self._request(url, params=params, deadline=deadline, allow_206=allow_206)
             except Exception as exc:
-                record_audio_operation("media_transcript_fallback", provider="supadata", model="transcript",
+                record_audio_operation(self._capability, provider="supadata", model="transcript",
                                        outcome="failure", latency_ms=int((time.perf_counter() - started) * 1000),
                                        audio_seconds=None, error=exc, billable_attempt=attempt_sent())
                 raise
-        record_audio_operation("media_transcript_fallback", provider="supadata", model="transcript",
+        record_audio_operation(self._capability, provider="supadata", model="transcript",
                                outcome="success", latency_ms=int((time.perf_counter() - started) * 1000),
                                audio_seconds=None, billable_attempt=True)
         return payload
@@ -309,8 +318,10 @@ class SupadataTranscriptClient:
 
         if response.status_code == 206:
             # Do not silently degrade generated-transcript failure into transcript=None.
-            raise SupadataTranscriptRequestFailed()
-        if response.status_code in {401, 402, 403, 404, 409, 422, 429}:
+            raise SupadataTranscriptNotFound()
+        if response.status_code in {404, 422}:
+            raise SupadataTranscriptNotFound()
+        if response.status_code in {401, 402, 403, 409, 429}:
             raise SupadataTranscriptRequestFailed()
         if response.status_code >= 500:
             raise SupadataTranscriptRequestFailed()
