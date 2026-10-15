@@ -7077,9 +7077,21 @@ worker, the AI spend cap unchanged.
 4. **Still one character to one character.** Lengths, word timings and tap offsets are unchanged (tests). Simplified to Traditional is
    unchanged. `script_map.json` is now `orena.zh-script-map.v2` (a new `contextual_to_simplified` and `unresolved`); the reader
    tolerates a v1 file.
-5. **Known limits.** The context judgement uses CC-CEDICT's words only: a proper name or rare word it does not list takes the default
-   (a name written with `乾` or `著` can change; `於` is converted to `于`, which is right outside a surname). `--check` fails when the
-   table is stale or when a sentinel word (the trial survivors and the kept words) does not convert as stated.
+5. **Simplified text is never altered (independent review of #224, P1-1).** The context layer acts only near Traditional evidence:
+   a character is judged only when a Traditional-only character (`script_detection`, the same table that classifies a text) lies in
+   the same clause (stops and line breaks end a clause) within 30 characters. Text with none is returned as written, so 鲁迅著,
+   乾卦, 宫商角徵羽 and 覆水 stay. The evidence is measured on the text before any conversion. Words and cues are judged by the same
+   rule, so an item with a stray Traditional character does not change its Simplified clauses. A Traditional sentence with no
+   Traditional-only character at all (看著我) is also left as written: with no evidence it cannot be told from Simplified.
+6. **Known limits.** The context judgement uses CC-CEDICT's words only: near Traditional evidence, any word CC-CEDICT does not list
+   takes the default (a name written with `乾` or `著` can change; `於` is converted to `于`, right outside a surname). Not converted,
+   with the reason: 諮 (Unihan gives 谘, the standard form is 咨) and 讎 (Unihan gives 雠, the standard is 仇), listed in the build
+   script's `EXCLUDED`; 戱 is dropped because its target 戯 is itself converted. A conversion is a single step and the build fails if
+   any target is also a key. Compatibility ideographs (U+F900 to U+FAFF, U+2F800 to U+2FA1F) are written as their unified form
+   first (NFC of each is exactly one code point, tested), so 豈 and 龜 in compatibility form convert. "Length" here is code
+   points: five astral keys map to a basic-block character, which changes the UTF-16 length, harmless because conversion runs before
+   any offset is computed. `--check` fails when the table is stale or when a sentinel word (the trial survivors and the kept
+   words, after a Traditional marker) does not convert as stated.
 
 **B. Long transcripts finish translating (N1; extends D-207 §2).**
 1. **Which limit (from the code and the repository's measurements; no provider call was made).** Groq answered the key with 1,000
@@ -7105,7 +7117,10 @@ worker, the AI spend cap unchanged.
    complete yet"; it is distinguished from its other use (translation not configured) by the presence of `translation_continuation`
    and non-empty counts. The admin `outcome.translation` returns it as `continuation` only while pending. Lines already translated are
    readable at once (the cache). A re-run (reprocess) clears the continuation at its start and wins over a pending timer; a restart
-   re-arms it from the record (`recover()`), so it survives the process.
+   re-arms it from the record (`recover()`), so it survives the process. A timer honours `next_at`: one that fires early (its record
+   was replaced by a later deferral) does nothing, the proper timer being armed. Before every provider round of a continuation the
+   item is read again; archived, removed, cancelled, re-run or a different continuation stops the attempt before the call (review
+   P2-1, P2-2).
 4. **Owner decisions left open.** The 6 / 30 min / 300 s bounds suit one minute's allowance; a measured real batch should confirm them.
    No admin control to continue by hand and no learner-facing "translating" wording are added (no UI change; the admin Details row
    shows the state through `outcome.translation`). Smaller request windows were not adopted: the completion reservation (2,048) guards

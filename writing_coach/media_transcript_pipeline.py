@@ -793,6 +793,7 @@ class MediaPipeline:
     def _translate(
         self, store: Any, entry: MediaLibraryEntry, batch_id: str, personal: bool, *, stop: dict[str, Any] | None = None,
         resume: bool = False, max_rounds: int = TRANSLATION_MAX_ROUNDS, max_total_wait: float = TRANSLATION_MAX_TOTAL_WAIT,
+        guard: Callable[[], None] | None = None,
     ) -> tuple[str, dict[str, dict[str, int]]]:
         """Materialize configured optional meanings before admission; workspace reads never generate them.
 
@@ -801,7 +802,8 @@ class MediaPipeline:
         A partial or failed translation never changes the item's own state: the lesson stands without it.
 
         `stop`, when given, receives why the run ended (`reason`, the provider's `retry_after`) for the caller that may
-        defer the rest. `resume` is a continuation: the item's own state is left alone (a held item stays held)."""
+        defer the rest. `resume` is a continuation: the item's own state is left alone (a held item stays held). `guard`, when given, is
+        called before every provider round and raises `PipelineStop` when the item has been archived, removed or re-run."""
         languages = [item.strip().casefold() for item in os.getenv("MEDIA_PRETRANSLATE_LANGUAGES", "vi").split(",") if item.strip()]
         languages = [item for item in languages if item != primary_language(entry.language)]
         if not languages or self._meanings is None:
@@ -833,6 +835,8 @@ class MediaPipeline:
                             stop.update(reason=stop_reason, retry_after=0.0)
                         return "spend_cap", counts
                     break
+                if guard is not None:
+                    guard()
                 usage: list[tuple[str, Any]] = []
                 retry_after = 0.0
                 try:
@@ -953,8 +957,11 @@ class MediaPipeline:
         try:
             entry = store.get(media_id)
             processing = dict(entry.processing or {}) if entry is not None else {}
-            if entry is None or not processing.get("translation_continuation"):
+            record = processing.get("translation_continuation")
+            if entry is None or not record:
                 return
+            if self._clock() < self._epoch(record.get("next_at")) - 1.0:
+                return  # a stale timer (the record was replaced by a later deferral): the proper one is still armed
             with self._guard:
                 if media_id in self._inflight or processing.get("state") in {STATE_QUEUED, STATE_RUNNING}:
                     busy = True
@@ -1004,6 +1011,18 @@ class MediaPipeline:
         record = dict(processing.get("translation_continuation") or {})
         if not record or processing.get("state") in {STATE_QUEUED, STATE_RUNNING}:
             return
+        if entry.status == "archived" or processing.get("state") == "cancelled":
+            return
+
+        def guard() -> None:
+            """Before every provider round: the item is still there, not archived, not re-run, same continuation."""
+            fresh = store.get(entry.media_id)
+            current = dict(fresh.processing or {}) if fresh is not None else {}
+            now_record = current.get("translation_continuation") or {}
+            if (fresh is None or fresh.status == "archived" or current.get("state") in {STATE_QUEUED, STATE_RUNNING, "cancelled"}
+                    or now_record.get("attempt") != record.get("attempt")):
+                raise PipelineStop("cancelled")
+
         if int(record.get("attempt") or 0) > CONTINUATION_MAX_ATTEMPTS or self._clock() > self._epoch(record.get("deadline")):
             self._write_processing(store, entry, translation=self._short_outcome(entry), translation_continuation={})
             return
@@ -1011,7 +1030,7 @@ class MediaPipeline:
         stop: dict[str, Any] = {}
         outcome, counts = self._translate(
             store, entry, batch_id, entry.library == "personal", stop=stop, resume=True,
-            max_rounds=CONTINUATION_ROUNDS, max_total_wait=0.0,
+            max_rounds=CONTINUATION_ROUNDS, max_total_wait=0.0, guard=guard,
         )
         fresh = store.get(entry.media_id) or entry
         outcome = self._defer_translation(store, fresh, outcome, stop)

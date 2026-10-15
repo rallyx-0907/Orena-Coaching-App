@@ -44,6 +44,12 @@ MAP_FORMAT = "orena.zh-script-map.v2"
 # A target must be in the original unified-ideograph block (U+4E00 to U+9FA5, Unicode 1.1): every CJK font carries it,
 # so a conversion never produces a missing glyph (the 2000s additions U+9FA6 and up are skipped).
 BASIC_BLOCK = (0x4E00, 0x9FA5)
+# Unihan variants that are not the standard Simplified form (D-211 review): converting them would write a character a
+# reader of Simplified does not expect. Left as written.
+EXCLUDED = {
+    "諮": "Unihan gives 谘; the standard form in 咨询 is 咨",
+    "讎": "Unihan gives 雠; the standard form for 仇 is 仇",
+}
 KEEP_WORD_MAX = 4  # the longest word a context-dependent character is protected inside
 
 # Real survivors of the 2026-10-15 mini trial (VOA) and the words that must stay as written, with the Simplified each
@@ -206,7 +212,16 @@ def derive_map() -> dict[str, object]:
             sources.setdefault(form, set()).add(simp)
     to_simplified = {t: next(iter(s)) for t, s in sorted(sources.items()) if t in traditional_only and len(s) == 1}
     unique, contextual, unresolved = derive_variant_maps(to_simplified)
+    for char in EXCLUDED:
+        unique.pop(char, None)
+    # A conversion is a single step: a target that is itself converted (戱 to 戯, 戯 to ...) would leave a text half done.
+    keys = set(to_simplified) | set(unique)
+    for char in [c for c, target in unique.items() if target in keys]:
+        del unique[char]
     to_simplified.update(unique)
+    chained = [c for c, target in to_simplified.items() if target in to_simplified]
+    if chained:
+        raise SystemExit("conversion chains: " + "".join(chained))
     return {
         "format": MAP_FORMAT,
         "source": "CC-CEDICT, Unicode Unihan (kSimplifiedVariant)",
@@ -221,13 +236,14 @@ def derive_map() -> dict[str, object]:
 
 
 def expected_failures() -> list[str]:
-    """Each EXPECTED word run through the shipped converter (not the freshly derived table)."""
+    """Each EXPECTED word, after a Traditional marker, run through the shipped converter (not the freshly derived table)."""
     from writing_coach.languages.chinese.script_conversion import convert_script
 
     return [
-        f"{word} -> {got} (want {want})"
+        f"{word} -> {got[1:]} (want {want})".encode("unicode_escape").decode("ascii")
         for word, want in EXPECTED.items()
-        if (got := convert_script(word, "zh-Hans")) != want
+        # 這 is the Traditional evidence a context-dependent character needs to be judged at all (D-211).
+        if (got := convert_script("這" + word, "zh-Hans")) != "这" + want
     ]
 
 

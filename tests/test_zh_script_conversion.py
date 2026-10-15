@@ -5,11 +5,12 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import unicodedata
 from pathlib import Path
 
 import pytest
 
-from writing_coach.languages.chinese.script_conversion import convert_script, convert_sequence, MAP_PATH
+from writing_coach.languages.chinese.script_conversion import _compatibility, convert_script, convert_sequence, MAP_PATH
 from writing_coach.languages.chinese.script_detection import SIMPLIFIED, TRADITIONAL, script_counts
 from writing_coach.media_zh_cleanup import normalise_words
 from writing_coach.speech_asr import SpeechAsrWord
@@ -18,7 +19,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _simplified(text: str) -> str:
-    return convert_script(text, SIMPLIFIED)
+    """The word inside a Traditional sentence: 這 is the Traditional evidence a context-dependent character needs."""
+    return convert_script("這" + text, SIMPLIFIED)[1:]
 
 
 @pytest.mark.parametrize(
@@ -82,13 +84,55 @@ def test_traditional_target_is_unchanged_by_the_context_table():
 
 
 def test_a_word_split_across_recogniser_words_is_judged_whole():
-    words = [SpeechAsrWord("著", 0, 100), SpeechAsrWord("名", 100, 200), SpeechAsrWord("看", 200, 300), SpeechAsrWord("著", 300, 400)]
+    words = [SpeechAsrWord(w, i * 100, i * 100 + 100) for i, w in enumerate(["這", "著", "名", "看", "著"])]
     out = normalise_words(words, "zh")
-    assert [word.word for word in out] == ["著", "名", "看", "着"]
-    assert [(word.start_ms, word.end_ms) for word in out] == [(0, 100), (100, 200), (200, 300), (300, 400)]
-    # Word by word the same split would have been 着 + 名.
-    assert [convert_script(word.word, SIMPLIFIED) for word in words][0] == "着"
-    assert convert_sequence(["著", "名"], SIMPLIFIED) == ["著", "名"]
+    assert [word.word for word in out] == ["这", "著", "名", "看", "着"]
+    assert [(word.start_ms, word.end_ms) for word in out] == [(i * 100, i * 100 + 100) for i in range(5)]
+    assert convert_sequence(["這", "著", "名"], SIMPLIFIED) == ["这", "著", "名"]
+
+
+# -- Simplified input is never altered (review of #224, P1-1) ---------------------------------------------------
+
+SIMPLIFIED_TEXTS = [
+    "鲁迅著《阿Q正传》",
+    "他著有多部小说",
+    "乾卦与坤卦",
+    "宫商角徵羽",
+    "覆水难收",
+    "这是一个很好的计划，他说着话看着我，什么都不用鼓励。",
+    "回复了那封信，借口很多，了解情况，干净的饼干。",
+]
+
+
+@pytest.mark.parametrize("text", SIMPLIFIED_TEXTS)
+def test_simplified_text_is_byte_identical(text):
+    assert convert_script(text, SIMPLIFIED) == text
+    words = [SpeechAsrWord(char, i * 10, i * 10 + 10) for i, char in enumerate(text)]
+    assert "".join(word.word for word in normalise_words(words, "zh")) == text
+
+
+def test_the_context_layer_acts_only_near_traditional_evidence():
+    # The Simplified clause after a stop is left alone though the Traditional one before it is converted.
+    assert convert_script("他說著話。鲁迅著《阿Q正传》", SIMPLIFIED) == "他说着话。鲁迅著《阿Q正传》"
+    # No Traditional-only character anywhere: nothing to judge by, so nothing changes.
+    assert convert_script("看著我", SIMPLIFIED) == "看著我"
+
+
+# -- compatibility ideographs and chains (review P2-3, P2-4) ------------------------------------------------------
+
+def test_compatibility_ideographs_are_converted_and_keep_their_length():
+    text = chr(0xF900) + chr(0xF907) + "們"  # 豈 and 龜 as compatibility forms
+    out = convert_script(text, SIMPLIFIED)
+    assert len(out) == len(text) and out == "岂龟们"
+    assert all(len(unicodedata.normalize("NFC", chr(code))) == 1 for code in _compatibility())
+
+
+def test_no_conversion_chains_and_the_doubtful_ones_are_dropped():
+    data = json.loads(MAP_PATH.read_text(encoding="utf-8"))
+    table = data["to_simplified"]
+    assert not [key for key, target in table.items() if target in table]
+    for doubtful in ("諮", "讎", "戱"):
+        assert doubtful not in table
 
 
 def test_conversion_is_one_character_to_one_character_in_the_whole_table():

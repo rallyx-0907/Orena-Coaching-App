@@ -10,7 +10,9 @@ Traditional to Simplified has two layers (D-211):
 * a one-to-one table: a Traditional-only character with one Simplified form, from CC-CEDICT, plus the characters
   for which the Unicode Unihan `kSimplifiedVariant` field names exactly one (麼 is 么; CC-CEDICT also lists the
   variant 麽, so it alone could not choose);
-* a context table for the characters whose Simplified form depends on the word. 著 is 着 in 看著 and stays 著 in
+* a context table for the characters whose Simplified form depends on the word, used only near Traditional
+  evidence: a clause with no Traditional-only character within 30 characters is never touched by it, so genuine
+  Simplified text (鲁迅著, 乾卦, 宫商角徵羽, 覆水) is returned as written. 著 is 着 in 看著 and stays 著 in
   著名; 乾 is 干 in 乾淨 and stays 乾 in 乾坤. The default is the form CC-CEDICT writes most often for that
   Traditional character, and the Simplified words of CC-CEDICT that contain the character (2 to 4 characters) are
   kept as written. The choice is made on the converted text, so 顯著 (显著) is found by its Simplified spelling.
@@ -26,6 +28,7 @@ Limits, stated so no caller assumes more:
 from __future__ import annotations
 
 import json
+import unicodedata
 from functools import lru_cache
 from pathlib import Path
 
@@ -51,15 +54,34 @@ def _tables() -> tuple[dict[int, str], dict[int, str], dict[str, tuple[str, froz
         return {}, {}, {}
 
 
-def _contextual(text: str, table: dict[str, tuple[str, frozenset[str]]]) -> str:
+# A context-dependent character is judged only near Traditional evidence (D-211): Simplified text is never altered
+# by it (鲁迅著 stays, 乾卦 stays). "Near" is the same clause and within this many characters of a Traditional-only one.
+EVIDENCE_REACH = 30
+_CLAUSE_BREAKS = frozenset("，。！？；：、,.!?;:" + chr(10))
+
+
+def _contextual(text: str, original: str, table: dict[str, tuple[str, frozenset[str]]]) -> str:
     """Each context-dependent character written as its default Simplified form unless it sits inside a word that is
-    Simplified as written. One character in, one character out."""
+    Simplified as written, and only where `original` (the text before any conversion, same length) shows Traditional
+    evidence nearby. One character in, one character out."""
     if not any(char in table for char in text):
+        return text
+    from writing_coach.languages.chinese.script_detection import is_traditional_only
+
+    clause, number = [], 0
+    for char in original:
+        if char in _CLAUSE_BREAKS:
+            number += 1
+        clause.append(number)
+    evidence = [index for index, char in enumerate(original) if is_traditional_only(char)]
+    if not evidence:
         return text
     out = list(text)
     for index, char in enumerate(text):
         entry = table.get(char)
         if entry is None:
+            continue
+        if not any(clause[j] == clause[index] and abs(j - index) <= EVIDENCE_REACH for j in evidence):
             continue
         target, keep = entry
         protected = any(
@@ -70,6 +92,19 @@ def _contextual(text: str, table: dict[str, tuple[str, frozenset[str]]]) -> str:
         if not protected:
             out[index] = target
     return "".join(out)
+
+
+@lru_cache(maxsize=1)
+def _compatibility() -> dict[int, str]:
+    """Compatibility ideographs (U+F900 to U+FAFF, U+2F800 to U+2FA1F) written as the unified ideograph they stand
+    for. Each NFC form is exactly one code point, so a text keeps its length; any that is not is left out."""
+    table: dict[int, str] = {}
+    for low, high in ((0xF900, 0xFB00), (0x2F800, 0x2FA20)):
+        for code in range(low, high):
+            normal = unicodedata.normalize("NFC", chr(code))
+            if len(normal) == 1 and normal != chr(code):
+                table[code] = normal
+    return table
 
 
 def target_script(language: str) -> str:
@@ -85,9 +120,10 @@ def target_script(language: str) -> str:
 def convert_script(text: str, target: str) -> str:
     """The text with every character that has an unambiguous counterpart written in the target script."""
     to_simplified, to_traditional, contextual = _tables()
+    original = str(text or "").translate(_compatibility())
     if target == TRADITIONAL:
-        return str(text or "").translate(to_traditional)
-    return _contextual(str(text or "").translate(to_simplified), contextual)
+        return original.translate(to_traditional)
+    return _contextual(original.translate(to_simplified), original, contextual)
 
 
 def convert_sequence(parts: list[str], target: str) -> list[str]:

@@ -168,9 +168,49 @@ def test_a_rerun_of_the_item_wins_over_a_pending_continuation(tmp_path, monkeypa
     calls = state["calls"]
     store.update_if_present(entry.media_id, lambda e: replace(e, processing={**e.processing, "state": "queued"}))
     delay, callback = scheduled.pop(0)
+    now[0] += delay
     callback()
     assert state["calls"] == calls  # nothing ran; it looks again after one minimum wait
     assert [d for d, _ in scheduled] == [mtp.CONTINUATION_MIN_DELAY]
+
+
+def test_a_stale_timer_does_nothing_before_next_at(tmp_path, monkeypatch):
+    store, entry, pipeline, scheduled, now, state = _setup(tmp_path, monkeypatch, lines=20, per_call=1, retry_after=40.0)
+    assert _first_run(store, entry, pipeline)[0] == "deferred"
+    calls = state["calls"]
+    _delay, callback = scheduled.pop(0)
+    now[0] += 5.0  # long before the 40 s are up
+    callback()
+    assert state["calls"] == calls and scheduled == []
+    now[0] += 40.0
+    callback()  # the same callback, now due, does run
+    assert state["calls"] > calls
+
+
+def test_an_archived_item_gets_no_provider_call(tmp_path, monkeypatch):
+    store, entry, pipeline, scheduled, now, state = _setup(tmp_path, monkeypatch, lines=20, per_call=1)
+    assert _first_run(store, entry, pipeline)[0] == "deferred"
+    calls = state["calls"]
+    store.update_if_present(entry.media_id, lambda e: replace(e, status="archived"))
+    _drain(scheduled, now)
+    assert state["calls"] == calls
+
+
+def test_an_item_archived_between_rounds_stops_the_attempt_before_the_next_call(tmp_path, monkeypatch):
+    store, entry, pipeline, scheduled, now, state = _setup(tmp_path, monkeypatch, lines=40, per_call=1)
+    assert _first_run(store, entry, pipeline)[0] == "deferred"
+    calls = state["calls"]
+
+    def meanings(e, target):
+        state["calls"] += 1
+        state["done"] += 1
+        # Progress with no stated reason: the attempt would go straight on to a second round.
+        store.update_if_present(entry.media_id, lambda fresh: replace(fresh, status="archived"))
+        return SimpleNamespace(status="partial", meanings=[object()] * state["done"], provider_calls=1, reason="", retry_after=0.0)
+
+    pipeline._meanings = meanings
+    _drain(scheduled, now)
+    assert state["calls"] == calls + 1
 
 
 def test_a_restart_arms_the_pending_continuation_again(tmp_path, monkeypatch):
