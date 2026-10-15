@@ -485,13 +485,14 @@ async def transcribe_speech(
     if purpose not in _TRANSCRIBE_PURPOSES:
         raise orena_http_error(422, "speech_asr_invalid_purpose", "Unsupported transcription purpose.")
 
-    provider = _provider()
     # PR-MON-7D2: standalone transcription is `speech.transcribe` (seconds). Push-to-talk is part of an Orena message
-    # and is never charged here (no double charge).
+    # and is never charged here (no double charge). Feature access and readiness come first, before the provider is
+    # resolved or any audio is read.
     metered = purpose != PURPOSE_ORENA_VOICE
     if metered:
         await anyio.to_thread.run_sync(quota.require_feature, TRANSCRIBE_METER)
         await anyio.to_thread.run_sync(quota.require_ready, TRANSCRIBE_METER)
+    provider = _provider()
     if purpose == PURPOSE_ORENA_VOICE:
         # Push-to-talk feeds a message the agent will charge: an exhausted learner is refused here, before any audio is
         # read or paid for. Read-only - nothing is reserved (the turn reserves its own message).

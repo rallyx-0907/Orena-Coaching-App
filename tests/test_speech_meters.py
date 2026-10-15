@@ -249,3 +249,137 @@ def test_conversational_voice_is_charged_only_as_orena_messages():
     assert voice_session.VOICE_METER == "orena.message"
     names = voice_session.VoiceService._mint_chunk.__code__.co_consts
     assert not {"speech.transcribe", "audio.tts"} & set(map(str, names))
+
+
+# ---- review of #238: funding order -------------------------------------------------------------------------------------
+
+class FundedRecorder(Recorder):
+    """`Recorder` that, like a real funded ticket, runs its block inside the operation's FundingContext and logs the
+    order of admission, funding check, dispatch and send."""
+
+    def __init__(self, log, context=None, **kwargs):
+        super().__init__(**kwargs)
+        self.log, self.context = log, context
+
+    @contextmanager
+    def __call__(self, meter, **kwargs):
+        from writing_coach.billing import funding_context as fc
+
+        self.log.append("admit")
+        with super().__call__(meter, **kwargs) as ticket, (fc.funded(self.context) if self.context else _none()):
+            original = ticket.dispatch
+
+            def dispatch(what):
+                self.log.append("dispatch")
+                original(what)
+
+            ticket.dispatch = dispatch
+            yield ticket
+
+
+@contextmanager
+def _none():
+    yield None
+
+
+@pytest.fixture
+def funding(monkeypatch):
+    from writing_coach.billing import funding_context as fc
+
+    previous = (fc._runtime.mode, fc._runtime.live, fc._runtime.dispatch)
+    yield fc
+    fc._runtime.mode, fc._runtime.live, fc._runtime.dispatch = previous
+
+
+
+def _context():
+    from writing_coach.billing import funding_context as fc
+
+    return fc.FundingContext(operation_id="q1:tts", meter="audio.tts", admission_digest="b" * 64)
+
+
+def test_tts_checks_funding_inside_the_admission_before_dispatch(monkeypatch, funding):
+    log: list[str] = []
+    real = funding.require_paid
+
+    def checked(**kwargs):
+        log.append("require_paid")
+        return real(**kwargs)
+
+    monkeypatch.setattr(funding, "require_paid", checked)
+    class Logged(tts.Wire):
+        def __call__(self, url, body, headers):
+            log.append("post")
+            return super().__call__(url, body, headers)
+
+    monkeypatch.setattr(quota, "admit", FundedRecorder(log, _context()))
+    funding.configure(mode="enforce", live=lambda *a, **k: None, dispatch=lambda op: "dispatched")
+    spoken = tts.voice(wire=Logged()).speak(term="word", language="en", reading="", single_reading=True)
+    assert spoken is not None
+    assert log == ["admit", "require_paid", "dispatch", "post"]   # funded by the admission's own context
+
+
+def test_tts_refused_by_live_funding_sends_nothing_and_releases_the_admission(monkeypatch, funding):
+    recorder = FundedRecorder([], _context())
+    monkeypatch.setattr(quota, "admit", recorder)
+    funding.configure(mode="enforce", live=lambda *a, **k: "hold_expiring", dispatch=lambda op: "dispatched")
+    wire = tts.Wire()
+    with pytest.raises(funding.FundingRequired):
+        tts.voice(wire=wire).speak(term="word", language="en", reading="", single_reading=True)
+    assert wire.calls == []
+    (row,) = recorder.admitted
+    assert row["dispatched"] is False and row["settled"] == "released"   # no dispatch, no charge
+
+
+def test_tts_over_its_spend_cap_is_never_admitted_or_funding_checked(monkeypatch, funding):
+    log: list[str] = []
+    monkeypatch.setattr(funding, "require_paid", lambda **k: log.append("require_paid"))
+    monkeypatch.setattr(quota, "admit", FundedRecorder(log))
+    assert tts.voice(spent=9.0, cap=5.0).speak(term="word", language="en", reading="", single_reading=True) is None
+    assert log == []
+
+
+# ---- review of #238: the standalone ASR asks feature access and readiness before resolving a provider ---------------
+
+@asr.needs_ffmpeg
+def test_feature_access_is_asked_before_the_provider_is_resolved(room, monkeypatch):
+    from writing_coach import speech_api
+    from writing_coach.core.errors import orena_http_error
+
+    _provider, send, _recorder = room
+    speech_api.configure_speech_asr(None)   # not configured: would answer 503 speech_asr_unconfigured
+    monkeypatch.setattr(quota, "require_feature",
+                        lambda meter: (_ for _ in ()).throw(orena_http_error(403, "feature_not_in_plan", "No.")))
+    answer = send(asr.silent_wav(1))
+    assert answer.status_code == 403 and answer.json()["detail"]["category"] == "feature_not_in_plan"
+
+
+@asr.needs_ffmpeg
+def test_readiness_is_asked_before_the_provider_is_resolved(room, monkeypatch):
+    from writing_coach import speech_api
+    from writing_coach.core.errors import orena_http_error
+
+    _provider, send, _recorder = room
+    speech_api.configure_speech_asr(None)
+    asked = []
+    monkeypatch.setattr(quota, "require_feature", lambda meter: asked.append(("feature", meter)))
+
+    def not_ready(meter):
+        asked.append(("ready", meter))
+        raise orena_http_error(503, "quota_unavailable", "Not now.", retryable=True)
+
+    monkeypatch.setattr(quota, "require_ready", not_ready)
+    answer = send(asr.silent_wav(1))
+    assert answer.status_code == 503 and answer.json()["detail"]["category"] == "quota_unavailable"
+    assert asked == [("feature", "speech.transcribe"), ("ready", "speech.transcribe")]
+
+
+@asr.needs_ffmpeg
+def test_an_unconfigured_provider_still_answers_503_after_the_checks(room):
+    from writing_coach import speech_api
+
+    _provider, send, _recorder = room
+    speech_api.configure_speech_asr(None)
+    for purpose in (None, "orena_voice"):
+        answer = send(asr.silent_wav(1), purpose=purpose)
+        assert answer.status_code == 503 and answer.json()["detail"]["category"] == "speech_asr_unconfigured"

@@ -50,3 +50,19 @@ PR-MON-7 design (recorded in the Billing decision log on PR #231/#233).
 - fresh TTS admitted in billed characters, 0 on failure, nothing when the paid voice is not asked, nothing for cached
   audio;
 - conversational voice only `orena.message`.
+
+## Review of #238 (P1): funding order
+
+- **TTS:** `require_paid(capability="word_tts")` now runs inside `quota.admit("audio.tts")`, before `ticket.dispatch`.
+  It sees the operation's own FundingContext; before this fix it ran ahead of the admission, with no context. A live
+  refusal releases the admission: nothing is dispatched, sent or charged. The cap check stays before the admission
+  (local, no outbound).
+- **ASR:** `_provider()` is resolved after `require_feature` / `require_ready("speech.transcribe")`, so a plan-disabled
+  or not-ready meter answers 403/503 before an unconfigured provider is reported. Push-to-talk is unchanged.
+- **Tests** (`tests/test_speech_meters.py`):
+  - the order admit -> require_paid -> dispatch -> post, funded by the admission's context;
+  - a live refusal sends nothing and releases;
+  - over the cap: no admission and no funding check;
+  - feature access and readiness come before provider resolution;
+  - an unconfigured provider is still 503 after the checks.
+

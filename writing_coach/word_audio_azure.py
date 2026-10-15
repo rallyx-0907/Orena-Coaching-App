@@ -171,10 +171,6 @@ class AzureVoice:
             if not single_reading:
                 return None  # a reading the voice cannot be told: no guess
             ssml = ssml_for(term, language, "")
-        from writing_coach.billing.funding_context import require_paid
-
-        require_paid(capability="word_tts", provider="azure",
-                     timeout_seconds=REQUEST_TIMEOUT)  # I-1's backstop (PR-MON-6 §2), the request's own timeout
         try:
             spent = float(self._spent())
         except Exception:  # noqa: BLE001 - an unreadable ledger is a closed cap, never "nothing spent"
@@ -187,11 +183,15 @@ class AzureVoice:
             return None
         # PR-MON-7D2: a fresh synthesis is `audio.tts` (characters), admitted only here - after the cache and the free
         # voices missed - so cached, stored and catalogue audio is never charged. Pending: the no-op until its limits.
+        from writing_coach.billing.funding_context import require_paid
         from writing_coach.product import quota
 
         units = billed_characters(term)
         digest = hashlib.sha256(ssml.encode("utf-8")).hexdigest()
         with quota.admit(TTS_METER, units=units, request_digest=digest) as ticket:
+            # I-1's backstop (PR-MON-6 §2), inside the admission so it sees the operation's FundingContext, and before
+            # dispatch: a refusal releases the admission and nothing is sent or charged.
+            require_paid(capability="word_tts", provider="azure", timeout_seconds=REQUEST_TIMEOUT)
             ticket.dispatch("tts")
             spoken = self._synthesize(ssml, term, language)
             ticket.settle(units if spoken is not None else 0, "synthesized" if spoken is not None else "failed")
