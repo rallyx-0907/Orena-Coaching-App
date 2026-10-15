@@ -6861,3 +6861,31 @@ migration change: everything lives in existing JSON fields (`creator`, the `sour
 9. **Follow-ups.** Re-importing an existing shared item with the same media id rewrites the whole entry (`source`, `creator`,
    `title`), as before but now with Commons-derived values; confirm whether a curated title should survive. The credits page link
    for `licence_url`. The Admin partial-translation state is in `UI_BACKEND_GAPS.md`.
+
+## D-206 - Admin preview of held media in the learner player; full admin transcript; ZH tap verified (2026-10-15)
+
+Status: PROPOSED — pending independent review. (Number to be renumbered if it collides at merge.) Video Sources
+mini-trial P1-5, P1-6 and P2-10 (part). No schema or migration change, no new role, no change to the publish or
+visibility policy.
+
+1. **Preview of a held item.** `GET /api/media/admin/player/{media_id}` behind the existing `require_admin` answers the
+   learner player's payload (`stored_media_payload`, one builder, `allow_unpublished=True`) for a *shared* entry in any
+   state. A personal entry, an unknown id and a non-admin are refused (404, 404, 401/403). It only reads: publish and
+   rights state are untouched. The learner routes (`/api/listening/library`, `/api/media/my`, the library listing) are
+   unchanged and still answer 404 for an unpublished item, to everyone including an administrator. The held item's own
+   bytes (`/api/media/files/...`) play for an administrator only. The Admin item page's "Open as learner" now shows for a
+   held or unpublished *imported* item and opens `#/content/media:preview:<id>`; the media resolver maps `preview:<id>` to
+   that route. The hint "Not visible to learners while it is not published" stays. A signed-out local developer session
+   is an administrator under the existing guard, as for every other admin route.
+2. **Transcript.** The Admin item page lists every segment (the 12-segment cap is removed) in its own scrolling region.
+3. **ZH tap (P1-5).** Not broken. The Listening player never reads the stored `words` for a tap (only for timing); it draws
+   one Han character per column and widens the tap through the local tagger over the line's *text* (`widenHanTap`, #209).
+   New items store unspaced text, so jieba groups it (fixture lines shaped like the trial's: 中国, 政策, 洗手, 肥皂, 神龙,
+   北京 ...). The old spaced item the trial tapped is old data and still opens single characters. Gates: a fixture of
+   trial-shaped lines (single-character word arrays), kept equal to the live tagger by pytest and replayed through
+   `widenHanTap` in `scripts/test_orena_reader_tap_word.mjs`.
+4. **Source line (P2-10 part).** The Admin item page shows the decoded address. The failure reason and translation counts
+   stay with PR-A.
+5. **Not done / for the owner.** Opening a preview in the learner player writes the administrator's own continuation (and
+   any practice progress) like any learner session; the player does not know it is a preview. Whether to suppress that is a
+   product decision. The player's own tap-through was checked by gate and fixture, not in a browser on a real held item.

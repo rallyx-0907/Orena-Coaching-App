@@ -112,6 +112,7 @@ MATRIX = {
         "/api/media/admin/import", {"json": {"language": "en", "items": [{"url": UNREADABLE_MEDIA_URL}]}}, {200, 503}),
     ("POST", "/api/media/admin/upload"): ("/api/media/admin/upload", {"files": [MEDIA_FILE], "data": {"language": "en"}}, {200, 503}),
     ("GET", "/api/media/admin/library"): ("/api/media/admin/library", {}, {200, 503}),
+    ("GET", "/api/media/admin/player/{media_id}"): ("/api/media/admin/player/not-present", {}, {404, 503}),
     ("GET", "/api/product/admin/account"): ("/api/product/admin/account", {}, {200}),
     ("GET", "/api/product/admin/plans"): ("/api/product/admin/plans", {}, {200}),
     # An empty catalogue is refused on its merits (422), which only an administrator reaches.
@@ -302,7 +303,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 106  # includes the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015), the three billing reconciliation routes (PR-MON-3), the two credit routes (PR-MON-4) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 107  # includes the held-import player (Video PR-C),  the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015), the three billing reconciliation routes (PR-MON-3), the two credit routes (PR-MON-4) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")
