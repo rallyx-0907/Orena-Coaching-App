@@ -247,3 +247,45 @@ only before the first streamed token, one `orena.message` per learner turn; Olla
 H7-7 and H7-8 stay open; no routing, credit, quota or funding enforcement is enabled. | Provider privacy no longer
 blocks, while each learner model still earns its place; limits stay data, not code; no learner result crosses an
 account. | `PR-MON-7_DESIGN.md` §12 and §14.
+
+
+D-MON-026 | 2026-10-15 | PR-MON-7 owner decisions closing H7-7 and H7-8, completing H7-4 and fixing the H7-2 process
+(same owner message as D-MON-025). H7-7: provider credits are never zero model cost; `economic_cost_usd` stays the
+catalogue/reference estimate; an owner-configured Ollama Cloud covered-credit allowance in USD of estimated economic
+cost, monthly, explicit configuration (amount, window anchor), default 0/disabled, shared-ledger accounting with used
+and remaining estimates; `provider_credit_estimated` while available, `unknown` otherwise; exhausted or unknown skips
+the Ollama Cloud primary (reviewed paid backup within its own cap, else graceful failure), never pay as you go; the
+80%-of-visible-credit rule is operator guidance, with no balance API, assumed credit amount or scrape. H7-8: the
+existing paid quality baseline of each 7A-first capability is its candidate reviewed backup, no new model searched;
+daily caps $0.50 (`writing_evaluator`), $0.50 (`writing_improver`), $1.00 (`text_discussion`), Admin-editable
+infrastructure caps; closed once the baseline ids are verified, unresolved ones reported. H7-4: Ollama Cloud must
+separately prove tool calling, streaming, multi-round state, Agent Contract compatibility, privacy, latency and quality
+for 7C. H7-2 stays open: benchmark live-catalogue candidates against the paid baseline (guideline: schema-valid >= 99%,
+critical <= 1%, quality >= 95% of baseline with no bucket < 90%, p95 <= min(1.25x, 6 s), cost <= 50%); the owner
+approves any winner explicitly. Delivery order and PR split: 7D1 decisions + cache isolation, 7D2 speech/TTS meters,
+7B1 plan meters, 7B2 follow-up routing, 7C adapter; each a draft PR synced to main. Everything stays off. | A covered
+subsidy must never turn into silent cash spend, and a backup must be a model already trusted. | `PR-MON-7_DESIGN.md`
+§12 and §14.
+
+
+D-MON-027 | 2026-10-15 | Owner clarifications for PR-MON-7D1. H7-8 is DECIDED: the exact existing Gemini baseline
+(`gemini` / `gemini-3.5-flash-lite` by repository evidence) is the backup strategy, pending one operator verification of
+the live `ai.active_selection` / `ai.capability.*` rows before it enters a production reviewed backup allowlist;
+repository documentation is never treated as proof of the runtime row, and 7D1 is not blocked. Learner cache scope is
+the account incarnation wherever the backbone exposes it: server-verified public/published content may use the shared
+in-process cache and the shared persistent DerivedStore; learner/private content uses an incarnation-scoped in-process
+cache and is never persisted to the shared store; where no incarnation can be obtained safely the seam bypasses
+learner caching rather than falling back to a global cache; raw client account/content identifiers are never scope
+authority; no new table for learner-derived cache in 7D1. The tests that locked the old client-asserted `article:`
+persistence are replaced by authority-boundary tests. | Learner-derived answers stay with the account incarnation
+that produced them. | `PR-MON-7_DESIGN.md` §14.7, §14.8; `PR-MON-7D1_REVIEW_REQUEST.md`.
+
+
+D-MON-028 | 2026-10-15 | H7-8 runtime verification (operator, read-only). On the :8000 runtime database a read-only
+transaction read `platform_settings`: `ai.active_selection`, `ai.capability.writing_evaluator`,
+`ai.capability.writing_improver` and `ai.capability.text_discussion` are all `gemini` / `gemini-3.5-flash-lite`, with
+no backup provider or model. No row was modified. H7-8 is therefore closed on runtime evidence: that exact pair is the
+reviewed paid backup of the three 7A-first capabilities, to be entered into their allowlists only by the activation
+change (with the D-MON-026 caps), never automatically. | D-MON-027 required the live row, not documentation. |
+`PR-MON-7_DESIGN.md` §12, §14.7.
+

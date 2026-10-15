@@ -429,8 +429,8 @@ and does not touch 0034.
 | H7-4 | **APPROVED (closed 2026-10-15, D-MON-025):** for 7C, `agent_turn_fast` may have a configurable reviewed cloud model and `agent_turn_deep` a configurable reviewed stronger cloud model, through a separate Agent adapter, never the structured router (§14.4). |
 | H7-5 | **APPROVED (closed 2026-10-15, D-MON-025):** the cache-isolation architecture of §14.3. A dedicated cache-isolation slice comes immediately after 7A-first. |
 | H7-6 | **APPROVED (closed 2026-10-15, D-MON-025):** Ollama Cloud is approved at the provider/privacy-policy level for `learner_text`, under its documented privacy and retention terms. Model-level allowlisting stays mandatory (§14.1); no model is populated automatically. |
-| H7-7 | **OPEN (activation gate):** Ollama Cloud reference prices (if no per-token price is published), and the covered-credit allowance: the budget, its window/start/reset, shared-ledger accounting, and the behaviour when it is exhausted or unknown. Until then `cost_coverage` is `unknown`. |
-| H7-8 | **OPEN:** the reviewed paid-backup `(provider, model)` and spend cap for each 7A-first capability. |
+| H7-7 | **APPROVED (closed 2026-10-15, D-MON-026):** the owner-configured covered-credit allowance of §14.6 (USD of estimated economic cost, monthly, explicit configuration, default 0/disabled). Exhausted or unknown: the Ollama Cloud primary is skipped, never paid as you go. |
+| H7-8 | **DECIDED (D-MON-026, D-MON-027):** the exact existing Gemini baseline is selected as the backup strategy; daily caps `writing_evaluator` $0.50, `writing_improver` $0.50, `text_discussion` $1.00, Admin-editable (§14.7). **Runtime verified 2026-10-15 (D-MON-028):** on :8000 `ai.active_selection` and `ai.capability.{writing_evaluator,writing_improver,text_discussion}` are all `gemini` / `gemini-3.5-flash-lite`, no backup set. The exact pair may now enter a reviewed backup allowlist in the activation PR (not before). |
 
 ## 13. Contradictions and findings
 
@@ -495,13 +495,100 @@ and the published paths of 7B route only after it.
   Agent Contract behaviour, memory/context semantics, per-round FundingContext and per-round cost attribution.
 - Failover may occur before the first streamed token of a round; after it, no provider switch for that round.
 - One learner turn consumes one `orena.message`; internal model/tool rounds create no extra learner quota units.
-- Ollama Cloud may be evaluated for 7C; it is not assumed.
+- Ollama Cloud may be evaluated for 7C; it is not assumed to qualify. It must separately prove tool calling,
+  streaming, multi-round state, Agent Contract compatibility, privacy, latency and quality.
+- H7-4 is closed as an architecture decision; activation stays separate.
 
-### 14.5 Still open
+### 14.5 Still open: H7-2
 
-- **H7-2:** the accepted primary model per capability (benchmark).
-- **H7-7:** reference prices and the covered-credit allowance.
-- **H7-8:** the reviewed paid backup and spend cap per 7A-first capability.
+H7-2 is the one remaining activation decision. No primary is chosen by intuition or from public documentation:
 
-Activation of any learner routing still needs these. Nothing here enables routing, credits, quota or funding
+- the candidates are the models the configured account actually reaches (the live authenticated catalogue);
+- each candidate runs the 7A-first benchmark harness for `writing_evaluator`, `writing_improver` and
+  `text_discussion` against the current paid baseline, on a meaningful EN/ZH set (about 100 cases per capability
+  where the existing corpus supports it, without invented data);
+- it measures schema-valid rate, semantic/task quality, critical failure rate, latency and economic cost.
+
+Activation review guideline (not a CI assertion): schema-valid rate >= 99%; critical failure rate <= 1%; quality >= 95%
+of the paid baseline, no important language/task bucket under 90%; p95 latency <= min(1.25 x baseline, 6 s);
+economic cost <= 50% of the baseline. A winning model is never added to an allowlist automatically: the report goes to
+the owner for explicit approval.
+
+Activation of any learner routing still needs H7-2. Nothing here enables routing, credits, quota or funding
 enforcement.
+
+### 14.6 H7-7: covered-credit allowance
+
+Ollama Cloud provider credits are never zero model cost. `economic_cost_usd` stays the normal catalogue/reference
+estimate; provider-credit coverage is an operator subsidy, separate from learner pricing and funding.
+
+```text
+budget unit = USD of estimated economic cost
+window      = monthly
+source      = explicit operator configuration
+default     = 0 / disabled
+```
+
+The allowance carries an explicit configured USD amount, a window start or monthly anchor, shared-ledger accounting
+across workers, the estimated spend used and the remaining estimated allowance. Operational guidance, not a server
+calculation: the configured allowance should be at most 80% of the included credit the owner sees in the Ollama
+account. There is no provider balance API, no assumed monthly credit amount and no account scrape.
+
+```text
+allowance available            -> the Ollama Cloud primary may run; cost_coverage = provider_credit_estimated
+allowance exhausted or unknown -> cost_coverage = unknown; skip the Ollama Cloud primary as a covered-credit route
+                               -> try the reviewed paid backup if admitted and within its own spend cap
+                               -> otherwise the existing graceful capability failure
+```
+
+No automatic pay-as-you-go Ollama Cloud spend.
+
+### 14.7 H7-8: paid backup
+
+No new paid model is searched for. Each 7A-first capability's existing paid quality baseline is its candidate
+reviewed backup. Initial daily caps, infrastructure spend caps only (not learner prices, not Credits prices),
+Admin-editable as policies:
+
+| Capability | Backup daily cap |
+| --- | ---: |
+| `writing_evaluator` | $0.50 / UTC day |
+| `writing_improver` | $0.50 / UTC day |
+| `text_discussion` | $1.00 / UTC day |
+
+If a baseline cannot be identified safely from the repository, it is reported unresolved, not invented.
+
+**Status (D-MON-027).** Repository evidence (`RELEASE_8000_READINESS.md`, `GOOGLE_PLAY_DATA_SAFETY.md`) points to
+`gemini` / `gemini-3.5-flash-lite` for all three capabilities, and that model is priced in the catalogue. The live
+selection is runtime database state (`ai.active_selection` / `ai.capability.*`, set through Admin), which the
+repository cannot prove. H7-8 is therefore **DECIDED, pending one operator verification of those live rows** before
+the exact provider/model enters any production reviewed backup allowlist. Repository documentation is not treated as
+proof of the runtime row. This does not block 7D1.
+
+**Verified (D-MON-028).** A read-only query (read-only transaction) on the :8000 runtime database on 2026-10-15
+returned `gemini` / `gemini-3.5-flash-lite` for `ai.active_selection`, `ai.capability.writing_evaluator`,
+`ai.capability.writing_improver` and `ai.capability.text_discussion`, with no backup provider or model. No row was
+changed. `reviewed_backup` allowlists stay empty in code until the activation PR.
+
+### 14.8 PR-MON-7D1: cache authority, before and after
+
+| Cache / path | Before | After (7D1) |
+| --- | --- | --- |
+| DerivedCache, Reading translation (`/api/reading/translate`) | Shared table and shared memory when the client sent `content_id="article:..."` (unverified); shared memory for everything else | Shared (memory + table) only when the server's repository has that article **published** and every segment is part of it; otherwise the learner's incarnation scope in memory, never the table |
+| DerivedCache, Reading summary (`/api/reading/summary`) | Shared table for a verified `article_id`; shared memory for a book chapter or raw text | Verified `article_id`: shared, unchanged. Book chapter or raw text: the learner's incarnation scope, never the table |
+| DerivedCache, word-detail gloss/explanation and sentence-sheet | As translation (unverified `article:` prefix) | Shared only for a verified published article containing the selection and its sentence; otherwise incarnation scope |
+| DerivedCache, basic tap reuse (`reading_lookup`) | Read the shared memory with any text | Reads the learner's own entries and the shared (verified-published) entries; writes only the learner's scope; the scope is resolved on the request thread |
+| Word deep, catalogue example context (8a) | Shared file store, key word + reading + support | Unchanged: shared, because the sentence is server catalogue content |
+| Word deep, learner fragment context (8b) | The same shared file store and key (cross-account leak, poisonable) | In-process only, under the incarnation and a hash of the fragment; never reads or writes the shared file store |
+| Router L1 (`word_translation`), legacy dictionary cache | Word-only public reference | Unchanged (not learner-derived; the dictionary language-key issue stays out of 7D1) |
+
+Learner scope is the account **incarnation** (`account_incarnations`, resolved, never created). When no incarnation
+can be read (no backbone, an error, auth off), the scope is `UNSCOPED`: no learner/private caching (nothing written,
+no learner entry read) and never a global learner cache, while exact verified-public shared entries may still be
+reused. A
+published article is read from `reading_articles` through `get_published_article`; an unreadable store is treated
+as not published. No new table, no schema change.
+
+Unblocked for PR-MON-7A-follow-up routing (not activated): the learner dictionary/contextual paths (#7, word-detail
+and sentence-sheet), learner-import Reading translation and summary (#4a, #5a), and learner-fragment word deep (#8b).
+Their published counterparts (#4b, #5b, #8a) keep a server-verified shared scope for 7B.
+

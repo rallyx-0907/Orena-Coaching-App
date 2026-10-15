@@ -75,6 +75,7 @@ from writing_coach.media_translation import (
 from writing_coach.reading_lookup import TAP_BUDGET_SECONDS, ReadingLookupService
 from writing_coach.word_detail import configure_word_detail, router as word_detail_router
 from writing_coach.persistence.reading_derived_repository import ReadingDerivedRepository
+from writing_coach.reading_cache_scope import configure as configure_reading_cache_scope
 from writing_coach.reading_derived import DerivedCache
 from writing_coach.reading_summary import ReadingSummaryService
 from writing_coach.reading_translation import (
@@ -1213,6 +1214,24 @@ def _backbone_tables():
 
 _account_backbone = build_backbone(_persistence_runtime.engine, _backbone_tables())
 configure_work(_account_backbone)
+
+
+def _reading_cache_incarnation(user_key: str) -> str | None:
+    """The account's active incarnation for the Reading cache scope; never creates one (PR-MON-7D1)."""
+    if not _account_backbone.is_active or _account_backbone.incarnations is None:
+        return None
+    return _account_backbone.incarnations.resolve(_quota.account_id(user_key))
+
+
+def _reading_cache_published_article(article_id: str):
+    """The article from the server's repository, only when it is published (the shared Reading cache scope)."""
+    from writing_coach import reading_articles_api
+
+    return reading_articles_api._require_repository().get_published_article(article_id)
+
+
+configure_reading_cache_scope(incarnation_of=_reading_cache_incarnation,
+                              published_article=_reading_cache_published_article)
 app.include_router(work_router)
 
 # D-161: plan quota enforcement. Switched off unless ORENA_QUOTA_ENFORCEMENT / the admin setting turn it on; where

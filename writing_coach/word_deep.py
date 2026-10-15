@@ -49,6 +49,8 @@ from writing_coach.becoming_library import (
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, InvalidAssetKey
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
+from writing_coach.reading_cache_scope import learner_scope
+from writing_coach.reading_derived import DerivedCache, content_key, normalize_text
 from writing_coach.vocabulary_library import normalize_vocabulary_word
 from writing_coach.vocabulary_usage_notes import texts_of_type
 
@@ -254,9 +256,24 @@ def explained(raw: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def _deep_layer(*, word: str, context: str, language: str, support: str, identity: str, reading: str) -> dict[str, Any]:
-    """The explained sections, from the cache when it has them."""
+# An explanation made from a learner's own saved fragment (8b) is that learner's: kept in this process under the
+# account incarnation and the fragment, never in the shared store (PR-MON-7D1, H7-5).
+_learner_layers = DerivedCache(entries=1024)
+_LEARNER_KIND = "word_deep"
 
+
+def _deep_layer(
+    *, word: str, context: str, language: str, support: str, identity: str, reading: str, public: bool = True
+) -> dict[str, Any]:
+    """The explained sections, from the cache when it has them.
+
+    `public` says the sentence is server-known catalogue content (8a): the explanation is then shared through the
+    store. A learner fragment is cached only in that learner's incarnation scope, keyed by the fragment too, and
+    never reads or writes the shared store."""
+
+    if not public:
+        return _learner_layer(word=word, context=context, language=language, support=support, identity=identity,
+                              reading=reading)
     key = cache_key(identity or word, reading, support) if (identity or word) else ""
     if key:
         remembered = _cached(key)
@@ -266,6 +283,27 @@ def _deep_layer(*, word: str, context: str, language: str, support: str, identit
         # The explanation capability is contextual by contract: without a
         # sentence to explain the word in, it is not asked.
         return {}
+    layer = _explained_layer(word=word, context=context, language=language, support=support)
+    if key and any(layer.values()):
+        _remember(key, layer)
+    return layer
+
+
+def _learner_layer(*, word: str, context: str, language: str, support: str, identity: str, reading: str) -> dict[str, Any]:
+    if not context:
+        return {}
+    scope = learner_scope()
+    key = content_key(_LEARNER_KIND, identity or word, reading, support, normalize_text(context))
+    remembered = _learner_layers.get(_LEARNER_KIND, support, key, scope=scope)
+    if remembered is not None:
+        return remembered
+    layer = _explained_layer(word=word, context=context, language=language, support=support)
+    if any(layer.values()):
+        _learner_layers.put_many(_LEARNER_KIND, support, language, [(key, layer)], scope=scope)
+    return layer
+
+
+def _explained_layer(*, word: str, context: str, language: str, support: str) -> dict[str, Any]:
     try:
         raw = media_interaction.explain_media_text(
             media_interaction.MediaExplainIn(
@@ -278,10 +316,7 @@ def _deep_layer(*, word: str, context: str, language: str, support: str, identit
         raise
     if not _text(raw.get("summary")):
         return {}
-    layer = explained(raw)
-    if key and any(layer.values()):
-        _remember(key, layer)
-    return layer
+    return explained(raw)
 
 
 def project_word_deep(
@@ -366,8 +401,9 @@ def word_deep(word: str, reading: str = Query("", max_length=240)) -> dict[str, 
         context = _text(candidate.get("text") if isinstance(candidate, Mapping) else candidate)
         if context:
             break
+    public = bool(context)   # a catalogue example: server-known public content (8a)
     if not context and saved:
-        context = _text(saved.get("source_fragment"))
+        context = _text(saved.get("source_fragment"))   # the learner's own text (8b)
     layer = _deep_layer(
         word=term,
         context=context,
@@ -375,6 +411,7 @@ def word_deep(word: str, reading: str = Query("", max_length=240)) -> dict[str, 
         support=support,
         identity=identity["entry_identity_key"],
         reading=identity["reading_key"],
+        public=public,
     )
     return project_word_deep(
         word=term,
