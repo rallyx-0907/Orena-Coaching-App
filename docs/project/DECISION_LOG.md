@@ -7190,7 +7190,7 @@ Evidence: the 2026-10-15 EN caption batch, attempt 2 (`youtube-LlhdnpsADZs`, san
 
 ## D-215 - Admin media imports can take captions from Supadata: native mode only, credit-capped (2026-10-15)
 
-Status: PROPOSED - pending independent review. No schema or migration change (the provenance lives in `source` and `processing`, free-form records, and the request count is rows of the existing media spend ledger file); no new provider (Supadata is already integrated); no cookie, proxy or bot bypass; the spend caps are unchanged; items stay held. No new learner UI; the admin Policies page gains two rows with EN/VI/ZH copy.
+Status: ACCEPTED (merged as #229 once CI was green; independent review CHANGES REQUESTED on baca0188, re-review APPROVE on 3bd92825, no open P0/P1; real-chunk timing to be measured on the first live sample). Owner direction 2026-10-15: paying users (Plus and above) may use it later only as a fallback after YouTube captions, tracked in #230. No schema or migration change (the provenance lives in `source` and `processing`, free-form records, and the request count is rows of the existing media spend ledger file); no new provider (Supadata is already integrated); no cookie, proxy or bot bypass; the spend caps are unchanged; items stay held. No new learner UI; the admin Policies page gains two rows with EN/VI/ZH copy.
 
 Evidence: the :8021 host IP is throttled by YouTube on caption downloads (HTTP 429). A whole-machine VPN unblocks YouTube but Groq refuses the VPN exit (403), so translation and ASR fail. The owner's Supadata Free plan: 100 credits a month plus bonus, no auto-charge; native mode is 1 credit per transcript, generated transcripts 2 credits per minute, translation 30 per minute.
 
