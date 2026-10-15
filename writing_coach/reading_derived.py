@@ -1,14 +1,15 @@
 """One content-addressed cache for what Reading generates on demand: a sentence's meaning, an article's
 summary and a word's meaning in its sentence (proposals/READING_ON_DEMAND.md).
 
-Every such answer is generated once, when a learner asks, and then reused: by the same learner next time and by
-every other learner who asks for the same text. The key is the normalized text, the learning language and the
-support language - never a segment id, a route or a screen - so the Reader's paragraph and the Sentence Sheet
-share one entry for one sentence.
+Every such answer is generated once, when a learner asks, and then reused within its cache scope
+(`reading_cache_scope`, PR-MON-7D1): by every learner for server-verified published text, and only by the same account
+incarnation for anything else. The key is the normalized text, the learning language and the support language -
+never a segment id, a route or a screen - so the Reader's paragraph and the Sentence Sheet share one entry for one
+sentence.
 
-Two layers. The in-process layer is a bounded LRU and always works. The persistent layer is the
-`reading_derived_texts` table (proposed migration 20261005_0028, not yet authorized); it is used only for
-*published* text, because the shared table must never hold what was derived from a learner's own imported text
+Two layers. The in-process layer is a bounded LRU, namespaced by scope, and always works. The persistent layer is the
+`reading_derived_texts` table (proposed migration 20261005_0028, not yet authorized); it is written and read only in
+the shared scope, because the shared table must never hold what was derived from a learner's own imported text
 (D-104: learner-owned records go with the account). Before the table exists, or on any database error,
 persistence pauses for five minutes and then tries again; nothing a learner does ever fails because of it
 (the writing_coach/ai/account_costs.py pattern).
@@ -23,7 +24,10 @@ import unicodedata
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Sequence
 from datetime import UTC, datetime, timedelta
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from writing_coach.reading_cache_scope import CacheScope
 
 KIND_TRANSLATION = "translation"
 KIND_SUMMARY = "summary"
@@ -77,22 +81,30 @@ class DerivedCache:
         self._store = store
         self._entries = max(1, int(entries))
         self._now = now
-        self._memory: OrderedDict[tuple[str, str, str], dict[str, Any]] = OrderedDict()
+        self._memory: OrderedDict[tuple[str, str, str, str], dict[str, Any]] = OrderedDict()
         self._lock = threading.Lock()
         self._paused_until: datetime | None = None
 
     def get_many(
-        self, kind: str, target: str, keys: Iterable[str], *, persist: bool
+        self, kind: str, target: str, keys: Iterable[str], *, scope: CacheScope
     ) -> dict[str, dict[str, Any]]:
+        """A learner scope reads its own entries, then the shared ones (which only ever hold verified published
+        text); no scope reads only the shared ones. The persistent store is read in the shared scope only."""
+
         found: dict[str, dict[str, Any]] = {}
         wanted: list[str] = []
+        spaces = [""] if scope.namespace in (None, "") else [scope.namespace, ""]
         for key in dict.fromkeys(keys):
-            value = self._remembered(kind, target, key)
+            value = None
+            for space in spaces:
+                value = self._remembered(space, kind, target, key)
+                if value is not None:
+                    break
             if value is None:
                 wanted.append(key)
             else:
                 found[key] = value
-        if wanted and persist and self._store_ready():
+        if wanted and scope.shared and self._store_ready():
             try:
                 stored = self._store.get_many(kind, target, wanted)  # type: ignore[union-attr]
             except Exception as error:  # noqa: BLE001 - the table may not exist yet
@@ -100,11 +112,11 @@ class DerivedCache:
                 stored = {}
             for key, value in stored.items():
                 found[key] = value
-                self._remember(kind, target, key, value)
+                self._remember("", kind, target, key, value)
         return found
 
-    def get(self, kind: str, target: str, key: str, *, persist: bool) -> dict[str, Any] | None:
-        return self.get_many(kind, target, [key], persist=persist).get(key)
+    def get(self, kind: str, target: str, key: str, *, scope: CacheScope) -> dict[str, Any] | None:
+        return self.get_many(kind, target, [key], scope=scope).get(key)
 
     def put_many(
         self,
@@ -113,13 +125,17 @@ class DerivedCache:
         source: str,
         rows: Sequence[tuple[str, dict[str, Any]]],
         *,
-        persist: bool,
+        scope: CacheScope,
         provider: str = "",
         model: str = "",
     ) -> None:
+        """Kept in the scope's own namespace; no scope keeps nothing. Persisted in the shared scope only."""
+
+        if scope.namespace is None:
+            return
         for key, value in rows:
-            self._remember(kind, target, key, value)
-        if rows and persist and self._store_ready():
+            self._remember(scope.namespace, kind, target, key, value)
+        if rows and scope.shared and self._store_ready():
             try:
                 self._store.put_many(  # type: ignore[union-attr]
                     kind, target, source, rows, provider=provider[:40], model=model[:160]
@@ -136,16 +152,16 @@ class DerivedCache:
         _log.warning("reading cache not persisted (%s); retrying in %s", type(error).__name__, RETRY_AFTER)
         self._paused_until = self._now() + RETRY_AFTER
 
-    def _remembered(self, kind: str, target: str, key: str) -> dict[str, Any] | None:
+    def _remembered(self, space: str, kind: str, target: str, key: str) -> dict[str, Any] | None:
         with self._lock:
-            value = self._memory.get((kind, target, key))
+            value = self._memory.get((space, kind, target, key))
             if value is not None:
-                self._memory.move_to_end((kind, target, key))
+                self._memory.move_to_end((space, kind, target, key))
             return value
 
-    def _remember(self, kind: str, target: str, key: str, value: dict[str, Any]) -> None:
+    def _remember(self, space: str, kind: str, target: str, key: str, value: dict[str, Any]) -> None:
         with self._lock:
-            self._memory[(kind, target, key)] = value
-            self._memory.move_to_end((kind, target, key))
+            self._memory[(space, kind, target, key)] = value
+            self._memory.move_to_end((space, kind, target, key))
             while len(self._memory) > self._entries:
                 self._memory.popitem(last=False)

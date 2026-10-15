@@ -44,6 +44,10 @@ class ProviderDefinition:
     supported_option_keys: frozenset[str]
     # The provider's endpoint may log or train on prompts (a free tier): refused for `learner_text` capabilities.
     may_log_prompts: bool = False
+    # PR-MON-7: the models whose privacy and retention classification has been explicitly reviewed for learner-authored
+    # text. None = no per-model review is required (the existing providers, governed by `may_log_prompts`). An empty set
+    # = no model of this provider may receive `learner_text` until one is reviewed (human decision H7-6).
+    learner_text_models: frozenset[str] | None = None
 
     def supports(self, operation: AIOperation) -> bool:
         return operation in self.supported_operations
@@ -134,6 +138,18 @@ _PROVIDER_DEFINITIONS = (
         secret_mode="server-managed",
         supported_operations=_CLOUD_CHAT_OPERATIONS,
         supported_option_keys=_TEXT_OPTION_KEYS,
+    ),
+    # PR-MON-7: Ollama Cloud, a cloud provider distinct from the local `ollama` adapter. Its usage may currently be
+    # covered by provider credits, but it is priced like any paid provider (never $0). Structured text only (agent
+    # turns are a separate 7C review). No model is reviewed for learner text yet (H7-6).
+    ProviderDefinition(
+        id="ollama-cloud",
+        name="Ollama Cloud",
+        kind="cloud",
+        secret_mode="server-managed",
+        supported_operations=_STRUCTURED_TEXT_OPERATIONS,
+        supported_option_keys=_TEXT_OPTION_KEYS,
+        learner_text_models=frozenset(),
     ),
     # D-195: only pinned ":free" models, and a free endpoint may log prompts, so it receives published reference
     # input only (never learner text). Structured text only: it is not offered for agent turns.
@@ -409,7 +425,7 @@ class OllamaProvider:
         if seed is not None:
             options["seed"] = seed
 
-        body = {
+        body = self._chat_body({
             "model": model,
             "stream": False,
             "think": False,
@@ -417,12 +433,13 @@ class OllamaProvider:
             "format": schema,
             "options": options,
             "messages": messages,
-        }
+        })
 
         try:
             response = requests.post(
                 f"{self.base_url}/api/chat",
                 json=body,
+                headers=self._request_headers(),
                 timeout=timeout if timeout is not None else self.timeout,
             )
             response.raise_for_status()
@@ -445,15 +462,115 @@ class OllamaProvider:
             data=extract_json_object(content),
             provider=self.id,
             model=model,
-            runtime={
-                "done_reason": envelope.get("done_reason"),
-                "total_duration_ns": envelope.get("total_duration"),
-                "load_duration_ns": envelope.get("load_duration"),
-                "prompt_eval_count": envelope.get("prompt_eval_count"),
-                "eval_count": envelope.get("eval_count"),
-                "eval_duration_ns": envelope.get("eval_duration"),
-            },
+            runtime=self._runtime(envelope),
         )
+
+    # Hooks: the local adapter sends no credential and keeps its model warm; Ollama Cloud overrides them.
+    def _request_headers(self) -> dict[str, str]:
+        return {}
+
+    def _chat_body(self, body: dict[str, Any]) -> dict[str, Any]:
+        return body
+
+    def _runtime(self, envelope: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "done_reason": envelope.get("done_reason"),
+            "total_duration_ns": envelope.get("total_duration"),
+            "load_duration_ns": envelope.get("load_duration"),
+            "prompt_eval_count": envelope.get("prompt_eval_count"),
+            "eval_count": envelope.get("eval_count"),
+            "eval_duration_ns": envelope.get("eval_duration"),
+        }
+
+
+class OllamaCloudProvider(OllamaProvider):
+    """Ollama Cloud (PR-MON-7): Ollama's hosted API, `POST {base}/api/chat` with `Authorization: Bearer <key>` (Ollama's
+    documentation, docs.ollama.com/cloud). A cloud provider with its own credential - never the local adapter pointed
+    at a cloud URL. Configured only with a key (`OLLAMA_CLOUD_API_KEY` or the D-037 store; a name here, never a value).
+    No model id is assumed: the operator lists the reviewed ones (`OLLAMA_CLOUD_MODELS`, or the store's models).
+    Token counts are reported as prompt/completion tokens so the call is priced from the catalogue - an unpriced
+    model is recorded as unpriced, never as free."""
+
+    id = "ollama-cloud"
+    name = "Ollama Cloud"
+    kind = "cloud"
+    secret_mode = "server-managed"
+
+    def __init__(self, credential_override: dict[str, Any] | None = None) -> None:
+        credential_override = credential_override or {}
+        override_url = credential_override.get("base_url")
+        self.base_url = str(
+            override_url if isinstance(override_url, str) and override_url.strip()
+            else os.getenv("OLLAMA_CLOUD_BASE_URL", "https://ollama.com")
+        ).strip().rstrip("/")
+        self._api_key = str(credential_override.get("api_key") or os.getenv("OLLAMA_CLOUD_API_KEY", "")).strip()
+        override_models = credential_override.get("models")
+        listed = [str(value).strip() for value in override_models if str(value).strip()] \
+            if isinstance(override_models, list) else []
+        # A stored empty list is "not set": the environment's list stands, as for the other providers.
+        self.allowed_models = listed or [value.strip() for value in os.getenv("OLLAMA_CLOUD_MODELS", "").split(",")
+                                         if value.strip()]
+        stored_default = str(credential_override.get("default_model") or "").strip()
+        self.default_model = stored_default if stored_default in self.allowed_models else (
+            self.allowed_models[0] if self.allowed_models else "")
+        self.timeout = int(os.getenv("OLLAMA_CLOUD_TIMEOUT", "120"))
+
+    @property
+    def configured(self) -> bool:
+        return bool(self._api_key)
+
+    @property
+    def api_key(self) -> str:
+        """For the Admin credential test of the environment key (never printed or returned by any route)."""
+        return self._api_key
+
+    def list_models(self) -> list[str]:
+        # Only the operator's listed models: a cloud catalogue is not an allowlist.
+        return sorted(dict.fromkeys(self.allowed_models)) if self.configured else []
+
+    def discover_models_live(self) -> list[str]:
+        """An authenticated catalogue read, so a wrong key fails the Admin test instead of the first learner call."""
+        if not self.configured:
+            raise AIProviderUnavailable("Ollama Cloud is not configured.")
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", headers=self._request_headers(), timeout=10)
+            response.raise_for_status()
+            envelope = response.json()
+        except requests.ConnectionError as exc:
+            raise AIProviderUnavailable("Ollama Cloud is not reachable.") from exc
+        except requests.Timeout as exc:
+            raise AIProviderUnavailable("Ollama Cloud timed out.") from exc
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "?"
+            raise AIProviderError(f"Ollama Cloud returned HTTP {status} during model discovery.") from exc
+        except ValueError as exc:
+            raise _invalid_model_catalog() from exc
+        # The live, authenticated catalogue the key can reach: the Admin test shows it, and the credential save checks
+        # that the operator's chosen models belong to it. It is never an allowlist by itself - at run time only the
+        # models the operator stored (or listed in the environment) are used.
+        return sorted(set(_model_catalog(envelope, container_key="models", model_key="name")))
+
+    def generate_json(self, **kwargs: Any) -> AIResult:
+        if not self.configured:
+            raise AIProviderUnavailable("Ollama Cloud is not configured.")
+        return super().generate_json(**kwargs)
+
+    def _request_headers(self) -> dict[str, str]:
+        return {"Authorization": f"Bearer {self._api_key}"}
+
+    def _chat_body(self, body: dict[str, Any]) -> dict[str, Any]:
+        # No local residency hint, and no local context cap: a long essay must not be truncated to 4096 tokens.
+        cloud = {key: value for key, value in body.items() if key != "keep_alive"}
+        cloud["options"] = {key: value for key, value in body.get("options", {}).items() if key != "num_ctx"}
+        return cloud
+
+    def _runtime(self, envelope: dict[str, Any]) -> dict[str, Any]:
+        runtime = super()._runtime(envelope)
+        prompt, completion = envelope.get("prompt_eval_count"), envelope.get("eval_count")
+        if type(prompt) is int and type(completion) is int:
+            runtime.update({"prompt_tokens": prompt, "completion_tokens": completion,
+                            "total_tokens": prompt + completion})
+        return runtime
 
 
 class OpenAICompatibleProvider:
@@ -1059,6 +1176,7 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             base_url_env='AZURE_OPENAI_BASE_URL', default_base_url='', models_env='AZURE_OPENAI_DEPLOYMENTS',
             credential_override=provider_credentials.get('azure-openai')),
         "ollama": OllamaProvider(provider_credentials.get("ollama")),
+        "ollama-cloud": OllamaCloudProvider(provider_credentials.get("ollama-cloud")),
         "openai": OpenAICompatibleProvider(
             provider_id="openai",
             name="OpenAI API",

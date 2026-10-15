@@ -29,6 +29,7 @@ from writing_coach.languages.english.ipa import ipa_for as _local_english_ipa
 from writing_coach.linguistic_annotation import annotate
 from writing_coach.media_ingestion import primary_language
 from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
+from writing_coach.reading_cache_scope import learner_scope
 from writing_coach.reading_translation import (
     ReadingTranslationService,
     ReadingTranslationStatus,
@@ -313,7 +314,7 @@ def _safe_english_dictionary(
     return payload if isinstance(payload, dict) else None
 
 
-def _start_local_translation(service, source, target, segments, text) -> Future | None:
+def _start_local_translation(service, source, target, segments, text, scope) -> Future | None:
     """The in-flight local translation for this word (started if none), or None when it should not run now."""
     key = (source, target, " ".join(text.casefold().split()))
     with _mt_lock:
@@ -327,7 +328,7 @@ def _start_local_translation(service, source, target, segments, text) -> Future 
 
         def job():
             try:
-                result = service.translate(source, target, segments, provider_timeout=_MT_CALL_TIMEOUT)
+                result = service.translate(source, target, segments, scope=scope, provider_timeout=_MT_CALL_TIMEOUT)
                 if result.status is not ReadingTranslationStatus.READY:
                     _mt_failed[key] = time.monotonic() + _MT_FAILURE_SECONDS
                 return result
@@ -355,10 +356,13 @@ def _safe_machine_translation(
     *, cached_only: bool = False,
 ) -> str | None:
     segments = [TextSegment("selection", text)]
+    # A tap carries no verified source: the learner's own scope (it still reads the shared, published entries).
+    # Resolved here, on the request's thread - the local-engine worker thread has no request identity.
+    scope = learner_scope()
     try:
         # An existing cached translation is used whatever engine is configured now.
         reader = getattr(service, "cached", None)
-        held = reader(source, target, segments) if reader else None
+        held = reader(source, target, segments, scope=scope) if reader else None
         if held is not None:
             return held.translations[0][1] if held.translations else None
         if cached_only:
@@ -368,9 +372,9 @@ def _safe_machine_translation(
             # AI platform or any paid service. Only the free local engine (Marian) may create one here.
             return None
         if wait is None:
-            result = service.translate(source, target, segments)
+            result = service.translate(source, target, segments, scope=scope)
         else:
-            future = _start_local_translation(service, source, target, segments, text)
+            future = _start_local_translation(service, source, target, segments, text, scope)
             if future is None:
                 return None
             result = future.result(timeout=wait)

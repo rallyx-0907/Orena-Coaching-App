@@ -98,7 +98,7 @@ def test_static_text_provider_definitions_need_no_credentials_or_network(monkeyp
         monkeypatch.delenv(variable, raising=False)
 
     definitions = provider_definitions()
-    text_providers = {"ollama", "openai", "deepseek", "groq", "gemini", "azure-openai", "openrouter"}
+    text_providers = {"ollama", "ollama-cloud", "openai", "deepseek", "groq", "gemini", "azure-openai", "openrouter"}
     assert {definition.id for definition in definitions} == text_providers | {"azure-speech"}
 
     speech_operations = {

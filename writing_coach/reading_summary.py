@@ -16,6 +16,7 @@ from typing import Any
 
 from writing_coach.core.support_languages import normalize_support_language, support_language
 from writing_coach.media_ingestion import primary_language
+from writing_coach.reading_cache_scope import CacheScope, learner_scope
 from writing_coach.reading_derived import (
     KIND_SUMMARY,
     DerivedCache,
@@ -44,7 +45,10 @@ def _platform_generate(**kwargs: Any) -> dict[str, Any]:
     from writing_coach.ai.platform import generate_structured
 
     try:
-        result = generate_structured(capability_key="text_discussion", temperature=0.2, seed=42, **kwargs)
+        # Not routed with `text_discussion` (PR-MON-7A-first): the summary's shared cache keeps it out of the routed
+        # slice until its own key and cache isolation (design revision 2.1, F-2/F-4).
+        result = generate_structured(capability_key="text_discussion", temperature=0.2, seed=42, routable=False,
+                                     **kwargs)
     except (AIProviderError, AICapabilityError) as exc:
         raise SummaryUnavailable(type(exc).__name__) from exc
     return result.data if isinstance(result.data, dict) else {}
@@ -55,12 +59,14 @@ class ReadingSummaryService:
         self._cache = cache
         self._generate = generate
 
-    def summarize(self, text: str, source_language: str, target_language: str, *, persist: bool) -> list[str]:
+    def summarize(self, text: str, source_language: str, target_language: str, *,
+                  scope: CacheScope | None = None) -> list[str]:
         source = primary_language(source_language)
         target = normalize_support_language(target_language)
         body = normalize_text(text)[:MAX_SUMMARY_SOURCE_CHARS]
         key = content_key(KIND_SUMMARY, source, body)
-        hit = self._cache.get(KIND_SUMMARY, target, key, persist=persist)
+        scope = scope or learner_scope()   # the shared scope only when the caller verified a published article
+        hit = self._cache.get(KIND_SUMMARY, target, key, scope=scope)
         if hit and hit.get("bullets"):
             return [str(item) for item in hit["bullets"]]
         source_label = (support_language(source) or support_language("en")).translation_label  # type: ignore[union-attr]
@@ -88,5 +94,5 @@ class ReadingSummaryService:
         ][: SUMMARY_BULLETS + 1]
         if not bullets:
             raise SummaryUnavailable("empty summary")
-        self._cache.put_many(KIND_SUMMARY, target, source, [(key, {"bullets": bullets})], persist=persist)
+        self._cache.put_many(KIND_SUMMARY, target, source, [(key, {"bullets": bullets})], scope=scope)
         return bullets

@@ -12,6 +12,7 @@ from writing_coach.core.request_context import current_language_code
 from writing_coach.core.support_languages import UnsupportedSupportLanguage
 from writing_coach.media_ingestion import primary_language
 from writing_coach.media_translation import MAX_TRANSLATION_BATCH_CHARS
+from writing_coach.reading_cache_scope import SHARED, learner_scope, scope_for
 from writing_coach.reading_lookup import ReadingLookupService
 from writing_coach.reading_summary import ReadingSummaryService, SummaryUnavailable
 from writing_coach.reading_translation import (
@@ -42,11 +43,6 @@ def configure_reading_summary(service: ReadingSummaryService | None) -> None:
     _summary_service = service
 
 
-def persists_to_shared_cache(content_id: str | None) -> bool:
-    """Only published articles reach the shared table; a learner's own text stays in this process (D-104)."""
-    return str(content_id or "").startswith("article:")
-
-
 def configure_reading_lookup(service: ReadingLookupService | None) -> None:
     global _lookup_service
     _lookup_service = service
@@ -64,7 +60,8 @@ class ReadingTranslationIn(BaseModel):
 
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
-    # `article:<uuid>` when the text is a published article: only then are the answers kept in the shared table.
+    # `article:<uuid>` names a published article. It is a claim: the answers are shared only when the server's
+    # repository has that article published and it contains every segment (reading_cache_scope, PR-MON-7D1).
     content_id: str | None = Field(default=None, max_length=200)
     segments: list[ReadingTranslationSegmentIn] = Field(
         min_length=1, max_length=MAX_READING_TRANSLATION_SEGMENTS
@@ -100,7 +97,7 @@ def translate_reading(payload: ReadingTranslationIn) -> dict[str, Any]:
             source,
             payload.target_language,
             [TextSegment(segment.segment_id, segment.text) for segment in payload.segments],
-            persist=persists_to_shared_cache(payload.content_id),
+            scope=scope_for(payload.content_id, [segment.text for segment in payload.segments]),
         )
     except UnsupportedSupportLanguage as exc:
         raise orena_http_error(
@@ -230,7 +227,8 @@ def summarize_reading(payload: ReadingSummaryIn) -> dict[str, Any]:
     if not text.strip():
         raise orena_http_error(422, "reading_summary_empty", "There is no text to summarise.", retryable=False)
     try:
-        bullets = _summary_service.summarize(text, source, payload.target_language, persist=persist)
+        bullets = _summary_service.summarize(text, source, payload.target_language,
+                                             scope=SHARED if persist else learner_scope())
     except UnsupportedSupportLanguage as exc:
         raise orena_http_error(
             422, "invalid_support_language", "Choose a valid support language.", retryable=False

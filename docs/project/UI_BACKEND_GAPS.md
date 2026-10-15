@@ -6337,3 +6337,9 @@ that hands what was entered to the unchanged Import sheet. Recorded, not resolve
 
   Text and Document are not offered in a chooser: they become a Reader text (or have no route, CL-1), which none of these practices can use. Hint chips follow the visible tab; two tabs lay out in two columns at every width. The result lands where the learner is: the import sheet already takes the chooser's `mediaRoute` (`listening`, `dictation`, `shadow`), so a created lesson opens in that practice room, not back in the chooser. Reading and Writing have no Discover chooser, so no mapping exists for them.
 - **CL-8 Text cap.** The card's text area and the Import sheet's text area both cap at 12000 characters, so a hand-over is never cut.
+
+## Plan & usage has no rows for the semantic AI meters (PR-MON-7B1, 2026-10-15)
+
+PR-MON-7B1 adds `word.assist`, `reading.assist` and `writing.task` to the plan catalogue: requests per day, Free/Plus/Pro 30/300/1500, 10/100/500 and 5/30/100 (H7-3, D-MON-025). Admin can edit them in the existing Plans & pricing editor, which lists every catalogue meter, with names in EN/VI/ZH. The pinned `Orena.dc.html` Pricing (`BILL_PLANS.lim`) and Plan & usage frames draw only messages, writing reviews, pronunciation minutes, media import minutes and target languages. The learner screens therefore keep `FEATURE_ORDER` / `USAGE_ORDER` unchanged and show none of the three.
+
+Before any of these meters is enforced, a separate fast UI slice needs the design's rows: a card line, a compare row and a usage row with its daily reset, plus the "limit reached" notice for each meter. The open question is whether the design draws them, and how. Nothing is enforced and no meter is admitted until then.

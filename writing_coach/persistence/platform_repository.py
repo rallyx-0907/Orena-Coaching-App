@@ -413,7 +413,8 @@ class SQLitePlatformRepository:
         # No ledger here: a spend cap must refuse, not read zero.
         raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
 
-    def ai_spend_since_for_capability(self, capability: str, since: datetime) -> tuple[float, int]:
+    def ai_spend_since_for_capability(self, capability: str, since: datetime, *, provider: str | None = None,
+                                      model: str | None = None) -> tuple[float, int]:
         # No ledger here: a spend cap must refuse, not read zero.
         raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
 
@@ -686,9 +687,11 @@ class PostgresPlatformRepository:
             usd, unpriced = connection.execute(query, {"since": since}).one()
         return float(usd or 0), int(unpriced or 0)
 
-    def ai_spend_since_for_capability(self, capability: str, since: datetime) -> tuple[float, int]:
+    def ai_spend_since_for_capability(self, capability: str, since: datetime, *, provider: str | None = None,
+                                      model: str | None = None) -> tuple[float, int]:
         """One capability's share of the shared ledger since `since`: the estimated USD of its priced calls, and how
-        many of its provider calls succeeded without a price (a per-capability daily cap, e.g. word translation)."""
+        many of its provider calls succeeded without a price (a per-capability daily cap, e.g. word translation).
+        With `provider` and `model`, only that one rung's calls (PR-MON-7: a routed capability's reviewed backup)."""
 
         query = text(
             "SELECT COALESCE(SUM((payload::jsonb -> 'cost' ->> 'amount')::numeric), 0), "
@@ -696,10 +699,13 @@ class PostgresPlatformRepository:
             "AND payload::jsonb ->> 'provider' IS NOT NULL "
             "AND COALESCE(payload::jsonb -> 'cost' ->> 'state', '') <> 'estimated') "
             "FROM audit_logs WHERE action = 'ai.operation' AND created_at >= :since "
-            "AND payload::jsonb ->> 'capability' = :capability"
+            "AND payload::jsonb ->> 'capability' = :capability "
+            "AND (CAST(:provider AS TEXT) IS NULL OR payload::jsonb ->> 'provider' = CAST(:provider AS TEXT)) "
+            "AND (CAST(:model AS TEXT) IS NULL OR payload::jsonb ->> 'model' = CAST(:model AS TEXT))"
         )
         with self.engine.connect() as connection:
-            usd, unpriced = connection.execute(query, {"since": since, "capability": str(capability)}).one()
+            usd, unpriced = connection.execute(query, {"since": since, "capability": str(capability),
+                                                       "provider": provider, "model": model}).one()
         return float(usd or 0), int(unpriced or 0)
 
     def ai_spend_for_capability(self, capability: str) -> float:

@@ -22,6 +22,7 @@ from fastapi.testclient import TestClient
 from writing_coach import media_interaction, reading_translation_api, word_detail
 from writing_coach.core.http_security import rate_group
 from writing_coach.media_translation import TranslationProviderError
+from writing_coach.reading_cache_scope import SHARED
 from writing_coach.reading_derived import DerivedCache, normalize_text
 from writing_coach.reading_summary import ReadingSummaryService, SummaryUnavailable
 from writing_coach.reading_translation import (
@@ -31,6 +32,15 @@ from writing_coach.reading_translation import (
 )
 
 NOON = datetime(2026, 10, 5, 12, tzinfo=UTC)
+
+
+@pytest.fixture(autouse=True)
+def _one_learner(monkeypatch):
+    """PR-MON-7D1: a learner's cached answers live in their account incarnation's scope; these tests are one
+    learner's, with one incarnation."""
+    from writing_coach import reading_cache_scope
+
+    monkeypatch.setattr(reading_cache_scope, "_incarnation_of", lambda _user_key: "inc-one-learner")
 
 
 class MemoryStore:
@@ -94,17 +104,17 @@ def test_the_key_is_the_text_and_languages_not_the_segment_id() -> None:
 def test_published_text_survives_a_restart_through_the_shared_table() -> None:
     store = MemoryStore()
     first = ReadingTranslationService(CountingEngine(), cache=DerivedCache(store))
-    first.translate("en", "vi", [TextSegment("a", "It rained.")], persist=True)
+    first.translate("en", "vi", [TextSegment("a", "It rained.")], scope=SHARED)
     engine = CountingEngine()
     restarted = ReadingTranslationService(engine, cache=DerivedCache(store))
-    result = restarted.translate("en", "vi", [TextSegment("z", "It rained.")], persist=True)
+    result = restarted.translate("en", "vi", [TextSegment("z", "It rained.")], scope=SHARED)
     assert result.translations == (("z", "vi|It rained."),) and engine.calls == []
 
 
 def test_a_learners_own_text_never_reaches_the_shared_table() -> None:
     store = MemoryStore()
     service = ReadingTranslationService(CountingEngine(), cache=DerivedCache(store))
-    service.translate("en", "vi", [TextSegment("a", "My private diary line.")])  # persist defaults to off
+    service.translate("en", "vi", [TextSegment("a", "My private diary line.")])  # the learner's scope by default
     assert store.rows == {} and store.reads == 0
 
 
@@ -114,13 +124,13 @@ def test_a_missing_table_pauses_persistence_and_the_learner_is_still_served() ->
     cache = DerivedCache(store, now=lambda: clock[0])
     engine = CountingEngine()
     service = ReadingTranslationService(engine, cache=cache)
-    assert service.translate("en", "vi", [TextSegment("a", "One.")], persist=True).translations
+    assert service.translate("en", "vi", [TextSegment("a", "One.")], scope=SHARED).translations
     reads = store.reads
-    service.translate("en", "vi", [TextSegment("b", "Two.")], persist=True)
+    service.translate("en", "vi", [TextSegment("b", "Two.")], scope=SHARED)
     assert store.reads == reads  # paused: the table is not asked again
     clock[0] = NOON + timedelta(minutes=5)
     store.fail = False
-    service.translate("en", "vi", [TextSegment("c", "Three.")], persist=True)
+    service.translate("en", "vi", [TextSegment("c", "Three.")], scope=SHARED)
     assert store.reads == reads + 1 and ("translation", "vi") in {(k[0], k[1]) for k in store.rows}
 
 
@@ -172,10 +182,10 @@ class CountingSummary:
 def test_a_summary_is_generated_once_per_text_and_target() -> None:
     generate = CountingSummary()
     service = ReadingSummaryService(DerivedCache(), generate)
-    first = service.summarize("A long\n text.", "en", "vi", persist=False)
-    again = service.summarize("A long text.", "en", "vi", persist=False)
+    first = service.summarize("A long\n text.", "en", "vi")
+    again = service.summarize("A long text.", "en", "vi")
     assert first == again == ["One.", "Two.", "Three."] and generate.calls == 1
-    service.summarize("A long text.", "en", "zh", persist=False)
+    service.summarize("A long text.", "en", "zh")
     assert generate.calls == 2
 
 
@@ -183,13 +193,13 @@ def test_a_failed_or_empty_summary_is_retryable_and_not_cached() -> None:
     generate = CountingSummary(fail=True)
     service = ReadingSummaryService(DerivedCache(), generate)
     with pytest.raises(SummaryUnavailable):
-        service.summarize("Text.", "en", "vi", persist=False)
+        service.summarize("Text.", "en", "vi")
     generate.fail = False
-    assert service.summarize("Text.", "en", "vi", persist=False)
+    assert service.summarize("Text.", "en", "vi")
     assert generate.calls == 2
     empty = ReadingSummaryService(DerivedCache(), CountingSummary(bullets=[" "]))
     with pytest.raises(SummaryUnavailable):
-        empty.summarize("Text.", "en", "vi", persist=False)
+        empty.summarize("Text.", "en", "vi")
 
 
 @pytest.fixture
@@ -256,7 +266,12 @@ def test_the_new_routes_are_in_the_reading_rate_group() -> None:
     assert rate_group("POST", "/api/reading/translate")[0] == "reading_ai"
 
 
-def test_translate_endpoint_persists_only_for_a_published_article(monkeypatch) -> None:
+def test_translate_endpoint_shares_only_a_server_verified_published_article(monkeypatch) -> None:
+    # PR-MON-7D1: replaces "an `article:` content id persists" - a client claim alone never reaches the shared table.
+    from writing_coach import reading_cache_scope
+
+    published = {"abc": {"title": "Farewell", "body": "Goodbye. See you soon."}}
+    monkeypatch.setattr(reading_cache_scope, "_published_article", published.get)
     store = MemoryStore()
     monkeypatch.setattr(reading_translation_api, "current_language_code", lambda: "en")
     reading_translation_api.configure_reading_translation(
@@ -271,8 +286,12 @@ def test_translate_endpoint_persists_only_for_a_published_article(monkeypatch) -
         assert store.rows == {}
         assert http.post("/api/reading/translate", json={**body, "content_id": "book:b1:c1"}).status_code == 200
         assert store.rows == {}  # a book chapter is a learner's import: process memory only
+        assert http.post("/api/reading/translate", json={**body, "content_id": "article:fake"}).status_code == 200
+        assert store.rows == {}  # no such published article: a claim, not a scope
+        assert http.post("/api/reading/translate", json={**body, "content_id": "article:abc"}).status_code == 200
+        assert store.rows == {}  # "Hello." is not in the published article
         assert http.post("/api/reading/translate", json={**body, "content_id": "article:abc", "segments": [{"segment_id": "p1s1", "text": "Goodbye."}]}).status_code == 200
-        assert len(store.rows) == 1
+        assert len(store.rows) == 1  # verified: the article is published and contains the segment
     finally:
         reading_translation_api.configure_reading_translation(None)
 
@@ -323,8 +342,15 @@ def test_the_same_word_in_the_same_sentence_asks_the_provider_once(sheet) -> Non
     assert calls == ["learner_dictionary"] and store.rows == {}  # no content id: process memory only
 
 
-def test_published_content_is_kept_in_the_shared_table(sheet) -> None:
+def test_only_server_verified_published_content_is_kept_in_the_shared_table(sheet, monkeypatch) -> None:
+    # PR-MON-7D1: replaces "an `article:` content id is kept in the shared table".
+    from writing_coach import reading_cache_scope
+
     _calls, _state, store = sheet
+    _word(content_id="article:abc")
+    assert store.rows == {}  # a claim: no published article behind it
+    monkeypatch.setattr(reading_cache_scope, "_published_article",
+                        {"abc": {"title": "Night", "body": "The lamp ran out of oil. It was dark."}}.get)
     _word(content_id="article:abc")
     assert [key[0] for key in store.rows] == ["gloss"]
 
@@ -340,6 +366,10 @@ def test_a_provider_failure_is_retryable_and_never_cached(sheet) -> None:
 
 
 def test_the_sentence_sheet_is_cached_but_the_learners_question_never_is(sheet, monkeypatch) -> None:
+    from writing_coach import reading_cache_scope
+
+    monkeypatch.setattr(reading_cache_scope, "_published_article",
+                        {"abc": {"title": "Night", "body": "The lamp ran out of oil."}}.get)
     calls, _state, store = sheet
     sentence = word_detail.SentenceSheetIn(
         text="The lamp ran out of oil.", source_language="en", target_language="vi", content_id="article:abc"
@@ -423,7 +453,7 @@ def test_postgres_stores_once_reads_back_and_rolls_back() -> None:
             # Before the table: an error the cache absorbs, never the learner's failure.
             with pytest.raises(DBAPIError):
                 repository.get_many("translation", "vi", [key])
-            assert cache.get("translation", "vi", key, persist=True) is None
+            assert cache.get("translation", "vi", key, scope=SHARED) is None
             with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
                 migration.upgrade()
             repository.put_many("translation", "vi", "en", [(key, {"text": "first"})], provider="ai", model="m")
