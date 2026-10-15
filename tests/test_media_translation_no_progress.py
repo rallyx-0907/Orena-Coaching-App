@@ -223,13 +223,15 @@ def test_the_old_fixed_2048_reservation_stalls_in_the_same_world(monkeypatch):
     rows = segments(*[f"(line {i}) " + "This is a caption of about eighty characters, said by a narrator in a film." for i in range(49)])
     provider = mt.GroqTranslationProvider("key", model="m")
     monkeypatch.setattr(provider, "_completion_budget", lambda _wire: 2048)
-    refused = 0
+    refused, done = 0, {}
     for batch in mt.build_translation_batches(rows):
-        with pytest.raises(mt.TranslationProviderError) as stalled:
-            provider.translate_batch("en", "vi", batch)
-        assert stalled.value.reason == "rate_limited"
-        refused += 1
-    assert refused >= 2 and admitted == []
+        try:
+            done.update(provider.translate_batch("en", "vi", batch))
+        except mt.TranslationProviderError as stalled:
+            assert stalled.reason == "rate_limited"
+            refused += 1
+    # Every full batch is refused; only a one-line tail is small enough to fit beside 2048 reserved tokens.
+    assert refused >= 2 and len(done) < 49 and sum(admitted) < 49
 
 
 # -- the usage sink -----------------------------------------------------------------------------------------------
@@ -248,7 +250,8 @@ def test_usage_captured_before_meanings_raises_is_still_booked(tmp_path, monkeyp
     world.pipeline._meanings = meanings
     world.run()
     count, spent = world.booked()
-    assert count == 1 and spent == pytest.approx(world.pipeline._ai_cost("openai/gpt-oss-120b", USAGE))
+    # A failure that is not terminal is asked again; each round that was billed is booked at what was reported.
+    assert count >= 1 and spent == pytest.approx(count * world.pipeline._ai_cost("openai/gpt-oss-120b", USAGE))
 
 
 def test_an_explicit_translation_sink_is_honoured(tmp_path, monkeypatch):
