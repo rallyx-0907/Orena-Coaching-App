@@ -28,6 +28,18 @@ MEDIA_LIBRARY_ROOT = Path(
     os.getenv("MEDIA_LIBRARY_ROOT", str(Path(__file__).resolve().parents[1] / "data" / "media_library"))
 )
 _ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]{0,255}$")
+# YouTube's own id alphabet is [A-Za-z0-9_-] (11 characters), and a real id may begin with "-" or "_" (`-anLfV9mZJY`, D-218).
+# That is a fact about this provider, so only a YouTube row may start that way; every other id keeps the stricter shape. The
+# store accepts what it always did plus that leading character; the exact 11-character check is the provider's parser's.
+_YOUTUBE_ID = re.compile(r"^[A-Za-z0-9_-][A-Za-z0-9._:-]{0,255}$")
+
+
+def valid_provider_media_id(provider: str, provider_media_id: str) -> bool:
+    """Whether `provider_media_id` is acceptable for `provider`. Callers that spend before they store ask this first, so an
+    id the store would refuse is refused before any paid call."""
+    return bool((_YOUTUBE_ID if provider == "youtube" else _ID).fullmatch(provider_media_id))
+
+
 _WRITERS: dict[str, threading.Lock] = {}
 _WRITERS_GUARD = threading.Lock()
 
@@ -137,7 +149,11 @@ def validate_entry(entry: MediaLibraryEntry) -> MediaLibraryEntry:
     """Keep corrupt rows from becoming a browse-time learner failure."""
     for name in ("media_id", "provider", "provider_media_id"):
         value = _require_text(getattr(entry, name), name)
-        if not _ID.fullmatch(value):
+        if name == "provider_media_id":
+            valid = valid_provider_media_id(_require_text(entry.provider, "provider"), value)
+        else:
+            valid = bool(_ID.fullmatch(value))
+        if not valid:
             raise ValueError(f"{name} is invalid")
     if entry.media_type not in {"video", "audio"}:
         raise ValueError("media_type is invalid")

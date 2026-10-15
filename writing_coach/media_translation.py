@@ -13,6 +13,7 @@ import logging
 import math
 import os
 import re
+import threading
 import time
 from collections.abc import Callable, Iterator, Mapping
 from typing import Protocol
@@ -50,6 +51,25 @@ MIN_GROQ_MAX_COMPLETION_TOKENS = 256
 MAX_GROQ_MAX_COMPLETION_TOKENS = 8192
 # How many times an over-large batch may be halved before giving up truthfully.
 MAX_TRANSLATION_SPLIT_DEPTH = 3
+
+# An output-tokens-per-minute (OTPM) allowance, which a provider may apply on top of its total-token one (D-218). The trial's
+# `qwen/qwen3.8-27b` refused with "(OTPM): Limit 1000, Used 867, Requested 640": a request is admitted only while the output
+# tokens used in the last minute plus the ones it reserves (`max_completion_tokens`) fit the limit. Nothing here names a
+# model: the limit is configured (`GROQ_TRANSLATION_OUTPUT_TOKENS_PER_MINUTE`) or read from the provider's own refusal.
+GROQ_OTPM_ENV = "GROQ_TRANSLATION_OUTPUT_TOKENS_PER_MINUTE"
+MAX_OTPM_LIMIT = 10_000_000
+OTPM_WINDOW_SECONDS = 60.0
+# After a refusal the wait covers a whole window plus this, whatever `retry-after` said: the window that refused is not
+# clear before then, and asking sooner only fills it again.
+OTPM_MARGIN_SECONDS = 2.0
+# One request reserves at most this share of the limit, so two fit a minute (a request as large as the limit leaves the
+# minute idle between requests).
+OTPM_REQUEST_SHARE = 2
+MAX_SALVAGED_LINES = 512
+
+# Time is read and slept through these two so a test can drive a virtual clock.
+_monotonic: Callable[[], float] = time.monotonic
+_pause: Callable[[float], None] = time.sleep
 
 
 class _RequestTooLarge(Exception):
@@ -91,21 +111,179 @@ def _output_chars(wire: tuple[TranslatableSegment, ...]) -> int:
     return sum(len(s.segment_id) + 2 * len(s.original_text) + 64 for s in wire)
 
 
+def estimate_output_tokens(segments: TranslationBatch) -> int:
+    """The completion room a batch reserves (two characters a token); the same bound `_completion_budget` uses."""
+    return math.ceil(_output_chars(_wire_segments(segments)[0]) / 2)
+
+
+def group_by_output_tokens(segments: TranslationBatch, cap: int) -> tuple[TranslationBatch, ...]:
+    """Consecutive groups whose reserved completion room each fits `cap` (a lone line larger than `cap` is its own group)."""
+    groups: list[TranslationBatch] = []
+    current: list[TranslatableSegment] = []
+    used = 0
+    for segment in segments:
+        compact = len(segment.segment_id) > 64
+        size = math.ceil(((11 if compact else len(segment.segment_id)) + 2 * len(segment.original_text) + 64) / 2)
+        if current and used + size > cap:
+            groups.append(tuple(current))
+            current, used = [], 0
+        current.append(segment)
+        used += size
+    if current:
+        groups.append(tuple(current))
+    return tuple(groups)
+
+
+def resolve_output_tokens_per_minute(value: int | None = None, env: Mapping[str, str] | None = None) -> int | None:
+    """The configured OTPM limit, or None when none is set or it cannot be read (the provider's refusal then teaches it)."""
+    if value is None:
+        values = os.environ if env is None else env
+        raw = str(values.get(GROQ_OTPM_ENV, "")).strip()
+        if not raw:
+            return None
+        try:
+            value = int(raw)
+        except ValueError:
+            return None
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 < value <= MAX_OTPM_LIMIT:
+        return None
+    return value
+
+
+class OutputTokenWindow:
+    """What this process has asked a model to write in the last minute, against the model's OTPM limit (when known).
+
+    A request reserves its `max_completion_tokens` when it is sent; a refusal that reports the provider's own `Used` count
+    corrects the window. The provider's allowance is per organisation and model, so every provider object for one model
+    shares one window (`output_window`)."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._limit: int | None = None
+        self._blocked_until = 0.0
+        self._events: list[list[float]] = []   # [time, tokens], oldest first
+
+    @property
+    def limit(self) -> int | None:
+        return self._limit
+
+    def set_limit(self, limit: int | None) -> None:
+        with self._lock:
+            self._limit = limit if limit and limit > 0 else self._limit
+
+    def _prune(self, now: float) -> None:
+        horizon = now - OTPM_WINDOW_SECONDS - OTPM_MARGIN_SECONDS
+        self._events = [event for event in self._events if event[0] > horizon]
+
+    def used(self, now: float) -> int:
+        with self._lock:
+            self._prune(now)
+            return int(sum(event[1] for event in self._events))
+
+    def wait_for(self, tokens: int, now: float) -> float:
+        """Seconds until `tokens` more fit under the limit; 0 when they fit now or no limit is known."""
+        with self._lock:
+            if self._limit is None:
+                return 0.0
+            self._prune(now)
+            held = max(0.0, self._blocked_until - now)
+            excess = sum(event[1] for event in self._events) + tokens - self._limit
+            if excess <= 0:
+                return held
+            freed = 0.0
+            for at, spent in self._events:
+                freed += spent
+                if freed >= excess:
+                    return max(held, at + OTPM_WINDOW_SECONDS + OTPM_MARGIN_SECONDS - now)
+            return max(held, OTPM_WINDOW_SECONDS + OTPM_MARGIN_SECONDS)
+
+    def reserve(self, tokens: int, now: float) -> list[float]:
+        event = [now, float(tokens)]
+        with self._lock:
+            self._events.append(event)
+        return event
+
+    def block_until(self, moment: float) -> None:
+        """The provider refused: nothing is sent before `moment`, even a request that would fit what is known."""
+        with self._lock:
+            self._blocked_until = max(self._blocked_until, moment)
+
+    def release(self, event: list[float]) -> None:
+        with self._lock:
+            self._events = [item for item in self._events if item is not event]
+
+    def sync_used(self, used: int, now: float) -> None:
+        """The provider said how much of the minute is spent: if that is more than this process knows, the rest was spent
+        elsewhere (another worker, an earlier run) and is counted from now, so it is waited out in full."""
+        with self._lock:
+            self._prune(now)
+            known = sum(event[1] for event in self._events)
+            if used > known:
+                self._events.append([now, float(used - known)])
+
+
+_WINDOWS: dict[str, OutputTokenWindow] = {}
+_WINDOWS_LOCK = threading.Lock()
+
+
+def output_window(model: str) -> OutputTokenWindow:
+    with _WINDOWS_LOCK:
+        return _WINDOWS.setdefault(str(model), OutputTokenWindow())
+
+
+def reset_output_windows() -> None:
+    with _WINDOWS_LOCK:
+        _WINDOWS.clear()
+
+
+class PacingBudget:
+    """How many seconds a caller lets the provider wait inside one call for the allowance to refill."""
+
+    def __init__(self, seconds: float) -> None:
+        self.remaining = max(0.0, float(seconds))
+
+
+_PACING: ContextVar[PacingBudget | None] = ContextVar("media_translation_pacing", default=None)
+
+
+@contextmanager
+def translation_pacing(seconds: float | PacingBudget) -> Iterator[PacingBudget]:
+    """Within this block a provider may sleep up to `seconds` in total for an output-token window to clear. Outside it, or
+    once the budget is spent, a request that does not fit is refused at once (`rate_limited`, with the exact wait) and is
+    never sent: the caller decides when to ask again."""
+    budget = seconds if isinstance(seconds, PacingBudget) else PacingBudget(seconds)
+    token = _PACING.set(budget)
+    try:
+        yield budget
+    finally:
+        _PACING.reset(token)
+
+
 _ORG_ID = re.compile(r"org_[A-Za-z0-9]+")
+_OTPM_REFUSAL = re.compile(r"\(OTPM\)\s*:\s*Limit\s+(\d+)\s*,\s*Used\s+(\d+)", re.IGNORECASE)
 
 
-def _error_detail(response: object) -> str:
-    """The provider's own sentence about a refusal (which allowance, how much was left), short and on one line.
-    It names limits and counts, never a credential; empty when the answer carries none."""
+def _error_message(response: object) -> str:
     try:
         payload = response.json()  # type: ignore[attr-defined]
         error = payload.get("error", {}) if isinstance(payload, dict) else {}
         message = error.get("message", "") if isinstance(error, dict) else ""
     except Exception:  # noqa: BLE001 - a log line never fails the call
         return ""
-    text = " ".join(str(message).split())
+    return " ".join(str(message).split())
+
+
+def _error_detail(response: object) -> str:
+    """The provider's own sentence about a refusal (which allowance, how much was left), short and on one line.
+    It names limits and counts, never a credential; empty when the answer carries none."""
     # An organisation id is an account identifier, not a limit: it stays out of the log.
-    return _ORG_ID.sub("org_<redacted>", text)[:240]
+    return _ORG_ID.sub("org_<redacted>", _error_message(response))[:240]
+
+
+def _otpm_refusal(response: object) -> tuple[int, int] | None:
+    """(limit, used) when a 429 says the output-tokens-per-minute allowance refused the request, else None."""
+    found = _OTPM_REFUSAL.search(_error_message(response))
+    return (int(found.group(1)), int(found.group(2))) if found else None
 
 
 @dataclass(frozen=True)
@@ -355,6 +533,7 @@ class GroqTranslationProvider:
         base_url: str = "https://api.groq.com/openai/v1",
         timeout_seconds: float = 90.0,
         max_completion_tokens: int | None = None,
+        output_tokens_per_minute: int | None = None,
     ) -> None:
         self._api_key = str(api_key or "").strip()
         self._model = str(model or "").strip()
@@ -362,6 +541,14 @@ class GroqTranslationProvider:
         self._timeout = timeout_seconds
         self.model_version = self._model
         self._max_completion_tokens = resolve_max_completion_tokens(max_completion_tokens)
+        # The model's output-token allowance: configured, else learned from the provider's own refusal, else unknown.
+        self._otpm = output_window(self._model)
+        configured = resolve_output_tokens_per_minute(output_tokens_per_minute)
+        if configured is not None:
+            self._otpm.set_limit(configured)
+        # Lines translated by a batch that then stopped on a rate limit: asked for again, they are not paid for twice.
+        self._salvaged: OrderedDict[tuple[str, str, str, str], str] = OrderedDict()
+        self._salvage_lock = threading.Lock()
         # The last response's quota headers, so an admin surface can report the
         # budget before it runs out rather than after.
         self.last_quota: dict[str, str] = {}
@@ -411,7 +598,49 @@ class GroqTranslationProvider:
 
         if not self.configured:
             raise TranslationProviderError("Groq translation is not configured.", reason="not_configured")
-        return self._translate_batch(source_language, target_language, segments, depth=0)
+        kept = {segment.segment_id: text for segment in segments
+                if (text := self._salvage_get(source_language, target_language, segment)) is not None}
+        pending = tuple(segment for segment in segments if segment.segment_id not in kept)
+        merged = dict(kept)
+        groups = group_by_output_tokens(pending, self._reservation_cap()) if self.batch_output_ceiling() is not None else (pending,)
+        for group in (group for group in groups if group):
+            try:
+                merged.update(self._translate_batch(source_language, target_language, group, depth=0))
+            except TranslationProviderError:
+                self._salvage_put(source_language, target_language, segments, merged)   # finished groups are kept
+                raise
+        self._salvage_drop(source_language, target_language, segments)
+        return {segment.segment_id: merged[segment.segment_id] for segment in segments}
+
+    def batch_output_ceiling(self) -> int | None:
+        """The most completion room one request should reserve so two fit a minute, or None while no output-token limit is
+        known. A caller that cuts a transcript into batches sizes them to this (D-218)."""
+        limit = self._otpm.limit
+        return None if limit is None else max(1, limit // OTPM_REQUEST_SHARE)
+
+    def _reservation_cap(self) -> int:
+        ceiling = self.batch_output_ceiling()
+        return self._max_completion_tokens if ceiling is None else min(self._max_completion_tokens, ceiling)
+
+    def _salvage_key(self, source_language: str, target_language: str, segment: TranslatableSegment) -> tuple[str, str, str, str]:
+        return (source_language, target_language, segment.segment_id, segment.original_text)
+
+    def _salvage_get(self, source_language: str, target_language: str, segment: TranslatableSegment) -> str | None:
+        with self._salvage_lock:
+            return self._salvaged.get(self._salvage_key(source_language, target_language, segment))
+
+    def _salvage_put(self, source_language: str, target_language: str, segments: TranslationBatch, done: Mapping[str, str]) -> None:
+        with self._salvage_lock:
+            for segment in segments:
+                if segment.segment_id in done:
+                    self._salvaged[self._salvage_key(source_language, target_language, segment)] = done[segment.segment_id]
+            while len(self._salvaged) > MAX_SALVAGED_LINES:
+                self._salvaged.popitem(last=False)
+
+    def _salvage_drop(self, source_language: str, target_language: str, segments: TranslationBatch) -> None:
+        with self._salvage_lock:
+            for segment in segments:
+                self._salvaged.pop(self._salvage_key(source_language, target_language, segment), None)
 
     def _translate_batch(
         self,
@@ -427,7 +656,7 @@ class GroqTranslationProvider:
             # generation, using the same bounded recovery as provider refusals.
             # The size that matters is the wire's: long canonical ids travel as short handles (_wire_segments).
             output_chars = _output_chars(_wire_segments(segments)[0])
-            if len(segments) > 1 and output_chars > 2 * self._max_completion_tokens:
+            if len(segments) > 1 and output_chars > 2 * self._reservation_cap():
                 raise _RequestTooLarge()
             return self._request_batch(source_language, target_language, segments)
         except _RequestTooLarge:
@@ -438,9 +667,14 @@ class GroqTranslationProvider:
             middle = len(segments) // 2
             merged: dict[str, str] = {}
             for half in (segments[:middle], segments[middle:]):
-                merged.update(
-                    self._translate_batch(source_language, target_language, half, depth + 1)
-                )
+                try:
+                    done = self._translate_batch(source_language, target_language, half, depth + 1)
+                except TranslationProviderError:
+                    # A rate limit (or any stop) part-way: what the earlier halves produced was billed, so it is kept for
+                    # the next ask instead of being thrown away with the exception.
+                    self._salvage_put(source_language, target_language, segments, merged)
+                    raise
+                merged.update(done)
             return merged
 
     def _completion_budget(self, wire: tuple[TranslatableSegment, ...]) -> int:
@@ -451,7 +685,8 @@ class GroqTranslationProvider:
         was nearly spent, and the same batch was refused every time it was asked again (2026-10-15 trial). The size is
         the one the batch guard already uses (two characters a token); a reply that still does not fit ends with
         `finish_reason: length` and the batch is halved, as before."""
-        return min(self._max_completion_tokens, max(MIN_GROQ_MAX_COMPLETION_TOKENS, math.ceil(_output_chars(wire) / 2)))
+        cap = self._reservation_cap()
+        return min(cap, max(min(MIN_GROQ_MAX_COMPLETION_TOKENS, cap), math.ceil(_output_chars(wire) / 2)))
 
     def _record(self, started: float, outcome: str, usage: object, error: BaseException | None = None) -> None:
         """Every Groq translation request in the shared AI ledger (ai/audio_telemetry.py): provider, model, the
@@ -470,6 +705,44 @@ class GroqTranslationProvider:
             latency_ms=int((time.perf_counter() - started) * 1000), usage=reported, error=error,
             billable_attempt=True,
         )
+
+    def _reserve_output(self, tokens: int) -> list[float] | None:
+        """Before a request is sent: make room for its reserved output tokens in the model's minute, or refuse it unsent.
+
+        Within a pacing allowance (`translation_pacing`) the wait for room is slept here; otherwise, or when the wait is
+        longer than what is left of the allowance, the request is refused as `rate_limited` carrying the exact wait. A
+        request refused here reaches no provider, books no tokens, and asks nothing of the allowance (D-218)."""
+        if self._otpm.limit is None:
+            return None
+        for _ in range(3):
+            wait = self._otpm.wait_for(tokens, _monotonic())
+            if wait <= 0:
+                return self._otpm.reserve(tokens, _monotonic())
+            budget = _PACING.get()
+            if budget is None or wait > budget.remaining:
+                raise TranslationProviderError("Groq translation is waiting for its output-token allowance.",
+                                               reason="rate_limited", retry_after=math.ceil(wait))
+            budget.remaining -= wait
+            _pause(wait)
+        raise TranslationProviderError("Groq translation is waiting for its output-token allowance.",
+                                       reason="rate_limited", retry_after=OTPM_WINDOW_SECONDS + OTPM_MARGIN_SECONDS)
+
+    def _learn_from_refusal(self, response: object, reserved: list[float] | None, asked: float) -> float:
+        """A 429 that names the output-tokens-per-minute allowance teaches this process its limit and its use, and is
+        answered with a wait that clears the whole window (never the shorter `retry-after`, which the trial showed leaves
+        the window full again)."""
+        if reserved is not None:
+            self._otpm.release(reserved)   # it was not admitted: it spent nothing of the minute
+        refusal = _otpm_refusal(response)
+        if refusal is None:
+            return asked
+        limit, used = refusal
+        self._otpm.set_limit(limit)
+        now = _monotonic()
+        self._otpm.sync_used(used, now)
+        wait = max(asked, OTPM_WINDOW_SECONDS + OTPM_MARGIN_SECONDS)
+        self._otpm.block_until(now + wait)
+        return wait
 
     def _request_batch(
         self,
@@ -503,6 +776,7 @@ class GroqTranslationProvider:
             "max_completion_tokens": self._completion_budget(wire_segments),
         }
 
+        reserved = self._reserve_output(body["max_completion_tokens"])
         started = time.perf_counter()
         answered = False
         try:
@@ -531,10 +805,12 @@ class GroqTranslationProvider:
                         "groq translation refused: status=%s lines=%d detail=%s",
                         response.status_code, len(segments), _error_detail(response),
                     )
+                asked = _retry_after_seconds(response.headers)
+                if response.status_code == 429:
+                    asked = self._learn_from_refusal(response, reserved, asked)
                 refused = (
                     TranslationProviderError(
-                        "Groq translation is rate limited.", reason="rate_limited",
-                        retry_after=_retry_after_seconds(response.headers),
+                        "Groq translation is rate limited.", reason="rate_limited", retry_after=asked,
                     )
                     if response.status_code == 429
                     else TranslationProviderError("Groq refused the credentials.", reason="provider_auth")
@@ -600,6 +876,11 @@ class MediaTranslationService:
     def __init__(self, provider: TranslationProvider) -> None:
         self._provider = provider
         self._cache: OrderedDict[str, tuple[SegmentTranslation, ...]] = OrderedDict()
+
+    def output_ceiling(self) -> int | None:
+        """The provider's per-request output-token ceiling when it has an output-token limit, else None (D-218)."""
+        ceiling = getattr(self._provider, "batch_output_ceiling", None)
+        return ceiling() if callable(ceiling) else None
 
     def translate(self, media_object: MediaLearningObject, target_language: str) -> MediaTranslationResult:
         canonical_target = normalize_support_language(target_language)
@@ -686,7 +967,12 @@ class MediaTranslationService:
         )
 
 
-def build_translation_batches(segments: tuple[TranslatableSegment, ...]) -> tuple[TranslationBatch, ...] | None:
+def build_translation_batches(
+    segments: tuple[TranslatableSegment, ...], *, max_output_tokens: int | None = None
+) -> tuple[TranslationBatch, ...] | None:
+    """Cut segments into request batches. With `max_output_tokens` (the provider's `batch_output_ceiling`) each batch also
+    fits that much reserved completion room, so one request is one rate-limit decision and a batch either arrives whole or
+    not at all (D-218)."""
     batches: list[TranslationBatch] = []
     current: list[TranscriptSegment] = []
     current_chars = 0
@@ -701,6 +987,8 @@ def build_translation_batches(segments: tuple[TranslatableSegment, ...]) -> tupl
         current_chars += size
     if current:
         batches.append(tuple(current))
+    if max_output_tokens:
+        batches = [group for batch in batches for group in group_by_output_tokens(batch, max_output_tokens)]
     if not batches or len(batches) > MAX_TRANSLATION_BATCHES:
         return None
     return tuple(batches)

@@ -23,7 +23,8 @@ from typing import Any
 
 from writing_coach import policies
 from writing_coach.billing.funding_context import system_funding
-from writing_coach.media_ingestion import ProviderRequestFailed, ProviderTimedOut
+from writing_coach.media_ingestion import ProviderRequestFailed, ProviderTimedOut, ProviderUrlMalformed
+from writing_coach.media_library_store import valid_provider_media_id
 from writing_coach.media_providers.supadata import (
     SupadataTranscriptError,
     SupadataTranscriptMalformed,
@@ -35,6 +36,10 @@ from writing_coach.media_providers.youtube import (
     YouTubeCaptionSnippet,
     YouTubeCaptionTrack,
     canonical_youtube_url,
+    TraditionalChineseNotAccepted,
+    is_traditional_chinese_tag,
+    is_youtube_video_id,
+    traditional_chinese_refused,
 )
 from writing_coach.media_spend import SpendCapReached
 
@@ -104,6 +109,8 @@ class PolicyCaptionClient:
         youtube_error: Exception | None = None
         try:
             track = self._youtube.fetch_track(video_id, source_language)
+        except TraditionalChineseNotAccepted:
+            raise   # the only Chinese track is Traditional: a paid request would not change that (D-218)
         except (ProviderTimedOut, ProviderRequestFailed) as error:
             track, youtube_error = None, error   # a refusal (HTTP 429) is the case this option exists for
         if track is not None:
@@ -114,12 +121,20 @@ class PolicyCaptionClient:
         return native
 
     def _native(self, video_id: str, source_language: str) -> YouTubeCaptionTrack | None:
+        # Every check an id or URL will meet later runs here, before a request is reserved or sent (D-218): the video id's
+        # own shape, the item identity the library would store it under, and the URL built from it. An id the store would
+        # refuse cost a paid request and then failed the import.
+        if not (is_youtube_video_id(video_id) and valid_provider_media_id("youtube", video_id)
+                and valid_provider_media_id("youtube", f"youtube-{video_id}")):
+            raise ProviderUrlMalformed()
         key = (video_id, source_language.casefold())
         with self._lock:
             flight = self._inflight.setdefault(key, threading.Lock())
         with flight:   # one caller per video and language at a time: the second reads the first's answer from the memo
             kept = self._remembered(key)
             if kept is not _MISS:
+                if isinstance(kept, Exception):
+                    raise kept   # a remembered rejection is not paid for twice
                 return kept
             try:
                 return self._ask(key, video_id, source_language)
@@ -136,7 +151,7 @@ class PolicyCaptionClient:
             self._memo.pop(key, None)
             return _MISS
 
-    def _remember(self, key: tuple[str, str], track: YouTubeCaptionTrack | None) -> None:
+    def _remember(self, key: tuple[str, str], track: YouTubeCaptionTrack | Exception | None) -> None:
         with self._lock:
             self._memo.pop(key, None)
             self._memo[key] = (self._clock() + MEMO_SECONDS, track)
@@ -170,6 +185,14 @@ class PolicyCaptionClient:
             raise ProviderRequestFailed() from error
         else:
             track = None
+            if (result is not None and result.chunks and source_language.casefold() == "zh"
+                    and traditional_chinese_refused() and is_traditional_chinese_tag(result.language)):
+                # Only the response reveals the language: the request is already counted, and it is recorded here. The
+                # captions are dropped before they become a lesson line, so nothing is translated or spent after it (D-218).
+                _log.warning("supadata native captions for %s are tagged %s: Traditional Chinese is not accepted", video_id, result.language)
+                refusal = TraditionalChineseNotAccepted()
+                self._remember(key, refusal)
+                raise refusal
             if result is not None and result.chunks:
                 track = YouTubeCaptionTrack(
                     source_language=result.language,
