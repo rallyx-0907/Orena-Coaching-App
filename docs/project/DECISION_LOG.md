@@ -6930,6 +6930,40 @@ in the existing `processing` JSON beside `translation_counts`.
    (reprocess still redoes everything). Whether the 5-round / 150 s bound suits the provider's real limits once a real batch is
    measured (no live provider was called; tests use fakes).
 
+## D-208 - ASR transcripts: one Chinese script per item, and hallucinated segments removed (2026-10-15)
+
+Status: ACCEPTED (merged as #218 once CI was green; independent review APPROVE-WITH-FOLLOWUPS on b2742791, re-review APPROVE on 2be1537e, no open P0/P1). Video Sources milestone, PR-B. No schema or migration change: the counts live in
+`processing` (an existing JSON field) and the recogniser signals are optional fields on an in-memory dataclass.
+
+1. **Script.** ASR cue text and the stored word arrays of a Chinese item are converted to the item's script before lines are cut:
+   Simplified by default, Traditional for a `zh-Hant`/`zh-TW`/`zh-HK` language tag (`languages/chinese/script_conversion.py`).
+   The table (`script_map.json`) is derived from the vendored CC-CEDICT pack by `scripts/build_chinese_script_table.py`, one
+   character to one character, so lengths, timings and tap alignment are unchanged. No new dependency. Simplified to
+   Traditional skips a character with more than one Traditional form (发, 后): it is left as written, never guessed.
+   The provider already receives the language hint (`zh`); a Whisper language code cannot name a script, and a prompt hint
+   would need a provider-interface change, so it is not added.
+2. **Filter.** `media_asr_filter.screen_segments` runs on the joined segments of every ASR item (EN and ZH, one contract),
+   never on captions. It always drops a subtitle-credit line or a bare sound tag, and a segment the recogniser doubts
+   (`no_speech_prob` > 0.6 with `avg_logprob` < -1.0, or `compression_ratio` > 2.4; the Whisper skip thresholds). A stock
+   sign-off ("Thank you", "The End", "I'm sorry", 谢谢) is dropped when it is long for its few words or the recogniser doubts
+   it (`no_speech_prob` >= 0.3, `avg_logprob` < -1.0 or `compression_ratio` > 2.0). Context alone (10 s of silence beside it,
+   an adjacent repeat) and a lone word at the tail after 2 s of silence drop only when the provider gave no confidence signal;
+   when it did and shows no doubt, the segment is kept and flagged, so a real "Bye. Bye." or closing 好的 survives. A long
+   segment with few words that matches nothing is kept and flagged. Words inside a dropped segment are removed with it. The
+   phrase lists are `writing_coach/media_asr_hallucinations.json`, with a stated basis and a line per language.
+3. **Recorded.** `processing.asr_filtered` and `processing.asr_flagged` are written on ready, held and failed outcomes of an ASR
+   item (0 for captions). If everything is filtered the item fails `empty_transcript` with the count as the detail.
+4. **ZH cut.** A recogniser cut with under 500 ms of silence after it is mid-sentence and no longer receives a full stop; a
+   question particle still closes it.
+5. **Known limits, review step.** Key-term recognition errors (大国空潮 for 大国空巢, BOA for VOA) and wrong-but-fluent
+   mishearings cannot be found by rules and are not corrected; a transcript still needs a human read before rights are
+   confirmed. A stock sign-off beside a long silence, an adjacent repeat, or a lone tail word is dropped only when the provider gave no confidence signal; with signals and no doubt it is kept and counted in `asr_flagged`. Real speech can still be lost where the recogniser itself doubts a stock phrase or the segment is long for its few words (a true "Thank you" given with low confidence). `asr_filtered` and `asr_flagged` let a reviewer see both. The admin does not yet render `asr_filtered`/`asr_flagged` (API only; `UI_BACKEND_GAPS.md`).
+6. **More known limits.** (a) Ambiguous characters stay unconverted by design (麼, 著, 乾, 徵, 餘 and the like: 什麼 and 那麼 can
+   remain Traditional inside a Simplified item), so a line can still mix scripts at those characters. (b) The Traditional
+   path is currently unreachable: imports store only `zh`, so every Chinese ASR item is normalised to Simplified, including
+   genuinely Traditional audio. No import option is added here; recorded as a gap in `UI_BACKEND_GAPS.md`. (c) The screen counts
+   are cleared at the start of every run, so a caption-path re-run or an early stop shows 0.
+
 ## D-209 - `/api/media/files` serves a file only through the stored entry that owns it (2026-10-15)
 
 Status: ACCEPTED (merged as #219 once CI was green; independent review APPROVE on e8105b2f, no open P0/P1). Fixes #216 (P2-2 of the #214 review). No schema or migration change, no new
