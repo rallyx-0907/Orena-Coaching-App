@@ -74,3 +74,14 @@ Merge and every activation gate (design §12) remain separate.
 - secret and configuration readiness on the runtime;
 - runtime migrations (0027 -> 0033);
 - production activation.
+
+## Implementation review of `10471923` (ChatGPT / GPT-5.6 Sol): REQUEST CHANGES (3 P1, 2 P2), and the fixes
+
+| Finding | Fix |
+| --- | --- |
+| **P1-1:** the order code was not exact; `int(digits)` turned `ORN0100001` into order 100001 | `order_code` returns an order only when the suffix is canonical: `str(int(digits)) == digits` and the number is positive. `ORN0100001`, `ORN000100001` and `ORN0` name no order. Tests: hermetic mapping, plus PostgreSQL via both the webhook and the feed. All give `payment_unknown_order`, no top-up, and the order stays pending. |
+| **P1-2:** an unapproved "international-only" exception | Removed. In production, no `BILLING_DOMESTIC_GATEWAY` means `domestic_gateway_unset` whatever is configured. A configured choice that is not configured as a gateway means `domestic_gateway_unconfigured`. Inference applies only outside production with one domestic gateway. Readiness test: a production runtime with Polar ready and no domestic choice is not billing-ready. |
+| **P1-3A:** the first run fell back to `now()` | The first run starts at the oldest open SePay order; when none is open, at the gateway's first order of any state (when SePay sales began). Before SePay ever sold, the cursor is not started (`sepay_feed_no_orders`), never "now". |
+| **P1-3B:** no operator date-range backfill | `SePayFeed.backfill(date_from, date_to)` uses the same §6.3 rules and the same `handle_fact` path. It runs with `page=1`, `transaction_date_to` and a local `since_id`, and **never reads or writes the cursor**. It needs only the token, so it also works while the feed is off. The range is positive and at most 31 days, with at most 50 pages. It is exposed as admin-only `POST /api/admin/billing/sepay/backfill`, recorded in the authorization matrix. Tests: same handling, cursor untouched, works with the feed off, needs the token, range bounds, and an idempotent replay on PostgreSQL (one top-up). |
+| **P2-1:** `Retry-After` was discarded | A 429 writes `not_before = now + Retry-After` into the cursor document (compare-and-set), default 60 s. Every tick before then, in any worker, makes no request (`sepay_feed_waiting`). Test: with a 600 s wait and 60 s ticks there is exactly one request until the wait ends. |
+| **P2-2:** VietQR tests were self-consistency only | Two complete published vectors from independent implementations, matched exactly. One is from `xuannghia/vietnam-qr-pay` (ACB 970416, 10,000 VND, "Chuyen tien"). The other is from `subiz/vietqr` (VietinBank 970415, 120,000 VND, "ung ho lu lut"). A real banking-app scan remains activation gate 8. |

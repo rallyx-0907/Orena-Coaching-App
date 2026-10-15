@@ -1348,6 +1348,19 @@ def _billing_service():
                           production=os.getenv("APP_ENV", "").strip().casefold() == "production")
 
 
+def _sepay_feed(service):
+    """PR-MON-8 §6: the SePay feed object, built whenever SePay has its API token (the operator's date-range backfill,
+    §6.4, needs only that). Its reconciler step runs only when SEPAY_FEED_ENABLED is on as well (feed.enabled)."""
+
+    sepay = service.gateways.get("sepay") if service is not None else None
+    if sepay is None or not sepay.has_api_token:
+        return None
+    from writing_coach.billing.sepay_feed import SePayFeed
+
+    return SePayFeed(service=service, gateway=sepay, settings=_persistence_runtime.platform_repository,
+                     orders=service.orders)
+
+
 def _billing_reconciler(service):
     """PR-MON-3: the reconciler runs only where billing does; payOS lookups only with payOS's keys (H3)."""
 
@@ -1358,14 +1371,7 @@ def _billing_reconciler(service):
     )
 
     settings = Settings.from_env(os.environ)
-    feed = None
-    sepay = service.gateways.get("sepay")
-    if sepay is not None and sepay.feed_enabled:
-        # PR-MON-8 §6: only with SEPAY_API_TOKEN AND SEPAY_FEED_ENABLED; the cursor is a platform setting (CAS).
-        from writing_coach.billing.sepay_feed import SePayFeed
-
-        feed = SePayFeed(service=service, gateway=sepay, settings=_persistence_runtime.platform_repository,
-                         orders=service.orders)
+    feed = _sepay_feed(service)
     reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
                                    lock=PostgresTickLock(_persistence_runtime.engine),
                                    lookups=build_lookups(service.gateways), settings=settings, credits=_credits,
@@ -1455,7 +1461,8 @@ _billing_reconcile = _billing_reconciler(_billing)
 configure_billing(service=_billing, backbone=_account_backbone, admin_guard=require_admin,
                   reconciliation=_billing.reconciliation if _billing is not None else None,
                   reconcile=_billing_reconcile.tick if _billing_reconcile is not None else None, credits=_credits,
-                  public_base_url=os.getenv("PUBLIC_BASE_URL", ""))
+                  public_base_url=os.getenv("PUBLIC_BASE_URL", ""),
+                  sepay_backfill=(lambda feed: feed.backfill if feed is not None else None)(_sepay_feed(_billing)))
 
 
 def _schema_state(names):

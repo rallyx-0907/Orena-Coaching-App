@@ -24,6 +24,7 @@ There is no learner screen yet: the design draws no plans or checkout page (UI_B
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 import uuid
 from collections.abc import Callable
 from typing import Any, Literal
@@ -49,15 +50,18 @@ _ready: Callable[[], bool] | None = None  # None: `billing.readiness.billing_rea
 _items: Any = None  # the reconciliation items (PR-MON-3)
 _reconcile: Callable[[], Any] | None = None  # one reconciliation pass
 _credits: Any = None  # the credit service (PR-MON-4), only when credits are enabled
+_sepay_backfill: Callable[[Any, Any], dict] | None = None  # PR-MON-8 §6.4, the operator's SePay recovery
 MAX_WEBHOOK_BYTES = 256 * 1024
 
 
 def configure_billing(*, service: Any, backbone: Any, admin_guard: Callable[[Request], Any],
                       public_base_url: str, reconciliation: Any = None,
-                      reconcile: Callable[[], Any] | None = None, credits: Any = None) -> None:
-    global _service, _backbone, _admin, _public_base, _items, _reconcile, _credits
+                      reconcile: Callable[[], Any] | None = None, credits: Any = None,
+                      sepay_backfill: Callable[[datetime, datetime], dict] | None = None) -> None:
+    global _service, _backbone, _admin, _public_base, _items, _reconcile, _credits, _sepay_backfill
     _service, _backbone, _admin, _public_base = service, backbone, admin_guard, public_base_url.rstrip("/")
     _items, _reconcile, _credits = reconciliation, reconcile, credits
+    _sepay_backfill = sepay_backfill
 
 
 def _billing_ready() -> bool:
@@ -255,6 +259,32 @@ def billing_reconciliation_resolve(item_id: str, payload: ResolveIn, request: Re
     except ResolutionRefused as refused:
         raise orena_http_error(409, refused.code, "This item cannot be closed that way.", retryable=False) from None
     return {"ok": True, "item": _public_item(item)}
+
+
+class SePayBackfillIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    date_from: datetime
+    date_to: datetime
+
+
+@router.post("/api/admin/billing/sepay/backfill")
+def billing_sepay_backfill(payload: SePayBackfillIn, request: Request) -> dict[str, Any]:
+    """PR-MON-8 §6.4: an operator's recovery of one SePay date range through the same rules and payment path as the
+    feed. It never moves the feed's cursor. Needs SEPAY_API_TOKEN; works while the feed itself is off."""
+
+    _admin_items(request)
+    if _sepay_backfill is None:
+        raise orena_http_error(503, "sepay_backfill_unavailable", "SePay recovery is not configured here.",
+                               retryable=False)
+    start, end = (value if value.tzinfo else value.replace(tzinfo=UTC) for value in (payload.date_from, payload.date_to))
+    try:
+        counts = _sepay_backfill(start, end)
+    except ValueError as invalid:
+        raise orena_http_error(422, "backfill_range_invalid", str(invalid), retryable=False) from None
+    except PermissionError:
+        raise orena_http_error(503, "sepay_backfill_unavailable", "SePay recovery is not configured here.",
+                               retryable=False) from None
+    return {"ok": True, "counts": counts}
 
 
 @router.post("/api/admin/billing/reconcile")

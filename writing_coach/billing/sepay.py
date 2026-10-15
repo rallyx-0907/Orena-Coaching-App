@@ -138,6 +138,8 @@ class SePayGateway:
         self.api_base = (api_base or API_BASE).rstrip("/")
         # PR-MON-8 §6.3: the recovery feed runs only with its token AND its switch; a token alone never starts it.
         self.feed_enabled = bool(feed_enabled and api_token)
+        # The operator's date-range backfill (§6.4) needs only the token: it is the recovery path while the feed is off.
+        self.has_api_token = bool(api_token)
 
     def __repr__(self) -> str:  # never the secret or the token
         return f"SePayGateway(account=***{self.account_number[-4:]}, prefix={self.prefix!r}, feed={self.feed_enabled})"
@@ -171,9 +173,12 @@ class SePayGateway:
         if not value.startswith(self.prefix):
             return None
         digits = value[len(self.prefix):]
-        if not digits.isdigit() or not 1 <= len(digits) <= ORDER_CODE_DIGITS or not digits.isascii():
+        if not digits.isascii() or not digits.isdigit() or not 1 <= len(digits) <= ORDER_CODE_DIGITS:
             return None
-        return int(digits)
+        order = int(digits)
+        # Exact: only the code Orena issued. `ORN0100001` is not `ORN100001` (review P1-1): a non-canonical suffix
+        # names no order, and the transfer becomes `payment_unknown_order`.
+        return order if order > 0 and str(order) == digits else None
 
     def to_fact(self, transfer: Transfer, *, payload_digest: str) -> PaymentFact:
         """One transfer as a `PaymentFact`. Outgoing money and other accounts are `ignored`; an incoming transfer to
@@ -257,8 +262,9 @@ class SePayGateway:
 
     # ---- recovery feed (G3, §6) ---------------------------------------------------------------------------------
 
-    def feed_request(self, *, since_id: str | None, date_from: datetime | None, per_page: int = 100) -> dict[str, Any]:
-        """Always page 1 (§6.2): the cursor moves, the page never does."""
+    def feed_request(self, *, since_id: str | None, date_from: datetime | None, per_page: int = 100,
+                     date_to: datetime | None = None) -> dict[str, Any]:
+        """Always page 1 (§6.2): the cursor moves, the page never does. `date_to` bounds an operator backfill (§6.4)."""
 
         params: dict[str, str] = {"transfer_type": "in", "transaction_date_sort": "asc", "per_page": str(per_page),
                                   "page": "1"}  # fmt: skip
@@ -266,6 +272,8 @@ class SePayGateway:
             params["since_id"] = since_id
         elif date_from is not None:
             params["transaction_date_from"] = date_from.astimezone(VIETNAM).strftime("%Y-%m-%d %H:%M:%S")
+        if date_to is not None:
+            params["transaction_date_to"] = date_to.astimezone(VIETNAM).strftime("%Y-%m-%d %H:%M:%S")
         return {"method": "GET", "url": f"{self.api_base}/transactions", "params": params,
                 "headers": {"Authorization": f"Bearer {self._token}"}}
 

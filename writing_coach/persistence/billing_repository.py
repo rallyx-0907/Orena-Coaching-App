@@ -200,6 +200,14 @@ class PostgresBillingRepository:
                 "SELECT MIN(created_at) FROM billing_orders WHERE gateway = :gateway "
                 "AND state IN ('created', 'pending', 'expired', 'cancelled')"), {"gateway": gateway}).scalar()
 
+    def first_order_created_at(self, gateway: str) -> datetime | None:
+        """The creation of the gateway's first order, of any state: when sales through it began. None when it has
+        never sold (PR-MON-8 §6.2, the first-run start when no order is open)."""
+
+        with self._engine.connect() as connection:
+            return connection.execute(text(
+                "SELECT MIN(created_at) FROM billing_orders WHERE gateway = :gateway"), {"gateway": gateway}).scalar()
+
     def mark_paid_domestic(self, *, order_code: int, event_id: str, amount_minor: int | None, currency: str | None,
                            transaction_at: datetime | None, grace: timedelta | None, paid_reference: str | None = None,
                            now: datetime | None = None) -> dict[str, Any]:

@@ -35,6 +35,9 @@ SETTLE_DELAY = timedelta(minutes=45)
 MAX_ITERATIONS = 5
 PER_PAGE = 100
 FEED_TIMEOUT_SECONDS = 10.0
+DEFAULT_RETRY_SECONDS = 60.0          # a 429 without a usable Retry-After still waits this long
+MAX_BACKFILL_PAGES = 50
+MAX_BACKFILL_RANGE = timedelta(days=31)
 
 
 class FeedHTTPError(Exception):
@@ -86,31 +89,50 @@ class SePayFeed:
     def _cursor(self) -> tuple[dict[str, Any], Any]:
         stored = self._settings.get_setting(CURSOR_KEY)
         if stored is None:
-            return {"since_id": None, "backfill_from": None}, None
+            return {"since_id": None, "backfill_from": None, "not_before": None}, None
         value = stored.get("value") if isinstance(stored.get("value"), dict) else {}
-        return {"since_id": value.get("since_id"), "backfill_from": value.get("backfill_from")}, stored["updated_at"]
+        return ({"since_id": value.get("since_id"), "backfill_from": value.get("backfill_from"),
+                 "not_before": value.get("not_before")}, stored["updated_at"])  # fmt: skip
 
-    def _first_run_from(self) -> datetime:
-        """The oldest open SePay order's creation, or now when none is open (nothing earlier can be owed)."""
+    def _first_run_from(self) -> datetime | None:
+        """§6.2: the oldest open SePay order's creation; when none is open, the date SePay sales began (its first
+        order of any state). Never "now", which could skip older money (review P1-3A). None while SePay has never
+        sold: there is nothing of Orena's to recover yet, and the cursor is not started."""
 
         oldest = self._orders.oldest_open_created_at(self._gateway.name)
-        return oldest if oldest is not None else self._now()
+        if oldest is None:
+            oldest = self._orders.first_order_created_at(self._gateway.name)
+        return oldest
+
+    def _write(self, value: dict[str, Any], version: Any, counts: Counter[str]) -> Any:
+        """A compare-and-set write of the cursor document; None when another writer moved it (nothing written)."""
+
+        from writing_coach.persistence.platform_repository import SettingConflict
+
+        try:
+            return self._settings.set_setting(CURSOR_KEY, value, updated_by="billing-reconciler",
+                                              expected_updated_at=version)["updated_at"]
+        except SettingConflict:
+            counts["sepay_feed_conflict"] += 1
+            return None
 
     def step(self, counts: Counter[str], lock: Any = None) -> None:
         if not self.enabled:
             return
-        from writing_coach.persistence.platform_repository import SettingConflict
-
         cursor, version = self._cursor()
+        not_before = cursor.get("not_before")
+        if not_before and datetime.fromisoformat(not_before) > self._now():
+            counts["sepay_feed_waiting"] += 1   # SePay asked us to wait (Retry-After): no request before then
+            return
         if cursor["since_id"] is None and cursor["backfill_from"] is None:
             start = self._first_run_from()
-            try:
-                written = self._settings.set_setting(CURSOR_KEY, {"since_id": None, "backfill_from": start.isoformat()},
-                                                     updated_by="billing-reconciler", expected_updated_at=version)
-            except SettingConflict:
-                counts["sepay_feed_conflict"] += 1
+            if start is None:
+                counts["sepay_feed_no_orders"] += 1
                 return
-            cursor, version = {"since_id": None, "backfill_from": start.isoformat()}, written["updated_at"]
+            cursor = {"since_id": None, "backfill_from": start.isoformat(), "not_before": None}
+            version = self._write(cursor, version, counts)
+            if version is None:
+                return
         horizon = self._now() - self._settle
         for _ in range(self._iterations):
             if lock is not None and hasattr(lock, "alive") and not lock.alive():
@@ -120,36 +142,74 @@ class SePayFeed:
             request = self._gateway.feed_request(since_id=cursor["since_id"], date_from=date_from, per_page=PER_PAGE)
             try:
                 answer = self._fetch(request)  # page 1, always
-            except RateLimited:
+            except RateLimited as limited:
                 counts["sepay_feed_rate_limited"] += 1
+                wait = limited.retry_after if limited.retry_after and limited.retry_after > 0 else DEFAULT_RETRY_SECONDS
+                # Honoured across ticks and workers (review P2-1): the wait is part of the cursor document.
+                self._write({**cursor, "not_before": (self._now() + timedelta(seconds=wait)).isoformat()}, version,
+                            counts)
                 return
             rows = answer.get("data") if isinstance(answer, dict) else None
             if not isinstance(rows, list) or not rows:
                 return
-            last_handled, settled_out = None, False
-            for row in rows:
-                if not isinstance(row, dict) or not row.get("id"):
-                    raise ValueError("a feed row without an id")   # an unreadable page never moves the cursor
-                transfer = self._gateway.feed_transfer(row)
-                if transfer.transaction_at is None or transfer.transaction_at > horizon:
-                    settled_out = True   # still inside the settle delay (or unreadable): not past this row
-                    break
-                eligible = (transfer.transfer_type == "in" and transfer.account_number == self._gateway.account_number
-                            and row.get("webhook_success") in (0, None))  # fmt: skip
-                if eligible:
-                    fact = self._gateway.to_fact(transfer, payload_digest=self._gateway.feed_row_digest(row))
-                    outcome = self._service.handle_fact(fact)   # raises on a write failure: the cursor stays
-                    counts[f"sepay_feed_{outcome.status}"] += 1
-                else:
-                    counts["sepay_feed_skipped"] += 1
-                last_handled = str(row["id"])
+            # In order; stops at the settle delay; a failure raises and the cursor stays where it was.
+            last_handled, settled_out = self._handle_page(rows, horizon, counts)
             if last_handled is not None:
-                try:
-                    written = self._settings.set_setting(CURSOR_KEY, {"since_id": last_handled, "backfill_from": None},
-                                                         updated_by="billing-reconciler", expected_updated_at=version)
-                except SettingConflict:
-                    counts["sepay_feed_conflict"] += 1   # another writer: stop, write nothing more
-                    return
-                cursor, version = {"since_id": last_handled, "backfill_from": None}, written["updated_at"]
+                cursor = {"since_id": last_handled, "backfill_from": None, "not_before": None}
+                version = self._write(cursor, version, counts)
+                if version is None:
+                    return   # another writer: stop, write nothing more
             if settled_out or last_handled is None or len(rows) < PER_PAGE:
                 return
+
+    def _handle_page(self, rows: list[Any], horizon: datetime, counts: Counter[str]) -> tuple[str | None, bool]:
+        """Handle one page in order under the §6.3 rules: (the last handled row's id, whether the settle delay was
+        reached). A row whose handling fails raises: nothing after it is handled."""
+
+        last_handled, settled_out = None, False
+        for row in rows:
+            if not isinstance(row, dict) or not row.get("id"):
+                raise ValueError("a feed row without an id")
+            transfer = self._gateway.feed_transfer(row)
+            if transfer.transaction_at is None or transfer.transaction_at > horizon:
+                settled_out = True
+                break
+            eligible = (transfer.transfer_type == "in" and transfer.account_number == self._gateway.account_number
+                        and row.get("webhook_success") in (0, None))  # fmt: skip
+            if eligible:
+                fact = self._gateway.to_fact(transfer, payload_digest=self._gateway.feed_row_digest(row))
+                outcome = self._service.handle_fact(fact)
+                counts[f"sepay_feed_{outcome.status}"] += 1
+            else:
+                counts["sepay_feed_skipped"] += 1
+            last_handled = str(row["id"])
+        return last_handled, settled_out
+
+    def backfill(self, date_from: datetime, date_to: datetime, *, max_pages: int = MAX_BACKFILL_PAGES) -> dict[str, int]:
+        """§6.4: an operator's recovery of one date range, through the same §6.3 rules and the same payment path. It
+        needs only the API token (it is the recovery path while the feed is off), and it never reads or moves the
+        authoritative cursor: it walks its own range with `page=1` and a local `since_id`."""
+
+        if not self._gateway.has_api_token:
+            raise PermissionError("SEPAY_API_TOKEN is not configured")
+        if date_to <= date_from or date_to - date_from > MAX_BACKFILL_RANGE:
+            raise ValueError(f"a backfill range is positive and at most {MAX_BACKFILL_RANGE.days} days")
+        counts: Counter[str] = Counter()
+        horizon = min(self._now() - self._settle, date_to)
+        since_id: str | None = None
+        for _ in range(max(1, int(max_pages))):
+            request = self._gateway.feed_request(since_id=since_id, date_from=None if since_id else date_from,
+                                                 date_to=date_to, per_page=PER_PAGE)
+            try:
+                answer = self._fetch(request)
+            except RateLimited:
+                counts["sepay_backfill_rate_limited"] += 1
+                break
+            rows = answer.get("data") if isinstance(answer, dict) else None
+            if not isinstance(rows, list) or not rows:
+                break
+            last_handled, settled_out = self._handle_page(rows, horizon, counts)
+            if settled_out or last_handled is None or len(rows) < PER_PAGE:
+                break
+            since_id = last_handled
+        return dict(counts)

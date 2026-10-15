@@ -103,6 +103,9 @@ def test_a_signed_but_unreadable_body_is_rejected():
     ({"code": "XYZ100001"}, "payment", None),                   # a foreign prefix
     ({"code": "ORN10A001"}, "payment", None),                   # not digits
     ({"code": "orn100001"}, "payment", "100001"),               # the prefix, case-insensitively
+    ({"code": "ORN0100001"}, "payment", None),                  # review P1-1: a leading zero is not the code issued
+    ({"code": "ORN000100001"}, "payment", None),
+    ({"code": "ORN0"}, "payment", None),
 ])
 def test_the_payment_code_alone_names_the_order(over, kind, order):
     body = payload(**over)
@@ -136,6 +139,21 @@ def test_transaction_dates_are_vietnam_time_and_unreadable_ones_are_none():
 
 
 # ---- VietQR (G1) ----------------------------------------------------------------------------------------------------
+
+@pytest.mark.parametrize(("inputs", "expected"), [
+    # xuannghia/vietnam-qr-pay README, "VietQR dynamic" (ACB 970416): an independent JS implementation
+    (dict(bank_bin="970416", account_number="257678859", amount_minor=10_000, purpose="Chuyen tien"),
+     "00020101021238530010A0000007270123000697041601092576788590208QRIBFTTA53037045405100005802VN62150811Chuyen tien"
+     "630453E6"),
+    # subiz/vietqr Go package, its documented Generate example (VietinBank 970415; the note without diacritics)
+    (dict(bank_bin="970415", account_number="0011001932418", amount_minor=120_000, purpose="ung ho lu lut"),
+     "00020101021238570010A00000072701270006970415011300110019324180208QRIBFTTA530370454061200005802VN62170813ung "
+     "ho lu lut6304C15C"),
+])
+def test_the_vietqr_matches_published_known_answer_vectors(inputs, expected):
+    """Review P2-2: complete payloads published by two independent implementations, not this code's own output."""
+    assert vietqr_payload(**inputs) == expected
+
 
 def test_crc16_ccitt_false_check_value():
     assert crc16_ccitt_false(b"123456789") == 0x29B1   # the published check value of CRC-16/CCITT-FALSE
@@ -264,7 +282,25 @@ def test_the_domestic_gateway_is_explicit_in_production():
     assert service({"sepay": sepay, "payos": PAYOS}, production=False).domestic_state() == (None, "domestic_gateway_unset")
     assert service({"payos": PAYOS}, domestic="sepay").domestic_state() == (None, "domestic_gateway_unconfigured")
     assert service({"sepay": sepay, "payos": PAYOS}, domestic="payos", production=True).domestic_state() == ("payos", None)
-    assert service({}, production=True).domestic_state() == (None, None)   # an international-only deployment
+    # review P1-2: no international-only exception - production without a choice is never ready
+    assert service({}, production=True).domestic_state() == (None, "domestic_gateway_unset")
+    from tests.test_billing import POLAR
+
+    assert service({"polar": POLAR}, production=True).domestic_blockers() == ["domestic_gateway_unset"]
+
+
+def test_a_production_runtime_is_not_billing_ready_on_polar_alone_without_the_domestic_choice():
+    from tests.test_billing import POLAR
+    from writing_coach.billing import readiness
+
+    real = service({"polar": POLAR}, production=True)
+    facade = SimpleNamespace(gateway_report=lambda: {"polar": {"ready": True}}, domestic_blockers=real.domestic_blockers)
+    facts = readiness.RuntimeFacts(switch=True, backend="postgresql", backbone="active",
+                                   commerce_schema=lambda: "present", orders_schema=lambda: "present",
+                                   entitlement_source=lambda: "installed", service=facade,
+                                   public_base_url="https://orena.test", production=True)
+    report = readiness.report(facts)
+    assert report["ready"] is False and "domestic_gateway_unset" in report["blockers"]
 
 
 def test_an_unconfigured_grace_closes_sepay_and_names_the_blocker(monkeypatch):
@@ -360,41 +396,43 @@ def test_a_transfer_without_an_order_code_is_recorded_and_never_decided():
 
 # ---- the webhook route: SePay's acknowledgement, and 503 when the item cannot be written --------------------------------
 
-def _route(billing):
+@pytest.fixture
+def route():
+    """The webhook route around one service; billing_api's module state is restored afterwards."""
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
     from writing_coach import billing_api
 
-    billing_api.configure_billing(service=billing, backbone=SimpleNamespace(is_active=True),
-                                  admin_guard=lambda request: None, public_base_url="https://orena.test")
-    app = FastAPI()
-    app.include_router(billing_api.router)
-    return TestClient(app), billing_api
+    names = ("_service", "_backbone", "_admin", "_public_base", "_items", "_reconcile", "_credits", "_sepay_backfill")
+    saved = {name: getattr(billing_api, name) for name in names}
+
+    def build(billing):
+        billing_api.configure_billing(service=billing, backbone=SimpleNamespace(is_active=True),
+                                      admin_guard=lambda request: None, public_base_url="https://orena.test")
+        app = FastAPI()
+        app.include_router(billing_api.router)
+        return TestClient(app)
+
+    yield build
+    for name, value in saved.items():
+        setattr(billing_api, name, value)
 
 
-def test_sepay_is_acknowledged_in_its_own_shape_once_recorded():
-    client, billing_api = _route(service({"sepay": gateway()}, domestic="sepay", orders=Orders("late"),
-                                         reconciliation=Items(), now=lambda: datetime.now(UTC)))
-    try:
-        body = payload()
-        answer = client.post("/api/billing/webhooks/sepay", content=body, headers=signed(body, at=datetime.now(UTC)))
-        assert answer.status_code == 200 and answer.json() == {"success": True}
-    finally:
-        billing_api.configure_billing(service=None, backbone=SimpleNamespace(is_active=False),
-                                      admin_guard=lambda request: None, public_base_url="")
+def test_sepay_is_acknowledged_in_its_own_shape_once_recorded(route):
+    client = route(service({"sepay": gateway()}, domestic="sepay", orders=Orders("late"), reconciliation=Items(),
+                           now=lambda: datetime.now(UTC)))
+    body = payload()
+    answer = client.post("/api/billing/webhooks/sepay", content=body, headers=signed(body, at=datetime.now(UTC)))
+    assert answer.status_code == 200 and answer.json() == {"success": True}
 
 
-def test_a_failed_item_write_answers_503_and_no_acknowledgement():
-    client, billing_api = _route(service({"sepay": gateway()}, domestic="sepay", orders=Orders("order_closed"),
-                                         reconciliation=Items(fail=True), now=lambda: datetime.now(UTC)))
-    try:
-        body = payload()
-        answer = client.post("/api/billing/webhooks/sepay", content=body, headers=signed(body, at=datetime.now(UTC)))
-        assert answer.status_code == 503 and answer.json() != {"success": True}
-    finally:
-        billing_api.configure_billing(service=None, backbone=SimpleNamespace(is_active=False),
-                                      admin_guard=lambda request: None, public_base_url="")
+def test_a_failed_item_write_answers_503_and_no_acknowledgement(route):
+    client = route(service({"sepay": gateway()}, domestic="sepay", orders=Orders("order_closed"),
+                           reconciliation=Items(fail=True), now=lambda: datetime.now(UTC)))
+    body = payload()
+    answer = client.post("/api/billing/webhooks/sepay", content=body, headers=signed(body, at=datetime.now(UTC)))
+    assert answer.status_code == 503 and answer.json() != {"success": True}
 
 
 # ---- the recovery feed's cursor loop (§6.2, §6.3) ---------------------------------------------------------------
@@ -519,6 +557,32 @@ def test_the_first_run_backfills_from_the_oldest_open_order():
     assert "since_id" not in first and first["transaction_date_from"] == "2026-10-14 10:00:00"   # NOW - 1 day, VN time
 
 
+def _first_run(open_at, first_at):
+    from writing_coach.billing.sepay_feed import SePayFeed
+
+    settings = Settings()
+    fetch = Feeder([row(1)])
+    orders = SimpleNamespace(oldest_open_created_at=lambda gateway: open_at,
+                             first_order_created_at=lambda gateway: first_at)
+    counts = Counter()
+    SePayFeed(service=Handler(), gateway=gateway(feed_enabled=True), settings=settings, orders=orders, fetch=fetch,
+              now=lambda: NOW).step(counts)
+    return settings, fetch, counts
+
+
+def test_with_no_open_order_the_first_run_starts_when_sepay_sales_began_never_now():
+    from writing_coach.billing.sepay import VIETNAM
+
+    began = NOW - timedelta(days=40)
+    _settings, fetch, _counts = _first_run(None, began)
+    assert fetch.requests[0]["transaction_date_from"] == began.astimezone(VIETNAM).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def test_before_sepay_ever_sold_the_feed_does_not_start_its_cursor():
+    settings, fetch, counts = _first_run(None, None)
+    assert fetch.requests == [] and settings.value is None and counts["sepay_feed_no_orders"] == 1
+
+
 def test_a_rate_limit_ends_the_step_without_moving_the_cursor():
     from writing_coach.billing.reconciler import RateLimited
     from writing_coach.billing.sepay_feed import SePayFeed
@@ -526,8 +590,73 @@ def test_a_rate_limit_ends_the_step_without_moving_the_cursor():
     def limited(_request):
         raise RateLimited(30)
 
-    settings = Settings({"since_id": None, "backfill_from": NOW.isoformat()})
+    settings = Settings({"since_id": "c1", "backfill_from": None})
     counts = Counter()
     SePayFeed(service=Handler(), gateway=gateway(feed_enabled=True), settings=settings, orders=None, fetch=limited,
               now=lambda: NOW).step(counts)
-    assert counts["sepay_feed_rate_limited"] == 1 and settings.writes == []
+    assert counts["sepay_feed_rate_limited"] == 1 and settings.value["since_id"] == "c1"   # the cursor never moved
+
+
+def test_retry_after_is_honoured_across_ticks_longer_than_the_reconciler_interval():
+    """Review P2-1: SePay asks for 600 s and the reconciler ticks every 60 s: no request before the wait ends."""
+    from writing_coach.billing.reconciler import RateLimited
+    from writing_coach.billing.sepay_feed import SePayFeed
+
+    calls = []
+    clock = {"now": NOW}
+
+    def limited(_request):
+        calls.append(clock["now"])
+        raise RateLimited(600)
+
+    settings = Settings({"since_id": "c1", "backfill_from": None})
+    step = SePayFeed(service=Handler(), gateway=gateway(feed_enabled=True), settings=settings, orders=None,
+                     fetch=limited, now=lambda: clock["now"])
+    step.step(Counter())
+    for seconds in (60, 120, 540):
+        clock["now"] = NOW + timedelta(seconds=seconds)
+        counts = Counter()
+        step.step(counts)
+        assert counts["sepay_feed_waiting"] == 1
+    assert len(calls) == 1 and settings.value["since_id"] == "c1"
+    clock["now"] = NOW + timedelta(seconds=601)
+    step.step(Counter())
+    assert len(calls) == 2   # asked again only once the wait was over
+
+
+# ---- the operator's date-range backfill (§6.4) ------------------------------------------------------------------
+
+def test_a_backfill_uses_the_same_handling_and_never_touches_the_cursor(monkeypatch):
+    from writing_coach.billing import sepay_feed
+
+    monkeypatch.setattr(sepay_feed, "PER_PAGE", 2)
+    rows = [row(1), row(2, webhook_success=1), row(3), row(4, account="999"), row(5)]
+    handler = Handler()
+    settings = Settings({"since_id": "authoritative", "backfill_from": None})
+    step = feed(rows, handler=handler, settings=settings)
+    counts = step.backfill(NOW - timedelta(days=2), NOW)
+    assert [f.extra["source_id"][-1] for f in handler.facts] == ["1", "3", "5"]   # the same §6.3 rules
+    assert counts["sepay_feed_skipped"] == 2
+    assert settings.value == {"since_id": "authoritative", "backfill_from": None} and settings.writes == []
+    requests = step._fetch.requests
+    assert all(r["page"] == "1" for r in requests) and all("transaction_date_to" in r for r in requests)
+    assert requests[0]["transaction_date_from"] and "since_id" not in requests[0]
+
+
+def test_a_backfill_works_while_the_feed_is_off_but_needs_the_token():
+    from writing_coach.billing.sepay_feed import SePayFeed
+
+    off = SePayFeed(service=Handler(), gateway=gateway(feed_enabled=False), settings=Settings(), orders=None,
+                    fetch=Feeder([row(1)]), now=lambda: NOW)
+    assert off.enabled is False and off.backfill(NOW - timedelta(days=1), NOW) == {"sepay_feed_apply": 1}
+    tokenless = SePayFeed(service=Handler(), gateway=gateway(api_token="", feed_enabled=False), settings=Settings(),
+                          orders=None, fetch=Feeder([]), now=lambda: NOW)
+    with pytest.raises(PermissionError):
+        tokenless.backfill(NOW - timedelta(days=1), NOW)
+
+
+@pytest.mark.parametrize(("start", "end"), [(NOW, NOW), (NOW, NOW - timedelta(days=1)),
+                                            (NOW - timedelta(days=40), NOW)])
+def test_a_backfill_range_is_positive_and_bounded(start, end):
+    with pytest.raises(ValueError):
+        feed([]).backfill(start, end)

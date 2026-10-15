@@ -290,11 +290,13 @@ class BillingService:
             if self._domestic_choice not in DOMESTIC_GATEWAYS or self._domestic_choice not in configured:
                 return None, "domestic_gateway_unconfigured"
             return self._domestic_choice, None
-        if not configured:
-            return None, None  # no domestic gateway at all (an international-only deployment): nothing to choose
-        if not self._production and len(configured) == 1:
+        if self._production:
+            # Approved §5: with billing on in production the choice is required, whatever is configured. There is no
+            # international-only exception (review P1-2); that would be its own design delta.
+            return None, "domestic_gateway_unset"
+        if len(configured) == 1:
             return configured[0], None  # development / test convenience only
-        return None, "domestic_gateway_unset"
+        return None, "domestic_gateway_unset" if configured else None
 
     def active_domestic(self) -> str | None:
         return self.domestic_state()[0]

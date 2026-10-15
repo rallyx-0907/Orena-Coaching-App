@@ -270,3 +270,49 @@ def test_the_grace_decision_uses_the_expires_at_read_under_the_lock(shop):
     shop.billing.orders.pause_before_lock = move_expiry
     assert pay(shop, code, at=start) == "late" and topups(shop) == 0
     assert order(shop, code)["state"] == "pending" and items(shop)[0]["reason"] == "late_payment"
+
+
+# ---- review of 10471923 ---------------------------------------------------------------------------------------------
+
+def test_a_leading_zero_order_code_is_never_the_order_from_the_webhook_or_the_feed(shop):
+    """Review P1-1: `ORN0<code>` names no order, even when the amount matches an open one."""
+    incarnation = shop.account()
+    code = checkout(shop, incarnation)
+    padded = json.loads(body(code, at=datetime.now(UTC), reference="FTZ1"))
+    padded["code"] = f"ORN0{code}"
+    assert deliver(shop, json.dumps(padded).encode()) == "unknown_order"
+    row = {"id": str(uuid.uuid4()), "transaction_date": datetime.now(UTC).astimezone(VIETNAM).strftime("%Y-%m-%d %H:%M:%S"),
+           "account_number": ACCOUNT, "transfer_type": "in", "amount_in": 50_000, "reference_number": "FTZ2",
+           "code": f"ORN00{code}", "webhook_success": 0}
+    fact = SEPAY.to_fact(SEPAY.feed_transfer(row), payload_digest=SEPAY.feed_row_digest(row))
+    assert shop.billing.handle_fact(fact).status == "unknown_order"
+    assert topups(shop) == 0 and order(shop, code)["state"] == "pending"
+    assert [item["kind"] for item in items(shop)] == ["payment_unknown_order", "payment_unknown_order"]
+
+
+def test_an_operator_backfill_replays_idempotently_and_leaves_the_cursor_alone(shop):
+    from writing_coach.billing.sepay_feed import CURSOR_KEY, SePayFeed
+
+    incarnation = shop.account()
+    code = checkout(shop, incarnation)
+    paid_at = datetime.now(UTC) - timedelta(hours=2)
+    set_order(shop, code, expires_at=paid_at + timedelta(minutes=10))
+    rows = [{"id": str(uuid.uuid4()), "transaction_date": paid_at.astimezone(VIETNAM).strftime("%Y-%m-%d %H:%M:%S"),
+             "account_number": ACCOUNT, "transfer_type": "in", "amount_in": 50_000, "reference_number": "FTBF1",
+             "code": f"ORN{code}", "webhook_success": 0}]
+
+    class Store:   # the platform settings; the cursor must never be read or written by a backfill
+        def get_setting(self, key):
+            raise AssertionError(f"a backfill read {key}")
+
+        def set_setting(self, key, *a, **k):
+            raise AssertionError(f"a backfill wrote {key}")
+
+    feed = SePayFeed(service=shop.billing, gateway=SePayGateway(webhook_secret=SECRET, account_number=ACCOUNT,
+                     account_name="A", bank_bin="970415", payment_prefix="ORN", api_token="t"), settings=Store(),
+                     orders=shop.billing.orders, fetch=lambda request: {"data": rows})
+    window = (datetime.now(UTC) - timedelta(days=1), datetime.now(UTC))
+    assert feed.backfill(*window) == {"sepay_feed_apply": 1}
+    assert feed.backfill(*window) == {"sepay_feed_duplicate": 1}   # a replay of the same range changes nothing
+    assert topups(shop) == 1 and shop.balance(incarnation)["posted"] == 500
+    assert CURSOR_KEY == "billing.sepay.feed_cursor"
