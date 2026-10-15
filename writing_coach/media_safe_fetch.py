@@ -157,12 +157,15 @@ class _PublicHTTPSHandler(HTTPSHandler):
         return self.do_open(_PublicHTTPSConnection, req, context=self._context)
 
 
-def _open(url: str, *, timeout: float, max_redirects: int, allowed_hosts: frozenset[str] | None = None, user_agent: str = ""):
+def _open(
+    url: str, *, timeout: float, max_redirects: int, allowed_hosts: frozenset[str] | None = None, user_agent: str = "",
+    headers: dict[str, str] | None = None,
+):
     validate_public_http_url(url, allowed_hosts=allowed_hosts)
     opener = build_opener(
         _PublicHTTPHandler(), _PublicHTTPSHandler(), _CheckedRedirects(max_redirects=max_redirects, allowed_hosts=allowed_hosts)
     )
-    request = Request(url, headers={"User-Agent": user_agent or "OrenaMediaImport/1.0"})
+    request = Request(url, headers={"User-Agent": user_agent or "OrenaMediaImport/1.0", **(headers or {})})
     try:
         return opener.open(request, timeout=timeout)
     except UnsafeMediaFetch:
@@ -225,6 +228,18 @@ def fetch_bounded(
     return b"".join(chunks), content_type
 
 
+_READ_PIECE_BYTES: Final[int] = 64 * 1024
+
+
+def _content_range(value: str) -> tuple[int | None, int | None]:
+    """(first byte, full length) of a `Content-Range: bytes 0-99/1234` header; None for what is absent, `*` or malformed."""
+    unit, _, rest = (value or "").strip().partition(" ")
+    span, _, total = rest.partition("/")
+    first, _, last = span.partition("-")
+    start = int(first) if unit.casefold() == "bytes" and first.strip().isdigit() and last.strip().isdigit() else None
+    return start, (int(total) if start is not None and total.strip().isdigit() else None)
+
+
 def download_bounded(
     url: str,
     destination: Path,
@@ -234,27 +249,97 @@ def download_bounded(
     max_redirects: int = 3,
     allowed_hosts: frozenset[str] | None = None,
     user_agent: str = "",
+    range_chunk_bytes: int | None = None,
+    total_timeout: float | None = None,
 ) -> int:
-    """Stream a direct-media source to a caller-owned local temporary path."""
+    """Stream a direct-media source to a caller-owned local temporary path.
+
+    `range_chunk_bytes`, when given, takes the file in `Range` pieces of that size, each one a request through the same
+    address checks. A host that throttles a plain GET (googlevideo serves a non-ranged request at about 30 KiB/s) answers a
+    ranged one at full speed, which is also how `yt-dlp` fetches it; a host that ignores `Range` and answers 200 is read
+    whole under the same byte budget. `total_timeout` bounds the whole download in wall-clock time (`timeout` only bounds
+    one socket operation, which a slow drip never trips). The byte budget is enforced as bytes arrive in every mode."""
     if max_bytes <= 0 or timeout <= 0 or max_redirects < 0:
         raise ValueError("fetch limits must be positive")
+    if range_chunk_bytes is not None and range_chunk_bytes <= 0:
+        raise ValueError("fetch limits must be positive")
     total = 0
+    started = time.monotonic()
+
+    def check_clock() -> None:
+        if total_timeout is not None and time.monotonic() - started > total_timeout:
+            raise _unsafe("The media address took too long to answer.")
+
+    def fail_too_large(output) -> None:  # type: ignore[no-untyped-def]
+        output.close()
+        destination.unlink(missing_ok=True)
+        raise _unsafe(TOO_LARGE_MESSAGE, too_large=True)
+
+    def copy(response, output, limit: int) -> int:  # type: ignore[no-untyped-def]
+        """Write up to `limit` bytes of this body (None-bounded by the budget); returns how many arrived."""
+        got = 0
+        while True:
+            check_clock()
+            chunk = response.read(min(_READ_PIECE_BYTES if total_timeout is not None else 1024 * 1024, max_bytes + 1 - (total + got)))
+            if not chunk:
+                return got
+            got += len(chunk)
+            if total + got > max_bytes:
+                fail_too_large(output)
+            output.write(chunk)
+            if got >= limit:
+                return got
+
     try:
-        with _open(url, timeout=timeout, max_redirects=max_redirects, allowed_hosts=allowed_hosts, user_agent=user_agent) as response:
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            with destination.open("wb") as output:
-                while True:
-                    chunk = response.read(min(1024 * 1024, max_bytes + 1))
-                    if not chunk:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        with destination.open("wb") as output:
+            if range_chunk_bytes is None:
+                with _open(url, timeout=timeout, max_redirects=max_redirects, allowed_hosts=allowed_hosts, user_agent=user_agent) as response:
+                    total += copy(response, output, max_bytes + 1)
+                return total
+            known_length: int | None = None
+            while known_length is None or total < known_length:
+                check_clock()
+                span = f"bytes={total}-{total + range_chunk_bytes - 1}"
+                try:
+                    response_cm = _open(url, timeout=timeout, max_redirects=max_redirects, allowed_hosts=allowed_hosts,
+                                        user_agent=user_agent, headers={"Range": span})
+                except UnsafeMediaFetch as refused:
+                    # 416 after bytes were written: the file ended exactly on a piece boundary (a total of `*`). With a
+                    # known total the check after the loop decides whether that was the end.
+                    if total and getattr(refused, "status_code", None) == 416:
                         break
-                    total += len(chunk)
-                    if total > max_bytes:
-                        output.close()
-                        destination.unlink(missing_ok=True)
-                        raise _unsafe(TOO_LARGE_MESSAGE, too_large=True)
-                    output.write(chunk)
-    except UnsafeMediaFetch:
-        raise
+                    raise
+                with response_cm as response:
+                    if getattr(response, "status", 200) != 206:
+                        if total:
+                            raise _unsafe("The media address could not be fetched.")
+                        total += copy(response, output, max_bytes + 1)  # the host ignored Range: the whole body, same budget
+                        return total
+                    start, advertised = _content_range(response.headers.get("Content-Range", ""))
+                    if start is None and total:
+                        raise _unsafe("The media address could not be fetched.")  # cannot prove this piece follows the last
+                    if start is not None and start != total:
+                        raise _unsafe("The media address could not be fetched.")  # not the piece asked for: corrupt audio
+                    if advertised is not None:
+                        if advertised > max_bytes:
+                            fail_too_large(output)
+                        if known_length is not None and advertised != known_length:
+                            raise _unsafe("The media address could not be fetched.")
+                        known_length = advertised
+                    got = copy(response, output, range_chunk_bytes)
+                    total += got
+                    if known_length is not None and total > known_length:
+                        raise _unsafe("The media address could not be fetched.")  # the advertised total was a lie
+                    if got == 0 or (known_length is None and got < range_chunk_bytes):
+                        break
+            if known_length is not None and total != known_length:
+                raise _unsafe("The media address could not be fetched.")  # stopped short: truncated audio
     except OSError as exc:
+        destination.unlink(missing_ok=True)
         raise _unsafe("The media address could not be fetched.") from exc
+    except BaseException:
+        # Whatever ended it - a refusal, a bug, an interrupt - no partial file stays behind.
+        destination.unlink(missing_ok=True)
+        raise
     return total
