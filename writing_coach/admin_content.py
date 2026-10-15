@@ -113,7 +113,7 @@ def media_outcome(entry: Any) -> dict[str, Any]:
         "stage": str(processing.get("stage") or ""),
         "reason": reason,
         "message": str(processing.get("message") or "") or reason_message(reason),
-        "translation": {"state": translation, "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)}},
+        "translation": {"state": translation, "reason": str(processing.get("translation_reason") or ""), "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)}},
     }
 
 

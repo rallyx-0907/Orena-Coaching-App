@@ -38,6 +38,7 @@ import os
 import subprocess
 import tempfile
 import threading
+import time
 import uuid
 from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
@@ -52,7 +53,8 @@ from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.media_learning import MediaTranscript, TranscriptSegment
 from writing_coach.media_library_store import MediaLibraryEntry
-from writing_coach.media_zh_cleanup import clean_asr_cues
+from writing_coach.media_asr_filter import screen_segments
+from writing_coach.media_zh_cleanup import clean_asr_cues, normalise_words
 from writing_coach.media_segmentation import Cue, first_failure, primary_language, segment_lines, validate_lines
 from writing_coach.media_spend import KIND_AI, KIND_ASR, SpendCapReached, SpendLedger
 from writing_coach.speech_asr import (
@@ -60,6 +62,7 @@ from writing_coach.speech_asr import (
     SpeechAsrPayloadTooLarge,
     SpeechAsrRequestFailed,
     SpeechAsrResult,
+    SpeechAsrSegment,
     SpeechAsrTimedOut,
     SpeechAsrWord,
 )
@@ -86,6 +89,16 @@ ORIGIN_ASR = "generated_asr"
 CHUNK_SECONDS = 600
 MAX_ATTEMPTS = 3
 AUDIO_FORMAT_TIMEOUT = 600
+
+# Translation continues the lines still missing, boundedly (Video PR-A): at most this many provider rounds per language
+# (the first plus continuations), each wait capped, and the waits together capped, so a stuck provider cannot hold the
+# single worker. Every round stays under the AI spend cap and only the missing lines are requested again.
+TRANSLATION_MAX_ROUNDS = 5
+TRANSLATION_MAX_WAIT = 60.0
+TRANSLATION_MAX_TOTAL_WAIT = 150.0
+TRANSLATION_DEFAULT_BACKOFF = 5.0
+# A failure that asking again cannot fix.
+TRANSLATION_TERMINAL_REASONS = frozenset({"spend_cap", "provider_auth", "not_configured", "too_large", "request_too_large"})
 
 
 # The stable reason codes an item can be held or failed with, each with the English sentence stored beside it
@@ -239,23 +252,31 @@ class Candidate:
     detected_language: str = ""
 
 
-def _asr_cues(results: list[tuple[SpeechAsrResult, float]]) -> tuple[list[Cue], list[SpeechAsrWord], str]:
-    cues: list[Cue] = []
+def _asr_cues(results: list[tuple[SpeechAsrResult, float]], language: str = "") -> tuple[list[Cue], list[SpeechAsrWord], str, dict[str, int]]:
+    """(cues, words, detected language, {"filtered", "flagged"}): the recogniser's segments joined across chunks,
+    with hallucinated segments and the words inside them removed (media_asr_filter)."""
+    segments: list[SpeechAsrSegment] = []
     words: list[SpeechAsrWord] = []
     detected = ""
     for result, offset in results:
         shift = round(offset * 1000)
         detected = detected or result.language
-        segments = result.segments
-        for segment in segments:
-            cues.append(Cue(segment.start_ms + shift, segment.end_ms + shift, segment.text))
-        if not segments and result.text.strip():
+        for segment in result.segments:
+            segments.append(replace(segment, start_ms=segment.start_ms + shift, end_ms=segment.end_ms + shift))
+        if not result.segments and result.text.strip():
             # A provider that returned text without segments: one cue spanning the chunk's words, if it has them.
             if result.words:
-                cues.append(Cue(result.words[0].start_ms + shift, result.words[-1].end_ms + shift, result.text))
+                segments.append(SpeechAsrSegment(result.text, result.words[0].start_ms + shift, result.words[-1].end_ms + shift))
         for word in result.words:
             words.append(SpeechAsrWord(word.word, word.start_ms + shift, word.end_ms + shift))
-    return cues, words, detected
+    screen = screen_segments(segments, words, language or detected)
+    cues = [Cue(segment.start_ms, segment.end_ms, segment.text) for segment in screen.segments]
+    return cues, list(screen.words), detected, {"filtered": screen.filtered, "flagged": screen.flagged}
+
+
+def _screen_fields(screen: dict[str, int]) -> dict[str, int]:
+    """What the ASR screen removed or doubted, recorded so a reviewer sees it (empty for a caption transcript)."""
+    return {"asr_filtered": int(screen["filtered"]), "asr_flagged": int(screen["flagged"])} if screen else {}
 
 
 def _stable_segment_id(asset_id: str, start_ms: int, end_ms: int, text: str, occurrence: int) -> str:
@@ -329,6 +350,7 @@ class MediaPipeline:
         self._meanings = meanings
         self._english_reading = english_reading
         self._translation_sink = translation_sink
+        self._sleep: Callable[[float], None] = time.sleep
         self._pool = ThreadPoolExecutor(max_workers=workers or _env_int("MEDIA_PIPELINE_WORKERS", 2), thread_name_prefix="media-pipeline")
         self._inflight: set[str] = set()
         self._guard = threading.Lock()
@@ -528,9 +550,9 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
-                                           translation="", translation_counts={})
+                                           translation="", translation_counts={}, translation_reason="", asr_filtered=0, asr_flagged=0)
             self._dispatch_quota(entry)
-            lines, origin, cost, asr_seconds, detected, words = self._transcript(store, assets, entry, batch_id, candidate)
+            lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
             self._hold_failed(store, media_id, stop)
             return
@@ -546,14 +568,15 @@ class MediaPipeline:
             # A transcript was made and it is not usable. Keep what was made so an operator can see it; do not publish.
             entry = self._store_lesson(store, entry, lines, origin, duration, status="review", words=words)
             self._write_processing(store, entry, state=STATE_FAILED, stage=STAGE_SEGMENT, reason=reason,
-                                   detail="", checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1))
+                                   detail="", checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
+                                   **_screen_fields(screen))
             return
         entry = self._store_lesson(store, entry, lines, origin, duration, status="processing", words=words)
         translation, translation_counts = self._translate(store, entry, batch_id, personal)
         entry = store.get(media_id) or entry
         rights = str(entry.source.get("rights") or RIGHTS_UNKNOWN)
         common = dict(checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
-                      translation=translation, translation_counts=translation_counts, rights=rights)
+                      translation=translation, translation_counts=translation_counts, rights=rights, **_screen_fields(screen))
         if personal or rights == RIGHTS_CLEARED:
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
             self._prepare_model_clips(assets, entry)
@@ -627,7 +650,7 @@ class MediaPipeline:
 
     def _transcript(
         self, store: Any, assets: BookAssetStore, entry: MediaLibraryEntry, batch_id: str, candidate: Candidate | None
-    ) -> tuple[list[Cue], str, float, float, str, list[SpeechAsrWord]]:
+    ) -> tuple[list[Cue], str, float, float, str, list[SpeechAsrWord], dict[str, int]]:
         language = entry.language
         cues: list[Cue] = []
         detected = ""
@@ -641,11 +664,11 @@ class MediaPipeline:
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
                 if not first_failure(validate_lines(lines, language=language, duration_ms=duration)):
-                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", []
+                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], {}
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE)
         try:
-            raw, words, detected, cost, seconds = self._speech(store, assets, entry, batch_id)
+            raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
         except PipelineStop as stop:
             # Captions were refused by the provider (not merely absent) and the audio route is closed too: that is the
             # cause an operator can act on, with the audio failure kept in the detail.
@@ -654,8 +677,9 @@ class MediaPipeline:
             raise
         # Chinese recognition output is repaired (no spaces between Hanzi, sentence marks, no leading silence) before it is cut.
         raw = clean_asr_cues(raw, words, language or detected)
+        words = normalise_words(words, language or detected)  # the same script as the lines, so taps stay aligned
         lines = segment_lines(raw, language)
-        return lines, ORIGIN_ASR, cost, seconds, detected, words
+        return lines, ORIGIN_ASR, cost, seconds, detected, words, screen
 
     def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str]:
         """(cues, why-none): the provider's category when it failed, "" when there were simply no captions."""
@@ -672,7 +696,7 @@ class MediaPipeline:
 
     def _speech(
         self, store: Any, assets: BookAssetStore, entry: MediaLibraryEntry, batch_id: str
-    ) -> tuple[list[Cue], list[SpeechAsrWord], str, float, float]:
+    ) -> tuple[list[Cue], list[SpeechAsrWord], str, float, float, dict[str, int]]:
         if self._asr is None:
             raise PipelineStop("asr_unconfigured")
         max_seconds = max_asr_seconds()
@@ -717,10 +741,10 @@ class MediaPipeline:
                 self._ledger.record(KIND_ASR, estimate, batch_id=batch_id, media_id=entry.media_id, units=_probe_seconds(path), provider="groq")
                 cost += estimate
                 results.append((result, offset))
-        cues, words, detected = _asr_cues(results)
+        cues, words, detected, screen = _asr_cues(results, entry.language)
         if not cues:
-            raise PipelineStop("empty_transcript")
-        return cues, words, detected, cost, total
+            raise PipelineStop("empty_transcript", f"{screen['filtered']} filtered" if screen["filtered"] else "")
+        return cues, words, detected, cost, total, screen
 
     def _audio_source(self, assets: BookAssetStore, entry: MediaLibraryEntry, work: Path, max_seconds: int) -> Path:
         if entry.provider == "youtube":
@@ -761,45 +785,89 @@ class MediaPipeline:
         stored_lines = lines_from_payload((entry.lesson or {}).get("payload"))
         characters = sum(len(line.text) for line in stored_lines)
         total_lines = len(stored_lines)
-        spent = 0.0
         counts: dict[str, dict[str, int]] = {}
         incomplete = False
         any_done = False
+        stop_reason = ""
+        waited = 0.0
         for target in languages:
-            tokens = max(200, int(characters / 2.5)) + 200
-            estimate = self._ai_cost("", {"prompt_tokens": tokens, "completion_tokens": tokens})
-            try:
-                self._ledger.check(KIND_AI, batch_id, estimate)
-            except SpendCapReached:
-                return "spend_cap", counts
-            usage: list[tuple[str, Any]] = []
-            try:
-                if self._translation_sink is not None:
-                    with self._translation_sink(lambda model, value, captured=usage: captured.append((model, value))):
+            done = 0
+            for attempt in range(TRANSLATION_MAX_ROUNDS):
+                missing_share = max(1, total_lines - done) / max(1, total_lines)
+                tokens = max(200, int(characters * missing_share / 2.5)) + 200
+                estimate = self._ai_cost("", {"prompt_tokens": tokens, "completion_tokens": tokens})
+                try:
+                    self._ledger.check(KIND_AI, batch_id, estimate)
+                except SpendCapReached:
+                    stop_reason = "spend_cap"
+                    if attempt == 0:
+                        self._record_translation_reason(store, entry, stop_reason)
+                        return "spend_cap", counts
+                    break
+                usage: list[tuple[str, Any]] = []
+                retry_after = 0.0
+                try:
+                    if self._translation_sink is not None:
+                        with self._translation_sink(lambda model, value, captured=usage: captured.append((model, value))):
+                            result = self._meanings(entry, target)
+                    else:
                         result = self._meanings(entry, target)
-                else:
-                    result = self._meanings(entry, target)
-            except Exception:  # noqa: BLE001 - translation is enrichment; the lesson stands without it
-                _logger.warning("pre-translation failed for %s", entry.media_id, exc_info=True)
-                counts[target] = {"done": 0, "total": total_lines}
+                except Exception:  # noqa: BLE001 - translation is enrichment; the lesson stands without it
+                    _logger.warning("pre-translation failed for %s", entry.media_id, exc_info=True)
+                    stop_reason = "provider_error"
+                    counts[target] = {"done": done, "total": total_lines}
+                    result = None
+                if result is not None:
+                    actual = sum(self._ai_cost(model, value) for model, value in usage)
+                    if usage or getattr(result, "provider_calls", 0):
+                        actual = actual or estimate
+                        self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(usage), provider="groq")
+                    if getattr(result, "status", "ready") in {"ready", "not_required"}:
+                        done = total_lines
+                        stop_reason = ""
+                        counts[target] = {"done": done, "total": total_lines}
+                        break
+                    progressed = len(getattr(result, "meanings", ()) or ()) > done
+                    done = max(done, len(getattr(result, "meanings", ()) or ()))
+                    counts[target] = {"done": done, "total": total_lines}
+                    given = str(getattr(result, "reason", "") or "")
+                    stop_reason = given or ("incomplete" if progressed else "provider_error")
+                    retry_after = float(getattr(result, "retry_after", 0.0) or 0.0)
+                    # A partial that did not grow and says nothing would be asked for again with no new information.
+                    if not progressed and not given:
+                        break
+                if stop_reason in TRANSLATION_TERMINAL_REASONS or attempt == TRANSLATION_MAX_ROUNDS - 1:
+                    break
+                # The provider asked for longer than one wait may be: asking again now meets the same limit.
+                if stop_reason == "rate_limited" and retry_after > TRANSLATION_MAX_WAIT:
+                    break
+                # A rate limit is waited out as the provider asked (capped); otherwise a short fixed pause. A round that
+                # made progress needs none.
+                wait = 0.0
+                if result is None or stop_reason != "incomplete":
+                    wait = min(retry_after or TRANSLATION_DEFAULT_BACKOFF, TRANSLATION_MAX_WAIT)
+                if waited + wait > TRANSLATION_MAX_TOTAL_WAIT:
+                    break
+                if wait:
+                    waited += wait
+                    self._sleep(wait)
+            counts.setdefault(target, {"done": done, "total": total_lines})
+            if done < total_lines or not total_lines and stop_reason:
                 incomplete = True
-                continue
-            actual = sum(self._ai_cost(model, value) for model, value in usage)
-            if usage or getattr(result, "provider_calls", 0):
-                actual = actual or estimate
-                self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(usage), provider="groq")
-                spent += actual
-            if getattr(result, "status", "ready") in {"ready", "not_required"}:
-                counts[target] = {"done": total_lines, "total": total_lines}
-                any_done = any_done or total_lines > 0
-            else:
-                done = len(getattr(result, "meanings", ()) or ())
-                counts[target] = {"done": done, "total": total_lines}
-                incomplete = True
-                any_done = any_done or done > 0
+            any_done = any_done or done > 0
+        self._record_translation_reason(store, entry, stop_reason if incomplete else "")
         if not incomplete:
             return "ready", counts
         return ("partial" if any_done else "failed"), counts
+
+    def _record_translation_reason(self, store: Any, entry: MediaLibraryEntry, reason: str) -> None:
+        """Why the translation stopped short, beside `translation_counts`: a stable code, never log prose."""
+        try:
+            self._write_processing(store, entry, translation_reason=reason)
+        except PipelineStop:
+            raise
+        except Exception:  # noqa: BLE001 - the reason is a convenience; the lesson stands without it
+            _logger.warning("translation reason not written for %s", entry.media_id, exc_info=True)
 
     def _ai_cost(self, model: str, usage: Any) -> float:
         usage = usage if isinstance(usage, Mapping) else {}

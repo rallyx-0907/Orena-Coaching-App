@@ -26,8 +26,13 @@ class UnsafeMediaFetch(ValueError):
     """A URL/fetch failure whose text is safe to return to a learner."""
 
 
-def _unsafe(message: str, status_code: int | None = None) -> UnsafeMediaFetch:
+TOO_LARGE_MESSAGE: Final[str] = "This media file is too large."
+
+
+def _unsafe(message: str, status_code: int | None = None, *, too_large: bool = False) -> UnsafeMediaFetch:
     failure = UnsafeMediaFetch(message)
+    # Set when the byte budget was exceeded, so a caller names that reason in a stable code, not by matching prose.
+    failure.too_large = too_large
     # The HTTP status the host answered with, when it did: lets a caller tell "rate limited" from "unreachable".
     failure.status_code = status_code
     return failure
@@ -215,7 +220,7 @@ def fetch_bounded(
                 break
             total += len(chunk)
             if total > max_bytes:
-                raise _unsafe("This media file is too large.")
+                raise _unsafe(TOO_LARGE_MESSAGE, too_large=True)
             chunks.append(chunk)
     return b"".join(chunks), content_type
 
@@ -246,7 +251,7 @@ def download_bounded(
                     if total > max_bytes:
                         output.close()
                         destination.unlink(missing_ok=True)
-                        raise _unsafe("This media file is too large.")
+                        raise _unsafe(TOO_LARGE_MESSAGE, too_large=True)
                     output.write(chunk)
     except UnsafeMediaFetch:
         raise

@@ -6259,10 +6259,15 @@ padding, gap and box size are equal for the title, hero, tile, balance, buttons,
 The pinned `Orena Admin.dc.html` draws no state for a media item whose line translation reached only some lines. The backend now
 stores `processing.translation` (`ready | partial | failed | deferred | spend_cap`) and `processing.translation_counts`
 (`{language: {done, total}}`) and returns them in the record's `outcome.translation`; the item's own state is never changed by
-it. No UI was invented. Open for the human: whether the media detail should show "48 of 113 lines translated" (and where), and a
-control to retry only the missing lines.
+it. D-207 (Video PR-A, at the human's request) shows the state, counts and stop reason as one "Translation" row in the media
+Details list, and the failure reason on a failed item that kept lines, using the page's existing banner and key/value patterns. Still
+open for the human: a control to retry only the missing lines, and whether the design should draw this row.
 
 - **Media licence link on the public credits page (D-205 follow-up).** Commons items now carry `license_name` and `license_url` through the credits rows and the listening payload, but no credits renderer shows the licence link, so CC attribution links stay invisible. Needs the design's credits row to place it.
+
+- **ASR screen counts in the Admin media record (D-208 proposed, 2026-10-15).** `processing.asr_filtered` (segments removed as hallucination or silence) and `processing.asr_flagged` (long segments with few words, kept) are in the API but not drawn. The review step should show them beside the transcript, with the note that key-term recognition errors are not machine-corrected. Needs a place in the design's Admin media record.
+
+- **Traditional Chinese media is not reachable (D-208 proposed, 2026-10-15).** Imports store only the language `zh`, so every Chinese ASR item is normalised to Simplified, including genuinely Traditional (Taiwan, Hong Kong) audio. Needs an owner decision on a script choice at import (not added in D-208).
 
 ## Credits top-up client: follow-ups from the independent review of PR #213 (2026-10-15)
 
