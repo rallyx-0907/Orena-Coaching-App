@@ -33,18 +33,36 @@ import urllib.request
 import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from writing_coach.billing.gateway import CheckoutIntent, GatewayNotConfigured, PaymentFact, Price, WebhookRejected
+from writing_coach.billing.gateway import (
+    CheckoutIntent,
+    GatewayNotConfigured,
+    PaymentFact,
+    Price,
+    WebhookRejected,
+    parse_time,
+)
 from writing_coach.billing.price_integrity import MINOR_EXPONENT, PriceCheck, blocked_gateways, check_prices
 from writing_coach.product.catalog import DEFAULT_PLAN_ID, PLANS, CatalogUnavailable, current_plans
 
 _log = logging.getLogger(__name__)
 _ON = frozenset({"1", "true", "yes", "on"})
 # Which currency each gateway takes, and whether it needs the gateway's own price id.
-_GATEWAY_RULES = {"payos": ({"VND"}, False), "polar": (None, True)}
+_GATEWAY_RULES = {"payos": ({"VND"}, False), "sepay": ({"VND"}, False), "polar": (None, True)}
+# The domestic gateways a deployment may choose between (PR-MON-8 §5): exactly one is active, by explicit choice.
+DOMESTIC_GATEWAYS = ("payos", "sepay")
+DOMESTIC_SWITCH = "BILLING_DOMESTIC_GATEWAY"
+# PR-MON-8 §4.3 (revision 6): the SePay locked outcomes are kept as the existing kind `payment_not_payable`, told apart
+# by these machine-stable reasons. Business logic branches on the locked outcome, never on this text.
+REASON_ORDER_CLOSED = "order_closed"
+REASON_LATE_PAYMENT = "late_payment"
+REASON_SOURCE_AMBIGUOUS = "source_ambiguous"
+_LOCKED_REASONS = {"order_closed": REASON_ORDER_CLOSED, "late": REASON_LATE_PAYMENT,
+                   "source_ambiguous": REASON_SOURCE_AMBIGUOUS}
+GRACE_POLICY = "billing.domestic_late_payment_grace_hours"
 # What a prices file may sell: a paid plan of the catalogue, by its own id (not a legacy alias).
 _SELLABLE_PLANS = frozenset(plan_id for plan_id in PLANS if plan_id != DEFAULT_PLAN_ID)
 _LIVE = frozenset({"active", "trialing", "past_due", "paused", "pending"})
@@ -123,7 +141,7 @@ class CreditPack:
 
 
 def load_credit_packs(env: Mapping[str, str]) -> dict[str, CreditPack]:
-    """The credit packs on sale, keyed `credits:<pack_id>:payos`. No file, no packs: nothing is sold (K1)."""
+    """The credit packs on sale, keyed `credits:<pack_id>:<gateway>`. No file, no packs: nothing is sold (K1)."""
 
     path = str(env.get("BILLING_CREDIT_PACKS_FILE", "")).strip()
     if not path:
@@ -135,10 +153,10 @@ def load_credit_packs(env: Mapping[str, str]) -> dict[str, CreditPack]:
             raise ValueError("a credit pack has positive integer units and a positive integer amount")
         if not _PACK_ID.match(str(item["pack_id"])):
             raise ValueError("a credit pack id is lower-case letters, digits, '-' or '_' (at most 40)")
-        if str(item["gateway"]) != "payos" or str(item["currency"]).upper() != "VND":
-            raise ValueError("credit packs are sold through payOS in VND (D-MON-002)")
+        if str(item["gateway"]) not in DOMESTIC_GATEWAYS or str(item["currency"]).upper() != "VND":
+            raise ValueError("credit packs are sold through a domestic gateway (payOS or SePay) in VND (D-MON-002)")
         pack = CreditPack(pack_id=str(item["pack_id"]), credit_units=units, currency="VND", amount_minor=amount,
-                          gateway="payos")  # fmt: skip
+                          gateway=str(item["gateway"]))  # fmt: skip
         if pack.key in packs:
             raise ValueError(f"{pack.key} is listed twice")
         packs[pack.key] = pack
@@ -148,15 +166,38 @@ def load_credit_packs(env: Mapping[str, str]) -> dict[str, CreditPack]:
 def build_gateways(env: Mapping[str, str]) -> dict[str, Any]:
     from writing_coach.billing.payos import PayOSGateway
     from writing_coach.billing.polar import PolarGateway
+    from writing_coach.billing.sepay import SePayGateway
 
     gateways: dict[str, Any] = {}
-    for factory in (PayOSGateway, PolarGateway):
+    for factory in (PayOSGateway, SePayGateway, PolarGateway):
         try:
             gateway = factory.from_env(env)
         except GatewayNotConfigured:
             continue
         gateways[gateway.name] = gateway
     return gateways
+
+
+def domestic_choice(env: Mapping[str, str]) -> str | None:
+    """`BILLING_DOMESTIC_GATEWAY` as written (None when unset); validated against the configured gateways later."""
+
+    value = str(env.get(DOMESTIC_SWITCH, "")).strip().casefold()
+    return value or None
+
+
+def late_payment_grace() -> timedelta | None:
+    """The configured late-payment grace (PR-MON-8 §4.1). `<= 0` is the UNCONFIGURED sentinel, never a grace of zero;
+    an unreadable policy is unconfigured too. None means no payment can be timely: every one fails closed."""
+
+    from writing_coach import policies
+
+    try:
+        hours = policies.value_strict(GRACE_POLICY)
+    except Exception:  # noqa: BLE001 - an unreadable grace is no grace: fail closed
+        return None
+    if type(hours) is not int or hours <= 0:
+        return None
+    return timedelta(hours=hours)
 
 
 def _send(request: dict) -> dict:
@@ -178,8 +219,14 @@ class BillingService:
                  catalog: Callable[[], Mapping[str, Any]] = lambda: current_plans(strict=True),
                  send: Callable[[dict], dict] = _send, now: Callable[[], datetime] = lambda: datetime.now(UTC),
                  reconciliation: Any = None, credit_packs: Mapping[str, CreditPack] | None = None,
-                 credits: Any = None) -> None:
+                 credits: Any = None, domestic: str | None = None, production: bool = False,
+                 grace: Callable[[], timedelta | None] = late_payment_grace) -> None:
         self._orders = orders
+        # PR-MON-8 §5: the explicitly chosen domestic gateway (`BILLING_DOMESTIC_GATEWAY`), and whether this runtime is
+        # production (only outside production may a single configured domestic gateway be inferred).
+        self._domestic_choice = (domestic or "").strip().casefold() or None
+        self._production = production
+        self._grace = grace
         self._credit_packs = dict(credit_packs or {})
         self._credits = credits  # the CreditService (PR-MON-4), only where credits are enabled
         # The reconciliation items (PR-MON-3). Without them no anomaly can be recorded, so none is acknowledged.
@@ -234,6 +281,40 @@ class BillingService:
 
         return [name for name, gateway in self._gateways.items() if getattr(gateway, "kind", "") == "domestic"]
 
+    def domestic_state(self) -> tuple[str | None, str | None]:
+        """(the active domestic gateway, or None; the blocker when there is none but one is needed). A credential
+        that appears or disappears never changes the choice (PR-MON-8 §5)."""
+
+        configured = self.domestic_gateways()
+        if self._domestic_choice is not None:
+            if self._domestic_choice not in DOMESTIC_GATEWAYS or self._domestic_choice not in configured:
+                return None, "domestic_gateway_unconfigured"
+            return self._domestic_choice, None
+        if not configured:
+            return None, None  # no domestic gateway at all (an international-only deployment): nothing to choose
+        if not self._production and len(configured) == 1:
+            return configured[0], None  # development / test convenience only
+        return None, "domestic_gateway_unset"
+
+    def active_domestic(self) -> str | None:
+        return self.domestic_state()[0]
+
+    def domestic_blockers(self) -> list[str]:
+        """What keeps domestic sales closed, for readiness: the gateway choice, and SePay's late-payment grace."""
+
+        active, blocker = self.domestic_state()
+        blockers = [blocker] if blocker else []
+        if active == "sepay" and self._grace() is None:
+            blockers.append("late_payment_grace_unset")
+        return blockers
+
+    def _domestic_sellable(self, gateway_name: str) -> bool:
+        """A domestic gateway sells only when it is the active one and, for SePay, its grace is configured."""
+
+        if gateway_name not in DOMESTIC_GATEWAYS:
+            return True
+        return self.active_domestic() == gateway_name and not self.domestic_blockers()
+
     # ---- price integrity (D-MON-005, D-MON-015) -----------------------------------------------------------
 
     def price_checks(self) -> dict[str, PriceCheck]:
@@ -271,7 +352,8 @@ class BillingService:
         if critical is None:
             return {}
         return {key: price for key, price in self._prices.items()
-                if price.gateway in self._gateways and price.gateway not in blocked | critical}  # fmt: skip
+                if price.gateway in self._gateways and price.gateway not in blocked | critical
+                and self._domestic_sellable(price.gateway)}  # fmt: skip
 
     def offered(self) -> list[dict[str, Any]]:
         try:
@@ -296,7 +378,8 @@ class BillingService:
         reconciliation state closes them too."""
 
         critical = self._critical_blocked()
-        if critical is None or "payos" in critical:
+        active = self.active_domestic()
+        if critical is None or active is None or active in critical:
             return True
         try:
             open_by_kind = self._items.summary()["open_by_kind"] if self._items is not None else {}
@@ -305,16 +388,17 @@ class BillingService:
         return any(open_by_kind.get(kind, 0) for kind in CREDIT_CHECKOUT_BLOCKERS)
 
     def credit_offers(self) -> list[dict[str, Any]]:
-        """The credit packs on sale now: none unless packs are configured, payOS has its keys, credits are ready and
-        no credit gap is critical (K5)."""
+        """The credit packs on sale now: none unless packs are configured, the active domestic gateway has its keys,
+        credits are ready and no credit gap is critical (K5). A pack sells only through the active domestic gateway."""
 
-        if not self._credit_packs or "payos" not in self._gateways or not self.credits_ready():
+        active = self.active_domestic()
+        if not self._credit_packs or active is None or not self._domestic_sellable(active) or not self.credits_ready():
             return []
         if self._credit_checkout_blocked():
             return []
         return [{"key": pack.key, "pack_id": pack.pack_id, "credit_units": pack.credit_units, "currency": pack.currency,
                  "amount_minor": pack.amount_minor, "gateway": pack.gateway} for pack in self._credit_packs.values()
-                if self._pack_sellable(pack.key)]
+                if pack.gateway == active and self._pack_sellable(pack.key)]
 
     def gateway_report(self) -> dict[str, dict[str, Any]]:
         """Per gateway: configured (its keys, and so its webhook verification), its prices against the catalogue, and
@@ -344,6 +428,13 @@ class BillingService:
             elif critical.get(name, 0) > 0:
                 entry["reconciliation_critical"] = int(critical[name])
                 entry["ready"] = False
+            if name in DOMESTIC_GATEWAYS:
+                entry["active_domestic"] = self.active_domestic() == name
+                if not self._domestic_sellable(name):
+                    entry["ready"] = False
+            if name == "sepay" and gateway is not None:
+                entry["late_payment_grace"] = "set" if self._grace() is not None else "unset"
+                entry["feed"] = "enabled" if getattr(gateway, "feed_enabled", False) else "disabled"
             if gateway is not None and getattr(gateway, "environment", None):
                 entry["environment"] = gateway.environment
             if checks is None:
@@ -366,7 +457,7 @@ class BillingService:
                                                units=confirmed_credit_units)  # fmt: skip
         price = self._prices.get(price_key)
         gateway = self._gateways.get(price.gateway) if price else None
-        if price is None or gateway is None:
+        if price is None or gateway is None or not self._domestic_sellable(price.gateway):
             raise LookupError("price_not_offered")
         uuid.UUID(operation_id)  # an operation id is the client's own UUID: a retry reuses it
         self._refuse_unverified_price(price_key, price, confirmed_amount_minor, confirmed_currency)
@@ -398,7 +489,14 @@ class BillingService:
 
     def _open_domestic_link(self, gateway: Any, intent: CheckoutIntent, order: Mapping[str, Any],
                             gateway_name: str) -> dict[str, Any]:
-        """The payOS payment link for a committed order. No transaction or lock is held while payOS is called."""
+        """The payment instructions for a committed order: SePay's are built here (no provider call, PR-MON-8 G1);
+        payOS's link is requested from payOS. No transaction or lock is held while a provider is called."""
+
+        build = getattr(gateway, "domestic_checkout", None)
+        if build is not None:
+            start = build(intent, order)
+            self._orders.mark_started(order["id"], now=self._now())
+            return {**start, "order_code": int(order["order_code"]), "gateway": gateway_name}
 
         request = gateway.checkout_request(intent, order_code=int(order["order_code"]),
                                            description=f"OR{order['order_code']}",
@@ -419,7 +517,8 @@ class BillingService:
 
         pack = self._credit_packs.get(pack_key)
         gateway = self._gateways.get(pack.gateway) if pack else None
-        if pack is None or gateway is None or not self._pack_sellable(pack.key):
+        if (pack is None or gateway is None or not self._pack_sellable(pack.key)
+                or pack.gateway != self.active_domestic() or not self._domestic_sellable(pack.gateway)):
             raise LookupError("price_not_offered")
         uuid.UUID(operation_id)
         if amount is None or not currency or units is None:
@@ -488,6 +587,8 @@ class BillingService:
             _log.warning("billing webhook from %s rejected: %s", gateway_name, rejected.reason)
             return WebhookOutcome("rejected", rejected.reason)
         if fact.kind == "payment":
+            if getattr(gateway, "domestic_checkout", None) is not None:
+                return self._domestic_payment(fact)  # PR-MON-8: decided under the order's lock
             return self._prepaid_payment(fact)
         if fact.kind == "subscription":
             return self._subscription(fact)
@@ -496,6 +597,17 @@ class BillingService:
         # other verified events move no money: logged, no effect.
         _log.info("billing event from %s: %s %s", gateway_name, fact.kind, fact.provider_state)
         return WebhookOutcome("ignored", fact.kind)
+
+    def handle_fact(self, fact: PaymentFact) -> WebhookOutcome:
+        """A fact a recovery source normalized itself (the SePay feed, PR-MON-8 §6.3): the same decision path as a
+        verified webhook's payment. Only a domestic gateway's payments are accepted here."""
+
+        gateway = self._gateways.get(fact.gateway)
+        if gateway is None or getattr(gateway, "domestic_checkout", None) is None:
+            raise ValueError(f"{fact.gateway} has no recovery path")
+        if fact.kind != "payment":
+            return WebhookOutcome("ignored", fact.kind)
+        return self._domestic_payment(fact)
 
     def _item(self, kind: str, gateway: str, dedupe_key: str, **facts: Any) -> dict[str, Any]:
         """Record one anomaly durably, before it is acknowledged. Raises when it cannot be recorded."""
@@ -597,6 +709,45 @@ class BillingService:
                                    payment_link_id=extra.get("payment_link_id", ""),
                                    paid_reference=extra.get("reference") or None, provider_state=fact.provider_state,
                                    payload_digest=fact.payload_digest or None)  # fmt: skip
+
+    def _domestic_payment(self, fact: PaymentFact) -> WebhookOutcome:
+        """A SePay transfer (PR-MON-8 §4.1-§4.3). Eligibility and the transition to `paid` are one locked operation
+        (`mark_paid_domestic`); every outcome that moves no order is recorded before this returns, so the webhook is
+        acknowledged only once the money is accounted for. A failure to record raises, and the route answers 503."""
+
+        extra = fact.extra or {}
+        source_id = extra.get("source_id") or fact.event_id
+        facts = {"external_event_id": source_id, "reported_amount_minor": fact.amount_minor,
+                 "reported_currency": fact.currency, "provider_state": fact.provider_state,
+                 "payload_digest": fact.payload_digest or None}  # fmt: skip
+        if fact.external_reference is None:
+            # Verified incoming money with no (or a foreign) payment code: recorded, never matched by amount (Q4).
+            self._item("payment_unknown_order", fact.gateway, fact.event_id, reason="no readable order code", **facts)
+            return WebhookOutcome("unknown_order", "no_order_code")
+        order_code = int(fact.external_reference)
+        transaction_at = parse_time(extra.get("transaction_at"))
+        marked = self._orders.mark_paid_domestic(order_code=order_code, event_id=fact.event_id,
+                                                 amount_minor=fact.amount_minor, currency=fact.currency,
+                                                 transaction_at=transaction_at, grace=self._grace(),
+                                                 paid_reference=extra.get("bank_reference") or None, now=self._now())
+        status = marked["status"]
+        facts = {**facts, "reported_order_code": order_code, "billing_order_id": marked.get("order_id"),
+                 "incarnation_id": marked.get("incarnation_id")}
+        if status in _LOCKED_REASONS:
+            self._item("payment_not_payable", fact.gateway, fact.event_id, reason=_LOCKED_REASONS[status], **facts)
+            return WebhookOutcome(status)
+        if status == "paid_deleted_account":
+            self._item("paid_deleted_account", fact.gateway, str(order_code), reason="paid after the account was "
+                       "deleted; nothing granted, a refund is owed", **facts)  # fmt: skip
+            return WebhookOutcome("paid_deleted_account")
+        if status in _PAYMENT_ANOMALY:
+            self._item(_PAYMENT_ANOMALY[status], fact.gateway, fact.event_id, reason=status, **facts)
+            return WebhookOutcome(status)
+        if status not in ("applied", "duplicate"):
+            raise RuntimeError(f"unexpected domestic payment status {status!r}")
+        if marked.get("product_kind") == "credit_pack":
+            return self.apply_credit_topup(order_code, gateway=fact.gateway, facts=facts)
+        return self.sync_prepaid(marked["incarnation_id"], fact.gateway, event_id=f"{fact.gateway}:paid:{order_code}")
 
     def record_payment(self, *, order_code: int, gateway: str, event_id: str, amount_minor: int | None,
                        currency: str | None, payment_link_id: str = "", paid_reference: str | None = None,

@@ -186,6 +186,10 @@ async def billing_webhook(gateway: str, request: Request) -> JSONResponse:
     if outcome.status == "rejected":
         return JSONResponse({"ok": False}, status_code=401)
     # Anything verified is acknowledged: the receipt (or the order) holds it, and a redelivery is a duplicate.
+    # PR-MON-8 G4: a gateway with its own success shape (SePay counts only {"success": true}) is answered in it.
+    ack = getattr((getattr(service, "gateways", None) or {}).get(gateway), "ack", None)
+    if callable(ack):
+        return JSONResponse(ack())
     return JSONResponse({"ok": True, "status": outcome.status})
 
 

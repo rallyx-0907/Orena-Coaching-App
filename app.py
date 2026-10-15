@@ -1329,7 +1329,7 @@ def _billing_service():
     a gateway without keys and a plan without an approved price are simply not offered (human gates)."""
 
     from writing_coach.billing.service import (
-        billing_enabled, build_gateways, load_credit_packs, load_prices, BillingService,
+        billing_enabled, build_gateways, domestic_choice, load_credit_packs, load_prices, BillingService,
     )
 
     if not billing_enabled(os.environ) or _persistence_runtime.engine is None or not _account_backbone.is_active:
@@ -1342,7 +1342,10 @@ def _billing_service():
                           commerce=PostgresCommerceRepository(_persistence_runtime.engine),
                           gateways=build_gateways(os.environ), prices=load_prices(os.environ),
                           credit_packs=load_credit_packs(os.environ),
-                          reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine))
+                          reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine),
+                          # PR-MON-8 §5: the domestic gateway is an explicit choice; inferred only outside production.
+                          domestic=domestic_choice(os.environ),
+                          production=os.getenv("APP_ENV", "").strip().casefold() == "production")
 
 
 def _billing_reconciler(service):
@@ -1355,9 +1358,18 @@ def _billing_reconciler(service):
     )
 
     settings = Settings.from_env(os.environ)
+    feed = None
+    sepay = service.gateways.get("sepay")
+    if sepay is not None and sepay.feed_enabled:
+        # PR-MON-8 §6: only with SEPAY_API_TOKEN AND SEPAY_FEED_ENABLED; the cursor is a platform setting (CAS).
+        from writing_coach.billing.sepay_feed import SePayFeed
+
+        feed = SePayFeed(service=service, gateway=sepay, settings=_persistence_runtime.platform_repository,
+                         orders=service.orders)
     reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
                                    lock=PostgresTickLock(_persistence_runtime.engine),
-                                   lookups=build_lookups(service.gateways), settings=settings, credits=_credits)
+                                   lookups=build_lookups(service.gateways), settings=settings, credits=_credits,
+                                   feed=feed)
     return BillingReconcileSchedule(reconciler, interval=settings.interval)
 
 
