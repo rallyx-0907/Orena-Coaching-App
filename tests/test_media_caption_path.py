@@ -458,3 +458,55 @@ def test_the_translation_source_is_the_real_one():
     # Generated earlier and read from the cache: no call now, still not editorial.
     assert translation_source_provider(_outcome(PROVENANCE_CACHED_GENERATED, PROVENANCE_CACHED_GENERATED)) == "media-translation"
     assert translation_source_provider(_outcome(PROVENANCE_EDITORIAL, PROVENANCE_CACHED_GENERATED)) == "media-translation"
+
+
+# -- review of #226: P2-1 re-arm after a restore, P2-3 stale snapshot, funding of the continuation -------------------------
+
+
+def test_a_restore_re_arms_the_translation_continuation_it_brings_back(tmp_path):
+    store, before, pipeline = _world(tmp_path, origin=ORIGIN_ASR, ingestion=Ingestion(cues=None), asr=object())
+    record = {"attempt": 1, "max_attempts": 6, "next_at": "2026-10-15T00:00:00Z", "deadline": "2026-10-16T00:00:00Z"}
+    store.update_if_present(before.media_id, lambda e: replace(e, processing={**e.processing, "translation": "deferred", "translation_continuation": record}))
+    scheduled = []
+    pipeline._schedule = lambda delay, callback: scheduled.append((delay, callback))
+    pipeline._speech = lambda *_a: (_ for _ in ()).throw(PipelineStop("audio_unavailable"))
+    pipeline.retry(store, None, before.media_id)
+    after = store.get(before.media_id)
+    assert after.processing["translation_continuation"] == record and after.processing["reprocess_reason"] == "audio_unavailable"
+    assert len(scheduled) == 1  # the restored record has a timer again
+
+
+def test_a_run_cancelled_by_archive_leaves_no_snapshot_behind(tmp_path):
+    store, before, pipeline = _world(tmp_path, ingestion=Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_FAILURE)))
+    pipeline._remember_previous(store, before)
+    assert store.get(before.media_id).processing.get("previous")
+    store.update_if_present(before.media_id, lambda e: replace(e, status="archived", processing={**e.processing, "state": "cancelled"}))
+    pipeline._hold_failed(store, before.media_id, PipelineStop("cancelled"))
+    assert not store.get(before.media_id).processing.get("previous")
+
+
+def test_the_deferred_continuation_runs_under_the_media_pipeline_funding(tmp_path, monkeypatch):
+    from contextlib import contextmanager
+
+    active = []
+
+    @contextmanager
+    def funding(name):
+        active.append(name)
+        try:
+            yield
+        finally:
+            active.pop()
+
+    seen = []
+
+    def meanings(entry, target):
+        seen.append(list(active))
+        return SimpleNamespace(status="ready", meanings=[object()] * LINES, provider_calls=1, reason="", retry_after=0.0)
+
+    monkeypatch.setattr(mtp, "system_funding", funding)
+    store, entry, pipeline = _world(tmp_path, ingestion=Ingestion(), meanings=meanings)
+    store.update_if_present(entry.media_id, lambda e: replace(e, processing={**e.processing, "translation": "deferred", "translation_continuation": {
+        "attempt": 1, "max_attempts": 6, "next_at": "2026-10-15T00:00:00Z", "deadline": "2999-01-01T00:00:00Z"}}))
+    pipeline._continuation_job(store, entry.media_id)
+    assert seen and all(names == ["media_pipeline"] for names in seen)

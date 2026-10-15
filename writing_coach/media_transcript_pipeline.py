@@ -436,8 +436,7 @@ class MediaPipeline:
         except Exception:  # noqa: BLE001 - without the snapshot a failed re-run behaves as it always did
             _logger.warning("previous state not kept for %s", entry.media_id, exc_info=True)
 
-    @staticmethod
-    def _restore_previous(store: Any, media_id: str, reason: str, detail: str = "") -> bool:
+    def _restore_previous(self, store: Any, media_id: str, reason: str, detail: str = "") -> bool:
         """A re-run of a good item failed: put the item back as it was and record why the re-run did not happen.
         False when the item has no snapshot (a first import), so the caller fails it as before."""
         restored: list[bool] = []
@@ -457,7 +456,25 @@ class MediaPipeline:
         except Exception:  # noqa: BLE001
             _logger.warning("previous state not restored for %s", media_id, exc_info=True)
             return False
+        if restored:
+            # The snapshot may hold a pending translation continuation; the run cleared its timer, so arm it again.
+            fresh = store.get(media_id)
+            if fresh is not None:
+                self._rearm_continuation(store, fresh)
         return bool(restored)
+
+    @staticmethod
+    def _clear_previous(store: Any, media_id: str) -> None:
+        """A run that was cancelled (archive) leaves no snapshot behind to be reused by a later re-run."""
+        def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
+            current = dict(fresh.processing or {})
+            if not current.get("previous"):
+                return fresh
+            return replace(fresh, processing={**current, "previous": {}})
+        try:
+            store.update_if_present(media_id, change)
+        except Exception:  # noqa: BLE001
+            _logger.warning("previous state not cleared for %s", media_id, exc_info=True)
 
     def recover(self, store: Any, assets: BookAssetStore) -> int:
         """Re-queue what a restart interrupted. An item that keeps being interrupted stops after MAX_ATTEMPTS.
@@ -558,8 +575,7 @@ class MediaPipeline:
                     system_funding("media_pipeline"):
                 self._run(store, assets, media_id, batch_id, candidate)
         except PipelineStop as stop:
-            if stop.code != "cancelled":
-                self._hold_failed(store, media_id, stop)
+            self._hold_failed(store, media_id, stop)
         except Exception:  # noqa: BLE001 - the last line of defence; the item must say it failed
             _logger.exception("media pipeline crashed for %s", media_id)
             try:
@@ -697,7 +713,10 @@ class MediaPipeline:
 
     def _hold_failed(self, store: Any, media_id: str, stop: PipelineStop) -> None:
         entry = store.get(media_id)
-        if entry is None or entry.status == "archived" or stop.code == "cancelled":
+        if entry is None:
+            return
+        if entry.status == "archived" or stop.code == "cancelled":
+            self._clear_previous(store, media_id)
             return
         if self._restore_previous(store, media_id, stop.code, stop.detail):
             return
@@ -1134,7 +1153,7 @@ class MediaPipeline:
             entry = store.get(media_id)
             if entry is None:
                 return
-            with telemetry_origin("learner" if entry.library == "personal" else None):
+            with telemetry_origin("learner" if entry.library == "personal" else None), system_funding("media_pipeline"):
                 self._continue_translation(store, entry)
         except PipelineStop:
             pass  # cancelled or removed while waiting: nothing to continue
