@@ -166,7 +166,7 @@ def normalise_words(words: Sequence[SpeechAsrWord], language: str) -> list[Speec
 def clean_asr_cues(cues: Sequence[Cue], words: Sequence[SpeechAsrWord], language: str) -> list[Cue]:
     if primary_language(language) != "zh":
         return list(cues)
-    # Whisper picks a script per phrase, so one line can hold both. The item's script is the standard (D-206).
+    # Whisper picks a script per phrase, so one line can hold both. The item's script is the standard (D-207).
     target = target_script(language)
     cues = [Cue(cue.start_ms, cue.end_ms, convert_script(cue.text, target)) for cue in cues]
     words = normalise_words(words, language)

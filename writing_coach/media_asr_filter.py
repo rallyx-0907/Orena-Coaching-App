@@ -1,4 +1,4 @@
-"""Dropping recogniser hallucinations from ASR segments before they become lesson lines (D-206, PROPOSED).
+"""Dropping recogniser hallucinations from ASR segments before they become lesson lines (D-207, PROPOSED).
 
 Whisper-family recognisers invent text over silence, music and noise: subtitle credits, "Thank you", "The End",
 a literal "foreign" tag, one stray word at the tail. Those lines pass every transcript check, because each is a

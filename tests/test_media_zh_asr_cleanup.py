@@ -48,7 +48,7 @@ def test_cue_end_gets_a_full_width_mark_and_questions_get_a_question_mark():
     ("这是什么", "这是什么？"),
 ])
 def test_questions_in_both_scripts_get_a_question_mark(text, expected):
-    # An item is written in one script: Traditional text keeps its forms only for a Traditional item (D-206).
+    # An item is written in one script: Traditional text keeps its forms only for a Traditional item (D-207).
     language = "zh-Hant" if script_counts(text)[1] else "zh"
     assert one(spaced(text), language) == expected
 
