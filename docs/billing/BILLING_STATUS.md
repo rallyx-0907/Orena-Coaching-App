@@ -6,13 +6,13 @@
 | | |
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` |
-| Main | `006ad0f7` (merged into the lane for PR-MON-7A-first); PR-MON-6 #223 `8abab02f`; PR-MON-5 #207 `2aa3bd04` |
+| Main | `6b3f53d1` (merged into the lane); PR-MON-6 #223 `8abab02f`; PR-MON-5 #207 `2aa3bd04` |
 | Last completed slice | PR-MON-6 cost-aware entitlement / funding admissions: design and migration gate APPROVED, implementation re-reviewed, CI green, merged as #223 (`8abab02f`). 0034 still proposed (not promoted, not applied); everything off by default |
 | Active PR | none |
 | Current slice | **PR-MON-7A-first IMPLEMENTING** (design revision 2.1 APPROVED FOR IMPLEMENTATION, `7e83c4b9`): `ollama-cloud` provider (cloud, priced, no learner-text model reviewed), reviewed-primary policy, `ORENA_CAPABILITY_ROUTING` (empty) for `writing_evaluator` / `writing_improver` / `text_discussion` only, legacy privacy guard, `cost_coverage` estimate, metered review refresh (`writing.review`), benchmark harness (`docs/billing/PR-MON-7A_REVIEW_REQUEST.md`). Everything off by default |
-| Exact next action | independent code review of PR-MON-7A-first; then CI. Activation needs H7-2, H7-6, H7-7, H7-8 (owner). Separately, the operator gate for 0027 -> 0033 on each runtime |
+| Exact next action | CI on the PR-MON-7A-first draft PR (CI only), then independent re-review of the formal review's fixes (4 P1). No merge before re-review and green CI. Activation needs H7-2, H7-6, H7-7, H7-8. Separately, the operator gate for 0027 -> 0033 on each runtime |
 | Blockers | none for the design. 0034 stays proposed (promotion and application are human gates); every PostgreSQL runtime is at its old head until the operator applies 0027 -> 0033. `CREDITS_ENABLED` off; quota and funding enforcement off; R-MON-014 not run |
-| Test status | PR-MON-7A-first, local (not CI): full SQLite 6987 passed; every PostgreSQL file 426 passed + 1 INHERITED #160; `tests/test_capability_routing.py` 41 passed. One non-CI combined run (selected suites, PostgreSQL variants enabled, no xdist) showed 21 order-dependent failures in `test_writing_review_reuse.py` that did not reproduce alone, in pairs, or in the full gate; recorded, not hidden. Last CI: PR #223 (PR-MON-6), green |
+| Test status | PR-MON-7A-first on main `6b3f53d1`, local (not CI): full SQLite 7008 passed; every PostgreSQL file 426 passed + 1 INHERITED #160; `tests/test_capability_routing.py` 49 passed |
 | Next human checkpoint | PR-MON-7 revision 2 re-review and the open H7 decisions. Issue #160 (quota PG test order dependence) belongs to the quota/test-infra lane, P2, not a Billing blocker |
 
 ## Revised sequence (human, 2026-10-13)
