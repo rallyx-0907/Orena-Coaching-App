@@ -119,6 +119,10 @@ POLICIES: tuple[Policy, ...] = (
     _p("media.model_clip_max_lines", "media", "int", 500, unit="count", low=10, high=5000,
        env="MEDIA_MODEL_CLIP_MAX_LINES", env_min=1),
     _p("rate.media_learning_per_hour", "media", "int", 30, unit="count", low=1, high=1000),
+    # Where a YouTube item's captions come from (D-215): YouTube itself (the default), Supadata in its native mode only,
+    # or YouTube first and Supadata native when YouTube gives none. Supadata is never asked to generate or translate.
+    _p("media.caption_source", "media", "enum", "youtube", env="MEDIA_CAPTION_SOURCE",
+       choices=("youtube", "supadata_native", "youtube_then_supadata_native")),
     # --- vocabulary (D-188): the operator's switch for the derived General catalogue; on by default
     _p("vocabulary.general_catalogue_enabled", "vocabulary", "bool", True),
     # --- request rates on the other paid routes (per account, per 10 minutes)
@@ -145,6 +149,9 @@ POLICIES: tuple[Policy, ...] = (
     _p("media.daily_cap_usd", "spend", "float", 25.0, unit="usd", low=0, high=10_000, env="MEDIA_DAILY_CAP_USD",
        env_min=0, confirm_above=250),
     # A price estimate of 0 would make every media spend cap unreachable, so the minimum is above 0.
+    # Supadata is paid in credits, not dollars: this is the most requests one UTC day may make (D-215). 0 turns it off.
+    _p("media.supadata_daily_requests", "spend", "int", 20, unit="count", low=0, high=1000,
+       env="MEDIA_SUPADATA_DAILY_REQUESTS", env_min=0),
     _p("media.asr_usd_per_hour", "spend", "float", 0.04, unit="usd_per_hour", low=0.001, high=100,
        env="MEDIA_ASR_USD_PER_HOUR", env_min=0),
     _p("media.ai_usd_per_million_tokens", "spend", "float", 1.0, unit="usd_per_mtok", low=0.001, high=1000,
@@ -199,6 +206,9 @@ def _env_mapping(env: Mapping[str, str] | None) -> Mapping[str, str]:
     return os.environ if env is None else env
 
 
+_WARNED_ENV: set[str] = set()   # one warning per variable, not one per read
+
+
 def _env_value(policy: Policy, env: Mapping[str, str] | None) -> Any:
     """`_INVALID` when the variable is unset or empty (the policy is not pinned); else its parsed value, or
     `policy.default` when it is set but cannot be read (the old behaviour of each variable)."""
@@ -210,6 +220,14 @@ def _env_value(policy: Policy, env: Mapping[str, str] | None) -> Any:
     if policy.kind == "bool":
         lowered = text.casefold()
         return True if lowered in _TRUE else False if lowered in _FALSE else policy.default
+    if policy.kind == "enum":
+        if text in policy.choices:
+            return text
+        if policy.env not in _WARNED_ENV:
+            _WARNED_ENV.add(policy.env)
+            _log.warning("platform.policies: %s=%r is not one of %s; using the default %r", policy.env, text,
+                         ", ".join(policy.choices), policy.default)
+        return policy.default
     try:
         number = float(text)
     except ValueError:
