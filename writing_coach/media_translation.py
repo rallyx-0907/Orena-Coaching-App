@@ -128,10 +128,38 @@ class MediaTranslationResult:
     target_language: str
     provenance: MediaTranslationProvenance | None = None
     failure_kind: MediaTranslationFailureKind | None = None
+    # Why a non-ready result stopped, as a stable machine code (`rate_limited`, `provider_error`, ...), and how long the
+    # provider asked to be left alone, in seconds. Empty when the result is ready.
+    reason: str = ""
+    retry_after: float = 0.0
 
 
 class TranslationProviderError(RuntimeError):
-    pass
+    """A provider failure. `reason` is the stable code an operator sees; `retry_after` is the wait the provider asked for."""
+
+    def __init__(self, message: str = "", *, reason: str = "provider_error", retry_after: float = 0.0) -> None:
+        super().__init__(message)
+        self.reason = reason
+        self.retry_after = max(0.0, float(retry_after or 0.0))
+
+
+_DURATION_PART = re.compile(r"(\d+(?:\.\d+)?)(ms|h|m|s)")
+
+
+def _retry_after_seconds(headers: Mapping[str, str]) -> float:
+    """The wait a rate-limited provider asked for: `Retry-After` seconds, else Groq's `x-ratelimit-reset-*` ("2m3.5s")."""
+    lowered = {str(key).lower(): str(value) for key, value in headers.items()}
+    try:
+        return max(0.0, float(lowered["retry-after"]))
+    except (KeyError, ValueError):
+        pass
+    waits = []
+    for key in ("x-ratelimit-reset-tokens", "x-ratelimit-reset-requests"):
+        parts = _DURATION_PART.findall(lowered.get(key, ""))
+        if parts:
+            scale = {"h": 3600.0, "m": 60.0, "s": 1.0, "ms": 0.001}
+            waits.append(sum(float(number) * scale[unit] for number, unit in parts))
+    return max(waits) if waits else 0.0
 
 
 class TranslatableSegment(Protocol):
@@ -195,7 +223,7 @@ class LocalHttpTranslationProvider:
             response.raise_for_status()
             data = response.json()
         except (requests.RequestException, ValueError) as exc:
-            raise TranslationProviderError("Local translation is unavailable.") from exc
+            raise TranslationProviderError("Local translation is unavailable.", reason="provider_timeout" if isinstance(exc, requests.Timeout) else "provider_error") from exc
         items = data.get("translations") if isinstance(data, dict) else None
         if not isinstance(items, list):
             raise TranslationProviderError("Local translation returned invalid data.")
@@ -324,7 +352,7 @@ class GroqTranslationProvider:
         """
 
         if not self.configured:
-            raise TranslationProviderError("Groq translation is not configured.")
+            raise TranslationProviderError("Groq translation is not configured.", reason="not_configured")
         return self._translate_batch(source_language, target_language, segments, depth=0)
 
     def _translate_batch(
@@ -346,7 +374,7 @@ class GroqTranslationProvider:
         except _RequestTooLarge:
             if len(segments) < 2 or depth >= MAX_TRANSLATION_SPLIT_DEPTH:
                 raise TranslationProviderError(
-                    "Groq translation request exceeds the model token ceiling."
+                    "Groq translation request exceeds the model token ceiling.", reason="request_too_large"
                 ) from None
             middle = len(segments) // 2
             merged: dict[str, str] = {}
@@ -422,6 +450,12 @@ class GroqTranslationProvider:
                 for key, value in response.headers.items()
                 if key.lower().startswith("x-ratelimit-")
             }
+            if response.status_code == 429:
+                raise TranslationProviderError(
+                    "Groq translation is rate limited.", reason="rate_limited", retry_after=_retry_after_seconds(response.headers)
+                )
+            if response.status_code in {401, 403}:
+                raise TranslationProviderError("Groq refused the credentials.", reason="provider_auth")
             if response.status_code == 413 and _is_request_too_large(response):
                 raise _RequestTooLarge()
             if response.status_code == 400:
@@ -441,12 +475,13 @@ class GroqTranslationProvider:
                 raise _RequestTooLarge()
             content = envelope["choices"][0]["message"]["content"]
             data = json.loads(content)
-        except _RequestTooLarge:
+        except (_RequestTooLarge, TranslationProviderError):
             raise
         except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
             if not answered:
                 self._record(started, "failure", None, exc)
-            raise TranslationProviderError("Groq translation is unavailable.") from exc
+            reason = "provider_timeout" if isinstance(exc, requests.Timeout) else "provider_error"
+            raise TranslationProviderError("Groq translation is unavailable.", reason=reason) from exc
 
         items = data.get("translations") if isinstance(data, dict) else None
         if not isinstance(items, list):
@@ -491,7 +526,7 @@ class MediaTranslationService:
 
         batches = build_translation_batches(transcript.segments)
         if batches is None:
-            return MediaTranslationResult(media_object, MediaTranslationStatus.TOO_LARGE, canonical_target)
+            return MediaTranslationResult(media_object, MediaTranslationStatus.TOO_LARGE, canonical_target, reason="too_large")
 
         cache_key = self._cache_key(source_language, canonical_target, transcript.segments)
         cached = self._cache.get(cache_key)
@@ -507,10 +542,13 @@ class MediaTranslationService:
                 translated = self._provider.translate_batch(source_language, canonical_target, batch)
                 expected = {segment.segment_id for segment in batch}
                 if set(translated) != expected or any(not value.strip() for value in translated.values()):
-                    return self._unavailable(media_object, canonical_target, MediaTranslationFailureKind.MALFORMED_RESULT, request_count)
+                    return self._unavailable(media_object, canonical_target, MediaTranslationFailureKind.MALFORMED_RESULT, request_count, reason="malformed_result")
                 generated.update(translated)
-        except TranslationProviderError:
-            return self._unavailable(media_object, canonical_target, MediaTranslationFailureKind.EXECUTION_UNAVAILABLE, request_count)
+        except TranslationProviderError as exc:
+            return self._unavailable(
+                media_object, canonical_target, MediaTranslationFailureKind.EXECUTION_UNAVAILABLE, request_count,
+                reason=exc.reason, retry_after=exc.retry_after,
+            )
 
         translations = tuple(
             SegmentTranslation(segment.segment_id, canonical_target, generated[segment.segment_id])
@@ -539,7 +577,7 @@ class MediaTranslationService:
                 translations=translations,
             )
         except MediaLearningContractError:
-            return self._unavailable(media_object, target, MediaTranslationFailureKind.MALFORMED_RESULT, request_count)
+            return self._unavailable(media_object, target, MediaTranslationFailureKind.MALFORMED_RESULT, request_count, reason="malformed_result")
         return MediaTranslationResult(
             translated_media,
             MediaTranslationStatus.READY,
@@ -547,13 +585,18 @@ class MediaTranslationService:
             MediaTranslationProvenance("local_translation", self._provider.engine_id, self._provider.model_version, request_count),
         )
 
-    def _unavailable(self, media_object: MediaLearningObject, target: str, failure: MediaTranslationFailureKind, request_count: int) -> MediaTranslationResult:
+    def _unavailable(
+        self, media_object: MediaLearningObject, target: str, failure: MediaTranslationFailureKind, request_count: int,
+        *, reason: str = "provider_error", retry_after: float = 0.0,
+    ) -> MediaTranslationResult:
         return MediaTranslationResult(
             media_object,
             MediaTranslationStatus.UNAVAILABLE,
             target,
             MediaTranslationProvenance("local_translation", self._provider.engine_id, self._provider.model_version, request_count),
             failure,
+            reason,
+            retry_after,
         )
 
 

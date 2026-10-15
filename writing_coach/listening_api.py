@@ -32,7 +32,7 @@ from writing_coach.media_source_import import (
 )
 from writing_coach.becoming_memory import get_learner_profile
 from writing_coach.core.support_languages import resolve_support_language
-from writing_coach.media_meaning import pinyin_for_segments, resolve_segment_meanings
+from writing_coach.media_meaning import TranslatedLines, pinyin_for_segments, resolve_segment_meanings
 from writing_coach.pinyin_alignment import align_readings
 from writing_coach.media_learning import (
     MediaLearningAsset,
@@ -42,7 +42,12 @@ from writing_coach.media_learning import (
     SegmentTranslation,
     TranscriptSegment,
 )
-from writing_coach.media_translation import MediaTranslationStatus, build_translation_batches
+from writing_coach.media_translation import (
+    MAX_TRANSLATION_BATCHES,
+    MAX_TRANSLATION_BATCH_SEGMENTS,
+    MediaTranslationStatus,
+    build_translation_batches,
+)
 from writing_coach.media_api import media_translation_service
 from writing_coach.media_api import serialize_media_acquisition
 from writing_coach.media_ingestion import MediaAcquisition
@@ -531,11 +536,17 @@ def _curated_translator(media_object: Any):
     if service is None:
         return None
 
-    def translate(segments: Any, target_language: str) -> dict[str, str]:
-        batches = build_translation_batches(tuple(segments))
+    def translate(segments: Any, target_language: str) -> TranslatedLines:
+        # A transcript longer than one call's batch bound is taken in windows that fit it; the caller asks again for
+        # what is still missing (the persisted cache makes that continuation cost only the missing lines).
+        window = tuple(segments)[: MAX_TRANSLATION_BATCHES * MAX_TRANSLATION_BATCH_SEGMENTS]
+        batches = build_translation_batches(window)
+        while batches is None and window:
+            window = window[: len(window) // 2]
+            batches = build_translation_batches(window) if window else None
         if batches is None:
-            return {}
-        generated: dict[str, str] = {}
+            return TranslatedLines(reason="too_large")
+        generated = TranslatedLines()
         for batch in batches:
             partial = MediaLearningObject(
                 asset=media_object.asset,
@@ -547,10 +558,12 @@ def _curated_translator(media_object: Any):
             )
             result = service.translate(partial, target_language)
             if result.status is not MediaTranslationStatus.READY:
+                generated.reason = result.reason or "provider_error"
+                generated.retry_after = result.retry_after
                 break
             generated.update({item.segment_id: item.translated_meaning for item in result.media_object.translations})
         # Preserve completed batches in the persistent segment cache even if
-        # a later provider request fails. The next open retries only missing lines.
+        # a later provider request fails. The next call retries only missing lines.
         return generated
 
     return translate

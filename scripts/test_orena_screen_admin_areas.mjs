@@ -281,6 +281,15 @@ for (const ui of ['en', 'vi', 'zh']) {
     assert.doesNotMatch(html, /undefined|\[object|NaN/, `${ui} page ${index} printed a JS value: ${html.match(/.{30}(undefined|\[object|NaN).{20}/)}`);
     assert.doesNotMatch(html, /<script|onerror=/i);
   }
+  /* Video PR-A: a failed item that kept its lines still says why it failed, and the translation state, counts and stop
+     reason are shown beside the other facts. Every word comes from the copy of the operator's language. */
+  const failedWithLines = String(cp.mediaPage({ ...c, detail: {
+    record: record('media', { status: 'review', outcome: { state: 'failed', reason: 'language_mismatch', message: '', translation: { state: 'partial', reason: 'rate_limited', counts: { vi: { done: 24, total: 47 } } } } }),
+    source: {}, transcript: { segments: [{ text: 'a line', start_ms: 0 }], segment_count: 1 } }, view: {} }).markup);
+  assert.ok(failedWithLines.includes(c.t('impErr_language_mismatch')), `${ui}: the failure reason shows although lines are stored`);
+  assert.ok(failedWithLines.includes('vi 24/47') && failedWithLines.includes(c.t('impTr_partial')) && failedWithLines.includes(c.t('impTrReason_rate_limited')), `${ui}: translation state, counts and reason show`);
+  const quietMedia = String(cp.mediaPage({ ...c, detail: { record: record('media'), source: {}, transcript: { segments: [], segment_count: 0 } }, view: {} }).markup);
+  assert.ok(!quietMedia.includes(c.t('impFailed')) || !quietMedia.includes('a-banner'), `${ui}: no failure banner without a failure`);
   tray.watch({ id: 'J1', label: 'A <b>title</b>' });
   const trayHtml = String(tp.trayMarkup({ open: true, href }));
   assert.ok(trayHtml.includes('A &lt;b&gt;title&lt;/b&gt;'), 'a submitted title is text, never markup');
