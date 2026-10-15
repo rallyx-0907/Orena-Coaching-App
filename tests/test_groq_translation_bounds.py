@@ -16,6 +16,7 @@ from writing_coach.media_translation import (
     DEFAULT_GROQ_MAX_COMPLETION_TOKENS,
     GROQ_MAX_COMPLETION_TOKENS_ENV,
     MAX_TRANSLATION_BATCH_SEGMENTS,
+    MIN_GROQ_MAX_COMPLETION_TOKENS,
     GroqTranslationProvider,
     TranslationProviderError,
     resolve_max_completion_tokens,
@@ -87,7 +88,8 @@ def test_a_normal_batch_does_not_request_eight_thousand_output_tokens(monkeypatc
     body = recorder.bodies[0]
     assert "max_tokens" not in body, "the deprecated field must be gone"
     reserved = body["max_completion_tokens"]
-    assert reserved == DEFAULT_GROQ_MAX_COMPLETION_TOKENS == 2048
+    # Sized to the batch (D-216) and bounded by the configured ceiling, never the whole organisation allowance.
+    assert MIN_GROQ_MAX_COMPLETION_TOKENS <= reserved <= DEFAULT_GROQ_MAX_COMPLETION_TOKENS == 2048
     assert reserved < 8000, "a request must not reserve the whole organisation ceiling"
 
 
@@ -106,11 +108,12 @@ def test_the_reservation_is_configurable_and_validated() -> None:
     assert resolve_max_completion_tokens(4096) == 4096
 
 
-def test_an_explicit_reservation_reaches_the_request(monkeypatch) -> None:
+def test_an_explicit_reservation_is_the_ceiling_of_every_request(monkeypatch) -> None:
     recorder = Recorder()
     engine = provider(monkeypatch, recorder, max_completion_tokens=1024)
-    engine.translate_batch("en", "es", segments(2))
-    assert recorder.bodies[0]["max_completion_tokens"] == 1024
+    result = engine.translate_batch("en", "es", segments(MAX_TRANSLATION_BATCH_SEGMENTS))
+    assert len(result) == MAX_TRANSLATION_BATCH_SEGMENTS
+    assert all(body["max_completion_tokens"] <= 1024 for body in recorder.bodies)
 
 
 # --- an oversized request is split, never blindly retried -------------------
