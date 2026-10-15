@@ -289,3 +289,29 @@ reviewed paid backup of the three 7A-first capabilities, to be entered into thei
 change (with the D-MON-026 caps), never automatically. | D-MON-027 required the live row, not documentation. |
 `PR-MON-7_DESIGN.md` §12, §14.7.
 
+
+D-MON-029 | 2026-10-15 | Domain boundary (owner). Three domains with one contract between them: Billing / Commerce
+(checkout, subscription and payment, SePay / payOS / Polar, credit top-up when Credits are used, transactions,
+webhook/IPN, refund and reversal, reconciliation, payment status, pricing and packs, production payment rollout)
+records and settles the payment and grants the purchased commercial product or credits; Plan & Entitlements (feature
+access, plan entitlements, quota, semantic meters, usage, Free/Plus/Pro limits, the Plan & Usage UI) resolves the
+effective plan, feature access and quota; AI Economics / Routing Optimization
+(Admin > AI & Models: provider/model registry, capability routing, model qualification and benchmark, quality, latency,
+provider cost and credits, per-tier routing policy, spend caps, fallback, margin, profit optimization under a quality
+floor) chooses the provider and model; a provider call returns usage, cost and latency evidence. Billing and cost
+accounting receive only `operation_id, capability, provider, model, usage, estimated/actual cost`, never why a model
+was chosen. No provider or model is globally fixed for Orena: Ollama Cloud is one provider in the pool beside Gemini,
+OpenRouter, Azure, Groq and later ones; selection is per capability by quality, privacy class, plan tier, cost and
+budget, latency, availability, covered capacity, spend cap and fallback policy; Free may prefer deterministic/cache,
+then free, covered or cheap qualified models, Plus/Pro a better pool or a higher budget. A benchmark qualifies a
+model per capability (eligible for one, not for another) and never picks a single winner; nothing is auto-promoted.
+H7-2 is stopped in the Billing lane (no benchmark run, no Ollama Cloud credits spent, no corpus/golden/grader built
+for it): the working key and the 18-model live catalogue confirm the integration only, and H7-2 moves to the AI
+Economics backlog. It is not a Billing completion gate. PR-MON-7B2 is split: 7B2a (wiring `word.assist`,
+`reading.assist`, `writing.task` with deterministic/stored/safe-cache first) belongs to Plan & Entitlements; 7B2b
+(provider/model pool, free/covered/cheap routing, fallback, quality/cost optimization) and 7C (Intelligence routing)
+belong to AI Economics. Billing is complete when a user pays, the payment is confirmed, the right plan or credits are
+granted, and the transaction can be reconciled and refunded safely. Nothing is activated by this decision. | The
+lanes stop treating model quality as a payment blocker, and a payment never depends on which model answered. |
+`BILLING_STATUS.md` (boundary, sequence, payment-ready list), `BILLING_LANE.md`, `PR-MON-7_DESIGN.md` header.
+
