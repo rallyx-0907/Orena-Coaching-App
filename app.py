@@ -847,7 +847,10 @@ configure_media_library(
     admin_guard=require_admin,
     language_supported=is_enabled,
 )
-configure_media_library_payload(stored_media_payload)
+configure_media_library_payload(
+    stored_media_payload,
+    lambda media_id, target: stored_media_payload(media_id, target, allow_unpublished=True),
+)
 configure_listening_media_library(_media_library_store)
 app.include_router(media_library_router)
 app.include_router(media_library_upload_router)
