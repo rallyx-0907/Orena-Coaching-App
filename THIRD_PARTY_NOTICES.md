@@ -11,7 +11,7 @@ itself, not here.
 
 | Id | What | Licence | Where in the repository | Attribution |
 | --- | --- | --- | --- | --- |
-| `cc-cedict` | CC-CEDICT Chinese-English dictionary (2026-10-03 export) | CC BY-SA 4.0 | `writing_coach/languages/chinese/lexicon_data/` (repacked; licence text and modification notice there); also `writing_coach/languages/chinese/script_chars.json`, a list of Simplified-only and Traditional-only characters derived from its headwords by `scripts/build_chinese_script_table.py` (CC BY-SA 4.0, release 2026-10-03) | MDBG and CC-CEDICT contributors; CEDICT © 1997, 1998 Paul Andrew Denisowski |
+| `cc-cedict` | CC-CEDICT Chinese-English dictionary (2026-10-03 export) | CC BY-SA 4.0 | `writing_coach/languages/chinese/lexicon_data/` (repacked; licence text and modification notice there); also `writing_coach/languages/chinese/script_chars.json` and `script_map.json`, a list of Simplified-only and Traditional-only characters derived from its headwords by `scripts/build_chinese_script_table.py` (CC BY-SA 4.0, release 2026-10-03) | MDBG and CC-CEDICT contributors; CEDICT © 1997, 1998 Paul Andrew Denisowski |
 | `unihan` | Unicode Unihan database 18.0.0 (`kMandarin`, `kVietnamese`, `kDefinition`) | Unicode License v3 | same folder | © Unicode, Inc. |
 | `make-me-a-hanzi` | Hanzi stroke data (hanzi-writer-data 2.0.1) | Arphic Public License | `writing_coach/languages/chinese/stroke_data/` | Shaunak Kishore (Make Me a Hanzi); Arphic Technology Co., Ltd. |
 | `open-dsl-dict` | open-dsl-dict `en-vi-enwiktionary` (from English Wiktionary translation tables, 2015) | CC BY-SA 3.0 / GFDL | `writing_coach/localization_data/vi_glosses.json.gz` (subset) | Wiktionary contributors; Open DSL Dictionary Project |

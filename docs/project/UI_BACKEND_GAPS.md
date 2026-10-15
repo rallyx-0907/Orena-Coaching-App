@@ -6179,3 +6179,5 @@ it. No UI was invented. Open for the human: whether the media detail should show
 control to retry only the missing lines.
 
 - **Media licence link on the public credits page (D-205 follow-up).** Commons items now carry `license_name` and `license_url` through the credits rows and the listening payload, but no credits renderer shows the licence link, so CC attribution links stay invisible. Needs the design's credits row to place it.
+
+- **ASR screen counts in the Admin media record (D-206 proposed, 2026-10-15).** `processing.asr_filtered` (segments removed as hallucination or silence) and `processing.asr_flagged` (long segments with few words, kept) are in the API but not drawn. The review step should show them beside the transcript, with the note that key-term recognition errors are not machine-corrected. Needs a place in the design's Admin media record.

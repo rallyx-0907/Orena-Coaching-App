@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from writing_coach.languages.chinese.script_detection import script_counts
 from writing_coach.media_segmentation import Cue, segment_lines
 from writing_coach.media_zh_cleanup import clean_asr_cues
 from writing_coach.speech_asr import SpeechAsrWord
@@ -47,7 +48,9 @@ def test_cue_end_gets_a_full_width_mark_and_questions_get_a_question_mark():
     ("这是什么", "这是什么？"),
 ])
 def test_questions_in_both_scripts_get_a_question_mark(text, expected):
-    assert one(spaced(text)) == expected
+    # An item is written in one script: Traditional text keeps its forms only for a Traditional item (D-206).
+    language = "zh-Hant" if script_counts(text)[1] else "zh"
+    assert one(spaced(text), language) == expected
 
 
 @pytest.mark.parametrize("text", [
@@ -60,7 +63,7 @@ def test_questions_in_both_scripts_get_a_question_mark(text, expected):
     "我不知道他是誰",
 ])
 def test_statements_that_hold_a_question_word_stay_statements(text):
-    assert one(spaced(text)) == text + "。"
+    assert one(spaced(text), "zh-Hant" if script_counts(text)[1] else "zh") == text + "。"
 
 
 def test_pauses_between_words_become_commas_and_sentence_marks():

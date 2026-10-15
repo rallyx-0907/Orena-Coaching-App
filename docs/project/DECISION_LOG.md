@@ -6861,3 +6861,31 @@ migration change: everything lives in existing JSON fields (`creator`, the `sour
 9. **Follow-ups.** Re-importing an existing shared item with the same media id rewrites the whole entry (`source`, `creator`,
    `title`), as before but now with Commons-derived values; confirm whether a curated title should survive. The credits page link
    for `licence_url`. The Admin partial-translation state is in `UI_BACKEND_GAPS.md`.
+
+## D-206 - ASR transcripts: one Chinese script per item, and hallucinated segments removed (2026-10-15)
+
+Status: PROPOSED - pending independent review. Video Sources milestone, PR-B. No schema or migration change: the counts live in
+`processing` (an existing JSON field) and the recogniser signals are optional fields on an in-memory dataclass.
+
+1. **Script.** ASR cue text and the stored word arrays of a Chinese item are converted to the item's script before lines are cut:
+   Simplified by default, Traditional for a `zh-Hant`/`zh-TW`/`zh-HK` language tag (`languages/chinese/script_conversion.py`).
+   The table (`script_map.json`) is derived from the vendored CC-CEDICT pack by `scripts/build_chinese_script_table.py`, one
+   character to one character, so lengths, timings and tap alignment are unchanged. No new dependency. Simplified to
+   Traditional skips a character with more than one Traditional form (发, 后): it is left as written, never guessed.
+   The provider already receives the language hint (`zh`); a Whisper language code cannot name a script, and a prompt hint
+   would need a provider-interface change, so it is not added.
+2. **Filter.** `media_asr_filter.screen_segments` runs on the joined segments of every ASR item (EN and ZH, one contract),
+   never on captions. It drops a segment that is a subtitle-credit line or a bare sound tag; one the recogniser doubts
+   (`no_speech_prob` > 0.6 with `avg_logprob` < -1.0, or `compression_ratio` > 2.4; the Whisper skip thresholds); a stock
+   sign-off ("Thank you", "The End", "I'm sorry", 谢谢) when it is long for its few words, next to 10 s of silence, repeated
+   or doubted; and a lone word left at the tail after 2 s of silence. A long segment with few words that matches nothing is
+   kept and counted as flagged. The words inside a dropped segment are removed with it. The phrase lists are
+   `writing_coach/media_asr_hallucinations.json`, with a stated basis and a line per language.
+3. **Recorded.** `processing.asr_filtered` and `processing.asr_flagged` are written on ready, held and failed outcomes of an ASR
+   item (absent for captions). If everything is filtered the item fails `empty_transcript` with the count as the detail.
+4. **ZH cut.** A recogniser cut with under 500 ms of silence after it is mid-sentence and no longer receives a full stop; a
+   question particle still closes it.
+5. **Known limits, review step.** Key-term recognition errors (大国空潮 for 大国空巢, BOA for VOA) and wrong-but-fluent
+   mishearings cannot be found by rules and are not corrected; a transcript still needs a human read before rights are
+   confirmed. Real speech inside a segment a stock rule drops (a true "Thank you" after 10 s of silence) is a rare loss; the
+   count lets a reviewer see it. The admin does not yet render `asr_filtered`/`asr_flagged` (API only; `UI_BACKEND_GAPS.md`).

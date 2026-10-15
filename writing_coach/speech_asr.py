@@ -49,6 +49,10 @@ class SpeechAsrSegment:
     text: str
     start_ms: int
     end_ms: int
+    # The recogniser's own confidence in the segment (Whisper verbose_json), None when the provider omits it.
+    no_speech_prob: float | None = None
+    avg_logprob: float | None = None
+    compression_ratio: float | None = None
 
 
 @dataclass(frozen=True)
@@ -84,6 +88,12 @@ def _seconds_to_ms(value: Any) -> int:
     ):
         raise SpeechAsrMalformed()
     return max(0, round(float(value) * 1000))
+
+
+def _signal(value: Any) -> float | None:
+    if type(value) in {int, float} and math.isfinite(value):
+        return float(value)
+    return None
 
 
 def _parse_transcription_response(
@@ -145,6 +155,9 @@ def _parse_transcription_response(
                     text=segment_text,
                     start_ms=start_ms,
                     end_ms=end_ms,
+                    no_speech_prob=_signal(item.get("no_speech_prob")),
+                    avg_logprob=_signal(item.get("avg_logprob")),
+                    compression_ratio=_signal(item.get("compression_ratio")),
                 )
             )
 
