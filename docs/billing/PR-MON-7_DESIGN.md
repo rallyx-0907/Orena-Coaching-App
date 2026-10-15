@@ -1,7 +1,8 @@
 # PR-MON-7: cost-tiered AI routing (design)
 
-**Status: DESIGNING, revision 2 (docs only).** It revises revision 1 (`2bdfdbb1`) after the independent review (3 P1)
-and the owner's decisions of 2026-10-15. There is no product code. Migration 0034 is untouched: proposed, not
+**Status: DESIGNING, revision 2.1 (docs only).** Revision 2 revised revision 1 (`2bdfdbb1`) after the independent
+review (3 P1) and the owner's decisions of 2026-10-15. Revision 2.1 answers the focused review of revision 2
+(`c2fbafb6`: P1-1 truth table, P1-2 writing-task split, P2 estimated coverage) without redesigning it. There is no product code. Migration 0034 is untouched: proposed, not
 promoted, not applied. Credits, quota enforcement and funding enforcement stay off. No meter price, credit pack or
 promotional grant is configured.
 
@@ -18,6 +19,14 @@ promotional grant is configured.
 | **P1-1:** free provider calls on paths with no quota or brake | Every learner-triggered remote AI operation is admitted under a real semantic meter (`word.assist`, `reading.assist`, `writing.task`, `writing.review`, `orena.message`; §3). A cache miss cannot create unlimited OpenRouter or Ollama Cloud requests. Order: access → deterministic/stored → safe cache → **admission** → chain → settle once (§5). |
 | **P1-2:** "local primary" could not be enforced, and production depended on a local GPU | **Local models are removed as a production tier** (owner decision). The covered-credit primary is a **cloud** provider (Ollama Cloud), and static validation proves it is in the capability's **reviewed primary allowlist** (§4.2). A random primary entered by an operator is refused. Until a primary is approved, the capability stays unlisted and off. |
 | **P1-3:** learner shared-cache paths were silently included in 7A | Paths whose cache crosses learner boundaries are **blocked** from routing until they are isolated (§6, H7-5 decision). 7A-first contains only capabilities whose stored results are account-scoped. |
+
+**Revision 2.1, the focused review of `c2fbafb6`:**
+
+| Finding | Answer |
+| --- | --- |
+| **P1-1:** the non-text and Admin capabilities were grouped as "existing meters / SystemFunding" | The truth table in §3.1 records, per Admin capability: execution path, routing state, meter and unit, whether the meter is active or NEEDS WIRING, cost telemetry key, and whether cost is recorded. It also freezes the no-double-charge rule. |
+| **P1-2:** `writing.task` mixed two privacy classes under one key | Split into `writing_task_public` (server-verified catalogue topic) and `writing_task_generator` (learner_text) (§6.1). |
+| **P2:** covered-credit coverage could read as an authoritative fact | `economic_cost_usd` is always the estimate. `cost_coverage` is `provider_credit_estimated` / `cash` / `unknown`, and stays `unknown` until H7-7 (§4.4). |
 
 ## 1. Code map (what exists at `8abab02f`)
 
@@ -71,6 +80,47 @@ hits happen **before** admission and consume nothing.
 - **Limits are a human gate.** `word.assist`, `reading.assist` and `writing.task` need their Free/Plus/Pro limits and
   granularity before they are enforced (PR-MON-6 H-2). Until enforced, their paths are not listed for routing in a
   way that could spend without a bound (§8, rollout).
+
+### 3.1 Admin capability, meter and cost truth table (revision 2.1)
+
+This table is the source of truth for the Admin surface. **"Not routable yet" means only "not on the Primary/Standby
+chain".** It does not mean the feature is unavailable or that its cost is untracked.
+
+| Admin capability (key) | Current execution path | Routing state | Learner meter (unit) | Meter state | Cost telemetry key | Provider cost recorded today |
+| --- | --- | --- | --- | --- | --- | --- |
+| Writing evaluation (`writing_evaluator`) | legacy selection via `generate_structured` | routable (7A-first) | `writing.review` (request) | **active** | `writing_evaluator` | yes (token estimate) |
+| Writing improvement (`writing_improver`) | legacy selection | routable (7A-first) | `writing.review` (request) | **active** | `writing_improver` | yes |
+| Text discussion (`text_discussion`) | legacy selection | routable (7A-first) | `orena.message` (request) | **active** | `text_discussion` | yes |
+| Reading evaluation (`reading_evaluator`) | deterministic, server-side | not a provider capability | none: no remote provider | — | — | **$0**: no provider call |
+| Speech recognition (`speech_asr`) | direct Groq ASR (`speech_asr.py`), **outside** Primary/Standby | not routable (non-text) | standalone transcription: `speech.transcribe` (second). Orena push-to-talk (`purpose=orena_voice`): inside `orena.message`, read-only `check_available` (D-169) | `speech.transcribe`: **NEEDS WIRING** (unit frozen, PR-MON-6 H-2; no limits, not admitted) | `speech_asr` | yes (audio seconds) |
+| Pronunciation evaluation (`pronunciation_evaluator`) | direct Azure via the speech resolver | not routable (non-text) | `pronunciation.audio` (second) | **active** | `pronunciation_evaluator` | yes (billed seconds) |
+| Speaking evaluation (`speaking_evaluator`) | `/api/speech/evaluation` is deterministic normalization: **no provider call** | reserved (`implemented=False`) | `speech.evaluate` (second), admitted **only when a remote speaking evaluator is activated and remote work is needed** | **NEEDS WIRING** (frozen; no remote evaluator exists) | — (none until a remote evaluator exists) | **$0** today |
+| Orena fast (`agent_turn_fast`) | legacy single cloud selection, `stream_agent_turn` | not routable (7C) | `orena.message` (request) | **active** | `agent_turn_fast` | yes (per model round) |
+| Orena deep (`agent_turn_deep`) | **no independent runtime**; no caller routes to it | not routable (7C) | `orena.message` (request) | (would share `orena.message`) | — (no separate stream yet) | no separate record |
+| Conversational voice (`conversational_speech`) | direct Gemini Live token mint (`ai/live_voice.py`, `agent/voice_session.py`) | not routable (non-text) | `orena.message`, charged by duration in chunks (D-169) | **active** | `agent_voice` | yes (session audio) |
+| Text to speech (`text_to_speech`) | generic capability **reserved** (`implemented=False`); the separate Azure word-audio implementation records as `word_tts` | not routable | a fresh standalone learner remote TTS operation: `audio.tts` (character). Cached or pre-generated catalogue audio: **no learner charge** (system work) | `audio.tts`: **NEEDS WIRING** (frozen; not admitted) | `word_tts` (Azure word audio only) | yes for `word_tts`. `word_tts` is **not** proof that generic `text_to_speech` is routed. |
+| Word translation (`word_translation`) | D-195 router (capability mode) | routed (free → capped Groq standby) | `word.assist` (request) on a model miss | **NEEDS WIRING** (frozen; today only the `tap.py` brake) | `word_translation` | yes |
+| Dictionary / contextual (`learner_dictionary`) | legacy selection | blocked (cache isolation) / 7B public split | `word.assist` / `reading.assist` / `orena.message` (§6) | **NEEDS WIRING** | `learner_dictionary` | yes |
+| Reading translation and summary (`learner_translation`, `text_discussion` reused) | legacy selection (or direct Groq/local engine by env) | blocked (learner import) / 7B (published) | `reading.assist` (request) | **NEEDS WIRING** | `learner_translation`, `text_discussion` | yes (via the platform; the direct Groq engine records as `media_translation`) |
+| Task generation (`writing_task_public` / `writing_task_generator`, §6.1) | legacy selection | 7B (public key) / private key per §6.1 | `writing.task` (request) | **NEEDS WIRING** | `writing_task_generator`, and `writing_task_public` once it exists | yes |
+
+**No double charge (frozen):**
+
+| Operation | Charged as |
+| --- | --- |
+| standalone ASR | `speech.transcribe` |
+| pronunciation exercise | `pronunciation.audio` |
+| remote speaking evaluation | `speech.evaluate` |
+| standalone remote learner TTS | `audio.tts` |
+| Orena conversational voice | `orena.message` **only** |
+
+Orena conversational voice's internal ASR, TTS and vendor work is provider-cost evidence, recorded with
+`billable_attempt` and attribution. It is **never** an additional learner quota unit.
+
+**Where the missing meter wiring goes.**
+- **A parallel meter-completion slice:** `speech.transcribe`, `speech.evaluate` and `audio.tts`, all after their H-2
+  limits. 7A-first is not expanded for them.
+- **7B and 7A-follow-up:** `word.assist`, `reading.assist` and `writing.task`, in the slices that route those paths.
 
 ## 4. Capability policy and validation
 
@@ -134,20 +184,35 @@ the capability cannot be listed.
 
 ### 4.4 Cost accounting for covered credits
 
-Every billable attempt is recorded with:
-- its estimated economic cost from the catalogue;
-- provider and model;
-- the operation id and meter (PR-MON-6 attribution);
-- **`cost_coverage`**: `provider_credit` while an owner-configured covered-credit allowance for that provider is not
-  exhausted according to Orena's own accounting, else `cash`.
+Economic cost and payment coverage are separate facts.
+
+**Economic cost.** `economic_cost_usd` is always the real catalogue (or reviewed reference) estimate. It never
+depends on credits.
+
+**Coverage.** `cost_coverage` is an **estimate**, never an authoritative cash fact, because Orena cannot read the
+provider's real remaining credit. It takes one of three values:
+- **`provider_credit_estimated`:** Orena's own shared-ledger accounting says the owner-configured allowance for that
+  provider still covers this call;
+- **`cash`:** the configured allowance is used up by that same accounting;
+- **`unknown`:** no allowance is configured, or the accounting cannot be read. This is the default **until H7-7
+  defines the allowance.**
+
+Every billable attempt records `economic_cost_usd`, `cost_coverage`, provider and model, and the operation id and
+meter (PR-MON-6 attribution).
 
 No external "remaining credits" API is assumed. If one is ever officially documented, adopting it is a later reviewed
-change. Admin can then show the estimated compute cost against the cash cost currently covered by provider credits.
+change.
 
-When the configured allowance is exhausted:
-- the covered-credit rung keeps its real cost and becomes `cash`;
-- whether it may then still serve is an activation decision (H7-7). The safe default is to treat the provider like
+Admin then shows the estimated compute cost beside the **estimated** share covered by provider credits.
+
+**H7-7 must specify, before activation:**
+- the configured allowance or budget;
+- its window, start and reset semantics;
+- accounting on a **shared ledger**, never a process-local counter;
+- the behaviour when the allowance is exhausted or its state is unknown. The safe default is to treat the provider as
   any other paid rung: admitted, capped, funded.
+
+H7-7 is an activation gate. It does not block 7A-first infrastructure from landing off by default.
 
 ## 5. Order and settlement invariant (every PR-MON-7 learner capability)
 
@@ -184,10 +249,25 @@ Key. Input = what the prompt really carries. Cache = shared (S), per learner (P)
 | 8a | Word deep, catalogue example | new public key | catalogue example | `word.assist` | S | OpenRouter free → Ollama Cloud | **7B** |
 | 8b | Word deep, learner fragment | `learner_dictionary` | learner's saved fragment | `word.assist` | **S, unsafe** (key ignores context) | Ollama Cloud → cheap paid | **blocked** → 7A-follow-up |
 | 9 | `word_translation` tap / prefetch | `word_translation` | word only | `word.assist` on a model miss (prefetch is system work: `SystemFunding`, free pool only, no learner charge) | S: router L1, deterministic sheet first | free → capped paid standby (today) | **7B** (meter wiring; routing shape already in place) |
-| 10 | Task generation | `writing_task_generator` | parameters + free-text topic | `writing.task` | none (built-in task before admission) | free → Ollama Cloud only if the topic becomes an enumerated value; otherwise learner_text: Ollama Cloud → cheap paid | **7B** |
+| 10a | Task generation, server-known topic | **`writing_task_public`** (new; `input_class=public_reference`) | task type, level, word target, a topic the **server** verified is in the fixed enumerated catalogue | `writing.task` | none (built-in task before admission) | reviewed OpenRouter free → Ollama Cloud | **7B** |
+| 10b | Task generation, custom/free-text topic | **`writing_task_generator`** (`input_class=learner_text`) | parameters + learner-typed topic | `writing.task` | none (built-in task before admission) | reviewed privacy-safe Ollama Cloud → reviewed cheap paid; **never OpenRouter free** | 7A-follow-up (no shared cache; meter after its H-2 limits) |
 | 11 | Orena Intelligence turn | (legacy, telemetry `agent_turn_fast`) | learner message + personal context | `orena.message` | none | unchanged | **7C** |
 | 11b | Opening greeting / compaction | — | — | greeting: none (stored or template); compaction: the turn's own `orena.message` operation | — | — | **7C** |
-| 12 | ASR, pronunciation, TTS, live voice, media pipeline | non-text | — | existing meters / `SystemFunding` | — | — | out of scope |
+| 12 | ASR, pronunciation, speaking evaluation, TTS, live voice | non-text | — | see §3.1: `speech.transcribe`, `pronunciation.audio`, `speech.evaluate`, `audio.tts`, `orena.message` | — | — | not routed; meters per §3.1 (parallel meter-completion slice) |
+| 13 | Media pipeline batches | non-text | — | `media.import` (learner allowance-only, H-5) + `SystemFunding` for the batch work | — | — | out of scope |
+
+### 6.1 Writing-task privacy split (revision 2.1)
+
+`input_class` is static capability metadata, so one key cannot be both public and private.
+
+| Key | When | Input class | Meter | Route |
+| --- | --- | --- | --- | --- |
+| `writing_task_public` | The **server** verifies that the requested topic is a member of the fixed enumerated topic catalogue | `public_reference` | `writing.task` | deterministic built-in task → admission → reviewed OpenRouter free → Ollama Cloud covered credit |
+| `writing_task_generator` | Any custom or free-text topic | `learner_text` | `writing.task` | deterministic built-in task → admission → reviewed privacy-safe Ollama Cloud → reviewed cheap paid; never OpenRouter free |
+
+- **The server picks the key.** A client field never asserts that its input is public: a topic is public only if the
+  server resolves it in its own catalogue.
+- **The built-in deterministic task** answers before admission for both keys.
 
 ## 7. Slice boundaries (revision 2)
 
@@ -232,7 +312,8 @@ cache. A client-provided `article:` prefix is never proof of publication.
 **Meters and paths:**
 - `word.assist`: dictionary entry (#6), catalogue-example word deep (#8a), and `word_translation` meter wiring (#9);
 - `reading.assist`: server-verified published translation and summary (#4b, #5b);
-- `writing.task` (#10).
+- `writing.task` for `writing_task_public` (#10a). The private `writing_task_generator` (#10b) is learner_text and
+  goes with 7A-follow-up.
 
 **Shape:**
 - new public capability keys decided by the server (F-4);
@@ -269,7 +350,7 @@ streaming, Agent Contract semantics, privacy, latency and quality. That is not a
 | Capability listed but config missing or invalid | 503 `capability_not_configured`, never a silent legacy fallback. |
 | Primary not in the reviewed allowlist, or a local provider configured | Refused when the config is saved or loaded, and on the call. |
 | Legacy mode, `learner_text` capability, free or prompt-logging selection | 503, nothing sent. |
-| Covered-credit allowance exhausted | The rung's cost becomes `cash`; whether it still serves follows H7-7. |
+| Covered-credit allowance exhausted or unknown | `cost_coverage` is `cash` or `unknown`; the economic cost is unchanged. Whether the rung still serves follows H7-7. |
 
 ## 9. Test plan
 
@@ -296,8 +377,13 @@ streaming, Agent Contract semantics, privacy, latency and quality. That is not a
   - credits-funded operations settle from the snapshot, whatever rung answered;
   - every billable attempt carries the same operation id and meter.
 - **Cost accounting:**
-  - an Ollama Cloud call is recorded at its catalogue price, never $0;
-  - `cost_coverage` reads `provider_credit` until the configured allowance is used, then `cash`.
+  - an Ollama Cloud call is recorded with `economic_cost_usd` at its catalogue or reference price, never $0;
+  - `cost_coverage` is `unknown` with no allowance configured, `provider_credit_estimated` while the shared-ledger
+    allowance remains, and `cash` once it is used up.
+- **Truth table:** the meter states of §3.1 match runtime (active vs NEEDS WIRING), and Orena voice charges only
+  `orena.message`.
+- **Writing-task split:** a client cannot make a free-text topic public; only a server-catalogued topic selects
+  `writing_task_public`.
 - **Cache isolation:**
   - blocked paths are not routable;
   - a client-asserted `article:` id is never treated as published;
@@ -343,7 +429,7 @@ and does not touch 0034.
 | H7-4 | **OPEN:** making `agent_turn_fast` / `agent_turn_deep` configurable for 7C (revisits the 2026-09-27 ruling). |
 | H7-5 | **DECIDED:** learner-boundary cache leaks block only their own paths (§7); public/published shared cache needs server-verified classification. **OPEN:** which lane fixes the isolation, and when. |
 | H7-6 | **OPEN:** Ollama Cloud's privacy and retention classification per model, needed before it may receive `learner_text`. |
-| H7-7 | **OPEN:** Ollama Cloud reference prices (if no per-token price is published) and the owner-configured covered-credit allowance, including whether a rung keeps serving as `cash` once the allowance is used. |
+| H7-7 | **OPEN (activation gate):** Ollama Cloud reference prices (if no per-token price is published), and the covered-credit allowance: the budget, its window/start/reset, shared-ledger accounting, and the behaviour when it is exhausted or unknown. Until then `cost_coverage` is `unknown`. |
 | H7-8 | **OPEN:** the reviewed paid-backup `(provider, model)` and spend cap for each 7A-first capability. |
 
 ## 13. Contradictions and findings
