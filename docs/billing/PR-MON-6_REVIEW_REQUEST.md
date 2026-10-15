@@ -85,3 +85,41 @@ self-approves).
 
 Re-run after the fixes (local): funding, gate, quota and contract suites 174 passed + 1 INHERITED #160; agent and
 voice suites 1254 passed.
+
+## Formal review of `7f28ef05`: REQUEST CHANGES (2 P1, no P0), and the fixes
+
+- **P1-1: cost evidence dropped billable failed calls.**
+  - Telemetry now carries an explicit, allowlisted `billable_attempt`.
+  - It is **true** for every request that was sent: a success, an invalid-output answer, a failed sent call, an
+    agent round once streamed, and every audio, token and TTS request.
+  - It is **never true** for a rung skipped before sending (budget, unfunded, cooling down) or for a chain's
+    summary.
+  - The account-cost recorder writes successes and billable attempts.
+  - Local and free-model calls are zero-price whatever their recorded state; a sent paid call without an estimated
+    price makes its operation incomplete.
+  - Word-TTS failures were dropped by the telemetry allowlist (`provider_error`); they are now `failure` with
+    `error_class` `provider_error`.
+  - Tests (`tests/test_funding_evidence.py`):
+    - invalid paid A plus paid retry B gives A + B;
+    - a sent paid call with unknown cost makes the operation incomplete;
+    - an unfunded rung and a budget-skipped rung write no cost row;
+    - free/local calls are zero-price (`tests/test_cost_model.py`).
+- **P1-2: real timeouts in the live hold check.** Every paid chokepoint passes the request's own upper bound:
+  - Groq ASR: its `_timeout_seconds`;
+  - Azure pronunciation: its `_timeout_seconds`;
+  - live-voice mint: `MINT_TIMEOUT_SECONDS`;
+  - word TTS: `REQUEST_TIMEOUT`;
+  - Supadata: its request timeout;
+  - chain rungs: the per-call timeout, or the client's default;
+  - the agent round: min(the client's read timeout, the turn's remaining time);
+  - an unknown timeout is refused as `timeout_unknown`, never treated as 0.
+  - Fake-transport tests:
+    - with 10 s left on the hold, ASR at 120 s and pronunciation at 30 s send nothing;
+    - with enough TTL, exactly one request is sent, carrying that timeout;
+    - the platform backstop uses the client's own default timeout.
+- **P2: reconciler row isolation.** Each row is isolated with a warning and a counter. Regression: a corrupt first
+  row and a repaired second row (`tests/test_funding_postgres.py`).
+- **Freshness.** The lane merged `main` `21f0596b`. Its changes to `speech_asr.py` (ASR signal fields) and
+  `media_transcript_pipeline.py` are kept together with the backstops. Full SQLite and every PostgreSQL file were
+  re-run (see `BILLING_STATUS.md`).
+
