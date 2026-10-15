@@ -99,7 +99,7 @@ def media_outcome(entry: Any) -> dict[str, Any]:
     """Where an imported item is, in the four words an operator needs: processing, held (waiting for a person),
     failed (no usable transcript), ready. `reason` is the stable code stored on the item and `message` its English
     sentence (rows written before the message was stored get it from the code). Translation is reported beside, as
-    `ready | partial | failed | deferred` with counts: a partial translation is not a failure and never moves the state."""
+    `ready | partial | failed | deferred` with counts (`deferred` with a `continuation` is a rate-limited rest being asked for again): a partial translation is not a failure and never moves the state."""
     from writing_coach.media_transcript_pipeline import reason_message
 
     processing = dict(getattr(entry, "processing", None) or {})
@@ -108,12 +108,19 @@ def media_outcome(entry: Any) -> dict[str, Any]:
     reason = str(processing.get("reason") or "")
     translation = str(processing.get("translation") or "")
     counts = processing.get("translation_counts") if isinstance(processing.get("translation_counts"), Mapping) else {}
+    continuation = processing.get("translation_continuation")
     return {
         "state": state,
         "stage": str(processing.get("stage") or ""),
         "reason": reason,
         "message": str(processing.get("message") or "") or reason_message(reason),
-        "translation": {"state": translation, "reason": str(processing.get("translation_reason") or ""), "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)}},
+        "translation": {
+            "state": translation, "reason": str(processing.get("translation_reason") or ""),
+            "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)},
+            # A deferred translation says when it asks again and how many tries it has (D-211); absent otherwise.
+            **({"continuation": {key: continuation[key] for key in ("attempt", "max_attempts", "next_at", "deadline") if key in continuation}}
+               if isinstance(continuation, Mapping) and continuation else {}),
+        },
     }
 
 
