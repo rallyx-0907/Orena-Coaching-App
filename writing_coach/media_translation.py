@@ -3,15 +3,18 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from enum import StrEnum
 import hashlib
 import json
 import logging
+import math
 import os
 import re
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Iterator, Mapping
 from typing import Protocol
 
 import requests
@@ -51,6 +54,58 @@ MAX_TRANSLATION_SPLIT_DEPTH = 3
 
 class _RequestTooLarge(Exception):
     """The provider refused this request for its size, not its timing."""
+
+
+# Who is listening for the tokens a provider answer billed. A caller that books spend (the media pipeline) opens
+# `usage_sink` around its translation call; every answer the provider returned with `usage` reports it there, and a
+# refused call (401/403/429), a timeout or an answer without `usage` reports nothing, so nothing is booked for it (#228).
+# It is a ContextVar: moving translation to another thread or executor needs `contextvars.copy_context().run(...)`, or
+# usage arrives empty there and the spend cap stops biting (nothing is booked).
+_USAGE_SINK: ContextVar[Callable[[str, dict], None] | None] = ContextVar("media_translation_usage_sink", default=None)
+
+
+@contextmanager
+def usage_sink(callback: Callable[[str, dict], None]) -> Iterator[None]:
+    token = _USAGE_SINK.set(callback)
+    try:
+        yield
+    finally:
+        _USAGE_SINK.reset(token)
+
+
+def _wire_segments(segments: TranslationBatch) -> tuple[tuple[TranslatableSegment, ...], dict[str, str]]:
+    """What travels to the provider, and the map back to the canonical ids.
+
+    Canonical provenance IDs contain hashes. Echoing those in every JSON row wastes generation capacity; short
+    request-local handles retain exact identity while keeping the provider response bounded."""
+    compact = any(len(segment.segment_id) > 64 for segment in segments)
+    wire = tuple(
+        _TranslationLine(f"line-{index:06d}", segment.original_text) if compact else segment
+        for index, segment in enumerate(segments)
+    )
+    return wire, {w.segment_id: original.segment_id for w, original in zip(wire, segments, strict=True)}
+
+
+def _output_chars(wire: tuple[TranslatableSegment, ...]) -> int:
+    """A generous bound on the JSON the provider will write back: the id, the text twice over, and the envelope."""
+    return sum(len(s.segment_id) + 2 * len(s.original_text) + 64 for s in wire)
+
+
+_ORG_ID = re.compile(r"org_[A-Za-z0-9]+")
+
+
+def _error_detail(response: object) -> str:
+    """The provider's own sentence about a refusal (which allowance, how much was left), short and on one line.
+    It names limits and counts, never a credential; empty when the answer carries none."""
+    try:
+        payload = response.json()  # type: ignore[attr-defined]
+        error = payload.get("error", {}) if isinstance(payload, dict) else {}
+        message = error.get("message", "") if isinstance(error, dict) else ""
+    except Exception:  # noqa: BLE001 - a log line never fails the call
+        return ""
+    text = " ".join(str(message).split())
+    # An organisation id is an account identifier, not a limit: it stays out of the log.
+    return _ORG_ID.sub("org_<redacted>", text)[:240]
 
 
 @dataclass(frozen=True)
@@ -370,7 +425,8 @@ class GroqTranslationProvider:
             # room for translated text and JSON rather than spending the whole
             # budget echoing provenance IDs. Split before a predictably large
             # generation, using the same bounded recovery as provider refusals.
-            output_chars = sum(len(s.segment_id) + 2 * len(s.original_text) + 64 for s in segments)
+            # The size that matters is the wire's: long canonical ids travel as short handles (_wire_segments).
+            output_chars = _output_chars(_wire_segments(segments)[0])
             if len(segments) > 1 and output_chars > 2 * self._max_completion_tokens:
                 raise _RequestTooLarge()
             return self._request_batch(source_language, target_language, segments)
@@ -387,6 +443,16 @@ class GroqTranslationProvider:
                 )
             return merged
 
+    def _completion_budget(self, wire: tuple[TranslatableSegment, ...]) -> int:
+        """The completion room this batch asks for: what it can need, never more than the configured ceiling.
+
+        A provider admits a request against the room left in an allowance for `prompt + max_completion_tokens`, so a
+        fixed reservation (2048) refused a 12-line batch that needed about 500 completion tokens whenever an allowance
+        was nearly spent, and the same batch was refused every time it was asked again (2026-10-15 trial). The size is
+        the one the batch guard already uses (two characters a token); a reply that still does not fit ends with
+        `finish_reason: length` and the batch is halved, as before."""
+        return min(self._max_completion_tokens, max(MIN_GROQ_MAX_COMPLETION_TOKENS, math.ceil(_output_chars(wire) / 2)))
+
     def _record(self, started: float, outcome: str, usage: object, error: BaseException | None = None) -> None:
         """Every Groq translation request in the shared AI ledger (ai/audio_telemetry.py): provider, model, the
         provider-reported tokens and the cost from the catalog. A request the provider answered is one row even when
@@ -394,6 +460,9 @@ class GroqTranslationProvider:
         from writing_coach.ai.audio_telemetry import record_token_operation
 
         reported = usage if isinstance(usage, dict) else {}
+        listener = _USAGE_SINK.get()
+        if listener is not None and outcome == "success" and reported:
+            listener(self._model, dict(reported))
         # Every call of this recorder follows `requests.post` (an answer, a refusal, or the post's own failure):
         # the request reached the transport, so it is a billable attempt (PR-MON-6 §8).
         record_token_operation(
@@ -409,15 +478,7 @@ class GroqTranslationProvider:
         segments: TranslationBatch,
     ) -> dict[str, str]:
 
-        # Canonical provenance IDs contain hashes. Echoing those in every JSON
-        # row wastes generation capacity; short request-local handles retain
-        # exact identity while keeping the provider response bounded.
-        compact = any(len(segment.segment_id) > 64 for segment in segments)
-        wire_segments = tuple(
-            _TranslationLine(f"line-{index:06d}", segment.original_text) if compact else segment
-            for index, segment in enumerate(segments)
-        )
-        canonical_ids = {wire.segment_id: original.segment_id for wire, original in zip(wire_segments, segments, strict=True)}
+        wire_segments, canonical_ids = _wire_segments(segments)
         body = {
             "model": self._model,
             "messages": [
@@ -439,7 +500,7 @@ class GroqTranslationProvider:
             # Groq reserves prompt + requested completion against one ceiling,
             # so asking for the whole budget left no room for the prompt and
             # returned 413 whenever the bucket was not already full.
-            "max_completion_tokens": self._max_completion_tokens,
+            "max_completion_tokens": self._completion_budget(wire_segments),
         }
 
         started = time.perf_counter()
@@ -461,8 +522,8 @@ class GroqTranslationProvider:
                     # Which allowance was spent (tokens or requests, per minute or per day) is in these headers; they
                     # carry counts and durations only, never a credential (D-211).
                     _logger.warning(
-                        "groq translation rate limited: retry_after=%s quota=%s lines=%d",
-                        response.headers.get("retry-after", ""), self.last_quota, len(segments),
+                        "groq translation rate limited: retry_after=%s quota=%s lines=%d detail=%s",
+                        response.headers.get("retry-after", ""), self.last_quota, len(segments), _error_detail(response),
                     )
                 refused = (
                     TranslationProviderError(

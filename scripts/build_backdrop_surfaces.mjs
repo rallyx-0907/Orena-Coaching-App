@@ -18,6 +18,9 @@ const SCOPES = new Set(['.o-frame', '.a-shell', '.o-main', '.a-main', '.s-onboar
 // Form controls draw their own ground in every browser.
 const CONTROLS = ['input', 'textarea', 'select', 'dialog', '[role="dialog"]', '[role="menu"]', '[role="listbox"]', '[role="tooltip"]'];
 
+// Solid surfaces whose ground is a gradient, which GROUND (one var(--surface...) fill) cannot see.
+const GRADIENT_SURFACES = ['.s-ic'];
+
 function strip(css) {
   return css.replace(/\/\*[\s\S]*?\*\//g, '');
 }
@@ -95,7 +98,7 @@ export function surfaceSelectors() {
       }
     }
   }
-  return [...found, ...CONTROLS].sort();
+  return [...new Set([...found, ...CONTROLS, ...GRADIENT_SURFACES])].sort();
 }
 
 export function buildSurfacesCss() {
