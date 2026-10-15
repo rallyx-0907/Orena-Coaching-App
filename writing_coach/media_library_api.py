@@ -22,7 +22,9 @@ second one invented here.
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
+from urllib.parse import urlsplit
 from collections.abc import Callable, Mapping
 from typing import Any
 
@@ -199,6 +201,55 @@ def _is_admin(request: Request) -> bool:
     return True
 
 
+_FILES_PREFIX = "/api/media/files/"
+_SAFE_KEY = re.compile(r"[A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-]+)+")
+
+
+def _entry_directories(entry: MediaLibraryEntry) -> set[str]:
+    """Every `media/<directory>` an entry's bytes live under, from what the entry itself records."""
+    directories = {f"media/{entry.media_id}", f"media/{entry.provider_media_id}"}
+    refs = [str((entry.playback or {}).get("url") or "")]
+    thumbnail = entry.thumbnail or {}
+    if thumbnail.get("kind") == "asset":
+        refs.append(f"{_FILES_PREFIX}{thumbnail.get('ref') or ''}")
+    for ref in refs:
+        path = urlsplit(ref).path
+        if path.startswith(_FILES_PREFIX):
+            parts = path[len(_FILES_PREFIX):].split("/")
+            if len(parts) >= 3 and parts[0] == "media":
+                directories.add("/".join(parts[:2]))
+    return directories
+
+
+def _owning_entries(store: Any, segments: list[str]) -> list[MediaLibraryEntry]:
+    """The stored entries that own `media/<directory>/...`, whatever their id or path prefix (upload-, direct-, ...).
+
+    The id candidates answer the common case with two lookups; the scan finds an entry whose recorded playback or
+    thumbnail lives in the directory under another name. Nothing outside `media/` is owned, so nothing there is served.
+    """
+    if len(segments) < 3 or segments[0] != "media":
+        return []
+    directory = "/".join(segments[:2])
+    found: dict[str, MediaLibraryEntry] = {}
+    for candidate in (segments[1], f"upload-{segments[1]}"):
+        entry = store.get(candidate)
+        if entry is not None and directory in _entry_directories(entry):
+            found[entry.media_id] = entry
+    if not found:
+        for library in ("shared", "personal"):
+            for entry in store.list(library=library, status=None):
+                if directory in _entry_directories(entry):
+                    found[entry.media_id] = entry
+    return list(found.values())
+
+
+def _may_read_file(entry: MediaLibraryEntry, request: Request) -> bool:
+    """One rule for every source: published shared is everyone's, unpublished shared is an administrator's, personal is its owner's."""
+    if entry.library == "personal":
+        return visible_to(entry, user_key=current_user_key(), language=current_language_code())
+    return entry.status == "published" or _is_admin(request)
+
+
 @router.get("/files/{key:path}")
 def stored_media_file(request: Request, key: str, variant: str = "") -> Any:
     """Serve bytes this application stores under an opaque, validated key.
@@ -211,17 +262,14 @@ def stored_media_file(request: Request, key: str, variant: str = "") -> Any:
     from fastapi.responses import Response
 
     store, asset_store, _ = _installed()
-    # A personal file's bytes (and its thumbnail) are as private as its entry.
+    # Ownership first (#216, D-209): a file is served only when a stored entry owns it, and that entry's rule applies.
     segments = key.split("/")
-    private = False
-    if len(segments) >= 3 and segments[0] == "media":
-        personal = store.get(f"upload-{segments[1]}")
-        if personal is not None and not visible_to(
-            personal, user_key=current_user_key(), language=current_language_code()
-        ) and not (personal.library == "shared" and _is_admin(request)):
-            # An administrator reviewing a held shared import may play its own bytes; no one else may.
-            raise orena_http_error(404, "media_asset_not_found", "This media file is not available.")
-        private = personal is not None and personal.library == "personal"
+    if not _SAFE_KEY.fullmatch(key) or any(part in {"", ".", ".."} for part in segments):
+        raise orena_http_error(404, "media_asset_not_found", "This media file is not available.")
+    owners = _owning_entries(store, segments)
+    if not owners or not all(_may_read_file(entry, request) for entry in owners):
+        raise orena_http_error(404, "media_asset_not_found", "This media file is not available.")
+    private = any(entry.library == "personal" for entry in owners)
     try:
         payload = asset_store.get(key)
     except (AssetNotFound, InvalidAssetKey):

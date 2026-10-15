@@ -6929,3 +6929,23 @@ in the existing `processing` JSON beside `translation_counts`.
 7. **Owner decisions left open.** Raising the 64 MiB cap (not done). A control to retry only the missing lines of a finished item
    (reprocess still redoes everything). Whether the 5-round / 150 s bound suits the provider's real limits once a real batch is
    measured (no live provider was called; tests use fakes).
+
+## D-209 - `/api/media/files` serves a file only through the stored entry that owns it (2026-10-15)
+
+Status: PROPOSED - pending independent review. Fixes #216 (P2-2 of the #214 review). No schema or migration change, no new
+role, no change to the publish or visibility policy: this enforces the existing rule that held content is not learner-visible.
+
+1. **Problem.** The file route looked up `upload-<segment>` only. Direct-URL (including Wikimedia Commons) imports store under
+   `media/direct-<sha256(url)>/`, so a held direct import was served to anyone who knew the path.
+2. **Rule.** The route resolves the entry that owns `media/<directory>/...` by id candidates (`<directory>`, `upload-<directory>`)
+   and, failing that, by the directory its recorded playback URL or thumbnail names, in either library. One rule then applies:
+   published shared is everyone's (as before); held or unpublished shared is an administrator's only, learner and anonymous get
+   404; personal is its owner's (same language), as before. If several entries claim a directory, all must allow the caller.
+3. **No owner, no file.** A key no entry owns, and any key outside `media/`, is 404, administrators included. Checked first:
+   thumbnails (recorded in the entry), model clips (`media/<token>/model-clip/`, under the entry's prefix, read through the
+   speaking routes) and playback URLs all live under an entry's directory; speaking-prefix clips are read by their own routes
+   from the asset store, not through this one. Nothing legitimate relied on serving an orphan.
+4. **Traversal.** Every segment must match `[A-Za-z0-9_.-]+` and not be `.` or `..` before any lookup; the asset store's key
+   validation is unchanged behind it. Tests: `tests/test_media_files_gate.py`.
+5. **Left open.** `_remove_personal_entry` deletes `media/<provider_media_id>`, which is not a direct import's directory
+   (`media/direct-<token>`); personal uploads are unaffected. Not changed here.
