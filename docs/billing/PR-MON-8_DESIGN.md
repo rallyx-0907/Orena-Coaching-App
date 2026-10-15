@@ -1,6 +1,6 @@
 # PR-MON-8: SePay domestic gateway, Billing sandbox and E2E (design)
 
-**Status: DESIGN APPROVED FOR IMPLEMENTATION at `c3af9154` (revision 5).** Independent architecture review (the reviewer of the r3/r4 rounds, ChatGPT / GPT-5.6 Sol): P0 0, P1 0, blocking P2 0. It authorizes implementation only; merge, production activation, shared-runtime migration, the live transfer and any tunnel/DNS change remain separate gates. Revision 2 answered the review of revision 1 (`b01e2f5f`: 2 P1, Q1-Q5). Revision 3 answers the owner's review of revision 2 (`c5d2ed47`): the cursor loop, cancelled orders, the feed's fail-safe, secrets, the late-payment grace (1 hour) and the activation gates. Revision 4 answers the independent architecture review of revision 3 (`d4b66c01`, 1 P1): late-payment eligibility no longer depends on the expiry reconciler. Revision 5 answers the re-review of revision 4 (`b5248b69`, 1 P1): the SePay eligibility decision and the transition to `paid` happen atomically under the order's row lock. See §0. Billing / Commerce scope (D-MON-029). Base: `main` `d42c9261`. Input:
+**Status: DESIGNING, revision 6: a targeted delta on revision 5 (docs only), for a delta review.** Revision 5 was APPROVED FOR IMPLEMENTATION at `c3af9154`; revision 6 changes only the persistence taxonomy of three reconciliation cases and states the grace sentinel (§0, revision 6). Revision 5's approval: Independent architecture review (the reviewer of the r3/r4 rounds, ChatGPT / GPT-5.6 Sol): P0 0, P1 0, blocking P2 0. It authorizes implementation only; merge, production activation, shared-runtime migration, the live transfer and any tunnel/DNS change remain separate gates. Revision 2 answered the review of revision 1 (`b01e2f5f`: 2 P1, Q1-Q5). Revision 3 answers the owner's review of revision 2 (`c5d2ed47`): the cursor loop, cancelled orders, the feed's fail-safe, secrets, the late-payment grace (1 hour) and the activation gates. Revision 4 answers the independent architecture review of revision 3 (`d4b66c01`, 1 P1): late-payment eligibility no longer depends on the expiry reconciler. Revision 5 answers the re-review of revision 4 (`b5248b69`, 1 P1): the SePay eligibility decision and the transition to `paid` happen atomically under the order's row lock. See §0. Billing / Commerce scope (D-MON-029). Base: `main` `d42c9261`. Input:
 `DOMESTIC_GATEWAY_SEPAY_ASSESSMENT.md` (D-MON-024). This is a payment change, so it needs independent review
 before code, and again before merge. Nothing is enabled: `BILLING_ENABLED` stays off, no credential is configured, and
 SePay is not approved for production.
@@ -54,6 +54,17 @@ loop, dedupe, feed gating, secrets or gates.
 | --- | --- |
 | **P1, TOCTOU between the SePay pre-check and `mark_paid`.** The design checked duplicate, closed state and time in the SePay path *before* `record_payment`, in another transaction. Today's `mark_paid` takes its own lock and still accepts `cancelled`. An order read as `pending`, then cancelled by an operator before the lock, would be paid and granted. | **§4.2:** one locked repository operation, `mark_paid_domestic(..., policy=SePayPaymentPolicy)`, decides eligibility **and** makes the transition under the `billing_orders` row lock (and the account lock `mark_paid` already takes). It runs these steps in order: duplicate → deletion safety → current state → closed (`order_closed`, no mutation) → time against `expires_at + grace` read under the lock (`late`, no mutation) → `source_ambiguous` → amount, currency and reference → `paid`. There is no pre-check outside the lock. payOS keeps today's `mark_paid` unchanged. The service records `payment_order_closed` / `payment_late` / `payment_source_ambiguous` before the webhook is acknowledged. A real concurrency test is added (§9). |
 | **P2** | The mapping test wording now reads "expired payment within grace (paid)". |
+
+**Revision 6: targeted delta (owner decision, 2026-10-15).** Found while preparing the implementation: `ck_billing_item_kind` admits only the existing kinds, so the three new kind names of revisions 3-5 would be refused by the database. Revision 6 records the owner's choice (option a, no schema change):
+
+1. `payment_order_closed`, `payment_late` and `payment_source_ambiguous` are removed as database kinds;
+2. all three map to the existing `payment_not_payable`;
+3. they are told apart by the stable `reason` values `order_closed`, `late_payment` and `source_ambiguous` (§4.3);
+4. the test expectations are updated (§9);
+5. the grace policy's default `0` is an UNCONFIGURED sentinel, not a real grace (§4.1);
+6. "no schema change" still holds.
+
+Payment behaviour, atomic locking, dedupe, the cursor, security and the activation gates are unchanged.
 
 The file count of revision 1 was two docs files (`PR-MON-8_DESIGN.md`, `BILLING_STATUS.md`), not one.
 
@@ -182,28 +193,36 @@ made **inside the locked payment operation of §4.2**, in this order, never in a
 `mark_paid`.
 
 1. **A repeat of a payment already recorded.** The order is `paid` by this payment event: `duplicate`, as today. The
-   order is `paid` by another event: as today, plus the §6.3 `payment_source_ambiguous` rule.
+   order is `paid` by another event: as today, plus the §6.3 `source_ambiguous` rule.
 2. **A closed order.** The order is `cancelled`, `refunded`, or in any state an operator or the system ended on
-   purpose: `payment_order_closed` reconciliation item. Never auto-granted, whatever the time.
+   purpose: `payment_not_payable` reconciliation item with `reason = order_closed`. Never auto-granted, whatever the time.
 3. **A payable order** (`created`, `pending`, or `expired` by checkout timeout). Compare the transfer directly with the
    order:
 
    | Transfer time (`transactionDate`) | Result, **whatever the stored state** |
    | --- | --- |
    | `<= expires_at + grace` | Paid and granted. |
-   | `> expires_at + grace` | `payment_late` reconciliation item. The money is recorded, nothing is granted, and the operator refunds or honours it by hand. |
+   | `> expires_at + grace` | `payment_not_payable` reconciliation item with `reason = late_payment`. The money is recorded, nothing is granted, and the operator refunds or honours it by hand. |
 
    **Time eligibility never depends on whether the expiry reconciler has already moved the order to `expired`.** A
    `pending` order past `expires_at` + grace is late, exactly as an `expired` one is.
 4. **Fail closed.** An order with no `expires_at`, an unreadable or unset grace when the payment arrives, or an
-   unparseable `transactionDate` all produce `payment_late`: recorded, nothing granted, and the operator decides.
+   unparseable `transactionDate` all produce `payment_not_payable` with `reason = late_payment`: recorded, nothing
+   granted, and the operator decides.
 
 "Within the grace" is judged on the transfer's own `transactionDate` (Vietnam time, converted to UTC), not on Orena's
 arrival time. A delayed webhook therefore does not turn an on-time transfer into a late one.
 
-**Grace (owner decision):** `billing.domestic_late_payment_grace_hours = 1`. It is an Admin-editable policy with **no
-implicit default**: while it is unset, SePay checkout is not ready (`readiness` names `late_payment_grace_unset`). It
-may be tuned later from real data. payOS is unchanged: its link has its own expiry.
+**Grace (owner decision):** `billing.domestic_late_payment_grace_hours`, operated at `1`, set explicitly on each
+runtime. It is an Admin-editable policy. Because the policy framework requires a default, the default is **`0`, an
+internal sentinel meaning UNCONFIGURED** (revision 6):
+- `0` (or any value `<= 0`) is **not** a grace of zero hours and is never a valid grace;
+- SePay checkout is not ready, and readiness names `late_payment_grace_unset`;
+- a payment arriving in this state fails closed: `payment_not_payable` with `reason = late_payment`, nothing granted;
+- a valid operating value is `>= 1`.
+
+There is no implicit grace that can grant access. The value may be tuned later from real data. payOS is unchanged:
+its link has its own expiry.
 
 ### 4.2 One locked operation decides and transitions (review P1, TOCTOU)
 
@@ -224,13 +243,41 @@ then the `billing_orders` row `FOR UPDATE`. Every step reads the order **under t
 The grace is read once by the service and passed in as `policy`. An unset grace is refused before the call (`late`).
 The time comparison uses the `expires_at` read under the lock, never a snapshot taken earlier.
 
-`BillingService` maps `order_closed` / `late` / `source_ambiguous` to the reconciliation items `payment_order_closed`
-/ `payment_late` / `payment_source_ambiguous`. It records them **before** the webhook route returns `ack()`. If
+`BillingService` records each of `order_closed` / `late` / `source_ambiguous` as **one existing reconciliation
+kind**, `payment_not_payable`, with the stable `reason` of §4.3. It records them **before** the webhook route returns
+`ack()`. If
 recording fails, the route answers 503 and SePay retries. A transition to `paid` continues to the grant or top-up as
 `record_payment` does today.
 
 `mark_paid` itself, and so payOS, is not changed. Its acceptance of `cancelled` remains a payOS behaviour outside this
 PR's scope, recorded as residual risk RR-8.1.
+
+### 4.3 Persistence taxonomy: one existing kind, stable reasons (revision 6)
+
+`billing_reconciliation_items.kind` is constrained in the database (`ck_billing_item_kind`, 0031 / 0032). The three
+SePay cases therefore use the **existing** kind `payment_not_payable`, so there is **no schema change and no
+migration**:
+
+| Locked outcome (§4.2) | `kind` | `reason` (machine-stable constant) |
+| --- | --- | --- |
+| `order_closed` | `payment_not_payable` | `order_closed` |
+| `late` | `payment_not_payable` | `late_payment` |
+| `source_ambiguous` | `payment_not_payable` | `source_ambiguous` |
+
+- `dedupe_key` is the payment event id of the event being processed (§3.1).
+- The item keeps every fact the design requires: external event id (source id), order code, amount, currency,
+  provider state, the billing order and incarnation when known, the bank reference and the transaction time.
+- The three `reason` values are code constants. Business logic branches on the locked outcome and on these constants,
+  never on free text.
+- Admin may show a friendly label from `reason`; the database kind stays `payment_not_payable`.
+- The financial behaviour is unchanged:
+  - `order_closed` and `late_payment`: the order is not moved to `paid`, and there is no grant and no top-up;
+  - `source_ambiguous`: no second payment, no grant, no top-up;
+  - the item is durable before `ack()`, and a failed write answers 503 so SePay retries;
+  - the operator then refunds, matches or waives through the existing reconciliation workflow.
+
+The names `payment_order_closed`, `payment_late` and `payment_source_ambiguous` in §0's history rows are superseded:
+they are not database kinds.
 
 ## 5. Gateway selection becomes data (G2)
 
@@ -316,8 +363,8 @@ When enabled, a row is applied only when:
 
 The applied row's payment event id follows §3.1. With a bank reference, a later manual replay of the webhook is a
 `duplicate`. Without one, a later webhook (only a manual replay can arrive after the settle delay) for an order the
-feed already paid is **not** a second payment and is **not** applied. It becomes a `payment_source_ambiguous`
-reconciliation item (both source ids, amount, order) for the operator. The same holds the other way round. This
+feed already paid is **not** a second payment and is **not** applied. It becomes a `payment_not_payable`
+(`reason = source_ambiguous`) reconciliation item (both source ids, amount, order) for the operator. The same holds the other way round. This
 decision is step 6 of the locked operation (§4.2), not a pre-check.
 
 ### 6.4 Recovery outside the cursor
@@ -357,7 +404,8 @@ in one of two ways:
 - Idempotency:
   - webhook redelivery and manual replay;
   - the same transfer from webhook and feed with a bank reference: one credit and one grant;
-  - without a reference: the feed skips `webhook_success = 1`, and a late replay becomes `payment_source_ambiguous`,
+  - without a reference: the feed skips `webhook_success = 1`, and a late replay becomes `payment_not_payable`
+    (`reason = source_ambiguous`),
     never a second payment.
 - Feed cursor:
   - advance only after a fully applied page;
@@ -368,13 +416,14 @@ in one of two ways:
   - a 429 back-off;
   - rows for another account skipped but counted.
 - Late payment:
-  - `pending` with `transactionDate > expires_at + grace`: `payment_late`, nothing granted;
-  - `created` with `transactionDate > expires_at + grace`: `payment_late`, nothing granted;
+  - `pending` with `transactionDate > expires_at + grace`: `payment_not_payable` / `late_payment`, nothing granted;
+  - `created` with `transactionDate > expires_at + grace`: `payment_not_payable` / `late_payment`, nothing granted;
   - `pending`, webhook arriving late, `transactionDate <= expires_at + grace`: paid and granted;
   - `expired` by timeout with the transfer inside the grace: paid and granted;
-  - `expired` with the transfer after the grace: `payment_late`;
-  - `cancelled` / `refunded`: always `payment_order_closed`, inside or outside the grace;
-  - no `expires_at`, the grace unset when the payment arrives, or an unparseable `transactionDate`: `payment_late`;
+  - `expired` with the transfer after the grace: `payment_not_payable` / `late_payment`;
+  - `cancelled` / `refunded`: always `payment_not_payable` / `order_closed`, inside or outside the grace;
+  - no `expires_at`, the grace unset (`<= 0`) when the payment arrives, or an unparseable `transactionDate`:
+    `payment_not_payable` / `late_payment`;
   - the grace judged on `transactionDate`;
   - grace unset: checkout not ready.
 - Cursor loop:
@@ -387,7 +436,7 @@ in one of two ways:
     lock (a test hook);
   - a second transaction moves the order to `cancelled` and commits;
   - the payment resumes;
-  - the result is `payment_order_closed`, the order is not `paid`, there is no plan grant and no credit top-up.
+  - the result is `payment_not_payable` with `reason = order_closed`, the order is not `paid`, there is no plan grant and no credit top-up.
 - **Locked snapshot:** a second transaction changes `expires_at` (or expires the order) between the service's read and
   the locked operation. The grace decision follows the value read under the lock, never the earlier snapshot.
 - **Recorded before acknowledging:** when recording the item fails, the webhook answers 503 and no `ack()` is sent.
@@ -412,7 +461,7 @@ in one of two ways:
 - **Q3:** yes. The domestic gateway is required when billing is on; it is inferred only in development or test with
   one domestic gateway configured.
 - **Q4:** approved.
-- **Q5:** a bounded grace, then `payment_late`; the owner decided the grace: 1 hour (§4.1).
+- **Q5:** a bounded grace, then `payment_not_payable` / `late_payment`; the owner decided the grace: 1 hour (§4.1).
 
 **Verified in SePay test mode before activation (H):** whether VietinBank fills the bank reference and whether it is
 the same in both sources; the order of `since_id` and whether it is exclusive; `webhook_success` timing; a real scan of
@@ -426,7 +475,7 @@ the generated QR.
 ## 12. Activation gates (owner, all required)
 
 Production stays off until every one of these passes:
-1. Independent review of revision 5: APPROVED.
+1. Independent review of revision 5 (APPROVED at `c3af9154`) and of the revision 6 delta: APPROVED.
 2. Hermetic tests pass.
 3. PostgreSQL integration tests pass.
 4. SePay test mode passes.
