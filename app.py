@@ -1350,6 +1350,63 @@ def _credit_service(service):
 _credits = _credit_service(_billing)
 if _billing is not None and _credits is not None:
     _billing.attach_credits(_credits)  # PR-MON-5: credit-pack orders are credited through the ledger
+
+
+def _funding_service():
+    """PR-MON-6: funding admissions exist only where the quota store does, `ORENA_FUNDING_ADMISSIONS` is on (off by
+    default) and 0034's tables exist (0034 is a proposal: applied nowhere). Credits fund an operation only where they
+    are ready and the meter has an approved price that passes the cost gate - none is configured (H-1, H-7)."""
+
+    from writing_coach.billing.funding import FUNDING_TABLES, funding_admissions_enabled
+
+    if _quota_repository is None or not funding_admissions_enabled(os.environ):
+        return None
+    try:
+        if not set(FUNDING_TABLES) <= set(_runtime_table_names()):
+            logging.getLogger(__name__).error("funding admissions are on but 0034 is not applied: left off")
+            return None
+    except Exception:
+        logging.getLogger(__name__).error("funding admissions: the tables cannot be listed: left off", exc_info=True)
+        return None
+    from writing_coach.ai.routing import provider_tier
+    from writing_coach.billing.cost_model import load_gate_inputs
+    from writing_coach.billing.funding import FundingService, load_meter_prices
+    from writing_coach.persistence.credit_repository import PostgresCreditRepository
+    from writing_coach.persistence.funding_repository import PostgresFundingRepository
+
+    repository = PostgresFundingRepository(_persistence_runtime.engine, quota=_quota_repository,
+                                           credits=PostgresCreditRepository(_persistence_runtime.engine))
+    return FundingService(repository, prices=load_meter_prices(os.environ), gate_inputs=load_gate_inputs(os.environ),
+                          credits_ready=lambda: _billing is not None and _billing.credits_ready(),
+                          packs=lambda: _billing.credit_packs if _billing is not None else {},
+                          tier_of=provider_tier)
+
+
+_funding = _funding_service()
+_quota.configure_funding(_funding)
+if _billing is not None and _funding is not None:
+    _billing.attach_pack_gate(_funding.pack_sellable)  # PR-MON-6 §8: a pack failing the cost gate is not sold
+from writing_coach.billing import funding_context as _funding_context  # noqa: E402
+
+@app.exception_handler(_funding_context.FundingRequired)
+async def _funding_required(_request, exc):  # noqa: ANN001 - FastAPI's handler signature
+    """I-1 in enforce mode: a paid-provider request without live funding was refused before it was sent."""
+    from fastapi.responses import JSONResponse
+
+    from writing_coach.core.errors import error_detail
+
+    return JSONResponse(status_code=503, content={"detail": error_detail(
+        "funding_required", "This request could not be funded right now. Please try again.", retryable=False,
+        context={"reason": exc.reason})})
+
+
+# I-1's backstop: FUNDING_ENFORCEMENT off (default) | log | enforce. Its live check reads the admission store.
+_funding_context.configure(env=os.environ, live=_funding.live if _funding is not None else None,
+                           dispatch=_funding.dispatch_for_backstop if _funding is not None else None)
+from writing_coach.funding_api import configure_funding_api, router as funding_router  # noqa: E402
+
+configure_funding_api(funding=_funding, admin_guard=require_admin)
+app.include_router(funding_router)
 _billing_reconcile = _billing_reconciler(_billing)
 configure_billing(service=_billing, backbone=_account_backbone, admin_guard=require_admin,
                   reconciliation=_billing.reconciliation if _billing is not None else None,
@@ -3315,6 +3372,9 @@ def api_evaluate(payload: EssayIn) -> dict[str, Any]:
         target_level=payload.target_cefr or "",
         prompt=payload.prompt,
     )
+    # PR-MON-6 §4 step 1: feature access before any bypass - a plan that disables writing review is refused here,
+    # before a stored review could answer it (P1-1). A no-op while the meter is not enforced.
+    _quota.require_feature("writing.review")
     existing = _stored_review_for(identity)
     if existing is not None:
         return _review_payload(existing, previous)

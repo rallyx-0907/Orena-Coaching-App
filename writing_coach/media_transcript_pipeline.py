@@ -49,6 +49,7 @@ from typing import Any
 
 from writing_coach import media_quota
 from writing_coach.ai.audio_telemetry import telemetry_origin
+from writing_coach.billing.funding_context import system_funding
 from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.media_learning import MediaTranscript, TranscriptSegment
@@ -473,7 +474,10 @@ class MediaPipeline:
         hold = media_quota.hold_of(first)
         try:
             # An operator's shared import is not a learner's request: its provider calls are recorded without that origin.
-            with telemetry_origin("learner" if first is None or first.library == "personal" else None):
+            # PR-MON-6 §2: a media batch is system-funded, bounded by the media spend caps (media_spend.py); a
+            # learner's import was admitted on its allowance (media.import is allowance-only, H-5).
+            with telemetry_origin("learner" if first is None or first.library == "personal" else None), \
+                    system_funding("media_pipeline"):
                 self._run(store, assets, media_id, batch_id, candidate)
         except PipelineStop as stop:
             if stop.code != "cancelled":

@@ -42,7 +42,14 @@ MAX_HOLD_TTL_SECONDS = 30 * 60
 NEW_METER_UNITS = {"speech.transcribe": "second", "reading.assist": "request", "word.assist": "request",
                    "writing.task": "request", "speech.evaluate": "second", "audio.tts": "character"}
 GATE_WINDOW = timedelta(days=90)
+SWITCH = "ORENA_FUNDING_ADMISSIONS"
+FUNDING_TABLES = ("funding_admissions", "promotional_grants")
 GATE_CACHE_SECONDS = 600
+
+
+def funding_admissions_enabled(env: Mapping[str, str]) -> bool:
+    """Off by default. On, an enforced meter is admitted through `funding_admissions` (PR-MON-6 rollout step 2)."""
+    return str(env.get(SWITCH, "")).strip().lower() in {"on", "1", "true", "yes"}
 
 
 @dataclass(frozen=True)
@@ -108,6 +115,14 @@ class FundingService:
     def repository(self) -> PostgresFundingRepository:
         return self._repository
 
+    @property
+    def tier_of(self) -> Callable[[str, str], str]:
+        return self._tier_of
+
+    @property
+    def gate_inputs_configured(self) -> bool:
+        return self._gate_inputs is not None
+
     # ---- H-1 / H-7: may this meter be funded by credits? ------------------------------------------------------------
 
     def gate(self, *, refresh: bool = False) -> GateResult:
@@ -119,7 +134,7 @@ class FundingService:
             prices = {m: p.credit_price for m, p in self._prices.items()}
             stats = {}
             if self._gate_inputs is not None and prices:
-                operations, _unattributed = read_operations(self._repository._engine,
+                operations, _unattributed = read_operations(self._repository.engine,
                                                             since=self._clock() - GATE_WINDOW, tier_of=self._tier_of)
                 stats = meter_stats(operations)
             result = evaluate_gate(packs=dict(self._packs()), prices=prices, stats=stats, inputs=self._gate_inputs)
@@ -138,6 +153,11 @@ class FundingService:
         if not result.meter_ok(meter):
             return None, "not_credit_eligible"
         return CreditTerms(price.credit_price, price.hold_ttl_seconds, price.revision, result.gate_id), ""
+
+    def offers_available(self, meter: str) -> bool:
+        """Section 9 `buy_credits`: the meter is credit-eligible and at least one pack passes the gate."""
+        terms, _why = self.credit_terms(meter)
+        return terms is not None and self._credits_ready() and any(self.pack_sellable(k) for k in self._packs())
 
     def pack_sellable(self, key: str) -> bool:
         """The gate only removes a pack from sale (K1, K5): no inputs, no evidence or a failing meter, no sale."""

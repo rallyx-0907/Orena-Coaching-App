@@ -362,7 +362,10 @@ class AzureSpeechPronunciationProvider:
         """Every Azure request in the shared AI ledger (ai/audio_telemetry.py): the seconds Azure received, once it
         answered 200 - a silent take it scored as nothing was still billed. `prepared` is the take already decoded by
         `prepare_audio` (the plan quota measured it before calling); the result and any failure carry the seconds
-        Azure billed (`audio_seconds`, `billed_seconds`)."""
+        Azure billed (`audio_seconds`, `billed_seconds`). I-1's backstop runs first (PR-MON-6 §2)."""
+        from writing_coach.billing.funding_context import require_paid
+
+        require_paid(capability="pronunciation_evaluator", provider=str(getattr(self, "provider_id", "") or "azure"))
 
         meter: dict[str, float] = {}
         started = time.perf_counter()

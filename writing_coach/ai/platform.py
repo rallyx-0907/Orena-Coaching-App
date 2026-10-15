@@ -51,6 +51,7 @@ from writing_coach.ai.credentials import (
 )
 from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.ai.routing import (
+    AllProvidersUnavailable,
     Attempt,
     ProviderTarget,
     build_chain,
@@ -365,6 +366,35 @@ def _budget_gate(definition: Any, *, paid_ok: bool = True) -> Callable[[Provider
     return admit
 
 
+def _funded_gate(capability_key: str, budget: Callable[[ProviderTarget], str | None] | None,
+                 timeout_for: Callable[[ProviderTarget], float | None]) -> Callable[[ProviderTarget], str | None]:
+    """The budget gate, then I-1's backstop for a paid rung (PR-MON-6 §2): a paid rung without live funding is skipped
+    (`unfunded`) when FUNDING_ENFORCEMENT is `enforce`, logged in `log`, untouched when `off`. Free and local rungs
+    need no paid funding."""
+
+    from writing_coach.billing import funding_context
+
+    def admit(target: ProviderTarget) -> str | None:
+        refused = budget(target) if budget is not None else None
+        if refused is not None:
+            return refused
+        if provider_tier(target.provider, target.model) != "paid":
+            return None
+        allowed = funding_context.paid_allowed(capability=capability_key, provider=target.provider,
+                                               timeout_seconds=timeout_for(target) or 0.0)
+        return None if allowed else "unfunded"
+
+    return admit
+
+
+def _require_paid_funding(capability: str, provider: str | None, model: str | None, timeout: float | None) -> None:
+    """The backstop for a single paid request with no other rung (legacy selection, agent rounds)."""
+    from writing_coach.billing import funding_context
+
+    if provider and provider_tier(provider, model or "") == "paid":
+        funding_context.require_paid(capability=capability, provider=provider, timeout_seconds=timeout or 0.0)
+
+
 def _record_attempt(capability_key: str | None, router_version: str | None = None) -> Callable[[Attempt], None]:
     """Every rung is logged, not only the one that answered.
 
@@ -513,6 +543,8 @@ def stream_agent_turn(
         stream_chat = getattr(item, "stream_chat", None)
         if definition is None or not definition.supports(AIOperation.AGENT_TURN) or not callable(stream_chat):
             raise AIProviderUnavailable(f"{item.name} cannot stream agent turns.")
+        # I-1's backstop, per model round: a stream whose funding closed (TTL, settlement) stops at its next round.
+        _require_paid_funding(AGENT_TURN_CAPABILITY, provider_id, model, timeout_seconds)
         events = stream_chat(
             messages=messages,
             tools=tools,
@@ -621,6 +653,7 @@ def generate_structured(
                 raise AIProviderUnavailable(f"{item.name} is not configured.")
 
             # Do not silently fail over to a paid provider.
+            _require_paid_funding(capability_key or "legacy", provider_id, model, attempt_timeout)
             return finish(item.generate_json(
                 messages=messages,
                 schema=schema,
@@ -661,8 +694,6 @@ def generate_structured(
             timeout_seconds=config.timeout_seconds,
         )
 
-        gate = _budget_gate(definition, paid_ok=paid_standby)
-
         def _timeout_for(target: ProviderTarget) -> float | None:
             """This attempt's HTTP timeout: the configured one (else the caller's), capped by what remains."""
 
@@ -671,6 +702,8 @@ def generate_structured(
                 remaining = max(0.05, deadline - _routing.monotonic())
                 limit = remaining if limit is None else min(limit, remaining)
             return limit
+
+        gate = _funded_gate(definition.key, _budget_gate(definition, paid_ok=paid_standby), _timeout_for)
 
         def _ask(target: ProviderTarget) -> AIResult:
             nonlocal provider_id, model
@@ -712,10 +745,18 @@ def generate_structured(
             assert invalid is not None
             raise invalid
 
-        routed = run_chain(
-            chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline,
-            health=health, admit=gate,
-        )
+        try:
+            routed = run_chain(
+                chain, _ask, on_attempt=_record_attempt(capability_key, router_version), deadline=deadline,
+                health=health, admit=gate,
+            )
+        except AllProvidersUnavailable as error:
+            skipped = [a for a in getattr(error, "attempts", []) or []]
+            if skipped and all(getattr(a, "reason", None) == "unfunded" for a in skipped):
+                from writing_coach.billing.funding_context import FundingRequired
+
+                raise FundingRequired("no_unpaid_rung", capability=definition.key) from error
+            raise
         provider_id, model = routed.target.provider, routed.target.model
         return finish(routed.value, routed.attempts)
     except (AICapabilityError, AIProviderError) as exc:

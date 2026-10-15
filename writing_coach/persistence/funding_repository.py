@@ -101,6 +101,10 @@ class PostgresFundingRepository:
         self._clock = clock or (lambda: datetime.now(UTC))
 
     @property
+    def engine(self) -> Engine:
+        return self._engine
+
+    @property
     def quota(self) -> Any:
         return self._quota
 

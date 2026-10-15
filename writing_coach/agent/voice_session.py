@@ -22,6 +22,8 @@ spoken words do not pass every gate a text turn does. What the server keeps:
 
 from __future__ import annotations
 
+import contextlib
+
 import json
 import logging
 import re
@@ -529,7 +531,10 @@ class VoiceService:
             locked["sessionResumption"] = {"handle": resumption} if resumption else {}
         try:
             ticket.dispatch(f"voice:{session_id}:{index}")
-            token, expires = self.tokens.mint(locked, now=self.now(), seconds=seconds)
+            # PR-MON-6: the mint is the paid request; a funded chunk carries its FundingContext into the backstop.
+            scope = getattr(ticket, "funding_scope", None)
+            with scope() if scope is not None else contextlib.nullcontext():
+                token, expires = self.tokens.mint(locked, now=self.now(), seconds=seconds)
         except BaseException:
             ticket.settle(0, "failed")  # nothing was handed to the learner
             raise

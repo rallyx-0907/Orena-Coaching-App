@@ -58,6 +58,9 @@ class GeminiLiveTokens:
         key = self.key()
         if not key:
             raise VoiceUnavailable("no Gemini key is configured")
+        from writing_coach.billing.funding_context import require_paid
+
+        require_paid(capability="agent_voice", provider="gemini")  # I-1's backstop (PR-MON-6 §2)
         iso = "%Y-%m-%dT%H:%M:%SZ"
         expires = (now + timedelta(seconds=seconds)).strftime(iso)
         body = {

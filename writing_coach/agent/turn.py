@@ -281,6 +281,9 @@ class AgentRuntime:
         return _Turn(self, request, learner, should_stop, admission).timed_events()
 
 
+_ROUND_DONE = object()
+
+
 class _Turn:
     def __init__(
         self,
@@ -356,6 +359,23 @@ class _Turn:
         finally:
             self._settle_quota(outcome)
             self._record_turn(outcome)
+
+    def _round(self, request: ProviderTurnRequest) -> Iterator[Any]:
+        """One model round. A funded message (PR-MON-6) starts it inside its FundingContext: the paid-provider
+        backstop runs when the round's request is sent (the first item), and no `yield` happens inside the scope, so
+        the context never crosses an iteration of this generator."""
+
+        stream = self.rt.provider.stream(request, should_stop=self.should_stop)
+        scope = getattr(self.ticket, "funding_scope", None)
+        if scope is None:
+            yield from stream
+            return
+        with scope():
+            first = next(stream, _ROUND_DONE)
+        if first is _ROUND_DONE:
+            return
+        yield first
+        yield from stream
 
     def _admit_turn(self) -> None:
         """Reserve this learner message and hand the work to the provider (dispatch), before anything is sent."""
@@ -661,7 +681,7 @@ class _Turn:
             calls: list[ToolCallRequest] = []
             self.provider_rounds += 1
             self.timeline.round_started()
-            for item in self.rt.provider.stream(request, should_stop=self.should_stop):
+            for item in self._round(request):
                 self.timeline.round_event()
                 if self.should_stop():
                     return

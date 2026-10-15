@@ -115,6 +115,12 @@ def record_for_current_account(event: dict[str, Any]) -> None:
 
     if _recorder is None:
         return
+    from writing_coach.billing.funding_context import attribution
     from writing_coach.core.request_context import current_user_key
 
+    # PR-MON-6 §8: the learner operation (or the system reason) this call was made for, so its cost is aggregated per
+    # operation. A call with neither is unattributed: counted and reported, never folded into a meter.
+    operation_id, meter = attribution()
+    if operation_id is not None:
+        event = {**event, "funding_operation_id": operation_id, "funding_meter": meter}
     _recorder.record(current_user_key(), event)

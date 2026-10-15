@@ -168,6 +168,9 @@ class AzureVoice:
             if not single_reading:
                 return None  # a reading the voice cannot be told: no guess
             ssml = ssml_for(term, language, "")
+        from writing_coach.billing.funding_context import require_paid
+
+        require_paid(capability="word_tts", provider="azure")  # I-1's backstop (PR-MON-6 §2)
         try:
             spent = float(self._spent())
         except Exception:  # noqa: BLE001 - an unreadable ledger is a closed cap, never "nothing spent"

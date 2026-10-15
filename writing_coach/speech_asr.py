@@ -219,7 +219,13 @@ class GroqSpeechAsrProvider:
         return self._metered(self._transcribe_url, *args, **kwargs)
 
     def _metered(self, call: Callable[..., SpeechAsrResult], *args: Any, **kwargs: Any) -> SpeechAsrResult:
-        """Every Groq request, from any caller, in the shared AI ledger (ai/audio_telemetry.py)."""
+        """Every Groq request, from any caller, in the shared AI ledger (ai/audio_telemetry.py). I-1's backstop runs
+        first: without live funding (a learner admission or SystemFunding) the request is not sent once
+        FUNDING_ENFORCEMENT is `enforce` (PR-MON-6 §2)."""
+        from writing_coach.billing.funding_context import require_paid
+
+        require_paid(capability="speech_asr", provider=str(getattr(self, "provider_id", "") or "groq"),
+                     timeout_seconds=float(getattr(self, "_timeout", 0) or 0))
 
         from writing_coach.ai.audio_telemetry import record_audio_operation
 
