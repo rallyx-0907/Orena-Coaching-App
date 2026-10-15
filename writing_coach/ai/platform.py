@@ -39,8 +39,9 @@ from writing_coach.ai import routing as _routing
 from writing_coach.ai import spend_gate
 from writing_coach.ai.capabilities import AIOperation, require_capability
 from writing_coach.ai.config import (
-    ROUTABLE_CAPABILITIES,
+    ROUTING_SWITCH,  # noqa: F401 - re-exported for the routing switch's readers
     CapabilityConfig,
+    routed_capabilities,
     routed_definition,
     validate_capability_config,
     validate_routed_policy,
@@ -95,20 +96,6 @@ def runtime_mode() -> AIRuntimeMode:
         return AIRuntimeMode(value)
     except ValueError as exc:
         raise AICapabilityConfigInvalid(f"Unsupported AI runtime mode: {value!r}.") from exc
-
-
-ROUTING_SWITCH = "ORENA_CAPABILITY_ROUTING"
-
-
-def routed_capabilities() -> frozenset[str]:
-    """PR-MON-7A-first: the capabilities taken off the legacy selection and onto their reviewed capability chain.
-    Empty by default. Only `ROUTABLE_CAPABILITIES` may be listed; anything else is ignored and logged."""
-
-    listed = {item.strip() for item in os.getenv(ROUTING_SWITCH, "").split(",") if item.strip()}
-    ignored = listed - ROUTABLE_CAPABILITIES
-    if ignored:
-        _logger.warning("%s lists capabilities this build does not route: %s", ROUTING_SWITCH, sorted(ignored))
-    return frozenset(listed & ROUTABLE_CAPABILITIES)
 
 
 # PR-MON-7: providers whose bill may currently be covered by provider credits. Their calls keep their real estimated
@@ -810,12 +797,19 @@ def generate_structured(
 
         budget = _budget_gate(definition, paid_ok=paid_standby)
         if routed and budget is not None:
-            # PR-MON-7 (independent pre-review P1-1): the routed daily cap belongs to the reviewed paid BACKUP. The
-            # reviewed primary - Ollama Cloud, priced as paid - is never skipped by it; the funding gate still applies.
-            backup_only, primary = budget, chain[0]
+            # PR-MON-7: the routed daily cap belongs to the reviewed paid BACKUP and measures only that backup's own
+            # spend (provider and model), never the primary's. The reviewed primary - Ollama Cloud, priced as paid -
+            # is never skipped by it; the funding gate still applies to every paid rung.
+            primary, cap_policy = chain[0], definition.paid_standby_cap_policy
 
             def budget(target: ProviderTarget) -> str | None:
-                return None if target == primary else backup_only(target)
+                if target == primary or provider_tier(target.provider, target.model) != "paid":
+                    return None
+                if not paid_standby:
+                    return "budget"
+                refused = spend_gate.paid_refused(definition.key, cap_policy, provider=target.provider,
+                                                  model=target.model)
+                return "budget" if refused else None
 
         gate = _funded_gate(definition.key, budget,
                             lambda target: _effective_timeout(_timeout_for(target), _provider_timeout(target.provider)))

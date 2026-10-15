@@ -400,8 +400,14 @@ class PaidFake(CloudFake):
 
 
 class LedgerRepository(Repository):
-    def ai_spend_since_for_capability(self, capability, since):
-        return 0.0, 0
+    """The shared AI ledger: today's spend per (provider, model) of the capability."""
+
+    spend: dict = {}
+
+    def ai_spend_since_for_capability(self, capability, since, *, provider=None, model=None):
+        if provider is None:
+            return sum(self.spend.values()), 0
+        return self.spend.get((provider, model), 0.0), 0
 
 
 def routed_world(monkeypatch, reviewed, *, cap, primary_answers, backup_answers=()):
@@ -478,7 +484,9 @@ def test_ollama_cloud_discovery_authenticates_so_a_wrong_key_fails_the_admin_tes
 
     monkeypatch.setattr(prov.requests, "get", get)
     good = prov.OllamaCloudProvider({"api_key": "right", "models": [CLOUD_MODEL, "listed-not-published"]})
-    assert good.discover_models_live() == [CLOUD_MODEL] and seen["url"] == "https://ollama.com/api/tags"
+    # the live reachable catalogue (formal review P1-2); the runtime allowlist stays the operator's listed models
+    assert good.discover_models_live() == [CLOUD_MODEL, "unlisted"] and seen["url"] == "https://ollama.com/api/tags"
+    assert good.list_models() == [CLOUD_MODEL, "listed-not-published"]
     assert good.api_key == "right"
     with pytest.raises(AIProviderError):
         prov.OllamaCloudProvider({"api_key": "wrong", "models": [CLOUD_MODEL]}).discover_models_live()
@@ -495,3 +503,163 @@ def test_a_refresh_is_403_before_any_stored_answer_when_the_plan_disables_review
     answer = client.post(f"/api/essays/{essay_id}/review/refresh")
     assert answer.status_code == 403 and answer.json()["detail"]["category"] == "feature_not_in_plan"
     assert client.calls == []
+
+
+# ---- formal review of 04fa9b3f ----------------------------------------------------------------------------------------
+
+def test_capability_mode_never_sends_learner_text_to_an_unreviewed_ollama_cloud_model(monkeypatch):
+    cloud = CloudFake([{"ok": True}])
+    monkeypatch.setenv("AI_RUNTIME_MODE", "capability")
+    monkeypatch.delenv(platform.ROUTING_SWITCH, raising=False)   # not even routed: global capability mode
+    monkeypatch.setattr(platform, "_platform_repository",
+                        Repository(config(provider="ollama-cloud", model=CLOUD_MODEL)))
+    monkeypatch.setattr(platform, "providers", lambda: {"ollama-cloud": cloud})
+    with pytest.raises(AICapabilityConfigInvalid, match="privacy classification"):
+        ask()
+    assert cloud.calls == 0
+
+
+def test_capability_mode_never_runs_a_7a_capability_on_a_local_model(monkeypatch):
+    local = CloudFake([{"ok": True}])
+    local.id = "ollama"
+    monkeypatch.setenv("AI_RUNTIME_MODE", "capability")
+    monkeypatch.delenv(platform.ROUTING_SWITCH, raising=False)
+    monkeypatch.setattr(platform, "_platform_repository", Repository(config(provider="ollama", model="qwen3:8b")))
+    monkeypatch.setattr(platform, "providers", lambda: {"ollama": local})
+    with pytest.raises(AICapabilityConfigInvalid, match="local-model"):
+        ask()
+    assert local.calls == 0
+
+
+def test_saving_an_activated_routed_capability_with_an_unreviewed_primary_is_refused(monkeypatch, tmp_path):
+    from writing_coach.ai.config import validate_capability_config
+    from writing_coach.persistence.platform_repository import SQLitePlatformRepository
+
+    monkeypatch.setenv(platform.ROUTING_SWITCH, "writing_evaluator")
+    unreviewed = config(provider="openai", model="gpt-4o-mini")
+    with pytest.raises(AICapabilityConfigInvalid, match="reviewed primary"):
+        validate_capability_config("writing_evaluator", unreviewed)        # save and load both run this
+    repository = SQLitePlatformRepository(tmp_path / "platform.db")
+    repository.initialize()
+    with pytest.raises(AICapabilityConfigInvalid, match="reviewed primary"):
+        repository.set_capability_config("writing_evaluator", unreviewed, updated_by="admin")
+    monkeypatch.delenv(platform.ROUTING_SWITCH)
+    validate_capability_config("writing_evaluator", unreviewed)   # not activated: the existing rules only
+
+
+def test_a_valid_reviewed_policy_still_saves_and_runs(monkeypatch, reviewed):
+    from writing_coach.ai.config import validate_capability_config
+
+    cloud, _paid = routed_world(monkeypatch, reviewed, cap=1.0, primary_answers=[{"ok": True}])
+    validate_capability_config("writing_evaluator", routed_config())   # save, with the cap check
+    assert ask().provider == "ollama-cloud" and cloud.calls == 1
+
+
+def test_the_backup_cap_measures_the_backups_own_spend_never_the_primarys(monkeypatch, reviewed):
+    from writing_coach.ai import spend_gate
+    from writing_coach.ai.base import AIOutputInvalid, AIProviderError
+
+    def validate(data):
+        if not data.get("ok"):
+            raise AIOutputInvalid("bad")
+
+    cloud, paid = routed_world(monkeypatch, reviewed, cap=1.0, primary_answers=[{"ok": False}, {"ok": False}],
+                               backup_answers=[{"ok": True}, {"ok": True}])
+    LedgerRepository.spend = {("ollama-cloud", CLOUD_MODEL): 5.0, PAID: 0.0}   # the primary alone is past the cap
+    try:
+        assert ask(validate).provider == "openai" and paid.calls == 1   # the backup is still eligible
+        LedgerRepository.spend = {("ollama-cloud", CLOUD_MODEL): 5.0, PAID: 1.0}   # now the backup reached its cap
+        spend_gate.reset()
+        with pytest.raises(AIProviderError):
+            ask(validate)
+        assert paid.calls == 1 and cloud.calls == 2   # the primary was still asked; the backup was skipped
+    finally:
+        LedgerRepository.spend = {}
+
+
+def test_ollama_cloud_credentials_bootstrap_from_the_encrypted_store_with_no_env_models(monkeypatch):
+    import json
+
+    from cryptography.fernet import Fernet
+    from fastapi import HTTPException, Request, Response
+
+    from writing_coach.ai.credentials import MASTER_KEY_ENV, decrypt_credentials
+
+    monkeypatch.setenv(MASTER_KEY_ENV, Fernet.generate_key().decode("ascii"))
+    monkeypatch.delenv("OLLAMA_CLOUD_MODELS", raising=False)
+    monkeypatch.delenv("OLLAMA_CLOUD_API_KEY", raising=False)
+
+    class Store:
+        def __init__(self):
+            self.values = {}
+
+        def get_provider_credential(self, provider_id):
+            return self.values.get(provider_id)
+
+        def set_provider_credential(self, provider_id, value, *, updated_by=""):
+            self.values[provider_id] = value
+
+    class Catalogue:
+        status_code = 200
+
+        def __init__(self, key):
+            self.key = key
+
+        def raise_for_status(self):
+            if self.key != "Bearer good-key":
+                import requests
+
+                self.status_code = 401
+                raise requests.HTTPError(response=self)
+
+        def json(self):
+            return {"models": [{"name": "model-a"}, {"name": "model-b"}]}
+
+    monkeypatch.setattr(prov.requests, "get", lambda url, headers, timeout: Catalogue(headers["Authorization"]))
+    store = Store()
+    monkeypatch.setattr(platform, "_platform_repository", store)
+    monkeypatch.setattr(platform, "_admin_guard", lambda _request: {"google_sub": "qa-admin"})
+    monkeypatch.setattr(platform, "_record_admin_event", lambda *a, **k: None)
+    request = Request({"type": "http", "method": "PUT", "path": "/api/admin/ai/credentials/ollama-cloud",
+                       "headers": [(b"host", b"testserver"), (b"origin", b"http://testserver")]})
+    tested = platform.admin_ai_provider_credential_test(
+        "ollama-cloud", platform.ProviderCredentialIn(api_key="good-key", base_url="https://ollama.com", models=[],
+                                                      default_model=""), request, Response())
+    assert tested["models"] == ["model-a", "model-b"]   # the live catalogue, with no allowlist yet
+    saved = platform.admin_ai_provider_credential_save(
+        "ollama-cloud", platform.ProviderCredentialIn(api_key="good-key", base_url="https://ollama.com",
+                                                      models=["model-a"], default_model="model-a"),
+        request, Response())
+    assert saved["secret_saved"] is True and "good-key" not in json.dumps(saved)
+    assert decrypt_credentials("ollama-cloud", store.values["ollama-cloud"])["models"] == ["model-a"]
+    assert platform.providers()["ollama-cloud"].list_models() == ["model-a"]   # never the whole live catalogue
+    with pytest.raises(HTTPException):
+        platform.admin_ai_provider_credential_test(
+            "ollama-cloud", platform.ProviderCredentialIn(api_key="wrong-key", base_url="https://ollama.com",
+                                                          models=[], default_model=""), request, Response())
+
+
+def test_a_refresh_refused_by_live_funding_answers_funding_required_and_charges_nothing(client, stack,  # noqa: F811
+                                                                                         monkeypatch):
+    import app as app_module
+    from writing_coach.billing import funding_context as fc
+
+    repository = enforced_runtime()
+    outbound = []
+
+    def evaluator(payload, *, support=None):
+        fc.require_paid(capability="writing_evaluator", provider="openai", timeout_seconds=30)  # the paid rung's check
+        outbound.append(payload.text)
+        return {}
+
+    monkeypatch.setattr(app_module, "evaluate_with_ai", evaluator)
+    previous = (fc._runtime.mode, fc._runtime.live, fc._runtime.dispatch)
+    fc.configure(mode="enforce", live=lambda *a, **k: "hold_expiring", dispatch=lambda op: "dispatched")
+    try:
+        essay_id, _values = seed(stack, learning="zh", support="vi")
+        answer = client.post(f"/api/essays/{essay_id}/review/refresh")
+    finally:
+        fc._runtime.mode, fc._runtime.live, fc._runtime.dispatch = previous
+    assert answer.status_code == 503 and answer.json()["detail"]["category"] == "funding_required"
+    assert outbound == []
+    assert "settle:1" not in repository.calls and "settle:0" in repository.calls

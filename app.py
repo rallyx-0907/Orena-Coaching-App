@@ -3621,6 +3621,8 @@ def _refresh_with(ticket: Any, essay_id: int, prior: str, detail: dict[str, Any]
         if evaluator == "fallback-demo":
             raise RuntimeError("a fallback evaluation is never stored")
         result = _bounded_review(result)
+    except _funding_required_error():
+        raise   # I-1 (PR-MON-6): answered 503 funding_required by its own handler, never "refresh unavailable"
     except Exception:  # noqa: BLE001 - a refresh that cannot be earned writes nothing and can be retried
         logging.getLogger(__name__).warning("essay review refresh unavailable", exc_info=True)
         ticket.settle(0, "refresh_unavailable")

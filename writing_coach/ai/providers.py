@@ -529,8 +529,7 @@ class OllamaCloudProvider(OllamaProvider):
         return sorted(dict.fromkeys(self.allowed_models)) if self.configured else []
 
     def discover_models_live(self) -> list[str]:
-        """An authenticated catalogue read, so a wrong key fails the Admin test instead of the first learner call.
-        Answers the operator's listed models that the account can reach (all listed ones when none is published)."""
+        """An authenticated catalogue read, so a wrong key fails the Admin test instead of the first learner call."""
         if not self.configured:
             raise AIProviderUnavailable("Ollama Cloud is not configured.")
         try:
@@ -546,9 +545,10 @@ class OllamaCloudProvider(OllamaProvider):
             raise AIProviderError(f"Ollama Cloud returned HTTP {status} during model discovery.") from exc
         except ValueError as exc:
             raise _invalid_model_catalog() from exc
-        published = set(_model_catalog(envelope, container_key="models", model_key="name"))
-        listed = self.list_models()
-        return [model for model in listed if model in published] if published else listed
+        # The live, authenticated catalogue the key can reach: the Admin test shows it, and the credential save checks
+        # that the operator's chosen models belong to it. It is never an allowlist by itself - at run time only the
+        # models the operator stored (or listed in the environment) are used.
+        return sorted(set(_model_catalog(envelope, container_key="models", model_key="name")))
 
     def generate_json(self, **kwargs: Any) -> AIResult:
         if not self.configured:

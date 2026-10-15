@@ -190,6 +190,23 @@ def _check_tiers(definition: AICapabilityDefinition, config: CapabilityConfig, *
 # (or none) and an existing learner meter (`writing.review`, `orena.message`). Every other capability stays on the
 # legacy selection until its own slice (7A-follow-up after cache isolation, 7B, 7C).
 ROUTABLE_CAPABILITIES = frozenset({"writing_evaluator", "writing_improver", "text_discussion"})
+ROUTING_SWITCH = "ORENA_CAPABILITY_ROUTING"
+
+
+def routed_capabilities() -> frozenset[str]:
+    """PR-MON-7A-first: the capabilities taken off the legacy selection onto their reviewed chain (`ORENA_CAPABILITY_
+    ROUTING`, empty by default). Only `ROUTABLE_CAPABILITIES` may be listed; anything else is ignored and logged."""
+    import logging
+    import os
+
+    listed = {item.strip() for item in os.getenv(ROUTING_SWITCH, "").split(",") if item.strip()}
+    ignored = listed - ROUTABLE_CAPABILITIES
+    if ignored:
+        logging.getLogger(__name__).warning("%s lists capabilities this build does not route: %s", ROUTING_SWITCH,
+                                            sorted(ignored))
+    return frozenset(listed & ROUTABLE_CAPABILITIES)
+
+
 # The daily cap of each routed capability's reviewed paid backup (a `writing_coach.policies` key; default 0 = no paid
 # backup, H7-8). It applies only while the capability is routed: on the legacy path nothing changes.
 ROUTED_BACKUP_CAP_POLICY = {
@@ -321,17 +338,35 @@ def validate_capability_config(
         check_model_allowed(config.backup_provider, config.backup_model or "")
     if definition.free_primary_only:
         _check_tiers(definition, config, enforce_cap=enforce_cap)
+    pool = [(provider, config.model)]
+    if config.backup_provider is not None:
+        pool.append((get_provider_definition(config.backup_provider), config.backup_model or ""))
     if definition.input_class == "learner_text":
         # A free tier, or any endpoint that may log prompts, never receives learner-authored text (D-195, D-104).
-        pool = [(provider, config.model)]
-        if config.backup_provider is not None:
-            pool.append((get_provider_definition(config.backup_provider), config.backup_model or ""))
         for entry, model in pool:
             if entry.may_log_prompts or is_free_model(entry.id, model):
                 raise AICapabilityConfigInvalid(
                     f"{definition.key!r} carries learner text: provider {entry.id!r} / model {model!r} "
                     "(a free tier or a provider that may log prompts) is refused."
                 )
+            # PR-MON-7: a provider that requires a per-model privacy review (Ollama Cloud) sends learner text only to
+            # a reviewed model - on every capability-mode path, routed or not (H7-6).
+            if entry.learner_text_models is not None and model not in entry.learner_text_models:
+                raise AICapabilityConfigInvalid(
+                    f"{definition.key!r} carries learner text: {entry.id!r} / {model!r} has no reviewed privacy "
+                    "classification for it."
+                )
+    if definition.key in ROUTABLE_CAPABILITIES:
+        # PR-MON-7A-first: these capabilities never run on a local production model, in any capability mode.
+        for entry, _model in pool:
+            if entry.kind == "local":
+                raise AICapabilityConfigInvalid(
+                    f"{definition.key!r} has no local-model production tier: {entry.id!r} is refused."
+                )
+        if definition.key in routed_capabilities():
+            # Activated for routing: its whole reviewed policy holds when the config is saved (with the cap check),
+            # loaded and called - an invalid routed config is never accepted and never runs.
+            validate_routed_policy(definition.key, config, enforce_cap=enforce_cap)
     if config.fallback_policy not in definition.allowed_fallback_policies:
         raise AICapabilityConfigInvalid(
             f"Fallback policy {config.fallback_policy.value!r} is not allowed for {definition.key!r}."
