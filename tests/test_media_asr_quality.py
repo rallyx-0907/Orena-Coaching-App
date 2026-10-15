@@ -1,4 +1,4 @@
-"""ASR transcript quality (D-207, PROPOSED): one script per Chinese item, and hallucinated segments removed.
+"""ASR transcript quality (D-208, PROPOSED): one script per Chinese item, and hallucinated segments removed.
 
 Fixtures are synthetic and shaped like what the 2026-10-14 mini trial observed; none is a real transcript."""
 from __future__ import annotations

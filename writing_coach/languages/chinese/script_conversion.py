@@ -1,4 +1,4 @@
-"""Convert Chinese text to one script, character by character (D-207, PROPOSED).
+"""Convert Chinese text to one script, character by character (D-208, PROPOSED).
 
 Pure and deterministic: no network, no AI, no dependency. The table (`script_map.json`) is derived from the
 vendored CC-CEDICT pack by `scripts/build_chinese_script_table.py` and holds only characters whose conversion is

@@ -538,7 +538,7 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
-                                           translation="", translation_counts={})
+                                           translation="", translation_counts={}, asr_filtered=0, asr_flagged=0)
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:

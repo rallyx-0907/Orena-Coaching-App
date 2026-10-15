@@ -1,4 +1,4 @@
-"""Dropping recogniser hallucinations from ASR segments before they become lesson lines (D-207, PROPOSED).
+"""Dropping recogniser hallucinations from ASR segments before they become lesson lines (D-208, PROPOSED).
 
 Whisper-family recognisers invent text over silence, music and noise: subtitle credits, "Thank you", "The End",
 a literal "foreign" tag, one stray word at the tail. Those lines pass every transcript check, because each is a
@@ -38,6 +38,7 @@ AVG_LOGPROB = -1.0
 COMPRESSION_RATIO = 2.4
 # A doubted segment: well short of the skip thresholds, still enough to tip a stock phrase.
 DOUBT_NO_SPEECH_PROB = 0.3
+DOUBT_COMPRESSION_RATIO = 2.0
 # Speech is 2-3 words (English) or 3-6 characters (Chinese) a second; under these a segment of at least
 # SPARSE_MIN_MS is mostly silence. A 33 s segment with 2 words is the shape seen in the trial.
 SPARSE_MIN_MS = 8000
@@ -103,9 +104,15 @@ def _is_tag(text: str) -> bool:
     return _fold(inner.group(1) if inner else text) in _tags()
 
 
+def _has_signals(segment: SpeechAsrSegment) -> bool:
+    return segment.no_speech_prob is not None or segment.avg_logprob is not None or segment.compression_ratio is not None
+
+
 def _doubted(segment: SpeechAsrSegment) -> bool:
-    return (segment.no_speech_prob is not None and segment.no_speech_prob >= DOUBT_NO_SPEECH_PROB) or (
-        segment.avg_logprob is not None and segment.avg_logprob < AVG_LOGPROB
+    return (
+        (segment.no_speech_prob is not None and segment.no_speech_prob >= DOUBT_NO_SPEECH_PROB)
+        or (segment.avg_logprob is not None and segment.avg_logprob < AVG_LOGPROB)
+        or (segment.compression_ratio is not None and segment.compression_ratio > DOUBT_COMPRESSION_RATIO)
     )
 
 
@@ -152,8 +159,16 @@ def screen_segments(
                 0 <= other < len(ordered) and folded[other] == folded[index] for other in (index - 1, index + 1)
             )
             silent = before >= LONG_SILENCE_MS or (after is not None and after >= LONG_SILENCE_MS)
-            if sparse or silent or repeated or _doubted(segment):
+            if sparse or _doubted(segment):
                 drop[index] = True
+            elif silent or repeated:
+                # Context alone: with the recogniser's confidence in hand and no doubt in it, the line may be real
+                # speech ("Bye. Bye.", a thank-you after applause), so it is kept and flagged for review. A
+                # provider that gave no confidence leaves context as the only evidence.
+                if _has_signals(segment):
+                    flagged += 1
+                else:
+                    drop[index] = True
             continue
         if sparse:
             flagged += 1
@@ -168,7 +183,10 @@ def screen_segments(
         previous_end = ordered[kept_before[-1]].end_ms if kept_before else 0
         if ordered[run[0]].start_ms - previous_end >= TAIL_SILENCE_MS:
             for i in run:
-                drop[i] = True
+                if _has_signals(ordered[i]) and not _doubted(ordered[i]):
+                    flagged += 1  # a confident closing word ("好的") is kept for review, not dropped
+                else:
+                    drop[i] = True
     kept = tuple(item for item, gone in zip(ordered, drop, strict=True) if not gone)
     gone_spans = [(item.start_ms, item.end_ms) for item, gone in zip(ordered, drop, strict=True) if gone]
     if not gone_spans:
