@@ -7046,7 +7046,7 @@ free number and is renumbered at merge if they land first.
 
 ## D-211 - ZH Traditional to Simplified is completed from Unihan; a long transcript finishes translating by a bounded deferred continuation (2026-10-15)
 
-Status: PROPOSED - pending independent review. Video Sources milestone, mini-trial rerun blockers N1 and P1-2. No schema or migration
+Status: ACCEPTED (merged as #224 once CI was green; independent review APPROVE WITH CONDITIONS on 60b0e32b, re-review APPROVE on 11b6ee06, no open P0/P1). Video Sources milestone, mini-trial rerun blockers N1 and P1-2. No schema or migration
 change: the new value lives in the existing `processing` JSON beside `translation_counts`. No learner UI, no new provider, no new
 worker, the AI spend cap unchanged.
 
@@ -7083,6 +7083,9 @@ worker, the AI spend cap unchanged.
    乾卦, 宫商角徵羽 and 覆水 stay. The evidence is measured on the text before any conversion. Words and cues are judged by the same
    rule, so an item with a stray Traditional character does not change its Simplified clauses. A Traditional sentence with no
    Traditional-only character at all (看著我) is also left as written: with no evidence it cannot be told from Simplified.
+   **Accepted limit (re-review P2-5):** the evidence is clause-scoped, so a context character in a Traditional cue whose clause has no
+   Traditional-only character stays unconverted (他看著我 keeps 著). This is the accepted cost of never altering Simplified text; re-check it
+   on VOA.
 6. **Known limits.** The context judgement uses CC-CEDICT's words only: near Traditional evidence, any word CC-CEDICT does not list
    takes the default (a name written with `乾` or `著` can change; `於` is converted to `于`, right outside a surname). Not converted,
    with the reason: 諮 (Unihan gives 谘, the standard form is 咨) and 讎 (Unihan gives 雠, the standard is 仇), listed in the build
