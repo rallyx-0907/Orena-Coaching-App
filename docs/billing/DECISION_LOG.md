@@ -293,8 +293,9 @@ change (with the D-MON-026 caps), never automatically. | D-MON-027 required the 
 D-MON-029 | 2026-10-15 | Domain boundary (owner). Three domains with one contract between them: Billing / Commerce
 (checkout, subscription and payment, SePay / payOS / Polar, credit top-up when Credits are used, transactions,
 webhook/IPN, refund and reversal, reconciliation, payment status, pricing and packs, production payment rollout)
-confirms the plan or the credits; Plan & Entitlements (feature access, plan entitlements, quota, semantic meters,
-usage, Free/Plus/Pro limits, the Plan & Usage UI) decides feature and quota; AI Economics / Routing Optimization
+records and settles the payment and grants the purchased commercial product or credits; Plan & Entitlements (feature
+access, plan entitlements, quota, semantic meters, usage, Free/Plus/Pro limits, the Plan & Usage UI) resolves the
+effective plan, feature access and quota; AI Economics / Routing Optimization
 (Admin > AI & Models: provider/model registry, capability routing, model qualification and benchmark, quality, latency,
 provider cost and credits, per-tier routing policy, spend caps, fallback, margin, profit optimization under a quality
 floor) chooses the provider and model; a provider call returns usage, cost and latency evidence. Billing and cost

@@ -38,11 +38,11 @@ Order holds unless a discovered dependency proves it unsafe; record any such cha
 | Domain | Owns | Backlog moved here |
 | --- | --- | --- |
 | **Billing / Commerce** (this lane) | checkout, subscription and payment, SePay / payOS / Polar, credit top-up (if Credits), transactions, webhook/IPN, refund and reversal, reconciliation, payment status, pricing and packs, production payment rollout | PR-MON-8, PR-MON-9, PR-MON-10 |
-| **Plan & Entitlements** | feature access, entitlements, quota, semantic meters, usage, Free/Plus/Pro limits, Plan & Usage UI | 7B2a (wire `word.assist` / `reading.assist` / `writing.task`, deterministic/stored/safe cache first); Plan & Usage rows before any enforcement (`UI_BACKEND_GAPS.md`); speech/TTS limits (owner); R-MON-003, R-MON-005 |
+| **Plan & Entitlements** | feature access, entitlements, quota, semantic meters, usage, Free/Plus/Pro limits, Plan & Usage UI | 7B2a (wire `word.assist` / `reading.assist` / `writing.task`, deterministic/stored/safe cache first); Plan & Usage rows before any enforcement (`UI_BACKEND_GAPS.md`); speech/TTS limits (owner); R-MON-003; R-MON-005 meter/quota admission (cross-domain, see the risk register) |
 | **AI Economics / Routing Optimization** (Admin > AI & Models) | provider/model registry, capability routing, model qualification, quality, latency, provider cost and credits, per-tier routing, spend caps, fallback, margin, quality floor | 7B2b, 7C, H7-2 (per-capability qualification, no single winner, never auto-promoted); the D-MON-026 covered-credit allowance; the Gemini backup caps (D-MON-026/028) at activation |
 
-Contract: Billing confirms plan/credits -> Plan & Entitlements decides feature/quota -> AI Economics chooses the
-provider/model -> the provider call returns usage/cost/latency evidence. Cost accounting receives `operation_id,
+Contract: Billing records/settles payment and grants the purchased commercial product or credits -> Plan &
+Entitlements resolves the effective plan, feature access and quota -> AI Economics chooses the provider/model -> the provider call returns usage/cost/latency evidence. Cost accounting receives `operation_id,
 capability, provider, model, usage, estimated/actual cost` only.
 
 ## Production payment-ready: what Billing still needs

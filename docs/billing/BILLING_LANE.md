@@ -42,8 +42,8 @@ selection and profit-quality optimization. No provider or model is globally fixe
 models per capability and is not a Billing completion gate.** (D-MON-029)
 
 ```text
-Billing                -> confirms plan / credits
-Plan & Entitlements    -> decides feature access and quota
+Billing                -> records/settles payment, grants the purchased commercial product or credits
+Plan & Entitlements    -> resolves the effective plan, feature access and quota
 AI Economics           -> chooses provider and model per capability
 Provider call          -> returns usage / cost / latency evidence
 ```
