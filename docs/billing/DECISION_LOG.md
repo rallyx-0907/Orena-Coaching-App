@@ -214,3 +214,18 @@ anti-reclaim contract only, default none. | Stable learner prices, no reusable-c
 and no commercial number invented ahead of evidence. | Recorded in `PR-MON-6_DESIGN.md` revision 2 with the review's
 P1 fixes (access before bypass, the admission state machine with live funding at dispatch, operation-level cost and
 per-pack margin gate).
+
+
+D-MON-024 | 2026-10-15 | Domestic gateway direction (owner decision, corrected the same day). The owner has no bank
+account payOS supports. payOS is therefore no longer the preferred production domestic gateway. Its adapter
+(`writing_coach/billing/payos.py`) stays in the repository unchanged, as the existing alternative, used only if the
+owner later has a supported bank path. payOS belongs to the Casso ecosystem: there is no separate "Casso + VietinBank"
+fallback and no `CassoGateway`. A genuinely separate Casso product would be research evidence first, then review.
+The primary candidate is SePay + VietinBank (personal account). SePay observes the owner's own account; it moves no
+money and cannot refund a personal account. It is built and validated in PR-MON-8 behind the normalized `PaymentFact`,
+with every money-side invariant unchanged (provider evidence only, exact amount and currency, idempotent redelivery,
+one credit per payment, reconciliation items for unmatched payments, durable deleted-account obligations, the
+approved refund and reversal semantics). International stays Polar. SePay is not approved for production: provider
+activation, credentials and the live test are human gates. PR-MON-6 is unchanged. | The available bank path decides
+the domestic provider; the core must not depend on any one of them. | Assessment and PR-MON-8 scope in
+`DOMESTIC_GATEWAY_SEPAY_ASSESSMENT.md`.
