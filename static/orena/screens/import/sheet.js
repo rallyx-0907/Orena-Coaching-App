@@ -372,6 +372,8 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening', initial =
       go('text');
     } else if (initial.source === 'url') {
       state.url = String(initial.url || '');
+      // Order matters: go() clears every error and paints the link step first, so submitUrl() can show its own
+      // refusal (or start processing) on top of it.
       go('url');
       submitUrl();
     }

@@ -77,7 +77,7 @@ export default async function discover(element, ctx) {
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
         </div>
       </div>
-      ${practice === 'listening' ? '' : html`<div data-lesson-host></div>`}
+      ${practice ? '' : html`<div data-lesson-host></div>`}
       <div class="o-search">
         ${raw(icon('search', { size: 18 }))}
         <input type="search" autocomplete="off" placeholder="${t(practice ? 'practiceSearch' : 'searchPlaceholder')}" data-query>

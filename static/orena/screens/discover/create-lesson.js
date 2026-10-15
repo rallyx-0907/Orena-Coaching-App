@@ -17,9 +17,25 @@ import { langAttr } from '../../kit/lang.js';
 export const LESSON_TABS = Object.freeze([
   { id: 'link', labelKey: 'lessonTabLink', icon: 'link' },
   { id: 'text', labelKey: 'lessonTabText', icon: 'file-text' },
-  { id: 'file', labelKey: 'lessonTabFile', icon: 'file' },
+  { id: 'file', labelKey: 'lessonTabFile', icon: 'file-minus' },
   { id: 'audio', labelKey: 'lessonTabAudio', icon: 'audio-lines' },
 ]);
+
+/* WAI-ARIA tabs: Left/Right move (and wrap), Home/End jump; any other key is not ours. */
+export function nextLessonTab(current, key) {
+  const ids = LESSON_TABS.map((tab) => tab.id);
+  const at = ids.indexOf(current);
+  if (key === 'ArrowRight') return ids[(at + 1) % ids.length];
+  if (key === 'ArrowLeft') return ids[(at - 1 + ids.length) % ids.length];
+  if (key === 'Home') return ids[0];
+  if (key === 'End') return ids[ids.length - 1];
+  return null;
+}
+
+/* The picker's own `accept` (audio/*, video/*), applied to a dropped file too. */
+export function isAcceptedLessonFile(file) {
+  return Boolean(file) && /^(audio|video)\//.test(String(file.type || ''));
+}
 
 /* What each kind accepts, as the design's three chips. `key` is a translated word; `label` is a format name that is the
    same in every language. `tone` is one of tokens.css's hue tokens (the design's literal hexes, mapped to the nearest). */
@@ -46,6 +62,8 @@ export const LESSON_HINTS = Object.freeze({
   ],
 });
 
+/* The text cap (12000) is the Import sheet's own textarea cap, so nothing typed here is cut on the next step. */
+
 /* The design's own spark mark (an artwork glyph, like the Credits spark - not a Lucide icon). */
 const SPARK = '<svg width="30" height="30" viewBox="0 0 32 32" class="s-ic__spark" aria-hidden="true">'
   + '<path class="s-ic__spark-a" d="M13 3c.8 6.3 4 9.5 10.3 10.3C17 14.1 13.8 17.3 13 23.6 12.2 17.3 9 14.1 2.7 13.3 9 12.5 12.2 9.3 13 3z"></path>'
@@ -69,15 +87,17 @@ export function createLessonMarkup(state, { t, language }) {
         <p class="s-ic__sub">${t('lessonSub')}</p>
       </div>
     </div>
-    <div class="s-ic__tabs" role="tablist">
-      ${LESSON_TABS.map((item) => html`<button type="button" class="s-ic__tab" role="tab" aria-selected="${tab === item.id ? 'true' : 'false'}" data-lesson-tab="${item.id}">${raw(icon(item.icon, { size: 16 }))}<span>${t(item.labelKey)}</span></button>`)}
+    <div class="s-ic__tabs" role="tablist" aria-label="${t('groupType')}">
+      ${LESSON_TABS.map((item) => html`<button type="button" class="s-ic__tab" role="tab" id="s-ic-tab-${item.id}" aria-controls="s-ic-panel" tabindex="${tab === item.id ? '0' : '-1'}" aria-selected="${tab === item.id ? 'true' : 'false'}" data-lesson-tab="${item.id}">${raw(icon(item.icon, { size: 16 }))}<span>${t(item.labelKey)}</span></button>`)}
     </div>
+    <div class="s-ic__panel" role="tabpanel" id="s-ic-panel" aria-labelledby="s-ic-tab-${tab}">
     <div class="s-ic__row">
       ${field}
       <button type="button" class="s-ic__create" data-lesson-create>${t('lessonCreate')}${raw(SPARK_SMALL)}</button>
     </div>
     <div class="s-ic__hints">
       ${LESSON_HINTS[tab].map((hint) => html`<span class="s-ic__hint"><span class="s-ic__hint-mark" style="background:var(--${hint.tone})">${raw(icon(hint.icon, { size: 12, stroke: 2.4 }))}</span>${hint.key ? t(hint.key) : hint.label}</span>`)}
+    </div>
     </div>
     <input type="file" accept="audio/*,video/*" data-lesson-file hidden>
   </div>`;
@@ -114,6 +134,13 @@ export function mountCreateLesson(host, { t, language, open }) {
         state.tab = button.dataset.lessonTab;
         paint(`[data-lesson-tab="${state.tab}"]`);
       });
+      button.addEventListener('keydown', (event) => {
+        const next = nextLessonTab(state.tab, event.key);
+        if (!next) return;
+        event.preventDefault();
+        state.tab = next;
+        paint(`[data-lesson-tab="${next}"]`);
+      });
     });
     const url = host.querySelector('[data-lesson-url]');
     url?.addEventListener('input', () => { state.url = url.value; });
@@ -127,6 +154,7 @@ export function mountCreateLesson(host, { t, language, open }) {
     const send = (chosen) => {
       if (!chosen) return;
       if (state.tab !== 'audio') { toast(t('lessonDocumentSoon'), { iconName: 'circle-alert' }); return; }
+      if (!isAcceptedLessonFile(chosen)) { toast(t('lessonAudioOnly'), { iconName: 'circle-alert' }); return; }
       open({ source: 'file', file: chosen });
     };
     drop?.addEventListener('click', () => (state.tab === 'audio' ? chooseFile() : toast(t('lessonDocumentSoon'), { iconName: 'circle-alert' })));

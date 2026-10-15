@@ -517,7 +517,39 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   const card = css.slice(css.indexOf('/* ---- The "Create lesson" card'));
   assert.equal(card.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/), null, 'the card takes every colour from tokens.css');
   assert.match(card, /@container \(max-width: 560px\)\s*\{\s*\.s-ic__tabs \{ --ic-cols: 2; \}/, 'two columns of tabs under a 560px card');
-  assert.ok(!/border:\s*1(\.5)?px (solid|dashed)/.test(card), 'no grey or violet outline (D-147)');
+  assert.ok(!/border:\s*1(\.5)?px (solid|dashed)(?! transparent)/.test(card.replace(/border:\s*1\.5px solid transparent/g, '')), 'no grey or violet outline (D-147)');
+  // D-147 / design review: focus is the app's field pattern (border-color + --sh2), never a box-shadow ring.
+  for (const selector of ['.s-ic__field:focus-within', '.s-ic__text:focus', '.s-ic__drop:focus-visible']) {
+    const body = card.split('}').filter((rule) => rule.includes(selector)).join(' ');
+    assert.ok(!/box-shadow:\s*0 0 0/.test(body), `${selector}: no box-shadow ring`);
+  }
+  assert.match(card, /\.s-ic__field:focus-within,\s*\.s-ic__text:focus\s*\{[^}]*border-color:\s*var\(--text3\);[^}]*box-shadow:\s*var\(--sh2\)/, 'the field focus pattern of the Import sheet');
+  const decls = card.replace(/\/\*[\s\S]*?\*\//g, '').match(/:[^;{}]*;/g) || [];
+  assert.deepEqual(decls.filter((d) => /\b(white|black|red|green|blue|gray|grey|orange|yellow|purple|pink|silver|gold)\b/.test(d.replace(/var\([^)]*\)/g, ''))), [], 'no named colour keyword in the card (tokens only)');
+  // The solid card is a solid surface for the backdrop's text tokens (design review P1-2).
+  const { surfaceSelectors } = await import('./build_backdrop_surfaces.mjs');
+  assert.ok(surfaceSelectors().includes('.s-ic'), '.s-ic is in the solid-surface list');
+  assert.match(fs.readFileSync('static/orena/shell/surfaces.css', 'utf8'), /^ {2}\.s-ic(,|$)/m, 'and in the generated surfaces.css');
+  // Tabs pattern (WAI-ARIA): label, roving tabindex, aria-controls/tabpanel, arrow keys.
+  const { nextLessonTab, isAcceptedLessonFile } = await import('../static/orena/screens/discover/create-lesson.js');
+  assert.deepEqual(['ArrowRight', 'ArrowLeft', 'Home', 'End'].map((key) => nextLessonTab('link', key)), ['text', 'audio', 'link', 'audio'], 'arrows wrap, Home/End jump');
+  assert.equal(nextLessonTab('audio', 'ArrowRight'), 'link');
+  assert.equal(nextLessonTab('text', 'x'), null);
+  const a11y = String(createLessonMarkup({ tab: 'file', url: '', text: '' }, { t, language: 'en' }));
+  assert.match(a11y, /role="tablist" aria-label="Content type"/, 'the tablist is labelled');
+  assert.equal((a11y.match(/tabindex="0"/g) || []).length >= 1 && (a11y.match(/role="tab"[^>]*tabindex="-1"/g) || []).length, 3, 'roving tabindex: three tabs at -1');
+  assert.match(a11y, /id="s-ic-tab-file"[^>]*tabindex="0"|tabindex="0"[^>]*id="s-ic-tab-file"/, 'the selected tab is the tab stop');
+  assert.match(a11y, /role="tabpanel" id="s-ic-panel" aria-labelledby="s-ic-tab-file"/, 'a tabpanel named by the selected tab');
+  assert.equal((a11y.match(/aria-controls="s-ic-panel"/g) || []).length, 4, 'every tab controls the panel');
+  assert.match(fs.readFileSync('static/orena/screens/discover/create-lesson.js', 'utf8'), /'file', labelKey: 'lessonTabFile', icon: 'file-minus'|id: 'file', labelKey: 'lessonTabFile', icon: 'file-minus'/, 'Document draws Lucide file-minus, as the design does');
+  assert.ok(ICONS['file-minus']);
+  // A dropped file passes the picker's own accept (audio/*, video/*).
+  assert.equal(isAcceptedLessonFile({ type: 'audio/mpeg' }), true);
+  assert.equal(isAcceptedLessonFile({ type: 'video/mp4' }), true);
+  assert.equal(isAcceptedLessonFile({ type: 'application/pdf' }), false);
+  assert.equal(isAcceptedLessonFile(null), false);
+  // The card is Discover's alone: not in the practice choosers.
+  assert.match(fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8'), /\$\{practice \? '' : html`<div data-lesson-host><\/div>`\}/, 'drawn on Discover only');
   const sheet = fs.readFileSync('static/orena/screens/import/sheet.js', 'utf8');
   assert.match(sheet, /initial\.source === 'file'[\s\S]*initial\.source === 'text'[\s\S]*initial\.source === 'url'/, 'the sheet starts from what the card entered');
 }

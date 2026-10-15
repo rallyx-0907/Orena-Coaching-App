@@ -120,6 +120,7 @@ NAMES = sorted(
         "x",
         "zap",
         "file",
+        "file-minus",
         "file-text",
         "film",
         "globe",

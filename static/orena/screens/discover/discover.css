@@ -170,9 +170,11 @@
   overflow: visible;
   flex: none;
 }
-.s-ic__spark-a { fill: var(--amber); }
-.s-ic__spark-b { fill: color-mix(in oklab, var(--amber) 60%, white); }
-.s-ic__spark-c { fill: color-mix(in oklab, var(--amber) 80%, white); }
+.s-ic__spark-a,
+.s-ic__spark-b,
+.s-ic__spark-c { fill: var(--spark); }
+.s-ic__spark-b,
+.s-ic__spark-c { opacity: 0.85; }
 .s-ic__titles {
   min-width: 0;
   display: flex;
@@ -254,6 +256,11 @@
   box-shadow: var(--sh1);
   color: var(--text);
 }
+.s-ic__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 .s-ic__row {
   position: relative;
   display: flex;
@@ -267,7 +274,7 @@
   flex: 1 1 300px;
   min-width: 0;
   border-radius: 14px;
-  border: 0;
+  border: 1.5px solid transparent;
   background: var(--bg);
   box-shadow: var(--edge-light);
   font-size: 15px;
@@ -300,10 +307,11 @@
   outline: 0;
   font-family: inherit;
 }
+/* Focus is the Import sheet's field pattern (border-color + --sh2): no ring, no thick grey or violet outline (D-147). */
 .s-ic__field:focus-within,
-.s-ic__text:focus,
-.s-ic__drop:focus-visible {
-  box-shadow: 0 0 0 2px var(--text3);
+.s-ic__text:focus {
+  border-color: var(--text3);
+  box-shadow: var(--sh2);
 }
 .s-ic__drop {
   display: flex;
