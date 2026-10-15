@@ -17,6 +17,15 @@ from writing_coach.reading_translation import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _one_learner(monkeypatch):
+    """PR-MON-7D1: a learner's cached answers live in their account incarnation's scope; these tests are one
+    learner's, with one incarnation."""
+    from writing_coach import reading_cache_scope
+
+    monkeypatch.setattr(reading_cache_scope, "_incarnation_of", lambda _user_key: "inc-one-learner")
+
+
 class RecordingProvider:
     engine_id = "fake"
     model_version = "fake-1"

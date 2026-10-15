@@ -259,14 +259,39 @@ def test_an_exception_inside_the_provider_poll_still_releases_the_claim() -> Non
 # --- 3 and 4: the terminal transitions are atomic ----------------------------
 
 def test_completed_transition_is_atomic_under_concurrency() -> None:
+    """Completion is all-or-nothing, however the callers interleave.
+
+    The first wave overlaps the claimed provider poll on purpose: a caller that
+    arrives while the poll is in flight is correctly told "processing" (that is
+    the cost contract, covered above), so asserting "ready" for an *unordered*
+    wave is a timing assumption, not a property of the code (issue #217). The
+    poll is therefore held open until every other caller has been turned away,
+    which makes the interleaving deterministic. Once it completes, a second
+    concurrent wave must see exactly the finished job.
+    """
+
     client = CountingPollClient(
         SupadataTranscriptJobResult(status="completed", transcript=completed_transcript()))
     engine, job_id = started_job(client)
 
+    first_wave = run_held_round(engine, job_id, client, 10)
+
+    assert len(client.poll_calls) == 1
+    ready = [r for r in first_wave if r.status == "ready"]
+    turned_away = [r for r in first_wave if r.status != "ready"]
+    assert len(ready) == 1, "exactly one caller owns the completing poll"
+    assert {r.status for r in turned_away} == {"processing"}
+    assert {r.provider_state for r in turned_away} == {POLL_IN_FLIGHT}
+    # Nobody who was turned away carries a half-written result.
+    assert all(r.acquisition.media_object.transcript is None
+               or not r.acquisition.media_object.transcript.segments
+               for r in turned_away)
+
+    # Now the job is finished: every concurrent caller sees the same finished
+    # job - nobody sees a half-written state, and nobody pays again.
     results = run_concurrently(lambda: poll(engine, job_id), 10)
 
     assert len(client.poll_calls) == 1
-    # Every caller sees the same finished job - nobody sees a half-written state.
     assert {r.status for r in results} == {"ready"}
     assert {r.provider_state for r in results} == {COMPLETED}
     transcripts = {

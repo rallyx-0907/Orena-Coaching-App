@@ -30,6 +30,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from writing_coach import media_interaction
 from writing_coach.core.errors import orena_http_error
 from writing_coach.reading_lookup import lexical_language
+from writing_coach.reading_cache_scope import scope_for
 from writing_coach.reading_derived import (
     KIND_EXPLANATION,
     KIND_GLOSS,
@@ -92,14 +93,6 @@ class _ProviderFailed(Exception):
     """The provider could not answer (unreachable, not configured, malformed): worth trying again."""
 
 
-def _persists(content_id: str | None) -> bool:
-    """Only text an administrator published may reach the shared table. A learner's own imported text (a book
-    chapter, anything without a content id) is cached in this process only: D-104 keeps what is derived from it
-    with the account, and no account-bound cache exists yet."""
-
-    return str(content_id or "").startswith("article:")
-
-
 def _through_cache(
     kind: str,
     source: str,
@@ -113,9 +106,12 @@ def _through_cache(
     A failure and an empty answer are never cached."""
 
     key = content_key(kind, source, normalize_text(text).casefold(), normalize_text(context))
-    persist = _persists(content_id)
+    # Shared only when the server's repository has the named article published and it contains the selection and
+    # its sentence; anything else (a learner's own text, a book chapter, a bare claim) stays in the learner's
+    # incarnation scope, never in the shared table (D-104, PR-MON-7D1).
+    scope = scope_for(content_id, [text, context] if normalize_text(context) else [text])
     if _cache is not None:
-        hit = _cache.get(kind, target, key, persist=persist)
+        hit = _cache.get(kind, target, key, scope=scope)
         if hit is not None:
             return hit, "ready"
     try:
@@ -125,7 +121,7 @@ def _through_cache(
     if result is None:
         return None, "empty"
     if _cache is not None:
-        _cache.put_many(kind, target, source, [(key, result)], persist=persist)
+        _cache.put_many(kind, target, source, [(key, result)], scope=scope)
     return result, "ready"
 
 

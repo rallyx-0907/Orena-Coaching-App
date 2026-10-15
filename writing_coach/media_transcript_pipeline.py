@@ -47,7 +47,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from writing_coach import media_quota
+from writing_coach import media_quota, media_translation
 from writing_coach.ai.audio_telemetry import telemetry_origin
 from writing_coach.billing.funding_context import system_funding
 from writing_coach.ai.pricing import estimate_token_cost
@@ -381,7 +381,8 @@ class MediaPipeline:
         self._youtube_audio = youtube_audio
         self._meanings = meanings
         self._english_reading = english_reading
-        self._translation_sink = translation_sink
+        # Where a translation call reports the tokens it was billed; the provider's own sink unless a caller brings one.
+        self._translation_sink = translation_sink if translation_sink is not None else media_translation.usage_sink
         self._sleep: Callable[[float], None] = time.sleep
         self._clock: Callable[[], float] = time.time
         # (delay seconds, callback): a one-shot timer; the work itself runs on the pool below. Replaced in tests.
@@ -984,11 +985,13 @@ class MediaPipeline:
                     stop_reason = "provider_error"
                     counts[target] = {"done": done, "total": total_lines}
                     result = None
-                if result is not None:
+                if usage:
+                    # Only what the provider reported it billed (#228): a refused call (401/403/429), a timeout and an
+                    # answer without `usage` carry none, so a round that made no progress costs nothing. `estimate` stays
+                    # what the cap is checked against before the call, never what is booked after it.
                     actual = sum(self._ai_cost(model, value) for model, value in usage)
-                    if usage or getattr(result, "provider_calls", 0):
-                        actual = actual or estimate
-                        self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(usage), provider="groq")
+                    self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(usage), provider="groq")
+                if result is not None:
                     if getattr(result, "status", "ready") in {"ready", "not_required"}:
                         done = total_lines
                         stop_reason = ""
