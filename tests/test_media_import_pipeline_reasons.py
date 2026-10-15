@@ -40,6 +40,7 @@ def test_translation_that_reaches_some_lines_is_partial_with_counts(tmp_path, mo
     store, entry, pipeline = _world(
         tmp_path, meanings=lambda e, t: SimpleNamespace(status="partial", meanings=[object()] * 3, provider_calls=1)
     )
+    pipeline._sleep = lambda _seconds: None  # the bounded continuation waits between rounds; this test does not
     assert pipeline._translate(store, entry, "b1", False) == ("partial", {"vi": {"done": 3, "total": 5}})
     pipeline._meanings = lambda e, t: SimpleNamespace(status="unavailable", meanings=[], provider_calls=1)
     assert pipeline._translate(store, entry, "b1", False) == ("failed", {"vi": {"done": 0, "total": 5}})

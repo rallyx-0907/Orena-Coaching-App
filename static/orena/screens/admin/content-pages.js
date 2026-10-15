@@ -12,7 +12,7 @@ import { processingProgressMarkup } from '../../kit/states.js';
 import { icon } from '../../kit/icons.js';
 import { dateShort, dateTime, latency, num } from '../../capabilities/admin-format.js';
 import { COMPLETENESS, KIND_TILE, PAGE_SIZE, RIGHTS, learnerLink, lifecycleIntents, publishChecks } from '../../capabilities/admin-content.js';
-import { block, button, chipRow, formBlock, kv, pageHead, pill, rowList, stateBlock, textBlock } from './blocks.js';
+import { banner, block, button, chipRow, formBlock, kv, pageHead, pill, rowList, stateBlock, textBlock } from './blocks.js';
 
 const STATUS_PILL = {
   published: ['ctStatusPublished', 'ok'], draft: ['ctStatusDraft', 'mute'], unpublished: ['ctStatusUnpublished', 'mute'], archived: ['ctStatusArchived', 'mute'],
@@ -122,12 +122,37 @@ export function bookPage({ detail, view, t, ui, href }) {
   };
 }
 
+/* The stored failure reason in the operator's words, or '' when the item did not fail. Shown whether or not lines were stored:
+   an item can fail after its transcript was kept (a language mismatch keeps what was heard). */
+function failureReason(record, t) {
+  const outcome = record.outcome || {};
+  if (outcome.state !== 'failed' || !outcome.reason) return '';
+  return t.has(`impErr_${outcome.reason}`) ? t(`impErr_${outcome.reason}`) : outcome.message || '';
+}
+
+/* The pipeline's translation state beside its counts and, when it stopped short, the stable reason. */
+function translationSummary(record, t) {
+  const translation = record.outcome?.translation || {};
+  if (!translation.state) return '—';
+  const parts = [t.has(`impTr_${translation.state}`) ? t(`impTr_${translation.state}`) : translation.state];
+  for (const [language, count] of Object.entries(translation.counts || {})) parts.push(`${language} ${count.done}/${count.total}`);
+  if (translation.reason) parts.push(t.has(`impTrReason_${translation.reason}`) ? t(`impTrReason_${translation.reason}`) : translation.reason);
+  return parts.join(' · ');
+}
+
+/* The address as a person reads it: the percent-encoding of a title or a comma is shown decoded. */
+function readableUrl(url) {
+  const value = String(url || '');
+  try { return decodeURI(value); } catch { return value; }
+}
+
 export function mediaPage({ detail, view, t, ui, href, form = {} }) {
   const record = detail.record;
   const facts = record.facts || {};
   const source = detail.source || {};
   const transcript = detail.transcript || { segments: [], segment_count: 0 };
   const missing = facts.transcript !== 'available';
+  const failedReason = failureReason(record, t);
   const link = learnerLink(record, detail);
   const reprocess = (record.actions || []).includes('reprocess');
   return {
@@ -136,11 +161,11 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
     markup: html`<section class="a-page" data-screen-label="A12 Media detail">
       ${pageHead({ back: { href: href('adminMedia'), label: t('ctMedia') }, title: record.title, sub: record.subtitle || '', pills: [statusPill(t, record), missing ? { label: t('ctTranscriptMissing'), tone: 'warn' } : { label: t('ctTranscriptReady'), tone: 'ok' }], actions: lifecycleButtons(t, record, 'media').filter((action) => action.data.intent !== 'reprocess').map((action) => ({ ...action, disabled: view.busy })) })}
       ${view.error ? html`<div class="a-error" role="alert">${view.error}</div>` : ''}
-      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${record.outcome?.state === 'failed' && record.outcome.reason ? (t.has(`impErr_${record.outcome.reason}`) ? t(`impErr_${record.outcome.reason}`) : record.outcome.message || t('ctMissingText')) : t('ctMissingText')}</div></div></div>` : ''}
+      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : !missing && failedReason ? banner({ tone: 'warn', title: t('impFailed'), text: failedReason }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${failedReason || t('ctMissingText')}</div></div></div>` : ''}
       ${['queued', 'running'].includes(record.processing?.state) ? processingProgressMarkup(record.processing.stage, Object.fromEntries(['fetch', 'transcribe', 'segment', 'translate', 'ready'].map((stage) => [stage, t(`impMediaStage_${stage}`)]))) : ''}
       <div class="a-blocks">
         ${block({ title: t('ctDetails'), body: kv([
-          { key: t('ctFactSource'), value: source.original_url || source.url || t('ctUpload'), mono: Boolean(source.original_url || source.url) },
+          { key: t('ctFactSource'), value: readableUrl(source.original_url || source.url) || t('ctUpload'), mono: Boolean(source.original_url || source.url) },
           { key: t('ctFactSegments'), value: num(facts.segment_count, ui) },
           { key: t('ctFactDuration'), value: facts.duration_ms ? latency(facts.duration_ms, ui) : '—' },
           { key: t('ctFactLanguage'), value: t(record.language === 'zh' ? 'langZh' : 'langEn') },
@@ -148,8 +173,9 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
           { key: t('ctFactTopic'), value: facts.topic || '—' },
           { key: t('ctFactProvider'), value: facts.provider || '—' },
           { key: t('ctFactLicense'), value: [source.license_name, source.license].filter(Boolean).join(' · ') || '—' },
+          { key: t('ctFactTranslation'), value: translationSummary(record, t) },
         ]) })}
-        ${block({ title: t('ctLearnerView'), body: html`${link ? html`<a class="a-btn a-btn--md" href="${link}">${t('ctOpenAsLearner')}</a>` : html`<div class="a-hint">${t('ctNotLive')}</div>`}<div class="a-hint">${t('ctPlaysGap')}</div>` })}
+        ${block({ title: t('ctLearnerView'), body: html`${link ? html`<a class="a-btn a-btn--md" href="${link}">${t('ctOpenAsLearner')}</a>` : ''}${!link || record.status !== 'published' ? html`<div class="a-hint">${t('ctNotLive')}</div>` : ''}<div class="a-hint">${t('ctPlaysGap')}</div>` })}
         ${record.origin === 'imported' ? formBlock({ span: true, title: t('ctRightsOrigin'), sub: t('ctMediaRightsHelp'), fields: [
           { id: 'rights', kind: 'seg', label: t('ctRightsStatus'), span: true, options: ['unknown', 'cleared', 'denied'].map((id) => ({ id, label: t(`ctMediaRights_${id}`), on: (form.rights || source.rights || 'unknown') === id })) },
           { id: 'license', label: t('ctFactLicense'), value: form.license ?? source.license ?? '', span: true },
@@ -161,7 +187,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
             { id: 'keep', label: t('ctRedoKeep'), sub: '', on: false, disabled: true, tip: t('ctRedoUnsupported') },
           ] },
         ], actions: reprocess ? [{ label: t('ctAct_reprocess'), a: 'lifecycle', data: { intent: 'reprocess' } }] : [] })}
-        ${block({ span: true, title: t('ctTranscript'), body: transcript.segments?.length ? html`${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}${transcript.segment_count > transcript.segments.length ? html`<div class="a-hint">${t('ctSegmentsShown', { shown: transcript.segments.length, total: num(transcript.segment_count, ui) })}</div>` : ''}` : html`<div class="a-hint">${t('ctNoTranscript')}</div>` })}
+        ${block({ span: true, title: t('ctTranscript'), body: transcript.segments?.length ? html`<div class="a-rows-scroll" tabindex="0">${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}</div>` : html`<div class="a-hint">${t('ctNoTranscript')}</div>` })}
       </div>
     </section>`,
   };

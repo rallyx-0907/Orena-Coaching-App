@@ -195,7 +195,17 @@ const { parseContentId } = await import('../static/orena/screens/content/model.j
 assert.deepEqual(parseContentId(decodeURIComponent(bookLearnerLink.slice('#/content/'.length))),
   { kind: 'book', id: 'B', chapterId: 'C1' }, 'Admin book link must resolve through the actual learner route parser');
 assert.equal(bookLearnerLink, '#/content/book%3AB%3AC1');
-assert.equal(content.learnerLink(record('media', { status: 'archived' }), {}), '', 'an unpublished item has no learner link');
+assert.equal(content.learnerLink(record('media', { origin: 'curated', status: 'unpublished' }), {}), '', 'an unpublished curated item has no learner link');
+/* A held import opens in the real learner player through the admin-only `preview:` id (Video PR-C). */
+const heldLink = content.learnerLink(record('media', { status: 'review' }), {});
+assert.deepEqual(parseContentId(decodeURIComponent(heldLink.slice('#/content/'.length))), { kind: 'media', id: 'preview:M' }, 'a held import links to the preview id');
+const { mediaRef, openMedia } = await import('../static/orena/product/media-source.js');
+assert.deepEqual(mediaRef('preview:M'), { kind: 'preview', value: 'M' });
+const asked = [];
+const fakeApi = { mediaAdminPlayer: async (id) => { asked.push(['admin', id]); return { asset: { asset_id: id }, playback: {} }; }, listeningLibraryLesson: async (id) => { asked.push(['learner', id]); return { asset: { asset_id: id } }; } };
+await openMedia('preview:M', { api: fakeApi });
+await openMedia('lesson-1', { api: fakeApi });
+assert.deepEqual(asked, [['admin', 'M'], ['learner', 'lesson-1']], 'only preview: ids use the admin route');
 /* Tray: the memory and the clock. */
 tray.clear();
 tray.watch({ id: 'J1', label: 'My article' });
@@ -281,6 +291,15 @@ for (const ui of ['en', 'vi', 'zh']) {
     assert.doesNotMatch(html, /undefined|\[object|NaN/, `${ui} page ${index} printed a JS value: ${html.match(/.{30}(undefined|\[object|NaN).{20}/)}`);
     assert.doesNotMatch(html, /<script|onerror=/i);
   }
+  /* Video PR-A: a failed item that kept its lines still says why it failed, and the translation state, counts and stop
+     reason are shown beside the other facts. Every word comes from the copy of the operator's language. */
+  const failedWithLines = String(cp.mediaPage({ ...c, detail: {
+    record: record('media', { status: 'review', outcome: { state: 'failed', reason: 'language_mismatch', message: '', translation: { state: 'partial', reason: 'rate_limited', counts: { vi: { done: 24, total: 47 } } } } }),
+    source: {}, transcript: { segments: [{ text: 'a line', start_ms: 0 }], segment_count: 1 } }, view: {} }).markup);
+  assert.ok(failedWithLines.includes(c.t('impErr_language_mismatch')), `${ui}: the failure reason shows although lines are stored`);
+  assert.ok(failedWithLines.includes('vi 24/47') && failedWithLines.includes(c.t('impTr_partial')) && failedWithLines.includes(c.t('impTrReason_rate_limited')), `${ui}: translation state, counts and reason show`);
+  const quietMedia = String(cp.mediaPage({ ...c, detail: { record: record('media'), source: {}, transcript: { segments: [], segment_count: 0 } }, view: {} }).markup);
+  assert.ok(!quietMedia.includes(c.t('impFailed')) || !quietMedia.includes('a-banner'), `${ui}: no failure banner without a failure`);
   tray.watch({ id: 'J1', label: 'A <b>title</b>' });
   const trayHtml = String(tp.trayMarkup({ open: true, href }));
   assert.ok(trayHtml.includes('A &lt;b&gt;title&lt;/b&gt;'), 'a submitted title is text, never markup');
@@ -291,6 +310,17 @@ copyIndex.setLanguages({ ui: 'en', support: 'en' });
 {
   /* The behaviours the pages promise. */
   const c = common('en');
+  {
+    /* A held import's page (Video PR-C): every transcript line in its own scrolling region, the source address readable, a way to open it as a learner. */
+    const segments = Array.from({ length: 40 }, (_, i) => ({ start_ms: i * 3000, text: `Line number ${i}` }));
+    const held = String(cp.mediaPage({ ...c, detail: { record: record('media', { status: 'review', actions: ['reprocess'] }), source: { original_url: 'https://archive.org/download/x/Tears%20of%20Steel.mp4' }, transcript: { segment_count: 40, segments } }, view: {} }).markup);
+    for (const i of [0, 12, 39]) assert.ok(held.includes(`Line number ${i}<`), `transcript line ${i} is drawn, not only the first 12`);
+    assert.ok(held.includes('class="a-rows-scroll"'), 'the transcript scrolls in its own region');
+    assert.ok(held.includes('Tears of Steel.mp4') && !held.includes('%20'), 'the source line shows the decoded address');
+    assert.ok(held.includes(t('ctOpenAsLearner')) && held.includes('preview%3AM'), 'a held import offers the learner player');
+    assert.ok(held.includes(t('ctNotLive')), 'and still says learners do not see it');
+    assert.ok(String(cp.mediaPage({ ...c, detail: { record: record('media'), source: { original_url: 'https://x/%E0%A4%A' }, transcript: { segments: [], segment_count: 0 } }, view: {} }).markup).includes('%E0%A4%A'), 'a malformed escape is shown as it is');
+  }
   {
     /* The authored preview: the design's rows, and the production card of the selected row (no learner, so no Save). */
     const page = String(ip.vocabularyPage({ ...c, vocab: authoredVocab() }).markup);

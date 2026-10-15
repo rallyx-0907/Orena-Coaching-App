@@ -61,6 +61,17 @@ class MeaningOutcome:
     status: str                  # ready | not_required | partial | unavailable
     provider_calls: int          # 0 when everything was pre-authored or cached
     failure_kind: str | None = None
+    reason: str = ""             # stable machine code of why lines are missing (rate_limited, provider_error, ...)
+    retry_after: float = 0.0     # seconds the provider asked to be left alone, when it said so
+
+
+class TranslatedLines(dict):
+    """What a translator returns: the lines it produced, plus why it stopped short (empty when it did not)."""
+
+    def __init__(self, lines: Any = (), *, reason: str = "", retry_after: float = 0.0) -> None:
+        super().__init__(lines)
+        self.reason = reason
+        self.retry_after = retry_after
 
 
 def text_fingerprint(text: str) -> str:
@@ -149,15 +160,19 @@ def resolve_segment_meanings(
         missing.append(segment)
 
     provider_calls = 0
+    reason, retry_after = "", 0.0
     if missing and translate is not None:
         provider_calls = 1
         generated = translate(tuple(missing), target)
+        reason = str(getattr(generated, "reason", "") or "")
+        retry_after = float(getattr(generated, "retry_after", 0.0) or 0.0)
         if not generated:
             # The original transcript stays usable; only meaning is missing.
             return MeaningOutcome(
                 tuple(resolved[str(getattr(s, "segment_id", ""))] for s in segments
                       if str(getattr(s, "segment_id", "")) in resolved),
-                "partial" if resolved else "unavailable", provider_calls, "translation_failed")
+                "partial" if resolved else "unavailable", provider_calls, "translation_failed",
+                reason or "provider_error", retry_after)
         stamp = now or datetime.now(UTC).isoformat()
         for segment in missing:
             segment_id = str(getattr(segment, "segment_id", ""))
@@ -180,10 +195,10 @@ def resolve_segment_meanings(
         if str(getattr(segment, "segment_id", "")) in resolved
     )
     if not ordered:
-        return MeaningOutcome((), "unavailable", provider_calls, "translation_unavailable")
+        return MeaningOutcome((), "unavailable", provider_calls, "translation_unavailable", reason or "provider_error", retry_after)
     if len(ordered) != len(segments):
         # Some lines have a meaning and the learner is shown them: that is `partial`, not a failure.
-        return MeaningOutcome(ordered, "partial", provider_calls, "translation_incomplete")
+        return MeaningOutcome(ordered, "partial", provider_calls, "translation_incomplete", reason, retry_after)
     return MeaningOutcome(ordered, "ready", provider_calls)
 
 

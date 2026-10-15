@@ -1,0 +1,753 @@
+{
+ "language": "zh",
+ "lines": [
+  {
+   "text": "曾经撰写探讨有关中国计划生育政策的。",
+   "words": [
+    {
+     "text": "曾",
+     "start_ms": 0,
+     "end_ms": 180
+    },
+    {
+     "text": "经",
+     "start_ms": 200,
+     "end_ms": 380
+    },
+    {
+     "text": "撰",
+     "start_ms": 400,
+     "end_ms": 580
+    },
+    {
+     "text": "写",
+     "start_ms": 600,
+     "end_ms": 780
+    },
+    {
+     "text": "探",
+     "start_ms": 800,
+     "end_ms": 980
+    },
+    {
+     "text": "讨",
+     "start_ms": 1000,
+     "end_ms": 1180
+    },
+    {
+     "text": "有",
+     "start_ms": 1200,
+     "end_ms": 1380
+    },
+    {
+     "text": "关",
+     "start_ms": 1400,
+     "end_ms": 1580
+    },
+    {
+     "text": "中",
+     "start_ms": 1600,
+     "end_ms": 1780
+    },
+    {
+     "text": "国",
+     "start_ms": 1800,
+     "end_ms": 1980
+    },
+    {
+     "text": "计",
+     "start_ms": 2000,
+     "end_ms": 2180
+    },
+    {
+     "text": "划",
+     "start_ms": 2200,
+     "end_ms": 2380
+    },
+    {
+     "text": "生",
+     "start_ms": 2400,
+     "end_ms": 2580
+    },
+    {
+     "text": "育",
+     "start_ms": 2600,
+     "end_ms": 2780
+    },
+    {
+     "text": "政",
+     "start_ms": 2800,
+     "end_ms": 2980
+    },
+    {
+     "text": "策",
+     "start_ms": 3000,
+     "end_ms": 3180
+    },
+    {
+     "text": "的",
+     "start_ms": 3200,
+     "end_ms": 3380
+    },
+    {
+     "text": "。",
+     "start_ms": 3400,
+     "end_ms": 3580
+    }
+   ],
+   "spans": [
+    [
+     0,
+     2
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     6,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     10,
+     14
+    ],
+    [
+     14,
+     16
+    ],
+    [
+     16,
+     17
+    ]
+   ]
+  },
+  {
+   "text": "这是第一次鼓励生育的政策。",
+   "words": [
+    {
+     "text": "这",
+     "start_ms": 0,
+     "end_ms": 180
+    },
+    {
+     "text": "是",
+     "start_ms": 200,
+     "end_ms": 380
+    },
+    {
+     "text": "第",
+     "start_ms": 400,
+     "end_ms": 580
+    },
+    {
+     "text": "一",
+     "start_ms": 600,
+     "end_ms": 780
+    },
+    {
+     "text": "次",
+     "start_ms": 800,
+     "end_ms": 980
+    },
+    {
+     "text": "鼓",
+     "start_ms": 1000,
+     "end_ms": 1180
+    },
+    {
+     "text": "励",
+     "start_ms": 1200,
+     "end_ms": 1380
+    },
+    {
+     "text": "生",
+     "start_ms": 1400,
+     "end_ms": 1580
+    },
+    {
+     "text": "育",
+     "start_ms": 1600,
+     "end_ms": 1780
+    },
+    {
+     "text": "的",
+     "start_ms": 1800,
+     "end_ms": 1980
+    },
+    {
+     "text": "政",
+     "start_ms": 2000,
+     "end_ms": 2180
+    },
+    {
+     "text": "策",
+     "start_ms": 2200,
+     "end_ms": 2380
+    },
+    {
+     "text": "。",
+     "start_ms": 2400,
+     "end_ms": 2580
+    }
+   ],
+   "spans": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     12
+    ]
+   ]
+  },
+  {
+   "text": "洗手的时候要用肥皂和清水。",
+   "words": [
+    {
+     "text": "洗",
+     "start_ms": 0,
+     "end_ms": 180
+    },
+    {
+     "text": "手",
+     "start_ms": 200,
+     "end_ms": 380
+    },
+    {
+     "text": "的",
+     "start_ms": 400,
+     "end_ms": 580
+    },
+    {
+     "text": "时",
+     "start_ms": 600,
+     "end_ms": 780
+    },
+    {
+     "text": "候",
+     "start_ms": 800,
+     "end_ms": 980
+    },
+    {
+     "text": "要",
+     "start_ms": 1000,
+     "end_ms": 1180
+    },
+    {
+     "text": "用",
+     "start_ms": 1200,
+     "end_ms": 1380
+    },
+    {
+     "text": "肥",
+     "start_ms": 1400,
+     "end_ms": 1580
+    },
+    {
+     "text": "皂",
+     "start_ms": 1600,
+     "end_ms": 1780
+    },
+    {
+     "text": "和",
+     "start_ms": 1800,
+     "end_ms": 1980
+    },
+    {
+     "text": "清",
+     "start_ms": 2000,
+     "end_ms": 2180
+    },
+    {
+     "text": "水",
+     "start_ms": 2200,
+     "end_ms": 2380
+    },
+    {
+     "text": "。",
+     "start_ms": 2400,
+     "end_ms": 2580
+    }
+   ],
+   "spans": [
+    [
+     0,
+     2
+    ],
+    [
+     2,
+     3
+    ],
+    [
+     3,
+     5
+    ],
+    [
+     5,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     9
+    ],
+    [
+     9,
+     10
+    ],
+    [
+     10,
+     12
+    ]
+   ]
+  },
+  {
+   "text": "我们每天早上都去附近的市场买菜。",
+   "words": [
+    {
+     "text": "我",
+     "start_ms": 0,
+     "end_ms": 180
+    },
+    {
+     "text": "们",
+     "start_ms": 200,
+     "end_ms": 380
+    },
+    {
+     "text": "每",
+     "start_ms": 400,
+     "end_ms": 580
+    },
+    {
+     "text": "天",
+     "start_ms": 600,
+     "end_ms": 780
+    },
+    {
+     "text": "早",
+     "start_ms": 800,
+     "end_ms": 980
+    },
+    {
+     "text": "上",
+     "start_ms": 1000,
+     "end_ms": 1180
+    },
+    {
+     "text": "都",
+     "start_ms": 1200,
+     "end_ms": 1380
+    },
+    {
+     "text": "去",
+     "start_ms": 1400,
+     "end_ms": 1580
+    },
+    {
+     "text": "附",
+     "start_ms": 1600,
+     "end_ms": 1780
+    },
+    {
+     "text": "近",
+     "start_ms": 1800,
+     "end_ms": 1980
+    },
+    {
+     "text": "的",
+     "start_ms": 2000,
+     "end_ms": 2180
+    },
+    {
+     "text": "市",
+     "start_ms": 2200,
+     "end_ms": 2380
+    },
+    {
+     "text": "场",
+     "start_ms": 2400,
+     "end_ms": 2580
+    },
+    {
+     "text": "买",
+     "start_ms": 2600,
+     "end_ms": 2780
+    },
+    {
+     "text": "菜",
+     "start_ms": 2800,
+     "end_ms": 2980
+    },
+    {
+     "text": "。",
+     "start_ms": 3000,
+     "end_ms": 3180
+    }
+   ],
+   "spans": [
+    [
+     0,
+     2
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     6,
+     7
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     13
+    ],
+    [
+     13,
+     15
+    ]
+   ]
+  },
+  {
+   "text": "他是神龙大侠，住在北京。",
+   "words": [
+    {
+     "text": "他",
+     "start_ms": 0,
+     "end_ms": 180
+    },
+    {
+     "text": "是",
+     "start_ms": 200,
+     "end_ms": 380
+    },
+    {
+     "text": "神",
+     "start_ms": 400,
+     "end_ms": 580
+    },
+    {
+     "text": "龙",
+     "start_ms": 600,
+     "end_ms": 780
+    },
+    {
+     "text": "大",
+     "start_ms": 800,
+     "end_ms": 980
+    },
+    {
+     "text": "侠",
+     "start_ms": 1000,
+     "end_ms": 1180
+    },
+    {
+     "text": "，",
+     "start_ms": 1200,
+     "end_ms": 1380
+    },
+    {
+     "text": "住",
+     "start_ms": 1400,
+     "end_ms": 1580
+    },
+    {
+     "text": "在",
+     "start_ms": 1600,
+     "end_ms": 1780
+    },
+    {
+     "text": "北",
+     "start_ms": 1800,
+     "end_ms": 1980
+    },
+    {
+     "text": "京",
+     "start_ms": 2000,
+     "end_ms": 2180
+    },
+    {
+     "text": "。",
+     "start_ms": 2200,
+     "end_ms": 2380
+    }
+   ],
+   "spans": [
+    [
+     0,
+     1
+    ],
+    [
+     1,
+     2
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     4,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     9
+    ],
+    [
+     9,
+     11
+    ]
+   ]
+  },
+  {
+   "text": "大国空巢的问题越来越严重了。",
+   "words": [
+    {
+     "text": "大",
+     "start_ms": 0,
+     "end_ms": 180
+    },
+    {
+     "text": "国",
+     "start_ms": 200,
+     "end_ms": 380
+    },
+    {
+     "text": "空",
+     "start_ms": 400,
+     "end_ms": 580
+    },
+    {
+     "text": "巢",
+     "start_ms": 600,
+     "end_ms": 780
+    },
+    {
+     "text": "的",
+     "start_ms": 800,
+     "end_ms": 980
+    },
+    {
+     "text": "问",
+     "start_ms": 1000,
+     "end_ms": 1180
+    },
+    {
+     "text": "题",
+     "start_ms": 1200,
+     "end_ms": 1380
+    },
+    {
+     "text": "越",
+     "start_ms": 1400,
+     "end_ms": 1580
+    },
+    {
+     "text": "来",
+     "start_ms": 1600,
+     "end_ms": 1780
+    },
+    {
+     "text": "越",
+     "start_ms": 1800,
+     "end_ms": 1980
+    },
+    {
+     "text": "严",
+     "start_ms": 2000,
+     "end_ms": 2180
+    },
+    {
+     "text": "重",
+     "start_ms": 2200,
+     "end_ms": 2380
+    },
+    {
+     "text": "了",
+     "start_ms": 2400,
+     "end_ms": 2580
+    },
+    {
+     "text": "。",
+     "start_ms": 2600,
+     "end_ms": 2780
+    }
+   ],
+   "spans": [
+    [
+     0,
+     2
+    ],
+    [
+     2,
+     4
+    ],
+    [
+     4,
+     5
+    ],
+    [
+     5,
+     7
+    ],
+    [
+     7,
+     10
+    ],
+    [
+     10,
+     12
+    ],
+    [
+     12,
+     13
+    ]
+   ]
+  },
+  {
+   "text": "Vector 的意思是向量。",
+   "words": [
+    {
+     "text": "V",
+     "start_ms": 0,
+     "end_ms": 180
+    },
+    {
+     "text": "e",
+     "start_ms": 200,
+     "end_ms": 380
+    },
+    {
+     "text": "c",
+     "start_ms": 400,
+     "end_ms": 580
+    },
+    {
+     "text": "t",
+     "start_ms": 600,
+     "end_ms": 780
+    },
+    {
+     "text": "o",
+     "start_ms": 800,
+     "end_ms": 980
+    },
+    {
+     "text": "r",
+     "start_ms": 1000,
+     "end_ms": 1180
+    },
+    {
+     "text": "的",
+     "start_ms": 1400,
+     "end_ms": 1580
+    },
+    {
+     "text": "意",
+     "start_ms": 1600,
+     "end_ms": 1780
+    },
+    {
+     "text": "思",
+     "start_ms": 1800,
+     "end_ms": 1980
+    },
+    {
+     "text": "是",
+     "start_ms": 2000,
+     "end_ms": 2180
+    },
+    {
+     "text": "向",
+     "start_ms": 2200,
+     "end_ms": 2380
+    },
+    {
+     "text": "量",
+     "start_ms": 2400,
+     "end_ms": 2580
+    },
+    {
+     "text": "。",
+     "start_ms": 2600,
+     "end_ms": 2780
+    }
+   ],
+   "spans": [
+    [
+     0,
+     6
+    ],
+    [
+     7,
+     8
+    ],
+    [
+     8,
+     10
+    ],
+    [
+     10,
+     11
+    ],
+    [
+     11,
+     13
+    ]
+   ]
+  }
+ ]
+}

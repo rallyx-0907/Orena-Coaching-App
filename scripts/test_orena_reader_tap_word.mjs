@@ -58,3 +58,25 @@ const listening = readFileSync(new URL('../static/orena/screens/listening/screen
 assert.match(listening, /rowsEl\.addEventListener\('click', \(event\) => \{\s*tapSeq \+= 1;/, 'every tap supersedes a pending word tap');
 assert.match(listening, /mine !== tapSeq/);
 console.log('listening tap word gate: ok');
+
+// A new Chinese import (Video PR-C, P1-5): the stored `words` are one entry per character and are not read for a tap;
+// the unspaced line's text and the tagger's spans decide the word. Fixture lines are shaped like the trial's new items,
+// spans are the local tagger's answers (tests/test_media_zh_word_tap.py keeps them equal to the live tagger).
+const trial = JSON.parse(readFileSync(new URL('../tests/fixtures/zh_trial_tap_lines.json', import.meta.url), 'utf8'));
+let wordsTapped = 0;
+let groupedTaps = 0;
+for (const [index, item] of trial.lines.entries()) {
+  assert.ok(item.words.every((word) => Array.from(word.text).length === 1), 'stored words are single characters');
+  const tokens = hanTokens(item.text, null);
+  const spans = item.spans.map(([start, end]) => ({ start, end }));
+  const lineTagger = createLineTagger({ allowed: () => true, request: async () => spans });
+  for (const token of tokens.filter((tok) => /\p{Script=Han}/u.test(tok.core))) {
+    const expected = spans.find((span) => span.start <= token.start && token.start < span.end);
+    const got = await widenHanTap({ text: item.text, token, word: token.core, tags: () => lineTagger(`t${index}`, item.text) });
+    assert.equal(got, expected ? item.text.slice(expected.start, expected.end) : token.core, `${item.text}: a tap at ${token.start}`);
+    wordsTapped += 1;
+    if (Array.from(got).length > 1) groupedTaps += 1;
+  }
+}
+assert.ok(groupedTaps / wordsTapped >= 0.6, `most taps on new ZH lines name a word (${groupedTaps}/${wordsTapped})`);
+console.log('new ZH import tap gate: ok');

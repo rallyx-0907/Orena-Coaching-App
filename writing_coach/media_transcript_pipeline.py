@@ -38,6 +38,7 @@ import os
 import subprocess
 import tempfile
 import threading
+import time
 import uuid
 from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
@@ -86,6 +87,16 @@ ORIGIN_ASR = "generated_asr"
 CHUNK_SECONDS = 600
 MAX_ATTEMPTS = 3
 AUDIO_FORMAT_TIMEOUT = 600
+
+# Translation continues the lines still missing, boundedly (Video PR-A): at most this many provider rounds per language
+# (the first plus continuations), each wait capped, and the waits together capped, so a stuck provider cannot hold the
+# single worker. Every round stays under the AI spend cap and only the missing lines are requested again.
+TRANSLATION_MAX_ROUNDS = 5
+TRANSLATION_MAX_WAIT = 60.0
+TRANSLATION_MAX_TOTAL_WAIT = 150.0
+TRANSLATION_DEFAULT_BACKOFF = 5.0
+# A failure that asking again cannot fix.
+TRANSLATION_TERMINAL_REASONS = frozenset({"spend_cap", "provider_auth", "not_configured", "too_large", "request_too_large"})
 
 
 # The stable reason codes an item can be held or failed with, each with the English sentence stored beside it
@@ -329,6 +340,7 @@ class MediaPipeline:
         self._meanings = meanings
         self._english_reading = english_reading
         self._translation_sink = translation_sink
+        self._sleep: Callable[[float], None] = time.sleep
         self._pool = ThreadPoolExecutor(max_workers=workers or _env_int("MEDIA_PIPELINE_WORKERS", 2), thread_name_prefix="media-pipeline")
         self._inflight: set[str] = set()
         self._guard = threading.Lock()
@@ -528,7 +540,7 @@ class MediaPipeline:
         personal = entry.library == "personal"
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
-                                           translation="", translation_counts={})
+                                           translation="", translation_counts={}, translation_reason="")
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
@@ -761,45 +773,89 @@ class MediaPipeline:
         stored_lines = lines_from_payload((entry.lesson or {}).get("payload"))
         characters = sum(len(line.text) for line in stored_lines)
         total_lines = len(stored_lines)
-        spent = 0.0
         counts: dict[str, dict[str, int]] = {}
         incomplete = False
         any_done = False
+        stop_reason = ""
+        waited = 0.0
         for target in languages:
-            tokens = max(200, int(characters / 2.5)) + 200
-            estimate = self._ai_cost("", {"prompt_tokens": tokens, "completion_tokens": tokens})
-            try:
-                self._ledger.check(KIND_AI, batch_id, estimate)
-            except SpendCapReached:
-                return "spend_cap", counts
-            usage: list[tuple[str, Any]] = []
-            try:
-                if self._translation_sink is not None:
-                    with self._translation_sink(lambda model, value, captured=usage: captured.append((model, value))):
+            done = 0
+            for attempt in range(TRANSLATION_MAX_ROUNDS):
+                missing_share = max(1, total_lines - done) / max(1, total_lines)
+                tokens = max(200, int(characters * missing_share / 2.5)) + 200
+                estimate = self._ai_cost("", {"prompt_tokens": tokens, "completion_tokens": tokens})
+                try:
+                    self._ledger.check(KIND_AI, batch_id, estimate)
+                except SpendCapReached:
+                    stop_reason = "spend_cap"
+                    if attempt == 0:
+                        self._record_translation_reason(store, entry, stop_reason)
+                        return "spend_cap", counts
+                    break
+                usage: list[tuple[str, Any]] = []
+                retry_after = 0.0
+                try:
+                    if self._translation_sink is not None:
+                        with self._translation_sink(lambda model, value, captured=usage: captured.append((model, value))):
+                            result = self._meanings(entry, target)
+                    else:
                         result = self._meanings(entry, target)
-                else:
-                    result = self._meanings(entry, target)
-            except Exception:  # noqa: BLE001 - translation is enrichment; the lesson stands without it
-                _logger.warning("pre-translation failed for %s", entry.media_id, exc_info=True)
-                counts[target] = {"done": 0, "total": total_lines}
+                except Exception:  # noqa: BLE001 - translation is enrichment; the lesson stands without it
+                    _logger.warning("pre-translation failed for %s", entry.media_id, exc_info=True)
+                    stop_reason = "provider_error"
+                    counts[target] = {"done": done, "total": total_lines}
+                    result = None
+                if result is not None:
+                    actual = sum(self._ai_cost(model, value) for model, value in usage)
+                    if usage or getattr(result, "provider_calls", 0):
+                        actual = actual or estimate
+                        self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(usage), provider="groq")
+                    if getattr(result, "status", "ready") in {"ready", "not_required"}:
+                        done = total_lines
+                        stop_reason = ""
+                        counts[target] = {"done": done, "total": total_lines}
+                        break
+                    progressed = len(getattr(result, "meanings", ()) or ()) > done
+                    done = max(done, len(getattr(result, "meanings", ()) or ()))
+                    counts[target] = {"done": done, "total": total_lines}
+                    given = str(getattr(result, "reason", "") or "")
+                    stop_reason = given or ("incomplete" if progressed else "provider_error")
+                    retry_after = float(getattr(result, "retry_after", 0.0) or 0.0)
+                    # A partial that did not grow and says nothing would be asked for again with no new information.
+                    if not progressed and not given:
+                        break
+                if stop_reason in TRANSLATION_TERMINAL_REASONS or attempt == TRANSLATION_MAX_ROUNDS - 1:
+                    break
+                # The provider asked for longer than one wait may be: asking again now meets the same limit.
+                if stop_reason == "rate_limited" and retry_after > TRANSLATION_MAX_WAIT:
+                    break
+                # A rate limit is waited out as the provider asked (capped); otherwise a short fixed pause. A round that
+                # made progress needs none.
+                wait = 0.0
+                if result is None or stop_reason != "incomplete":
+                    wait = min(retry_after or TRANSLATION_DEFAULT_BACKOFF, TRANSLATION_MAX_WAIT)
+                if waited + wait > TRANSLATION_MAX_TOTAL_WAIT:
+                    break
+                if wait:
+                    waited += wait
+                    self._sleep(wait)
+            counts.setdefault(target, {"done": done, "total": total_lines})
+            if done < total_lines or not total_lines and stop_reason:
                 incomplete = True
-                continue
-            actual = sum(self._ai_cost(model, value) for model, value in usage)
-            if usage or getattr(result, "provider_calls", 0):
-                actual = actual or estimate
-                self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(usage), provider="groq")
-                spent += actual
-            if getattr(result, "status", "ready") in {"ready", "not_required"}:
-                counts[target] = {"done": total_lines, "total": total_lines}
-                any_done = any_done or total_lines > 0
-            else:
-                done = len(getattr(result, "meanings", ()) or ())
-                counts[target] = {"done": done, "total": total_lines}
-                incomplete = True
-                any_done = any_done or done > 0
+            any_done = any_done or done > 0
+        self._record_translation_reason(store, entry, stop_reason if incomplete else "")
         if not incomplete:
             return "ready", counts
         return ("partial" if any_done else "failed"), counts
+
+    def _record_translation_reason(self, store: Any, entry: MediaLibraryEntry, reason: str) -> None:
+        """Why the translation stopped short, beside `translation_counts`: a stable code, never log prose."""
+        try:
+            self._write_processing(store, entry, translation_reason=reason)
+        except PipelineStop:
+            raise
+        except Exception:  # noqa: BLE001 - the reason is a convenience; the lesson stands without it
+            _logger.warning("translation reason not written for %s", entry.media_id, exc_info=True)
 
     def _ai_cost(self, model: str, usage: Any) -> float:
         usage = usage if isinstance(usage, Mapping) else {}

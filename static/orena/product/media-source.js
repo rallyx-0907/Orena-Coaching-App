@@ -6,6 +6,8 @@
                        record (GET /api/media/source), never acquire from a workspace;
    - `upload:<id>`     a file the learner uploaded, Orena's own stored content: resolved by identity
                        (GET /api/media/my/<id>), with no provider and possibly no transcript;
+   - `preview:<id>`    an administrator's review of a shared import that is not published yet
+                       (GET /api/media/admin/player/<id>); the server refuses anyone else;
    - anything else     a curated or shared lesson id (GET /api/listening/library/<id>). A bare
                        stored media id (what the upload route answers with as `media_id`) resolves
                        there too, because the library route falls back to the stored entry.
@@ -31,6 +33,7 @@ export function mediaRef(id) {
   const value = String(id || '');
   if (value.startsWith('url:')) return { kind: 'url', value: value.slice(4) };
   if (value.startsWith('upload:')) return { kind: 'upload', value: value.slice(7) };
+  if (value.startsWith('preview:')) return { kind: 'preview', value: value.slice(8) };
   return { kind: 'lesson', value };
 }
 
@@ -55,7 +58,8 @@ export async function openMedia(id, { api, support = '', language = '', owner = 
     return payload;
   }
   const pending = Promise.resolve().then(() => ref.kind === 'upload'
-    ? api.mediaMy(ref.value, support) : api.listeningLibraryLesson(ref.value, support));
+    ? api.mediaMy(ref.value, support)
+    : ref.kind === 'preview' ? api.mediaAdminPlayer(ref.value, support) : api.listeningLibraryLesson(ref.value, support));
   sessions.set(key, {promise: pending, expires: Date.now() + SESSION_TTL_MS});
   try {
     const payload = await pending;

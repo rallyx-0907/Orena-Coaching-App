@@ -69,6 +69,18 @@ def is_commons_address(url: str) -> bool:
     return host in {COMMONS_PAGE_HOST, COMMONS_UPLOAD_HOST}
 
 
+def is_derivative_upload(url: str) -> bool:
+    """A transcoded rendition on upload.wikimedia.org (`.../commons/transcoded/<a>/<ab>/<File>/<File>.360p.webm`).
+
+    Its last path segment is a derivative name, not a Commons file title, so the File lookup would answer "missing";
+    it is a plain media file and imports as a direct one."""
+    parts = urlsplit(url)
+    if (parts.hostname or "").casefold().rstrip(".") != COMMONS_UPLOAD_HOST:
+        return False
+    segments = [unquote(item) for item in parts.path.split("/") if item]
+    return len(segments) > 3 and segments[:2] == ["wikipedia", "commons"] and segments[2] == "transcoded"
+
+
 def _filename_from(url: str) -> str:
     parts = urlsplit(url)
     host = (parts.hostname or "").casefold().rstrip(".")

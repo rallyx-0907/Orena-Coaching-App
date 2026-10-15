@@ -400,6 +400,8 @@ export const api={
   // administrator's import or a learner's own file - into the same acquisition
   // payload `/import` answers with, so the encounter has one shape to render.
   // The admin routes are admin-gated server-side, not here.
+  // An administrator's review of a held import: the same payload `mediaMy` answers, for any state (admin only).
+  mediaAdminPlayer:(mediaId,support='')=>request(`/api/media/admin/player/${encodeURIComponent(mediaId)}${support?`?target_language=${encodeURIComponent(support)}`:''}`),
   mediaMy:(mediaId,support='')=>request(`/api/media/my/${encodeURIComponent(mediaId)}${support?`?target_language=${encodeURIComponent(support)}`:''}`),
   // An import is charged by the source's length against the plan's media-import minutes (D-168): the device timezone
   // says when the learner's month ends. No idempotency key: importing the same source again is answered by the
