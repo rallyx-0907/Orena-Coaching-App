@@ -6932,7 +6932,7 @@ in the existing `processing` JSON beside `translation_counts`.
 
 ## D-208 - ASR transcripts: one Chinese script per item, and hallucinated segments removed (2026-10-15)
 
-Status: PROPOSED - pending independent review. Video Sources milestone, PR-B. No schema or migration change: the counts live in
+Status: ACCEPTED (merged as #218 once CI was green; independent review APPROVE-WITH-FOLLOWUPS on b2742791, re-review APPROVE on 2be1537e, no open P0/P1). Video Sources milestone, PR-B. No schema or migration change: the counts live in
 `processing` (an existing JSON field) and the recogniser signals are optional fields on an in-memory dataclass.
 
 1. **Script.** ASR cue text and the stored word arrays of a Chinese item are converted to the item's script before lines are cut:
@@ -6952,15 +6952,14 @@ Status: PROPOSED - pending independent review. Video Sources milestone, PR-B. No
    segment with few words that matches nothing is kept and flagged. Words inside a dropped segment are removed with it. The
    phrase lists are `writing_coach/media_asr_hallucinations.json`, with a stated basis and a line per language.
 3. **Recorded.** `processing.asr_filtered` and `processing.asr_flagged` are written on ready, held and failed outcomes of an ASR
-   item (absent for captions). If everything is filtered the item fails `empty_transcript` with the count as the detail.
+   item (0 for captions). If everything is filtered the item fails `empty_transcript` with the count as the detail.
 4. **ZH cut.** A recogniser cut with under 500 ms of silence after it is mid-sentence and no longer receives a full stop; a
    question particle still closes it.
 5. **Known limits, review step.** Key-term recognition errors (大国空潮 for 大国空巢, BOA for VOA) and wrong-but-fluent
    mishearings cannot be found by rules and are not corrected; a transcript still needs a human read before rights are
-   confirmed. Real speech inside a segment a stock rule drops (a true "Thank you" after 10 s of silence) is a rare loss; the
-   count lets a reviewer see it. The admin does not yet render `asr_filtered`/`asr_flagged` (API only; `UI_BACKEND_GAPS.md`).
+   confirmed. A stock sign-off beside a long silence, an adjacent repeat, or a lone tail word is dropped only when the provider gave no confidence signal; with signals and no doubt it is kept and counted in `asr_flagged`. Real speech can still be lost where the recogniser itself doubts a stock phrase or the segment is long for its few words (a true "Thank you" given with low confidence). `asr_filtered` and `asr_flagged` let a reviewer see both. The admin does not yet render `asr_filtered`/`asr_flagged` (API only; `UI_BACKEND_GAPS.md`).
 6. **More known limits.** (a) Ambiguous characters stay unconverted by design (麼, 著, 乾, 徵, 餘 and the like: 什麼 and 那麼 can
    remain Traditional inside a Simplified item), so a line can still mix scripts at those characters. (b) The Traditional
    path is currently unreachable: imports store only `zh`, so every Chinese ASR item is normalised to Simplified, including
    genuinely Traditional audio. No import option is added here; recorded as a gap in `UI_BACKEND_GAPS.md`. (c) The screen counts
-   are cleared at the start of every run, so a caption-path re-run or an early stop shows none.
+   are cleared at the start of every run, so a caption-path re-run or an early stop shows 0.
