@@ -62,6 +62,8 @@ from writing_coach.media_fallback import SupadataMediaFallbackService
 from writing_coach.media_ingestion import MediaIngestionService
 from writing_coach.media_providers.supadata import SupadataTranscriptClient
 from writing_coach.media_recovery_policy import build_youtube_adapter
+from writing_coach.media_providers.caption_source import PolicyCaptionClient
+from writing_coach.media_providers.youtube import PublicYouTubeCaptionClient
 from writing_coach.media_providers.youtube_audio import YtDlpYouTubeAudioUrlResolver
 from writing_coach.media_timing import MediaTimingService
 from writing_coach.media_translation import (
@@ -593,7 +595,10 @@ if callable(_feedback_deleter):
 _media_ingestion_service = MediaIngestionService(
     # One recovery policy, shared with the bulk importer, so a caption-less
     # video means the same thing in My Media and in the catalog pipeline.
-    adapters=(build_youtube_adapter(),),
+    # D-215: the caption client follows `media.caption_source` (default: YouTube, as before). Supadata native only, capped
+    # per day in the media spend ledger, which the pipeline below owns and this reads when it is first needed.
+    adapters=(build_youtube_adapter(caption_client=PolicyCaptionClient(
+        PublicYouTubeCaptionClient(), SupadataTranscriptClient.from_env(), lambda: _media_pipeline.ledger)),),
     source_language_supported=is_enabled,
 )
 configure_media_ingestion(_media_ingestion_service)

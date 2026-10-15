@@ -118,6 +118,8 @@ def media_outcome(entry: Any) -> dict[str, Any]:
         "transcript": {
             "origin": str(processing.get("origin") or ""),
             "caption_kind": str(processing.get("caption_kind") or ""),
+            "caption_provider": str(processing.get("caption_provider") or ""),
+            "caption_language": str(processing.get("caption_language") or ""),
             "caption_fallback": fallback,
             "caption_fallback_message": reason_message(fallback),
             "reprocess_reason": reprocess_reason,

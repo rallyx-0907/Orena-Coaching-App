@@ -151,6 +151,7 @@ REASON_MESSAGES: dict[str, str] = {
     "pipeline_error": "The transcript pipeline failed unexpectedly. The server log has the details.",
     "captions_unavailable": "The provider's captions could not be fetched this time. Speech recognition was not run; any stored captions were kept.",
     "captions_unusable": "The provider's captions were not good enough to use. Speech recognition was not run; any stored captions were kept.",
+    "caption_quota": "Today's limit of caption requests to the caption provider was reached; none was sent.",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
     "spend_cap_batch_ai": "The AI spend limit for this batch was reached.",
@@ -652,7 +653,7 @@ class MediaPipeline:
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
                                            translation="", translation_counts={}, translation_reason="", translation_retry_after=0, translation_continuation={}, asr_filtered=0, asr_flagged=0,
-                                           caption_kind="", caption_fallback="", reprocess_reason="", reprocess_detail="", reprocess_message="")
+                                           caption_kind="", caption_provider="", caption_language="", caption_fallback="", reprocess_reason="", reprocess_detail="", reprocess_message="")
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
@@ -771,22 +772,26 @@ class MediaPipeline:
         fallback = ""  # why the audio is used where captions were the first choice (D-213), a stable code
         if entry.provider == "youtube":
             kind = str(entry.source.get("caption_kind") or "")
+            provider = str(entry.source.get("caption_provider") or "")
+            caption_language = str(entry.source.get("caption_language") or "")
             if candidate is not None and candidate.cues:
                 cues = list(candidate.cues)
             else:
-                cues, captions_error, kind = self._captions(entry)
+                cues, captions_error, kind, provider, caption_language = self._captions(entry)
                 if not cues and not captions_error and entry.source.get("caption_status") == "unavailable":
-                    captions_error = "provider_failure"  # the importer was refused by the provider and said so
+                    # the importer was refused by the provider and said so (or by the daily caption cap, D-215)
+                    captions_error = str(entry.source.get("caption_error") or "") or "provider_failure"
             if cues:
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
                 if not first_failure(validate_lines(lines, language=language, duration_ms=duration)):
-                    self._write_processing(store, entry, caption_kind=kind, caption_fallback="")
+                    self._write_processing(store, entry, caption_kind=kind, caption_provider=provider,
+                                           caption_language=caption_language, caption_fallback="")
                     return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], {}
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
                 fallback = "captions_unusable"
             elif captions_error:
-                fallback = "captions_unavailable"
+                fallback = "caption_quota" if captions_error == "caption_quota" else "captions_unavailable"
             if self._keeps_captions(entry):
                 # The stored transcript is the provider's own captions and they cannot be had now: it stays, and the
                 # audio is not listened to in its place (D-213). The item is restored by the caller.
@@ -795,7 +800,8 @@ class MediaPipeline:
                 # The operator asked for captions or nothing (D-214): no audio is downloaded, no recognition runs, nothing
                 # is spent. The item fails with the stable reason and can be re-run once the provider answers.
                 raise PipelineStop(fallback or "captions_unavailable", captions_error)
-        self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_fallback=fallback)
+        self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_provider="",
+                               caption_language="", caption_fallback=fallback)
         try:
             raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
         except PipelineStop as stop:
@@ -810,21 +816,24 @@ class MediaPipeline:
         lines = segment_lines(raw, language)
         return lines, ORIGIN_ASR, cost, seconds, detected, words, screen
 
-    def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str, str]:
-        """(cues, why-none, kind): the provider's category when it failed, "" when there were simply no captions; `kind` is
-        `manual` or `auto` for the track that was used."""
+    def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str, str, str, str]:
+        """(cues, why-none, kind, provider, language): the provider's category when it failed, "" when there were simply no
+        captions; `kind` is `manual`, `auto` or `unknown` for the track that was used; `provider` is empty for YouTube's own
+        captions and `supadata` for a track from there, with the language it returned (D-215)."""
         if self._ingestion is None or not entry.canonical_url:
-            return [], "", ""
+            return [], "", "", "", ""
         try:
             acquisition = self._ingestion.import_media(entry.canonical_url, "en", entry.language)
         except Exception as exc:  # noqa: BLE001 - no captions is a normal answer; audio is the next source
-            return [], str(getattr(getattr(exc, "category", None), "value", "") or ""), ""
+            return [], str(getattr(getattr(exc, "category", None), "value", "") or ""), "", "", ""
         provenance = getattr(acquisition, "provenance", None) or {}
         transcript = acquisition.media_object.transcript
         if transcript is None:
-            return [], ("provider_failure" if provenance.get("caption_status") == "unavailable" else ""), ""
+            refused = provenance.get("caption_status") == "unavailable"
+            return [], (str(provenance.get("caption_error") or "provider_failure") if refused else ""), "", "", ""
         return ([Cue(int(segment.start_ms), int(segment.end_ms), segment.original_text) for segment in transcript.segments], "",
-                str(provenance.get("caption_kind") or ""))
+                str(provenance.get("caption_kind") or ""), str(provenance.get("caption_provider") or ""),
+                str(provenance.get("caption_language") or ""))
 
     @staticmethod
     def _keeps_captions(entry: MediaLibraryEntry) -> bool:

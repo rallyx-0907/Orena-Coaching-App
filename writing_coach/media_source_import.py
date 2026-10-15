@@ -623,6 +623,10 @@ class MediaSourceImporter:
                 # Which caption track the transcript is (manual or auto), or that the provider refused the captions (D-213).
                 "caption_kind": acquisition.provenance.get("caption_kind", ""),
                 "caption_status": acquisition.provenance.get("caption_status", ""),
+                # Captions that came from another provider than YouTube, and the language it returned (D-215).
+                "caption_provider": acquisition.provenance.get("caption_provider", ""),
+                "caption_language": acquisition.provenance.get("caption_language", ""),
+                "caption_error": acquisition.provenance.get("caption_error", ""),
             }),
             library="shared",
             created_at=_now(),
