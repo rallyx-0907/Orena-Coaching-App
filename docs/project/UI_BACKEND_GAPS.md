@@ -6193,7 +6193,8 @@ and `CREDITS_ENABLED` are not live. Missing backend data, no workaround written:
   Client side (PR #213 design review P1-A): when the order route answers 404, or the watcher ends without a terminal state,
   the sheet and the pending banner show the existing "Still waiting" line instead of staying silent; the route itself is still open.
 - **CT-2 learner balance.** Balance and ledger are admin-only (`/api/admin/billing/credits/{incarnation}`). Needed: a
-  learner read of the caller's own balance (posted, available) and a page of entries.
+  learner read of the caller's own balance (posted, available) and a page of entries. Owner decision 2026-10-15 (D-210):
+  until it exists the balance shows "—" with its unit, not hidden and never a fake 0.
 - **CT-3 learner history shape.** Needed: only learner-meaningful entries (topup, settle, refund, reversal, adjustment),
   each with `kind`, signed `posted_delta` and `created_at`, and no reason, actor, source or hold entries. The client maps
   kinds to Buy/Use/Refund/Adjust credits and drops reserve, release and reserve_expire rows; it never shows backend terms.
@@ -6276,9 +6277,8 @@ the design's "waiting for your transfer" lines are sample copy, D-068, and are n
 route, purchase cleared on sign-in refusal / auth stop / nothing on sale, closed-order steps use their own status line,
 `qrMatrix` no longer throws, `checkout_already_started` no longer loops.
 
-Not fixed, logged:
+Not fixed, logged (the balance "—" is no longer open: owner decision of 2026-10-15, below):
 
-- **P2-6 balance placeholder.** The balance shows "—" beside its unit until CT-2 ships; that glyph is not drawn by the design.
 - **P2-7 plan strip.** The only plan-derived text in the sheet comes from `/api/product/commerce`; keep Credits and
   subscription state separate in any refactor.
 - **P2-8 offers read.** `GET /api/billing/offers` is read on each Plan and Profile load; share one cached read per route
@@ -6287,3 +6287,15 @@ Not fixed, logged:
   reviewer and is not measured here (browser check belongs to the design-reviewer lane).
 - **A purchase survives a sign-out within one page session** only until the next Credits entry, auth stop or sign-in
   refusal; a full-page sign-out reloads the module state. A session-scoped key would need an account id on the client.
+
+## Owner decisions of 2026-10-15 (D-210 proposed)
+
+- **Credits balance (CT-2), owner decision.** There is still no learner balance endpoint (balance and ledger are admin-only). The
+  balance shows "—" beside its unit until one exists: more honest than hiding it or a fake 0 (owner 2026-10-15). CT-2 is marked
+  "owner decision: show —" and the review's P2-6 is closed by it.
+- **Admin preview of a held item is read-only (D-206 §5 closed by D-210).** The design draws no disabled state for Save, so the
+  controls that would keep something are not drawn in a preview and nothing replaces them. A learner-visible cue that this is a
+  preview is not drawn either (the design has none). `POST /api/library/vocabulary` carries no media id, so only the client walls
+  cover a word save from a preview.
+- **64 MiB media cap, owner decision.** Unchanged; `media_too_large` is reported. Raise the cap or move to streaming / chunked
+  processing: decided after the Phase 2 size distribution (D-207 §4, D-210 §3).

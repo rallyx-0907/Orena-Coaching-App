@@ -73,6 +73,14 @@ def _backbone():
     return work_api._backbone  # noqa: SLF001 - one backbone, configured once for every account route
 
 
+def _require_state_writable(content_id: str) -> None:
+    """Notes, highlights, responses and provenance against a held, unpublished or someone else's media id are
+    refused before anything is read or written (D-210)."""
+    from writing_coach.listening_api import require_media_state_writable  # lazy: listening_api imports far more
+
+    require_media_state_writable(content_id)
+
+
 def _key(value: str, code: str) -> str:
     if not value or len(value) > 255 or any(ord(ch) < 32 for ch in value):
         raise orena_http_error(422, code, 'That is not a key this room knows.', retryable=False)
@@ -166,6 +174,7 @@ def get_annotations(content_id: str) -> dict[str, Any]:
 def put_annotations(content_id: str, body: AnnotationSave) -> dict[str, Any]:
     scope = work_api._scope()  # noqa: SLF001
     content_id = _key(content_id, 'content_id_invalid')
+    _require_state_writable(content_id)
     if _text_import_deleted(scope, content_id):
         raise orena_http_error(404, 'annotation_not_found', 'That text was deleted.', retryable=False)
     ids = [item.id for item in body.highlights] + [item.id for item in body.notes]
@@ -630,6 +639,8 @@ def put_response(key: str, body: ResponseSave) -> dict[str, Any]:
     key = _key(key, 'response_key_invalid')
     if bool(body.sourceKind) != bool(body.sourceId):
         raise orena_http_error(422, 'source_incomplete', 'A source is both kind and id, or neither.', retryable=False)
+    if body.sourceId:
+        _require_state_writable(body.sourceId)
     payload = {'mode': body.mode, 'answer': body.answer, 'coaching': body.coaching, 'sentenceRef': body.sentenceRef}
     return _commit(
         scope, kind='response', ident=_work_id(scope, 'response', key), operation_id=body.operationId,
@@ -687,6 +698,8 @@ def attach_word_provenance(word: str, body: ProvenanceIn) -> dict[str, Any]:
     from writing_coach.persistence.provenance_repository import ProvenanceRejected
 
     scope = work_api._scope()  # noqa: SLF001
+    if body.sourceId:
+        _require_state_writable(body.sourceId)
     saved = _saved_word_id(scope, _key(word, 'word_invalid'))
     if saved is None:
         raise orena_http_error(404, 'word_not_found', 'That word is not kept.', retryable=False)
