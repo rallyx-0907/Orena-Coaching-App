@@ -6804,3 +6804,60 @@ product by the Admin through a server-side flag, never by editing code. No schem
 6. **Not covered, by design.** A learner's own saved progress for a hidden lesson stays stored and shows as unavailable without a
    title; it is not deleted. Default for genuinely curated items stays visible. Further kinds are added to
    `content_visibility.KINDS` only together with the filter on their learner paths.
+
+## D-204 - Media import makes no per-word network lookup (2026-10-14)
+
+Status: ACCEPTED (merged once CI was green). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 552daf3f: ACCEPT, no P0/P1. Owner decision 2026-10-14, from the Video Sources Phase 0 runtime: lesson
+preparation must never wait on a dictionary website. No schema change.
+
+1. **Cause.** `lesson_payload` asked `lookup_dictionary(word, allow_ai=False, persist=False)` (api.dictionaryapi.dev, up to ~20 s
+   or HTTP 522 per word) for every distinct word of an English transcript. A 63 s clip took 7 minutes and a 555 s clip 22 minutes
+   in the segment stage, on a single worker.
+2. **Rule.** During import, English pronunciation is the local CMUdict IPA (D-202, `ipa_for`) and empty on a miss. Word meaning
+   and enrichment during import use local catalogue or cache only; a miss is left for the learner's own on-demand tap lookup,
+   which is unchanged. Nothing in lesson preparation blocks on a dictionary. No worker or concurrency was added to hide latency.
+3. **Readings.** New English readings are General American (CMUdict, D-202). Older stored lessons, and the cache-fed legacy
+   path, may carry dictionaryapi.dev readings (often British); no migration or reprocess rewrites them.
+4. **Word meaning.** Import does no word-meaning lookup at all; meaning is the learner's on-demand tap.
+5. **Remaining network in the readiness path** (none per word): caption and metadata fetch, yt-dlp audio, ASR, the spend-capped
+   line translation, and the `_prepare_model_clips` audio re-download.
+6. **Where.** `app.py` wires `MediaPipeline(english_reading=ipa_for)`; `tests/test_media_import_offline_lexicon.py` fails if the
+   import path makes any HTTP, socket or dictionary call. The line translation stage (`prepare_media_meanings`) is a separate,
+   spend-capped provider stage and is not a word lookup; it is unchanged.
+
+## D-205 - Media import records provenance, specific rejections and a stable outcome (2026-10-14)
+
+Status: ACCEPTED (merged once CI was green). Independent review 2026-10-14, Delegated Architecture Reviewer, Claude Opus 5.5, on 89b89535: ACCEPT WITH CONDITIONS; conditions fixed on this branch (item 8); re-review APPROVE on 7207d922, no open P0/P1. Owner-approved P1s from the Video Sources Phase 0 runtime. No schema or
+migration change: everything lives in existing JSON fields (`creator`, the `source` string map, `processing`).
+
+1. **Provenance.** A YouTube import stores the channel (oEmbed `author_name`/`author_url`) as `creator` and in `source`
+   (`creator`, `creator_url`, `platform`, `original_url`). A Wikimedia Commons import stores the author, the licence short name
+   (in `license_name`, captured and not verified) and its URL (`license_url`); `license` keeps the "review provider terms before publishing" reminder, the platform and the File: page. Rights are untouched: unknown stays unknown and
+   the item is held, never auto-published.
+2. **Commons.** `commons.wikimedia.org/wiki/File:...` pages and `upload.wikimedia.org` files (including `.ogv`) resolve through
+   one bounded Commons API request to the media URL, a readable title (the page's own name, else the filename without
+   extension and underscores), the author and the licence. The item is a direct media file (`provider: direct`) so reprocess
+   keeps working.
+3. **Rejections say why.** Stable codes: `commons_not_a_file`, `commons_not_commons`, `commons_file_missing`,
+   `commons_not_media`, `commons_unavailable`, `media_unreadable`, `unsupported_media_type` (now naming the suffix). The preview
+   rows carry the same `category` as the import report, so the console no longer shows the generic "source could not be read".
+4. **URL box.** Splits on line breaks and whitespace; a comma separates only where the next piece starts `http(s)://`.
+5. **Outcome.** `processing.reason` (stable code) is stored with `processing.message` (English sentence); the admin record gains
+   `outcome` = `processing | held | failed | ready` plus the reason, message and translation state, and a failed item no longer
+   reads as the held "Review" pill. New code `captions_blocked`: the provider refused the captions and the audio route failed.
+6. **Partial translation.** A line translation that reaches some lines is `partial` with `{done, total}` per language in
+   `processing.translation_counts`; the item state is unchanged and the learner payload's `translation.status` is `partial`
+   (not `unavailable`) when lines have a meaning. Only no lines at all is `failed`.
+7. **Not drawn.** The design draws no translation-progress or partial-translation state in the Admin; none was invented. The
+   data is on the record for the console to show when the design adds it.
+8. **Review conditions, fixed.** Merged `main` (#209: `clean_asr_cues` runs after the `_speech` try/except). Commons requests send a
+   Wikimedia-style User-Agent naming the project URL (no personal address), pin `allowed_hosts` (API: commons.wikimedia.org,
+   download: upload.wikimedia.org) and use `redirects=1` (a renamed File: resolves; the filename is re-derived). A 403/429 from
+   Commons is `commons_rate_limited`, any other failure `commons_unavailable`, never `unsafe_source`. The licence is kept apart from
+   `license`; the credits rows and the listening source carry `license_name`/`license_url` (the credits page does not yet render the
+   link: follow-up). `splitMediaUrls` also splits scheme-less `host/path` pieces after a comma and trims trailing `. ; ,` and an
+   unmatched `)`; a URL with a literal space is still cut in two. A re-run clears `translation`/`translation_counts`. Tests: a
+   captured CC licence stays `rights=unknown`/held, `<script>` in Artist is plain text, oversize and 429 responses.
+9. **Follow-ups.** Re-importing an existing shared item with the same media id rewrites the whole entry (`source`, `creator`,
+   `title`), as before but now with Commons-derived values; confirm whether a curated title should survive. The credits page link
+   for `licence_url`. The Admin partial-translation state is in `UI_BACKEND_GAPS.md`.
