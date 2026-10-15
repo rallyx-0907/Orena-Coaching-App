@@ -331,6 +331,9 @@ def sanitize_telemetry(value: object) -> dict[str, Any] | None:
     # before any outbound request (budget, unfunded, cooling down) or a call refused before sending is never billable.
     if value.get("billable_attempt") is True:
         result["billable_attempt"] = True
+    # PR-MON-7 §4.4: an estimate of whether provider credits covered the call; never a cash fact.
+    if value.get("cost_coverage") in {"provider_credit_estimated", "cash", "unknown"}:
+        result["cost_coverage"] = value["cost_coverage"]
     result.update(_router_telemetry(value))
     return result
 

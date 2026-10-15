@@ -38,7 +38,14 @@ from writing_coach.ai.base import (
 from writing_coach.ai import routing as _routing
 from writing_coach.ai import spend_gate
 from writing_coach.ai.capabilities import AIOperation, require_capability
-from writing_coach.ai.config import CapabilityConfig, validate_capability_config
+from writing_coach.ai.config import (
+    ROUTING_SWITCH,  # noqa: F401 - re-exported for the routing switch's readers
+    CapabilityConfig,
+    routed_capabilities,
+    routed_definition,
+    validate_capability_config,
+    validate_routed_policy,
+)
 from writing_coach.ai.control_plane import (
     AIControlPlane,
     safe_capability_display,
@@ -89,6 +96,37 @@ def runtime_mode() -> AIRuntimeMode:
         return AIRuntimeMode(value)
     except ValueError as exc:
         raise AICapabilityConfigInvalid(f"Unsupported AI runtime mode: {value!r}.") from exc
+
+
+# PR-MON-7: providers whose bill may currently be covered by provider credits. Their calls keep their real estimated
+# cost; whether credits covered a call is only an estimate, `unknown` until an allowance is defined (H7-7).
+COVERED_CREDIT_PROVIDERS = frozenset({"ollama-cloud"})
+
+
+def _legacy_privacy_guard(capability_key: str | None, item: Any, model: str) -> None:
+    """The D-195/D-104 privacy rule on the legacy single selection (PR-MON-7 F-1): learner text never reaches a free
+    tier, a provider that may log prompts, or a model without its required privacy review. An unknown or missing key is
+    treated as learner text. Refused before anything is sent."""
+
+    from writing_coach.ai.capabilities import get_capability
+    from writing_coach.ai.pricing import is_free_model
+    from writing_coach.ai.providers import get_provider_definition
+
+    definition = get_capability(capability_key) if capability_key else None
+    if definition is not None and definition.input_class != "learner_text":
+        return
+    provider_id = str(getattr(item, "id", "") or "")
+    provider = get_provider_definition(provider_id)
+    refused = provider is not None and (
+        provider.may_log_prompts
+        or is_free_model(provider_id, model)
+        or (provider.learner_text_models is not None and model not in provider.learner_text_models)
+    )
+    if refused:
+        raise AIProviderUnavailable(
+            "The selected AI provider cannot receive learner text (a free tier, a provider that may log prompts, or "
+            "a model without a privacy review)."
+        )
 
 
 class AIConfigIn(BaseModel):
@@ -165,6 +203,12 @@ _PROVIDER_CONFIG_META: dict[str, dict[str, str | None]] = {
         "credential_env": None,
         "model_env": "OLLAMA_MODEL",
         "models_env": None,
+    },
+    "ollama-cloud": {
+        "endpoint_env": "OLLAMA_CLOUD_BASE_URL",
+        "credential_env": "OLLAMA_CLOUD_API_KEY",
+        "model_env": None,
+        "models_env": "OLLAMA_CLOUD_MODELS",
     },
     "openai": {
         "endpoint_env": "OPENAI_BASE_URL",
@@ -314,6 +358,9 @@ def active_ai_status() -> dict[str, Any]:
 def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
     """Best-effort persistence through the installed platform repository."""
 
+    if isinstance(telemetry, dict) and telemetry.get("provider") in COVERED_CREDIT_PROVIDERS:
+        # PR-MON-7 §4.4: the economic cost stays the catalogue estimate; coverage is an estimate, `unknown` until H7-7.
+        telemetry = {**telemetry, "cost_coverage": "unknown"}
     safe = sanitize_telemetry(telemetry)
     recorder = getattr(_platform_repository, "record_ai_operation", None)
     if safe is None or not callable(recorder):
@@ -629,6 +676,7 @@ def generate_structured(
     capability_mode: bool = False,
     health: Any = None,
     paid_standby: bool = True,
+    routable: bool = True,
 ) -> AIResult:
     """One structured request through the learner runtime.
 
@@ -676,11 +724,16 @@ def generate_structured(
         return result
 
     try:
+        # `routable=False`: a caller that shares a capability key but is not part of the routed slice (the reading
+        # summary reuses `text_discussion`; its shared cache blocks it until 7A-follow-up) stays on the legacy path.
+        routed = routable and capability_key is not None and capability_key in routed_capabilities()
+        capability_mode = capability_mode or routed
         if runtime_mode() is AIRuntimeMode.LEGACY and not capability_mode:
             item, model = active_selection()
             provider_id = str(getattr(item, "id", "") or "") or None
             if not item.configured:
                 raise AIProviderUnavailable(f"{item.name} is not configured.")
+            _legacy_privacy_guard(capability_key, item, model)
 
             # Do not silently fail over to a paid provider.
             _require_paid_funding(capability_key or "legacy", provider_id, model,
@@ -715,6 +768,11 @@ def generate_structured(
         if not config.enabled:
             raise AICapabilityDisabled(f"AI capability {definition.key!r} is disabled.")
         validate_capability_config(definition.key, config, enforce_cap=False)  # a zero cap is the gate below
+        if routed:
+            # PR-MON-7: a routed capability runs only on its reviewed primary and reviewed backup (§4.2), and its paid
+            # backup is gated by the routed daily cap (0 by default: no paid backup).
+            validate_routed_policy(definition.key, config, enforce_cap=False)
+            definition = routed_definition(definition.key)
 
         # The operator configured a backup pair; until now nothing used it, so
         # one rate-limited provider stopped the capability. The chain asks each
@@ -737,7 +795,23 @@ def generate_structured(
                 limit = remaining if limit is None else min(limit, remaining)
             return limit
 
-        gate = _funded_gate(definition.key, _budget_gate(definition, paid_ok=paid_standby),
+        budget = _budget_gate(definition, paid_ok=paid_standby)
+        if routed and budget is not None:
+            # PR-MON-7: the routed daily cap belongs to the reviewed paid BACKUP and measures only that backup's own
+            # spend (provider and model), never the primary's. The reviewed primary - Ollama Cloud, priced as paid -
+            # is never skipped by it; the funding gate still applies to every paid rung.
+            primary, cap_policy = chain[0], definition.paid_standby_cap_policy
+
+            def budget(target: ProviderTarget) -> str | None:
+                if target == primary or provider_tier(target.provider, target.model) != "paid":
+                    return None
+                if not paid_standby:
+                    return "budget"
+                refused = spend_gate.paid_refused(definition.key, cap_policy, provider=target.provider,
+                                                  model=target.model)
+                return "budget" if refused else None
+
+        gate = _funded_gate(definition.key, budget,
                             lambda target: _effective_timeout(_timeout_for(target), _provider_timeout(target.provider)))
 
         def _ask(target: ProviderTarget) -> AIResult:
@@ -783,7 +857,7 @@ def generate_structured(
             raise invalid
 
         try:
-            routed = run_chain(
+            outcome = run_chain(
                 chain, _ask, on_attempt=_record_attempt(capability_key, router_version,
                                                         sent=lambda: unaccounted.pop("rung", False)),
                 deadline=deadline,
@@ -796,8 +870,8 @@ def generate_structured(
 
                 raise FundingRequired("no_unpaid_rung", capability=definition.key) from error
             raise
-        provider_id, model = routed.target.provider, routed.target.model
-        return finish(routed.value, routed.attempts)
+        provider_id, model = outcome.target.provider, outcome.target.model
+        return finish(outcome.value, outcome.attempts)
     except (AICapabilityError, AIProviderError) as exc:
         model_display, model_redacted = safe_model_display(model)
         if router_version is not None:
