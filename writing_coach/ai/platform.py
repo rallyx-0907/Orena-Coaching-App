@@ -808,7 +808,16 @@ def generate_structured(
                 limit = remaining if limit is None else min(limit, remaining)
             return limit
 
-        gate = _funded_gate(definition.key, _budget_gate(definition, paid_ok=paid_standby),
+        budget = _budget_gate(definition, paid_ok=paid_standby)
+        if routed and budget is not None:
+            # PR-MON-7 (independent pre-review P1-1): the routed daily cap belongs to the reviewed paid BACKUP. The
+            # reviewed primary - Ollama Cloud, priced as paid - is never skipped by it; the funding gate still applies.
+            backup_only, primary = budget, chain[0]
+
+            def budget(target: ProviderTarget) -> str | None:
+                return None if target == primary else backup_only(target)
+
+        gate = _funded_gate(definition.key, budget,
                             lambda target: _effective_timeout(_timeout_for(target), _provider_timeout(target.provider)))
 
         def _ask(target: ProviderTarget) -> AIResult:
@@ -854,7 +863,7 @@ def generate_structured(
             raise invalid
 
         try:
-            routed = run_chain(
+            outcome = run_chain(
                 chain, _ask, on_attempt=_record_attempt(capability_key, router_version,
                                                         sent=lambda: unaccounted.pop("rung", False)),
                 deadline=deadline,
@@ -867,8 +876,8 @@ def generate_structured(
 
                 raise FundingRequired("no_unpaid_rung", capability=definition.key) from error
             raise
-        provider_id, model = routed.target.provider, routed.target.model
-        return finish(routed.value, routed.attempts)
+        provider_id, model = outcome.target.provider, outcome.target.model
+        return finish(outcome.value, outcome.attempts)
     except (AICapabilityError, AIProviderError) as exc:
         model_display, model_redacted = safe_model_display(model)
         if router_version is not None:

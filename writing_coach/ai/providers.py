@@ -505,26 +505,50 @@ class OllamaCloudProvider(OllamaProvider):
         ).strip().rstrip("/")
         self._api_key = str(credential_override.get("api_key") or os.getenv("OLLAMA_CLOUD_API_KEY", "")).strip()
         override_models = credential_override.get("models")
-        if isinstance(override_models, list):
-            self.allowed_models = [str(value).strip() for value in override_models if str(value).strip()]
-        else:
-            self.allowed_models = [value.strip() for value in os.getenv("OLLAMA_CLOUD_MODELS", "").split(",")
-                                   if value.strip()]
-        self.default_model = self.allowed_models[0] if self.allowed_models else ""
+        listed = [str(value).strip() for value in override_models if str(value).strip()] \
+            if isinstance(override_models, list) else []
+        # A stored empty list is "not set": the environment's list stands, as for the other providers.
+        self.allowed_models = listed or [value.strip() for value in os.getenv("OLLAMA_CLOUD_MODELS", "").split(",")
+                                         if value.strip()]
+        stored_default = str(credential_override.get("default_model") or "").strip()
+        self.default_model = stored_default if stored_default in self.allowed_models else (
+            self.allowed_models[0] if self.allowed_models else "")
         self.timeout = int(os.getenv("OLLAMA_CLOUD_TIMEOUT", "120"))
 
     @property
     def configured(self) -> bool:
         return bool(self._api_key)
 
+    @property
+    def api_key(self) -> str:
+        """For the Admin credential test of the environment key (never printed or returned by any route)."""
+        return self._api_key
+
     def list_models(self) -> list[str]:
         # Only the operator's listed models: a cloud catalogue is not an allowlist.
         return sorted(dict.fromkeys(self.allowed_models)) if self.configured else []
 
     def discover_models_live(self) -> list[str]:
+        """An authenticated catalogue read, so a wrong key fails the Admin test instead of the first learner call.
+        Answers the operator's listed models that the account can reach (all listed ones when none is published)."""
         if not self.configured:
             raise AIProviderUnavailable("Ollama Cloud is not configured.")
-        return self.list_models()
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", headers=self._request_headers(), timeout=10)
+            response.raise_for_status()
+            envelope = response.json()
+        except requests.ConnectionError as exc:
+            raise AIProviderUnavailable("Ollama Cloud is not reachable.") from exc
+        except requests.Timeout as exc:
+            raise AIProviderUnavailable("Ollama Cloud timed out.") from exc
+        except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "?"
+            raise AIProviderError(f"Ollama Cloud returned HTTP {status} during model discovery.") from exc
+        except ValueError as exc:
+            raise _invalid_model_catalog() from exc
+        published = set(_model_catalog(envelope, container_key="models", model_key="name"))
+        listed = self.list_models()
+        return [model for model in listed if model in published] if published else listed
 
     def generate_json(self, **kwargs: Any) -> AIResult:
         if not self.configured:

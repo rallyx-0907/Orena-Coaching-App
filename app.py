@@ -3565,6 +3565,7 @@ def essay_review_refresh(essay_id: int) -> dict[str, Any]:
     row = _learning_repository.get_essay(essay_id)
     if not row:
         raise HTTPException(404, "Essay not found")
+    _quota.require_feature("writing.review")   # feature access before any stored answer (PR-MON-6 §4, H7-3)
     detail = row_to_dict(row, detail=True)
     stored = identity_of_stored(detail.get("module_data"))
     learning, support_code = stored.get("learning_language", ""), stored.get("support_language", "")
@@ -3641,8 +3642,9 @@ def _refresh_with(ticket: Any, essay_id: int, prior: str, detail: dict[str, Any]
         new_identity,
         datetime.now().astimezone().isoformat(timespec="seconds"),
     )
-    ticket.settle(1, "refresh")
-    return _refresh_answer(essay_id, "refreshed" if outcome["status"] == "refreshed" else "current")
+    refreshed = outcome["status"] == "refreshed"
+    ticket.settle(1 if refreshed else 0, "refresh" if refreshed else "refresh_superseded")
+    return _refresh_answer(essay_id, "refreshed" if refreshed else "current")
 
 
 @app.get("/api/essays/{essay_id}/review/history")

@@ -59,6 +59,7 @@ class ModelReport:
     cost_total: Decimal = Decimal(0)
     priced_cases: int = 0
     unpriced_cases: int = 0
+    failed_calls: int = 0
 
     @staticmethod
     def _rate(part: int, whole: int) -> float | None:
@@ -81,7 +82,8 @@ class ModelReport:
                            "max": max(self.latencies) if self.latencies else None},
             "cost_usd": {"total_priced": str(self.cost_total), "mean_priced": (
                 str(self.cost_total / self.priced_cases) if self.priced_cases else None),
-                "priced_cases": self.priced_cases, "unpriced_or_unknown_cases": self.unpriced_cases},
+                "priced_cases": self.priced_cases, "unpriced_or_unknown_cases": self.unpriced_cases,
+                "failed_calls": self.failed_calls},
         }
 
 
@@ -100,7 +102,7 @@ def score(label: str, cases: Sequence[BenchmarkCase], outcomes: Mapping[str, Cas
             report.critical += 1
             if outcome is not None:
                 report.latencies.append(outcome.latency_ms)
-                _cost(report, outcome)
+                report.failed_calls += 1   # no answer was priced: not counted as an unpriced case
             continue
         report.latencies.append(outcome.latency_ms)
         _cost(report, outcome)

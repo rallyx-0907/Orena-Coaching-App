@@ -276,7 +276,7 @@ def test_the_benchmark_reports_the_five_measurements_and_never_a_verdict():
     assert a["critical_failure_rate"] == 0.75   # a wrong band, a schema failure, an error
     assert a["latency_ms"]["max"] == 3000
     assert a["cost_usd"] == {"total_priced": "0.002", "mean_priced": "0.001", "priced_cases": 2,
-                             "unpriced_or_unknown_cases": 2}
+                             "unpriced_or_unknown_cases": 1, "failed_calls": 1}   # an error was never priced
     report = compare(score("cand", cases, candidate, validate=validate, grade=grade),
                      score("base", cases, baseline, validate=validate, grade=grade))
     assert report["verdict"] is None and report["difference"]["quality_mean"] == -0.5
@@ -373,3 +373,125 @@ def test_the_reading_summary_stays_legacy_when_text_discussion_is_routed(monkeyp
     with pytest.raises(AICapabilityNotConfigured):   # the discussion itself is routed
         platform.generate_structured(messages=[], schema={"type": "object"}, max_output_tokens=10,
                                      capability_key="text_discussion")
+
+
+# ---- independent pre-review fixes ------------------------------------------------------------------------------------
+
+class CloudFake:
+    id = "ollama-cloud"
+    name = "Ollama Cloud"
+    configured = True
+    timeout = 120
+
+    def __init__(self, answers):
+        self.answers, self.calls = list(answers), 0
+
+    def generate_json_once(self, **kwargs):
+        self.calls += 1
+        return AIResult(data=dict(self.answers.pop(0)), provider=self.id, model=kwargs["model"],
+                        runtime={"prompt_tokens": 10, "completion_tokens": 5})
+
+    generate_json = generate_json_once
+
+
+class PaidFake(CloudFake):
+    id = "openai"
+    name = "OpenAI"
+
+
+class LedgerRepository(Repository):
+    def ai_spend_since_for_capability(self, capability, since):
+        return 0.0, 0
+
+
+def routed_world(monkeypatch, reviewed, *, cap, primary_answers, backup_answers=()):
+    reviewed(cap=cap)
+    cloud, paid = CloudFake(primary_answers), PaidFake(backup_answers)
+    monkeypatch.setenv(platform.ROUTING_SWITCH, "writing_evaluator")
+    monkeypatch.setattr(platform, "_platform_repository", LedgerRepository(routed_config()))
+    monkeypatch.setattr(platform, "providers", lambda: {"ollama-cloud": cloud, "openai": paid})
+    from writing_coach.ai import spend_gate
+
+    spend_gate.reset()
+    return cloud, paid
+
+
+def ask(validate=None):
+    return platform.generate_structured(messages=[], schema={"type": "object"}, max_output_tokens=10,
+                                        capability_key="writing_evaluator", validate=validate)
+
+
+def test_a_routed_primary_answers_even_with_the_backup_cap_at_zero(monkeypatch, reviewed):
+    cloud, paid = routed_world(monkeypatch, reviewed, cap=0.0, primary_answers=[{"ok": True}])
+    result = ask()
+    assert result.provider == "ollama-cloud" and cloud.calls == 1 and paid.calls == 0
+
+
+def test_at_cap_zero_an_invalid_primary_never_reaches_the_paid_backup(monkeypatch, reviewed):
+    from writing_coach.ai.base import AIOutputInvalid, AIProviderError
+
+    def validate(data):
+        if not data.get("ok"):
+            raise AIOutputInvalid("bad")
+
+    cloud, paid = routed_world(monkeypatch, reviewed, cap=0.0, primary_answers=[{"ok": False}, {"ok": False}],
+                               backup_answers=[{"ok": True}])
+    with pytest.raises(AIProviderError):
+        ask(validate)
+    assert paid.calls == 0   # the backup is skipped by its cap
+
+
+def test_with_a_backup_cap_the_reviewed_backup_answers_after_an_invalid_primary(monkeypatch, reviewed):
+    from writing_coach.ai.base import AIOutputInvalid
+
+    def validate(data):
+        if not data.get("ok"):
+            raise AIOutputInvalid("bad")
+
+    cloud, paid = routed_world(monkeypatch, reviewed, cap=1.0, primary_answers=[{"ok": False}, {"ok": False}],
+                               backup_answers=[{"ok": True}])
+    result = ask(validate)
+    assert result.provider == "openai" and paid.calls == 1 and cloud.calls == 1   # no invalid re-ask by default
+
+
+def test_ollama_cloud_discovery_authenticates_so_a_wrong_key_fails_the_admin_test(monkeypatch):
+    from writing_coach.ai.base import AIProviderError
+
+    seen = {}
+
+    class Response:
+        def __init__(self, status):
+            self.status_code = status
+
+        def raise_for_status(self):
+            if self.status_code >= 400:
+                import requests
+
+                raise requests.HTTPError(response=self)
+
+        def json(self):
+            return {"models": [{"name": CLOUD_MODEL}, {"name": "unlisted"}]}
+
+    def get(url, headers, timeout):
+        seen.update(url=url, headers=headers)
+        return Response(401 if headers["Authorization"] == "Bearer wrong" else 200)
+
+    monkeypatch.setattr(prov.requests, "get", get)
+    good = prov.OllamaCloudProvider({"api_key": "right", "models": [CLOUD_MODEL, "listed-not-published"]})
+    assert good.discover_models_live() == [CLOUD_MODEL] and seen["url"] == "https://ollama.com/api/tags"
+    assert good.api_key == "right"
+    with pytest.raises(AIProviderError):
+        prov.OllamaCloudProvider({"api_key": "wrong", "models": [CLOUD_MODEL]}).discover_models_live()
+    monkeypatch.setenv("OLLAMA_CLOUD_MODELS", "env-model")
+    assert prov.OllamaCloudProvider({"api_key": "k", "models": []}).list_models() == ["env-model"]
+
+
+def test_a_refresh_is_403_before_any_stored_answer_when_the_plan_disables_review(client, stack):  # noqa: F811
+    from tests.test_funding_gate import _disable_review_on_free
+
+    enforced_runtime()
+    _disable_review_on_free()
+    essay_id, _values = seed(stack, learning="zh", support="vi")
+    answer = client.post(f"/api/essays/{essay_id}/review/refresh")
+    assert answer.status_code == 403 and answer.json()["detail"]["category"] == "feature_not_in_plan"
+    assert client.calls == []

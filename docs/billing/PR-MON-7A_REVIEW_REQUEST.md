@@ -65,3 +65,17 @@
 - **503 mapping**, and the reading summary staying legacy.
 
 Full-suite results are recorded in `BILLING_STATUS.md` with this commit.
+
+## Independent pre-review (fresh-context agent, read-only, on `1be7a36c`): REQUEST CHANGES, no P0
+
+| Finding | Disposition |
+| --- | --- |
+| **P1-1:** the routed backup cap (0 by default) also gated the reviewed primary, because Ollama Cloud is priced as paid, so a routed capability could never reach its primary | **Fixed.** When routed, the budget gate applies to the backup rung only; the funding gate still applies to every paid rung. End-to-end tests: at cap 0 the primary answers and the backup is never called, and an invalid primary is not followed by the backup; with a cap above 0 the reviewed backup answers. |
+| P2: Ollama Cloud discovery made no network call (a wrong key was accepted) | **Fixed.** It makes an authenticated `GET /api/tags`, and returns the operator-listed models the account can reach. |
+| P2: no `api_key` for the Admin test of the environment key | **Fixed** (property). |
+| P2: a stored empty model list overrode the environment; the stored default model was ignored | **Fixed:** same semantics as the other providers. |
+| P2: a refresh superseded by another writer was charged | **Fixed:** settle 1 only when the review was replaced, else 0. |
+| P2: refresh feature access | **Fixed:** `require_feature("writing.review")` runs before any stored answer. Test: 403 with no provider call. |
+| P2: the benchmark counted failed calls as unpriced | **Fixed:** they are counted as `failed_calls`. |
+| P2: `routed` was rebound to the chain result | **Fixed** (renamed). |
+
