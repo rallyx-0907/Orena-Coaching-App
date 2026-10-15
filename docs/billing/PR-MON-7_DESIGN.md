@@ -430,7 +430,7 @@ and does not touch 0034.
 | H7-5 | **APPROVED (closed 2026-10-15, D-MON-025):** the cache-isolation architecture of §14.3. A dedicated cache-isolation slice comes immediately after 7A-first. |
 | H7-6 | **APPROVED (closed 2026-10-15, D-MON-025):** Ollama Cloud is approved at the provider/privacy-policy level for `learner_text`, under its documented privacy and retention terms. Model-level allowlisting stays mandatory (§14.1); no model is populated automatically. |
 | H7-7 | **APPROVED (closed 2026-10-15, D-MON-026):** the owner-configured covered-credit allowance of §14.6 (USD of estimated economic cost, monthly, explicit configuration, default 0/disabled). Exhausted or unknown: the Ollama Cloud primary is skipped, never paid as you go. |
-| H7-8 | **APPROVED (D-MON-026):** each capability's existing paid quality baseline is its candidate reviewed backup; daily caps `writing_evaluator` $0.50, `writing_improver` $0.50, `text_discussion` $1.00, Admin-editable (§14.7). Closed once the exact baseline ids are verified from the repository (§14.7). |
+| H7-8 | **DECIDED (D-MON-026, D-MON-027):** the exact existing Gemini baseline is selected as the backup strategy; daily caps `writing_evaluator` $0.50, `writing_improver` $0.50, `text_discussion` $1.00, Admin-editable (§14.7). **Pending** one operator verification of the live `ai.active_selection` / `ai.capability.*` rows before the exact provider/model is admitted into a production reviewed backup allowlist. |
 
 ## 13. Contradictions and findings
 
@@ -556,4 +556,32 @@ Admin-editable as policies:
 | `text_discussion` | $1.00 / UTC day |
 
 If a baseline cannot be identified safely from the repository, it is reported unresolved, not invented.
+
+**Status (D-MON-027).** Repository evidence (`RELEASE_8000_READINESS.md`, `GOOGLE_PLAY_DATA_SAFETY.md`) points to
+`gemini` / `gemini-3.5-flash-lite` for all three capabilities, and that model is priced in the catalogue. The live
+selection is runtime database state (`ai.active_selection` / `ai.capability.*`, set through Admin), which the
+repository cannot prove. H7-8 is therefore **DECIDED, pending one operator verification of those live rows** before
+the exact provider/model enters any production reviewed backup allowlist. Repository documentation is not treated as
+proof of the runtime row. This does not block 7D1.
+
+### 14.8 PR-MON-7D1: cache authority, before and after
+
+| Cache / path | Before | After (7D1) |
+| --- | --- | --- |
+| DerivedCache, Reading translation (`/api/reading/translate`) | Shared table and shared memory when the client sent `content_id="article:..."` (unverified); shared memory for everything else | Shared (memory + table) only when the server's repository has that article **published** and every segment is part of it; otherwise the learner's incarnation scope in memory, never the table |
+| DerivedCache, Reading summary (`/api/reading/summary`) | Shared table for a verified `article_id`; shared memory for a book chapter or raw text | Verified `article_id`: shared, unchanged. Book chapter or raw text: the learner's incarnation scope, never the table |
+| DerivedCache, word-detail gloss/explanation and sentence-sheet | As translation (unverified `article:` prefix) | Shared only for a verified published article containing the selection and its sentence; otherwise incarnation scope |
+| DerivedCache, basic tap reuse (`reading_lookup`) | Read the shared memory with any text | Reads the learner's own entries and the shared (verified-published) entries; writes only the learner's scope; the scope is resolved on the request thread |
+| Word deep, catalogue example context (8a) | Shared file store, key word + reading + support | Unchanged: shared, because the sentence is server catalogue content |
+| Word deep, learner fragment context (8b) | The same shared file store and key (cross-account leak, poisonable) | In-process only, under the incarnation and a hash of the fragment; never reads or writes the shared file store |
+| Router L1 (`word_translation`), legacy dictionary cache | Word-only public reference | Unchanged (not learner-derived; the dictionary language-key issue stays out of 7D1) |
+
+Learner scope is the account **incarnation** (`account_incarnations`, resolved, never created). When no incarnation
+can be read (no backbone, an error, auth off), learner caching is bypassed; there is no global learner cache. A
+published article is read from `reading_articles` through `get_published_article`; an unreadable store is treated
+as not published. No new table, no schema change.
+
+Unblocked for PR-MON-7A-follow-up routing (not activated): the learner dictionary/contextual paths (#7, word-detail
+and sentence-sheet), learner-import Reading translation and summary (#4a, #5a), and learner-fragment word deep (#8b).
+Their published counterparts (#4b, #5b, #8a) keep a server-verified shared scope for 7B.
 

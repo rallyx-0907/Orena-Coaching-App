@@ -29,6 +29,7 @@ from writing_coach.media_translation import (
     TranslationProviderError,
     build_translation_batches,
 )
+from writing_coach.reading_cache_scope import CacheScope, learner_scope
 from writing_coach.reading_derived import (
     DEFAULT_ENTRIES,
     KIND_TRANSLATION,
@@ -177,7 +178,8 @@ class ReadingTranslationService:
         return self._provider.engine_id in {"ai", "groq"}
 
     def cached(
-        self, source_language: str, target_language: str, segments: Sequence[TextSegment], *, persist: bool = False
+        self, source_language: str, target_language: str, segments: Sequence[TextSegment], *,
+        scope: CacheScope | None = None,
     ) -> ReadingTranslation | None:
         """The translation already held for every segment, or None. Read-only: never calls the provider.
 
@@ -187,7 +189,7 @@ class ReadingTranslationService:
         if source == target or not segments:
             return None
         keys = {segment.segment_id: self._key(source, segment.original_text) for segment in segments}
-        held = self._cache.get_many(KIND_TRANSLATION, target, keys.values(), persist=persist)
+        held = self._cache.get_many(KIND_TRANSLATION, target, keys.values(), scope=scope or learner_scope())
         pairs = []
         for segment in segments:
             hit = held.get(keys[segment.segment_id])
@@ -203,10 +205,12 @@ class ReadingTranslationService:
         target_language: str,
         segments: Sequence[TextSegment],
         *,
-        persist: bool = False,
+        scope: CacheScope | None = None,
         provider_timeout: float | None = None,
     ) -> ReadingTranslation:
-        """`persist` lets the shared table hold the answers; the caller sets it only for published text.
+        """`scope` is who may reuse the answers (`reading_cache_scope`): the shared scope only for server-verified
+        published text, otherwise the learner's incarnation (or nobody). None: the current learner's scope, resolved
+        here - so a caller on a worker thread must pass it.
 
         `provider_timeout` shortens the provider's own timeout for this call (a word lookup's); it is passed only to a
         provider that accepts it, and every other caller keeps the provider's default."""
@@ -218,9 +222,10 @@ class ReadingTranslationService:
 
         if source == target:
             return result(ReadingTranslationStatus.NOT_REQUIRED)
+        scope = scope or learner_scope()
 
         keys = {segment.segment_id: self._key(source, segment.original_text) for segment in segments}
-        cached = self._cache.get_many(KIND_TRANSLATION, target, keys.values(), persist=persist)
+        cached = self._cache.get_many(KIND_TRANSLATION, target, keys.values(), scope=scope)
         known: dict[str, str] = {}
         missing: list[TextSegment] = []
         for segment in segments:
@@ -264,7 +269,7 @@ class ReadingTranslationService:
                 target,
                 source,
                 list(rows.items()),
-                persist=persist,
+                scope=scope,
                 provider=str(self._provider.engine_id),
                 model=str(self._provider.model_version),
             )

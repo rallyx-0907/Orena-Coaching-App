@@ -267,3 +267,16 @@ approves any winner explicitly. Delivery order and PR split: 7D1 decisions + cac
 subsidy must never turn into silent cash spend, and a backup must be a model already trusted. | `PR-MON-7_DESIGN.md`
 §12 and §14.
 
+
+D-MON-027 | 2026-10-15 | Owner clarifications for PR-MON-7D1. H7-8 is DECIDED: the exact existing Gemini baseline
+(`gemini` / `gemini-3.5-flash-lite` by repository evidence) is the backup strategy, pending one operator verification of
+the live `ai.active_selection` / `ai.capability.*` rows before it enters a production reviewed backup allowlist;
+repository documentation is never treated as proof of the runtime row, and 7D1 is not blocked. Learner cache scope is
+the account incarnation wherever the backbone exposes it: server-verified public/published content may use the shared
+in-process cache and the shared persistent DerivedStore; learner/private content uses an incarnation-scoped in-process
+cache and is never persisted to the shared store; where no incarnation can be obtained safely the seam bypasses
+learner caching rather than falling back to a global cache; raw client account/content identifiers are never scope
+authority; no new table for learner-derived cache in 7D1. The tests that locked the old client-asserted `article:`
+persistence are replaced by authority-boundary tests. | Learner-derived answers stay with the account incarnation
+that produced them. | `PR-MON-7_DESIGN.md` §14.7, §14.8; `PR-MON-7D1_REVIEW_REQUEST.md`.
+
