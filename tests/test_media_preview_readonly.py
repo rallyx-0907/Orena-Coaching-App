@@ -299,12 +299,41 @@ def test_an_id_the_store_could_never_hold_costs_no_store_read(world, monkeypatch
     assert store.reads == 0
 
 
-@pytest.mark.parametrize("cid", ["reading:14", "book:b1:c2", "text:9f3a", "url:abc123", "conversation:x"])
-def test_any_id_the_store_could_hold_is_media_shaped_and_costs_one_read(world, monkeypatch, cid):
-    """The store allows ':' in an id (media_library_store._ID), so `reading:14` is one it could hold: one read, no more."""
+NON_MEDIA = ["reading:14", "book:b1:c2", "article:a1", "text:9f3a", "url:abc123", "conversation:x", "voice:v1",
+             "expression:e1", "essay:7", "grammar:g1", "media:text:9f3a", "media:book:b1"]
+
+
+@pytest.mark.parametrize("cid", NON_MEDIA)
+def test_ids_in_a_known_non_media_namespace_cost_no_store_read(world, monkeypatch, cid):
+    """Reading, books, texts, links, conversations, grammar... are not media: this guard never reads for them."""
     store = _counting(monkeypatch)
     assert listening_api.media_state_writable(cid) is True
+    assert store.reads == 0
+
+
+@pytest.mark.parametrize("issue", ["index_corrupt", "index_unreadable"])
+@pytest.mark.parametrize("cid", NON_MEDIA)
+def test_non_media_namespaces_still_write_while_the_media_index_is_corrupt(world, monkeypatch, issue, cid):
+    """Reading and Book writes are not coupled to the health of the media index."""
+    client, recorder = world
+    _counting(monkeypatch, issue)
+    assert _continue(client, cid).status_code == 200
+    assert _response(client, cid).status_code == 200
+    assert _annotations(client, cid).status_code == 200
+    assert len(recorder.writes) == 3
+
+
+def test_any_other_store_shaped_id_is_media_and_costs_one_read(world, monkeypatch):
+    store = _counting(monkeypatch)
+    assert listening_api.media_state_writable("unknown-ns:thing") is True
     assert store.reads == 1
+
+
+@pytest.mark.parametrize("issue", ["index_corrupt", "index_unreadable"])
+def test_a_colon_id_outside_the_known_namespaces_is_refused_when_the_index_cannot_be_read(world, monkeypatch, issue):
+    _counting(monkeypatch, issue)
+    assert listening_api.media_state_writable("odd:held-id") is False
+    assert listening_api.media_state_writable("media:odd:held-id") is False
 
 
 def test_a_stored_id_containing_a_colon_is_guarded(world, monkeypatch):
@@ -335,7 +364,8 @@ def test_a_read_that_another_request_interleaves_with_cannot_make_a_corrupt_inde
     monkeypatch.setattr(FileMediaLibraryStore, "_read_checked", interleaved)
     monkeypatch.setattr(listening_api, "_media_store", store)
     assert listening_api.media_state_writable(f"media:{PUBLISHED}") is False
-    assert listening_api.media_state_writable("reading:14") is False  # store-shaped, unverifiable: refused
+    assert listening_api.media_state_writable("odd:held-id") is False  # store-shaped, unverifiable: refused
+    assert listening_api.media_state_writable("reading:14") is True  # not media: never coupled to this index
     # A healthy index with no such entry is a plain "no entry", and a missing index is a fresh start.
     (tmp_path / "index.json").unlink()
     assert store.lookup("whatever") == (None, "index_missing")

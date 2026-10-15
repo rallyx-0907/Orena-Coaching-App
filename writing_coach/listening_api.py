@@ -147,6 +147,14 @@ def stored_media_entry(media_id: str, *, allow_unpublished: bool = False) -> Med
 
 
 _CONTENT_PREFIXES = ("media:", "preview:", "upload:")
+# The content-id namespaces that are not media, as the code that mints them names them: the content kinds
+# `article`, `book`, `text` (static/orena/screens/content/model.js KINDS), a saved link `url` and the library's
+# `reading` kind (account_records_api._source_candidates, library_api place kinds), and the work ids of
+# static/orena/product/intent.js (`conversation`, `voice`, `expression`, `essay`, `grammar`). `media`, `upload` and
+# `preview` are the media namespaces and are peeled above, never listed here.
+_NON_MEDIA_NAMESPACES = frozenset({
+    "article", "book", "text", "url", "reading", "conversation", "voice", "expression", "essay", "grammar",
+})
 _STORE_ID = _MEDIA_STORE_ID  # exactly the shape the store accepts for a media id, ':' included
 
 
@@ -163,8 +171,9 @@ def media_state_writable(content_id: str) -> bool:
     The id is read in every spelling a client gives it: bare, `media:<id>`, `upload:<id>`, `preview:<id>`
     and any prefixed form of those. The spellings are peeled to the one bare id the store is keyed by, so a
     write costs at most ONE store read, and the entry read is checked with `visible_to`, the one visibility
-    rule. Media-shaped means any id the store could hold (its own id pattern, ':' included, so `reading:14` is one);
-    an id it could never hold (empty, spaces, over-long) costs no read.
+    rule. Media-shaped means any id the store could hold (its own id pattern, ':' included) that is not in a
+    known non-media namespace (`reading:`, `book:`, `text:`, `url:`, ... see `_NON_MEDIA_NAMESPACES`); those, and
+    an id the store could never hold (empty, spaces, over-long), cost no read and are never refused here.
 
     Media-shaped ids fail closed: if the store cannot be read or verified (a corrupt or unreadable index, an
     error), the write is refused, because nothing can show the item is visible. The read's issue comes back
@@ -180,6 +189,8 @@ def media_state_writable(content_id: str) -> bool:
         value = value[len(prefix):]
     if not _STORE_ID.fullmatch(value):
         return True  # an id the store could never hold
+    if ":" in value and value.split(":", 1)[0] in _NON_MEDIA_NAMESPACES:
+        return True  # Reading, books, texts, links, conversations, grammar: not media, never read or refused here
     try:
         lookup = getattr(_media_store, "lookup", None)
         # `lookup` returns the read's own issue; `last_read_issue` is shared and reset by every concurrent read.

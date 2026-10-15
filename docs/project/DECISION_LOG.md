@@ -7022,9 +7022,11 @@ free number and is renumbered at merge if they land first.
      A preview opened elsewhere in the shell (the Orena panel itself) therefore cannot take a turn while the address is a preview.
    - **Guard cost and failure (review #220 P2-3, P2-5).** The id spellings are peeled to the one bare id the store is keyed by: at most one
      store read per write, then `visible_to` on that entry. Media-shaped means any id the store could hold (its own `_ID` pattern, ':'
-     included, so `reading:14` is one and costs a read); an id it could never hold (empty, spaces, over-long) costs none. For a
-     media-shaped id the guard fails closed: a corrupt or unreadable index or an error refuses the write (so a write against a
-     store-shaped non-media id is refused too while the index is unreadable); a missing index is a fresh start. The read's issue
+     included) outside the known non-media namespaces. Those namespaces (`article`, `book`, `text`, `url`, `reading`,
+     `conversation`, `voice`, `expression`, `essay`, `grammar`, taken from the content kinds, the account-record source forms and
+     `intent.js`) cost no read and are never refused by this guard, so Reading and Book writes do not depend on the media
+     index's health; neither does an id the store could never hold (empty, spaces, over-long). For every other id the guard fails
+     closed: a corrupt or unreadable index or an error refuses the write; a missing index is a fresh start. The read's issue
      travels with the read (`FileMediaLibraryStore.lookup` returns `(entry, issue)`), not through the shared `last_read_issue`
      that every concurrent read resets (re-review P2-A, P2-B).
    - **An item unpublished or archived while a learner is on it (review #220 P2-4).** Writes against it now answer 404
