@@ -70,7 +70,8 @@ def ledger_world(migrations):
         # DELETE/TRUNCATE on every other table; the credit tables come only through orena_credit_runtime
         names = connection.execute(text(
             "SELECT tablename FROM pg_tables WHERE schemaname = current_schema() AND tablename NOT IN "
-            "('credit_accounts', 'credit_ledger', 'credit_reversal_requests', 'alembic_version')")).scalars().all()
+            "('credit_accounts', 'credit_ledger', 'credit_reversal_requests', 'funding_admissions', "
+            "'promotional_grants', 'alembic_version')")).scalars().all()
         for name in names:
             connection.execute(text(f'GRANT SELECT, INSERT, UPDATE ON "{name}" TO {role}'))
         # the order code comes from a sequence (0027); the application runtime holds USAGE on its sequences (runbook §2)

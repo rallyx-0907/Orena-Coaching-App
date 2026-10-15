@@ -120,3 +120,41 @@ cleanly, the next verdict should be APPROVE FOR IMPLEMENTATION / MIGRATION GATE.
 
 **Answered by design revision 2** (this lane's next commit): §4 (P1-1), §3, §5.3 and §7 (P1-2), §2.1, §5.4, §5.6 and
 §11 (P1-3), §8 (P1-4), §13 (decisions, D-MON-023).
+
+---
+
+# Focused re-review of design revision 2 (`418e937eb3bf62fefcc3e8a66941f567b1ad169f`), 2026-10-15
+
+## VERDICT
+
+**APPROVE FOR IMPLEMENTATION / MIGRATION GATE.** All four P1s are closed; no architecture blocker remains.
+
+- **P1-1 CLOSED:** feature entitlement precedes deterministic/cache. A plan-disabled meter is always 403; the cache
+  bypasses funding, never feature access.
+- **P1-2 CLOSED:** H-3 is consistent with "a credit is metered work". After a credits admission, local, free and paid
+  all settle the same snapshot price; only deterministic/stored/cache work completed before admission costs 0. The
+  reserve → free → release → repeat loophole is gone.
+- **P1-3 CLOSED:** an immutable digest, row serialization by `operation_id`, the source chosen exactly once, an
+  immutable snapshot, explicit crash adoption/recovery, a canonical lock order, and live database validation
+  immediately before each paid outbound request. A stale context, or a hold near or past expiry, cannot authorize a
+  provider call.
+- **P1-4 CLOSED:** cost is summed per `(operation_id, meter)` before cost per unit; unpriced/partial never becomes
+  USD 0; the paid-reaching p95 is separate from zero-cost operations; the margin gate runs on each real pack's
+  effective VND per credit, so discounts and rounding cannot slip under the floor.
+
+H-1…H-8 are recorded as decided: H-2…H-6 closed; H-1, H-7 and H-8 OFF, with no commercial number invented.
+
+## Allowed next step
+
+The PR-MON-6 migration gate for §11: a proposed revision 0034 (or the one the real topology needs) with at least
+`funding_admissions`, the promotional grant contract and storage, and the attribution fields
+`ai_cost_records.operation_id` / `meter`. The gate is reviewed separately on: topology and the current Alembic head;
+foreign keys, ownership and privileges; database guards for the immutable identity/snapshot and forward-only
+transitions; operation-id uniqueness and concurrency; the delete/re-register identity rule of promotional grants;
+upgrade/downgrade/rehearsal; PostgreSQL concurrency and mutation tests.
+
+No feature implementation until the migration gate closes. No promotion or application of 0034, no quota, funding or
+credits enabled, and no R-MON-014, without separate human authorization.
+
+**Answered by** `docs/billing/PR-MON-6_MIGRATION_GATE_REVIEW_REQUEST.md` and the proposed
+`migrations/proposed/20261015_0034_funding_admissions.py` (this lane's next commit).
