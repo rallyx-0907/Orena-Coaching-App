@@ -75,6 +75,11 @@ METERS: dict[str, Meter] = {
         Meter("media.import", "month", "second", "minute", scale=60),
         # A count of target languages; only ADDING one beyond the cap is refused, on the server (language_limit.py, D-170).
         Meter("languages.target", None, "language", "language"),
+        # PR-MON-7B1 (H7-3, D-MON-025): the semantic AI meters, one fresh remote AI operation = one request, per day.
+        # In the catalogue only: no route admits them and none is enforceable (quota.WIRED_METERS) until 7B2.
+        Meter("word.assist", "day", "request", "request"),
+        Meter("reading.assist", "day", "request", "request"),
+        Meter("writing.task", "day", "request", "request"),
     )
 }
 
@@ -151,14 +156,23 @@ def _prices(monthly_usd: float, monthly_vnd: float, yearly_usd: float, yearly_vn
 VOICE_SECONDS_PER_MESSAGE = 60
 
 
+# H7-3 (D-MON-025) bootstrap product limits, requests per day: (word.assist, reading.assist, writing.task).
+# Defaults only - an administrator edits them in the plan catalogue like every other limit.
+ASSIST_LIMITS: dict[str, tuple[int, int, int]] = {"free": (30, 10, 5), "plus": (300, 100, 30), "pro": (1500, 500, 100)}
+
+
 def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, import_minutes: int,
-                  languages: int) -> tuple[Entitlement, ...]:
+                  languages: int, assist: tuple[int, int, int]) -> tuple[Entitlement, ...]:
+    word_assist, reading_assist, writing_task = assist
     return (
         Entitlement("orena.message", limit=messages, params={"voice_seconds_per_message": VOICE_SECONDS_PER_MESSAGE}),
         Entitlement("writing.review", limit=reviews),
         Entitlement("pronunciation.audio", limit=pronunciation_minutes * 60),
         Entitlement("media.import", limit=import_minutes * 60),
         Entitlement("languages.target", limit=languages),
+        Entitlement("word.assist", limit=word_assist),
+        Entitlement("reading.assist", limit=reading_assist),
+        Entitlement("writing.task", limit=writing_task),
     )
 
 
@@ -169,7 +183,7 @@ FREE = Plan(
     price_label="Free",
     rank=0,
     prices=_prices(0, 0, 0, 0),
-    entitlements=_entitlements(20, 2, 5, 15, 1),
+    entitlements=_entitlements(20, 2, 5, 15, 1, ASSIST_LIMITS["free"]),
 )
 
 PLUS = Plan(
@@ -179,7 +193,7 @@ PLUS = Plan(
     price_label="Plus",
     rank=1,
     prices=_prices(9.99, 199000, 79.99, 1590000),
-    entitlements=_entitlements(200, 10, 30, 120, 2),
+    entitlements=_entitlements(200, 10, 30, 120, 2, ASSIST_LIMITS["plus"]),
 )
 
 PRO = Plan(
@@ -189,7 +203,7 @@ PRO = Plan(
     price_label="Pro",
     rank=2,
     prices=_prices(19.99, 399000, 159.99, 3190000),
-    entitlements=_entitlements(1000, 50, 120, 600, 2),
+    entitlements=_entitlements(1000, 50, 120, 600, 2, ASSIST_LIMITS["pro"]),
 )
 
 # The default catalogue, in rank order. `PLANS` keeps its name: the persistence importer seeds the `plans`
