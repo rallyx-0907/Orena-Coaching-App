@@ -7043,3 +7043,70 @@ free number and is renumbered at merge if they land first.
 3. **The 64 MiB media cap is unchanged (owner 2026-10-15).** A file over the cap keeps failing with the stable code
    `media_too_large` (D-207 §4). Whether to raise the cap or to move to streaming / chunked processing is decided after the Phase 2
    size distribution of the Video Sources milestone is known, not before.
+
+## D-211 - ZH Traditional to Simplified is completed from Unihan; a long transcript finishes translating by a bounded deferred continuation (2026-10-15)
+
+Status: PROPOSED - pending independent review. Video Sources milestone, mini-trial rerun blockers N1 and P1-2. No schema or migration
+change: the new value lives in the existing `processing` JSON beside `translation_counts`. No learner UI, no new provider, no new
+worker, the AI spend cap unchanged.
+
+**A. Script normalisation (extends D-208 §1 and §6a).**
+1. **Why each survivor survived (found by running the shipped converter on the trial's own character list).** At this commit
+   `勵` already converts to `励` (it is in the CC-CEDICT one-to-one table), so the `勵` in the trial's VOA note is not reproducible
+   from the code; the only character of the trial's list that the converter left was `麼`. `麼` is skipped on purpose by D-208: CC-CEDICT
+   lists it as the traditional form of two Simplified entries (`么` and the variant `麽`), so the dictionary alone cannot choose.
+   The other known leftovers are the characters that are Traditional and still Simplified: `著` (着 in 看著, 著 in 著名), `乾` (干 in
+   乾淨, 乾 in 乾坤), `覆` (复 in 回覆, 覆 in 覆蓋), `徵` (征 in 徵求, 徵 the musical note), `瞭`, `藉`, `摺`, `夥`, `於`, `剋`,
+   `苧`, `衹`, `麴`, and `餘` (余 or the variant 馀). D-208 left all of them as written; none is "missing from CC-CEDICT".
+2. **Source and licence.** The Unicode Unihan `kSimplifiedVariant` field (Unicode 18.0.0, `Unihan_Variants.txt`, 2026-07-31), under the
+   Unicode License v3 that already covers the Unihan data vendored in `lexicon_data/` (`UNICODE-LICENSE.txt`). OpenCC `STCharacters`
+   (Apache 2.0) was not needed. Recorded in `THIRD_PARTY_NOTICES.md` and the `lexicon_data/README.md`. A generated data file, no runtime
+   dependency: `lexicon_data/unihan_simplified_variants.json` (7,291 characters, the one field kept, with the source archive's SHA-256)
+   is refreshed by `build_chinese_script_table.py --unihan-zip Unihan.zip`; the default run reads it offline, so the build is deterministic.
+3. **Rule (all in `scripts/build_chinese_script_table.py`, `derive_variant_maps`).** A Traditional character that the CC-CEDICT table
+   does not convert and for which Unihan names exactly one Simplified form in the original block (U+4E00 to U+9FA5, a glyph in every
+   font) that no standard CC-CEDICT word uses as written is converted everywhere (64 characters: `麼` to `么`, `參` to `参`, `噁` to
+   `恶`, `錄` to `录`, ...). Where the Simplified form depends on the word (Unihan names several, or the character is still Simplified
+   in some words; 15 characters), the default is the form CC-CEDICT writes most often at that position for that Traditional character
+   (the documented basis; `餘` is `余` in far more entries than `馀`), and the standard CC-CEDICT words of 2 to 4 characters that contain
+   the character are kept as written (`著名`, `显著`, `乾坤`, `乾隆`, `覆盖`, `颠覆`, `狼藉`, `瞭望`). A word that CC-CEDICT also
+   lists with the default form (`回覆` beside `回复`, `藉口` beside `借口`) is a variant spelling and does not protect the character. A
+   character with no evidence or a tie (17, `unresolved` in the table: `阪`, `奬`, `藴`, ...) is left as written: a wrong character is
+   worse than a script left mixed. The choice is made on the converted text, so `顯著` is found as `显著`; the recogniser's word array is
+   converted as one running text so a word it splits (`著|名`) is judged whole.
+4. **Still one character to one character.** Lengths, word timings and tap offsets are unchanged (tests). Simplified to Traditional is
+   unchanged. `script_map.json` is now `orena.zh-script-map.v2` (a new `contextual_to_simplified` and `unresolved`); the reader
+   tolerates a v1 file.
+5. **Known limits.** The context judgement uses CC-CEDICT's words only: a proper name or rare word it does not list takes the default
+   (a name written with `乾` or `著` can change; `於` is converted to `于`, which is right outside a surname). `--check` fails when the
+   table is stale or when a sentinel word (the trial survivors and the kept words) does not convert as stated.
+
+**B. Long transcripts finish translating (N1; extends D-207 §2).**
+1. **Which limit (from the code and the repository's measurements; no provider call was made).** Groq answered the key with 1,000
+   requests (per day) and **8,000 tokens per minute** (`ORENA_AI_COST_REDUCTION_PLAN.md`, read from its headers). A 24-line request
+   reserves its prompt plus 2,048 completion tokens, about 2.8k of the 8k, so two or three requests fit in a minute: exactly the
+   24/47, 24/69, 48/113 and 24/78 shapes, and `0/78` when the minute was already spent. Requests per minute (30 on the free tier) are
+   not reached. The per-minute window refills within about a minute, so the right behaviour is to wait for it, not to give up after
+   five rounds. D-207's in-job rounds also stop at once on a `Retry-After` over 60 s, which is where a long transcript was lost. A
+   daily token allowance would show as a much longer wait; it cannot be told from the code, so a 429 now logs the response's
+   `x-ratelimit-*` headers (counts and durations, no credential), and a wait over 300 s is never scheduled. I designed for both.
+2. **Design.** After the existing bounded in-job rounds, a run that ends `rate_limited` records
+   `processing.translation_continuation = {attempt, max_attempts, next_at, deadline, retry_after}`, sets `translation` to `deferred`,
+   keeps `translation_reason = rate_limited` and the `translation_counts` so far, and arms a one-shot timer for the provider's own
+   `Retry-After` (at least 20 s, 65 s when it gave none, at most 300 s). The timer only hands the job to the **existing single pool**
+   (`workers=1`): no new worker, no concurrency. The continuation asks for only the lines the persisted cache lacks, in at most two
+   rounds that do not sleep (the schedule is the wait), and either finishes (`ready`, continuation cleared), or defers again.
+   Bounds: at most 6 attempts, 30 minutes from the first deferral, one wait at most 300 s. When a bound is reached, or the stop is
+   anything but `rate_limited` (`spend_cap`, `provider_auth`, `provider_error`, ...), the continuation is cleared and the item ends
+   `partial` or `failed` with the stable reason, as before. Every round checks the AI spend cap with an estimate for the missing
+   share only (unchanged), so the cap holds across continuations.
+3. **State is honest while it is pending.** The item's own state is untouched (a held item stays held, a learner import stays ready):
+   a continuation never writes `state`, `stage` or `status`. `processing.translation` is `deferred`, the one existing value for "not
+   complete yet"; it is distinguished from its other use (translation not configured) by the presence of `translation_continuation`
+   and non-empty counts. The admin `outcome.translation` returns it as `continuation` only while pending. Lines already translated are
+   readable at once (the cache). A re-run (reprocess) clears the continuation at its start and wins over a pending timer; a restart
+   re-arms it from the record (`recover()`), so it survives the process.
+4. **Owner decisions left open.** The 6 / 30 min / 300 s bounds suit one minute's allowance; a measured real batch should confirm them.
+   No admin control to continue by hand and no learner-facing "translating" wording are added (no UI change; the admin Details row
+   shows the state through `outcome.translation`). Smaller request windows were not adopted: the completion reservation (2,048) guards
+   a reasoning model against `finish_reason=length`, and halving the window would only change how many requests share the minute.

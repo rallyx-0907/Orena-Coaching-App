@@ -30,6 +30,11 @@ Entries whose simplified headword does not begin with a CJK Unified Ideograph
 (U+3400–U+4DBF, U+4E00–U+9FFF) are not included. From Unihan, only the three
 fields above are kept, and only for characters that occur in a kept headword.
 
+A separate file, `unihan_simplified_variants.json`, keeps one more Unihan field, `kSimplifiedVariant` (from
+`Unihan_Variants.txt`, Unicode 18.0.0, 2026-07-31), for the Traditional to Simplified conversion of
+`scripts/build_chinese_script_table.py` (D-211). It is not part of the lexicon pack and is refreshed with
+`--unihan-zip`. Same Unicode License v3 as above.
+
 Share-alike: this repacked data remains under CC BY-SA 4.0. The learner-facing
 dictionary credits CC-CEDICT wherever a sense from it is shown.
 

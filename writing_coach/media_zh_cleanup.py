@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from collections.abc import Sequence
 
-from writing_coach.languages.chinese.script_conversion import convert_script, target_script
+from writing_coach.languages.chinese.script_conversion import convert_script, convert_sequence, target_script
 from writing_coach.media_segmentation import Cue, primary_language
 from writing_coach.speech_asr import SpeechAsrWord
 
@@ -160,7 +160,9 @@ def normalise_words(words: Sequence[SpeechAsrWord], language: str) -> list[Speec
     if primary_language(language) != "zh":
         return list(words)
     target = target_script(language)
-    return [SpeechAsrWord(convert_script(word.word, target), word.start_ms, word.end_ms) for word in words]
+    # Together, not word by word: a word the recogniser splits (著|名) must be judged whole (D-211).
+    converted = convert_sequence([word.word for word in words], target)
+    return [SpeechAsrWord(text, word.start_ms, word.end_ms) for text, word in zip(converted, words, strict=True)]
 
 
 def clean_asr_cues(cues: Sequence[Cue], words: Sequence[SpeechAsrWord], language: str) -> list[Cue]:

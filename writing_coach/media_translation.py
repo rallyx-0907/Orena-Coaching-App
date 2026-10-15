@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from enum import StrEnum
 import hashlib
 import json
+import logging
 import os
 import re
 import time
@@ -23,6 +24,8 @@ from writing_coach.media_learning import (
     SegmentTranslation,
     TranscriptSegment,
 )
+
+_logger = logging.getLogger(__name__)
 
 MAX_TRANSLATION_BATCH_SEGMENTS = 24
 MAX_TRANSLATION_BATCH_CHARS = 6_000
@@ -451,6 +454,13 @@ class GroqTranslationProvider:
                 if key.lower().startswith("x-ratelimit-")
             }
             if response.status_code == 429 or response.status_code in {401, 403}:
+                if response.status_code == 429:
+                    # Which allowance was spent (tokens or requests, per minute or per day) is in these headers; they
+                    # carry counts and durations only, never a credential (D-211).
+                    _logger.warning(
+                        "groq translation rate limited: retry_after=%s quota=%s lines=%d",
+                        response.headers.get("retry-after", ""), self.last_quota, len(segments),
+                    )
                 refused = (
                     TranslationProviderError(
                         "Groq translation is rate limited.", reason="rate_limited",
