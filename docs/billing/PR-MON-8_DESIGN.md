@@ -72,6 +72,7 @@ are listed here; their values are a human gate:
 | `SEPAY_BANK_BIN` | VietinBank `970415`; configurable, never inferred |
 | `SEPAY_PAYMENT_PREFIX` | the payment-code prefix configured in SePay (Company → General settings), e.g. `ORN` |
 | `SEPAY_API_TOKEN` | the v2 transactions feed (reconciler only); optional, and without it there is no feed |
+| `SEPAY_FEED_ENABLED` | turns the feed on; off by default, and required together with the token (§6.3) |
 | `SEPAY_API_BASE` | `https://userapi.sepay.vn/v2`, or the sandbox base in test mode |
 
 It is configured only when the secret, account number, account name, BIN and prefix are all present
@@ -192,7 +193,7 @@ may be tuned later from real data. payOS is unchanged: its link has its own expi
 
 ## 6. Missed webhooks: the reconciler feed (G3)
 
-A reconciler step, `sepay_feed`, runs when `SEPAY_API_TOKEN` is set. It is read-only towards SePay, never runs on
+A reconciler step, `sepay_feed`, runs only when `SEPAY_API_TOKEN` is configured **and** `SEPAY_FEED_ENABLED` is true. A token alone never starts the feed (§6.3). It is read-only towards SePay, never runs on
 the learner path, and its failure never stops the tick's other steps (the existing per-step isolation).
 
 ### 6.1 Request
@@ -321,7 +322,7 @@ in one of two ways:
 - Cursor loop:
   - always `page=1` with the committed cursor; `page` never increases;
   - more rows than one page are processed across iterations without a skip;
-  - feed disabled by default.
+  - feed disabled by default: a token present with `SEPAY_FEED_ENABLED` absent or false never runs the feed.
 - Secrets: no token or `Authorization` in logs, errors, readiness or reports.
 - The credit top-up through `sepay:<code>` (G5) and a full operator refund reversing it.
 - Selection: payOS-only, SePay-only, both configured without a choice (not ready), the choice made.
@@ -344,7 +345,7 @@ in one of two ways:
 - **Q3:** yes. The domestic gateway is required when billing is on; it is inferred only in development or test with
   one domestic gateway configured.
 - **Q4:** approved.
-- **Q5:** a bounded grace, then `payment_late`; the grace value is a human decision.
+- **Q5:** a bounded grace, then `payment_late`; the owner decided the grace: 1 hour (§4.1).
 
 **Verified in SePay test mode before activation (H):** whether VietinBank fills the bank reference and whether it is
 the same in both sources; the order of `since_id` and whether it is exclusive; `webhook_success` timing; a real scan of
@@ -353,7 +354,7 @@ the generated QR.
 ## 12. Activation gates (owner, all required)
 
 Production stays off until every one of these passes:
-1. Independent review of the next design revision: APPROVED.
+1. Independent review of revision 3: APPROVED.
 2. Hermetic tests pass.
 3. PostgreSQL integration tests pass.
 4. SePay test mode passes.
