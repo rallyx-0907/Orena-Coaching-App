@@ -7235,7 +7235,7 @@ Evidence: the 2026-10-15 Supadata trial on :8021 (`SUPADATA_TRIAL_2026-10-15.md`
 
 ## D-218 - Media translation respects an output-tokens-per-minute allowance; a YouTube id may start with "-"; a caption reject names its check; media AI spend is rated per model; only Simplified Chinese captions are accepted (2026-10-15)
 
-Status: PROPOSED - pending independent review. Not accepted until an independent reviewer approves the reviewed commit and the owner confirms. No schema or migration change, no new provider, items stay held.
+Status: ACCEPTED (owner confirmed 2026-10-16; independent review APPROVE on f4c4586b, no open P0/P1; merged as #243 once CI was green). Follow-ups in #244. No schema or migration change, no new provider, items stay held.
 
 Evidence: the 2026-10-15 Orena Phase 2 sitting 2 on :8021 (`VIDEO_SOURCE_TRIAL_2026-10-15.md` "Sitting 2", `GROQ_MODEL_SWITCH_2026-10-15.md`), `GROQ_TRANSLATION_MODEL=qwen/qwen3.8-27b`.
 
