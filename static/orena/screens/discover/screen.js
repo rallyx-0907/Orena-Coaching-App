@@ -5,7 +5,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard, headlineTitle, settleCovers, vipButton } from '../../kit/components.js';
+import { mediaCard, headlineTitle, settleCovers } from '../../kit/components.js';
 import { openImportFlow as openImport } from '../import/open.js';
 import { langSpan, langAttr } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
@@ -17,6 +17,7 @@ import { sourceFromLesson } from '../../product/speaking-source.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
+import { mountCreateLesson, lessonTabsFor } from './create-lesson.js';
 import { overviewMarkup } from './overview.js';
 import {
   entryFromArticle, entryFromBook, entryFromMedia, entryFromCollection,
@@ -74,9 +75,9 @@ export default async function discover(element, ctx) {
           : html`<div><h1 class="o-h1">${ts('discover')}</h1><p class="s-discover__sub">${t('subtitle')}</p></div>`}
         <div class="s-discover__actions">
           <button type="button" class="o-btn o-btn--secondary" data-filters>${raw(icon('list-filter', { size: 16 }))}${t('filters')}<span data-filtercount></span></button>
-          ${practice === 'listening' ? '' : vipButton({ label: t('importAction'), dataset: { import: '' } })}
         </div>
       </div>
+      <div data-lesson-host></div>
       <div class="o-search">
         ${raw(icon('search', { size: 18 }))}
         <input type="search" autocomplete="off" placeholder="${t(practice ? 'practiceSearch' : 'searchPlaceholder')}" data-query>
@@ -159,7 +160,7 @@ export default async function discover(element, ctx) {
       /* D-167: All is an overview of four sections, never one grid of every type. Each section
          draws the same cards its own tab draws (cardFor) and a "See all" that opens that tab. */
       mount(resultsEl, overviewMarkup(overviewSections(state.entries, { query: state.query, filters: state.filters }), { card: cardFor, t }));
-      resultsEl.querySelector('[data-import-cta]')?.addEventListener('click', openImportFlow);
+      resultsEl.querySelector('[data-import-cta]')?.addEventListener('click', () => openImportFlow());
       resultsEl.querySelectorAll('[data-see-all]').forEach((button) => {
         button.addEventListener('click', () => {
           openTab(button.dataset.seeAll);
@@ -239,11 +240,12 @@ export default async function discover(element, ctx) {
     });
   });
 
-  // The header's "+ Import" and the Imported section's call to action are one action.
-  function openImportFlow() {
-    return openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening' });
+  // The "Create lesson" card (design 2026-10-15) and the Imported section's call to action open the same flow.
+  function openImportFlow(initial = null) {
+    return openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening', initial });
   }
-  root.querySelector('[data-import]')?.addEventListener('click', openImportFlow);
+  const lessonHost = root.querySelector('[data-lesson-host]');
+  if (lessonHost) mountCreateLesson(lessonHost, { t, language, tabs: lessonTabsFor(practice), open: (initial) => openImportFlow(initial) });
 
   let searchTimer = null;
   queryInput.addEventListener('input', () => {

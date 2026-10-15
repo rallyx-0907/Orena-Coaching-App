@@ -360,7 +360,7 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   // action, a rotating conic-gradient border around the accent fill; held still under reduced motion; no colour literal.
   const css = fs.readFileSync('static/orena/kit/components.css', 'utf8'); // the VIP control is a kit control (D-167)
   const screenSrc = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
-  assert.match(screenSrc, /vipButton\(\{ label: t\('importAction'\), dataset: \{ import: '' \} \}\)/, 'the header "+ Import" is the VIP control');
+  assert.ok(!/vipButton|data-import/.test(screenSrc.replace(/data-import-cta/g, '')), 'the header no longer carries "+ Import": the Create lesson card replaced it (design 2026-10-15)');
   assert.match(css, /@property --vip-angle\s*\{[^}]*syntax:\s*'<angle>'/, 'the angle is a registered property, so it can animate');
   assert.match(css, /conic-gradient\(\s*from var\(--vip-angle\)/, 'a conic-gradient border');
   assert.match(css, /animation:\s*o-vip-run[^;]*infinite/, 'it runs');
@@ -404,7 +404,6 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
     assert.ok(!/o-btn--vip/.test(fs.readFileSync('static/orena/kit/kit.css', 'utf8')), 'the VIP look has one owner (components.css)');
     const read = (file) => fs.readFileSync(file, 'utf8');
     const entries = {
-      'Discover header': ['static/orena/screens/discover/screen.js', /vipButton\(\{ label: t\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', openImportFlow\)/],
       'Discover Imported call to action': ['static/orena/screens/discover/overview.js', /vipButton\(\{ label: t\('importAction'\), dataset: \{ 'import-cta': '' \} \}\)/, null],
       'Today featured card': ['static/orena/screens/today/screen.js', /vipButton\(\{ label: shellCopy\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(ctx\)\)/],
       'My Library header': ['static/orena/screens/library/screen.js', /vipButton\(\{ label: sc\('importAction'\), dataset: \{ import: '' \} \}\)/, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(ctx\)\)/],
@@ -442,8 +441,8 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   assert.match(screenSource, /openTab\(button\.dataset\.seeAll\)/, 'See all opens the tab through the same openTab the tab bar uses');
   assert.match(screenSource, /button\.addEventListener\('click', \(\) => openTab\(button\.dataset\.tab\)\)/, 'the tab bar keeps its own switch');
   assert.match(screenSource, /TAB_LABEL_KEY = \{ all: 'tabAll', listen: 'tabListen', read: 'tabRead', collections: 'tabCollections', imported: 'tabImported' \}/, 'the tab bar runs in the skill order (D-152)');
-  assert.match(screenSource, /querySelector\('\[data-import\]'\)\?\.addEventListener\('click', openImportFlow\)/, 'the header "+ Import" opens the import flow');
-  assert.match(screenSource, /querySelector\('\[data-import-cta\]'\)\?\.addEventListener\('click', openImportFlow\)/, 'the call to action opens the same import flow');
+  assert.match(screenSource, /mountCreateLesson\(lessonHost, \{ t, language, tabs: lessonTabsFor\(practice\), open: \(initial\) => openImportFlow\(initial\) \}\)/, 'the Create lesson card opens the import flow with what was entered');
+  assert.match(screenSource, /querySelector\('\[data-import-cta\]'\)\?\.addEventListener\('click', \(\) => openImportFlow\(\)\)/, 'the call to action opens the same import flow');
 }
 
 // The learner's place is the address, so Back from a collection (or a card) restores the tab, search and filters.
@@ -476,6 +475,98 @@ const href = (id, params = {}) => `#/${id}${params.id ? `/${params.id}` : ''}`;
   const src = fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8');
   assert.match(src, /t\('emptySearchText'\)[\s\S]*t\('searchEverywhere'\)/);
   assert.match(src, /ctx\.go\(searchEverywhereHref\(typed, ctx\.href\)\)/);
+}
+
+// The "Create lesson" card (design 2026-10-15): four kinds, one field each, three hint chips, EN/VI/ZH words, tokens only.
+{
+  const { createLessonMarkup, LESSON_TABS, LESSON_HINTS } = await import('../static/orena/screens/discover/create-lesson.js');
+  const { registeredCopy } = await import('../static/orena/copy/index.js');
+  await import('../static/orena/screens/discover/copy.js');
+  const packs = registeredCopy().get('discover').packs;
+  const { ICONS } = await import('../static/orena/kit/icons.js');
+  assert.deepEqual(LESSON_TABS.map((tab) => tab.id), ['link', 'text', 'file', 'audio'], 'the design\'s four kinds, in its order');
+  for (const tab of LESSON_TABS) assert.ok(ICONS[tab.icon], `${tab.id}: a Lucide icon from the pinned package`);
+  for (const hints of Object.values(LESSON_HINTS)) {
+    assert.equal(hints.length, 3, 'three hint chips per kind');
+    for (const hint of hints) {
+      assert.ok(ICONS[hint.icon], `hint icon ${hint.icon} is a Lucide icon`);
+      assert.match(hint.tone, /^(skill-[a-z]+|gcat-\d)$/, 'a hint hue is a tokens.css token');
+    }
+  }
+  for (const ui of ['en', 'vi', 'zh']) {
+    const pack = packs[ui];
+    const t = (key) => pack[key];
+    for (const tab of LESSON_TABS) {
+      const markup = String(createLessonMarkup({ tab: tab.id, url: '', text: '' }, { t, language: ui === 'zh' ? 'zh' : 'en' }));
+      assert.match(markup, /role="tablist"/, `${ui}/${tab.id}: a tablist`);
+      assert.equal((markup.match(/role="tab"/g) || []).length, 4, `${ui}/${tab.id}: four tabs`);
+      assert.equal((markup.match(/aria-selected="true"/g) || []).length, 1, `${ui}/${tab.id}: one selected`);
+      assert.equal((markup.match(/class="s-ic__hint"/g) || []).length, 3, `${ui}/${tab.id}: three hints`);
+      assert.match(markup, /data-lesson-create/);
+      assert.ok(markup.includes(pack.lessonCreate) && markup.includes(pack.lessonTitle), `${ui}/${tab.id}: title and Create in the learner's language`);
+      assert.ok(!/undefined/.test(markup), `${ui}/${tab.id}: no missing word`);
+    }
+    for (const key of ['lessonTitle', 'lessonSub', 'lessonCreate', 'lessonLinkPlaceholder', 'lessonTextPlaceholder', 'lessonDropFile', 'lessonDropAudio', 'lessonLinkFirst', 'lessonTextFirst', 'lessonDocumentSoon', 'lessonHintWebsite', 'lessonHintArticle', 'lessonHintEmail', 'lessonHintNotes', 'lessonHintPodcast', 'lessonTabLink', 'lessonTabText', 'lessonTabFile', 'lessonTabAudio']) assert.ok(pack[key], `${ui}: ${key}`);
+  }
+  assert.notEqual(packs.en.lessonTitle, packs.vi.lessonTitle);
+  assert.notEqual(packs.en.lessonTitle, packs.zh.lessonTitle);
+  const t = (key) => packs.en[key];
+  assert.match(String(createLessonMarkup({ tab: 'link', url: 'https://x.test/a"b', text: '' }, { t, language: 'en' })), /value="https:\/\/x\.test\/a&quot;b"/, 'what the learner typed is escaped');
+  assert.match(String(createLessonMarkup({ tab: 'text', url: '', text: '<b>x</b>' }, { t, language: 'en' })), /&lt;b&gt;x&lt;\/b&gt;<\/textarea>/, 'pasted text is escaped');
+  const css = fs.readFileSync('static/orena/screens/discover/discover.css', 'utf8');
+  const card = css.slice(css.indexOf('/* ---- The "Create lesson" card'));
+  assert.equal(card.replace(/\/\*[\s\S]*?\*\//g, '').match(/#[0-9a-fA-F]{3,8}\b|\brgba?\(|\bhsla?\(/), null, 'the card takes every colour from tokens.css');
+  assert.match(card, /@container \(max-width: 560px\)\s*\{\s*\.s-ic__tabs \{ --ic-cols: 2; \}/, 'two columns of tabs under a 560px card');
+  assert.ok(!/border:\s*1(\.5)?px (solid|dashed)(?! transparent)/.test(card.replace(/border:\s*1\.5px solid transparent/g, '')), 'no grey or violet outline (D-147)');
+  // D-147 / design review: focus is the app's field pattern (border-color + --sh2), never a box-shadow ring.
+  for (const selector of ['.s-ic__field:focus-within', '.s-ic__text:focus', '.s-ic__drop:focus-visible']) {
+    const body = card.split('}').filter((rule) => rule.includes(selector)).join(' ');
+    assert.ok(!/box-shadow:\s*0 0 0/.test(body), `${selector}: no box-shadow ring`);
+  }
+  assert.match(card, /\.s-ic__field:focus-within,\s*\.s-ic__text:focus\s*\{[^}]*border-color:\s*var\(--text3\);[^}]*box-shadow:\s*var\(--sh2\)/, 'the field focus pattern of the Import sheet');
+  const decls = card.replace(/\/\*[\s\S]*?\*\//g, '').match(/:[^;{}]*;/g) || [];
+  assert.deepEqual(decls.filter((d) => /\b(white|black|red|green|blue|gray|grey|orange|yellow|purple|pink|silver|gold)\b/.test(d.replace(/var\([^)]*\)/g, ''))), [], 'no named colour keyword in the card (tokens only)');
+  // The solid card is a solid surface for the backdrop's text tokens (design review P1-2).
+  const { surfaceSelectors } = await import('./build_backdrop_surfaces.mjs');
+  assert.ok(surfaceSelectors().includes('.s-ic'), '.s-ic is in the solid-surface list');
+  assert.match(fs.readFileSync('static/orena/shell/surfaces.css', 'utf8'), /^ {2}\.s-ic(,|$)/m, 'and in the generated surfaces.css');
+  // Tabs pattern (WAI-ARIA): label, roving tabindex, aria-controls/tabpanel, arrow keys.
+  const { nextLessonTab, isAcceptedLessonFile } = await import('../static/orena/screens/discover/create-lesson.js');
+  assert.deepEqual(['ArrowRight', 'ArrowLeft', 'Home', 'End'].map((key) => nextLessonTab('link', key)), ['text', 'audio', 'link', 'audio'], 'arrows wrap, Home/End jump');
+  assert.equal(nextLessonTab('audio', 'ArrowRight'), 'link');
+  assert.equal(nextLessonTab('text', 'x'), null);
+  const a11y = String(createLessonMarkup({ tab: 'file', url: '', text: '' }, { t, language: 'en' }));
+  assert.match(a11y, /role="tablist" aria-label="Content type"/, 'the tablist is labelled');
+  assert.equal((a11y.match(/tabindex="0"/g) || []).length >= 1 && (a11y.match(/role="tab"[^>]*tabindex="-1"/g) || []).length, 3, 'roving tabindex: three tabs at -1');
+  assert.match(a11y, /id="s-ic-tab-file"[^>]*tabindex="0"|tabindex="0"[^>]*id="s-ic-tab-file"/, 'the selected tab is the tab stop');
+  assert.match(a11y, /role="tabpanel" id="s-ic-panel" aria-labelledby="s-ic-tab-file"/, 'a tabpanel named by the selected tab');
+  assert.equal((a11y.match(/aria-controls="s-ic-panel"/g) || []).length, 4, 'every tab controls the panel');
+  assert.match(fs.readFileSync('static/orena/screens/discover/create-lesson.js', 'utf8'), /'file', labelKey: 'lessonTabFile', icon: 'file-minus'|id: 'file', labelKey: 'lessonTabFile', icon: 'file-minus'/, 'Document draws Lucide file-minus, as the design does');
+  assert.ok(ICONS['file-minus']);
+  // A dropped file passes the picker's own accept (audio/*, video/*).
+  assert.equal(isAcceptedLessonFile({ type: 'audio/mpeg' }), true);
+  assert.equal(isAcceptedLessonFile({ type: 'video/mp4' }), true);
+  assert.equal(isAcceptedLessonFile({ type: 'application/pdf' }), false);
+  assert.equal(isAcceptedLessonFile(null), false);
+  // The card is Discover's alone: not in the practice choosers.
+  assert.match(fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8'), /<div data-lesson-host><\/div>/, 'the card is drawn on Discover and in its practice choosers');
+  assert.match(fs.readFileSync('static/orena/screens/discover/screen.js', 'utf8'), /tabs: lessonTabsFor\(practice\)/, 'the chooser selects the kinds');
+  // Owner decision on CL-7: a practice chooser offers only the kinds that practice can use; plain Discover keeps all four.
+  const { lessonTabsFor } = await import('../static/orena/screens/discover/create-lesson.js');
+  assert.deepEqual(lessonTabsFor(''), ['link', 'text', 'file', 'audio'], 'plain Discover: four kinds');
+  assert.deepEqual(lessonTabsFor('nonsense'), ['link', 'text', 'file', 'audio']);
+  for (const practice of ['listening', 'dictation', 'shadowing', 'pronunciation']) assert.deepEqual(lessonTabsFor(practice), ['link', 'audio'], `${practice}: link / video and audio only`);
+  for (const ui of ['en', 'vi', 'zh']) {
+    const two = String(createLessonMarkup({ tab: 'link', url: '', text: '' }, { t: (key) => packs[ui][key], language: 'en', tabs: ['link', 'audio'] }));
+    assert.equal((two.match(/role="tab"/g) || []).length, 2, `${ui}: two tabs in a chooser`);
+    assert.match(two, /--ic-cols:2/, `${ui}: the track lays out in two columns`);
+    assert.equal((two.match(/class="s-ic__hint"/g) || []).length, 3, `${ui}: hints follow the visible tab`);
+    assert.ok(!two.includes('data-lesson-tab="text"') && !two.includes('data-lesson-tab="file"'), `${ui}: no text or document tab in a chooser`);
+  }
+  assert.ok(!/--ic-cols:/.test(String(createLessonMarkup({ tab: 'link', url: '', text: '' }, { t, language: 'en' }))), 'four tabs keep the design\'s own 4 / 2 columns');
+  assert.deepEqual(['ArrowRight', 'End', 'ArrowLeft'].map((key) => nextLessonTab('link', key, ['link', 'audio'])), ['audio', 'audio', 'audio'], 'arrows wrap inside the visible tabs');
+  const sheet = fs.readFileSync('static/orena/screens/import/sheet.js', 'utf8');
+  assert.match(sheet, /initial\.source === 'file'[\s\S]*initial\.source === 'text'[\s\S]*initial\.source === 'url'/, 'the sheet starts from what the card entered');
 }
 
 console.log('Orena Discover: data mapping, filters, tabs, search and presentation all pure, no invented data: PASS');

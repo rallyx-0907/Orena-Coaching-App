@@ -1,4 +1,4 @@
-/* Import overlay (pinned design frame 58, opened from Discover's "+ Import"). Two real paths, no
+/* Import overlay (pinned design frame 58, opened from Discover's "Create lesson" card and the other import controls). Two real paths, no
    fictional preview or fake progress (Design Contract rule 40):
 
    - text  -> device memory (product/memory.js#add), straight into the Reader - there never was a
@@ -36,7 +36,7 @@ import { textStats, importErrorKey, urlMediaEntry, uploadMediaEntry } from './mo
 
 const STEP_LABEL = { type: 'stepType', text: 'stepText', url: 'stepUrl', processing: 'stepProcessing' };
 
-export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
+export async function openImport(ctx = {}, { mediaRoute = 'listening', initial = null } = {}) {
   const context = ctx.context || {};
   const memory = context.memory || null;
   const admittedForPractice = (id, result) => {
@@ -360,6 +360,25 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
     }
   }
 
+  /* Discover's "Create lesson" card hands over what the learner already entered (design 2026-10-15: Create goes
+     straight to the next step, never back to "type"): a link starts the import (a link that is not one is said on
+     the link step), pasted text opens the text step filled in, a chosen file is sent. */
+  function begin() {
+    if (!initial) return;
+    if (initial.source === 'file' && initial.file) {
+      submitFile(initial.file);
+    } else if (initial.source === 'text') {
+      state.text = String(initial.text || '');
+      go('text');
+    } else if (initial.source === 'url') {
+      state.url = String(initial.url || '');
+      // Order matters: go() clears every error and paints the link step first, so submitUrl() can show its own
+      // refusal (or start processing) on top of it.
+      go('url');
+      submitUrl();
+    }
+  }
+
   await useStyles('screens/import/import.css');
   if (!ctx.isCurrent || ctx.isCurrent()) {
     sheetHandle = openSheet({
@@ -369,6 +388,7 @@ export async function openImport(ctx = {}, { mediaRoute = 'listening' } = {}) {
         sheetEl = element;
         sheetHandle = handle;
         paint();
+        begin();
         return () => {
           alive = false;
         };
