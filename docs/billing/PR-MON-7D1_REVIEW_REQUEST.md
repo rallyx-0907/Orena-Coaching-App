@@ -24,12 +24,14 @@ Details: `PR-MON-7_DESIGN.md` §12 and §14 (§14.8 is the cache authority matri
   - `SHARED`: a server-verified published article (`get_published_article`) whose title and body contain every text
     the request derives from;
   - `inc:<incarnation>`: the learner's active account incarnation (resolved, never created);
-  - `UNSCOPED`: no readable incarnation; learner caching is bypassed.
+  - `UNSCOPED`: no readable incarnation. No learner/private caching at all: nothing is written and no learner
+    entry is read. Exact verified-public shared entries (keyed by the exact published text) may still be reused,
+    because the shared namespace only ever holds server-verified published content.
 
   A client `content_id`, prefix or flag is only a claim. An unreadable published store means not published.
 - **`DerivedCache`:** the in-process LRU is namespaced by scope. A learner scope reads its own entries, then the shared
   ones (which only ever hold verified published text). Writes go to the scope's own namespace. The persistent store is
-  read and written in the shared scope only. `UNSCOPED` writes nothing.
+  read and written in the shared scope only. `UNSCOPED` writes nothing and reads only the shared in-process entries.
 - **Reading translation, summary, word-detail, sentence-sheet:** `persist=<client prefix>` replaced by the
   server-decided scope. A summary by verified `article_id` stays shared; a book chapter or raw text is learner-scoped.
 - **Basic tap (`reading_lookup`):** the learner's scope, resolved on the request thread and passed to the

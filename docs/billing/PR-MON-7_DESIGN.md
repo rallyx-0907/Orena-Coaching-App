@@ -577,7 +577,9 @@ proof of the runtime row. This does not block 7D1.
 | Router L1 (`word_translation`), legacy dictionary cache | Word-only public reference | Unchanged (not learner-derived; the dictionary language-key issue stays out of 7D1) |
 
 Learner scope is the account **incarnation** (`account_incarnations`, resolved, never created). When no incarnation
-can be read (no backbone, an error, auth off), learner caching is bypassed; there is no global learner cache. A
+can be read (no backbone, an error, auth off), the scope is `UNSCOPED`: no learner/private caching (nothing written,
+no learner entry read) and never a global learner cache, while exact verified-public shared entries may still be
+reused. A
 published article is read from `reading_articles` through `get_published_article`; an unreadable store is treated
 as not published. No new table, no schema change.
 
