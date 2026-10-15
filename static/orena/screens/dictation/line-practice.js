@@ -25,8 +25,9 @@ function setText(target, value) {
 let instances = 0; // one id per practice, so the hint's description never points at another room's note
 
 /* `lesson` is dictation/model.js#mapLesson's shape; `priorRead` may be a function. `byId` is the stored progress per segment; the
-   factory adds this session's own checks to it. */
-export function createLinePractice({ lesson, byId, priorRead = true, memory = null, onChange = () => {}, onNext = () => {}, onCheck = () => {}, onRetry = () => {} }) {
+   factory adds this session's own checks to it. `readOnly` is the administrator's preview of a held item (D-210): the
+   line is checked and shown as ever, and nothing is stored - no draft on the device, no attempt on the server. */
+export function createLinePractice({ lesson, byId, priorRead = true, memory = null, readOnly = false, onChange = () => {}, onNext = () => {}, onCheck = () => {}, onRetry = () => {} }) {
   // Whether the stored progress was read: a value, or a question asked at check time when it loads later.
   const readPrior = typeof priorRead === 'function' ? priorRead : () => priorRead;
   instances += 1;
@@ -52,9 +53,11 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
   const q = (selector) => stageEl?.querySelector(selector) || dockEl?.querySelector(selector) || null;
   const draftKey = () => `${lesson.assetId || lesson.id}:${seg.id}`;
   function saveDraft(value) {
+    if (readOnly) return;
     try { memory?.write(draftKey(), value, 'answers'); } catch { /* device memory unavailable */ }
   }
   function readDraft() {
+    if (readOnly) return '';
     try { return String(memory?.value?.answers?.[draftKey()] || ''); } catch { return ''; }
   }
 
@@ -254,6 +257,8 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     paint();
     onChange();
     if (!attempted) return;
+    // The line is checked and shown above; the attempt is stored below, which a preview never does (D-210).
+    if (readOnly) return;
     evidence.compare(answer, { hintLevel });
     let outgoing = evidence.value;
     if (recover) {

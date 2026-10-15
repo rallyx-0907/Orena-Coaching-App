@@ -35,7 +35,9 @@ async function resolveTerm(term, { lang, support, context }) {
   };
 }
 
-export async function openVocabFocus(ctx, { label, terms, lang, support, context, onPlay, source = null }) {
+/* `readOnly` is the administrator's preview of a held item (D-210): the terms are shown and played, the Save buttons
+   are not drawn (the design has no disabled state for them) and nothing is kept. */
+export async function openVocabFocus(ctx, { label, terms, lang, support, context, onPlay, source = null, readOnly = false }) {
   const words = [...new Set((terms || []).filter(Boolean))];
   let rows = words.map((word) => ({ word, reading: '', meaning: '', saved: false }));
   let alive = true;
@@ -48,7 +50,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
         <div class="s-vocab__word"><span lang="${langAttr(lang)}">${row.word}</span>${row.reading ? html` <span class="s-vocab__reading">${row.reading}</span>` : ''}</div>
         ${row.meaning ? html`<div class="s-vocab__meaning">${row.meaning}</div>` : ''}
       </div>
-      <button type="button" class="s-vocab__save" data-save="${index}" aria-pressed="${String(row.saved)}">${row.saved ? t('saved') : t('save')}</button>
+      ${readOnly ? '' : html`<button type="button" class="s-vocab__save" data-save="${index}" aria-pressed="${String(row.saved)}">${row.saved ? t('saved') : t('save')}</button>`}
     </div>`;
   }
 
@@ -79,7 +81,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
 
   async function toggleSave(index) {
     const row = rows[index];
-    if (!row) return;
+    if (!row || readOnly) return;
     try {
       if (row.saved) {
         await api.deleteLibraryVocabulary(row.word);

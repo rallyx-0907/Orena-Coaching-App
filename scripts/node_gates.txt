@@ -136,3 +136,4 @@ scripts/test_orena_reader_kinsoku.mjs
 scripts/test_orena_annotate_policy.mjs
 scripts/test_orena_reader_sentences.mjs
 scripts/test_orena_reader_tap_word.mjs
+scripts/test_orena_preview_readonly.mjs

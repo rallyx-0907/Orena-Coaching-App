@@ -1,5 +1,6 @@
 import { isTransientRequestError, retryOnce } from './retry.js';
 import { navigationSignal } from './navigation.js';
+import { previewRefuses, previewRefusal } from './preview-mode.js';
 import { deviceTimezone, newIdempotencyKey, quotaHeaders as quotaHeadersFor } from './quota-headers.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
@@ -16,6 +17,8 @@ let onUnauthorized=()=>{location.href='/#/welcome';};
 export function setUnauthorizedHandler(handler){onUnauthorized=typeof handler==='function'?handler:()=>{};}
 
 export async function request(url, options={}){
+  /* An administrator's preview of a held item stores nothing (D-210, infrastructure/preview-mode.js). */
+  if(previewRefuses(options.method,url))throw previewRefusal();
   const response = await fetch(url,{
     credentials:'same-origin',
     cache:'no-store',

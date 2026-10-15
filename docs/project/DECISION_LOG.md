@@ -6929,3 +6929,41 @@ in the existing `processing` JSON beside `translation_counts`.
 7. **Owner decisions left open.** Raising the 64 MiB cap (not done). A control to retry only the missing lines of a finished item
    (reprocess still redoes everything). Whether the 5-round / 150 s bound suits the provider's real limits once a real batch is
    measured (no live provider was called; tests use fakes).
+
+## D-210 - Admin preview of held media is read-only; Credits balance shows "—"; the 64 MiB media cap stays (2026-10-15)
+
+Status: PROPOSED — pending independent review. Owner decisions of 2026-10-15; the first closes D-206 §5. No schema or
+migration change, no new role, no change to the publish or visibility policy. D-208 and D-209 are in flight; this is the next
+free number and is renumbered at merge if they land first.
+
+1. **Preview of a held item writes nothing (owner 2026-10-15).** `#/listening/preview:<id>` (D-206, `GET /api/media/admin/player/{id}`)
+   opens the real learner player, and the administrator is not a learner on that item: no place, progress, completion, streak,
+   activity, practice or dictation attempt, saved word, note, highlight, response, review scheduling or record of where a word was met.
+   Three independent walls, so the rule does not rest on one:
+   - **Client, the room.** The Listening room derives "preview" from the address (`mediaRef(...).kind === 'preview'`). It does not
+     remember a place (device or server), passes `readOnly` to the line practice (a check still marks the line; no draft, no attempt is
+     stored), the word sheet and the Vocabulary Focus, and does not draw what would keep something: the word sheet's save icon and
+     button and its link to the word page, the Vocabulary Focus "Save", the selected line's "Save phrase", and the links into Shadowing,
+     React and Respond, which save. The design has no disabled state for these, so they are hidden, not greyed; nothing is added.
+   - **Client, the request.** `infrastructure/preview-mode.js`: while the room is a preview, `request` refuses every call that stores
+     learner state (a list of path prefixes, with the gate that lists them), whichever code makes it. Reads, lookups, tagging and
+     translation are not on the list. The wall is open only while the address is still a preview, so a room that fails cannot leave the
+     app read-only.
+   - **Server.** `listening_api.media_state_writable` / `require_media_state_writable`, reusing `stored_media_entry` (the one
+     visibility check): an id that names a stored media entry takes learner state only while that entry is visible to this learner,
+     that is a published shared item or the learner's own personal import. A held, unpublished or archived shared item and another
+     learner's import answer 404 `media_not_available`, whoever sends the write, in every spelling (`<id>`, `media:<id>`, `upload:<id>`,
+     `preview:<id>` and prefixed forms). An id no stored entry names (a curated lesson, a text, a book) is unaffected. Applied to:
+     `PUT /api/continue/{id}`, `POST /api/listening/progress`, `POST /api/listening/shadowing-progress`, `PUT /api/annotations/{id}`,
+     `PUT /api/responses/{key}` (its `sourceId`), `POST /api/library/vocabulary/{word}/provenance` (its `sourceId`) and
+     `POST /api/library/items` (its `source_id`). The owner's own personal import keeps writing (tested).
+   - **Gap, stated.** `POST /api/library/vocabulary` (save a word) and its review, restore and delete carry no media id (a word is the
+     learner's, not the item's), so the server cannot tell a preview from a learner there: only the two client walls cover it. The
+     Orena conversation (Explain, "Ask deeper") belongs to the Intelligence lane and is not changed here.
+   - Progress and streak are derived from the records above, so blocking the records blocks the derived figures.
+2. **Credits balance shows "—" until a balance API exists (owner 2026-10-15).** More honest than hiding it or a fake 0. This confirms
+   the Credits top-up client's `UI_BACKEND_GAPS.md` CT-2 handling (balance and ledger are admin-only; the hero and card read "—" beside
+   the unit, never 0) and closes its P2-6 question: the glyph the design does not draw is accepted.
+3. **The 64 MiB media cap is unchanged (owner 2026-10-15).** A file over the cap keeps failing with the stable code
+   `media_too_large` (D-207 §4). Whether to raise the cap or to move to streaming / chunked processing is decided after the Phase 2
+   size distribution of the Video Sources milestone is known, not before.

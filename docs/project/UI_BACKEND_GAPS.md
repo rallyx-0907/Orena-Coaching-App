@@ -6180,3 +6180,16 @@ Details list, and the failure reason on a failed item that kept lines, using the
 open for the human: a control to retry only the missing lines, and whether the design should draw this row.
 
 - **Media licence link on the public credits page (D-205 follow-up).** Commons items now carry `license_name` and `license_url` through the credits rows and the listening payload, but no credits renderer shows the licence link, so CC attribution links stay invisible. Needs the design's credits row to place it.
+
+## Owner decisions of 2026-10-15 (D-210 proposed)
+
+- **Credits balance (CT-2), owner decision.** There is still no learner balance endpoint (balance and ledger are admin-only). The
+  balance shows "—" beside its unit until one exists: more honest than hiding it or a fake 0 (owner 2026-10-15). The CT-2 and CT-3
+  entries and the P2-6 note live with the Credits top-up client (`claude/credits-topup-client`, not on `main` when this was written);
+  on merge, mark CT-2 "owner decision: show —" and drop P2-6 from the open list.
+- **Admin preview of a held item is read-only (D-206 §5 closed by D-210).** The design draws no disabled state for Save, so the
+  controls that would keep something are not drawn in a preview and nothing replaces them. A learner-visible cue that this is a
+  preview is not drawn either (the design has none). `POST /api/library/vocabulary` carries no media id, so only the client walls
+  cover a word save from a preview.
+- **64 MiB media cap, owner decision.** Unchanged; `media_too_large` is reported. Raise the cap or move to streaming / chunked
+  processing: decided after the Phase 2 size distribution (D-207 §4, D-210 §3).

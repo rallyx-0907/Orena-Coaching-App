@@ -145,6 +145,46 @@ def stored_media_entry(media_id: str, *, allow_unpublished: bool = False) -> Med
         return None
 
 
+_CONTENT_PREFIXES = ("media:", "preview:", "upload:")
+
+
+def media_state_writable(content_id: str) -> bool:
+    """Whether learner state (a place, progress, a note, a response, where a word was met) may be written
+    against this id (D-210).
+
+    An id that names a stored media entry is writable only while that entry is visible to this learner:
+    a published shared item, or the learner's own personal import. A held, unpublished or archived shared
+    item, and another learner's import, are not - whoever sends the write, whatever the client believes
+    it is doing (the administrator's preview of a held item must leave nothing behind). An id that no
+    stored entry names (a curated lesson, a text, a book) is not this rule's business.
+
+    The id is read in every spelling a client gives it: bare, `media:<id>`, `upload:<id>`, `preview:<id>`
+    and any prefixed form of those. This reuses `stored_media_entry`, the one visibility check."""
+    if _media_store is None:
+        return True
+    value = str(content_id or "").strip()
+    candidates = [value]
+    while True:
+        prefix = next((p for p in _CONTENT_PREFIXES if value.startswith(p)), "")
+        if not prefix:
+            break
+        value = value[len(prefix):]
+        candidates.append(value)
+    try:
+        for candidate in candidates:
+            if candidate and _media_store.get(candidate) is not None:
+                return stored_media_entry(candidate) is not None
+    except Exception:  # a broken index cannot prove the item is visible: fail closed, as the entry lookup does
+        return False
+    return True
+
+
+def require_media_state_writable(content_id: str) -> None:
+    """404 for learner state aimed at a media id the learner cannot see (the answer an unknown id gets)."""
+    if not media_state_writable(content_id):
+        raise orena_http_error(404, "media_not_available", "This media is not available.")
+
+
 def stored_media_payload(media_id: str, target_language: str = "", *, allow_unpublished: bool = False) -> dict[str, Any] | None:
     """The learner-facing payload for one persisted entry.
 
@@ -755,6 +795,7 @@ def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
+    require_media_state_writable(values["asset_id"])
     if values["presentation"] == "revealed":
         values["revealed"] = True
     if values["revealed"] and values["presentation"] == "prompt":
@@ -801,6 +842,7 @@ def save_shadowing_progress(payload: ShadowingProgressIn) -> dict[str, Any]:
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
     values["segment_id"] = _clean_identity(values["segment_id"], "segment_id")
+    require_media_state_writable(values["asset_id"])
     values["updated_at"] = datetime.now(UTC).isoformat()
     _require_progress_line(values["asset_id"], values["segment_id"])
     try:

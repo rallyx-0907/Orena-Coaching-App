@@ -57,6 +57,13 @@ def _library() -> LibraryRepository:
     return repository
 
 
+def _require_state_writable(content_id: str) -> None:
+    """A place or a kept item against a held, unpublished or someone else's media id is refused (D-210)."""
+    from writing_coach.listening_api import require_media_state_writable  # lazy: listening_api imports far more
+
+    require_media_state_writable(content_id)
+
+
 def _refuse(error: LibraryConflict):
     return orena_http_error(
         _STATUS.get(error.reason, 422), error.reason, "The library refused that change."
@@ -108,6 +115,7 @@ def library_items(
 
 @router.post("/items", name="orena_library_keep")
 def library_keep(payload: KeepIn) -> dict[str, Any]:
+    _require_state_writable(payload.source_id)
     try:
         return {"item": _library().keep(
             kind=payload.kind, word=payload.word,
@@ -248,6 +256,7 @@ def continue_put(content_id: str, payload: ContinueIn) -> dict[str, Any]:
     source_id = content_id.strip()
     if not source_id or len(source_id) > 255:
         raise orena_http_error(422, "place_invalid", "That content id is not valid.")
+    _require_state_writable(source_id)
     place = _clean_place(payload.place) if payload.place is not None else None
     try:
         return _library().set_place(kind=payload.kind, source_id=source_id, place=place)
