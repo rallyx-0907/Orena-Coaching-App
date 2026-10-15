@@ -96,6 +96,11 @@ WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciati
 # one pair of environment variables govern everything the server enforces; they never go through `admit()`.
 WIRED_ENTITLEMENTS: tuple[str, ...] = ("languages.target",)
 ENFORCEABLE: tuple[str, ...] = WIRED_METERS + WIRED_ENTITLEMENTS
+# PR-MON-7D2: meters whose call sites already admit them, but which have no catalogue window and no approved
+# Free/Plus/Pro limit yet (H7-3: their numbers are a separate human decision). They are never enforceable: every
+# admission is the no-op ticket and no reservation is ever written, until a meter moves into the catalogue and
+# WIRED_METERS with its approved limits. The unit is the frozen D-MON-023 H-2 unit.
+PENDING_METERS: dict[str, str] = {"speech.transcribe": "second", "speech.evaluate": "second", "audio.tts": "character"}
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
 SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
 # Meters whose work outlives the request in a background job that settles its own reservation by operation id
@@ -725,6 +730,8 @@ def _context(meter: str) -> tuple[Any, str, Plan, str, Entitlement]:
 
 def _require_bucket_meter(meter: str) -> None:
     """Only a meter with a window is admitted through a bucket; a count entitlement (`languages.target`) is not."""
+    if meter in PENDING_METERS:
+        return   # wired, never listed by switch(): the caller always gets the no-op path
     if meter not in METERS:
         raise ValueError(f"Unknown meter {meter!r}")
     if METERS[meter].window is None:

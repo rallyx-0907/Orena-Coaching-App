@@ -19,6 +19,7 @@ the bill, like the pronunciation rate).
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import os
 import re
@@ -37,6 +38,8 @@ _log = logging.getLogger(__name__)
 
 CAPABILITY = "word_tts"
 PROVIDER = "azure-speech"
+# PR-MON-7D2: the meter of a fresh learner-requested synthesis (characters); pending - never enforced before its limits.
+TTS_METER = "audio.tts"
 MODEL = "neural-tts"
 # Azure neural TTS list price, USD per 1,000,000 billed characters (read 2026-10-05; to be checked against the bill).
 PER_MILLION_CHARACTERS = 16.0
@@ -182,6 +185,19 @@ class AzureVoice:
             _log.warning("word TTS: spend cap reached (%.4f of %.2f USD)", spent, self._cap)
             self._state.failed = True
             return None
+        # PR-MON-7D2: a fresh synthesis is `audio.tts` (characters), admitted only here - after the cache and the free
+        # voices missed - so cached, stored and catalogue audio is never charged. Pending: the no-op until its limits.
+        from writing_coach.product import quota
+
+        units = billed_characters(term)
+        digest = hashlib.sha256(ssml.encode("utf-8")).hexdigest()
+        with quota.admit(TTS_METER, units=units, request_digest=digest) as ticket:
+            ticket.dispatch("tts")
+            spoken = self._synthesize(ssml, term, language)
+            ticket.settle(units if spoken is not None else 0, "synthesized" if spoken is not None else "failed")
+        return spoken
+
+    def _synthesize(self, ssml: str, term: str, language: str) -> Spoken | None:
         url = f"https://{self._region}.tts.speech.microsoft.com/cognitiveservices/v1"
         headers = {
             "Ocp-Apim-Subscription-Key": self._key,

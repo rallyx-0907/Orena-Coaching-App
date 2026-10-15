@@ -1,6 +1,7 @@
 """D-169: the guard on `POST /api/speech/transcribe` - a take is at most five minutes (measured on the server), an account
 sends at most an hour of audio a day, and Orena's push-to-talk is refused before transcribing when no Orena message is left.
-No plan meter is added or used for the transcription itself.
+The transcription's own meter, `speech.transcribe`, is pending (PR-MON-7D2: wired, never enforced before its
+limits are approved) - tests/test_speech_meters.py.
 
 The provider is a counting fake, so "Groq was not called" is asserted. The audio is real (silent WAV made here, decoded
 by ffmpeg like any recording), so the server really measures it.

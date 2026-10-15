@@ -138,6 +138,13 @@ TRANSCRIBE_MIN_BILLED_SECONDS = 10
 TRANSCRIBE_DAILY_SECONDS = policies.default("speech.asr_daily_seconds")
 TRANSCRIBE_DAY = 24 * 60 * 60
 PURPOSE_ORENA_VOICE = "orena_voice"
+# PR-MON-7D2: the meter of standalone learner transcription (seconds); pending - never enforced before its limits.
+TRANSCRIBE_METER = "speech.transcribe"
+
+
+def _transcribe_units(seconds: float | None) -> int:
+    """Whole seconds, rounded up (at least one): the meter counts what was measured, not the brake's billing floor."""
+    return max(1, math.ceil(round(float(seconds or 0), 3)))
 _TRANSCRIBE_PURPOSES = frozenset({"", PURPOSE_ORENA_VOICE})
 _PCM16_16K_BYTES_PER_SECOND = 32000
 
@@ -479,6 +486,12 @@ async def transcribe_speech(
         raise orena_http_error(422, "speech_asr_invalid_purpose", "Unsupported transcription purpose.")
 
     provider = _provider()
+    # PR-MON-7D2: standalone transcription is `speech.transcribe` (seconds). Push-to-talk is part of an Orena message
+    # and is never charged here (no double charge).
+    metered = purpose != PURPOSE_ORENA_VOICE
+    if metered:
+        await anyio.to_thread.run_sync(quota.require_feature, TRANSCRIBE_METER)
+        await anyio.to_thread.run_sync(quota.require_ready, TRANSCRIBE_METER)
     if purpose == PURPOSE_ORENA_VOICE:
         # Push-to-talk feeds a message the agent will charge: an exhausted learner is refused here, before any audio is
         # read or paid for. Read-only - nothing is reserved (the turn reserves its own message).
@@ -510,12 +523,29 @@ async def transcribe_speech(
             )
             refusal.headers = {"Retry-After": str(math.ceil(wait))}
             raise refusal
-        result = provider.transcribe_bytes(
-            data,
-            filename=file.filename or "recording.webm",
-            content_type=file.content_type or "application/octet-stream",
-            language=normalized_language,
-        )
+        if metered:
+            units = _transcribe_units(seconds)
+            digest = hashlib.sha256(data + f"|{normalized_language or ''}".encode()).hexdigest()
+            # Admitted after local measuring and before the provider is asked; a refusal costs nothing. An error after
+            # dispatch settles 0 (admit's own failure path); a transcript settles the seconds the provider heard, never
+            # more than were admitted.
+            with quota.admit(TRANSCRIBE_METER, units=units, request_digest=digest) as ticket:
+                ticket.dispatch("transcribe")
+                result = provider.transcribe_bytes(
+                    data,
+                    filename=file.filename or "recording.webm",
+                    content_type=file.content_type or "application/octet-stream",
+                    language=normalized_language,
+                )
+                heard = getattr(result, "duration_seconds", None)
+                ticket.settle(min(units, _transcribe_units(heard)) if heard else units, "transcribed")
+        else:
+            result = provider.transcribe_bytes(
+                data,
+                filename=file.filename or "recording.webm",
+                content_type=file.content_type or "application/octet-stream",
+                language=normalized_language,
+            )
     except SpeechAsrPayloadTooLarge as exc:
         raise orena_http_error(
             413,
