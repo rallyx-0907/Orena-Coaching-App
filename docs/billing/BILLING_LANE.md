@@ -81,7 +81,11 @@ not replaced.
 
 **Gateways** (D-MON-003)
 - payOS: plan access (payment → verified webhook → paid order → prepaid subscription → `paid_through`) and credit
-  top-up (verified webhook → ledger credit, exactly once).
+  top-up (verified webhook → ledger credit, exactly once). An existing adapter that stays in the repository.
+- **Domestic direction (D-MON-024, 2026-10-15):** payOS (a Casso-ecosystem product) is no longer the preferred
+  production domestic gateway, because the owner's banks are not supported. The primary candidate is SePay +
+  VietinBank, built and validated in PR-MON-8 behind the same `PaymentFact` (`DOMESTIC_GATEWAY_SEPAY_ASSESSMENT.md`).
+  payOS remains the alternative only if a supported bank path appears later. Activation is a human gate.
 - Polar: Orena consumes its lifecycle (active, trialing, past_due, canceled, `current_period_end`,
   `cancel_at_period_end`) and rebuilds none of its tax, VAT, invoice or renewal. No invented local cancellation state.
 

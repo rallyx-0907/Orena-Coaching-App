@@ -17,6 +17,8 @@ after the review and authorization its own docstring names.
 
 **Promoted on the Billing lane branch (2026-10-14, PR-MON-5 migration gate, not yet merged):** `20261005_0027_billing_orders.py` → `20261014_0031_billing_reconciliation.py` → `20261014_0032_credit_ledger.py` → `20261015_0033_credit_topup_orders.py`, moved into `versions/` together (design reviews in `docs/reviews/architecture/PR_MON_3_*`, `PR_MON_4_*`, `PR_MON_5_*`). Source control only: no runtime has them. Once merged, every PostgreSQL runtime must apply them (operator step, after a backup) before it starts. `20261005_0028_reading_derived_texts.py` stays here on 0027 by linearity; under H1 the Reading lane re-parents it on the head of the day when it promotes it.
 
+**Open proposal (Billing, PR-MON-6 migration gate, 2026-10-15):** `20261015_0034_funding_admissions.py` on `20261015_0033` - funding admissions, promotional grants, cost attribution (`docs/billing/PR-MON-6_MIGRATION_GATE_REVIEW_REQUEST.md`). Awaiting its independent review; promotion and application are human gates.
+
 **Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
 awaiting the human's authorization). If it is promoted after 0025, re-parent it on `20261004_0025`.
 

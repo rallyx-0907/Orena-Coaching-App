@@ -327,6 +327,10 @@ def sanitize_telemetry(value: object) -> dict[str, Any] | None:
     cost = normalized_cost(value.get("cost"))
     if cost is not None:
         result["cost"] = cost
+    # PR-MON-6 §8: True only for a request that was actually sent to a provider (success or failure). A rung skipped
+    # before any outbound request (budget, unfunded, cooling down) or a call refused before sending is never billable.
+    if value.get("billable_attempt") is True:
+        result["billable_attempt"] = True
     result.update(_router_telemetry(value))
     return result
 

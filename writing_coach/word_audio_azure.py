@@ -168,6 +168,10 @@ class AzureVoice:
             if not single_reading:
                 return None  # a reading the voice cannot be told: no guess
             ssml = ssml_for(term, language, "")
+        from writing_coach.billing.funding_context import require_paid
+
+        require_paid(capability="word_tts", provider="azure",
+                     timeout_seconds=REQUEST_TIMEOUT)  # I-1's backstop (PR-MON-6 §2), the request's own timeout
         try:
             spent = float(self._spent())
         except Exception:  # noqa: BLE001 - an unreadable ledger is a closed cap, never "nothing spent"
@@ -191,12 +195,12 @@ class AzureVoice:
         except (urllib.error.URLError, urllib.error.HTTPError, ValueError, OSError, TimeoutError) as error:
             _log.info("word TTS unavailable: %s", type(error).__name__)
             self._state.failed = True
-            self._record(_event("provider_error", None, int((time.monotonic() - started) * 1000), type(error).__name__))
+            self._record(_event("failure", None, int((time.monotonic() - started) * 1000), "provider_error"))
             return None
         latency = int((time.monotonic() - started) * 1000)
         if not audio or len(audio) > MAX_AUDIO_BYTES:
             self._state.failed = True
-            self._record(_event("provider_error", None, latency, "empty_audio"))
+            self._record(_event("failure", None, latency, "empty_audio"))
             return None
         self._record(_event("success", billed_characters(term), latency, None))
         return Spoken(
@@ -223,7 +227,7 @@ def _event(outcome: str, characters: int | None, latency_ms: int, error_class: s
         "capability": CAPABILITY, "origin": "learner", "provider": PROVIDER, "model": MODEL, "model_redacted": False,
         "outcome": outcome, "error_class": (error_class or "")[:80] or None, "latency_ms": latency_ms,
         "usage": {"characters": characters} if characters is not None else {}, "rate_limit": {}, "cost": cost,
-        "quota_available": "unknown",
+        "quota_available": "unknown", "billable_attempt": True,   # only around a request that was sent
     }  # fmt: skip
 
 

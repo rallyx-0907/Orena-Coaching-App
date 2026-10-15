@@ -913,16 +913,41 @@ class PostgresPlatformRepository:
             "cost_usd": cost.get("amount"), "input_tokens": usage.get("prompt_tokens"),
             "output_tokens": usage.get("completion_tokens"), "audio_seconds": usage.get("audio_seconds"),
         }  # fmt: skip
+        attributed = bool(event.get("funding_operation_id")) and self._ai_cost_attribution()
+        extra_columns = extra_values = ""
+        if attributed:
+            # PR-MON-6 §8 (0034's columns, both or neither): only where the columns exist.
+            values["operation_id"] = str(event["funding_operation_id"])[:200]
+            values["meter"] = str(event.get("funding_meter") or "")[:80] or "unknown"
+            extra_columns, extra_values = ", operation_id, meter", ", :operation_id, :meter"
         statement = text(
             "INSERT INTO ai_cost_records (id, account_id, occurred_at, feature, provider, model, cost_state, cost_usd, "
-            "input_tokens, output_tokens, audio_seconds) "
+            f"input_tokens, output_tokens, audio_seconds{extra_columns}) "
             "SELECT :id, users.id, :occurred_at, :feature, :provider, :model, :cost_state, :cost_usd, :input_tokens, "
-            ":output_tokens, :audio_seconds FROM users WHERE users.user_key = :user_key"
+            f":output_tokens, :audio_seconds{extra_values} FROM users WHERE users.user_key = :user_key"
         )
         with self.engine.begin() as connection:
             connection.execute(text("SET LOCAL statement_timeout = 500"))
             connection.execute(text("SET LOCAL lock_timeout = 200"))
             return int(connection.execute(statement, values).rowcount or 0) == 1
+
+    def _ai_cost_attribution(self) -> bool:
+        """Whether `ai_cost_records` has 0034's attribution columns; read once, re-read every 10 minutes while absent."""
+        import time
+
+        cached = getattr(self, "_attribution_cache", None)
+        now = time.monotonic()
+        if cached is not None and (cached[1] or now - cached[0] < 600):
+            return cached[1]
+        try:
+            with self.engine.connect() as connection:
+                present = connection.execute(text(
+                    "SELECT count(*) FROM information_schema.columns WHERE table_schema = current_schema() "
+                    "AND table_name = 'ai_cost_records' AND column_name IN ('operation_id', 'meter')")).scalar() == 2
+        except Exception:  # noqa: BLE001 - unreadable: record without attribution, try again later
+            present = False
+        self._attribution_cache = (now, present)
+        return present
 
     def delete_ai_costs_before(self, before: datetime, *, limit: int) -> int:
         """The 13-month sweep (ai/account_costs.py): at most `limit` cost records older than `before`, oldest first.

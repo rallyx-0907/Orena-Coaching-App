@@ -191,9 +191,27 @@ class BillingService:
         self._catalog = catalog
         self._send = send
         self._now = now
+        # PR-MON-6 §8: the cost gate per pack. It can only remove a pack from sale (K1, K5); None = not attached.
+        self._pack_gate: Any = None
 
     def attach_credits(self, credits: Any) -> None:
         self._credits = credits
+
+    def attach_pack_gate(self, sellable: Any) -> None:
+        """`sellable(pack_key) -> bool` (PR-MON-6 §8): a pack failing the cost gate is not offered and not sold."""
+        self._pack_gate = sellable
+
+    @property
+    def credit_packs(self) -> Mapping[str, CreditPack]:
+        return dict(self._credit_packs)
+
+    def _pack_sellable(self, key: str) -> bool:
+        if self._pack_gate is None:
+            return True
+        try:
+            return bool(self._pack_gate(key))
+        except Exception:  # noqa: BLE001 - an unreadable gate sells nothing
+            return False
 
     @property
     def credits(self) -> Any:
@@ -295,7 +313,8 @@ class BillingService:
         if self._credit_checkout_blocked():
             return []
         return [{"key": pack.key, "pack_id": pack.pack_id, "credit_units": pack.credit_units, "currency": pack.currency,
-                 "amount_minor": pack.amount_minor, "gateway": pack.gateway} for pack in self._credit_packs.values()]
+                 "amount_minor": pack.amount_minor, "gateway": pack.gateway} for pack in self._credit_packs.values()
+                if self._pack_sellable(pack.key)]
 
     def gateway_report(self) -> dict[str, dict[str, Any]]:
         """Per gateway: configured (its keys, and so its webhook verification), its prices against the catalogue, and
@@ -400,7 +419,7 @@ class BillingService:
 
         pack = self._credit_packs.get(pack_key)
         gateway = self._gateways.get(pack.gateway) if pack else None
-        if pack is None or gateway is None:
+        if pack is None or gateway is None or not self._pack_sellable(pack.key):
             raise LookupError("price_not_offered")
         uuid.UUID(operation_id)
         if amount is None or not currency or units is None:

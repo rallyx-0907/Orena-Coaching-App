@@ -111,7 +111,9 @@ def test_a_provider_failure_is_recorded_unpriced_and_said():
     azure = voice(wire=Wire(fail=True), records=records)
     assert azure.speak(term="花生", language="zh", reading="huā shēng", single_reading=True) is None
     assert azure.last_failed is True
-    assert records[0]["outcome"] == "provider_error" and records[0]["cost"]["amount"] is None
+    # a "failure" the telemetry allowlist keeps (PR-MON-6 §8: a sent request is cost evidence, never dropped)
+    assert records[0]["outcome"] == "failure" and records[0]["error_class"] == "provider_error"
+    assert records[0]["cost"]["amount"] is None and records[0]["billable_attempt"] is True
 
 
 def test_an_english_word_with_several_readings_is_not_guessed():

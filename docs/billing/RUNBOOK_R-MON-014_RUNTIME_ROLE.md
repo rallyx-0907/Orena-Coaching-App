@@ -39,14 +39,16 @@ GRANT USAGE ON SCHEMA <schema> TO orena_runtime;
 ## 2. Grant the application's ordinary privileges (everything except the credit tables)
 
 The application reads and writes its own tables. Grant DML on every table **except** `credit_accounts`,
-`credit_ledger` and `credit_reversal_requests`, whose privileges come only through `orena_credit_runtime`:
+`credit_ledger` and `credit_reversal_requests` (and, once 0034 is applied, `funding_admissions` and
+`promotional_grants`), whose privileges come only through `orena_credit_runtime`:
 
 ```sql
 -- generate the list from the catalog on the deployed schema; review it before running
 SELECT format('GRANT SELECT, INSERT, UPDATE, DELETE ON %I.%I TO orena_runtime;', schemaname, tablename)
   FROM pg_tables
  WHERE schemaname = '<schema>'
-   AND tablename NOT IN ('credit_accounts', 'credit_ledger', 'credit_reversal_requests', 'alembic_version');
+   AND tablename NOT IN ('credit_accounts', 'credit_ledger', 'credit_reversal_requests', 'funding_admissions',
+                         'promotional_grants', 'alembic_version');
 GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA <schema> TO orena_runtime;
 ```
 

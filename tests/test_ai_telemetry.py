@@ -99,6 +99,7 @@ def test_success_telemetry_keeps_capability_provider_model_and_reported_usage(
         "rate_limit": {"requests_limit": None, "requests_remaining": None, "tokens_limit": None, "tokens_remaining": None},
         "cost": {"state": "unpriced", "currency": None, "amount": None, "provenance": {"catalog_version": PRICING_CATALOG_VERSION, "provider": "openai", "model": "telemetry-model", "input_per_million": None, "output_per_million": None, "reason": "model_not_cataloged"}},
         "quota_available": "unknown",
+        "billable_attempt": True,  # PR-MON-6 §8: a provider answered
     }
     assert isinstance(result.runtime["telemetry"]["latency_ms"], int)
     assert result.runtime["telemetry"]["latency_ms"] >= 0
@@ -175,6 +176,7 @@ def test_failure_telemetry_is_typed_and_redacts_suspicious_model(
         "rate_limit": {"requests_limit": None, "requests_remaining": None, "tokens_limit": None, "tokens_remaining": None},
         "cost": {"state": "unpriced", "currency": None, "amount": None, "provenance": {"catalog_version": PRICING_CATALOG_VERSION, "provider": "openai", "model": "[redacted]", "input_per_million": None, "output_per_million": None, "reason": "model_not_cataloged"}},
         "quota_available": "unknown",
+        "billable_attempt": False,  # PR-MON-6 §8: the chain's rungs are recorded each; the summary is not a call
     }
     assert "do-not-leak" not in repr(caught.value.telemetry)
 

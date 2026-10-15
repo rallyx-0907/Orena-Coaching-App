@@ -480,7 +480,10 @@ class AIControlPlane:
                 model = row.config.backup_model if standby else row.config.model
             if standby and (provider is None or model is None):
                 raise AICapabilityConfigInvalid("Capability has no configured standby provider/model.")
-            result = self._live_test(capability_key, standby=standby)
+            from writing_coach.billing.funding_context import system_funding
+
+            with system_funding("operator_test"):   # PR-MON-6 §2: an operator's test is never learner-funded
+                result = self._live_test(capability_key, standby=standby)
             reported_usage = result.pop("_telemetry_usage", None)
             reported_rate_limit = result.pop("_telemetry_rate_limit", None)
             model_display, model_redacted = safe_model_display(result.get("model"))

@@ -54,7 +54,11 @@ class AccountCostRecorder:
     def record(self, user_key: str, event: dict[str, Any]) -> bool:
         """Record one telemetry event for this account, if it was a provider call that answered."""
 
-        if user_key in _NOT_AN_ACCOUNT or event.get("outcome") != "success" or not event.get("provider"):
+        # A success, or any request actually sent (PR-MON-6 §8): a failed call that was sent may have cost money;
+        # its cost state (unknown / unpriced / partial) makes its operation incomplete, never USD 0. A rung skipped
+        # before sending is not a billable attempt and is never a cost row.
+        billable = event.get("outcome") == "success" or event.get("billable_attempt") is True
+        if user_key in _NOT_AN_ACCOUNT or not billable or not event.get("provider"):
             return False
         if event.get("origin") in _NOT_SPEND:
             return False
@@ -115,6 +119,12 @@ def record_for_current_account(event: dict[str, Any]) -> None:
 
     if _recorder is None:
         return
+    from writing_coach.billing.funding_context import attribution
     from writing_coach.core.request_context import current_user_key
 
+    # PR-MON-6 §8: the learner operation (or the system reason) this call was made for, so its cost is aggregated per
+    # operation. A call with neither is unattributed: counted and reported, never folded into a meter.
+    operation_id, meter = attribution()
+    if operation_id is not None:
+        event = {**event, "funding_operation_id": operation_id, "funding_meter": meter}
     _recorder.record(current_user_key(), event)
