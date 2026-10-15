@@ -170,6 +170,9 @@ class FundingService:
         include the meter's allowance here (the caller already refused a disabled meter with 403)."""
         quota, credits = self._repository.quota, self._repository.credits
         key = fund_key(intent.operation_id)
+        # Read before the transaction (it may query the evidence): `choose` holds the admission row and a connection,
+        # and must never wait for a second one (independent code review P2-1).
+        terms, why = self.credit_terms(intent.meter)
 
         def choose(connection: Any, row: dict[str, Any]) -> Snapshot | Refusal:
             facts: dict[str, Any] = {}
@@ -194,8 +197,7 @@ class FundingService:
                     return snapshot
                 facts["allowance"] = {"status": outcome.get("status"), "limit": outcome.get("limit"),
                                       "consumed": outcome.get("consumed"), "reserved": outcome.get("reserved")}
-            # 3. prepaid credits
-            terms, why = self.credit_terms(intent.meter)
+            # 3. prepaid credits (terms read before the transaction)
             if terms is None:
                 if intent.meter in ALLOWANCE_ONLY:
                     return Refusal("allowance_exhausted", facts)
@@ -286,8 +288,7 @@ class FundingService:
         def bump(name: str) -> None:
             counts[name] = counts.get(name, 0) + 1
 
-        for row in self._repository.open_rows(states=("funded", "dispatched"), older_than=now - timedelta(minutes=1),
-                                              limit=limit):  # fmt: skip
+        for row in self._repository.closed_backing_rows(older_than=now - timedelta(minutes=1), limit=limit):
             outcome = self._repository.complete_from_backing(row["operation_id"])
             if outcome in ("settled", "released", "inconsistent"):
                 bump(f"completed_{outcome}")

@@ -180,3 +180,50 @@ def test_without_funding_attached_the_gate_is_unchanged():
     with quota.admit("writing.review", request_digest="x") as ticket:
         assert isinstance(ticket, quota.Ticket)
     assert "reserve" in repository.calls
+
+
+def test_a_replayed_open_admission_is_in_progress_never_a_second_ticket():
+    """Independent code review P1-2: one live ticket per admission."""
+    enforced_runtime()
+    replay = AdmissionOutcome("funded", row={"units": 1, "source": "credits", "state": "dispatched"}, replayed=True)
+    funding = FakeFunding(replay)
+    quota.configure_funding(funding)
+    with pytest.raises(HTTPException) as refused:
+        with quota.admit("writing.review", request_digest="x"):
+            pass
+    assert refused.value.status_code == 409 and refused.value.detail["category"] == "operation_in_progress"
+    assert funding.calls == []   # nothing dispatched, settled or released by the twin
+
+
+def test_an_agent_round_runs_every_step_in_its_funding_context_and_none_leaks_between_yields():
+    from writing_coach.agent.turn import _Turn
+
+    seen: list[object] = []
+
+    class Provider:
+        def stream(self, request, *, should_stop):
+            def events():
+                seen.append(("start", fc.current()))   # the paid request: the backstop's live check runs here
+                yield "a"
+                seen.append(("middle", fc.current()))
+                yield "b"
+                seen.append(("end", fc.current()))     # the round's cost record
+            return events()
+
+    class Ticket:
+        def __init__(self, context):
+            self.context = context
+
+        def funding_scope(self):
+            return fc.funded(self.context)
+
+    context = fc.FundingContext(operation_id="q1:turn", meter="orena.message", admission_digest="f" * 64)
+    turn = _Turn.__new__(_Turn)
+    turn.rt = type("Rt", (), {"provider": Provider()})()
+    turn.should_stop = lambda: False
+    turn.ticket = Ticket(context)
+    outside = []
+    for item in turn._round(object()):
+        outside.append((item, fc.current()))
+    assert seen == [("start", context), ("middle", context), ("end", context)]
+    assert outside == [("a", None), ("b", None)]

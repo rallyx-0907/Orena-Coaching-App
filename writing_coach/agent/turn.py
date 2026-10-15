@@ -361,21 +361,23 @@ class _Turn:
             self._record_turn(outcome)
 
     def _round(self, request: ProviderTurnRequest) -> Iterator[Any]:
-        """One model round. A funded message (PR-MON-6) starts it inside its FundingContext: the paid-provider
-        backstop runs when the round's request is sent (the first item), and no `yield` happens inside the scope, so
-        the context never crosses an iteration of this generator."""
+        """One model round. A funded message (PR-MON-6) runs every step of it inside its FundingContext: the paid
+        request (the backstop's live check) and the round's cost record at its end are both attributed to the
+        operation. Each `next()` enters and leaves the scope, and no `yield` happens inside it, so the context never
+        crosses an iteration of this generator (which may resume on another thread)."""
 
-        stream = self.rt.provider.stream(request, should_stop=self.should_stop)
         scope = getattr(self.ticket, "funding_scope", None)
         if scope is None:
-            yield from stream
+            yield from self.rt.provider.stream(request, should_stop=self.should_stop)
             return
         with scope():
-            first = next(stream, _ROUND_DONE)
-        if first is _ROUND_DONE:
-            return
-        yield first
-        yield from stream
+            stream = self.rt.provider.stream(request, should_stop=self.should_stop)
+        while True:
+            with scope():
+                item = next(stream, _ROUND_DONE)
+            if item is _ROUND_DONE:
+                return
+            yield item
 
     def _admit_turn(self) -> None:
         """Reserve this learner message and hand the work to the provider (dispatch), before anything is sent."""

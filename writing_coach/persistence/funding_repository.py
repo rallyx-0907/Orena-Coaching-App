@@ -86,6 +86,7 @@ class AdmissionOutcome:
     status: str
     row: dict[str, Any] | None = None
     refusal: Refusal | None = None
+    replayed: bool = False   # the admission existed already (a retry or a concurrent twin), nothing new was funded
 
     @property
     def funded(self) -> bool:
@@ -152,6 +153,20 @@ class PostgresFundingRepository:
         if row["quota_state"] not in ("reserved", "dispatched"):
             return "quota_closed"
         return None
+
+    def closed_backing_rows(self, *, older_than: datetime, limit: int = 200) -> list[dict[str, Any]]:
+        """Funded/dispatched rows whose backing reservation is already closed: only these need completing, so healthy
+        long-running operations never fill the reconciler's page (independent code review P2-2)."""
+        with self._engine.connect() as connection:
+            rows = connection.execute(text(
+                f"SELECT {', '.join('f.' + c.strip() for c in _COLUMNS.split(','))} FROM funding_admissions f "
+                "LEFT JOIN commerce_quota_reservations r ON r.id = f.quota_reservation_id "
+                "WHERE f.state IN ('funded', 'dispatched') AND f.created_at < :before AND ("
+                "(f.source = 'credits' AND EXISTS (SELECT 1 FROM credit_ledger c "
+                "WHERE c.ref_entry_id = f.credit_reserve_entry_id AND c.kind IN ('settle', 'release', 'reserve_expire'))) "
+                "OR (f.source <> 'credits' AND r.state IN ('settled', 'released'))) "
+                "ORDER BY f.created_at LIMIT :limit"), {"before": older_than, "limit": int(limit)}).mappings().all()
+        return [dict(row) for row in rows]
 
     def open_rows(self, *, states: tuple[str, ...], older_than: datetime, limit: int = 200) -> list[dict[str, Any]]:
         with self._engine.connect() as connection:
@@ -370,14 +385,19 @@ class PostgresFundingRepository:
         key = fund_key(row["operation_id"])
         with self._engine.connect() as connection:
             hold = connection.execute(text(
-                "SELECT l.id, l.amount FROM credit_ledger l JOIN credit_accounts a ON a.id = l.credit_account_id "
+                "SELECT l.id, l.amount, l.request_digest, "
+                "round(extract(epoch FROM l.expires_at - l.created_at))::bigint AS ttl "
+                "FROM credit_ledger l JOIN credit_accounts a ON a.id = l.credit_account_id "
                 "WHERE a.incarnation_id = :inc AND l.kind = 'reserve' AND l.idempotency_key = :key "
                 "AND l.meter = :meter AND l.operation_ref = :ref AND NOT EXISTS (SELECT 1 FROM credit_ledger c "
                 "WHERE c.ref_entry_id = l.id AND c.kind IN ('settle', 'release', 'reserve_expire'))"),
                 {"inc": row["incarnation_id"], "key": key, "meter": row["meter"],
                  "ref": row["operation_ref"]}).mappings().first()  # fmt: skip
-            if hold is not None:
-                return {"store": "credits", **dict(hold)}
+            # exact = the 0034 guard's definition, including PR-MON-4's reserve digest of the hold's own amount and TTL
+            if hold is not None and hold["request_digest"] == digest(
+                    kind="reserve", account=str(row["incarnation_id"]), amount=int(hold["amount"]), meter=row["meter"],
+                    operation_ref=row["operation_ref"], ttl=int(hold["ttl"])):
+                return {"store": "credits", "id": hold["id"], "amount": hold["amount"]}
             reservation = connection.execute(text(
                 "SELECT r.id FROM commerce_quota_reservations r JOIN commerce_quota_buckets b ON b.id = r.bucket_id "
                 "WHERE r.operation_id = :key AND r.admitted_units = :units AND r.state IN ('reserved', 'dispatched') "
@@ -455,7 +475,7 @@ class PostgresFundingRepository:
 def _replay(row: dict[str, Any]) -> AdmissionOutcome:
     """A retry of an operation already decided (§5.4): its snapshot, or 409 when it is over."""
     if row["state"] in OPEN:
-        return AdmissionOutcome("funded", row=row)
+        return AdmissionOutcome("funded", row=row, replayed=True)
     if row["state"] == "settled":
         return AdmissionOutcome("operation_completed", row=row)
     return AdmissionOutcome("operation_closed", row=row)

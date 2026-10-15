@@ -929,6 +929,11 @@ def _fund(meter: str, units: int, op: str, incarnation: str, bucket: Any, *, pla
         if "deleted account is never admitted" in str(error):
             raise orena_http_error(403, "account_deleted", "This account was deleted.", retryable=False) from None
         raise _unavailable("funding") from error
+    if outcome.status == "funded" and outcome.replayed:
+        # Another request holds this operation (a retry or a concurrent twin): one live ticket per admission, so
+        # this one gets the gate's in-progress answer, never a second ticket that could run, settle or release the
+        # same funding (independent code review P1-2). A crashed holder's admission is closed by the reconciler.
+        raise _duplicate_error(_FUNDING_STATE.get(str(outcome.row["state"]), "settled"))
     if outcome.status == "funded":
         row = outcome.row
         facts = _facts(meter, entitlement, plan, used=units, window=window)
@@ -1232,7 +1237,11 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
                     elif row.get("updated_at") is None or row["updated_at"] > now - ASYNC_IN_PLAY_CEILING:
                         continue  # in play on a live entry: its worker settles it; the ceiling is the last resort
                 if funded is not None:
-                    state = _runtime.funding.settle(funded, actual, ref)
+                    try:
+                        state = _runtime.funding.settle(funded, actual, ref)
+                    except Exception:  # noqa: BLE001 - this row is retried next tick; the others still run
+                        _log.warning("quota reconciler: funded %s not settled", funded, exc_info=True)
+                        continue
                     done["settled" if state == "settled" else "released"] += state in ("settled", "released")
                     continue
                 outcome = repository.settle(operation_id=row["operation_id"], actual_units=actual,
@@ -1240,7 +1249,10 @@ def reconcile_once(repository: Any, *, now: datetime | None = None, limit: int =
                 done["settled"] += outcome.get("status") == "settle"
             else:
                 if funded is not None:
-                    done["released"] += _runtime.funding.release(funded, "reconciled:abandoned") == "released"
+                    try:
+                        done["released"] += _runtime.funding.release(funded, "reconciled:abandoned") == "released"
+                    except Exception:  # noqa: BLE001 - retried next tick
+                        _log.warning("quota reconciler: funded %s not released", funded, exc_info=True)
                     continue
                 outcome = repository.release(operation_id=row["operation_id"])
                 done["released"] += outcome.get("status") == "release"

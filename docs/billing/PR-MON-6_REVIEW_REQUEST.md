@@ -63,3 +63,25 @@
   - `tests/test_funding_gate_postgres.py`: precedence through the gate, credits unavailable, backstop with live
     admission, stale context, expiring or closed hold, attribution and aggregation.
 - **Full-suite results** are recorded in `BILLING_STATUS.md` with this commit.
+
+## Independent pre-review (fresh-context agent, read-only, on `26ee7142`): REQUEST CHANGES, no P0
+
+This is a pre-check by a separate agent, not the formal architecture/code review (an implementer never
+self-approves).
+
+| Finding | Disposition |
+| --- | --- |
+| **P1-1:** the agent round's FundingContext. The reviewer said the provider stream is created outside the scope. | **Partly wrong; the real part is fixed.** `stream_agent_turn` is a generator function, so its backstop runs at the first `next()`, which was already inside the scope. What was true: the round's cost record at the stream's end ran outside the scope, so agent costs were unattributed. `_Turn._round` now runs every `next()` inside the scope, with no `yield` inside it. Test: `test_an_agent_round_runs_every_step_in_its_funding_context_and_none_leaks_between_yields`. |
+| **P1-2:** a same-operation twin got a second live ticket over one admission. | **Fixed.** A replayed open admission answers 409 `operation_in_progress` at the gate (`AdmissionOutcome.replayed`). There is one live ticket per admission; a crashed holder's admission is closed by the reconciler. Test: `test_a_replayed_open_admission_is_in_progress_never_a_second_ticket`. |
+| **P2-1:** the cost gate was read inside the admission transaction (a second connection). | **Fixed.** The credit terms are read before the transaction. |
+| **P2-2:** the reconciler paged every open row. | **Fixed.** `closed_backing_rows` reads only rows whose backing has closed. |
+| **P2-3:** one failing funded row aborted the quota tick. | **Fixed.** Each row is isolated with a warning and `continue`. |
+| **P2-4:** a credits settle that fails transiently is lost when the hold expires. | **Accepted (C7):** an expired hold is released, never collected. Recorded as a known cost. A retry belongs with the PR-MON-8 runtime work. |
+| **P2-5:** `require_feature` changes `/api/evaluate` behaviour whenever the meter is enforced. | **Intended (P1-1 of the design review).** A plan-disabled learner with a cached review now gets 403. It changes nothing while quota enforcement is off, which is the default. |
+| **P2-6:** `exact_backing` ignored the reserve digest. | **Fixed.** It mirrors the 0034 guard: the canonical digest of the hold's own amount and TTL. |
+| **P2-7:** learner media imports run under `SystemFunding`. | **As designed** (§2: media batches, bounded by the media spend caps). The admission's own context for personal imports is a later refinement. |
+| **P2-8:** prefetch, reading workers and media fallbacks carry no context. | Already a precondition of enforce mode above (log-only first). |
+| **P2-9:** a skipped unfunded rung is labelled `skipped_budget` with reason `unfunded`. | Known and fails closed. The telemetry label stays, to keep the routing contract unchanged. |
+
+Re-run after the fixes (local): funding, gate, quota and contract suites 174 passed + 1 INHERITED #160; agent and
+voice suites 1254 passed.
