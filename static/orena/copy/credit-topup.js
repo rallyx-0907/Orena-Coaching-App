@@ -24,7 +24,7 @@ const KEYS = [
   'sheetAdd', 'rowType', 'rowTypeValue', 'rowPlan', 'rowPlanValue', 'payToday', 'vietqrVia', 'scanWith', 'back', 'pay',
   'scanTitle', 'amount', 'waitingTitle', 'waitingText', 'cancelPayment', 'vietqrBadge',
   'receivedTitle', 'receivedAdding', 'receivedText', 'doneTitle', 'doneAdded', 'paid', 'done',
-  'expiredTitle', 'expiredText', 'makeNewQr', 'close',
+  'headExpired', 'headCancelled', 'headFailed', 'headRefunded', 'expiredTitle', 'expiredText', 'makeNewQr', 'close',
 ];
 
 export const t = defineCopy('creditTopup', {
@@ -60,6 +60,7 @@ export const t = defineCopy('creditTopup', {
     waitingText: "Orena notices the moment it arrives. You don't need to press anything.", cancelPayment: 'Cancel payment', vietqrBadge: 'VIETQR · PAYOS',
     receivedTitle: 'Payment received', receivedAdding: 'Adding Credits', receivedText: 'Adding {n} Credits to your balance…',
     doneTitle: 'Credits added', doneAdded: '+{n} Credits', paid: 'Paid', done: 'Done',
+    headExpired: 'QR expired', headCancelled: 'Payment cancelled', headFailed: 'Payment failed', headRefunded: 'Payment refunded',
     expiredTitle: 'This QR has expired', expiredText: 'Nothing was charged. Make a new QR to try again.', makeNewQr: 'Make a new QR', close: 'Close',
   },
   vi: {
@@ -93,7 +94,8 @@ export const t = defineCopy('creditTopup', {
     waitingText: 'Orena nhận biết ngay khi tiền về. Bạn không cần bấm gì thêm.', cancelPayment: 'Huỷ thanh toán', vietqrBadge: 'VIETQR · PAYOS',
     receivedTitle: 'Đã nhận thanh toán', receivedAdding: 'Đang cộng Credits', receivedText: 'Đang cộng {n} Credits vào số dư…',
     doneTitle: 'Đã cộng Credits', doneAdded: '+{n} Credits', paid: 'Đã thanh toán', done: 'Xong',
-    expiredTitle: 'Mã QR đã hết hạn', expiredText: 'Bạn chưa bị trừ tiền. Tạo mã QR mới để thử lại.', makeNewQr: 'Tạo mã QR mới', close: 'Đóng',
+    headExpired: 'Mã QR hết hạn', headCancelled: 'Đã hủy thanh toán', headFailed: 'Thanh toán thất bại', headRefunded: 'Đã hoàn tiền',
+    expiredTitle: 'Mã QR này đã hết hạn', expiredText: 'Bạn chưa bị trừ tiền. Tạo mã QR mới để thử lại.', makeNewQr: 'Tạo mã QR mới', close: 'Đóng',
   },
   zh: {
     errUnavailable: '暂时无法使用 Credits。', errTryLater: '暂时无法购买 Credits，请稍后再试。',
@@ -126,6 +128,7 @@ export const t = defineCopy('creditTopup', {
     waitingText: '款项一到账 Orena 就会知道，你无需再点任何按钮。', cancelPayment: '取消支付', vietqrBadge: 'VIETQR · PAYOS',
     receivedTitle: '已收到付款', receivedAdding: '正在添加 Credits', receivedText: '正在把 {n} Credits 添加到你的余额…',
     doneTitle: 'Credits 已到账', doneAdded: '+{n} Credits', paid: '已支付', done: '完成',
-    expiredTitle: '二维码已过期', expiredText: '未扣款。重新生成二维码即可再试。', makeNewQr: '重新生成二维码', close: '关闭',
+    headExpired: '二维码过期', headCancelled: '付款取消', headFailed: '付款失败', headRefunded: '已退款',
+    expiredTitle: '此二维码已过期', expiredText: '未扣款。重新生成二维码即可再试。', makeNewQr: '重新生成二维码', close: '关闭',
   },
 });

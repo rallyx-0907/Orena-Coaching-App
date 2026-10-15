@@ -438,6 +438,68 @@
   color: var(--text);
   box-shadow: var(--sh1);
 }
+/* History rows (frame "Credits": tile 38, title 14.5/600, amount 15.5/700, time 12) */
+.s-cr-hlist {
+  display: flex;
+  flex-direction: column;
+}
+.s-cr-hrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+}
+.s-cr-hrow__tile {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  background: var(--surface2);
+  color: var(--muted);
+}
+.s-cr-hrow__tile--spark {
+  background: var(--spark-soft);
+}
+.s-cr-hrow__tile--green {
+  background: var(--green-soft);
+  color: var(--green);
+}
+.s-cr-hrow__text {
+  flex: 1;
+  min-width: 0;
+}
+.s-cr-hrow__title {
+  font-size: 14.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.s-cr-hrow__end {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: none;
+}
+.s-cr-hrow__amt {
+  font-size: 15.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.s-cr-hrow__amt--pos {
+  color: var(--green);
+}
+.s-cr-hrow__time {
+  font-size: 12px;
+  color: var(--text3);
+  font-variant-numeric: tabular-nums;
+}
 .s-cr-empty {
   display: flex;
   flex-direction: column;

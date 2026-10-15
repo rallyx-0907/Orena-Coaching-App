@@ -68,6 +68,9 @@ function doneBody({ total, price }) {
    failed or cancelled order uses its own status line and makes no claim about a charge. */
 export const CLOSED_TITLE = Object.freeze({ expired: 'expiredTitle', cancelled: 'statusCancelled', failed: 'statusFailed', refunded: 'statusRefunded' });
 
+/* The sheet head of each closed state (the frame's "QR expired"); the body line above is a different sentence. */
+export const CLOSED_HEAD = Object.freeze({ expired: 'headExpired', cancelled: 'headCancelled', failed: 'headFailed', refunded: 'headRefunded' });
+
 function expiredBody(orderState) {
   const key = CLOSED_TITLE[orderState] || CLOSED_TITLE.expired;
   const text = key === 'expiredTitle' ? html`<div class="s-cr-sheet__p s-cr-sheet__p--wide">${t('expiredText')}</div>` : '';
@@ -77,7 +80,7 @@ function expiredBody(orderState) {
 /* The sheet for a step. `busy` disables the pay button while a checkout request is in flight (one request per
    intent, product/credit-topup.js createCheckout). */
 export function sheetMarkup({ step, total, price, planName = '', qr = '', busy = false, orderState = 'expired', stillWaiting = false }) {
-  const titles = { confirm: t('sheetAdd'), qr: t('scanTitle'), received: t('receivedAdding'), done: t('doneTitle'), expired: t(CLOSED_TITLE[orderState] || CLOSED_TITLE.expired) };
+  const titles = { confirm: t('sheetAdd'), qr: t('scanTitle'), received: t('receivedAdding'), done: t('doneTitle'), expired: t(CLOSED_HEAD[orderState] || CLOSED_HEAD.expired) };
   const body = {
     confirm: () => confirmBody({ total, price, planName }),
     qr: () => qrBody({ price, qr, stillWaiting }),
@@ -91,7 +94,8 @@ export function sheetMarkup({ step, total, price, planName = '', qr = '', busy =
     qr: html`<button type="button" class="s-cr-btn s-cr-btn--sec" data-cr-cancel>${t('cancelPayment')}</button>`,
     received: '',
     done: html`<button type="button" class="s-cr-btn s-cr-btn--pri" data-cr-done>${t('done')}</button>`,
-    expired: html`<button type="button" class="s-cr-btn s-cr-btn--sec" data-sheet-close>${t('close')}</button><button type="button" class="s-cr-btn s-cr-btn--pri" data-cr-again${busyAttr}>${t('makeNewQr')}</button>`,
+    /* A refunded order is settled: the frame draws no such state, so the least UI is Close alone (no new QR offered). */
+    expired: html`<button type="button" class="s-cr-btn s-cr-btn--sec" data-sheet-close>${t('close')}</button>${orderState === 'refunded' ? '' : html`<button type="button" class="s-cr-btn s-cr-btn--pri" data-cr-again${busyAttr}>${t('makeNewQr')}</button>`}`,
   }[step];
   return html`${sheetHead({ title: titles[step], closeLabel: shellCopy('close') })}
     <div class="o-sheet__body s-cr-sheet__body">${body}</div>

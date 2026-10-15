@@ -51,6 +51,29 @@ const base = (extra = {}) => ({ packs: PACKS, selectedKey: '', strip: { id: 'plu
   eq(model.sheetStep({ order: {}, orderState: 'received' }), 'received');
   eq(model.sheetStep({ order: {}, orderState: 'confirmed' }), 'done');
   for (const s of ['expired', 'cancelled', 'failed', 'refunded']) eq(model.sheetStep({ order: {}, orderState: s }), 'expired');
+  /* roving radio group (WAI-ARIA): arrows move and wrap, Home/End jump */
+  const keys = PACKS.map((p) => p.key);
+  eq(model.nextPackKey(PACKS, keys[0], 'ArrowRight'), keys[1]);
+  eq(model.nextPackKey(PACKS, keys[0], 'ArrowDown'), keys[1]);
+  eq(model.nextPackKey(PACKS, keys[1], 'ArrowRight'), keys[0], 'wraps forward');
+  eq(model.nextPackKey(PACKS, keys[0], 'ArrowLeft'), keys[1], 'wraps back');
+  eq(model.nextPackKey(PACKS, keys[1], 'ArrowUp'), keys[0]);
+  eq(model.nextPackKey(PACKS, keys[1], 'Home'), keys[0]);
+  eq(model.nextPackKey(PACKS, keys[0], 'End'), keys[1]);
+  eq(model.nextPackKey(PACKS, keys[0], 'Tab'), null, 'other keys are not handled');
+  eq(model.nextPackKey([], '', 'ArrowRight'), null);
+  /* the watcher ends on a still-waiting line, never silently */
+  eq(model.watchEndsStillWaiting({ state: 'still_waiting', stopped: false }), true, 'cap reached');
+  eq(model.watchEndsStillWaiting({ state: 'waiting', stopped: true, reason: 'missing' }), true, '404 from the order route');
+  eq(model.watchEndsStillWaiting({ state: 'confirmed', stopped: false }), false, 'terminal');
+  eq(model.watchEndsStillWaiting({ state: 'expired', stopped: false }), false, 'terminal');
+  eq(model.watchEndsStillWaiting({ state: 'waiting', stopped: true }), false, 'retired by the screen');
+  eq(model.watchEndsStillWaiting({ state: 'waiting', stopped: true, reason: 'auth' }), false, 'signed out');
+  /* focus returns to the control that opened the sheet, after the screen re-mounted */
+  const root = (have) => ({ querySelector: (sel) => (have.includes(sel) ? { sel } : null) });
+  eq(model.sheetReturnTarget(root(['[data-cr-show]', '[data-cr-continue]'])).sel, '[data-cr-show]', 'banner up: Show QR');
+  eq(model.sheetReturnTarget(root(['[data-cr-continue]'])).sel, '[data-cr-continue]');
+  eq(model.sheetReturnTarget(root([])), null);
   eq(model.qrPath(3, (r, c) => r === c), 'M0 0h1v1h-1zM1 1h1v1h-1zM2 2h1v1h-1z');
   eq(model.qrPath(2, () => true), 'M0 0h2v1h-2zM0 1h2v1h-2z', 'runs are merged');
 }
@@ -95,6 +118,39 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   const rows = String(creditsMarkup(base({ rows: [{ labelKey: 'historyBuy', change: 5, at: '' }], filter: 'out' })));
   ok(rows.includes('s-cr-empty'), 'a filter with no rows shows the empty state');
 }
+/* --- history rows, per language ------------------------------------------------------------------------------ */
+{
+  const fixture = [
+    { labelKey: 'historyBuy', change: 1111, at: '2026-10-14T08:30:00Z' },
+    { labelKey: 'historyUse', change: -25, at: '2026-10-13T08:30:00Z' },
+    { labelKey: 'historyRefund', change: 25, at: '' },
+    { labelKey: 'historyAdjust', change: -5, at: 'not a date' },
+  ];
+  const words = { en: ['Buy credits', 'Use credits', 'Refund credits', 'Adjust credits'], zh: ['购买 Credits', '使用 Credits', '退还 Credits', '调整 Credits'], vi: ['Mua Credits', 'Dùng Credits', 'Hoàn Credits', 'Điều chỉnh Credits'] };
+  for (const locale of ['en', 'vi', 'zh']) {
+    copy.setLanguages({ ui: locale, support: locale });
+    const all = String(creditsMarkup(base({ rows: fixture })));
+    eq((all.match(/class="s-cr-hrow"/g) || []).length, 4, `${locale}: one row per entry`);
+    ok(!all.includes('s-cr-empty'), `${locale}: rows replace the empty state`);
+    for (const word of words[locale] || []) ok(all.includes(word), `${locale}: ${word}`);
+    ok(all.includes('+1') && all.includes('−25') && all.includes('−5'), `${locale}: signed amounts`);
+    ok(all.includes('s-cr-hrow__amt--pos'), 'credits in are marked');
+    const out = String(creditsMarkup(base({ rows: fixture, filter: 'out' })));
+    eq((out.match(/class="s-cr-hrow"/g) || []).length, 2, `${locale}: the Used filter keeps outgoing rows`);
+    ok(!/undefined|NaN|Invalid/.test(all), `${locale}: no raw value for a missing or bad time`);
+  }
+  copy.setLanguages({ ui: 'en', support: 'en' });
+  ok(String(creditsMarkup(base({ rows: fixture }))).includes('+1,111'), 'amount grouped for the language');
+}
+/* --- pack radio group: roving tabindex -------------------------------------------------------------------------- */
+{
+  const markup = String(creditsMarkup(base({ selectedKey: 'credits:bb:payos' })));
+  const tabs = [...markup.matchAll(/data-cr-pack="([^"]+)"/g)].map((m) => {
+    const tag = markup.slice(markup.lastIndexOf('<button', m.index), m.index);
+    return [m[1], /tabindex="(-?\d)"/.exec(tag)?.[1]];
+  });
+  eq(tabs, [['credits:aa:payos', '-1'], ['credits:bb:payos', '0']], 'only the selected pack is a tab stop');
+}
 
 /* --- Credits Payment --------------------------------------------------------------------------------------- */
 {
@@ -127,8 +183,22 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   ok(expired.includes('This QR has expired') && expired.includes('Nothing was charged') && expired.includes('data-cr-again'));
   for (const [state, line] of [['cancelled', 'The payment was cancelled'], ['failed', 'The payment did not go through'], ['refunded', 'This payment was refunded']]) {
     const closed = String(sheetMarkup({ ...model0, step: 'expired', orderState: state }));
-    ok(closed.includes(line) && !closed.includes('Nothing was charged') && !closed.includes('This QR has expired') && closed.includes('data-cr-again'), `${state}: its own status line, no "nothing was charged"`);
+    ok(closed.includes(line) && !closed.includes('Nothing was charged') && !closed.includes('This QR has expired'), `${state}: its own status line, no "nothing was charged"`);
   }
+  /* each closed state has a head and a body of its own (the frame: head "QR expired", body "This QR has expired") */
+  for (const locale of ['en', 'vi', 'zh']) {
+    copy.setLanguages({ ui: locale, support: locale });
+    for (const state of ['expired', 'cancelled', 'failed', 'refunded']) {
+      const closed = String(sheetMarkup({ ...model0, step: 'expired', orderState: state }));
+      const head = /s-cr-sheet__title[^>]*>([^<]*)</.exec(closed) || /o-sheet__title">([^<]*)</.exec(closed);
+      const body = /s-cr-sheet__h s-cr-sheet__h--big">([^<]*)</.exec(closed);
+      ok(head && body && head[1] && body[1] && head[1] !== body[1], `${locale} ${state}: head and body differ (${head && head[1]} / ${body && body[1]})`);
+      eq(closed.includes('data-cr-again'), state !== 'refunded', `${locale} ${state}: "Make a new QR" is not offered after a refund`);
+      ok(closed.includes('data-sheet-close'), `${locale} ${state}: Close stays`);
+    }
+  }
+  copy.setLanguages({ ui: 'en', support: 'en' });
+  ok(String(sheetMarkup({ ...model0, step: 'expired' })).includes('QR expired'), 'the frame head for an expired QR');
   eq(qrMatrix('x'.repeat(5000)), null, 'a payment string over QR capacity gives no matrix instead of throwing');
   const unreadable = String(sheetMarkup({ ...model0, step: 'qr', qr: 'x'.repeat(5000) }));
   ok(unreadable.includes('The payment page could not be opened') && unreadable.includes('data-cr-cancel') && !unreadable.includes('shape-rendering'), 'an unreadable QR shows the gateway message in the existing wait line');
@@ -160,6 +230,9 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   ok(/return \(\) => \{ stopped = true;/.test(src) && /shouldStop:[^\n]*stopped/.test(src), 'leaving the route retires the watcher');
   ok(/purchase\.order && !purchase\.cancelled[^\n]*\n?\s*[^\n]*watch\(\);/.test(src), 'returning to the route re-watches an open order');
   ok(/function clearPurchase/.test(src) && /refusal\.action === 'sign_in'\) clearPurchase\(\)/.test(src) && /reason === 'auth'\) \{ clearPurchase/.test(src), 'a purchase does not outlive the signed-in session');
+  ok(new RegExp('onClose: \\(\\) => \\{[^}]*paint\\(\\);[^}]*sheetReturnTarget\\(element\\)\\?\\.focus').test(src), 'closing the sheet returns focus to the opener after the re-mount');
+  ok(/watchEndsStillWaiting\(result\)/.test(src), 'every non-terminal end of the watcher shows the still-waiting line');
+  ok(/keydown/.test(src) && /nextPackKey/.test(src), 'the pack group answers the arrow keys');
   ok(/refusal\.action === 'resume'/.test(src), 'checkout_already_started is handled without looping on the pay button');
   ok(!/t\('waitingTitle'\)|t\('pendingText'/.test(src + readFileSync(new URL('../static/orena/screens/credits/sheet.js', import.meta.url), 'utf8')), 'the design sample waiting lines are not rendered');
 }

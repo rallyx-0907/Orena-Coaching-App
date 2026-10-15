@@ -92,3 +92,44 @@ export function qrPath(size, isDark) {
   }
   return d;
 }
+
+/* The pack the arrow keys move to inside the radio group (WAI-ARIA): next/previous wrap, Home/End jump. Null for any
+   other key, so the group leaves Tab and the rest alone. */
+export function nextPackKey(packs, key, pressed) {
+  const list = Array.isArray(packs) ? packs : [];
+  if (!list.length) return null;
+  const at = Math.max(0, list.findIndex((pack) => pack.key === key));
+  const last = list.length - 1;
+  const target = { ArrowRight: at === last ? 0 : at + 1, ArrowDown: at === last ? 0 : at + 1, ArrowLeft: at === 0 ? last : at - 1, ArrowUp: at === 0 ? last : at - 1, Home: 0, End: last }[pressed];
+  return target === undefined ? null : list[target].key;
+}
+
+/* Does a finished watch leave the sheet on "still waiting"? Yes for the attempt cap and for an order route that answers
+   404 (nothing more to poll, nothing confirmed). No for a terminal state, a sign-out, or a watcher the screen retired. */
+export function watchEndsStillWaiting(result) {
+  if (!result) return false;
+  return result.state === 'still_waiting' || result.reason === 'missing';
+}
+
+/* After the sheet closes the screen is painted again, so the control that opened the sheet is gone: the matching
+   control of the new paint ("Show QR" while the pending banner is up, else "Continue") takes the focus. */
+export function sheetReturnTarget(root) {
+  return root.querySelector('[data-cr-show]') || root.querySelector('[data-cr-continue]') || null;
+}
+
+/* A history row's time, short, in the interface language; empty when the backend gave none or it does not parse. */
+export function formatHistoryTime(at, locale = 'en') {
+  const date = at ? new Date(at) : null;
+  if (!date || Number.isNaN(date.getTime())) return '';
+  try {
+    return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(date);
+  } catch {
+    return '';
+  }
+}
+
+/* The tile of a history row: the spark for credits coming in, an arrow back for a refund, the pen for use. */
+export const HISTORY_TILES = Object.freeze({
+  historyBuy: { icon: null, tone: 'spark' }, historyAdjust: { icon: null, tone: 'spark' },
+  historyRefund: { icon: 'undo-2', tone: 'green' }, historyUse: { icon: 'pen-line', tone: 'plain' },
+});

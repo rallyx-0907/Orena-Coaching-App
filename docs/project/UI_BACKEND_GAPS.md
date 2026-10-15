@@ -6190,6 +6190,8 @@ and `CREDITS_ENABLED` are not live. Missing backend data, no workaround written:
   "waiting for payment confirmation", never confirm. The route serves only the caller's own order (another learner's code
   answers 404, not 403, so codes are not probed), and its `state` and `credited` must match what `orderStateFrom` reads.
   The client has no kill switch of its own: `credit_packs` is the only runtime gate that hides the screen.
+  Client side (PR #213 design review P1-A): when the order route answers 404, or the watcher ends without a terminal state,
+  the sheet and the pending banner show the existing "Still waiting" line instead of staying silent; the route itself is still open.
 - **CT-2 learner balance.** Balance and ledger are admin-only (`/api/admin/billing/credits/{incarnation}`). Needed: a
   learner read of the caller's own balance (posted, available) and a page of entries.
 - **CT-3 learner history shape.** Needed: only learner-meaningful entries (topup, settle, refund, reversal, adjustment),
@@ -6227,8 +6229,9 @@ padding, gap and box size are equal for the title, hero, tile, balance, buttons,
   the new-balance figure and the count-up animation are not drawn.
 - **Bonus and tag (CT-5).** The pack card has no benefit line or "Most chosen" tag, so a pack card is 29px shorter than
   the design's.
-- **History (CT-3).** The card draws its filters and the design's empty state only; rows exist in the code
-  (`historyRows`) but nothing serves them. The design's per-feature icon, title and sub need a feature per entry.
+- **History (CT-3).** The card renders given rows (tile, Buy/Use/Refund/Adjust Credits label, signed amount, short date;
+  gate fixture in `test_orena_screen_credits.mjs`), but nothing serves them, so the list is empty and the design's empty
+  state shows. No data is faked. The design's per-feature icon, sub line and day groups need a feature per entry.
 - **Timer and expiry (CT-6).** The "Valid 15:00" countdown is not drawn (no `expires_at`). Expired is reached only from the
   backend's `expired`/`cancelled`/`failed`/`refunded` order state.
 - **Receipt.** "Receipt sent to ..." is not drawn: the backend sends none.

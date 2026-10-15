@@ -22,7 +22,7 @@ import { languages } from '../../copy/index.js';
 import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from '../../copy/credit-topup.js';
 import { createCheckout, loadOffers, historyRows, watchOrder } from '../../product/credit-topup.js';
-import { packCards, selectedPack, planStrip, formatNumber, formatPrice, HOW_ROWS, FILTERS, filterHistory, sheetStep } from './model.js';
+import { packCards, selectedPack, planStrip, formatNumber, formatPrice, HOW_ROWS, FILTERS, filterHistory, sheetStep, nextPackKey, watchEndsStillWaiting, sheetReturnTarget, formatHistoryTime, HISTORY_TILES } from './model.js';
 import { sheetMarkup } from './sheet.js';
 import { ensureSpark, spark } from './spark.js';
 
@@ -37,6 +37,13 @@ function clearPurchase() {
 }
 
 const lang = () => languages().ui;
+
+function historyRow(row) {
+  const tile = HISTORY_TILES[row.labelKey] || HISTORY_TILES.historyBuy;
+  const gain = row.change > 0;
+  const time = formatHistoryTime(row.at, lang());
+  return html`<div class="s-cr-hrow"><span class="${cls('s-cr-hrow__tile', `s-cr-hrow__tile--${tile.tone}`)}" aria-hidden="true">${tile.icon ? raw(icon(tile.icon, { size: 18 })) : spark(19)}</span><div class="s-cr-hrow__text"><div class="s-cr-hrow__title">${t(row.labelKey)}</div></div><div class="s-cr-hrow__end"><span class="${cls('s-cr-hrow__amt', gain && 's-cr-hrow__amt--pos')}">${gain ? '+' : '−'}${formatNumber(Math.abs(row.change), lang())}</span>${time ? html`<span class="s-cr-hrow__time">${time}</span>` : ''}</div></div>`;
+}
 
 export function creditsMarkup({ packs, selectedKey, strip, pending, filter, rows }) {
   const cards = packCards(packs, selectedKey, lang());
@@ -69,7 +76,7 @@ export function creditsMarkup({ packs, selectedKey, strip, pending, filter, rows
         <section class="s-cr-card s-cr-packs" data-cr-packs>
           <div class="s-cr-card__head"><h2 class="s-cr-card__title">${t('addCredits')}</h2><div class="s-cr-card__sub">${t('packsSub')}</div></div>
           <div class="s-cr-packs__list" role="radiogroup" aria-label="${t('packsLabel')}">
-            ${cards.map((card) => html`<button type="button" role="radio" class="${cls('s-cr-pack', card.selected && 's-cr-pack--on')}" aria-checked="${card.selected ? 'true' : 'false'}" data-cr-pack="${card.key}">
+            ${cards.map((card) => html`<button type="button" role="radio" class="${cls('s-cr-pack', card.selected && 's-cr-pack--on')}" aria-checked="${card.selected ? 'true' : 'false'}" tabindex="${card.selected ? '0' : '-1'}" data-cr-pack="${card.key}">
               <div class="s-cr-pack__top">${spark(18)}<span class="s-cr-pack__flex"></span><span class="s-cr-pack__check">${raw(icon('check', { size: 13, stroke: 3.4 }))}</span></div>
               <div class="s-cr-pack__total"><span class="s-cr-pack__num">${card.total}</span><span class="s-cr-pack__unit">${t('credits')}</span></div>
               <div class="s-cr-pack__rule"></div>
@@ -87,7 +94,7 @@ export function creditsMarkup({ packs, selectedKey, strip, pending, filter, rows
             <div class="s-cr-history__head"><h2 class="s-cr-card__title">${t('history')}</h2>
               <div class="s-cr-filter" role="group">${FILTERS.map((item) => html`<button type="button" class="${cls('s-cr-filter__btn', filter === item.id && 's-cr-filter__btn--on')}" aria-pressed="${filter === item.id ? 'true' : 'false'}" data-cr-filter="${item.id}">${t(item.label)}</button>`)}</div>
             </div>
-            ${shown.length ? '' : html`<div class="s-cr-empty">${spark(26)}<div class="s-cr-empty__title">${filter === 'in' ? t('emptyInTitle') : t('emptyTitle')}</div><div class="s-cr-empty__text">${t('emptyText')}</div></div>`}
+            ${shown.length ? html`<div class="s-cr-hlist">${shown.map(historyRow)}</div>` : html`<div class="s-cr-empty">${spark(26)}<div class="s-cr-empty__title">${filter === 'in' ? t('emptyInTitle') : t('emptyTitle')}</div><div class="s-cr-empty__text">${t('emptyText')}</div></div>`}
           </section>
           <section class="s-cr-card s-cr-how">
             <h2 class="s-cr-how__title">${t('howTitle')}</h2>
@@ -158,7 +165,13 @@ export default async function credits(element, ctx) {
     openSheet({
       label: t('sheetAdd'),
       className: 's-cr-sheet',
-      onClose: () => { sheet = null; if (ctx.isCurrent()) paint(); },
+      onClose: () => {
+        sheet = null;
+        if (!ctx.isCurrent()) return;
+        paint();
+        /* paint() re-mounted the screen, so the overlay's opener is gone: hand the focus to its successor. */
+        sheetReturnTarget(element)?.focus({ preventScroll: true });
+      },
       render: (el, handle) => {
         sheet = { element: el, handle };
         fillSheet(el, handle, sheetMarkup(sheetModel(step)));
@@ -193,7 +206,7 @@ export default async function credits(element, ctx) {
     }).then((result) => {
       if (purchase.watcher !== token) return;
       if (result.reason === 'auth') { clearPurchase(); return; }
-      if (result.state === 'still_waiting') { purchase.stillWaiting = true; refresh(); }
+      if (watchEndsStillWaiting(result)) { purchase.stillWaiting = true; refresh(); }
     }).finally(() => { if (purchase.watcher === token) purchase.watching = false; });
   }
 
@@ -258,6 +271,14 @@ export default async function credits(element, ctx) {
     const scrollToPacks = () => element.querySelector('[data-cr-packs]')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     element.querySelector('[data-cr-add]')?.addEventListener('click', scrollToPacks);
     element.querySelectorAll('[data-cr-pack]').forEach((button) => button.addEventListener('click', () => { view.selectedKey = button.dataset.crPack; paint(); element.querySelector(`[data-cr-pack="${view.selectedKey}"]`)?.focus({ preventScroll: true }); }));
+    element.querySelector('.s-cr-packs__list')?.addEventListener('keydown', (event) => {
+      const key = nextPackKey(offers.packs, view.selectedKey, event.key);
+      if (!key) return;
+      event.preventDefault();
+      view.selectedKey = key;
+      paint();
+      element.querySelector(`[data-cr-pack="${key}"]`)?.focus({ preventScroll: true });
+    });
     element.querySelectorAll('[data-cr-filter]').forEach((button) => button.addEventListener('click', () => { view.filter = button.dataset.crFilter; paint(); }));
     element.querySelector('[data-cr-continue]')?.addEventListener('click', () => {
       const resumable = purchase.order && purchase.order.packKey === view.selectedKey && ['waiting', 'received'].includes(purchase.state);
