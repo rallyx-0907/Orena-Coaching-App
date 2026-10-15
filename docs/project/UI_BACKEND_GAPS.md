@@ -6181,6 +6181,10 @@ open for the human: a control to retry only the missing lines, and whether the d
 
 - **Media licence link on the public credits page (D-205 follow-up).** Commons items now carry `license_name` and `license_url` through the credits rows and the listening payload, but no credits renderer shows the licence link, so CC attribution links stay invisible. Needs the design's credits row to place it.
 
+- **ASR screen counts in the Admin media record (D-208 proposed, 2026-10-15).** `processing.asr_filtered` (segments removed as hallucination or silence) and `processing.asr_flagged` (long segments with few words, kept) are in the API but not drawn. The review step should show them beside the transcript, with the note that key-term recognition errors are not machine-corrected. Needs a place in the design's Admin media record.
+
+- **Traditional Chinese media is not reachable (D-208 proposed, 2026-10-15).** Imports store only the language `zh`, so every Chinese ASR item is normalised to Simplified, including genuinely Traditional (Taiwan, Hong Kong) audio. Needs an owner decision on a script choice at import (not added in D-208).
+
 ## Owner decisions of 2026-10-15 (D-210 proposed)
 
 - **Credits balance (CT-2), owner decision.** There is still no learner balance endpoint (balance and ledger are admin-only). The

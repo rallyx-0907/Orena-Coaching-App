@@ -146,6 +146,7 @@ def stored_media_entry(media_id: str, *, allow_unpublished: bool = False) -> Med
 
 
 _CONTENT_PREFIXES = ("media:", "preview:", "upload:")
+_MEDIA_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$")  # the store's id shape, without ':'
 
 
 def media_state_writable(content_id: str) -> bool:
@@ -159,28 +160,37 @@ def media_state_writable(content_id: str) -> bool:
     stored entry names (a curated lesson, a text, a book) is not this rule's business.
 
     The id is read in every spelling a client gives it: bare, `media:<id>`, `upload:<id>`, `preview:<id>`
-    and any prefixed form of those. This reuses `stored_media_entry`, the one visibility check."""
+    and any prefixed form of those. The spellings are peeled to the one bare id the store is keyed by, so a
+    write costs at most ONE store read, and the entry read is checked with `visible_to`, the one visibility
+    rule. An id that is not media-shaped (`reading:14`, `book:..`, `text:..`, `url:..`, empty) costs none.
+
+    Media-shaped ids fail closed: if the store cannot be read or verified (a corrupt or unreadable index, an
+    error), the write is refused, because nothing can show the item is visible. A missing index is a fresh
+    start, not a failure. Ids that are not media-shaped are unaffected whatever the index's state."""
     if _media_store is None:
         return True
     value = str(content_id or "").strip()
-    candidates = [value]
     while True:
         prefix = next((p for p in _CONTENT_PREFIXES if value.startswith(p)), "")
         if not prefix:
             break
         value = value[len(prefix):]
-        candidates.append(value)
+    if not value or ":" in value or not _MEDIA_ID.fullmatch(value):
+        return True
     try:
-        for candidate in candidates:
-            if candidate and _media_store.get(candidate) is not None:
-                return stored_media_entry(candidate) is not None
-    except Exception:  # a broken index cannot prove the item is visible: fail closed, as the entry lookup does
+        entry = _media_store.get(value)
+        if entry is None:
+            # The file store answers "no entry" for a corrupt or unreadable index too; its issue says which.
+            return getattr(_media_store, "last_read_issue", "") not in {"index_corrupt", "index_unreadable"}
+        return visible_to(entry, user_key=current_user_key(), language=current_language_code())
+    except Exception:
         return False
-    return True
 
 
 def require_media_state_writable(content_id: str) -> None:
-    """404 for learner state aimed at a media id the learner cannot see (the answer an unknown id gets)."""
+    """404 for learner state aimed at a media id the learner cannot see. (Held, unpublished and another learner's ids
+    answer alike; an id nothing names is not refused, so a write is a faint existence check for a hidden id. Media ids
+    are digest-shaped and the listings already hide them at the same level: accepted, D-210.)"""
     if not media_state_writable(content_id):
         raise orena_http_error(404, "media_not_available", "This media is not available.")
 

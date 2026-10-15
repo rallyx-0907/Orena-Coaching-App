@@ -234,6 +234,14 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
         localById.delete(line.id);
       }
     } catch (error) {
+      // The item was unpublished or archived while the learner was on it (D-210): the room stays usable and reads on,
+      // the attempt is simply not kept. No note, no retry that cannot succeed, nothing loops.
+      if (error?.status === 404 && /media_not_available/.test(String(error?.category || error?.detail?.category || ''))) {
+        saveStates.delete(line.id);
+        if (seg?.id === line.id && checked) paint();
+        onChange();
+        return;
+      }
       // A lesson outside the learner's learning language cannot be saved: saying so beats a retry that fails again.
       const language = error?.status === 409 || error?.status === 422 || /language/.test(String(error?.category || error?.detail?.category || ''));
       saveStates.set(line.id, language ? 'language' : 'failed');

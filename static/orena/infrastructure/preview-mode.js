@@ -43,6 +43,9 @@ const STATE_PATHS = [
   '/api/annotations/',
   '/api/responses/',
   '/api/vocabulary/decks',
+  // Orena conversation: the turn and the persisted history (Intelligence lane's server; this is only the learner wall).
+  '/api/agent/',
+  '/api/conversations/',
 ];
 
 export function isLearnerStateWrite(method, url) {

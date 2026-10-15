@@ -39,6 +39,9 @@ const STATE = [
   ['PUT', '/api/annotations/media%3Aheld-one'],
   ['PUT', '/api/responses/react%3Aone'],
   ['POST', '/api/vocabulary/decks/d1/words'],
+  ['POST', '/api/agent/turn'],
+  ['POST', '/api/agent/voice/session'],
+  ['POST', '/api/conversations/conversation%3Ax/turns'],
 ];
 const NOT_STATE = [
   ['GET', '/api/listening/progress?asset_id=held-one'],
@@ -50,6 +53,7 @@ const NOT_STATE = [
   ['POST', '/api/media/annotate'],
   ['POST', '/api/media/translate'],
   ['GET', '/api/media/admin/player/held-one'],
+  ['GET', '/api/conversations/conversation%3Ax'],
 ];
 for (const [method, url] of STATE) assert.equal(isLearnerStateWrite(method, url), true, `${method} ${url} stores learner state`);
 for (const [method, url] of NOT_STATE) assert.equal(isLearnerStateWrite(method, url), false, `${method} ${url} does not`);
@@ -129,12 +133,20 @@ assert.match(practice, /if \(readOnly\) return;\s*\n\s*evidence\.compare[\s\S]*a
 
 assert.match(wordSheet, /readOnly = false/, 'the word sheet takes the flag');
 assert.match(wordSheet, /\$\{readOnly \? '' : html`<button[^`]*data-save\b/, 'no save icon in a preview');
-assert.match(wordSheet, /\$\{readOnly \? '' : html`<button[^`]*data-save-cta/, 'no save button in a preview');
+assert.match(wordSheet, /\$\{readOnly \? '' : html`<div class="s-qs__actions">\s*<button[^`]*data-save-cta/, 'no save button in a preview');
 assert.match(wordSheet, /loading \|\| readOnly \? ''/, 'no link to the word page, which saves, in a preview');
 assert.match(wordSheet, /if \(busy \|\| readOnly\) return;/, 'and the save handler is closed too');
 
 assert.match(vocab, /readOnly = false/, 'the Vocabulary Focus takes the flag');
 assert.match(vocab, /\$\{readOnly \? '' : html`<button[^`]*s-vocab__save/, 'no Save in the Vocabulary Focus in a preview');
 assert.match(vocab, /if \(!row \|\| readOnly\) return;/, 'and its handler is closed too');
+
+/* No Orena conversation is opened from a preview (D-210): Explain and Ask deeper are not drawn. */
+assert.match(room, /\$\{preview \? '' : html`<button[^`]*data-act="explain"/, 'no Explain in a preview');
+assert.match(wordSheet, /\$\{readOnly \? '' : html`<div class="s-qs__actions">/, 'no Ask deeper (nor the save row) in a preview');
+assert.match(wordSheet, /card\.whyHere && readOnly\) return html`<div class="s-qs__why">/, 'the "why here" row is text, not a way into Orena, in a preview');
+
+/* An item unpublished while a learner is on it: the attempt is not kept, quietly (no note, no retry that cannot work). */
+assert.match(practice, /error\?\.status === 404 && \/media_not_available\/[\s\S]{0,300}return;/, 'a 404 media_not_available ends the save without a note');
 
 console.log('preview read-only gate: ok');

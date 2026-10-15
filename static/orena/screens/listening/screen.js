@@ -687,7 +687,7 @@ export default async function listening(element, ctx) {
         ${playbackOk ? pill({ id: 'play-seg', label: t('playSegment'), iconName: 'play', variant: 'primary' }) : ''}
         ${preview ? '' : html`<button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>`}
         ${pill({ id: 'vocab', label: t('vocabularyFocus') })}
-        <button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>
+        ${preview ? '' : html`<button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>`}
         <span class="s-listening__extra-acts${moreActs ? ' is-open' : ''}" role="group" aria-label="${t('practiseLine')}">
           <span class="s-listening__practise-label">${t('practiseLine')}</span>
           ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}

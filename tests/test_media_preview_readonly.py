@@ -256,6 +256,63 @@ def test_the_learners_own_personal_import_still_saves_practice_progress(world):
     assert [kind for kind, _ in recorder.writes] == ["dictation"]
 
 
+# --- Cost and failure behaviour of the guard (review #220: P2-3, P2-5) ----------------------------
+
+
+class CountingStore(MemoryStore):
+    def __init__(self, entries, issue=""):
+        super().__init__(entries)
+        self.reads = 0
+        self.last_read_issue = issue
+
+    def get(self, media_id):
+        self.reads += 1
+        if self.last_read_issue in {"index_corrupt", "index_unreadable"}:
+            return None  # what FileMediaLibraryStore answers: an empty index and the reason
+        return super().get(media_id)
+
+
+def _counting(monkeypatch, issue=""):
+    store = CountingStore(list(listening_api._media_store.entries.values()), issue)
+    monkeypatch.setattr(listening_api, "_media_store", store)
+    return store
+
+
+@pytest.mark.parametrize("cid", [HELD, f"media:{HELD}", f"media:preview:{HELD}", f"preview:{HELD}",
+                                  f"media:upload:{HELD_UPLOAD}", f"media:{PUBLISHED}", f"media:upload:{MINE}",
+                                  f"media:{THEIRS}"])
+def test_the_guard_reads_the_store_at_most_once_per_write(world, monkeypatch, cid):
+    store = _counting(monkeypatch)
+    listening_api.media_state_writable(cid)
+    assert store.reads <= 1, (cid, store.reads)
+
+
+@pytest.mark.parametrize("cid", ["reading:14", "book:b1:c2", "text:9f3a", "url:abc123", "conversation:x", ""])
+def test_an_id_that_is_not_media_shaped_costs_no_store_read(world, monkeypatch, cid):
+    store = _counting(monkeypatch)
+    assert listening_api.media_state_writable(cid) is True
+    assert store.reads == 0
+
+
+@pytest.mark.parametrize("issue", ["index_corrupt", "index_unreadable"])
+def test_an_unreadable_index_refuses_a_media_shaped_write_and_spares_the_rest(world, monkeypatch, issue):
+    client, recorder = world
+    _counting(monkeypatch, issue)
+    # The store cannot say whether the item is held: nothing is written against it.
+    assert _continue(client, f"media:preview:{HELD}").status_code == 404
+    assert _continue(client, f"media:{PUBLISHED}").status_code == 404
+    assert recorder.writes == []
+    # An id that is not media is not this rule's business, whatever state the index is in.
+    assert _continue(client, "reading:14").status_code == 200
+    assert len(recorder.writes) == 1
+
+
+def test_a_missing_index_is_a_fresh_start_not_a_failure(world, monkeypatch):
+    client, recorder = world
+    _counting(monkeypatch, "index_missing")
+    assert _continue(client, "media:curated-lesson-1").status_code == 200
+
+
 @pytest.mark.parametrize("name", sorted(WRITERS))
 def test_an_id_no_media_store_names_keeps_writing(world, name):
     """A curated lesson, a text, a book: not stored media, so this rule says nothing about them."""
