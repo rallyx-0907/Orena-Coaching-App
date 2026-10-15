@@ -247,3 +247,23 @@ only before the first streamed token, one `orena.message` per learner turn; Olla
 H7-7 and H7-8 stay open; no routing, credit, quota or funding enforcement is enabled. | Provider privacy no longer
 blocks, while each learner model still earns its place; limits stay data, not code; no learner result crosses an
 account. | `PR-MON-7_DESIGN.md` §12 and §14.
+
+
+D-MON-026 | 2026-10-15 | PR-MON-7 owner decisions closing H7-7 and H7-8, completing H7-4 and fixing the H7-2 process
+(same owner message as D-MON-025). H7-7: provider credits are never zero model cost; `economic_cost_usd` stays the
+catalogue/reference estimate; an owner-configured Ollama Cloud covered-credit allowance in USD of estimated economic
+cost, monthly, explicit configuration (amount, window anchor), default 0/disabled, shared-ledger accounting with used
+and remaining estimates; `provider_credit_estimated` while available, `unknown` otherwise; exhausted or unknown skips
+the Ollama Cloud primary (reviewed paid backup within its own cap, else graceful failure), never pay as you go; the
+80%-of-visible-credit rule is operator guidance, with no balance API, assumed credit amount or scrape. H7-8: the
+existing paid quality baseline of each 7A-first capability is its candidate reviewed backup, no new model searched;
+daily caps $0.50 (`writing_evaluator`), $0.50 (`writing_improver`), $1.00 (`text_discussion`), Admin-editable
+infrastructure caps; closed once the baseline ids are verified, unresolved ones reported. H7-4: Ollama Cloud must
+separately prove tool calling, streaming, multi-round state, Agent Contract compatibility, privacy, latency and quality
+for 7C. H7-2 stays open: benchmark live-catalogue candidates against the paid baseline (guideline: schema-valid >= 99%,
+critical <= 1%, quality >= 95% of baseline with no bucket < 90%, p95 <= min(1.25x, 6 s), cost <= 50%); the owner
+approves any winner explicitly. Delivery order and PR split: 7D1 decisions + cache isolation, 7D2 speech/TTS meters,
+7B1 plan meters, 7B2 follow-up routing, 7C adapter; each a draft PR synced to main. Everything stays off. | A covered
+subsidy must never turn into silent cash spend, and a backup must be a model already trusted. | `PR-MON-7_DESIGN.md`
+§12 and §14.
+

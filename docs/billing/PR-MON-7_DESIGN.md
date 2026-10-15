@@ -429,8 +429,8 @@ and does not touch 0034.
 | H7-4 | **APPROVED (closed 2026-10-15, D-MON-025):** for 7C, `agent_turn_fast` may have a configurable reviewed cloud model and `agent_turn_deep` a configurable reviewed stronger cloud model, through a separate Agent adapter, never the structured router (§14.4). |
 | H7-5 | **APPROVED (closed 2026-10-15, D-MON-025):** the cache-isolation architecture of §14.3. A dedicated cache-isolation slice comes immediately after 7A-first. |
 | H7-6 | **APPROVED (closed 2026-10-15, D-MON-025):** Ollama Cloud is approved at the provider/privacy-policy level for `learner_text`, under its documented privacy and retention terms. Model-level allowlisting stays mandatory (§14.1); no model is populated automatically. |
-| H7-7 | **OPEN (activation gate):** Ollama Cloud reference prices (if no per-token price is published), and the covered-credit allowance: the budget, its window/start/reset, shared-ledger accounting, and the behaviour when it is exhausted or unknown. Until then `cost_coverage` is `unknown`. |
-| H7-8 | **OPEN:** the reviewed paid-backup `(provider, model)` and spend cap for each 7A-first capability. |
+| H7-7 | **APPROVED (closed 2026-10-15, D-MON-026):** the owner-configured covered-credit allowance of §14.6 (USD of estimated economic cost, monthly, explicit configuration, default 0/disabled). Exhausted or unknown: the Ollama Cloud primary is skipped, never paid as you go. |
+| H7-8 | **APPROVED (D-MON-026):** each capability's existing paid quality baseline is its candidate reviewed backup; daily caps `writing_evaluator` $0.50, `writing_improver` $0.50, `text_discussion` $1.00, Admin-editable (§14.7). Closed once the exact baseline ids are verified from the repository (§14.7). |
 
 ## 13. Contradictions and findings
 
@@ -495,13 +495,65 @@ and the published paths of 7B route only after it.
   Agent Contract behaviour, memory/context semantics, per-round FundingContext and per-round cost attribution.
 - Failover may occur before the first streamed token of a round; after it, no provider switch for that round.
 - One learner turn consumes one `orena.message`; internal model/tool rounds create no extra learner quota units.
-- Ollama Cloud may be evaluated for 7C; it is not assumed.
+- Ollama Cloud may be evaluated for 7C; it is not assumed to qualify. It must separately prove tool calling,
+  streaming, multi-round state, Agent Contract compatibility, privacy, latency and quality.
+- H7-4 is closed as an architecture decision; activation stays separate.
 
-### 14.5 Still open
+### 14.5 Still open: H7-2
 
-- **H7-2:** the accepted primary model per capability (benchmark).
-- **H7-7:** reference prices and the covered-credit allowance.
-- **H7-8:** the reviewed paid backup and spend cap per 7A-first capability.
+H7-2 is the one remaining activation decision. No primary is chosen by intuition or from public documentation:
 
-Activation of any learner routing still needs these. Nothing here enables routing, credits, quota or funding
+- the candidates are the models the configured account actually reaches (the live authenticated catalogue);
+- each candidate runs the 7A-first benchmark harness for `writing_evaluator`, `writing_improver` and
+  `text_discussion` against the current paid baseline, on a meaningful EN/ZH set (about 100 cases per capability
+  where the existing corpus supports it, without invented data);
+- it measures schema-valid rate, semantic/task quality, critical failure rate, latency and economic cost.
+
+Activation review guideline (not a CI assertion): schema-valid rate >= 99%; critical failure rate <= 1%; quality >= 95%
+of the paid baseline, no important language/task bucket under 90%; p95 latency <= min(1.25 x baseline, 6 s);
+economic cost <= 50% of the baseline. A winning model is never added to an allowlist automatically: the report goes to
+the owner for explicit approval.
+
+Activation of any learner routing still needs H7-2. Nothing here enables routing, credits, quota or funding
 enforcement.
+
+### 14.6 H7-7: covered-credit allowance
+
+Ollama Cloud provider credits are never zero model cost. `economic_cost_usd` stays the normal catalogue/reference
+estimate; provider-credit coverage is an operator subsidy, separate from learner pricing and funding.
+
+```text
+budget unit = USD of estimated economic cost
+window      = monthly
+source      = explicit operator configuration
+default     = 0 / disabled
+```
+
+The allowance carries an explicit configured USD amount, a window start or monthly anchor, shared-ledger accounting
+across workers, the estimated spend used and the remaining estimated allowance. Operational guidance, not a server
+calculation: the configured allowance should be at most 80% of the included credit the owner sees in the Ollama
+account. There is no provider balance API, no assumed monthly credit amount and no account scrape.
+
+```text
+allowance available            -> the Ollama Cloud primary may run; cost_coverage = provider_credit_estimated
+allowance exhausted or unknown -> cost_coverage = unknown; skip the Ollama Cloud primary as a covered-credit route
+                               -> try the reviewed paid backup if admitted and within its own spend cap
+                               -> otherwise the existing graceful capability failure
+```
+
+No automatic pay-as-you-go Ollama Cloud spend.
+
+### 14.7 H7-8: paid backup
+
+No new paid model is searched for. Each 7A-first capability's existing paid quality baseline is its candidate
+reviewed backup. Initial daily caps, infrastructure spend caps only (not learner prices, not Credits prices),
+Admin-editable as policies:
+
+| Capability | Backup daily cap |
+| --- | ---: |
+| `writing_evaluator` | $0.50 / UTC day |
+| `writing_improver` | $0.50 / UTC day |
+| `text_discussion` | $1.00 / UTC day |
+
+If a baseline cannot be identified safely from the repository, it is reported unresolved, not invented.
+
