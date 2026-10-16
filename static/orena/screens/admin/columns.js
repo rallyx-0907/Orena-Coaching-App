@@ -74,24 +74,29 @@ export function layoutBlocks(page) {
   }
 }
 
-/* Keep `page` arranged: after every repaint (the pages repaint by replacing their content) and when the
-   window crosses the phone breakpoint. */
+/* Keep `page` arranged: after every repaint and when the device flips between phone and desktop.
+   Invariant: a repaint replaces the page content through innerHTML (kit `mount`), which yields fresh,
+   unarranged `.a-blocks`, so arrangement runs exactly once per paint and never on top of itself.
+   Unplaced cards pick the shorter stack with the fonts available at that moment; once the fonts have
+   loaded the page is re-balanced a single time, and only while nothing inside it has focus. */
 export function watchBlocks(page) {
   if (typeof MutationObserver === 'undefined') return () => {};
   let queued = false;
   const run = () => { queued = false; layoutBlocks(page); };
   const observer = new MutationObserver(() => { if (!queued) { queued = true; queueMicrotask(run); } });
   observer.observe(page, { childList: true, subtree: true });
-  const onResize = () => {
-    for (const container of page.querySelectorAll('.a-blocks[data-cols]')) {
-      const want = isDesktop() ? 'two' : 'flat';
-      if (want === 'flat' && container.dataset.cols === 'two') restore(container);
-      else if (want === 'two' && container.dataset.cols !== 'two' && container.dataset.cols !== 'one') arrange(container);
-    }
-    layoutBlocks(page);
-  };
-  const deviceWatch = new MutationObserver(onResize);
+  const deviceWatch = new MutationObserver(() => layoutBlocks(page));
   deviceWatch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-device'] });
   layoutBlocks(page);
-  return () => { observer.disconnect(); deviceWatch.disconnect(); };
+  let live = true;
+  document.fonts?.ready?.then(() => {
+    if (!live) return;
+    const focused = document.activeElement;
+    if (focused && focused !== document.body && page.contains(focused)) return;
+    for (const container of page.querySelectorAll('.a-blocks[data-cols="two"]')) {
+      restore(container);
+      arrange(container);
+    }
+  });
+  return () => { live = false; observer.disconnect(); deviceWatch.disconnect(); };
 }

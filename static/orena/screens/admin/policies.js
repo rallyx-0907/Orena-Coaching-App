@@ -167,7 +167,7 @@ function changedLine(meta, ui) {
 }
 
 /* Where each card sits on the desktop two-column page (phones keep the authored order, one column). */
-export const GROUP_COLUMN = Object.freeze({ quota: 'left', agent: 'left', voice: 'left', speech: 'left', rates: 'left', vocabulary: 'right', spend: 'right', feedback: 'right', media: 'right' });
+export const GROUP_COLUMN = Object.freeze({ quota: 'left', agent: 'left', voice: 'left', speech: 'left', rates: 'left', billing: 'left', vocabulary: 'right', spend: 'right', feedback: 'right', media: 'right' });
 
 function quotaBlock(view, ui) {
   const { quota, quotaDraft: draft } = view;

@@ -6,7 +6,7 @@ import { pageHead, block, metrics, rowList, kv, stateBlock, formBlock, banner } 
 
 const value = (x) => x === null || x === undefined || x === '' ? t('opUnavailable') : String(x);
 const key = (x) => String(x || '').replaceAll('_', ' ');
-const feedRows = (items) => rowList(items, { title: t('opNone'), text: '' }, { feed: true });
+const feedRows = (items) => rowList(items, { title: t('opNone'), text: '' }, { feed: true, label: t('opEvents') });
 const rows = (items) => rowList(items, { title: t('opNone'), text: '' });
 const section = (title, body, opts = {}) => block({ title: t(title), body, ...opts });
 const capabilityHref = (id, href) => /^[a-z][a-z0-9_]*$/.test(String(id || ''))

@@ -51,9 +51,9 @@ export function block({ title = '', sub = '', pills = [], actions: list = [], sp
 
 /* A list of rows. Each row: `tile` (the two letters on a tile), title, meta, detail, pills, a right
    note, actions; `go` makes the row open another place. */
-export function rowList(list, empty = null, { feed = false } = {}) {
+export function rowList(list, empty = null, { feed = false, label = '' } = {}) {
   if (!list.length && empty) return stateBody({ kind: 'empty', title: empty.title, text: empty.text, compact: true });
-  return html`<div class="a-rows${feed ? ' a-rows--feed' : ''}"${feed ? raw(' tabindex="0"') : ''}>${list.map((row) => {
+  return html`<div class="a-rows${feed ? ' a-rows--feed' : ''}"${feed ? raw(' tabindex="0" role="region"') : ''}${feed && label ? html` aria-label="${label}"` : ''}>${list.map((row) => {
     const open = row.go ? html` data-go="${row.go}" role="link" tabindex="0"` : '';
     return html`<div class="a-row${row.go ? ' a-row--open' : ''}"${open}>
       ${row.tile ? html`<span class="a-row__tile" aria-hidden="true">${row.tile}</span>` : ''}

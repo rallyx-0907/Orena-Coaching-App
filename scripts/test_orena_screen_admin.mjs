@@ -666,6 +666,8 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
   assert.match(columns, /data-ord|dataset\.ord/, 'the authored order is kept so a phone restores it');
   assert.match(columns, /dataset\.device !== 'mobile'/, 'a phone is not arranged');
 
+  assert.match(fs.readFileSync('static/orena/screens/admin/blocks.js', 'utf8'), /a-rows--feed[^\n]*aria-label/, 'the feed scroller has an accessible name');
+
   const ctl = fs.readFileSync('static/orena/screens/admin/control-pages.js', 'utf8');
   assert.ok(ctl.indexOf("route === 'adminOperations' ? navCard") < ctl.lastIndexOf("section('opRuntime'"), 'Operations leads with its navigation (Policies & limits)');
   assert.match(ctl, /feedRows\(\(telemetry\.recent/, 'recent operations is the feed');
