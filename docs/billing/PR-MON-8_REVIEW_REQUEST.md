@@ -111,3 +111,25 @@ exactly-once, reconciliation, feed-cursor, secret or schema areas. CI run 388266
 | **P1-1:** an operator backfill could finish incomplete and still answer `ok: true` (the 50-page cap, a 429) | `backfill()` returns `{complete, reason, resume_after, retry_after, counts}`. `complete` is true only when SePay returned the range's last page. A page cap gives `page_cap`, a 429 gives `rate_limited` (with `retry_after`), and rows still in the settle window give `settle_delay`. Each comes with the last handled row as `resume_after`. The admin route answers **409 / 429 `backfill_incomplete`** with that context, never `ok: true`, and accepts `resume_after` to continue. The authoritative feed cursor is still never read or written. Tests: more rows than the cap is incomplete and the tail is recovered on resume; a 429 after several pages is incomplete and resumes exactly once; the settle delay leaves the range incomplete; the route is never ok for a partial run; on PostgreSQL a capped run resumes and a full replay stays exactly once on the real ledger (top-ups 2, then 2). |
 | **P1-2:** stale evidence and resume point | The "Evidence" section above now carries the current head, CI run and counts. `BILLING_STATUS.md` now records `main` `4ee804d0` and the current PR-MON-8 evidence. Historical review outcomes are unchanged. |
 
+
+## Final implementation re-review of `c3140740` (ChatGPT / GPT-5.6 Sol): APPROVED
+
+**P0 0, P1 0, blocking P2 0.** CI run 38830077460 passed. The code fix head is `ac174ad5` and the base is `main`
+`4ee804d0`. The two blockers of the `851f4bb9` review are closed, and every earlier area remains accepted.
+
+The implementation is approved to proceed to its merge gate. The merge itself is the owner's decision. Not authorized
+by this review:
+- production activation;
+- any shared-runtime migration;
+- the live-money transfer;
+- public tunnel/DNS;
+- production credentials.
+
+After the merge, the remaining design §12 gates still apply, each separately:
+1. SePay test mode;
+2. real cursor semantics;
+3. bank-reference equality;
+4. `webhook_success` behaviour;
+5. a real banking-app QR scan;
+6. the human-approved small-value live transfer and its refund;
+7. the runtime, configuration and production activation gates.
