@@ -601,7 +601,7 @@ _media_ingestion_service = MediaIngestionService(
 )
 # D-219: the one Admin cost page also shows the media processing ledger, split into real spend and free-tier value.
 from writing_coach.ai.platform import register_media_spend_reader as _register_media_spend_reader
-_register_media_spend_reader(lambda days: _media_pipeline.ledger.totals(days))
+_register_media_spend_reader(lambda days, tier_at=None: _media_pipeline.ledger.totals(days, tier_at))
 # D-215: the ADMIN importer and pipeline have their own acquisition service, whose YouTube caption client follows
 # `media.caption_source` (default: YouTube, as before). A learner's import and preview never reach it, so they never call
 # Supadata. Native mode only, capped per day in the media spend ledger the pipeline below owns (read when first needed).
