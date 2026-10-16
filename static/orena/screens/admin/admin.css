@@ -2573,3 +2573,10 @@ a.a-btn--primary:hover {
   border-radius: 10px;
   background: var(--accent-fill);
 }
+
+/* The cost page's four metrics (D-219) would be ~67px wide each on a phone: two by two below 720px. */
+@media (max-width: 720px) {
+  .a-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

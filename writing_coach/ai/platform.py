@@ -361,6 +361,17 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
     if isinstance(telemetry, dict) and telemetry.get("provider") in COVERED_CREDIT_PROVIDERS:
         # PR-MON-7 §4.4: the economic cost stays the catalogue estimate; coverage is an estimate, `unknown` until H7-7.
         telemetry = {**telemetry, "cost_coverage": "unknown"}
+    if isinstance(telemetry, dict) and telemetry.get("provider"):
+        # D-219: stamp the tier in force now. For a provider that has a flag, the flag decides: a model billed at 0 on a
+        # free plan (qwen) becomes real spend when the owner turns the flag off. Only a provider without a flag falls
+        # back to the model being free by id (an OpenRouter ":free" id; its amount is 0 either way).
+        from writing_coach import cost_tier
+        from writing_coach.ai.pricing import is_free_model
+
+        provider = telemetry.get("provider")
+        free = (cost_tier.is_free_tier(provider) if cost_tier.flag_key(provider)
+                else is_free_model(provider, telemetry.get("model")))
+        telemetry = {**telemetry, "free_tier": free}
     safe = sanitize_telemetry(telemetry)
     recorder = getattr(_platform_repository, "record_ai_operation", None)
     if safe is None or not callable(recorder):
@@ -1254,7 +1265,15 @@ COST_REPORT_GAPS = (
     ("audio_list_price", "Audio rates are provider list prices (ai/pricing.py); the Azure pronunciation rate is to "
      "be checked against the Azure bill."),
     ("audio_before", "Calls before 2026-10-04 for speech recognition and pronunciation scoring were never recorded."),
+    ("free_tier_tier", "Free tier: an amount on a free plan is shown at its list price, apart from real spend. Calls "
+     "recorded before the tier was stamped (2026-10-16) are counted as unknown tier, in neither."),
+    ("account_tier", "Cost by account has no tier column (its schema is a human gate): the tier is read from the "
+     "flag's change history in the audit log, at the time of each record."),
 )
+
+
+# D-219: an amount split by the tier stamped on the event.
+_TIER_FIELDS = ("usd_real", "usd_free", "usd_unknown")
 
 
 def cost_report(rows: list[dict[str, Any]], *, days: int, since: datetime) -> dict[str, Any]:
@@ -1264,21 +1283,28 @@ def cost_report(rows: list[dict[str, Any]], *, days: int, since: datetime) -> di
     by_day: dict[str, dict[str, Any]] = {}
     by_feature: dict[tuple[str, str, str], dict[str, Any]] = {}
     for row in rows:
-        day = by_day.setdefault(row["day"], {"day": row["day"], "calls": 0, "usd": 0.0, "unpriced_calls": 0})
+        day = by_day.setdefault(row["day"], {"day": row["day"], "calls": 0, "usd": 0.0, "unpriced_calls": 0,
+                                             **dict.fromkeys(_TIER_FIELDS, 0.0)})
         day["calls"] += row["calls"]
         day["usd"] += row["usd"]
         day["unpriced_calls"] += row["unpriced_calls"]
+        for name in _TIER_FIELDS:
+            day[name] += row.get(name, 0.0)
         key = (row["capability"] or "", row["provider"] or "", row["model"] or "")
         item = by_feature.setdefault(key, {"capability": key[0], "provider": key[1] or None, "model": key[2] or None,
                                            "calls": 0, "failures": 0, "priced_calls": 0, "unpriced_calls": 0,
                                            "usd": 0.0, "prompt_tokens": 0, "completion_tokens": 0,
-                                           "audio_seconds": 0.0})  # fmt: skip
+                                           "audio_seconds": 0.0, **dict.fromkeys(_TIER_FIELDS, 0.0)})  # fmt: skip
         for name in ("calls", "failures", "priced_calls", "unpriced_calls", "usd", "prompt_tokens",
                      "completion_tokens", "audio_seconds"):  # fmt: skip
             item[name] += row[name]
+        for name in _TIER_FIELDS:
+            item[name] += row.get(name, 0.0)
     features = []
     for item in by_feature.values():
         item["usd"] = round(item["usd"], 8)
+        for name in _TIER_FIELDS:
+            item[name] = round(item[name], 8)
         if item["capability"] in _PER_MINUTE:
             minutes = item["audio_seconds"] / 60
             item["unit"], item["usd_per_unit"] = "audio_minute", round(item["usd"] / minutes, 6) if minutes else None
@@ -1289,8 +1315,13 @@ def cost_report(rows: list[dict[str, Any]], *, days: int, since: datetime) -> di
     features.sort(key=lambda entry: -entry["usd"])
     return {
         "since": since.isoformat(), "days": days, "currency": "USD",
-        "by_day": [dict(day, usd=round(day["usd"], 8)) for day in sorted(by_day.values(), key=lambda d: d["day"], reverse=True)],
-        "by_feature": features, "gaps": [{"code": code, "text": text} for code, text in COST_REPORT_GAPS],
+        "by_day": [dict(day, usd=round(day["usd"], 8), **{name: round(day[name], 8) for name in _TIER_FIELDS})
+                   for day in sorted(by_day.values(), key=lambda d: d["day"], reverse=True)],
+        "by_feature": features,
+        # D-219: `usd` is every computed amount (list price); `usd_real` only events stamped free_tier=false; `usd_free`
+        # the list-price value of free-plan events; `usd_unknown` events written before the stamp existed.
+        "totals": {name: round(sum(day[name] for day in by_day.values()), 8) for name in ("usd", *_TIER_FIELDS)},
+        "gaps": [{"code": code, "text": text} for code, text in COST_REPORT_GAPS],
     }
 
 
@@ -1304,7 +1335,28 @@ def admin_ai_costs(request: Request, days: int = 30) -> dict[str, Any]:
     since = datetime(now.year, now.month, now.day, tzinfo=UTC) - timedelta(days=bounded - 1)
     reader = getattr(_installed_platform_repository(), "ai_cost_rows", None)
     rows = reader(since) if callable(reader) else []
-    return cost_report(rows, days=bounded, since=since)
+    report = cost_report(rows, days=bounded, since=since)
+    report["media"] = _media_spend_totals(bounded)
+    return report
+
+
+# The media processing spend lives in its own ledger (media_spend.py); app.py registers its reader here so the one cost
+# page can show both stores without this module importing the media pipeline.
+_media_spend_reader: Callable[[int], dict[str, Any]] | None = None
+
+
+def register_media_spend_reader(reader: Callable[[int], dict[str, Any]] | None) -> None:
+    global _media_spend_reader
+    _media_spend_reader = reader
+
+
+def _media_spend_totals(days: int) -> dict[str, Any] | None:
+    if _media_spend_reader is None:
+        return None
+    try:
+        return _media_spend_reader(days)
+    except Exception:  # noqa: BLE001 - an unreadable ledger leaves the block out; it never fails the report
+        return None
 
 
 @router.get("/costs/accounts")
@@ -1319,7 +1371,24 @@ def admin_ai_costs_by_account(request: Request, days: int = 30) -> dict[str, Any
     reader = getattr(_installed_platform_repository(), "ai_costs_by_account", None)
     limit = 100
     # One more than shown, to say whether the list was cut (the page shows the most expensive accounts only).
-    accounts = reader(since, limit=limit + 1) if callable(reader) else None
+    accounts = None
+    tiered = getattr(_installed_platform_repository(), "ai_costs_by_account_tiered", None)
+    history = getattr(_installed_platform_repository(), "policy_change_history", None)
+    if callable(tiered) and callable(history):
+        # D-219: split each account's cost into real and free-tier by the flag's state at the time of each record.
+        from writing_coach import cost_tier
+        from writing_coach import policies as _policies
+
+        # The whole history is read (the table is a handful of rows): a flag stored ON that no audit row explains is
+        # "unknown" for the window, never silently free.
+        timeline = cost_tier.timeline_from_audit(
+            history(datetime(2000, 1, 1, tzinfo=UTC)),
+            pinned=frozenset(name for name in cost_tier.PROVIDERS if _policies.is_pinned(cost_tier.flag_key(name))),
+            stored=frozenset(name for name in cost_tier.PROVIDERS if _policies.has_admin_value(cost_tier.flag_key(name))))
+        accounts = tiered(since, now + timedelta(seconds=1), timeline.boundaries(since, now), timeline.tier_at,
+                          limit=limit + 1)
+    if accounts is None and callable(reader):
+        accounts = reader(since, limit=limit + 1)
     _record_admin_event(admin, "admin.ai.costs.accounts.view", entity_type="ai_costs", entity_id="accounts",
                         payload={"days": bounded, "available": accounts is not None})
     return {"since": since.isoformat(), "days": bounded, "currency": "USD", "available": accounts is not None,

@@ -176,24 +176,25 @@ POLICIES: tuple[Policy, ...] = (
        env="WRITING_IMPROVER_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
     _p("text_discussion.daily_spend_cap_usd", "spend", "float", 0.0, unit="usd", low=0, high=100,
        env="TEXT_DISCUSSION_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
+    # --- free-tier flags (D-219, owner decision 2026-10-16): the provider account is on a free plan. Each cost event is
+    # stamped with the flag in force when it is recorded and reported apart from real spend; the flag never zeroes an
+    # amount or a cap (writing_coach/cost_tier.py). Turn it off when the account moves to a paid plan.
+    _p("cost.free_tier.groq", "spend", "bool", True),
+    _p("cost.free_tier.supadata", "spend", "bool", True),
+    _p("cost.free_tier.gemini", "spend", "bool", False),
     # --- billing (PR-MON-8 §4.1, owner decision: 1 hour). 0 is the UNCONFIGURED sentinel, never a grace of zero: SePay
     # checkout is not ready and every SePay payment fails closed (no grant) until an operator sets a value >= 1.
     _p("billing.domestic_late_payment_grace_hours", "billing", "int", 0, unit="hours", low=0, high=168,
        danger="charging"),
 )
 
-# What the media AI spend ledger rates a model at when the flat `media.ai_usd_per_million_tokens` would be wrong for it
-# (D-218): published (input, output) USD per million tokens. A model not listed here is rated at the flat default, never at
-# 0, so a spend cap always bites; a free-plan entry of the pricing catalogue does not zero the media ledger.
-#   qwen/qwen3.8-27b: Groq model page https://console.groq.com/docs/model/qwen/qwen3.8-27b, read 2026-10-15 (input $0.80,
-#   output $4.00 per million tokens; a "Preview" model, so the price may change; https://groq.com/pricing does not list it).
-MEDIA_AI_MODEL_RATES: Mapping[str, tuple[float, float]] = {
-    "qwen/qwen3.8-27b": (0.80, 4.00),
-}
-
 
 def media_ai_model_rate(model: object) -> tuple[float, float] | None:
-    return MEDIA_AI_MODEL_RATES.get(str(model or "").strip())
+    """The public (list) rate of a model for the media AI ledger, or None. One source: `ai/pricing.py` (D-219 unified
+    what D-218 kept here), so the ledger and the cost report agree on a model's price."""
+    from writing_coach.ai.pricing import list_rate
+
+    return list_rate("groq", model)
 
 
 BY_KEY: dict[str, Policy] = {item.key: item for item in POLICIES}
@@ -298,6 +299,16 @@ def configure(store: SettingStore | None, *, env: Mapping[str, str] | None = Non
     global _store, _env, _cache, _last_good
     with _lock:
         _store, _env, _cache, _last_good = store, env, None, None
+
+
+def is_pinned(key: str, env: Mapping[str, str] | None = None) -> bool:
+    """Whether the environment fixes this policy, so its stored history says nothing about its value."""
+    return _env_value(BY_KEY[key], env if env is not None else _env) is not _INVALID
+
+
+def has_admin_value(key: str) -> bool:
+    """Whether an administrator has stored a value for this policy (it is not just the default)."""
+    return key in _loaded().values
 
 
 def clear_cache() -> None:

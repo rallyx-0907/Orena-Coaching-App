@@ -65,6 +65,7 @@ scripts/test_orena_former_addresses.mjs
 scripts/test_orena_vocabulary_contracts.mjs
 scripts/test_orena_admin_control.mjs
 scripts/test_orena_admin_policies.mjs
+scripts/test_orena_admin_cost_tier.mjs
 scripts/test_orena_copy.mjs
 scripts/test_orena_legal.mjs
 scripts/test_orena_copy_engine.mjs
