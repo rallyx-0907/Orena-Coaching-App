@@ -98,15 +98,15 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
     body = html`${metrics([
       { label: t('opTotal'), value: summary.accounts?.available ? value(summary.accounts.total) : t('opUnavailable') },
       { label: t('opActive'), value: summary.activity?.available ? value(summary.activity.active_7d) : t('opUnavailable') },
-    ])}${formBlock({ title: t('opAccounts'), fields: [
+    ])}${formBlock({ span: true, title: t('opAccounts'), fields: [
       field('role', 'opRole', [['', 'opAll'], ['user', 'opLearner'], ['admin', 'opAdmin']]),
       field('language', 'opLanguage', [['', 'opAll'], ['en', 'opEnglish'], ['zh', 'opChinese']]),
       field('activity', 'opStatus', [['', 'opAll'], ['active', 'opActiveFilter'], ['idle', 'opIdle'], ['never', 'opNever']]),
-    ] })}${list.available === false ? stateBlock({ kind: 'unavail', heading: t('opUnavailable') }) : section('opAccounts', rows((list.items || []).map((item) => ({
+    ] })}${list.available === false ? stateBlock({ span: true, kind: 'unavail', heading: t('opUnavailable') }) : section('opAccounts', rows((list.items || []).map((item) => ({
       title: item.display_name || item.id, meta: [item.email_masked, ...(item.languages || [])].filter(Boolean).join(' · '),
       detail: `${t('opJoined')}: ${value(item.joined_at)} · ${t('opLastActive')}: ${value(item.last_active_at)}`,
       pills: [{ label: key(item.role) }, { label: key(item.status) }], go: href('adminUser', { id: item.id }),
-    }))))}${block({ title: t('opCount'), body: kv([{ key: t('opCount'), value: value(list.total) }]), actions: [
+    }))), { span: true })}${block({ span: true, title: t('opCount'), body: kv([{ key: t('opCount'), value: value(list.total) }]), actions: [
       { label: t('opPrevious'), a: 'previous', disabled: offset === 0 },
       { label: t('opNext'), a: 'next', disabled: offset + (list.items?.length || 0) >= (list.total || 0) },
     ] })}`;
@@ -145,14 +145,14 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
         ]), { col: 'left' })}${section('opStores', kv(Object.entries(runtime.stores || {}).map(([name, state]) => ({ key: key(name), value: value(state) }))), { col: 'left' })}
         ${section('opServices', rows((runtime.services || []).map((s) => ({ title: key(s.id), meta: [s.engine, s.model].filter(Boolean).join(' · '), pills: [{ label: s.state === 'configured' ? t('opConfigured') : s.state === 'not_configured' ? t('opNotConfigured') : value(s.state) }] }))), { col: 'left' })}
         ${block({ col: 'left', title: t('opReading'), body: data.reading?.available === false ? t('opUnavailable') : metrics(['queued', 'running', 'failed', 'completed'].map((state) => ({ label: t(({ queued: 'opQueued', running: 'opRunning', failed: 'opFailed', completed: 'opCompleted' })[state]), value: data.reading?.queue ? value(data.reading.queue[state] ?? 0) : t('opUnavailable') }))), actions: [{ label: t('opReading'), a: 'go', data: { to: href('adminJobs') } }] })}`;
-      body = html`${body}${block({ col: 'right', title: t('opTelemetry'), sub: t('opSample'), body: telemetry.available === false ? stateBlock({ kind: 'unavail', heading: t('opUnavailable') }) : rows((telemetry.by_capability || []).map((c) => ({
+      body = html`${body}${block({ col: route === 'adminOperations' ? 'right' : '', title: t('opTelemetry'), sub: t('opSample'), body: telemetry.available === false ? stateBlock({ kind: 'unavail', heading: t('opUnavailable') }) : rows((telemetry.by_capability || []).map((c) => ({
         title: key(c.capability), meta: `${t('opRequests')}: ${value(c.total)} · ${t('opFailures')}: ${value(c.failure_rate_percent)}% · ${t('opLatency')}: ${value(c.avg_latency_ms)} ms`,
         pills: [{ label: key(c.health_state), tone: c.health_state === 'healthy' ? 'ok' : 'warn' }], go: capabilityHref(c.capability, href),
       }))) })}${section('opEvents', feedRows((telemetry.recent || []).slice(0, 15).map((e) => ({
         title: key(e.capability), meta: [e.created_at, e.provider, e.error_class].filter(Boolean).join(' · '),
         pills: [{ label: key(e.outcome), tone: e.outcome === 'success' ? 'ok' : 'err' }],
         go: e.provider ? href('adminProvider', { id: e.provider }) : href('adminAi'),
-      }))), { col: 'right' })}`;
+      }))), { col: route === 'adminOperations' ? 'right' : '' })}`;
     }
   }
   return { title, filterValue: filters.q || '', markup: html`<section class="a-page">${pageHead({ title, sub, back, actions: [...(route === 'adminOverview' ? [{ label: t('trafTitle'), size: 'sm', a: 'go', data: { to: href('adminTraffic') } }] : []), ...(route === 'adminUsers' ? [{ label: t('plansTitle'), size: 'sm', a: 'go', data: { to: href('adminPlans') } }, { label: t('fbTitle'), size: 'sm', a: 'go', data: { to: href('adminFeedback') } }] : []), { label: t('retry'), a: 'reload' }] })}<div class="a-blocks">${body}</div></section>` };
