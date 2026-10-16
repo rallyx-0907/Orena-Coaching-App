@@ -24,9 +24,24 @@ Merge and every activation gate (design §12) remain separate.
 | `writing_coach/policies.py`, Admin copy/page/gate | Policy `billing.domestic_late_payment_grace_hours`: int, hours, default `0` = UNCONFIGURED, range 0-168, confirmation required (charging). Group `billing`, with EN/VI/ZH copy. |
 | `.env.example` | Billing, payOS, Polar and SePay variable **names** (gap 7). |
 
-## Evidence (local, not CI)
+## Evidence: current, for code head `ac174ad5`
 
-- **`tests/test_billing_sepay.py`** (56, hermetic):
+The latest code head is `ac174ad5`, synced with `main` `4ee804d0`. The evidence commit that follows changes docs only.
+
+- **CI:** [run 38829616460](https://github.com/rallyx-0907/Orena-Coaching-App/actions/runs/38829616460) on
+  `ac174ad5`. Every job passed: `changes`, `python-gates`, `node-gates`, `pytest`, `docker-build` and `test`.
+- **Local** (not CI):
+  - full SQLite gate: 7287 passed;
+  - every PostgreSQL file: 445 passed, plus 1 inherited failure (#160);
+  - `tests/test_billing_sepay.py`: **74** passed;
+  - `tests/test_billing_sepay_postgres.py`: **19** passed;
+  - all Node gates passed.
+
+The lists below describe what the two SePay files cover. The counts above are the current ones.
+
+### Coverage (the first implementation, `20fff517`)
+
+- **`tests/test_billing_sepay.py`** (hermetic):
   - signature cases, and the ±300 s boundary;
   - normalization and identity;
   - webhook and feed agree with a bank reference, and never without one;
@@ -41,7 +56,7 @@ Merge and every activation gate (design §12) remain separate.
   - SePay's ack shape, and 503 with no ack on a failed item write;
   - feed cursor loop: never `page=2`, a full multi-page run without a skip, the settle stop, a failure mid-page keeps
     the cursor, a lost compare-and-set writes nothing, skipped rows are counted, first-run backfill, 429.
-- **`tests/test_billing_sepay_postgres.py`** (16, PostgreSQL):
+- **`tests/test_billing_sepay_postgres.py`** (PostgreSQL):
   - **Exactly once:** one top-up across the webhook, its replay and the feed, with a reference. Without a reference,
     the second source is `source_ambiguous` and never a second payment. Two different references are a real second
     transfer (`not_payable`). A timely plan payment grants once.
@@ -52,8 +67,8 @@ Merge and every activation gate (design §12) remain separate.
     gives `payment_not_payable` / `order_closed`: not paid, no grant, no top-up, balance 0.
   - **Race, second form:** the payment paused before the lock while a cancellation commits.
   - **Locked snapshot:** an `expires_at` moved before the lock decides the outcome.
-- **Full gate:** SQLite 7183 passed. Every PostgreSQL file: 442 passed plus 1 inherited failure (#160). All Node gates
-  passed.
+- **Full gate at `20fff517`** (history): SQLite 7183 passed. Every PostgreSQL file: 442 passed plus 1 inherited
+  failure (#160).
 
 ## Notes for the reviewer
 
@@ -85,3 +100,14 @@ Merge and every activation gate (design §12) remain separate.
 | **P1-3B:** no operator date-range backfill | `SePayFeed.backfill(date_from, date_to)` uses the same §6.3 rules and the same `handle_fact` path. It runs with `page=1`, `transaction_date_to` and a local `since_id`, and **never reads or writes the cursor**. It needs only the token, so it also works while the feed is off. The range is positive and at most 31 days, with at most 50 pages. It is exposed as admin-only `POST /api/admin/billing/sepay/backfill`, recorded in the authorization matrix. Tests: same handling, cursor untouched, works with the feed off, needs the token, range bounds, and an idempotent replay on PostgreSQL (one top-up). |
 | **P2-1:** `Retry-After` was discarded | A 429 writes `not_before = now + Retry-After` into the cursor document (compare-and-set), default 60 s. Every tick before then, in any worker, makes no request (`sepay_feed_waiting`). Test: with a 600 s wait and 60 s ticks there is exactly one request until the wait ends. |
 | **P2-2:** VietQR tests were self-consistency only | Two complete published vectors from independent implementations, matched exactly. One is from `xuannghia/vietnam-qr-pay` (ACB 970416, 10,000 VND, "Chuyen tien"). The other is from `subiz/vietqr` (VietinBank 970415, 120,000 VND, "ung ho lu lut"). A real banking-app scan remains activation gate 8. |
+
+## Implementation re-review of `851f4bb9` (ChatGPT / GPT-5.6 Sol): REQUEST CHANGES (2 P1), and the fixes
+
+All 5 findings of the review of `10471923` were confirmed closed, with no new issue in the payment, locking,
+exactly-once, reconciliation, feed-cursor, secret or schema areas. CI run 38826615961 passed on `851f4bb9`.
+
+| Finding | Fix |
+| --- | --- |
+| **P1-1:** an operator backfill could finish incomplete and still answer `ok: true` (the 50-page cap, a 429) | `backfill()` returns `{complete, reason, resume_after, retry_after, counts}`. `complete` is true only when SePay returned the range's last page. A page cap gives `page_cap`, a 429 gives `rate_limited` (with `retry_after`), and rows still in the settle window give `settle_delay`. Each comes with the last handled row as `resume_after`. The admin route answers **409 / 429 `backfill_incomplete`** with that context, never `ok: true`, and accepts `resume_after` to continue. The authoritative feed cursor is still never read or written. Tests: more rows than the cap is incomplete and the tail is recovered on resume; a 429 after several pages is incomplete and resumes exactly once; the settle delay leaves the range incomplete; the route is never ok for a partial run; on PostgreSQL a capped run resumes and a full replay stays exactly once on the real ledger (top-ups 2, then 2). |
+| **P1-2:** stale evidence and resume point | The "Evidence" section above now carries the current head, CI run and counts. `BILLING_STATUS.md` now records `main` `4ee804d0` and the current PR-MON-8 evidence. Historical review outcomes are unchanged. |
+

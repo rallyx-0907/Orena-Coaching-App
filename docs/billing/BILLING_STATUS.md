@@ -6,13 +6,13 @@
 | | |
 | --- | --- |
 | Branch | `feature/monetization-billing-v1` (lane); docs and slices land on `main` through their own PRs |
-| Main | `56921b0d` (#238 merged); #236 `2a2fff2c`, #233 `53dddafd`, #231 `5b20d5ff`, PR-MON-6 #223 `8abab02f` |
+| Main | `4ee804d0` (PR-MON-8 #242 is synced with it); #238 `56921b0d`, #236 `2a2fff2c`, #233 `53dddafd`, #231 `5b20d5ff`, PR-MON-6 #223 `8abab02f` |
 | Last completed slice | Merged 2026-10-15: #231 (routing infrastructure, off), #233 (Reading cache isolation), #236 (plan meters `word.assist` / `reading.assist` / `writing.task` in the catalogue), #238 (pending speech/TTS meters). Reclassified by D-MON-029: Plan & Entitlements and AI Economics work, not Billing |
-| Active PR | #242 PR-MON-8: design **APPROVED FOR IMPLEMENTATION** = revision 5 at `c3af9154` + revision 6 delta at `1fe4568e` (independent architecture reviews, ChatGPT / GPT-5.6 Sol: r3 `d4b66c01` 1 P1, r4 `b5248b69` 1 P1, r5 approved, r6 `ab353b57` 1 P1, r6 `1fe4568e` approved). Implementation in progress |
+| Active PR | #242 PR-MON-8: design **APPROVED FOR IMPLEMENTATION** = revision 5 at `c3af9154` + revision 6 delta at `1fe4568e`. Implementation reviews (ChatGPT / GPT-5.6 Sol): `10471923` REQUEST CHANGES (3 P1, 2 P2), fixed; `851f4bb9` REQUEST CHANGES (2 P1), fixed at `ac174ad5` (code) plus this evidence commit. Awaiting the final independent implementation re-review |
 | Current slice | **Billing / Commerce only** (D-MON-029): the production payment-ready list below. **Billing handles money. Plan & Entitlements handle access and usage limits. AI Economics handles provider/model selection and profit-quality optimization. No provider or model is globally fixed for Orena. Benchmark qualifies models per capability and is not a Billing completion gate.** (D-MON-029) |
-| Exact next action | Independent implementation review of PR-MON-8 (#242, `docs/billing/PR-MON-8_REVIEW_REQUEST.md`). Then the gated steps of design §12: SePay test mode (public URL is a human gate), cursor / bank-reference / `webhook_success` verification, QR scan, live small-value transfer. Not authorized: merge, activation, runtime migrations, live transfer, tunnel/DNS |
+| Exact next action | Final independent implementation re-review of #242 (`docs/billing/PR-MON-8_REVIEW_REQUEST.md`). Not authorized: merge, SePay test-mode execution, public tunnel/DNS, runtime migration, live-money transfer, production activation |
 | Blockers | none for Billing engineering. Runtime: every PostgreSQL runtime is at its old head until the operator applies 0027 -> 0033; 0034 stays proposed; R-MON-014 not run; `CREDITS_ENABLED`, quota and funding enforcement off. H7-2 is **not** a Billing blocker (D-MON-029) |
-| Test status | PR-MON-8 local (not CI): full SQLite 7183 passed; every PostgreSQL file 442 passed + 1 INHERITED #160; `test_billing_sepay.py` 56 + `test_billing_sepay_postgres.py` 16 passed; Node gates passed |
+| Test status | PR-MON-8 code head `ac174ad5`, CI run 38829616460 green. Local (not CI): full SQLite 7287 passed; every PostgreSQL file 445 passed + 1 INHERITED #160; `test_billing_sepay.py` 74 + `test_billing_sepay_postgres.py` 19 passed; Node gates passed |
 | Next human checkpoint | The next Billing slice to start (PR-MON-8 by default); the 0027 -> 0033 operator step; the human gates listed under "Production payment-ready" |
 
 ## Revised sequence (human, 2026-10-13)
