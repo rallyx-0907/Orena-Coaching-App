@@ -69,7 +69,7 @@ class Policy:
     group: str
     kind: str                       # int | float | bool | enum
     default: Any
-    unit: str = ""                  # seconds | minutes | days | count | tokens | usd | usd_per_hour | usd_per_mtok | ""
+    unit: str = ""                  # seconds | minutes | hours | days | count | tokens | usd | usd_per_hour | usd_per_mtok | ""
     low: float | int | None = None
     high: float | int | None = None
     env: str = ""                   # the environment variable that pins this policy when it is set
@@ -85,7 +85,8 @@ def _p(key: str, group: str, kind: str, default: Any, **extra: Any) -> Policy:
     return Policy(key=key, group=group, kind=kind, default=default, **extra)
 
 
-GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "vocabulary", "rates", "feedback", "spend")
+GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "vocabulary", "rates", "feedback", "spend",
+                           "billing")
 
 POLICIES: tuple[Policy, ...] = (
     # --- quota (the enforcement switch itself is product.quota_enforcement, D-161; this is what the reconciler decides)
@@ -181,6 +182,10 @@ POLICIES: tuple[Policy, ...] = (
     _p("cost.free_tier.groq", "spend", "bool", True),
     _p("cost.free_tier.supadata", "spend", "bool", True),
     _p("cost.free_tier.gemini", "spend", "bool", False),
+    # --- billing (PR-MON-8 §4.1, owner decision: 1 hour). 0 is the UNCONFIGURED sentinel, never a grace of zero: SePay
+    # checkout is not ready and every SePay payment fails closed (no grant) until an operator sets a value >= 1.
+    _p("billing.domestic_late_payment_grace_hours", "billing", "int", 0, unit="hours", low=0, high=168,
+       danger="charging"),
 )
 
 

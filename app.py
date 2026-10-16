@@ -1332,7 +1332,7 @@ def _billing_service():
     a gateway without keys and a plan without an approved price are simply not offered (human gates)."""
 
     from writing_coach.billing.service import (
-        billing_enabled, build_gateways, load_credit_packs, load_prices, BillingService,
+        billing_enabled, build_gateways, domestic_choice, load_credit_packs, load_prices, BillingService,
     )
 
     if not billing_enabled(os.environ) or _persistence_runtime.engine is None or not _account_backbone.is_active:
@@ -1345,7 +1345,23 @@ def _billing_service():
                           commerce=PostgresCommerceRepository(_persistence_runtime.engine),
                           gateways=build_gateways(os.environ), prices=load_prices(os.environ),
                           credit_packs=load_credit_packs(os.environ),
-                          reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine))
+                          reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine),
+                          # PR-MON-8 §5: the domestic gateway is an explicit choice; inferred only outside production.
+                          domestic=domestic_choice(os.environ),
+                          production=os.getenv("APP_ENV", "").strip().casefold() == "production")
+
+
+def _sepay_feed(service):
+    """PR-MON-8 §6: the SePay feed object, built whenever SePay has its API token (the operator's date-range backfill,
+    §6.4, needs only that). Its reconciler step runs only when SEPAY_FEED_ENABLED is on as well (feed.enabled)."""
+
+    sepay = service.gateways.get("sepay") if service is not None else None
+    if sepay is None or not sepay.has_api_token:
+        return None
+    from writing_coach.billing.sepay_feed import SePayFeed
+
+    return SePayFeed(service=service, gateway=sepay, settings=_persistence_runtime.platform_repository,
+                     orders=service.orders)
 
 
 def _billing_reconciler(service):
@@ -1358,9 +1374,11 @@ def _billing_reconciler(service):
     )
 
     settings = Settings.from_env(os.environ)
+    feed = _sepay_feed(service)
     reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
                                    lock=PostgresTickLock(_persistence_runtime.engine),
-                                   lookups=build_lookups(service.gateways), settings=settings, credits=_credits)
+                                   lookups=build_lookups(service.gateways), settings=settings, credits=_credits,
+                                   feed=feed)
     return BillingReconcileSchedule(reconciler, interval=settings.interval)
 
 
@@ -1446,7 +1464,8 @@ _billing_reconcile = _billing_reconciler(_billing)
 configure_billing(service=_billing, backbone=_account_backbone, admin_guard=require_admin,
                   reconciliation=_billing.reconciliation if _billing is not None else None,
                   reconcile=_billing_reconcile.tick if _billing_reconcile is not None else None, credits=_credits,
-                  public_base_url=os.getenv("PUBLIC_BASE_URL", ""))
+                  public_base_url=os.getenv("PUBLIC_BASE_URL", ""),
+                  sepay_backfill=(lambda feed: feed.backfill if feed is not None else None)(_sepay_feed(_billing)))
 
 
 def _schema_state(names):
