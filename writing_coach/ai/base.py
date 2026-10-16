@@ -331,6 +331,9 @@ def sanitize_telemetry(value: object) -> dict[str, Any] | None:
     # before any outbound request (budget, unfunded, cooling down) or a call refused before sending is never billable.
     if value.get("billable_attempt") is True:
         result["billable_attempt"] = True
+    # D-219: the tier in force when the call was recorded (cost.free_tier.<provider>); never rewritten afterwards.
+    if type(value.get("free_tier")) is bool:
+        result["free_tier"] = value["free_tier"]
     # PR-MON-7 §4.4: an estimate of whether provider credits covered the call; never a cash fact.
     if value.get("cost_coverage") in {"provider_credit_estimated", "cash", "unknown"}:
         result["cost_coverage"] = value["cost_coverage"]

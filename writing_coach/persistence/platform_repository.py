@@ -421,6 +421,12 @@ class SQLitePlatformRepository:
     def record_ai_cost(self, user_key: str, event: dict) -> bool:
         return False
 
+    def policy_change_history(self, since: datetime) -> list[dict]:
+        return []
+
+    def ai_costs_by_account_tiered(self, since, until, boundaries, tier_at, *, limit: int = 100) -> list[dict] | None:
+        return None
+
     def delete_ai_costs_before(self, before: datetime, *, limit: int) -> int:
         return 0
 
@@ -882,6 +888,10 @@ class PostgresPlatformRepository:
             "COUNT(*) FILTER (WHERE p ->> 'outcome' = 'success' AND p ->> 'provider' IS NOT NULL "
             "AND COALESCE(p -> 'cost' ->> 'state', '') <> 'estimated') AS unpriced_calls, "
             "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric), 0) AS usd, "
+            # D-219: the same sum by the tier stamped on each event (no stamp: unknown, never real or free)
+            "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric) FILTER (WHERE p ->> 'free_tier' = 'false'), 0) AS usd_real, "
+            "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric) FILTER (WHERE p ->> 'free_tier' = 'true'), 0) AS usd_free, "
+            "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric) FILTER (WHERE p ->> 'free_tier' IS NULL), 0) AS usd_unknown, "
             "COALESCE(SUM((p -> 'usage' ->> 'prompt_tokens')::bigint), 0) AS prompt_tokens, "
             "COALESCE(SUM((p -> 'usage' ->> 'completion_tokens')::bigint), 0) AS completion_tokens, "
             "COALESCE(SUM((p -> 'usage' ->> 'audio_seconds')::numeric), 0) AS audio_seconds, "
@@ -895,6 +905,8 @@ class PostgresPlatformRepository:
                 "day": row["day"], "capability": row["capability"], "provider": row["provider"], "model": row["model"],
                 "calls": int(row["calls"]), "failures": int(row["failures"]), "priced_calls": int(row["priced_calls"]),
                 "unpriced_calls": int(row["unpriced_calls"]), "usd": round(float(row["usd"]), 8),
+                "usd_real": round(float(row["usd_real"]), 8), "usd_free": round(float(row["usd_free"]), 8),
+                "usd_unknown": round(float(row["usd_unknown"]), 8),
                 "prompt_tokens": int(row["prompt_tokens"]), "completion_tokens": int(row["completion_tokens"]),
                 "audio_seconds": round(float(row["audio_seconds"]), 3),
                 "avg_latency_ms": round(float(row["avg_latency_ms"])) if row["avg_latency_ms"] is not None else None,
@@ -968,6 +980,58 @@ class PostgresPlatformRepository:
             result = session.execute(delete(AICostRecord).where(AICostRecord.id.in_(oldest))
                                      .execution_options(synchronize_session=False))  # fmt: skip
             return int(result.rowcount or 0)
+
+    def policy_change_history(self, since: datetime) -> list[dict]:
+        """The `platform.policies.update` audit rows from `since` on, oldest first: `{created_at, payload}`. Read only,
+        to tell which tier a record without a stamp (`ai_cost_records`) was made under (cost_tier.FlagTimeline)."""
+
+        with Session(self.engine) as session:
+            rows = session.scalars(
+                select(AuditLog).where(AuditLog.action == "platform.policies.update")
+                .where(AuditLog.created_at >= since).order_by(AuditLog.created_at)
+            ).all()
+        return [{"created_at": row.created_at, "payload": row.payload if isinstance(row.payload, dict) else {}}
+                for row in rows]
+
+    def ai_costs_by_account_tiered(self, since: datetime, until: datetime, boundaries: list[datetime], tier_at,
+                                   *, limit: int = 100) -> list[dict] | None:
+        """`ai_costs_by_account` with each account's cost split into real and free-tier (D-219). `ai_cost_records` has
+        no tier column and its schema is a human gate, so the window is cut at every instant a free-tier flag changed
+        and each piece is classified by `tier_at(provider, start)` (real, free or unknown) from the audit log. None
+        before the table."""
+
+        from sqlalchemy import func
+        from sqlalchemy.exc import ProgrammingError
+
+        from writing_coach.persistence.models import AICostRecord
+
+        edges = [since, *boundaries[:200], until]
+        truncated = len(boundaries) > 200  # the last piece then spans changes it does not see: it is "unknown"
+        names = {"real": "usd_real", "free": "usd_free", "unknown": "usd_unknown"}
+        accounts: dict[str, dict] = {}
+        try:
+            with Session(self.engine) as session:
+                for index, (start, end) in enumerate(zip(edges, edges[1:], strict=False)):
+                    query = (
+                        select(User.email, User.name, AICostRecord.provider, func.count(AICostRecord.id),
+                               func.coalesce(func.sum(AICostRecord.cost_usd), 0))
+                        .join(User, User.id == AICostRecord.account_id)
+                        .where(AICostRecord.occurred_at >= start, AICostRecord.occurred_at < end)
+                        .group_by(User.id, User.email, User.name, AICostRecord.provider)
+                    )
+                    for email, name, provider, calls, usd in session.execute(query).all():
+                        row = accounts.setdefault(email, {"email": email, "name": name, "calls": 0, "usd": 0.0,
+                                                          "usd_real": 0.0, "usd_free": 0.0, "usd_unknown": 0.0})
+                        amount = float(usd or 0)
+                        row["calls"] += int(calls)
+                        row["usd"] += amount
+                        last = truncated and index == len(edges) - 2
+                        row[names["unknown" if last else tier_at(provider, start)]] += amount
+        except ProgrammingError:
+            return None
+        ranked = sorted(accounts.values(), key=lambda item: -item["usd"])[:max(1, min(int(limit), 1000))]
+        return [{**item, **{name: round(item[name], 8) for name in ("usd", "usd_real", "usd_free", "usd_unknown")}}
+                for item in ranked]
 
     def ai_costs_by_account(self, since: datetime, *, limit: int = 100) -> list[dict] | None:
         """Cost per account since `since`, the most expensive first, at most `limit` accounts, for an

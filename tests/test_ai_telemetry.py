@@ -104,7 +104,8 @@ def test_success_telemetry_keeps_capability_provider_model_and_reported_usage(
     assert isinstance(result.runtime["telemetry"]["latency_ms"], int)
     assert result.runtime["telemetry"]["latency_ms"] >= 0
     assert result.runtime["telemetry"]["cost"]["state"] == "unpriced"
-    assert repository.events[0] == result.runtime["telemetry"]
+    # D-219: the persisted copy alone carries the tier in force when it was recorded (openai has no free-tier flag).
+    assert repository.events[0] == {**result.runtime["telemetry"], "free_tier": False}
 
 
 def test_absent_or_malformed_usage_remains_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
