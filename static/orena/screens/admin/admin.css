@@ -18,7 +18,7 @@
 }
 
 .a-shell {
-  --a-pgcols: repeat(2, minmax(0, 1fr));
+  --a-pgn: 2;
   --a-fcols: repeat(2, minmax(0, 1fr));
   --a-cols4: repeat(4, minmax(0, 1fr));
   --a-pad: 32px;
@@ -31,7 +31,7 @@
   overflow: hidden;
 }
 :root[data-device='mobile'] .a-shell {
-  --a-pgcols: 1fr;
+  --a-pgn: 1;
   --a-fcols: 1fr;
   --a-cols4: repeat(2, minmax(0, 1fr));
   --a-pad: 18px;
@@ -553,11 +553,32 @@ a.a-btn--primary:hover {
 }
 
 /* ---- Blocks ---- */
+/* Independent columns, never row-aligned: a tall card in one column must not stretch a grid row and
+   leave a hole beside it. Cards fill column one then column two in DOM order, so keyboard and reader
+   order is the visual order; a full-width block spans every column and starts a new run beneath it. */
 .a-blocks {
-  display: grid;
-  grid-template-columns: var(--a-pgcols);
-  gap: 18px;
-  align-items: start;
+  display: block;
+  column-count: var(--a-pgn, 2);
+  column-gap: 18px;
+  column-fill: balance;
+}
+.a-blocks > * {
+  break-inside: avoid;
+  margin: 0 0 18px;
+}
+.a-blocks > .a-block--full,
+.a-blocks > .a-metrics,
+.a-blocks > .a-banner,
+.a-blocks > .a-skeleton,
+.a-blocks > .a-loading,
+.a-blocks > .a-error,
+.a-blocks > .a-overview-metrics {
+  column-span: all;
+}
+/* A long feed scrolls inside its own card so it cannot push the cards after it down the page. */
+.a-block:not(.a-block--flat) > .a-rows {
+  max-height: 440px;
+  overflow-y: auto;
 }
 .a-block {
   min-width: 0;
@@ -570,7 +591,7 @@ a.a-btn--primary:hover {
   padding: 20px;
 }
 .a-block--full {
-  grid-column: 1 / -1;
+  column-span: all;
 }
 .a-block--flat {
   background: transparent;
@@ -1196,7 +1217,7 @@ a.a-btn--primary:hover {
   max-width: 760px;
 }
 .a-blocks--one {
-  grid-template-columns: minmax(0, 1fr);
+  column-count: 1;
 }
 .a-hint {
   font-size: 13px;

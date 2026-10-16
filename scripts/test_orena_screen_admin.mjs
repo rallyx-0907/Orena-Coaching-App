@@ -643,3 +643,22 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
   assert.ok(String(plansPage.plansPage({ doc: { ...catalogue, source: 'default', updated_at: null }, drafts, ui: 'en', href })).includes(t('plansDefault')), 'built-in values say so');
   assert.equal(model.areaOf('adminPlans'), 'users');
 }
+
+/* No row-stretch gaps (owner report 2026-10-16). The page block container must lay cards out in
+   independent columns, never a row-aligned grid, so a tall card cannot leave a hole beside it. */
+{
+  const css = fs.readFileSync('static/orena/screens/admin/admin.css', 'utf8').replace(/\r\n/g, '\n');
+  const rule = (selector) => {
+    const at = css.indexOf(`\n${selector} {`);
+    assert.ok(at >= 0, `admin.css has ${selector}`);
+    return css.slice(at, css.indexOf('}', at));
+  };
+  const blocks = rule('.a-blocks');
+  assert.match(blocks, /column-count:\s*var\(--a-pgn/, '.a-blocks flows cards in independent columns');
+  assert.doesNotMatch(blocks, /display:\s*grid|grid-template-rows|grid-auto-rows/, '.a-blocks is not a row-aligned grid');
+  assert.match(css, /\.a-blocks > \* \{[^}]*break-inside:\s*avoid/, 'a card never splits across columns');
+  assert.match(rule('.a-block--full'), /column-span:\s*all/, 'a full block spans every column');
+  assert.match(css, /:root\[data-device='mobile'\] \.a-shell \{[^}]*--a-pgn:\s*1;/, 'phone is one column');
+  assert.match(css, /\.a-block:not\(\.a-block--flat\) > \.a-rows \{[^}]*max-height[^}]*overflow-y:\s*auto/, 'a long feed scrolls inside its own card');
+  for (const grid of ['.a-detail__grid', '.a-vpreview']) assert.match(rule(grid), /align-items:\s*start/, `${grid} does not stretch its cells`);
+}

@@ -210,7 +210,7 @@ export function policiesPage({ doc, quota, quotaDraft, drafts, view = {}, ui = '
     <div class="a-blocks">
       ${quotaBlock({ quota, quotaDraft, ...view }, ui)}
       ${GROUP_ORDER.map((group) => groupBlock(group, doc, drafts, ui))}
-      ${formBlock({ fields: [], error: view.error || '', status: view.status || '', actions: [{ label: view.busy ? t('polSaving') : t('polSave'), a: 'policies-save', kind: 'primary', disabled: Boolean(view.busy) }], span: true })}
+      ${formBlock({ span: true, fields: [], error: view.error || '', status: view.status || '', actions: [{ label: view.busy ? t('polSaving') : t('polSave'), a: 'policies-save', kind: 'primary', disabled: Boolean(view.busy) }], span: true })}
     </div>
   </section>`;
 }
