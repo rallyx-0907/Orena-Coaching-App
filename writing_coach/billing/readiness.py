@@ -8,6 +8,8 @@ Every capability is checked, and each one that is missing is named in `blockers`
 * the billing entitlement source installed, so a payment changes the plan (`installed`, not `absent` or `unverified`,
   R-MON-010);
 * a public base URL for the gateways' return pages (https in production);
+* the domestic gateway chosen explicitly (`BILLING_DOMESTIC_GATEWAY`) and, for SePay, its late-payment grace set
+  (`domestic_gateway_unset` / `domestic_gateway_unconfigured` / `late_payment_grace_unset`, PR-MON-8);
 * at least one gateway ready: configured with its keys (and so its webhook verification), priced, and every one of
   its prices exactly the catalogue's (`BillingService.gateway_report`), and no open critical reconciliation item on
   it (PR-MON-3 §4.2: paid without access, or paid but unrecorded, closes new checkouts on that gateway).
@@ -83,6 +85,9 @@ def report(facts: RuntimeFacts) -> dict[str, Any]:
         blockers.append("reconciliation_critical")
     if any(entry.get("reconciliation") == "unavailable" for entry in gateways.values()):
         blockers.append("reconciliation_unavailable")
+    if facts.service is not None and hasattr(facts.service, "domestic_blockers"):
+        # PR-MON-8 §4.1/§5: the domestic gateway must be chosen explicitly (production), and SePay's grace configured.
+        blockers.extend(facts.service.domestic_blockers())
     if not any(entry.get("ready") for entry in gateways.values()):
         blockers.append("no_gateway_ready")
     result = {"ready": not blockers, "blockers": blockers, "checks": checks, "gateways": gateways}

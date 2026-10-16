@@ -151,8 +151,10 @@ class PostgresTickLock:
 class BillingReconciler:
     def __init__(self, *, service: Any, orders: Any, items: Any, lock: Callable[[], Any],
                  lookups: Mapping[str, Callable[[int], Lookup]], settings: Settings = Settings(),
-                 now: Callable[[], datetime] = lambda: datetime.now(UTC), credits: Any = None) -> None:
+                 now: Callable[[], datetime] = lambda: datetime.now(UTC), credits: Any = None,
+                 feed: Any = None) -> None:
         self._service = service
+        self._feed = feed  # PR-MON-8: the SePay recovery feed, which runs only when switched on (sepay_feed.py)
         self._credits = credits  # PR-MON-4: the credit ledger's step, when credits are enabled
         self._orders = orders
         self._items = items
@@ -173,6 +175,8 @@ class BillingReconciler:
                 steps.append(("credits", self._credit_step))
             if getattr(self._service, "credits", None) is not None:
                 steps.append(("credit_orders", self._credit_order_step))
+            if self._feed is not None and self._feed.enabled:
+                steps.append(("sepay_feed", self._feed.step))
             for name, step in steps:
                 if not lock.alive():
                     counts["lock_lost"] += 1

@@ -24,6 +24,7 @@ There is no learner screen yet: the design draws no plans or checkout page (UI_B
 from __future__ import annotations
 
 import logging
+from datetime import UTC, datetime
 import uuid
 from collections.abc import Callable
 from typing import Any, Literal
@@ -49,15 +50,18 @@ _ready: Callable[[], bool] | None = None  # None: `billing.readiness.billing_rea
 _items: Any = None  # the reconciliation items (PR-MON-3)
 _reconcile: Callable[[], Any] | None = None  # one reconciliation pass
 _credits: Any = None  # the credit service (PR-MON-4), only when credits are enabled
+_sepay_backfill: Callable[[Any, Any], dict] | None = None  # PR-MON-8 §6.4, the operator's SePay recovery
 MAX_WEBHOOK_BYTES = 256 * 1024
 
 
 def configure_billing(*, service: Any, backbone: Any, admin_guard: Callable[[Request], Any],
                       public_base_url: str, reconciliation: Any = None,
-                      reconcile: Callable[[], Any] | None = None, credits: Any = None) -> None:
-    global _service, _backbone, _admin, _public_base, _items, _reconcile, _credits
+                      reconcile: Callable[[], Any] | None = None, credits: Any = None,
+                      sepay_backfill: Callable[[datetime, datetime], dict] | None = None) -> None:
+    global _service, _backbone, _admin, _public_base, _items, _reconcile, _credits, _sepay_backfill
     _service, _backbone, _admin, _public_base = service, backbone, admin_guard, public_base_url.rstrip("/")
     _items, _reconcile, _credits = reconciliation, reconcile, credits
+    _sepay_backfill = sepay_backfill
 
 
 def _billing_ready() -> bool:
@@ -186,6 +190,10 @@ async def billing_webhook(gateway: str, request: Request) -> JSONResponse:
     if outcome.status == "rejected":
         return JSONResponse({"ok": False}, status_code=401)
     # Anything verified is acknowledged: the receipt (or the order) holds it, and a redelivery is a duplicate.
+    # PR-MON-8 G4: a gateway with its own success shape (SePay counts only {"success": true}) is answered in it.
+    ack = getattr((getattr(service, "gateways", None) or {}).get(gateway), "ack", None)
+    if callable(ack):
+        return JSONResponse(ack())
     return JSONResponse({"ok": True, "status": outcome.status})
 
 
@@ -251,6 +259,42 @@ def billing_reconciliation_resolve(item_id: str, payload: ResolveIn, request: Re
     except ResolutionRefused as refused:
         raise orena_http_error(409, refused.code, "This item cannot be closed that way.", retryable=False) from None
     return {"ok": True, "item": _public_item(item)}
+
+
+class SePayBackfillIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    date_from: datetime
+    date_to: datetime
+    # The boundary a previous, incomplete run returned: the run continues after it (§6.4).
+    resume_after: str | None = Field(default=None, min_length=1, max_length=80)
+
+
+@router.post("/api/admin/billing/sepay/backfill")
+def billing_sepay_backfill(payload: SePayBackfillIn, request: Request) -> dict[str, Any]:
+    """PR-MON-8 §6.4: an operator's recovery of one SePay date range through the same rules and payment path as the
+    feed. It never moves the feed's cursor. Needs SEPAY_API_TOKEN; works while the feed itself is off."""
+
+    _admin_items(request)
+    if _sepay_backfill is None:
+        raise orena_http_error(503, "sepay_backfill_unavailable", "SePay recovery is not configured here.",
+                               retryable=False)
+    start, end = (value if value.tzinfo else value.replace(tzinfo=UTC) for value in (payload.date_from, payload.date_to))
+    try:
+        result = _sepay_backfill(start, end, resume_after=payload.resume_after)
+    except ValueError as invalid:
+        raise orena_http_error(422, "backfill_range_invalid", str(invalid), retryable=False) from None
+    except PermissionError:
+        raise orena_http_error(503, "sepay_backfill_unavailable", "SePay recovery is not configured here.",
+                               retryable=False) from None
+    if not result["complete"]:
+        # A partial recovery is never a success: the operator continues with `resume_after` (after `retry_after`).
+        status = 429 if result["reason"] == "rate_limited" else 409
+        raise orena_http_error(status, "backfill_incomplete", "The range is not fully recovered yet; resume it.",
+                               retryable=True, context={"reason": result["reason"],
+                                                        "resume_after": result["resume_after"],
+                                                        "retry_after": result["retry_after"],
+                                                        "counts": result["counts"]})
+    return {"ok": True, "complete": True, "counts": result["counts"]}
 
 
 @router.post("/api/admin/billing/reconcile")

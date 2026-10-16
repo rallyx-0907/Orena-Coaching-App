@@ -49,6 +49,8 @@ ORDER_TTL = timedelta(minutes=30)  # H5: an operational expiry, never when Orena
 class PostgresBillingRepository:
     def __init__(self, engine: Engine) -> None:
         self._engine = engine
+        # PR-MON-8 race tests only: called inside mark_paid_domestic before its locks are taken.
+        self.pause_before_lock: Any = None
 
     # ---- checkout -----------------------------------------------------------------------------------------
 
@@ -172,6 +174,116 @@ class PostgresBillingRepository:
                 {"event": event_id, "now": moment, "seq": sequence, "end": end, "code": order_code, "ref": reference,
                  "settled": settled})  # fmt: skip
         return {**result, "status": "applied" if status == "active" else "paid_deleted_account"}
+
+    # ---- PR-MON-8: a domestic payment decided under the order's lock (design revisions 5 + 6, §4.2) ------------
+
+    # States an operator or the system ended on purpose: never paid automatically (review of revision 2).
+    CLOSED_STATES = ("cancelled", "refunded")
+    # States a timely payment may still pay: open, or expired only because its checkout timed out.
+    PAYABLE_STATES = ("created", "pending", "expired")
+
+    def mark_started(self, order_id: Any, *, now: datetime | None = None) -> None:
+        """A domestic checkout with no provider link (SePay): the order is `pending`, with no external reference."""
+
+        moment = now or datetime.now(UTC)
+        with self._engine.begin() as connection:
+            connection.execute(text(
+                "UPDATE billing_orders SET state = 'pending', updated_at = :now WHERE id = :id AND state = 'created'"),
+                {"now": moment, "id": order_id})  # fmt: skip
+
+    def oldest_open_created_at(self, gateway: str) -> datetime | None:
+        """The creation of the gateway's oldest order not yet paid or refunded: where the SePay feed's first run
+        starts (PR-MON-8 §6.2). None when there is none."""
+
+        with self._engine.connect() as connection:
+            return connection.execute(text(
+                "SELECT MIN(created_at) FROM billing_orders WHERE gateway = :gateway "
+                "AND state IN ('created', 'pending', 'expired', 'cancelled')"), {"gateway": gateway}).scalar()
+
+    def first_order_created_at(self, gateway: str) -> datetime | None:
+        """The creation of the gateway's first order, of any state: when sales through it began. None when it has
+        never sold (PR-MON-8 §6.2, the first-run start when no order is open)."""
+
+        with self._engine.connect() as connection:
+            return connection.execute(text(
+                "SELECT MIN(created_at) FROM billing_orders WHERE gateway = :gateway"), {"gateway": gateway}).scalar()
+
+    def mark_paid_domestic(self, *, order_code: int, event_id: str, amount_minor: int | None, currency: str | None,
+                           transaction_at: datetime | None, grace: timedelta | None, paid_reference: str | None = None,
+                           now: datetime | None = None) -> dict[str, Any]:
+        """One verified domestic transfer for one order, decided and applied in ONE transaction under the same locks
+        as `mark_paid` (the incarnation `FOR NO KEY UPDATE`, then the order `FOR UPDATE`). Every decision reads the
+        order as locked; nothing is pre-checked outside this transaction. In order:
+
+        1. `duplicate`: this payment event is already the order's (a redelivery, or the other source with the same
+           bank reference);
+        2. deletion safety, as `mark_paid`: a timely payment for a deleted account is recorded paid, nothing granted
+           (`paid_deleted_account`);
+        3. the current state;
+        4. `order_closed` for an order ended on purpose (no mutation);
+        5. for a payable order, `transaction_at <= locked expires_at + grace`, else `late` (no mutation). A missing
+           `expires_at`, `grace` (unconfigured) or `transaction_at` is `late`: fail closed;
+        6. `source_ambiguous` for an order already paid by another event when either side has no bank reference;
+           `not_payable` when both carry different bank references (a real second transfer); no mutation;
+        7. `mismatch` for a different amount or currency (no mutation);
+        8. the transition to `paid`, written as `mark_paid` writes it (a lookup-free gateway: settled at once).
+
+        `pause_before_lock`, when set (tests only), runs before the locks are taken, to reproduce a race."""
+
+        moment = now or datetime.now(UTC)
+        if self.pause_before_lock is not None:
+            self.pause_before_lock()
+        with self._engine.begin() as connection:
+            found = connection.execute(text(
+                "SELECT incarnation_id FROM billing_orders WHERE order_code = :code"), {"code": order_code}).first()
+            if found is None:
+                return {"status": "unknown_order"}
+            incarnation = found[0]
+            owner = connection.execute(text(
+                "SELECT status, deleted_at FROM account_incarnations WHERE id = :inc FOR NO KEY UPDATE"),
+                {"inc": incarnation}).one()  # fmt: skip
+            order = connection.execute(text(f"SELECT {_ORDER_COLUMNS} FROM billing_orders WHERE order_code = :code "
+                                            "FOR UPDATE"), {"code": order_code}).mappings().one()
+            result = {"incarnation_id": str(incarnation), "order_code": order_code, "order_id": order["id"],
+                      "product_kind": order["product_kind"], "state": order["state"]}
+            # 1. idempotency (and a payment already recorded for a since-deleted account stays that, as mark_paid)
+            if order["state"] in ("paid", "refunded") and order["paid_event_id"] == event_id:
+                repeat = ("paid_deleted_account" if owner[1] is not None and order["paid_at"] is not None
+                          and order["paid_at"] >= owner[1] else "duplicate")  # fmt: skip
+                return {**result, "status": repeat}
+            # 3-4. the locked state: an order ended on purpose is never paid automatically
+            if order["state"] in self.CLOSED_STATES:
+                return {**result, "status": "order_closed"}
+            if order["state"] == "paid":
+                # 6. another event already paid it
+                both_referenced = (event_id.startswith("sepay:ref:")
+                                   and str(order["paid_event_id"] or "").startswith("sepay:ref:"))  # fmt: skip
+                return {**result, "status": "not_payable" if both_referenced else "source_ambiguous"}
+            if order["state"] not in self.PAYABLE_STATES:
+                return {**result, "status": "not_payable"}
+            # 5. time, against the expires_at read under this lock - never a snapshot taken before it
+            expires_at = order["expires_at"]
+            if grace is None or expires_at is None or transaction_at is None or transaction_at > expires_at + grace:
+                return {**result, "status": "late"}
+            # 7. exact money
+            if amount_minor != int(order["amount_minor"]) or (currency or "").upper() != order["currency"]:
+                return {**result, "status": "mismatch"}
+            # 8. the transition, as mark_paid writes it
+            sequence, end = None, None
+            if order["product_kind"] == "plan":
+                chain = self._chain(connection, incarnation, gateway=order["gateway"])
+                end = extended_until(chain["paid_through"], moment, order["period"])
+                sequence = connection.execute(text(
+                    "SELECT COALESCE(MAX(paid_sequence), 0) + 1 FROM billing_orders WHERE incarnation_id = :inc"),
+                    {"inc": incarnation}).scalar_one()
+            connection.execute(text(
+                "UPDATE billing_orders SET state = 'paid', paid_event_id = :event, paid_at = :now, "
+                "paid_sequence = :seq, period_end = :end, paid_reference = :ref, updated_at = :now, "
+                "provider_settled_at = :now, provider_status = 'PAID' WHERE order_code = :code"),
+                {"event": event_id, "now": moment, "seq": sequence, "end": end, "code": order_code,
+                 "ref": (paid_reference or "").strip()[:200] or None})  # fmt: skip
+        # 2. deletion safety: the money is accounted for, nothing is granted
+        return {**result, "status": "applied" if owner[0] == "active" else "paid_deleted_account", "state": "paid"}
 
     def mark_refunded(self, *, order_code: int, note: str, now: datetime | None = None) -> dict[str, Any]:
         """An operator's record that a paid order's money was returned (payOS has no refund API: the money goes
