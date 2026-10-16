@@ -12,6 +12,7 @@ import { useStyles } from '../../kit/styles.js';
 import { adminAccess, areaOf } from './model.js';
 import { renderNoAccess } from './no-access.js';
 import { drawAdminShell } from './frame.js';
+import { watchBlocks } from './columns.js';
 import { mountTray } from './tray.js';
 
 const AREA_PAGES = {
@@ -59,14 +60,17 @@ export default async function admin(element, ctx) {
   }
   const shell = drawAdminShell(element, { area, href: ctx.href, name: access.name });
   const leaveTray = mountTray(shell.tray, ctx.href);
+  const leaveBlocks = watchBlocks(shell.page);
   const mount = await load(ctx.route.id);
   if (!ctx.isCurrent()) {
     leaveTray();
+    leaveBlocks();
     return undefined;
   }
   const leavePage = await mount(shell, ctx);
   return () => {
     leaveTray();
+    leaveBlocks();
     if (typeof leavePage === 'function') leavePage();
   };
 }

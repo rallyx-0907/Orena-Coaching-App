@@ -644,8 +644,8 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
   assert.equal(model.areaOf('adminPlans'), 'users');
 }
 
-/* No row-stretch gaps (owner report 2026-10-16). The page block container must lay cards out in
-   independent columns, never a row-aligned grid, so a tall card cannot leave a hole beside it. */
+/* No row-stretch gaps (owner report 2026-10-16). Cards sit in two independent stacks, never in shared
+   grid rows, so a tall card cannot leave a hole beside it; long feeds are bounded by an explicit class. */
 {
   const css = fs.readFileSync('static/orena/screens/admin/admin.css', 'utf8').replace(/\r\n/g, '\n');
   const rule = (selector) => {
@@ -653,12 +653,25 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
     assert.ok(at >= 0, `admin.css has ${selector}`);
     return css.slice(at, css.indexOf('}', at));
   };
-  const blocks = rule('.a-blocks');
-  assert.match(blocks, /column-count:\s*var\(--a-pgn/, '.a-blocks flows cards in independent columns');
-  assert.doesNotMatch(blocks, /display:\s*grid|grid-template-rows|grid-auto-rows/, '.a-blocks is not a row-aligned grid');
-  assert.match(css, /\.a-blocks > \* \{[^}]*break-inside:\s*avoid/, 'a card never splits across columns');
-  assert.match(rule('.a-block--full'), /column-span:\s*all/, 'a full block spans every column');
-  assert.match(css, /:root\[data-device='mobile'\] \.a-shell \{[^}]*--a-pgn:\s*1;/, 'phone is one column');
-  assert.match(css, /\.a-block:not\(\.a-block--flat\) > \.a-rows \{[^}]*max-height[^}]*overflow-y:\s*auto/, 'a long feed scrolls inside its own card');
+  assert.doesNotMatch(rule('.a-blocks'), /display:\s*grid|grid-template|column-count/, '.a-blocks is not a row-aligned grid');
+  assert.match(rule('.a-stacks'), /display:\s*flex/, 'the stacks sit side by side');
+  assert.match(rule('.a-stacks'), /align-items:\s*flex-start/, 'a stack is as tall as its own cards');
+  assert.match(rule('.a-stack'), /flex-direction:\s*column/, 'a stack is a column of cards');
+  assert.match(rule('.a-rows--feed'), /max-height[^;]*;[\s\S]*overflow-y:\s*auto/, 'a feed scrolls inside its own card');
+  assert.match(css, /:root\[data-device='mobile'\] \.a-rows--feed \{[^}]*max-height:\s*none/, 'a phone has no nested scroller');
+  assert.doesNotMatch(css, /\.a-block:not\([^)]*\) > \.a-rows \{/, 'the cap is never applied to every list');
   for (const grid of ['.a-detail__grid', '.a-vpreview']) assert.match(rule(grid), /align-items:\s*start/, `${grid} does not stretch its cells`);
+
+  const columns = fs.readFileSync('static/orena/screens/admin/columns.js', 'utf8');
+  assert.match(columns, /data-ord|dataset\.ord/, 'the authored order is kept so a phone restores it');
+  assert.match(columns, /dataset\.device !== 'mobile'/, 'a phone is not arranged');
+
+  const ctl = fs.readFileSync('static/orena/screens/admin/control-pages.js', 'utf8');
+  assert.ok(ctl.indexOf("route === 'adminOperations' ? navCard") < ctl.lastIndexOf("section('opRuntime'"), 'Operations leads with its navigation (Policies & limits)');
+  assert.match(ctl, /feedRows\(\(telemetry\.recent/, 'recent operations is the feed');
+  assert.equal((ctl.match(/feedRows\(/g) || []).length, 1, 'only the one feed is capped');
+  const policies = await import('../static/orena/screens/admin/policies.js');
+  assert.equal(policies.GROUP_COLUMN.quota, 'left');
+  assert.equal(policies.GROUP_COLUMN.spend, 'right');
+  for (const group of policies.GROUP_ORDER) assert.ok(['left', 'right'].includes(policies.GROUP_COLUMN[group]), `${group} has a placement`);
 }
