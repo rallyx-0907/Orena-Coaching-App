@@ -265,6 +265,8 @@ class SePayBackfillIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     date_from: datetime
     date_to: datetime
+    # The boundary a previous, incomplete run returned: the run continues after it (§6.4).
+    resume_after: str | None = Field(default=None, min_length=1, max_length=80)
 
 
 @router.post("/api/admin/billing/sepay/backfill")
@@ -278,13 +280,21 @@ def billing_sepay_backfill(payload: SePayBackfillIn, request: Request) -> dict[s
                                retryable=False)
     start, end = (value if value.tzinfo else value.replace(tzinfo=UTC) for value in (payload.date_from, payload.date_to))
     try:
-        counts = _sepay_backfill(start, end)
+        result = _sepay_backfill(start, end, resume_after=payload.resume_after)
     except ValueError as invalid:
         raise orena_http_error(422, "backfill_range_invalid", str(invalid), retryable=False) from None
     except PermissionError:
         raise orena_http_error(503, "sepay_backfill_unavailable", "SePay recovery is not configured here.",
                                retryable=False) from None
-    return {"ok": True, "counts": counts}
+    if not result["complete"]:
+        # A partial recovery is never a success: the operator continues with `resume_after` (after `retry_after`).
+        status = 429 if result["reason"] == "rate_limited" else 409
+        raise orena_http_error(status, "backfill_incomplete", "The range is not fully recovered yet; resume it.",
+                               retryable=True, context={"reason": result["reason"],
+                                                        "resume_after": result["resume_after"],
+                                                        "retry_after": result["retry_after"],
+                                                        "counts": result["counts"]})
+    return {"ok": True, "complete": True, "counts": result["counts"]}
 
 
 @router.post("/api/admin/billing/reconcile")

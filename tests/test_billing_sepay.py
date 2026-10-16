@@ -634,9 +634,10 @@ def test_a_backfill_uses_the_same_handling_and_never_touches_the_cursor(monkeypa
     handler = Handler()
     settings = Settings({"since_id": "authoritative", "backfill_from": None})
     step = feed(rows, handler=handler, settings=settings)
-    counts = step.backfill(NOW - timedelta(days=2), NOW)
+    result = step.backfill(NOW - timedelta(days=2), NOW)
+    assert result["complete"] is True and result["resume_after"] is None
     assert [f.extra["source_id"][-1] for f in handler.facts] == ["1", "3", "5"]   # the same §6.3 rules
-    assert counts["sepay_feed_skipped"] == 2
+    assert result["counts"]["sepay_feed_skipped"] == 2
     assert settings.value == {"since_id": "authoritative", "backfill_from": None} and settings.writes == []
     requests = step._fetch.requests
     assert all(r["page"] == "1" for r in requests) and all("transaction_date_to" in r for r in requests)
@@ -648,11 +649,115 @@ def test_a_backfill_works_while_the_feed_is_off_but_needs_the_token():
 
     off = SePayFeed(service=Handler(), gateway=gateway(feed_enabled=False), settings=Settings(), orders=None,
                     fetch=Feeder([row(1)]), now=lambda: NOW)
-    assert off.enabled is False and off.backfill(NOW - timedelta(days=1), NOW) == {"sepay_feed_apply": 1}
+    done = off.backfill(NOW - timedelta(days=1), NOW)
+    assert off.enabled is False and done["complete"] is True and done["counts"] == {"sepay_feed_apply": 1}
     tokenless = SePayFeed(service=Handler(), gateway=gateway(api_token="", feed_enabled=False), settings=Settings(),
                           orders=None, fetch=Feeder([]), now=lambda: NOW)
     with pytest.raises(PermissionError):
         tokenless.backfill(NOW - timedelta(days=1), NOW)
+
+
+def _cap_world(monkeypatch, rows, *, fail_at=None):
+    """A backfill over `rows` with a page of 2 and a cap of 3 pages; `fail_at` makes that request a 429."""
+    from writing_coach.billing import sepay_feed
+    from writing_coach.billing.reconciler import RateLimited
+
+    monkeypatch.setattr(sepay_feed, "PER_PAGE", 2)
+    monkeypatch.setattr(sepay_feed, "MAX_BACKFILL_PAGES", 3)
+    feeder = Feeder(rows)
+    calls = {"n": 0}
+
+    def fetch(request):
+        calls["n"] += 1
+        if fail_at is not None and calls["n"] == fail_at:
+            raise RateLimited(30)
+        return feeder(request)
+
+    handler = Handler()
+    settings = Settings({"since_id": "authoritative", "backfill_from": None})
+    step = sepay_feed.SePayFeed(service=handler, gateway=gateway(feed_enabled=False), settings=settings, orders=None,
+                                fetch=fetch, now=lambda: NOW)
+    return step, handler, settings, calls
+
+
+def test_a_range_larger_than_the_cap_is_reported_incomplete_and_its_tail_is_recovered_on_resume(monkeypatch):
+    """Review P1-1: 7 rows, pages of 2, a cap of 3 pages: the first run handles 6 and says so; the resume recovers
+    the 7th; nothing is handled twice and the feed's cursor is untouched."""
+    rows = [row(n) for n in range(1, 8)]
+    step, handler, settings, _calls = _cap_world(monkeypatch, rows)
+    first = step.backfill(NOW - timedelta(days=2), NOW, max_pages=3)
+    assert first["complete"] is False and first["reason"] == "page_cap"
+    assert first["resume_after"] == rows[5]["id"] and len(handler.facts) == 6
+    second = step.backfill(NOW - timedelta(days=2), NOW, resume_after=first["resume_after"], max_pages=3)
+    assert second["complete"] is True and second["resume_after"] is None
+    handled = [f.extra["source_id"] for f in handler.facts]
+    assert handled == [f"sepay:v2:{r['id']}" for r in rows] and len(set(handled)) == 7   # each exactly once
+    assert settings.value == {"since_id": "authoritative", "backfill_from": None} and settings.writes == []
+
+
+def test_a_rate_limit_after_several_pages_is_incomplete_with_its_wait_and_resumes_exactly_once(monkeypatch):
+    rows = [row(n) for n in range(1, 6)]
+    step, handler, settings, _calls = _cap_world(monkeypatch, rows, fail_at=3)
+    first = step.backfill(NOW - timedelta(days=2), NOW, max_pages=3)
+    assert first["complete"] is False and first["reason"] == "rate_limited" and first["retry_after"] == 30
+    assert first["resume_after"] == rows[3]["id"] and len(handler.facts) == 4
+    second = step.backfill(NOW - timedelta(days=2), NOW, resume_after=first["resume_after"], max_pages=3)
+    assert second["complete"] is True
+    assert [f.extra["source_id"] for f in handler.facts] == [f"sepay:v2:{r['id']}" for r in rows]
+    assert settings.writes == []
+
+
+def test_rows_still_inside_the_settle_delay_leave_the_range_incomplete(monkeypatch):
+    rows = [row(1), row(2, minutes_ago=5)]
+    step, handler, _settings, _calls = _cap_world(monkeypatch, rows)
+    result = step.backfill(NOW - timedelta(days=1), NOW)
+    assert result["complete"] is False and result["reason"] == "settle_delay"
+    assert result["resume_after"] == rows[0]["id"] and len(handler.facts) == 1
+
+
+def test_the_route_never_answers_ok_for_an_incomplete_recovery(route_admin):
+    client, answers = route_admin
+    answers.append({"complete": False, "reason": "page_cap", "resume_after": "row-6", "retry_after": None,
+                    "counts": {"sepay_feed_apply": 6}})
+    answer = client.post("/api/admin/billing/sepay/backfill",
+                         json={"date_from": "2026-10-01T00:00:00+00:00", "date_to": "2026-10-02T00:00:00+00:00"})
+    assert answer.status_code == 409 and answer.json()["detail"]["category"] == "backfill_incomplete"
+    assert answer.json()["detail"]["context"]["resume_after"] == "row-6"
+    answers.append({"complete": False, "reason": "rate_limited", "resume_after": "row-4", "retry_after": 30,
+                    "counts": {}})
+    limited = client.post("/api/admin/billing/sepay/backfill",
+                          json={"date_from": "2026-10-01T00:00:00+00:00", "date_to": "2026-10-02T00:00:00+00:00",
+                                "resume_after": "row-2"})
+    assert limited.status_code == 429 and limited.json()["detail"]["context"]["retry_after"] == 30
+    answers.append({"complete": True, "reason": None, "resume_after": None, "retry_after": None, "counts": {}})
+    done = client.post("/api/admin/billing/sepay/backfill",
+                       json={"date_from": "2026-10-01T00:00:00+00:00", "date_to": "2026-10-02T00:00:00+00:00",
+                             "resume_after": "row-4"})
+    assert done.status_code == 200 and done.json()["complete"] is True
+
+
+@pytest.fixture
+def route_admin():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from writing_coach import billing_api
+
+    names = ("_service", "_backbone", "_admin", "_public_base", "_items", "_reconcile", "_credits", "_sepay_backfill")
+    saved = {name: getattr(billing_api, name) for name in names}
+    answers: list[dict] = []
+
+    def backfill(start, end, *, resume_after=None):
+        return answers.pop(0)
+
+    billing_api.configure_billing(service=SimpleNamespace(), backbone=SimpleNamespace(is_active=True),
+                                  admin_guard=lambda request: None, public_base_url="https://orena.test",
+                                  reconciliation=SimpleNamespace(), sepay_backfill=backfill)
+    app = FastAPI()
+    app.include_router(billing_api.router)
+    yield TestClient(app), answers
+    for name, value in saved.items():
+        setattr(billing_api, name, value)
 
 
 @pytest.mark.parametrize(("start", "end"), [(NOW, NOW), (NOW, NOW - timedelta(days=1)),

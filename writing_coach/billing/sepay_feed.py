@@ -185,10 +185,19 @@ class SePayFeed:
             last_handled = str(row["id"])
         return last_handled, settled_out
 
-    def backfill(self, date_from: datetime, date_to: datetime, *, max_pages: int = MAX_BACKFILL_PAGES) -> dict[str, int]:
+    def backfill(self, date_from: datetime, date_to: datetime, *, resume_after: str | None = None,
+                 max_pages: int = MAX_BACKFILL_PAGES) -> dict[str, Any]:
         """§6.4: an operator's recovery of one date range, through the same §6.3 rules and the same payment path. It
         needs only the API token (it is the recovery path while the feed is off), and it never reads or moves the
-        authoritative cursor: it walks its own range with `page=1` and a local `since_id`."""
+        authoritative cursor: it walks its own range with `page=1` and a local `since_id`.
+
+        A partial run never reads as a finished one (review P1-1 of `851f4bb9`). The result is
+        `{"complete", "reason", "resume_after", "retry_after", "counts"}`:
+        - `complete` is true only when SePay returned the range's last page (fewer rows than a page, or none);
+        - otherwise `reason` is `page_cap` (the safety cap was reached while more rows may remain), `rate_limited`
+          (SePay answered 429; `retry_after` is its wait) or `settle_delay` (the rest of the range is still inside the
+          webhook retry window), and `resume_after` is the last row handled: the operator calls again with it and the
+          run continues from there. Rows already handled are not asked for again, and a repeat is a duplicate."""
 
         if not self._gateway.has_api_token:
             raise PermissionError("SEPAY_API_TOKEN is not configured")
@@ -196,20 +205,30 @@ class SePayFeed:
             raise ValueError(f"a backfill range is positive and at most {MAX_BACKFILL_RANGE.days} days")
         counts: Counter[str] = Counter()
         horizon = min(self._now() - self._settle, date_to)
-        since_id: str | None = None
+        since_id = resume_after or None
+
+        def incomplete(reason: str, retry_after: float | None = None) -> dict[str, Any]:
+            return {"complete": False, "reason": reason, "resume_after": since_id, "retry_after": retry_after,
+                    "counts": dict(counts)}
+
         for _ in range(max(1, int(max_pages))):
             request = self._gateway.feed_request(since_id=since_id, date_from=None if since_id else date_from,
                                                  date_to=date_to, per_page=PER_PAGE)
             try:
                 answer = self._fetch(request)
-            except RateLimited:
+            except RateLimited as limited:
                 counts["sepay_backfill_rate_limited"] += 1
-                break
+                return incomplete("rate_limited", limited.retry_after or DEFAULT_RETRY_SECONDS)
             rows = answer.get("data") if isinstance(answer, dict) else None
             if not isinstance(rows, list) or not rows:
-                break
+                return {"complete": True, "reason": None, "resume_after": None, "retry_after": None,
+                        "counts": dict(counts)}
             last_handled, settled_out = self._handle_page(rows, horizon, counts)
-            if settled_out or last_handled is None or len(rows) < PER_PAGE:
-                break
-            since_id = last_handled
-        return dict(counts)
+            if last_handled is not None:
+                since_id = last_handled
+            if settled_out:
+                return incomplete("settle_delay")
+            if len(rows) < PER_PAGE:
+                return {"complete": True, "reason": None, "resume_after": None, "retry_after": None,
+                        "counts": dict(counts)}
+        return incomplete("page_cap")   # more rows may remain: never reported as a finished recovery

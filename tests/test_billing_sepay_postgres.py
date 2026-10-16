@@ -312,7 +312,50 @@ def test_an_operator_backfill_replays_idempotently_and_leaves_the_cursor_alone(s
                      account_name="A", bank_bin="970415", payment_prefix="ORN", api_token="t"), settings=Store(),
                      orders=shop.billing.orders, fetch=lambda request: {"data": rows})
     window = (datetime.now(UTC) - timedelta(days=1), datetime.now(UTC))
-    assert feed.backfill(*window) == {"sepay_feed_apply": 1}
-    assert feed.backfill(*window) == {"sepay_feed_duplicate": 1}   # a replay of the same range changes nothing
+    first = feed.backfill(*window)
+    assert first["complete"] is True and first["counts"] == {"sepay_feed_apply": 1}
+    again = feed.backfill(*window)   # a replay of the same range changes nothing
+    assert again["complete"] is True and again["counts"] == {"sepay_feed_duplicate": 1}
     assert topups(shop) == 1 and shop.balance(incarnation)["posted"] == 500
     assert CURSOR_KEY == "billing.sepay.feed_cursor"
+
+
+def test_an_incomplete_backfill_resumes_exactly_once_on_the_real_ledger(shop, monkeypatch):
+    """Review P1-1 of 851f4bb9: two paid packs, a page of one row and a cap of one page. The first run recovers the
+    first and reports incomplete; the resume recovers the second; a full replay changes nothing."""
+    from writing_coach.billing import sepay_feed
+
+    monkeypatch.setattr(sepay_feed, "PER_PAGE", 1)
+    paid_at = datetime.now(UTC) - timedelta(hours=2)
+    rows = []
+    for index in range(2):
+        incarnation = shop.account()
+        code = checkout(shop, incarnation)
+        set_order(shop, code, expires_at=paid_at + timedelta(minutes=10))
+        rows.append({"id": str(uuid.uuid4()), "transaction_date": paid_at.astimezone(VIETNAM).strftime(
+            "%Y-%m-%d %H:%M:%S"), "account_number": ACCOUNT, "transfer_type": "in", "amount_in": 50_000,
+            "reference_number": f"FTRS{index}", "code": f"ORN{code}", "webhook_success": 0})
+
+    def fetch(request):
+        since = request["params"].get("since_id")
+        start = 0 if since is None else [r["id"] for r in rows].index(since) + 1
+        return {"data": rows[start:start + 1]}
+
+    feed = sepay_feed.SePayFeed(service=shop.billing, gateway=SePayGateway(
+        webhook_secret=SECRET, account_number=ACCOUNT, account_name="A", bank_bin="970415", payment_prefix="ORN",
+        api_token="t"), settings=None, orders=shop.billing.orders, fetch=fetch)
+    window = (datetime.now(UTC) - timedelta(days=1), datetime.now(UTC))
+    first = feed.backfill(*window, max_pages=1)
+    assert first["complete"] is False and first["reason"] == "page_cap" and topups(shop) == 1
+    second = feed.backfill(*window, resume_after=first["resume_after"], max_pages=1)
+    assert second["counts"] == {"sepay_feed_apply": 1} and topups(shop) == 2
+    boundary = None
+    for _ in range(5):   # the whole range again, to its end: only duplicates
+        replay = feed.backfill(*window, resume_after=boundary, max_pages=1)
+        assert "sepay_feed_apply" not in replay["counts"]
+        if replay["complete"]:
+            break
+        boundary = replay["resume_after"]
+    assert replay["complete"] is True
+    assert topups(shop) == 2 and items(shop) == []
+
