@@ -505,7 +505,7 @@ export const zh = {
   polHelp_writing_improver_daily_spend_cap_usd: '写作润色在启用路由时，已审核的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问已审核的主模型。',
   pol_text_discussion_daily_spend_cap_usd: '文本讨论备用模型每日上限',
   polHelp_text_discussion_daily_spend_cap_usd: '文本讨论在启用路由时，已审核的付费备用模型每个 UTC 日最多可花费的金额；达到上限或设为 0 时，只询问已审核的主模型。',
-  pol_cost_free_tier_groq: 'Groq 使用免费套餐', polHelp_cost_free_tier_groq: '开启时，Groq 调用记为免费额度：按公开价格显示，与实际支出分开。账户升级为付费套餐时请关闭；此后的调用计为实际支出。支出上限始终按公开价格计算。',
-  pol_cost_free_tier_supadata: 'Supadata 使用免费套餐', polHelp_cost_free_tier_supadata: '开启时，Supadata 字幕请求记为免费额度。账户升级为付费套餐时请关闭；此后的请求计为实际支出。',
-  pol_cost_free_tier_gemini: 'Gemini 使用免费套餐', polHelp_cost_free_tier_gemini: '开启时，Gemini 调用记为免费额度：按公开价格显示，与实际支出分开。默认关闭；仅当密钥处于免费套餐时才开启。',
+  pol_cost_free_tier_groq: 'Groq 使用免费额度', polHelp_cost_free_tier_groq: '开启时，Groq 调用记为免费额度：按公开价格显示，与实际支出分开。账户升级为付费套餐时请关闭；此后的调用计为实际支出。支出上限始终按公开价格计算。',
+  pol_cost_free_tier_supadata: 'Supadata 使用免费额度', polHelp_cost_free_tier_supadata: '开启时，Supadata 字幕请求记为免费额度。账户升级为付费套餐时请关闭；此后的请求计为实际支出。',
+  pol_cost_free_tier_gemini: 'Gemini 使用免费额度', polHelp_cost_free_tier_gemini: '开启时，Gemini 调用记为免费额度：按公开价格显示，与实际支出分开。默认关闭；仅当密钥处于免费额度时才开启。',
 };

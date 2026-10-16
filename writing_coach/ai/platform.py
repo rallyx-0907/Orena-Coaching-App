@@ -362,13 +362,16 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
         # PR-MON-7 §4.4: the economic cost stays the catalogue estimate; coverage is an estimate, `unknown` until H7-7.
         telemetry = {**telemetry, "cost_coverage": "unknown"}
     if isinstance(telemetry, dict) and telemetry.get("provider"):
-        # D-219: stamp the tier in force now. A model that is free whatever the flag says (an OpenRouter ":free" id, a
-        # zero-rate entry) is free-tier too; the amount stays the list price, so no cap changes.
+        # D-219: stamp the tier in force now. For a provider that has a flag, the flag decides: a model billed at 0 on a
+        # free plan (qwen) becomes real spend when the owner turns the flag off. Only a provider without a flag falls
+        # back to the model being free by id (an OpenRouter ":free" id; its amount is 0 either way).
         from writing_coach import cost_tier
         from writing_coach.ai.pricing import is_free_model
 
-        telemetry = {**telemetry, "free_tier": cost_tier.is_free_tier(telemetry.get("provider"))
-                     or is_free_model(telemetry.get("provider"), telemetry.get("model"))}
+        provider = telemetry.get("provider")
+        free = (cost_tier.is_free_tier(provider) if cost_tier.flag_key(provider)
+                else is_free_model(provider, telemetry.get("model")))
+        telemetry = {**telemetry, "free_tier": free}
     safe = sanitize_telemetry(telemetry)
     recorder = getattr(_platform_repository, "record_ai_operation", None)
     if safe is None or not callable(recorder):
@@ -1376,11 +1379,13 @@ def admin_ai_costs_by_account(request: Request, days: int = 30) -> dict[str, Any
         from writing_coach import cost_tier
         from writing_coach import policies as _policies
 
-        # The first change after the window begins says what the flag was before it; changes before it do not matter.
+        # The whole history is read (the table is a handful of rows): a flag stored ON that no audit row explains is
+        # "unknown" for the window, never silently free.
         timeline = cost_tier.timeline_from_audit(
-            history(since), pinned=frozenset(name for name in cost_tier.PROVIDERS
-                                             if _policies.is_pinned(cost_tier.flag_key(name))))
-        accounts = tiered(since, now + timedelta(seconds=1), timeline.boundaries(since, now), timeline.is_free,
+            history(datetime(2000, 1, 1, tzinfo=UTC)),
+            pinned=frozenset(name for name in cost_tier.PROVIDERS if _policies.is_pinned(cost_tier.flag_key(name))),
+            stored=frozenset(name for name in cost_tier.PROVIDERS if _policies.has_admin_value(cost_tier.flag_key(name))))
+        accounts = tiered(since, now + timedelta(seconds=1), timeline.boundaries(since, now), timeline.tier_at,
                           limit=limit + 1)
     if accounts is None and callable(reader):
         accounts = reader(since, limit=limit + 1)

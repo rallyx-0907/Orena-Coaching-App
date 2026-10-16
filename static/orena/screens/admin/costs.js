@@ -10,13 +10,14 @@ import { adminApi } from '../../capabilities/admin-api.js';
 import { t } from './copy.js';
 import { block, formBlock, metrics, pageHead, rowList, skeleton } from './blocks.js';
 import { createHost } from './host.js';
-import { tierParts, tierRow } from './cost-tier.js';
+import { tierParts, tierRequests, tierRow } from './cost-tier.js';
 
 const DAYS = [7, 30, 90];
 
 function usd(value, ui) {
   if (value == null) return '—';
-  return new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: value < 1 ? 4 : 2, maximumFractionDigits: value < 1 ? 4 : 2 }).format(value);
+  // One precision for every amount on the page, so a real, a free and a per-call amount compare at a glance.
+  return new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(value);
 }
 
 function capabilityLabel(key) {
@@ -43,7 +44,7 @@ export function costsPage({ report, accounts, days, failed, ui, href }) {
       ${range}
       ${block({ span: true, body: metrics([
         { label: t('costReal'), value: money(real), note: unknown > 0 ? t('costUnknownTier', { amount: money(unknown) }) : '' },
-        { label: t('costFreeValue'), value: money(free), note: t('costFreeValueNote'), tone: 'mute' },
+        { label: t('costFreeValue'), value: money(free), note: t('costFreeValueNote'), tone: 'ok' },
         { label: t('costCalls'), value: new Intl.NumberFormat(ui).format(calls) },
         { label: t('costUnpriced'), value: new Intl.NumberFormat(ui).format(unpriced), tone: unpriced ? 'warn' : '' },
       ], { columns: 4 }) })}
@@ -51,27 +52,27 @@ export function costsPage({ report, accounts, days, failed, ui, href }) {
         const view = tier(row);
         return {
           title: capabilityLabel(row.capability),
-          meta: [[row.provider, row.model].filter(Boolean).join(' · ') || t('costNoProvider'), ...view.meta].join(' · '),
+          meta: [row.provider, row.model].filter(Boolean).join(' · ') || t('costNoProvider'),
+          detail: view.detail,
           right: view.right,
-          pills: [{ label: row.usd_per_unit == null ? t('costNoUnit') : t(row.unit === 'audio_minute' ? 'costPerMinute' : 'costPerCall', { amount: usd(row.usd_per_unit, ui) }), tone: 'mute' }, ...view.pills],
+          pills: [{ label: row.usd_per_unit == null ? t('costNoUnit') : t(row.unit === 'audio_minute' ? 'costPerMinute' : 'costPerCall', { amount: usd(row.usd_per_unit, ui) }), tone: 'mute' }],
         };
       }), { title: t('opNone'), text: '' }) })}
       ${block({ span: true, title: t('costByDay'), body: rowList((report.by_day || []).map((day) => {
         const view = tier(day);
-        return { title: day.day, meta: [t('costDayMeta', { calls: day.calls, unpriced: day.unpriced_calls }), ...view.meta].join(' · '), right: view.right, pills: view.pills };
+        return { title: day.day, meta: t('costDayMeta', { calls: day.calls, unpriced: day.unpriced_calls }), detail: view.detail, right: view.right };
       }), { title: t('opNone'), text: '' }) })}
       ${report.media ? block({ span: true, title: t('costMedia'), sub: t('costMediaSub'), body: rowList((report.media.by_provider || []).map((row) => {
-        const view = tier(row);
-        const parts = [t('costMediaEvents', { n: row.events }), ...(row.requests ? [t('costMediaRequests', { n: row.requests })] : []), ...view.meta];
         const amounts = tierParts(row);
         const credits = row.requests > 0 && amounts.real + amounts.free + amounts.unknown === 0;
-        return { title: row.provider, meta: parts.join(' · '), right: credits ? '' : view.right, pills: view.pills };
+        const view = credits ? { right: '', detail: tierRequests(row, { t }) } : tier(row);
+        return { title: row.provider, meta: t('costMediaEvents', { n: row.events }), detail: view.detail, right: view.right };
       }), { title: t('opNone'), text: '' }) }) : ''}
       ${accounts ? block({ span: true, title: t('costByAccount'), body: accounts.available
         ? rowList([
           ...(accounts.accounts || []).map((row) => {
             const view = tier(row);
-            return { title: row.name || row.email, meta: [row.email, t('costAccountMeta', { calls: row.calls }), ...view.meta].filter(Boolean).join(' · '), right: view.right, pills: view.pills };
+            return { title: row.name || row.email, meta: [row.email, t('costAccountMeta', { calls: row.calls })].filter(Boolean).join(' · '), detail: view.detail, right: view.right };
           }),
           ...(accounts.truncated ? [{ title: t('costAccountsTop') }] : []),
         ], { title: t('opNone'), text: '' })

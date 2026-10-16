@@ -25,13 +25,13 @@ const copyIndex = await import('../static/orena/copy/index.js');
 await import('../static/orena/copy/shell.js');
 await import('../static/orena/screens/admin/copy.js');
 const { costsPage } = await import('../static/orena/screens/admin/costs.js');
-const { tierRow, tierParts } = await import('../static/orena/screens/admin/cost-tier.js');
+const { tierRow, tierParts, tierRequests } = await import('../static/orena/screens/admin/cost-tier.js');
 const packs = copyIndex.registeredCopy().get('admin').packs;
 const href = (name) => `#/${name}`;
 const escape = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
 
 /* ---- a. the words -------------------------------------------------------------------------------------------- */
-const NEW_KEYS = ['costReal', 'costFreeValue', 'costFreeValueNote', 'costFreeTier', 'costFreeShort', 'costFreeAt', 'costUnknownTier',
+const NEW_KEYS = ['costReal', 'costFreeValue', 'costFreeValueNote', 'costFreeTier', 'costFreeAt', 'costListAt', 'costUnknownTier', 'costUnknownShort',
   'costMedia', 'costMediaSub', 'costMediaEvents', 'costMediaRequests', 'costGap_free_tier_tier', 'costGap_account_tier',
   'pol_cost_free_tier_groq', 'polHelp_cost_free_tier_groq', 'pol_cost_free_tier_supadata', 'polHelp_cost_free_tier_supadata',
   'pol_cost_free_tier_gemini', 'polHelp_cost_free_tier_gemini'];
@@ -45,6 +45,9 @@ for (const key of NEW_KEYS) {
 }
 assert.equal(placeholders(packs.en.costFreeAt), 'amount');
 assert.match(packs.en.costFreeAt, /Free tier/);
+assert.equal(placeholders(packs.en.costListAt), 'amount');
+const ZH_TERM = '免费额度';
+for (const key of NEW_KEYS.filter((name) => /free_tier|Free/i.test(name))) assert.ok(!packs.zh[key].includes('免费套餐'), `zh.${key}: one term for free tier (${ZH_TERM}) on both pages`);
 assert.ok(/[ăâđêôơưạảấầẩẫậắằẳẵặẹẻẽếềểễệỉịọỏốồổỗộớờởỡợụủứừửữự]/i.test(packs.vi.costFreeTier + packs.vi.costFreeValueNote), 'Vietnamese keeps its diacritics');
 assert.ok(/[一-鿿]/.test(packs.zh.costFreeTier), 'Chinese is written in Chinese');
 
@@ -55,21 +58,24 @@ assert.ok(/[一-鿿]/.test(packs.zh.costFreeTier), 'Chinese is written in Chines
   const money = (value) => `$${value.toFixed(2)}`;
   const only = (row) => tierRow(row, { money, t });
   const free = only({ usd: 0.12, usd_real: 0, usd_free: 0.12, usd_unknown: 0 });
-  assert.equal(free.right, 'Free', 'a free-tier-only row says Free, not $0.00');
-  assert.deepEqual(free.meta, ['Free tier · ~$0.12 at list price']);
-  assert.deepEqual(free.pills, [{ label: 'Free tier', tone: 'mute' }]);
+  assert.equal(free.right, '', 'a free-tier-only row has no amount on the right: it says "free" once, on its own line');
+  assert.match(String(free.detail), /data-tone="ok">Free tier<\/span> ~\$0\.12 at list price/, 'the ok pill is attached to the free line');
+  assert.equal((String(free.detail).match(/Free tier/g) || []).length, 1, 'said once');
   const paid = only({ usd: 0.5, usd_real: 0.5, usd_free: 0, usd_unknown: 0 });
   assert.equal(paid.right, '$0.50');
-  assert.deepEqual(paid.meta, []);
-  assert.deepEqual(paid.pills, [], 'a paid amount carries no free-tier label');
+  assert.equal(String(paid.detail), '', 'a paid amount carries no free-tier label');
   const mixed = only({ usd: 0.62, usd_real: 0.5, usd_free: 0.12, usd_unknown: 0 });
   assert.equal(mixed.right, '$0.50', 'the amount on the right is real spend only; the free value is not added');
-  assert.equal(mixed.meta.length, 1);
+  assert.match(String(mixed.detail), /Free tier<\/span> ~\$0\.12 at list price/, 'the free value is its own line, not beside the real amount');
   const legacy = only({ usd: 0.7, usd_real: 0, usd_free: 0, usd_unknown: 0.7 });
-  assert.equal(legacy.right, '$0.70');
-  assert.deepEqual(legacy.meta, ['Before the tier was recorded · $0.70']);
-  assert.deepEqual(legacy.pills, [], 'an unstamped amount is not called free');
+  assert.equal(legacy.right, '', 'an unstamped amount is not shown as real spend');
+  assert.match(String(legacy.detail), /data-tone="mute">Before tier recording<\/span> \$0\.70/);
+  assert.doesNotMatch(String(legacy.detail), /Free tier/, 'an unstamped amount is not called free');
+  const bare = only({ usd: 0.33 });
+  assert.deepEqual([bare.right, String(bare.detail)], ['$0.33', ''], 'a row with no tier fields falls back to its plain amount');
   assert.deepEqual(tierParts({ real_usd: 1, free_tier_usd: 2, unknown_tier_usd: 3 }), { real: 1, free: 2, unknown: 3 }, 'the media ledger shape reads the same');
+  const credits = String(tierRequests({ requests_by_tier: { free: 3, real: 0, unknown: 0 } }, { t }));
+  assert.match(credits, /Free tier<\/span> 3 requests/, 'a credit-billed provider states its tier with its request count');
 }
 
 /* ---- c. the page ---------------------------------------------------------------------------------------------- */
@@ -84,7 +90,7 @@ const report = {
   ],
   media: { days: 30, real_usd: 0.25, free_tier_usd: 0.4, unknown_tier_usd: 0, by_provider: [
     { provider: 'groq', real_usd: 0.25, free_tier_usd: 0.4, unknown_tier_usd: 0, events: 7, requests: 0 },
-    { provider: 'supadata', real_usd: 0, free_tier_usd: 0, unknown_tier_usd: 0, events: 3, requests: 3 },
+    { provider: 'supadata', real_usd: 0, free_tier_usd: 0, unknown_tier_usd: 0, events: 3, requests: 3, requests_by_tier: { free: 3, real: 0, unknown: 0 } },
   ] },
   gaps: [{ code: 'free_tier_tier' }, { code: 'account_tier' }],
 };
@@ -92,16 +98,15 @@ const accounts = { available: true, truncated: false, accounts: [{ name: 'Ada', 
 for (const ui of ['en', 'vi', 'zh']) {
   copyIndex.setLanguages({ ui, support: 'en' });
   const words = packs[ui];
-  const money = (value) => new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: value < 1 ? 4 : 2, maximumFractionDigits: value < 1 ? 4 : 2 }).format(value);
+  const money = (value) => new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(value);
   const markup = String(costsPage({ report, accounts, days: 30, failed: false, ui, href }));
   assert.ok(markup.includes(escape(words.costReal)) && markup.includes(escape(money(0.5))), `${ui}: real spend is a metric`);
   assert.ok(markup.includes(escape(words.costFreeValue)) && markup.includes(escape(money(1))), `${ui}: free-tier value is its own metric`);
   assert.ok(markup.includes(escape(words.costUnknownTier.replace('{amount}', money(0.25)))), `${ui}: the unstamped total is told apart`);
-  assert.ok(markup.includes(escape(words.costFreeAt.replace('{amount}', money(1)))), `${ui}: a feature row says Free tier at list price`);
-  assert.ok(markup.includes(escape(words.costFreeAt.replace('{amount}', money(0.4)))), `${ui}: the media block says it too`);
-  assert.ok(markup.includes(escape(words.costFreeAt.replace('{amount}', money(0.2)))), `${ui}: and the account row`);
-  assert.ok((markup.match(new RegExp(`>${escape(words.costFreeTier)}<`, 'g')) || []).length >= 4, `${ui}: the Free tier pill on every row with free value`);
-  assert.ok(markup.includes(`>${escape(words.costFreeShort)}<`), `${ui}: a free-only row says Free`);
+  for (const amount of [1, 0.4, 0.2]) assert.ok(markup.includes(`${escape(words.costFreeTier)}</span> ${escape(words.costListAt.replace('{amount}', money(amount)))}`), `${ui}: a row says Free tier, ~${amount} at list price, on its own line with the pill`);
+  assert.match(markup, /class="a-metric__value[^"]*" data-tone="ok"/, `${ui}: the free-tier value metric is the ok tone`);
+  assert.ok(markup.includes(`${escape(words.costUnknownShort)}</span> ${escape(money(0.25))}`), `${ui}: an unstamped row is labelled, not shown as real spend`);
+  assert.ok(markup.includes(`${escape(words.costFreeTier)}</span> ${escape(words.costMediaRequests.replace('{n}', '3'))}`), `${ui}: the credit-billed media row states its tier`);
   assert.ok(markup.includes(escape(words.costMedia)) && markup.includes(escape(words.costMediaRequests.replace('{n}', '3'))), `${ui}: media processing, with the credit-priced requests`);
   assert.ok(markup.includes(escape(words.costGap_free_tier_tier)) && markup.includes(escape(words.costGap_account_tier)), `${ui}: the report's own gaps are stated`);
   assert.doesNotMatch(markup, /\{[a-zA-Z]+\}|undefined|\[object|NaN/, `${ui}: nothing unfilled`);
@@ -120,5 +125,8 @@ const spend = fs.readFileSync('writing_coach/media_spend.py', 'utf8');
 for (const name of ['real_usd', 'free_tier_usd', 'unknown_tier_usd', 'by_provider']) assert.ok(spend.includes(`"${name}"`), `media totals carry ${name}`);
 const policies = fs.readFileSync('writing_coach/policies.py', 'utf8');
 for (const provider of ['groq', 'supadata', 'gemini']) assert.ok(policies.includes(`"cost.free_tier.${provider}"`), `the ${provider} flag is a policy`);
+
+const css = fs.readFileSync('static/orena/screens/admin/admin.css', 'utf8');
+assert.match(css, /@media \(max-width: 720px\) \{\s*\.a-metrics \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/, 'the metrics strip reflows to two by two on a phone');
 
 console.log('admin cost tier gate: ok');

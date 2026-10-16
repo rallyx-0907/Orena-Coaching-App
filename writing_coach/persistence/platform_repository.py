@@ -424,7 +424,7 @@ class SQLitePlatformRepository:
     def policy_change_history(self, since: datetime) -> list[dict]:
         return []
 
-    def ai_costs_by_account_tiered(self, since, until, boundaries, free_at, *, limit: int = 100) -> list[dict] | None:
+    def ai_costs_by_account_tiered(self, since, until, boundaries, tier_at, *, limit: int = 100) -> list[dict] | None:
         return None
 
     def delete_ai_costs_before(self, before: datetime, *, limit: int) -> int:
@@ -993,11 +993,11 @@ class PostgresPlatformRepository:
         return [{"created_at": row.created_at, "payload": row.payload if isinstance(row.payload, dict) else {}}
                 for row in rows]
 
-    def ai_costs_by_account_tiered(self, since: datetime, until: datetime, boundaries: list[datetime], free_at,
+    def ai_costs_by_account_tiered(self, since: datetime, until: datetime, boundaries: list[datetime], tier_at,
                                    *, limit: int = 100) -> list[dict] | None:
         """`ai_costs_by_account` with each account's cost split into real and free-tier (D-219). `ai_cost_records` has
         no tier column and its schema is a human gate, so the window is cut at every instant a free-tier flag changed
-        and each piece is classified by `free_at(provider, start)` - the flag's state then, from the audit log. None
+        and each piece is classified by `tier_at(provider, start)` (real, free or unknown) from the audit log. None
         before the table."""
 
         from sqlalchemy import func
@@ -1006,10 +1006,12 @@ class PostgresPlatformRepository:
         from writing_coach.persistence.models import AICostRecord
 
         edges = [since, *boundaries[:200], until]
+        truncated = len(boundaries) > 200  # the last piece then spans changes it does not see: it is "unknown"
+        names = {"real": "usd_real", "free": "usd_free", "unknown": "usd_unknown"}
         accounts: dict[str, dict] = {}
         try:
             with Session(self.engine) as session:
-                for start, end in zip(edges, edges[1:], strict=False):
+                for index, (start, end) in enumerate(zip(edges, edges[1:], strict=False)):
                     query = (
                         select(User.email, User.name, AICostRecord.provider, func.count(AICostRecord.id),
                                func.coalesce(func.sum(AICostRecord.cost_usd), 0))
@@ -1019,16 +1021,17 @@ class PostgresPlatformRepository:
                     )
                     for email, name, provider, calls, usd in session.execute(query).all():
                         row = accounts.setdefault(email, {"email": email, "name": name, "calls": 0, "usd": 0.0,
-                                                          "usd_real": 0.0, "usd_free": 0.0})
+                                                          "usd_real": 0.0, "usd_free": 0.0, "usd_unknown": 0.0})
                         amount = float(usd or 0)
                         row["calls"] += int(calls)
                         row["usd"] += amount
-                        row["usd_free" if free_at(provider, start) else "usd_real"] += amount
+                        last = truncated and index == len(edges) - 2
+                        row[names["unknown" if last else tier_at(provider, start)]] += amount
         except ProgrammingError:
             return None
         ranked = sorted(accounts.values(), key=lambda item: -item["usd"])[:max(1, min(int(limit), 1000))]
-        return [{**item, "usd": round(item["usd"], 8), "usd_real": round(item["usd_real"], 8),
-                 "usd_free": round(item["usd_free"], 8)} for item in ranked]
+        return [{**item, **{name: round(item[name], 8) for name in ("usd", "usd_real", "usd_free", "usd_unknown")}}
+                for item in ranked]
 
     def ai_costs_by_account(self, since: datetime, *, limit: int = 100) -> list[dict] | None:
         """Cost per account since `since`, the most expensive first, at most `limit` accounts, for an

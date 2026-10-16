@@ -301,6 +301,11 @@ def is_pinned(key: str, env: Mapping[str, str] | None = None) -> bool:
     return _env_value(BY_KEY[key], env if env is not None else _env) is not _INVALID
 
 
+def has_admin_value(key: str) -> bool:
+    """Whether an administrator has stored a value for this policy (it is not just the default)."""
+    return key in _loaded().values
+
+
 def clear_cache() -> None:
     global _cache
     with _lock:

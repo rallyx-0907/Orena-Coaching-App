@@ -253,7 +253,8 @@ class SpendLedger:
         for event in events:
             name = str(event.get("provider") or "") or "unknown"
             row = providers.setdefault(name, {"provider": name, "real_usd": 0.0, "free_tier_usd": 0.0,
-                                              "unknown_tier_usd": 0.0, "events": 0, "requests": 0})
+                                              "unknown_tier_usd": 0.0, "events": 0, "requests": 0,
+                                              "requests_by_tier": {"real": 0, "free": 0, "unknown": 0}})
             tier = cost_tier.tier_of(event)
             key = {cost_tier.TIER_REAL: "real_usd", cost_tier.TIER_FREE: "free_tier_usd",
                    cost_tier.TIER_UNKNOWN: "unknown_tier_usd"}[tier]
@@ -261,6 +262,7 @@ class SpendLedger:
             row["events"] += 1
             if event.get("kind") == KIND_SUPADATA:
                 row["requests"] += int(event.get("units") or 0)
+                row["requests_by_tier"][tier] += int(event.get("units") or 0)
         for row in providers.values():
             for key in ("real_usd", "free_tier_usd", "unknown_tier_usd"):
                 row[key] = round(row[key], 6)

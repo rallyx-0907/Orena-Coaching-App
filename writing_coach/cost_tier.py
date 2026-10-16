@@ -87,9 +87,11 @@ class FlagTimeline:
     throughout."""
 
     def __init__(self, current: Mapping[str, bool], changes: list[tuple[datetime, str, bool, bool]],
-                 pinned: frozenset[str] = frozenset()) -> None:
+                 pinned: frozenset[str] = frozenset(), stored: frozenset[str] = frozenset()) -> None:
         # changes: (when, provider, from, to), oldest first
         self._current = dict(current)
+        self._pinned = pinned
+        self._stored = stored
         self._changes: dict[str, list[tuple[datetime, bool, bool]]] = {}
         for when, provider, before, after in sorted(changes, key=lambda item: item[0]):
             if provider in pinned or provider not in PROVIDERS:
@@ -111,6 +113,15 @@ class FlagTimeline:
                 break
         return state
 
+    def tier_at(self, provider: object, at: datetime) -> str:
+        """`free`, `real` or `unknown` for a record without a stamp. `unknown` when the flag is ON by an administrator's
+        stored value yet no retained audit row explains it: the history is missing, and calling it free could hide real
+        spend. A flag that is OFF, or that is its untouched default, needs no history."""
+        name = _provider(provider)
+        if name in PROVIDERS and name not in self._changes and name in self._stored and self._current.get(name) and name not in self._pinned:
+            return TIER_UNKNOWN
+        return TIER_FREE if self.is_free(provider, at) else TIER_REAL
+
     def boundaries(self, since: datetime, until: datetime) -> list[datetime]:
         """The instants inside (since, until) at which some flag changed, oldest first."""
         points = {when for history in self._changes.values() for when, _b, _a in history if since < when < until}
@@ -118,7 +129,7 @@ class FlagTimeline:
 
 
 def timeline_from_audit(rows: list[Mapping[str, Any]], *, current: Mapping[str, bool] | None = None,
-                        pinned: frozenset[str] = frozenset()) -> FlagTimeline:
+                        pinned: frozenset[str] = frozenset(), stored: frozenset[str] = frozenset()) -> FlagTimeline:
     """`rows` are `platform.policies.update` audit rows: `{"created_at": datetime, "payload": {"changes": {...}}}`."""
     present = dict(current) if current is not None else {name: is_free_tier(name) for name in PROVIDERS}
     changes: list[tuple[datetime, str, bool, bool]] = []
@@ -136,4 +147,4 @@ def timeline_from_audit(rows: list[Mapping[str, Any]], *, current: Mapping[str, 
             before, after = edit.get("from"), edit.get("to")
             if isinstance(before, bool) and isinstance(after, bool):
                 changes.append((when, provider, before, after))
-    return FlagTimeline(present, changes, pinned)
+    return FlagTimeline(present, changes, pinned, stored)
