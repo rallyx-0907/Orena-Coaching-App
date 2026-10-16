@@ -166,15 +166,19 @@ function changedLine(meta, ui) {
   return [t('polChangedAt', { when }), meta.updated_by ? t('polChangedBy', { name: meta.updated_by }) : ''].filter(Boolean).join(' · ');
 }
 
+/* Where each card sits on the desktop two-column page (phones keep the authored order, one column). */
+export const GROUP_COLUMN = Object.freeze({ quota: 'left', agent: 'left', voice: 'left', speech: 'left', media: 'left', rates: 'right', billing: 'right', vocabulary: 'right', spend: 'right', feedback: 'right' });
+
 function quotaBlock(view, ui) {
   const { quota, quotaDraft: draft } = view;
-  if (!quota) return block({ title: t('polQuotaTitle'), body: html`<p class="a-sub">${t('polQuotaUnavailable')}</p>` });
+  if (!quota) return block({ col: 'left', title: t('polQuotaTitle'), body: html`<p class="a-sub">${t('polQuotaUnavailable')}</p>` });
   const locked = quota.source === 'environment';
   const fields = [
     { id: 'quota|enabled', kind: 'toggle', label: t('polQuotaSwitch'), tag: locked ? t('polLocked') : (quota.source === 'setting' ? t('polSourceAdmin') : t('polSourceDefault')), span: true, on: draft.enabled, toggleLabel: draft.enabled ? t('polOn') : t('polOff'), disabledToggle: locked, hint: [t('polQuotaHelp'), locked ? t('polQuotaLockedHint') : ''].filter(Boolean).join(' · '), hintTone: locked ? 'warn' : '' },
     ...Object.keys(draft.meters).map((key) => ({ id: `quota|meter|${key}`, kind: 'toggle', label: featureLabel(key), span: true, on: draft.meters[key], toggleLabel: draft.meters[key] ? t('polQuotaEnforced') : t('polQuotaNotEnforced'), disabledToggle: locked })),
   ];
   return formBlock({
+    col: 'left',
     title: t('polQuotaTitle'),
     sub: [quotaStateLine(quota), changedLine(quota, ui)].filter(Boolean).join(' · '),
     fields,
@@ -190,6 +194,7 @@ function groupBlock(group, doc, drafts, ui) {
   const rows = doc.policies.filter((policy) => policy.group === group);
   if (!rows.length) return '';
   return formBlock({
+    col: GROUP_COLUMN[group] || '',
     title: t(`polGroup_${group}`),
     sub: t(`polGroupSub_${group}`),
     fields: rows.map((policy) => fieldOf(policy, drafts[policy.key], ui)),
@@ -210,7 +215,7 @@ export function policiesPage({ doc, quota, quotaDraft, drafts, view = {}, ui = '
     <div class="a-blocks">
       ${quotaBlock({ quota, quotaDraft, ...view }, ui)}
       ${GROUP_ORDER.map((group) => groupBlock(group, doc, drafts, ui))}
-      ${formBlock({ fields: [], error: view.error || '', status: view.status || '', actions: [{ label: view.busy ? t('polSaving') : t('polSave'), a: 'policies-save', kind: 'primary', disabled: Boolean(view.busy) }], span: true })}
+      ${formBlock({ span: true, fields: [], error: view.error || '', status: view.status || '', actions: [{ label: view.busy ? t('polSaving') : t('polSave'), a: 'policies-save', kind: 'primary', disabled: Boolean(view.busy) }] })}
     </div>
   </section>`;
 }

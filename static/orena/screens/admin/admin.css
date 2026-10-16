@@ -18,7 +18,6 @@
 }
 
 .a-shell {
-  --a-pgcols: repeat(2, minmax(0, 1fr));
   --a-fcols: repeat(2, minmax(0, 1fr));
   --a-cols4: repeat(4, minmax(0, 1fr));
   --a-pad: 32px;
@@ -31,7 +30,6 @@
   overflow: hidden;
 }
 :root[data-device='mobile'] .a-shell {
-  --a-pgcols: 1fr;
   --a-fcols: 1fr;
   --a-cols4: repeat(2, minmax(0, 1fr));
   --a-pad: 18px;
@@ -553,11 +551,38 @@ a.a-btn--primary:hover {
 }
 
 /* ---- Blocks ---- */
+/* Cards sit in two independent stacks, never in shared grid rows: a tall card in one stack cannot
+   leave a hole in the other. columns.js moves the authored blocks into `.a-stacks` on a desktop (a
+   block's `data-col` places it, the rest go to the shorter stack); a phone keeps the authored order in
+   one column. A full-width block ends a run and the next run starts beneath it. */
 .a-blocks {
-  display: grid;
-  grid-template-columns: var(--a-pgcols);
+  display: flex;
+  flex-direction: column;
   gap: 18px;
-  align-items: start;
+}
+.a-blocks > * {
+  min-width: 0;
+}
+.a-stacks {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+.a-stack {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+/* A long feed scrolls inside its own card (desktop only: one column has nothing to protect). */
+.a-rows--feed {
+  max-height: 440px;
+  overflow-y: auto;
+}
+:root[data-device='mobile'] .a-rows--feed {
+  max-height: none;
+  overflow: visible;
 }
 .a-block {
   min-width: 0;
@@ -570,7 +595,7 @@ a.a-btn--primary:hover {
   padding: 20px;
 }
 .a-block--full {
-  grid-column: 1 / -1;
+  min-width: 0;
 }
 .a-block--flat {
   background: transparent;
@@ -1196,7 +1221,7 @@ a.a-btn--primary:hover {
   max-width: 760px;
 }
 .a-blocks--one {
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
 }
 .a-hint {
   font-size: 13px;

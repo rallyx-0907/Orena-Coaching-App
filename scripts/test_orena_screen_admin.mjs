@@ -643,3 +643,37 @@ console.log(`Orena admin screen: routes, access (Profile entry, No access with z
   assert.ok(String(plansPage.plansPage({ doc: { ...catalogue, source: 'default', updated_at: null }, drafts, ui: 'en', href })).includes(t('plansDefault')), 'built-in values say so');
   assert.equal(model.areaOf('adminPlans'), 'users');
 }
+
+/* No row-stretch gaps (owner report 2026-10-16). Cards sit in two independent stacks, never in shared
+   grid rows, so a tall card cannot leave a hole beside it; long feeds are bounded by an explicit class. */
+{
+  const css = fs.readFileSync('static/orena/screens/admin/admin.css', 'utf8').replace(/\r\n/g, '\n');
+  const rule = (selector) => {
+    const at = css.indexOf(`\n${selector} {`);
+    assert.ok(at >= 0, `admin.css has ${selector}`);
+    return css.slice(at, css.indexOf('}', at));
+  };
+  assert.doesNotMatch(rule('.a-blocks'), /display:\s*grid|grid-template|column-count/, '.a-blocks is not a row-aligned grid');
+  assert.match(rule('.a-stacks'), /display:\s*flex/, 'the stacks sit side by side');
+  assert.match(rule('.a-stacks'), /align-items:\s*flex-start/, 'a stack is as tall as its own cards');
+  assert.match(rule('.a-stack'), /flex-direction:\s*column/, 'a stack is a column of cards');
+  assert.match(rule('.a-rows--feed'), /max-height[^;]*;[\s\S]*overflow-y:\s*auto/, 'a feed scrolls inside its own card');
+  assert.match(css, /:root\[data-device='mobile'\] \.a-rows--feed \{[^}]*max-height:\s*none/, 'a phone has no nested scroller');
+  assert.doesNotMatch(css, /\.a-block:not\([^)]*\) > \.a-rows \{/, 'the cap is never applied to every list');
+  for (const grid of ['.a-detail__grid', '.a-vpreview']) assert.match(rule(grid), /align-items:\s*start/, `${grid} does not stretch its cells`);
+
+  const columns = fs.readFileSync('static/orena/screens/admin/columns.js', 'utf8');
+  assert.match(columns, /data-ord|dataset\.ord/, 'the authored order is kept so a phone restores it');
+  assert.match(columns, /dataset\.device !== 'mobile'/, 'a phone is not arranged');
+
+  assert.match(fs.readFileSync('static/orena/screens/admin/blocks.js', 'utf8'), /a-rows--feed[^\n]*aria-label/, 'the feed scroller has an accessible name');
+
+  const ctl = fs.readFileSync('static/orena/screens/admin/control-pages.js', 'utf8');
+  assert.ok(ctl.indexOf("route === 'adminOperations' ? navCard") < ctl.lastIndexOf("section('opRuntime'"), 'Operations leads with its navigation (Policies & limits)');
+  assert.match(ctl, /feedRows\(\(telemetry\.recent/, 'recent operations is the feed');
+  assert.equal((ctl.match(/feedRows\(/g) || []).length, 1, 'only the one feed is capped');
+  const policies = await import('../static/orena/screens/admin/policies.js');
+  assert.equal(policies.GROUP_COLUMN.quota, 'left');
+  assert.equal(policies.GROUP_COLUMN.spend, 'right');
+  for (const group of policies.GROUP_ORDER) assert.ok(['left', 'right'].includes(policies.GROUP_COLUMN[group]), `${group} has a placement`);
+}
