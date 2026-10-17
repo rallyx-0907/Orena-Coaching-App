@@ -264,6 +264,7 @@ export function providerPage({ state, view, t, ui, href, now }) {
   else models = block({ title: t('modelsBlock'), body: rowList(provider.models.map((model) => ({ title: model, pills: [{ label: t('modelAvailable'), tone: 'ok' }] }))) });
 
   const usedBy = block({
+    col: 'left',
     title: t('usedByBlock'),
     sub: t('usedBySub'),
     body: rowList(
@@ -278,6 +279,7 @@ export function providerPage({ state, view, t, ui, href, now }) {
 
   const usageBlock = usage
     ? block({
+      col: 'right',
       title: t('usageBlock'),
       foot: t('usageFoot', { n: num(usage.sample, ui) }),
       body: metrics([

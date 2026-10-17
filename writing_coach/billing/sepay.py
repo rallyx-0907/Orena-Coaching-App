@@ -39,6 +39,7 @@ from writing_coach.billing.gateway import (
 TOLERANCE_SECONDS = 300
 VIETNAM = timezone(timedelta(hours=7))
 API_BASE = "https://userapi.sepay.vn/v2"
+USER_AGENT = "Orena-Billing/1.0"
 # The memo every payment carries: SePay needs `SEVQR` first for a VietinBank personal account (API banking).
 MEMO_MARKER = "SEVQR"
 # EMVCo purpose of transaction (tag 62, sub-tag 08) holds at most 25 characters.
@@ -275,7 +276,10 @@ class SePayGateway:
         if date_to is not None:
             params["transaction_date_to"] = date_to.astimezone(VIETNAM).strftime("%Y-%m-%d %H:%M:%S")
         return {"method": "GET", "url": f"{self.api_base}/transactions", "params": params,
-                "headers": {"Authorization": f"Bearer {self._token}"}}
+                # SePay's API sits behind Cloudflare, which refuses Python's default User-Agent with Error 1010 (403),
+                # found in SePay test mode on 2026-10-17: the feed and the backfill must name themselves.
+                "headers": {"Authorization": f"Bearer {self._token}", "User-Agent": USER_AGENT,
+                            "Accept": "application/json"}}
 
     @staticmethod
     def feed_transfer(row: Mapping[str, Any]) -> Transfer:

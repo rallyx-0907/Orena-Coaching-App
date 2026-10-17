@@ -54,7 +54,7 @@ export function hubPage({ recent, failedJobs, t, href }) {
     markup: html`<section class="a-page" data-screen-label="A28 Imports">
       ${pageHead({ title: t('impTitle'), sub: t('impSub') })}
       <div class="a-blocks">
-        ${block({ title: t('impImport'), body: rowList([
+        ${block({ span: true, title: t('impImport'), body: rowList([
           row(t('impBooks'), t('impBooksNote'), href('adminImportBooks'), recent.book),
           row(t('impMedia'), t('impMediaNote'), href('adminImportMedia'), recent.media),
           row(t('impVocab'), t('impVocabNote'), href('adminImportVocab'), recent.vocabulary),
@@ -63,7 +63,7 @@ export function hubPage({ recent, failedJobs, t, href }) {
           row(t('impPack'), t('impPackNote'), href('adminImportPack')),
           row(t('grImp'), t('grImpNote'), href('adminImportGrammar'), recent.grammar),
         ]) })}
-        ${block({ title: t('impFollow'), body: rowList([
+        ${block({ span: true, title: t('impFollow'), body: rowList([
           row(t('impJobs'), t('impJobsNote'), href('adminJobs'), null, failedJobs ? t('impFailedCount', { n: failedJobs }) : ''),
           row(t('impHistory'), t('impHistoryNote'), href('adminHistory'), recent.total),
         ]) })}

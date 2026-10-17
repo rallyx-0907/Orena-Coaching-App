@@ -133,3 +133,21 @@ After the merge, the remaining design §12 gates still apply, each separately:
 5. a real banking-app QR scan;
 6. the human-approved small-value live transfer and its refund;
 7. the runtime, configuration and production activation gates.
+
+## Post-merge finding in SePay test mode (2026-10-17): the feed's User-Agent
+
+Running activation gates 2-4 on the `:8031` sandbox against `userapi-sandbox.sepay.vn` showed that Cloudflare in front
+of SePay's API answers **Error 1010 (403)** to Python's default `User-Agent: Python-urllib/3.x`. The same request with a
+named User-Agent answers 200. As merged, the feed and the operator backfill would have failed every request.
+
+The fix is in `SePayGateway.feed_request`: it sends `User-Agent: Orena-Billing/1.0` and `Accept: application/json`. A
+test pins both headers. No other behaviour changes.
+
+Test-mode evidence so far:
+- the real webhook was verified and order 100001 was paid and granted once;
+- a re-delivery with the same bank reference was a `duplicate`;
+- v2 `reference_number` equals the webhook's `referenceCode`;
+- `webhook_success` is 1 after Orena's ack;
+- `since_id` excludes its boundary row.
+
+The ascending order under `since_id` waits for more test transactions.

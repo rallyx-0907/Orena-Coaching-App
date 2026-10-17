@@ -42,18 +42,18 @@ export function pageHead({ back = null, pills = [], title, sub = '', actions: li
 }
 
 /* A block of the page grid: a white card (or `flat`, no card) with an optional head. */
-export function block({ title = '', sub = '', pills = [], actions: list = [], span = false, flat = false, foot = '', body }) {
+export function block({ title = '', sub = '', pills = [], actions: list = [], span = false, flat = false, col = '', foot = '', body }) {
   const head = title
     ? html`<div class="a-block__head"><div class="a-block__title"><div class="a-block__name"><span>${title}</span>${pills.map(pill)}</div>${sub ? html`<div class="a-block__sub">${sub}</div>` : ''}</div>${actions(list)}</div>`
     : '';
-  return html`<div class="a-block${span ? ' a-block--full' : ''}${flat ? ' a-block--flat' : ''}">${head}${body}${foot ? html`<div class="a-foot">${foot}</div>` : ''}</div>`;
+  return html`<div class="a-block${span ? ' a-block--full' : ''}${flat ? ' a-block--flat' : ''}"${col ? html` data-col="${col}"` : ''}>${head}${body}${foot ? html`<div class="a-foot">${foot}</div>` : ''}</div>`;
 }
 
 /* A list of rows. Each row: `tile` (the two letters on a tile), title, meta, detail, pills, a right
    note, actions; `go` makes the row open another place. */
-export function rowList(list, empty = null) {
+export function rowList(list, empty = null, { feed = false, label = '' } = {}) {
   if (!list.length && empty) return stateBody({ kind: 'empty', title: empty.title, text: empty.text, compact: true });
-  return html`<div class="a-rows">${list.map((row) => {
+  return html`<div class="a-rows${feed ? ' a-rows--feed' : ''}"${feed ? raw(' tabindex="0" role="region"') : ''}${feed && label ? html` aria-label="${label}"` : ''}>${list.map((row) => {
     const open = row.go ? html` data-go="${row.go}" role="link" tabindex="0"` : '';
     return html`<div class="a-row${row.go ? ' a-row--open' : ''}"${open}>
       ${row.tile ? html`<span class="a-row__tile" aria-hidden="true">${row.tile}</span>` : ''}
@@ -114,11 +114,12 @@ function field(item) {
 }
 
 /* A form block: its fields, an inline error and the buttons. */
-export function formBlock({ title = '', sub = '', fields, error = '', status = '', actions: list = [], span = false, justify = 'end' }) {
+export function formBlock({ title = '', sub = '', fields, error = '', status = '', actions: list = [], span = false, col = '', justify = 'end' }) {
   return block({
     title,
     sub,
     span,
+    col,
     body: html`<div class="a-form">${fields.map(field)}</div>${error ? html`<div class="a-error" role="alert">${error}</div>` : ''}${status ? html`<div class="a-status" role="status">${status}</div>` : ''}<div class="a-actions a-actions--${justify}">${list.map(button)}</div>`,
   });
 }
