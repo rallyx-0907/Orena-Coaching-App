@@ -6,6 +6,7 @@ from typing import Any
 import pytest
 
 import writing_coach.ai.platform as platform
+from writing_coach import cost_env
 from writing_coach.ai.base import AICapabilityUnsupported, AIProviderError, AIResult, sanitize_telemetry
 from writing_coach.ai.config import CapabilityConfig
 from writing_coach.ai.control_plane import AIControlPlane
@@ -105,7 +106,8 @@ def test_success_telemetry_keeps_capability_provider_model_and_reported_usage(
     assert result.runtime["telemetry"]["latency_ms"] >= 0
     assert result.runtime["telemetry"]["cost"]["state"] == "unpriced"
     # D-219: the persisted copy alone carries the tier in force when it was recorded (openai has no free-tier flag).
-    assert repository.events[0] == {**result.runtime["telemetry"], "free_tier": False}
+    # D-221: and the environment that wrote it.
+    assert repository.events[0] == {**result.runtime["telemetry"], "free_tier": False, "environment": cost_env.label()}
 
 
 def test_absent_or_malformed_usage_remains_unknown(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -228,7 +230,7 @@ def test_control_plane_success_uses_the_same_telemetry_contract() -> None:
         "quota_available": "unknown",
     }
     assert "_telemetry_rate_limit" not in result
-    assert repository.events[0] == result["telemetry"]
+    assert repository.events[0] == {**result["telemetry"], "environment": cost_env.label()}  # D-221
 
 
 def test_control_plane_provider_failure_carries_typed_telemetry() -> None:
@@ -243,7 +245,7 @@ def test_control_plane_provider_failure_carries_typed_telemetry() -> None:
     assert caught.value.telemetry["outcome"] == "failure"
     assert caught.value.telemetry["error_class"] == "provider_error"
     assert caught.value.telemetry["quota_available"] == "unknown"
-    assert repository.events[0] == caught.value.telemetry
+    assert repository.events[0] == {**caught.value.telemetry, "environment": cost_env.label()}  # D-221
 
 
 def test_invalid_capability_key_is_redacted_in_failure_telemetry() -> None:

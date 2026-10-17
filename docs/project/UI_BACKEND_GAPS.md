@@ -6358,3 +6358,8 @@ Owner report: on `#/admin/ai` there was no "Policies & limits" (it was the last 
 ## Admin page blocks: two independent columns, not the design's row grid (owner request 2026-10-16)
 
 The pinned `Orena-Admin.dc.html` composes multi-card pages with a shared row grid (`--pgcols`). Rows of that grid stretch to the tallest card, so on Operations and Policies & limits a long feed or the tall quota card left large empty blocks and pushed configuration down. The owner asked on 2026-10-16: "giao diện admin đang có nhiều khoảng trống vô lý mà lại đẩy phần giao diện cấu hình xuống tận phía dưới. điều chỉnh lại để cho nó vào vị trí đúng và dễ quan sát. Fix lại tất cả những lỗi tương tự trong admin." The admin therefore lays blocks in two independent stacks (`columns.js`, `.a-stacks`), with explicit placement (`data-col`) on Operations and Policies, and one column in authored order on a phone. This is a recorded, owner-requested deviation from the pinned design; the design itself is unchanged. Long feeds are capped only by the explicit `a-rows--feed` class, on desktop.
+
+## Admin AI cost page: the environment block (D-221 proposed, 2026-10-17)
+
+The pinned admin design draws no cost page (D-128). The "Where this spend was made" block reuses the kit row list with the muted pill used by the other cost rows. Backend gap: `ai_cost_records` has no free column, so the per-account table cannot carry the environment tag (a column is a human gate); the tag lives in the `ai.operation` payload and the media ledger event only.
+

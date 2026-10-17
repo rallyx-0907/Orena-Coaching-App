@@ -41,8 +41,9 @@ PROVIDER = "azure-speech"
 # PR-MON-7D2: the meter of a fresh learner-requested synthesis (characters); pending - never enforced before its limits.
 TTS_METER = "audio.tts"
 MODEL = "neural-tts"
-# Azure neural TTS list price, USD per 1,000,000 billed characters (read 2026-10-05; to be checked against the bill).
-PER_MILLION_CHARACTERS = 16.0
+# Azure neural TTS list price, USD per 1,000,000 billed characters: "S1 Neural Text To Speech Characters" USD 15.00,
+# Azure Retail Prices API (prices.azure.com, eastus, Azure Speech), read 2026-10-17 (it was 16.0, read 2026-10-05).
+PER_MILLION_CHARACTERS = 15.0
 DEFAULT_CAP_USD = 5.0
 VOICES = {"en": ("en-US", "en-US-JennyNeural"), "zh": ("zh-CN", "zh-CN-XiaoxiaoNeural")}
 OUTPUT_FORMAT = "audio-24khz-48kbitrate-mono-mp3"

@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-16.v8"
+PRICING_CATALOG_VERSION = "2026-10-17.v9"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -67,7 +67,12 @@ _CATALOG = MappingProxyType({
         list_input_per_million=0.80, list_output_per_million=4.00,
     ),
     # Published paid-tier text rate, ai.google.dev/gemini-api/docs/pricing, read 2026-09-27.
+    # Re-read 2026-10-17: input USD 0.30, output USD 2.50 per million, "output includes thinking tokens"; the
+    # thinking a vendor reports only in its total is added to the completion at the adapter (ai/base.py).
     ("gemini", "gemini-3.5-flash-lite"): TokenPricing("gemini", "gemini-3.5-flash-lite", "USD", 0.30, 2.50),
+    # Same page, read 2026-10-17: text/image/video input USD 0.25 (audio input is USD 0.50, not modelled: Orena sends
+    # text), output USD 1.50 including thinking. Used for the reading generator and dictionary; it was unpriced.
+    ("gemini", "gemini-3.1-flash-lite"): TokenPricing("gemini", "gemini-3.1-flash-lite", "USD", 0.25, 1.50),
     # AI Cost Router (D-195): pinned OpenRouter ":free" models, an explicit zero rate so a free call is "estimated at 0"
     # and never counted as unpriced by the daily spend ledger. VERIFIED 2026-10-14 against the public catalogue
     # https://openrouter.ai/api/v1/models (no key): all three ids are listed with the ":free" suffix. A model is only
@@ -115,12 +120,19 @@ _AUDIO_CATALOG = MappingProxyType({
                                                "groq-asr-model-guide-2026-10-04"),
     # Azure Speech pronunciation assessment, standard real-time: $1.32 per audio hour, billed per second
     # (Microsoft Learn Q&A 5608069, Nov 2025, US East). Not the invoice: check it against the Azure bill.
+    # Cross-check 2026-10-17, Azure Retail Prices API (prices.azure.com, eastus, Azure Speech): S1 Speech To Text
+    # USD 1.00 an hour plus S1 Speech to Text Enhanced Feature Audio USD 0.30 an hour = USD 1.30; the rate above stays
+    # as the higher figure, because prosody assessment (on for en-US) may count as a second enhanced feature.
     ("azure-speech", "pronunciation-assessment"): AudioPricing("azure-speech", "pronunciation-assessment", "USD",
                                                                1.32, 0.0, 1.0, "ms-learn-qa-5608069-2025-11"),
-    # Gemini Live, a voice session's wall-clock time (agent/voice_session.py, R28): about $0.036 a minute, the list
-    # price AGENT_SPEC §41 carries (AGENT_VOICE_SLICE4 §2.2). Unverified: check it against the Gemini bill (Q11).
+    # Gemini Live, a voice session's wall-clock time (agent/voice_session.py, R28): USD 0.036 a minute, kept as a
+    # CEILING (D-221). Google's page (ai.google.dev/gemini-api/docs/pricing, read 2026-10-17) prices Gemini 3.8 Live per
+    # token: audio in USD 3.00 and audio out USD 12.00 per million (25 tokens a second), shown as USD 0.005 and
+    # USD 0.018 a minute, plus text in USD 0.75 and out USD 4.50 per million. Both audio sides streaming is USD 0.023 a
+    # minute (USD 1.38 an hour); the rest of the ceiling covers the instruction, tool and re-read context tokens. The
+    # vendor reports the real usage only to the browser socket, so the server cannot do better than this ceiling.
     ("gemini", "gemini-3.8-live"): AudioPricing("gemini", "gemini-3.8-live", "USD", 2.16, 0.0, 1.0,
-                                                "agent-spec-41-list-price-unverified"),
+                                                "ceiling-over-ai-google-dev-pricing-2026-10-17"),
 })
 
 
