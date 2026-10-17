@@ -26,7 +26,7 @@ function capabilityLabel(key) {
 }
 
 export function costsPage({ report, accounts, days, failed, ui, href }) {
-  const head = pageHead({ back: { href: href('adminAi'), label: t('aiTitle') }, title: t('costTitle'), sub: t('costSub') });
+  const head = pageHead({ back: { href: href('adminAi'), label: t('aiTitle') }, title: t('costTitle'), sub: t('costSub'), actions: [{ label: t('polTitle'), size: 'sm', a: 'go', data: { to: href('adminPolicies') } }] });
   if (failed) return html`<section class="a-page" data-screen-label="AI cost">${head}${block({ body: t('opUnavailable') })}</section>`;
   if (!report) return html`<section class="a-page" data-screen-label="AI cost">${head}${skeleton(t('loading'))}</section>`;
   const totals = report.totals || {};

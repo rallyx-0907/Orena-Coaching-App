@@ -424,6 +424,9 @@ class SQLitePlatformRepository:
     def policy_change_history(self, since: datetime) -> list[dict]:
         return []
 
+    def ai_unstamped_cost_rows(self, start: datetime, end: datetime) -> list[dict]:
+        return []
+
     def ai_costs_by_account_tiered(self, since, until, boundaries, tier_at, *, limit: int = 100) -> list[dict] | None:
         return None
 
@@ -980,6 +983,23 @@ class PostgresPlatformRepository:
             result = session.execute(delete(AICostRecord).where(AICostRecord.id.in_(oldest))
                                      .execution_options(synchronize_session=False))  # fmt: skip
             return int(result.rowcount or 0)
+
+    def ai_unstamped_cost_rows(self, start: datetime, end: datetime) -> list[dict]:
+        """The amount of `ai.operation` events with no `free_tier` stamp (written before D-219) in [start, end), by the
+        keys of `ai_cost_rows`. Read only; the cost report classifies each piece by the flag's history (D-220)."""
+
+        query = text(
+            "WITH ops AS (SELECT created_at, payload::jsonb AS p FROM audit_logs "
+            "WHERE action = 'ai.operation' AND created_at >= :start AND created_at < :end "
+            "AND payload::jsonb ->> 'free_tier' IS NULL) "
+            "SELECT to_char(date_trunc('day', created_at AT TIME ZONE 'UTC'), 'YYYY-MM-DD') AS day, "
+            "p ->> 'capability' AS capability, p ->> 'provider' AS provider, p ->> 'model' AS model, "
+            "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric), 0) AS usd FROM ops GROUP BY 1, 2, 3, 4"
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(query, {"start": start, "end": end}).mappings().all()
+        return [{"day": r["day"], "capability": r["capability"], "provider": r["provider"], "model": r["model"],
+                 "usd": float(r["usd"])} for r in rows]
 
     def policy_change_history(self, since: datetime) -> list[dict]:
         """The `platform.policies.update` audit rows from `since` on, oldest first: `{created_at, payload}`. Read only,
