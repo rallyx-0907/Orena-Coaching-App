@@ -359,4 +359,10 @@ Consequences:
 - `RUNBOOK_SEPAY_ACTIVATION.md` is rewritten for 7a. Nothing is enabled. | Recurring revenue without monthly manual
   transfers, and one clear place for QR payments. | `PR-MON-8_DESIGN.md` §14, `BILLING_STATUS.md`,
   `RUNBOOK_SEPAY_ACTIVATION.md`.
-
+D-MON-033 | 2026-10-17 | Billing UI on Polar (owner, PR-MON-9). The design draws card entry, plan changes, cancel and
+  invoices inside the app; Polar is the merchant of record and Orena never takes card data. **First purchase:** Polar's
+  embedded checkout opened from the Billing Sheet's "Pay". **Existing subscribers:** change plan, cancel (with the
+  design's reasons mapped to Polar's) and resume in the app through Polar's subscription API. **Payment method
+  "Update":** opens Polar's customer portal; the in-app card sheet is not built. **Invoices:** listed and downloaded
+  in the app through Polar's API. | Keep the designed in-app flow wherever Polar allows it, without card data in
+  Orena. | `PR-MON-9_DESIGN.md`.
