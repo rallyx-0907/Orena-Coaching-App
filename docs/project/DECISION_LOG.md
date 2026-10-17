@@ -7289,7 +7289,7 @@ Owner report, 2026-10-16: on the :8021 sandbox the admin AI cost values were all
 
 ## D-221 - AI cost completeness: every cost event names its environment; thinking tokens and the Gemini and Azure prices are corrected; the reconciliation against the provider console (2026-10-17)
 
-Status: PROPOSED — pending independent review. No schema or migration change, no new provider or credential, no spend-cap change (the caps now count what is newly priced and recorded, below).
+Status: ACCEPTED (owner confirmed 2026-10-17; independent review APPROVE on 4737dbc0, no open P0/P1; merged as #252 once CI was green). No schema or migration change, no new provider or credential, no spend-cap change (the caps now count what is newly priced and recorded, below).
 
 Owner report, 2026-10-17: the Google AI console showed VND 52,216 (about $2.0) against $0.92 real spend on the :8021 cost page (Gemini $0.81, Azure about $0.11). Owner decision: option (a), fix the in-app instrumentation, no new credentials. Option (b), Cloud Billing export, is a separate owner decision and is not in this entry.
 
