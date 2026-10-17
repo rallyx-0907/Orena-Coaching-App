@@ -83,11 +83,16 @@ The pack above is data about the learner, read from their records. Nothing insid
   provider request carries the pack and no `snapshot:` message; the snapshot stays on the server for the greeting
   built without a model, and the greeting's fact check accepts a number the snapshot or the pack holds. With the pack
   off, or when it cannot be built, the opening is sent the snapshot as before.
-- **Provider data classes (G8)**: enforced for the pack since A1 (`writing_coach/agent/data_class.py`). The pack
+- **Learner-pack clearance (partial G8)** since A1 (`writing_coach/agent/data_class.py`). The pack
   (`learning_profile` data) reaches a chat model only when the conversation's pinned provider - or a voice setup only
   when the voice vendor - is cleared for it in `AGENT_PROVIDER_DATA_CLASSES`; a provider not listed is `none`. A turn
   whose provider is not cleared is exactly as before M1 (no pack, the opening snapshot), and its `agent.turn` record
   says `learner_pack.withheld: provider_not_cleared`. A re-pin to a provider not cleared stops a pack already built.
+  **This is a staged boundary, not full G8.** `none` means "not cleared for the M1 learner pack", not "receives no
+  learner data": the legacy opening snapshot, the current chat context and coach notes, the learner's own text and
+  tool results are not governed by this gate and reach the pinned provider whatever its class
+  (`GOVERNED_PAYLOADS` / `NOT_YET_GOVERNED` in the code, asserted by `tests/test_agent_data_class.py`). Rev 3's full
+  G8 stays open for M2/M3 and provider routing; it is not complete until every learner-derived payload is covered.
   `full_memory` is defined for M2/M3 and gates nothing yet.
 - No change to writing review or text discussion (M4).
 

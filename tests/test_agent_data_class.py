@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import pytest
 
-from writing_coach.agent.data_class import DataClass, ProviderDataClasses
+from writing_coach.agent.data_class import GOVERNED_PAYLOADS, NOT_YET_GOVERNED, DataClass, ProviderDataClasses
 from writing_coach.agent.fake_provider import reply
 from writing_coach.agent.memory_pack import PACK_OPEN, PackBuilder
 from writing_coach.agent.provider import ModelRoute
@@ -108,6 +108,27 @@ def test_an_opening_whose_pack_is_withheld_is_sent_the_snapshot(monkeypatch):
     _open(rt)
     sent = _sent(provider)
     assert any(c.startswith("snapshot: ") for c in sent) and not any(c.startswith(PACK_OPEN) for c in sent)
+
+
+def test_the_gate_is_learner_pack_clearance_only_and_none_is_not_a_privacy_guarantee(monkeypatch):
+    """A1 is a staged, partial G8 (review of PR #263). `none` means "not cleared for the M1 learner pack": the payloads
+    in NOT_YET_GOVERNED still reach a `none` provider. When a later slice gates one of them, it moves it into
+    GOVERNED_PAYLOADS and changes this test with the code that gates it."""
+    assert GOVERNED_PAYLOADS == ("learner_pack",)
+    assert NOT_YET_GOVERNED == ("opening_snapshot", "chat_context", "coach_notes", "learner_text", "tool_results")
+    assert not set(GOVERNED_PAYLOADS) & set(NOT_YET_GOVERNED)
+    # the learner's own text reaches a provider that is cleared for nothing
+    rt, provider, _ = pack_runtime([reply("a1")], classes=ProviderDataClasses.parse("gemini=none"))
+    run(rt, turn_request("Tại sao tôi sai từ này?"))
+    assert not has_pack(provider.requests[0])
+    assert any("Tại sao tôi sai từ này?" in m.content for m in provider.requests[0].messages)
+    # and so does the legacy opening snapshot
+    from tests.test_agent_learner_pack import _open, _opening_runtime, _sent
+
+    rt, provider = _opening_runtime(PackBuilder(sources=sources(), enabled=True, clock=lambda: NOW), monkeypatch)
+    rt.router, rt.data_classes = Router(GEMINI), ProviderDataClasses.parse("gemini=none")
+    _open(rt)
+    assert any(c.startswith("snapshot: ") for c in _sent(provider))
 
 
 # --- in a voice session ------------------------------------------------------------------------------------------------

@@ -1,16 +1,21 @@
-"""Which learner data each provider may receive (ORENA_MEMORY.md §8, G8; rev 3 and its architecture review F10).
+"""Learner-pack clearance: which providers may receive the M1 learner pack (ORENA_MEMORY.md §8, G8 - partial).
 
-Every configured provider - or one model of it - carries one data class, set by the owner after reading its retention
-and training terms:
+This is a staged, partial G8. It governs one payload, the M1 learner pack, and nothing else:
 
-- `none`: no learner data beyond what the call itself is about;
-- `learning_profile`: the learner's profile and learning evidence (the M1 learner pack);
-- `full_memory`: that, and Orena Memory proper - notes, inferred and continuity items, session summaries (M2/M3).
+- `none`: **not cleared for the learner pack**. It is not a privacy guarantee: a `none` provider still receives
+  everything an agent turn sent before M1 (below);
+- `learning_profile`: cleared for the learner pack (the learner's profile and learning evidence);
+- `full_memory`: defined for Orena Memory proper (notes, inferred and continuity items, session summaries, M2/M3);
+  it gates nothing yet.
 
-A call that would carry a class of data goes only to a provider cleared for it. What this governs today is the data
-Orena Memory adds: the learner pack is put into a chat turn or a voice setup only when the conversation's pinned
-provider is cleared for `learning_profile`; otherwise the turn is exactly what it was before M1 (no pack, the opening
-snapshot as before), and the turn record says the pack was withheld. A provider with no recorded class is `none`.
+The learner pack is put into a chat turn or a voice setup only when the conversation's pinned provider is cleared for
+`learning_profile`; otherwise the turn is exactly what it was before M1 (no pack, the opening snapshot as before), and
+the turn record says the pack was withheld. A provider with no recorded class is `none`.
+
+**Not governed by this gate yet** (`NOT_YET_GOVERNED`): the legacy opening snapshot, the current chat context and
+coach notes, the learner's own text in the conversation, and tool results. They reach the pinned provider whatever its
+class. Rev 3's full G8 - every learner-derived payload class gated - stays open for M2/M3 and the provider-routing work,
+and G8 is not complete until each of those is covered and moved into `GOVERNED_PAYLOADS`.
 
 The classes are configuration, read once at start, never guessed: `AGENT_PROVIDER_DATA_CLASSES` lists
 `provider=class` or `provider:model=class` entries separated by commas (a model entry wins over its provider's). An
@@ -28,6 +33,8 @@ from typing import Any
 
 
 class DataClass(IntEnum):
+    """How far a provider is cleared. Only the learner pack is checked against it (`GOVERNED_PAYLOADS`)."""
+
     NONE = 0
     LEARNING_PROFILE = 1
     FULL_MEMORY = 2
@@ -84,3 +91,7 @@ class ProviderDataClasses:
 
 
 PACK_CLASS = DataClass.LEARNING_PROFILE  # what the M1 learner pack carries
+
+# The staged boundary (A1). A payload moves from the second tuple to the first only with the code that gates it.
+GOVERNED_PAYLOADS = ("learner_pack",)
+NOT_YET_GOVERNED = ("opening_snapshot", "chat_context", "coach_notes", "learner_text", "tool_results")
