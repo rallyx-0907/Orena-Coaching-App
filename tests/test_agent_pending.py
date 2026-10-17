@@ -8,7 +8,7 @@ or drops it. It clears on confirm, cancel, expiry or when a new offer replaces i
 
 from __future__ import annotations
 
-import json
+from tests.agent_prompt_context import context_of as merged_context
 
 from writing_coach.agent.fake_provider import call_tools, reply
 from writing_coach.agent.limits import AgentLimits
@@ -39,7 +39,7 @@ def session_of(events):
 
 
 def context_of(req):
-    return json.loads(next(m.content for m in req.messages if m.content.startswith("context: "))[len("context: "):])
+    return merged_context(req.messages)
 
 
 def offer(proposal=SAVE_ABATE):

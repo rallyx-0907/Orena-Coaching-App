@@ -18,6 +18,7 @@ from typing import Any
 
 from writing_coach.agent.errors import ProviderUnavailable
 from writing_coach.agent.provider import (
+    ModelRoute,
     ProviderEvent,
     ProviderMessage,
     ProviderToolSpec,
@@ -102,6 +103,8 @@ class PlatformAgentTurnProvider:
                 temperature=request.temperature,
                 should_stop=should_stop,
                 timeout_seconds=request.timeout_seconds,
+                **({"route": (request.route.provider, request.route.model)} if request.route is not None else {}),
+                **({"tool_choice": request.tool_choice} if request.tool_choice is not None and request.tools else {}),
             )
         except (AIProviderError, AICapabilityError) as exc:
             # For the operator only: the learner is told `provider_unavailable`, never this.
@@ -129,3 +132,29 @@ class PlatformAgentTurnProvider:
         except (AIProviderError, AICapabilityError) as exc:
             _log.warning("agent provider round stopped: %s", exc)
             raise ProviderUnavailable("the provider stopped") from exc
+
+
+class PlatformModelRouter:
+    """Pins a conversation to a model (ORENA_MEMORY.md §7.2, M0): the active selection when the conversation opens,
+    kept for every round after, so an Admin change applies to new conversations only."""
+
+    def __init__(self, current: Callable[[], tuple[str, str] | None] | None = None,
+                 usable: Callable[[tuple[str, str]], bool] | None = None) -> None:
+        if current is None or usable is None:
+            from writing_coach.ai.platform import agent_current_route, agent_route_usable
+
+            current = current or agent_current_route
+            usable = usable or agent_route_usable
+        self._current = current
+        self._usable = usable
+
+    def current(self) -> ModelRoute | None:
+        route = self._current()
+        return ModelRoute(provider=route[0], model=route[1]) if route else None
+
+    def usable(self, route: ModelRoute) -> bool:
+        try:
+            return bool(self._usable((route.provider, route.model)))
+        except Exception:  # noqa: BLE001 - an unreadable configuration is not a usable route
+            _log.warning("agent route check failed", exc_info=True)
+            return False

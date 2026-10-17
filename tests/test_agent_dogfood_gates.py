@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+from tests.agent_prompt_context import context_of as merged_context
 from writing_coach.agent.fake_provider import call_tools, reply
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import LearnerScope
@@ -50,7 +50,7 @@ def test_after_a_switch_to_chinese_nothing_of_the_english_context_reaches_the_pr
     # The screen's state belongs to the language it was learned in: no stale selection, no English tool result.
     # The conversation does not (human direction 2026-10-07: a language change is not a new conversation), so the
     # words the learner and Orena said stay in the history the model is shown.
-    context = json.loads(next(m.content for m in provider.requests[-1].messages if m.content.startswith("context: "))[9:])
+    context = merged_context(provider.requests[-1].messages)
     assert context["selection"] is None, "no stale English selection"
     assert context["earlier_in_session"] == [], "no English tool result in earlier_in_session"
     assert "two flagged syllables" not in chinese

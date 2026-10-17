@@ -5,7 +5,7 @@ offer, with no model call; and the next turn's model sees what was offered."""
 
 from __future__ import annotations
 
-import json
+from tests.agent_prompt_context import context_of as merged_context
 
 import pytest
 
@@ -75,7 +75,7 @@ def test_the_next_turn_sees_what_was_offered():
     first = list(rt.run(_request("Có bài nghe nào về Stephen Hawking không?"), ZH))
     session_id = next(e.session_id for e in first if e.name == "session")
     list(rt.run(_request("Bài đó nói về gì?", session_id), ZH))
-    context = json.loads(next(m.content for m in provider.requests[-1].messages if m.content.startswith("context: "))[9:])
+    context = merged_context(provider.requests[-1].messages)
     assert context["offered_last_turn"] == [{"label": next(e.label for e in first if e.name == "action"),
                                              "payload": LESSON["payload"]}]  # fmt: skip
 

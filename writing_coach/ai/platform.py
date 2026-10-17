@@ -69,6 +69,7 @@ from writing_coach.ai.routing import (
 from writing_coach.ai.providers import (
     OpenAICompatibleProvider,
     build_providers,
+    check_model_allowed,
     get_provider_definition,
     normalize_openai_base_url,
     provider_definitions,
@@ -562,6 +563,40 @@ def _record_invalid_output(capability_key: str | None, target: ProviderTarget, r
 AGENT_TURN_CAPABILITY = "agent_turn_fast"
 
 
+def _route_item(route: tuple[str, str]) -> Any:
+    item = providers().get(route[0])
+    if item is None:
+        raise AIProviderUnavailable("The agent's pinned provider is not known on this server.")
+    return item
+
+
+def agent_route_usable(route: tuple[str, str]) -> bool:
+    """Whether a pinned agent route can still stream here: a managed provider, configured, that streams agent turns.
+    False when Admin removed or unconfigured it; the conversation is then pinned again to the current selection."""
+
+    item = providers().get(route[0])
+    if item is None or getattr(item, "kind", "") != "cloud" or not item.configured or not route[1]:
+        return False
+    try:
+        check_model_allowed(item.id, route[1])  # e.g. an OpenRouter free model since dropped from the catalogue
+    except (AICapabilityError, AIProviderError):
+        return False
+    definition = get_provider_definition(item.id)
+    return bool(definition is not None and definition.supports(AIOperation.AGENT_TURN)
+                and callable(getattr(item, "stream_chat", None)))
+
+
+def agent_current_route() -> tuple[str, str] | None:
+    """The route a new agent conversation is pinned to: the active selection, when it can stream agent turns."""
+
+    try:
+        item, model = active_selection()
+    except Exception:  # noqa: BLE001 - no route: the round reads the selection itself and fails as before
+        return None
+    route = (str(getattr(item, "id", "") or ""), str(model or ""))
+    return route if route[0] and agent_route_usable(route) else None
+
+
 def stream_agent_turn(
     *,
     messages: list[dict[str, Any]],
@@ -570,8 +605,14 @@ def stream_agent_turn(
     temperature: float | None = None,
     should_stop: Callable[[], bool] = lambda: False,
     timeout_seconds: float | None = None,
+    route: tuple[str, str] | None = None,
+    tool_choice: str | None = None,
 ) -> Iterator[ChatStreamEvent]:
-    """Stream one Orena Intelligence round on the legacy active selection.
+    """Stream one Orena Intelligence round on the legacy active selection, or on `route`.
+
+    `route` is `(provider id, model)`: the model the conversation was pinned to when it opened (ORENA_MEMORY.md
+    §7.2). The agent checks that it is still usable before it asks (`agent_route_usable`); a pinned provider that is
+    not usable here fails the round, like any provider failure - nothing switches provider on its own.
 
     The agent routes the way every learner call routes until a reviewed
     activation makes its capability keys configurable (human ruling
@@ -620,7 +661,10 @@ def stream_agent_turn(
         )
 
     try:
-        item, model = active_selection()
+        if route is not None:
+            item, model = _route_item(route), route[1]
+        else:
+            item, model = active_selection()
         provider_id = str(getattr(item, "id", "") or "") or None
         if getattr(item, "kind", "") != "cloud":
             raise AIProviderUnavailable("The agent needs a managed provider selected in Admin > AI.")
@@ -643,6 +687,7 @@ def stream_agent_turn(
             temperature=temperature,
             should_stop=should_stop,
             read_timeout=timeout_seconds,
+            **({"tool_choice": tool_choice} if tool_choice is not None else {}),
         )
     except (AICapabilityError, AIProviderError) as exc:
         record("failure", error=exc)

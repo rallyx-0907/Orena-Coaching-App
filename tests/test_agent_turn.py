@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from tests.agent_prompt_context import context_of as merged_context
 import itertools
 import socket
 from types import MappingProxyType
@@ -621,10 +622,8 @@ def test_a_calls_provider_data_goes_back_with_it_in_the_next_round():
 
 
 def _context_of(provider):
-    import json
-
     system = [m.content for m in provider.requests[0].messages if m.role == "system"]
-    return json.loads(next(c for c in system if c.startswith("context: "))[len("context: "):])
+    return merged_context(system)
 
 
 def test_a_accepted_action_is_offered_as_a_button_never_as_done():

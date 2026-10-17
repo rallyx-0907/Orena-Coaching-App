@@ -118,11 +118,12 @@ from writing_coach.agent.outputs import (
     selection_kind,
 )
 from writing_coach.agent.tokens import FRAME_TOKENS, RESERVE_TOKENS, estimate_tokens, messages_tokens
-from writing_coach.agent.prompts import INSTRUCTION, opening_messages
+from writing_coach.agent.prompts import INSTRUCTION, PromptLayout, opening_messages
 from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, PendingInteraction, action_key
 from writing_coach.agent.provider import (
     NORMAL_FINISH,
     AgentTurnProvider,
+    ModelRoute,
     ProviderMessage,
     ProviderToolSpec,
     ProviderTurnRequest,
@@ -130,6 +131,7 @@ from writing_coach.agent.provider import (
     ToolCallRequest,
     TurnFinished,
     never_stop,
+    tools_digest,
 )
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
@@ -239,11 +241,16 @@ class AgentRuntime:
     # One record per rolling-summary call (agent/summary.py), and its price: (input, output tokens) ->
     # {provider, model, cost}. Both optional; a summary behaves the same without them.
     record_summary: Callable[[str, dict], None] | None = None
-    price_summary: Callable[[int, int], dict] | None = None
+    # (input, output tokens[, route=ModelRoute]) -> {provider, model, cost}; priced on the pinned route when there is one.
+    price_summary: Callable[..., dict] | None = None
     # The staging daily spend cap (agent/budget.py): seconds until it resets when reached, else None.
     spend_guard: Callable[[], float | None] | None = None
     # Live voice, mode A (agent/voice_session.py, R28): None unless the server turns voice on.
     voice: Any = None
+    # Pins each conversation to a model (agent/platform_provider.py PlatformModelRouter); None: every round reads the
+    # active selection, as before M0.
+    router: Any = None
+    prompt: PromptLayout = field(default_factory=PromptLayout)
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
     # The opening greeting is free of learner quota, so the model may write at most `model_openings_per_window` of
@@ -337,6 +344,7 @@ class _Turn:
         self.address: Address = default_address(request.context.locale.support)
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
         self.timeline = TurnTimeline(runtime.clock)
+        self.route: ModelRoute | None = None  # the conversation's pinned model, once a model turn chose it
 
     # --- the turn ------------------------------------------------------------
 
@@ -416,6 +424,16 @@ class _Turn:
             provider_rounds=self.provider_rounds, input_tokens=self.usage_in if self.usage_known else None,
             output_tokens=self.usage_out if self.usage_known else None, evidence_count=len(self.evidence_ids),
         )
+        # The cache benchmark's numbers (ORENA_MEMORY.md §9 M0): cached and uncached input, tool calls, and the turn's
+        # cost at the catalogue's uncached rate (cached input is not priced lower there yet: an upper bound).
+        cached = sum(r.get("cached_input_tokens") or 0 for r in self.timeline.rounds)
+        self.timeline.facts.update(
+            cached_input_tokens=cached if self.usage_known else None,
+            uncached_input_tokens=max(self.usage_in - cached, 0) if self.usage_known else None,
+            tool_calls=sum(r.get("tool_calls") or 0 for r in self.timeline.rounds),
+        )
+        if self.provider_rounds and self.usage_known:
+            self.timeline.facts["cost_upper_bound"] = self._priced(self.usage_in, self.usage_out).get("cost")
         try:
             self.rt.record_turn(self.learner.user_key, self.timeline.record(trace_id=self.trace_id, outcome=outcome))
         except Exception:  # telemetry never costs the learner the answer
@@ -477,6 +495,9 @@ class _Turn:
             raise
         except AgentError as exc:
             self._notes_unresolved()
+            if isinstance(exc, ProviderUnavailable) and self.route is not None:
+                self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                        lambda state: state.with_route_outcome(self.route, failed=True))  # fmt: skip
             if not self.should_stop():
                 if not released:
                     yield opened
@@ -550,8 +571,9 @@ class _Turn:
         messages = opening_messages(
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
-            budget_tokens=self.rt.limits.max_input_tokens_per_turn,
+            budget_tokens=self.rt.limits.max_input_tokens_per_turn, cache_stable=self.rt.prompt.cache_stable,
         )
+
         answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
         if (self.focused and word_in_view and not answering
                 and (asks_about_status(turn.message) or asks_to_go(turn.message))):  # fmt: skip
@@ -595,6 +617,7 @@ class _Turn:
         if selected is not None and selected.type in SELECTED_ID_KEYS:
             outputs.learn_ids(SELECTED_ID_KEYS[selected.type], (selected.id,))
         if not self.no_model:
+            self.route = self._pin_route(session)  # only a turn that asks a model pins one
             yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
@@ -604,6 +627,41 @@ class _Turn:
             # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
+
+    def _pin_route(self, session) -> ModelRoute | None:
+        """The model this conversation runs on (ORENA_MEMORY.md §7.2): the one it was pinned to, or - on its first
+        model turn, or when the pinned one can no longer stream here (removed or unconfigured in Admin) - the current
+        selection, pinned from now on. Never a switch on a failed round: that fails the turn, as before."""
+
+        router = self.rt.router
+        if router is None:
+            return None
+        pinned = session.model_route
+        try:
+            current = router.current()
+        except Exception:  # noqa: BLE001 - no route: the round reads the selection itself, as before M0
+            _log.warning("agent route not chosen", exc_info=True, extra={"trace_id": self.trace_id})
+            current = None
+        # Kept while it can stream here - unless its last turn failed at the provider and Admin has since selected
+        # another model: that is the outage the selection was moved for.
+        moved_after_failure = session.model_route_failed and current is not None and current != pinned
+        if pinned is not None and router.usable(pinned) and not moved_after_failure:
+            self._route_fact(pinned, "kept")
+            return pinned
+        if current is None:
+            self.timeline.facts["model_route"] = {"provider": None, "model": None, "pinned": "none"}
+            return None
+        route = current
+        self._route_fact(route, "repinned" if pinned else "new")
+        self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                lambda state: state.with_model_route(route))  # fmt: skip
+        return route
+
+    def _route_fact(self, route: ModelRoute, how: str) -> None:
+        from writing_coach.ai.control_plane import safe_model_display
+
+        model, _ = safe_model_display(route.model)  # the same operator-safe label the round telemetry keeps
+        self.timeline.facts["model_route"] = {"provider": route.provider, "model": model or None, "pinned": how}
 
     def _opening_snapshot(self) -> dict | None:
         """S13 is built on the learner's snapshot: read here, by the server, not asked of the model."""
@@ -648,6 +706,17 @@ class _Turn:
             yield self.stream.emit(SuggestionEvent(label=label, intent=intent))
         yield self.stream.emit(DoneEvent(usage=Usage(input_tokens=0, output_tokens=0), trace_id=self.trace_id))
 
+    def _listed_tools(self) -> tuple[ProviderToolSpec, ...]:
+        """Every tool this conversation could use, in one fixed order (PromptLayout.stable_tools): the reads of the
+        learner's language and the reply tools of this client, as a turn with an open offer is given them. The same
+        for every round and every turn of the conversation, whatever the turn's own rules allow."""
+
+        reads = tuple(ProviderToolSpec.from_tool(tool) for tool in self.rt.tools.tools()
+                      if self.learner.contract_language in tool.languages)  # fmt: skip
+        replies = reply_tool_specs(self.request.client, self.locale.target, version=self.stream.version,
+                                   opening=False, pending=True)  # fmt: skip
+        return reads + replies
+
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         # An opening turn reads nothing itself: the server gave it the snapshot (S13 has no tool_call).
         # A screen-help turn (F-13) is answered from the screen's context: the server offers it no read tool, so
@@ -664,21 +733,31 @@ class _Turn:
         if self.screen_help:
             # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
             reply_specs = tuple(spec for spec in reply_specs if spec.name in SCREEN_HELP_REPLY_TOOLS)
+        # An opening or a screen-help turn is not shown tools it may not call: each refused call would be one more
+        # model round, and an opening is free to the learner. Those turns keep the per-round list.
+        listed = (self._listed_tools() if self.rt.prompt.stable_tools and not self.opening and not self.screen_help
+                  else None)
+        self.timeline.facts["prompt_layout"] = self.rt.prompt.version
         limit = self.rt.limits.max_tool_iterations_per_turn
         nudged = notes_nudged = evidence_nudged = False
         for round_index in range(limit + 1):
             remaining = self.deadline - self.rt.clock()
             if remaining <= 0:
                 raise ProviderUnavailable("turn timed out")
-            offer = () if round_index == limit else read_specs + reply_specs
+            # What the model may call this round; with stable tools, more is listed and the rest is refused below.
+            allowed = () if round_index == limit else read_specs + reply_specs
             request = ProviderTurnRequest(
                 messages=tuple(messages),
-                tools=offer,
+                tools=allowed if listed is None else listed,
                 # A greeting is at most 240 characters and a few suggestions: its round is capped, since it is free.
                 max_output_tokens=min(self.rt.max_output_tokens, self.rt.limits.opening_max_output_tokens)
                 if self.opening else self.rt.max_output_tokens,
                 timeout_seconds=remaining,
+                tool_choice="none" if listed is not None and not allowed else None,
+                route=self.route,
             )
+            if round_index == 0:
+                self.timeline.facts["tools_digest"] = tools_digest(request.tools)
             round_text: list[str] = []
             calls: list[ToolCallRequest] = []
             self.provider_rounds += 1
@@ -737,7 +816,7 @@ class _Turn:
                 continue
             messages.append(ProviderMessage(role="assistant", content="".join(round_text), tool_calls=tuple(calls)))
             read_any = False
-            offered = {spec.name for spec in offer}
+            offered = {spec.name for spec in allowed}
             for call in calls:
                 if call.name not in offered:
                     # A tool the server did not offer this round never runs, whatever the model asks for: an
@@ -1066,6 +1145,8 @@ class _Turn:
                 state = state.with_outcome(live=self.live, settle=self.settle, new_offer=self.new_offer, ran=self.ran)
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
+            if self.route is not None:  # the conversation's model answered: it is not in an outage
+                state = state.with_route_outcome(self.route, failed=False)
             return state
 
         # None when it expired meanwhile: the next turn opens a new one.
@@ -1089,7 +1170,7 @@ class _Turn:
             if job is None:
                 return
             old, folded = job
-            made = summarize(self.rt.provider, old, folded, limit=self.rt.limits.max_summary_chars)
+            made = summarize(self.rt.provider, old, folded, limit=self.rt.limits.max_summary_chars, route=self.route)
             self.usage_in += made.input_tokens
             self.usage_out += made.output_tokens
             applied = made.text is not None
@@ -1129,11 +1210,19 @@ class _Turn:
     def _price(self, made) -> dict:
         """Provider, model and the estimated cost of the call, from the platform's catalog; unknown when unavailable."""
 
+        return self._priced(made.input_tokens, made.output_tokens)
+
+    def _priced(self, input_tokens: int, output_tokens: int) -> dict:
         none = {"provider": None, "model": None, "cost": None}
         if self.rt.price_summary is None:
             return none
         try:
-            return self.rt.price_summary(made.input_tokens, made.output_tokens)
+            if self.route is not None:
+                try:
+                    return self.rt.price_summary(input_tokens, output_tokens, route=self.route)
+                except TypeError:  # a pricer that takes no route prices the selection, as before M0
+                    pass
+            return self.rt.price_summary(input_tokens, output_tokens)
         except Exception:
             return none
 

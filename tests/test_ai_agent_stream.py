@@ -478,3 +478,98 @@ def test_the_adapter_fails_closed_on_an_unknown_end():
         list(adapter._convert(iter([ChatTextDelta("a"), ChatFinished("content_filter")])))
     with pytest.raises(ProviderUnavailable):
         list(adapter._convert(iter([ChatFinished("missing")])))
+
+
+# --- M0 of Orena Memory (ORENA_MEMORY.md §5.4, §7.2): tool_choice and the pinned route --------------
+
+
+def test_tool_choice_is_sent_only_with_tools(monkeypatch):
+    seen = []
+    post_returning(monkeypatch, StreamResponse([finish("stop")]), seen)
+    tools = [{"type": "function", "function": {"name": "get_x", "description": "x", "parameters": {"type": "object"}}}]
+    item = provider(monkeypatch, "groq")
+    run(item, tools=tools, tool_choice="none")
+    run(item, tool_choice="none")
+    run(item, tools=tools)
+    assert seen[0][1]["json"]["tool_choice"] == "none" and seen[0][1]["json"]["tools"] == tools
+    assert "tool_choice" not in seen[1][1]["json"] and "tool_choice" not in seen[2][1]["json"]
+
+
+def test_an_endpoint_not_known_to_take_tool_choice_gets_no_tools_on_that_round(monkeypatch):
+    seen = []
+    post_returning(monkeypatch, StreamResponse([finish("stop")]), seen)
+    tools = [{"type": "function", "function": {"name": "get_x", "description": "x", "parameters": {"type": "object"}}}]
+    run(provider(monkeypatch, "gemini"), tools=tools, tool_choice="none")
+    body = seen[0][1]["json"]
+    assert "tools" not in body and "tool_choice" not in body  # as before the stable tool list: no 400 risk
+
+
+def test_a_route_to_a_model_the_allowlist_refuses_is_not_usable(monkeypatch):
+    monkeypatch.setattr(platform, "providers", lambda: {"openrouter": Selected(provider_id="openrouter")})
+    assert not platform.agent_route_usable(("openrouter", "openrouter/auto"))
+
+
+def test_a_pinned_route_streams_on_its_own_provider_not_the_selection(monkeypatch, telemetry):
+    events = [ChatFinished("stop", prompt_tokens=5, completion_tokens=1)]
+    pinned, selected = Selected(events=events, provider_id="groq"), Selected(events=events)
+    monkeypatch.setattr(platform, "active_selection", lambda: (selected, "gemini-3.5-flash-lite"))
+    monkeypatch.setattr(platform, "providers", lambda: {"groq": pinned, "gemini": selected})
+    list(platform.stream_agent_turn(messages=[], tools=[{"type": "function"}], max_output_tokens=10,
+                                    route=("groq", "openai/gpt-oss-120b"), tool_choice="none"))
+    assert selected.calls == [] and pinned.calls[0]["model"] == "openai/gpt-oss-120b"
+    assert pinned.calls[0]["tool_choice"] == "none"
+    assert telemetry[0]["provider"] == "groq"
+
+
+def test_a_pinned_route_to_an_unknown_provider_fails_the_round(monkeypatch, telemetry):
+    monkeypatch.setattr(platform, "providers", lambda: {})
+    with pytest.raises(AIProviderUnavailable):
+        platform.stream_agent_turn(messages=[], tools=[], max_output_tokens=10, route=("gone", "m"))
+    assert telemetry[0]["outcome"] == "failure"
+
+
+def test_route_usable_and_current(monkeypatch):
+    monkeypatch.setattr(platform, "providers", lambda: {
+        "gemini": Selected(), "ollama": Selected(kind="local", provider_id="ollama"), "off": Selected(configured=False)})
+    assert platform.agent_route_usable(("gemini", "gemini-3.5-flash-lite"))
+    assert not platform.agent_route_usable(("ollama", "qwen3:8b"))
+    assert not platform.agent_route_usable(("off", "m")) and not platform.agent_route_usable(("missing", "m"))
+    assert not platform.agent_route_usable(("gemini", ""))
+    monkeypatch.setattr(platform, "active_selection", lambda: (Selected(), "gemini-3.5-flash-lite"))
+    assert platform.agent_current_route() == ("gemini", "gemini-3.5-flash-lite")
+    monkeypatch.setattr(platform, "active_selection", lambda: (Selected(kind="local", provider_id="ollama"), "q"))
+    assert platform.agent_current_route() is None
+
+
+def test_the_agent_provider_passes_route_and_tool_choice_through():
+    seen = {}
+
+    def stream_turn(**kwargs):
+        seen.update(kwargs)
+        return iter([ChatFinished("stop", prompt_tokens=1, completion_tokens=1)])
+
+    from writing_coach.agent.provider import ModelRoute, ProviderMessage, ProviderToolSpec, ProviderTurnRequest
+
+    spec = ProviderToolSpec("get_x", "x", {"type": "object"})
+    request = ProviderTurnRequest(messages=(ProviderMessage("user", "hi"),), tools=(spec,), tool_choice="none",
+                                  route=ModelRoute("groq", "openai/gpt-oss-120b"))
+    list(PlatformAgentTurnProvider(stream_turn).stream(request))
+    assert seen["route"] == ("groq", "openai/gpt-oss-120b") and seen["tool_choice"] == "none"
+    seen.clear()
+    list(PlatformAgentTurnProvider(stream_turn).stream(ProviderTurnRequest(messages=(ProviderMessage("user", "hi"),))))
+    assert "route" not in seen and "tool_choice" not in seen  # the legacy call, unchanged
+
+
+def test_the_platform_router_pins_and_checks():
+    from writing_coach.agent.platform_provider import PlatformModelRouter
+    from writing_coach.agent.provider import ModelRoute
+
+    router = PlatformModelRouter(current=lambda: ("gemini", "m"), usable=lambda route: route == ("gemini", "m"))
+    assert router.current() == ModelRoute("gemini", "m")
+    assert router.usable(ModelRoute("gemini", "m")) and not router.usable(ModelRoute("groq", "m"))
+
+    def broken(route):
+        raise RuntimeError("store down")
+
+    assert PlatformModelRouter(current=lambda: None, usable=broken).usable(ModelRoute("gemini", "m")) is False
+    assert PlatformModelRouter(current=lambda: None, usable=broken).current() is None
