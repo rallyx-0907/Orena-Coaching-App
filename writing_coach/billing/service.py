@@ -54,6 +54,8 @@ _ON = frozenset({"1", "true", "yes", "on"})
 _GATEWAY_RULES = {"payos": ({"VND"}, False), "sepay": ({"VND"}, False), "polar": (None, True)}
 # The domestic gateways a deployment may choose between (PR-MON-8 §5): exactly one is active, by explicit choice.
 DOMESTIC_GATEWAYS = ("payos", "sepay")
+# D-MON-032 (PR-MON-8 §14.2): plans are card subscriptions sold by Polar only. A domestic gateway tops up Credits.
+PLAN_GATEWAYS = ("polar",)
 DOMESTIC_SWITCH = "BILLING_DOMESTIC_GATEWAY"
 # PR-MON-8 §4.3 (revision 6): the SePay locked outcomes are kept as the existing kind `payment_not_payable`, told apart
 # by these machine-stable reasons. Business logic branches on the locked outcome, never on this text.
@@ -110,6 +112,8 @@ def load_prices(env: Mapping[str, str]) -> dict[str, Price]:
             raise ValueError(f"a price is in a currency the catalogue prices in: {', '.join(sorted(MINOR_EXPONENT))}")
         if str(item["gateway"]) not in _GATEWAY_RULES:
             raise ValueError(f"unknown gateway {item['gateway']!r}")
+        if str(item["gateway"]) not in PLAN_GATEWAYS:
+            raise ValueError("Plans are sold by Polar only (D-MON-032)")
         currencies, needs_id = _GATEWAY_RULES[str(item["gateway"])]
         if currencies is not None and str(item["currency"]).upper() not in currencies:
             raise ValueError(f"{item['gateway']} takes {', '.join(sorted(currencies))} only")
@@ -357,8 +361,8 @@ class BillingService:
         if critical is None:
             return {}
         return {key: price for key, price in self._prices.items()
-                if price.gateway in self._gateways and price.gateway not in blocked | critical
-                and self._domestic_sellable(price.gateway)}  # fmt: skip
+                if price.gateway in PLAN_GATEWAYS and price.gateway in self._gateways
+                and price.gateway not in blocked | critical}  # fmt: skip
 
     def offered(self) -> list[dict[str, Any]]:
         try:
@@ -404,6 +408,64 @@ class BillingService:
         return [{"key": pack.key, "pack_id": pack.pack_id, "credit_units": pack.credit_units, "currency": pack.currency,
                  "amount_minor": pack.amount_minor, "gateway": pack.gateway} for pack in self._credit_packs.values()
                 if pack.gateway == active and self._pack_sellable(pack.key)]
+
+    # ---- readiness per capability (PR-MON-8 §14.4) -------------------------------------------------------------
+
+    def credits_configured(self) -> bool:
+        """The Credits capability is in use: packs are configured, or credits are enabled (§14.3). Only then does the
+        domestic gateway (its choice, its grace, its VA) block anything."""
+
+        return bool(self._credit_packs) or self._credits is not None
+
+    def plans_capability(self, report: Mapping[str, Mapping[str, Any]] | None = None) -> dict[str, Any]:
+        """Plans are sold by Polar only: configured, priced, every price the catalogue's, no critical item on it."""
+
+        entry = (report if report is not None else self.gateway_report()).get("polar", {})
+        blockers: list[str] = []
+        if not entry.get("configured"):
+            blockers.append("polar_unconfigured")
+        if entry.get("catalog") == "unavailable":
+            blockers.append("catalog_unavailable")
+        elif not entry.get("prices"):
+            blockers.append("no_polar_price")
+        elif not all(check.get("status") == "match" for check in entry["prices"]):
+            blockers.append("price_mismatch")
+        if entry.get("reconciliation") == "unavailable":
+            blockers.append("reconciliation_unavailable")
+        elif entry.get("reconciliation_critical"):
+            blockers.append("reconciliation_critical")
+        return {"ready": not blockers, "blockers": blockers}
+
+    def credits_capability(self) -> dict[str, Any]:
+        """Credits top-up through the active domestic gateway: packs, credits ready, the gateway chosen and sellable
+        (grace, VA in production), no critical item on it and no open credit gap."""
+
+        if not self.credits_configured():
+            return {"ready": False, "blockers": ["credits_not_configured"]}
+        blockers: list[str] = []
+        if not self._credit_packs:
+            blockers.append("no_credit_pack")
+        if not self.credits_ready():
+            blockers.append("credits_not_ready")
+        blockers.extend(self.domestic_blockers())
+        critical = self._critical_blocked()
+        active = self.active_domestic()
+        if critical is None:
+            blockers.append("reconciliation_unavailable")
+        elif active is not None and active in critical:
+            blockers.append("reconciliation_critical")
+        else:
+            try:
+                open_by_kind = self._items.summary()["open_by_kind"] if self._items is not None else {}
+            except Exception:  # noqa: BLE001 - unreadable reconciliation state sells nothing
+                open_by_kind = None
+            if open_by_kind is None:
+                blockers.append("reconciliation_unavailable")
+            elif any(open_by_kind.get(kind, 0) for kind in CREDIT_CHECKOUT_BLOCKERS):
+                blockers.append("credit_gap_open")
+        if not blockers and not self.credit_offers():
+            blockers.append("no_sellable_pack")
+        return {"ready": not blockers, "blockers": blockers}
 
     def gateway_report(self) -> dict[str, dict[str, Any]]:
         """Per gateway: configured (its keys, and so its webhook verification), its prices against the catalogue, and
@@ -463,7 +525,9 @@ class BillingService:
                                                units=confirmed_credit_units)  # fmt: skip
         price = self._prices.get(price_key)
         gateway = self._gateways.get(price.gateway) if price else None
-        if price is None or gateway is None or not self._domestic_sellable(price.gateway):
+        # D-MON-032: a plan is sold by Polar only, whatever price reached this service (a second guard after
+        # `load_prices`).
+        if price is None or gateway is None or price.gateway not in PLAN_GATEWAYS:
             raise LookupError("price_not_offered")
         uuid.UUID(operation_id)  # an operation id is the client's own UUID: a retry reuses it
         self._refuse_unverified_price(price_key, price, confirmed_amount_minor, confirmed_currency)

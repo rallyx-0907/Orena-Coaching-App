@@ -159,9 +159,9 @@ def test_a_payment_extends_from_the_end_while_access_lasts_and_from_now_after():
 def test_prices_come_only_from_the_approved_file(tmp_path):
     assert load_prices({}) == {}
     path = tmp_path / "prices.json"
-    path.write_text(json.dumps([{"plan_id": "pro", "period": "month", "currency": "vnd", "amount_minor": 99000,
-                                 "gateway": "payos"}]))  # fmt: skip
-    assert load_prices({"BILLING_PRICES_FILE": str(path)})["pro:month:payos"].currency == "VND"
+    path.write_text(json.dumps([{"plan_id": "pro", "period": "month", "currency": "usd", "amount_minor": 1999,
+                                 "gateway": "polar", "external_price_id": "prod_123"}]))  # fmt: skip
+    assert load_prices({"BILLING_PRICES_FILE": str(path)})["pro:month:polar"].currency == "USD"
     path.write_text(json.dumps([{"plan_id": "p", "period": "month", "currency": "USD", "amount_minor": 4.99, "gateway": "polar"}]))
     with pytest.raises(ValueError):
         load_prices({"BILLING_PRICES_FILE": str(path)})
@@ -454,7 +454,7 @@ PRO_USD_MONTH = Price(plan_id="pro", period="month", currency="USD", amount_mino
                       external_price_id="prod_123")  # fmt: skip
 
 
-def checkout(commerce, orders, price_key="pro:month:payos"):
+def checkout(commerce, orders, price_key="pro:month:polar"):
     from writing_coach.billing.service import CheckoutRefused
 
     prices = {"pro:month:payos": PRO_VND_MONTH, "pro:month:polar": PRO_USD_MONTH}
@@ -472,14 +472,17 @@ def checkout(commerce, orders, price_key="pro:month:payos"):
         return refused.code
 
 
-def test_one_live_subscription_per_account_but_prepaid_access_may_be_renewed():
+def test_one_live_subscription_per_account_and_a_plan_is_never_sold_by_a_domestic_gateway():
     card = {"state": "active", "provider": "polar", "external_subscription_id": "sub_1", "paid_through": NOW + timedelta(days=9)}
+    # Prepaid access bought before D-MON-032 still counts as the account's live subscription.
     prepaid = {"state": "active", "provider": "payos", "external_subscription_id": "prepaid:inc-1", "paid_through": NOW + timedelta(days=9)}
     lapsed = {**card, "paid_through": NOW - timedelta(days=1)}
     assert checkout(LiveCommerce(card), CheckoutOrders()) == "subscription_live"
-    assert checkout(LiveCommerce(prepaid), CheckoutOrders(), "pro:month:polar") == "subscription_live"
-    assert checkout(LiveCommerce(prepaid), CheckoutOrders()) == "https://pay/x"
-    assert checkout(LiveCommerce(lapsed), CheckoutOrders()) == "https://pay/x"
+    assert checkout(LiveCommerce(prepaid), CheckoutOrders()) == "subscription_live"
+    assert checkout(LiveCommerce(lapsed), CheckoutOrders()) == "https://pay/y"
+    # PR-MON-8 §14.2: no renewal of prepaid access, and no plan at all, through a domestic gateway
+    with pytest.raises(LookupError, match="price_not_offered"):
+        checkout(LiveCommerce(prepaid), CheckoutOrders(), "pro:month:payos")
 
 
 @pytest.mark.parametrize(("state", "code"), [("pending", "checkout_already_started"), ("paid", "order_closed"), ("refunded", "order_closed")])

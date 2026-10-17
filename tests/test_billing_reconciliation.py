@@ -14,7 +14,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from tests.test_billing import NOW, PAYOS, POLAR, FakeCommerce, FakeItems, FakeOrders, payos_body, polar_request, service
-from tests.test_billing_price_integrity import PLUS_VND, billing, facts, start
+from tests.test_billing_price_integrity import PLUS_USD, PLUS_VND, billing, facts, start
 from writing_coach import billing_api
 from writing_coach.billing import readiness
 from writing_coach.billing.payos import parse_lookup
@@ -190,38 +190,42 @@ def with_items(service_, items):
 
 
 def test_an_open_critical_item_blocks_its_gateway_and_readiness_says_why():
-    blocked = with_items(billing([PLUS_VND]), Critical({"payos": 1}))
+    blocked = with_items(billing([PLUS_USD]), Critical({"polar": 1}))
     assert blocked.offered() == []
     assert start(blocked) == "reconciliation_critical"
     report = readiness.report(facts(service=blocked))
-    assert report["ready"] is False and "reconciliation_critical" in report["blockers"]
-    assert report["gateways"]["payos"]["reconciliation_critical"] == 1 and report["gateways"]["payos"]["ready"] is False
-    assert report["reconciliation"]["critical_by_gateway"] == {"payos": 1}
+    # PR-MON-8 §14.4: the plans capability says why; the top level says only that no capability is ready
+    assert report["ready"] is False and report["blockers"] == ["no_billing_capability_ready"]
+    assert "reconciliation_critical" in report["capabilities"]["plans"]["blockers"]
+    assert report["gateways"]["polar"]["reconciliation_critical"] == 1 and report["gateways"]["polar"]["ready"] is False
+    assert report["reconciliation"]["critical_by_gateway"] == {"polar": 1}
 
 
 def test_a_critical_item_on_another_gateway_does_not_block_this_one():
-    other = with_items(billing([PLUS_VND]), Critical({"polar": 2}))
-    assert [offer["key"] for offer in other.offered()] == ["plus:month:payos"]
+    other = with_items(billing([PLUS_USD]), Critical({"payos": 2}))
+    assert [offer["key"] for offer in other.offered()] == ["plus:month:polar"]
     assert start(other).startswith("https://")
+    assert readiness.report(facts(service=other))["capabilities"]["plans"] == {"ready": True, "blockers": []}
 
 
 def test_unreadable_reconciliation_state_sells_nothing():
-    unknown = with_items(billing([PLUS_VND]), Critical(None))
+    unknown = with_items(billing([PLUS_USD]), Critical(None))
     assert unknown.offered() == [] and start(unknown) == "reconciliation_critical"
-    assert "reconciliation_unavailable" in readiness.report(facts(service=unknown))["blockers"]
+    report = readiness.report(facts(service=unknown))
+    assert report["ready"] is False and "reconciliation_unavailable" in report["capabilities"]["plans"]["blockers"]
 
 
 def test_a_critical_refusal_is_a_retryable_503(monkeypatch):
     app = FastAPI()
     app.include_router(billing_api.router)
-    blocked = with_items(billing([PLUS_VND]), Critical({"payos": 1}))
+    blocked = with_items(billing([PLUS_USD]), Critical({"polar": 1}))
     monkeypatch.setattr(billing_api, "_service", blocked)
     monkeypatch.setattr(billing_api, "_ready", lambda: True)
     monkeypatch.setattr(billing_api, "current_user_key", lambda: "learner-1")
     monkeypatch.setattr(billing_api, "_incarnation", lambda: "inc-1")
     answer = TestClient(app).post("/api/billing/checkout", json={
-        "price": "plus:month:payos", "operation_id": "6f1c1a2e-0000-4000-8000-000000000001", "amount_minor": 199_000,
-        "currency": "VND"})  # fmt: skip
+        "price": "plus:month:polar", "operation_id": "6f1c1a2e-0000-4000-8000-000000000001", "amount_minor": 999,
+        "currency": "USD"})  # fmt: skip
     assert answer.status_code == 503 and "reconciliation_critical" in answer.text
 
 
