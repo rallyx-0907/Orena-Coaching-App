@@ -168,9 +168,9 @@ Coach notes (context.coach_notes; the device keeps them):
 
 OPENING = """This is an opening turn: the learner has not written anything yet.
 - Write one short greeting fitted to where they are and what they have in view: at most 240 characters,
-  one or two sentences, a statement they can check, taken from the snapshot below (for example how many words
-  are due), no praise and no slogans. If the snapshot holds no records, greet without numbers. Never state a
-  number the snapshot does not hold.
+  one or two sentences, a statement they can check, taken from the snapshot or the learner pack you were given
+  (for example how many words are due), no praise and no slogans. If it holds no records, greet without numbers.
+  Never state a number it does not hold.
 - Then call suggest_next one to five times with the most useful next questions. You may offer at most two
   actions, none that needs a confirmation. Claim no error without evidence."""
 
@@ -439,6 +439,7 @@ def opening_messages(
     screen_help: bool = False,
     budget_tokens: int | None = None,
     cache_stable: bool = False,
+    pack: str | None = None,
 ) -> list[ProviderMessage]:
     """The messages of a turn. `budget_tokens` bounds the whole assembled prompt: what is added from the conversation
     (the older turns, then the carried pasted text) gives way to the fixed parts, the summary and the learner's words.
@@ -453,7 +454,9 @@ def opening_messages(
     else:
         head = ProviderMessage(role="system", content=f"context: {json.dumps(document, ensure_ascii=False)}")
         context_message = head
-    messages = [ProviderMessage(role="system", content=INSTRUCTION), head]
+    # The learner pack (agent/memory_pack.py) right after the instruction: the same bytes for the whole conversation.
+    messages = [ProviderMessage(role="system", content=INSTRUCTION),
+                *([ProviderMessage(role="system", content=pack)] if pack else []), head]
     if snapshot is not None:  # the opening turn is built on the learner's snapshot (S13), read by the server
         messages.append(
             ProviderMessage(role="system", content="snapshot: " + json.dumps(redact_for_provider(snapshot), ensure_ascii=False))

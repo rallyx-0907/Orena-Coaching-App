@@ -129,6 +129,7 @@ def build_agent_runtime(
     spend_guard: Callable[[], float | None] | None = None,
     prompt: PromptLayout = PromptLayout(),
     router: object | None = None,
+    pack: object | None = None,
 ) -> AgentRuntime:
     tools = build_tool_registry(
         writing_review=writing_review, writing_history=writing_history, reads=reads, limits=limits
@@ -144,6 +145,7 @@ def build_agent_runtime(
         # provider handed in (a test's fake) is pinned only when a router is handed in too.
         router=router if router is not None else (PlatformModelRouter() if provider is None else None),
         prompt=prompt,
+        pack=pack,  # the learner pack (agent/memory_pack.py PackBuilder); None: none
         tools=tools,
         capabilities=load_capability_registry(registered_tools=tools.names()),
         sessions=SessionCache(limits=limits),

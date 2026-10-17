@@ -102,6 +102,10 @@ class AgentSessionState:
     # The last model turn on that route failed at the provider: the next turn may pin the current selection instead,
     # when Admin has moved it (an outage or a retired model is not waited out for the session's life).
     model_route_failed: bool = False
+    # The learner pack (agent/memory_pack.py), built once for the conversation and sent as the same bytes every round
+    # (ORENA_MEMORY.md §5.2), with the (target, support) it was built for: another pair builds it again.
+    learner_pack: str | None = field(default=None, repr=False)
+    learner_pack_key: tuple[str, str] | None = None
 
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
@@ -136,6 +140,12 @@ class AgentSessionState:
 
     def with_model_route(self, route: ModelRoute) -> AgentSessionState:
         return replace(self, model_route=route, model_route_failed=False)
+
+    def with_learner_pack(self, text: str, key: tuple[str, str]) -> AgentSessionState:
+        return replace(self, learner_pack=text, learner_pack_key=key)
+
+    def pack_for(self, key: tuple[str, str]) -> str | None:
+        return self.learner_pack if self.learner_pack_key == key else None
 
     def with_route_outcome(self, route: ModelRoute, *, failed: bool) -> AgentSessionState:
         """How the last model turn on `route` ended; a turn on a route since replaced changes nothing."""

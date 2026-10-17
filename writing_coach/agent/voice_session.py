@@ -54,6 +54,8 @@ from writing_coach.agent.outputs import (
     asked_for,
     reply_tool_specs,
 )
+from writing_coach.agent.locale import to_internal
+from writing_coach.agent.memory_pack import VOICE_BUDGET
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.redaction import redact_for_provider
@@ -474,7 +476,8 @@ class VoiceService:
         session_state, _ = self.runtime.sessions.open(request.session_id, learner.user_key)
         tier1 = build_tier1(turn, session_state.for_target(request.context.locale.target))
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
-        instruction = self._instruction(turn, tier1, here, session_state)
+        instruction = self._instruction(turn, tier1, here, session_state,
+                                        pack=self._learner_pack(session_state, learner, request))  # fmt: skip
         specs = self._tool_specs(request, learner)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
@@ -626,9 +629,32 @@ class VoiceService:
         target = tier1.contract_locale.target
         return tuple(entry.id for entry in self.runtime.capabilities.for_surface(tier1.surface, target))
 
-    def _instruction(self, turn: TurnInput, tier1, here, session_state) -> str:
+    def _learner_pack(self, session_state, learner: LearnerScope, request: TurnRequest) -> str | None:
+        """The learner pack (agent/memory_pack.py) for the voice setup: the conversation's own when its text turns
+        built one for this language pair - the same learner, the same bytes - else one at the voice size. None when
+        the pack is off or cannot be built: the session opens without it."""
+
+        builder = getattr(self.runtime, "pack", None)
+        if builder is None or not getattr(builder, "enabled", False):
+            return None
+        locale = request.context.locale
+        kept = session_state.pack_for((str(locale.target), str(locale.support)))
+        if kept is not None:
+            return kept
+        from writing_coach.agent.turn import learner_context  # the turn's own scoping, as its tools run under it
+
+        try:
+            with learner_context(learner):
+                pack = builder.build(target=to_internal(locale.target), support=to_internal(locale.support),
+                                     budget_tokens=VOICE_BUDGET)  # fmt: skip
+        except Exception:  # noqa: BLE001 - the voice session opens without it
+            _log.warning("learner pack not built for voice", exc_info=True)
+            return None
+        return pack.text if pack is not None else None
+
+    def _instruction(self, turn: TurnInput, tier1, here, session_state, *, pack: str | None = None) -> str:
         context = json.dumps(context_document(turn, tier1, here, session_state), ensure_ascii=False)
-        parts = [INSTRUCTION, VOICE_RULES, f"context: {context}"]
+        parts = [INSTRUCTION, VOICE_RULES, *([pack] if pack else []), f"context: {context}"]
         earlier = _conversation_so_far(session_state)
         if earlier:
             parts.append(earlier)
