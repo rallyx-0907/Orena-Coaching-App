@@ -635,3 +635,27 @@ then the operator's refund).
   passes or the owner decides otherwise.
 - `SEVQR` stays in the memo (owner decision).
 - The User-Agent fix (#249) is separate and independent of this delta.
+
+### 13.8 Delta re-review of `eed8e3a7`: APPROVED FOR IMPLEMENTATION
+
+Reviewer: ChatGPT / GPT-5.6 Sol. P0 0, P1 0, blocking P2 0; CI 38994062827. All four findings of the `5b396941` review
+are closed. Approved scope:
+- `SEPAY_VA_NUMBER`, an alphanumeric VietQR beneficiary, and the VA in the QR and the checkout response;
+- the production `sepay_va_unset` blocker, so production checkout fails closed without a VA;
+- masking, and tests for it;
+- unchanged main-account-only receiving and matching.
+
+The approval does not establish Live VA support: that is gate 8.
+
+**Gate 8 evidence (2026-10-17, owner-authorized, `:8031` sandbox on `main` `9ebd25f3`, Live credentials):** one real
+2,000 VND transfer to the Live VPBank VA (order 100004) passed all six conditions:
+1. the VA exists on the Live account, and v2 reports it in `va`;
+2. a banking app paid it;
+3. the Live webhook was answered 200, and the transaction appears in Live v2 with `webhook_success = 1`;
+4. `code = ORN100004`, and the v2 `reference_number` equals the order's payment event id;
+5. the v2 `account_number` is the main account, with the VA as separate metadata, and the order was paid;
+6. a signed re-delivery of the same transfer through the tunnel answered 200 and left the order unchanged (same event,
+   `paid_at` and `paid_sequence`, no item, plan still active).
+
+The operator then refunded the transfer and recorded it: the order is `refunded` and the access ended. No number or
+secret was printed during the checks.
