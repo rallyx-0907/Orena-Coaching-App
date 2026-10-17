@@ -659,3 +659,31 @@ The approval does not establish Live VA support: that is gate 8.
 
 The operator then refunded the transfer and recorded it: the order is `refunded` and the access ended. No number or
 secret was printed during the checks.
+
+### 13.9 Implementation of revision 7.1 (for independent implementation review)
+
+The implementation is code commit `f4f1d5e5`, synced with `main` afterwards. Changes:
+- **`writing_coach/billing/sepay.py`:**
+  - `_BENEFICIARY = [0-9A-Z]{1,19}` for the VietQR beneficiary (the main account stays digits 6-19);
+  - `SEPAY_VA_NUMBER` (`va_number`): a malformed value raises `GatewayNotConfigured`;
+  - `has_va` and `qr_account`;
+  - `domestic_checkout` puts the VA (when set) in the QR and in `transfer.account_number`;
+  - `repr` masks both numbers to the last four.
+- **`writing_coach/billing/service.py`:** `domestic_blockers` adds `sepay_va_unset` in production with SePay active
+  and no VA (so SePay is not sellable and there is no checkout); `gateway_report` shows `virtual_account` as
+  set/unset.
+- **`.env.example`:** the variable name.
+
+Tests in `tests/test_billing_sepay.py` (89, hermetic):
+- with a VA, the QR and the checkout response name it and never the main account, with an independent CRC check
+  (`binascii.crc_hqx`);
+- without a VA, the QR is unchanged;
+- a malformed VA (lower case, `-`, space, 20 characters, non-ASCII) refuses the configuration;
+- production without a VA: `sepay_va_unset`, not sellable, checkout refused, readiness not billing-ready;
+- production with a valid VA has no VA blocker, and development keeps the fallback;
+- no full main account and no full VA in `repr` or the readiness report;
+- a webhook to the VA's number is `ignored`, so receiving stays the main account.
+
+`tests/test_billing_sepay_postgres.py`: 19 passed, with the production fixture now carrying a VA.
+
+Local evidence (not CI): full SQLite 7328 passed. Every PostgreSQL file: 445 passed plus 1 inherited failure (#160).
