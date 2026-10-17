@@ -202,6 +202,29 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
                                retryable=True) from None
 
 
+@router.post("/api/billing/portal")
+def billing_portal(request: Request) -> dict[str, Any]:
+    """PR-MON-10 §4.4: the signed-in learner's Polar customer portal (cancel, change plan, card, invoices). Managing a
+    subscription that exists is not gated by new-sale readiness."""
+
+    service = _require_service()
+    if current_user_key() in {"", "legacy", "local-admin"}:
+        raise orena_http_error(401, "sign_in_required", "Sign in to manage your plan.", retryable=False)
+    incarnation = _incarnation()
+    base = _public_base or str(request.base_url).rstrip("/")
+    try:
+        return service.customer_portal(incarnation, f"{base}/#/plan")
+    except LookupError:
+        raise orena_http_error(404, "no_subscription", "There is no card subscription to manage.",
+                               retryable=False) from None
+    except CheckoutRefused:
+        raise orena_http_error(503, "portal_unavailable", "Managing a plan is not available right now.",
+                               retryable=True) from None
+    except Exception:  # noqa: BLE001 - Polar's own failure; the link is never logged
+        raise orena_http_error(502, "gateway_unavailable", "The plan page could not be opened. Try again.",
+                               retryable=True) from None
+
+
 @router.post("/api/billing/webhooks/{gateway}")
 async def billing_webhook(gateway: str, request: Request) -> JSONResponse:
     service = _require_service()

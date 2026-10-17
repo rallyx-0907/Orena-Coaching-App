@@ -150,6 +150,14 @@ class PolarGateway:
             )  # fmt: skip
         return PaymentFact(**base, kind="ignored", external_reference=None, provider_state=kind or None)
 
+    def customer_session_request(self, external_customer_id: str, return_url: str) -> dict:
+        """PR-MON-10 §4.4: `POST /v1/customer-sessions/` (scope `customer_sessions:write`) answers a pre-authenticated
+        `customer_portal_url` that expires; the customer is Orena's incarnation (`external_customer_id`)."""
+
+        return {"method": "POST", "url": API_BASE[self.environment] + "/v1/customer-sessions/",
+                "json": {"external_customer_id": external_customer_id, "return_url": return_url},
+                "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip
+
     def checkout_request(self, intent: CheckoutIntent) -> dict:
         if not intent.price.external_price_id:
             raise ValueError("a Polar price is a Polar product id")

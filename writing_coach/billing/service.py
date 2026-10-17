@@ -205,9 +205,11 @@ def late_payment_grace() -> timedelta | None:
 
 
 def _send(request: dict) -> dict:
-    body = json.dumps(request["json"]).encode("utf-8")
+    body = json.dumps(request["json"]).encode("utf-8") if "json" in request else None
+    # A named client: a provider behind Cloudflare refuses the default Python agent (PR-MON-8 #249).
     call = urllib.request.Request(request["url"], data=body, method=request["method"],
-                                  headers={"Content-Type": "application/json", **request["headers"]})  # fmt: skip
+                                  headers={"Content-Type": "application/json", "Accept": "application/json",
+                                           "User-Agent": "Orena-Billing/1.0", **request["headers"]})  # fmt: skip
     with urllib.request.urlopen(call, timeout=20) as response:  # noqa: S310 - fixed https gateway hosts
         return json.loads(response.read(1_000_000).decode("utf-8"))
 
@@ -760,6 +762,24 @@ class BillingService:
                        # `rejected` is an account the commerce record does not know: nothing to link to.
                        incarnation_id=None if result.status == "rejected" else incarnation)  # fmt: skip
         return result
+
+    # ---- manage and cancel (PR-MON-10 §4.4) ----------------------------------------------------------------------
+
+    def customer_portal(self, incarnation_id: str, return_url: str) -> dict[str, Any]:
+        """A pre-authenticated Polar customer-portal link for this account's card subscription: cancel, change the
+        plan, update the card, read invoices. The link is returned to the learner only: never logged, never stored."""
+
+        gateway = self._gateways.get("polar")
+        if gateway is None:
+            raise CheckoutRefused("portal_unavailable")
+        current = self._commerce.get_subscription(incarnation_id)
+        if not current or current.get("provider") != "polar" or not current.get("external_subscription_id"):
+            raise LookupError("no_subscription")
+        answer = self._send(gateway.customer_session_request(incarnation_id, return_url))
+        url = str(answer.get("customer_portal_url") or "")
+        if not url.startswith("https://"):
+            raise RuntimeError("portal_session_failed")
+        return {"url": url, "expires_at": str(answer.get("expires_at") or "")}
 
     def _plan_for_product(self, product_id: str) -> str | None:
         """The plan a Polar product is priced as (`external_price_id` in the prices file), or None."""
