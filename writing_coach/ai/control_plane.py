@@ -253,6 +253,10 @@ class AIControlPlane:
 
     def _record_operation(self, telemetry: dict[str, Any]) -> None:
         recorder = getattr(self.repository, "record_ai_operation", None)
+        if isinstance(telemetry, dict):
+            from writing_coach import cost_env
+
+            telemetry = {**telemetry, "environment": cost_env.label()}   # D-221
         safe = sanitize_telemetry(telemetry)
         if safe is None or not callable(recorder):
             return

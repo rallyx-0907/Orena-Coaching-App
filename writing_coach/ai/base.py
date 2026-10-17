@@ -123,6 +123,22 @@ class AIResult:
     def label(self) -> str:
         return f"{self.provider}:{self.model}"
 
+def reported_completion_tokens(usage: object) -> int | None:
+    """The completion tokens a provider billed, thinking included (D-221).
+
+    An OpenAI-compatible endpoint reports `completion_tokens` and `total_tokens`. Some (Gemini's) leave the model's
+    thinking tokens out of the first and keep them in the second, and every vendor bills them at the output rate. When
+    the total exceeds prompt plus completion the difference is thinking, and is counted with the completion; when the
+    completion already holds it (total equals the sum) nothing is added. An absent completion stays unknown."""
+
+    source = usage if isinstance(usage, dict) else {}
+    prompt, completion, total = (source.get(key) for key in ("prompt_tokens", "completion_tokens", "total_tokens"))
+    if type(completion) is not int or completion < 0:
+        return None
+    if type(prompt) is int and prompt >= 0 and type(total) is int and total > prompt + completion:
+        return total - prompt
+    return completion
+
 
 def normalized_usage(runtime: object) -> dict[str, int | float | None]:
     """Keep provider usage honest: malformed or absent counts remain unknown."""
@@ -334,6 +350,10 @@ def sanitize_telemetry(value: object) -> dict[str, Any] | None:
     # D-219: the tier in force when the call was recorded (cost.free_tier.<provider>); never rewritten afterwards.
     if type(value.get("free_tier")) is bool:
         result["free_tier"] = value["free_tier"]
+    # D-221: the environment that wrote the event (the provider key is shared by many); a short token or absent.
+    environment = value.get("environment")
+    if isinstance(environment, str) and re.fullmatch(r"[a-z0-9][a-z0-9._:-]{0,39}", environment):
+        result["environment"] = environment
     # PR-MON-7 §4.4: an estimate of whether provider credits covered the call; never a cash fact.
     if value.get("cost_coverage") in {"provider_credit_estimated", "cash", "unknown"}:
         result["cost_coverage"] = value["cost_coverage"]

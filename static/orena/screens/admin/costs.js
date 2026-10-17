@@ -68,6 +68,12 @@ export function costsPage({ report, accounts, days, failed, ui, href }) {
         const view = credits ? { right: '', detail: tierRequests(row, { t }) } : tier(row);
         return { title: row.provider, meta: t('costMediaEvents', { n: row.events }), detail: view.detail, right: view.right };
       }), { title: t('opNone'), text: '' }) }) : ''}
+      ${report.environments ? block({ span: true, title: t('costEnv'), sub: t('costEnvSub'), body: rowList((report.environments.by_environment || []).map((row) => ({
+        title: row.environment || t('costEnvUntagged'),
+        meta: t('costEnvCalls', { n: row.calls }),
+        right: money(row.usd),
+        pills: row.current ? [{ label: t('costEnvThis'), tone: 'mute' }] : [],
+      })), { title: t('opNone'), text: '' }) }) : ''}
       ${accounts ? block({ span: true, title: t('costByAccount'), body: accounts.available
         ? rowList([
           ...(accounts.accounts || []).map((row) => {

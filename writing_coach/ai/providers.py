@@ -27,6 +27,7 @@ from writing_coach.ai.base import (
     ChatTextDelta,
     ChatToolCall,
     extract_json_object,
+    reported_completion_tokens,
 )
 from writing_coach.ai.capabilities import AIOperation
 from writing_coach.ai.pricing import resolve_token_pricing
@@ -910,7 +911,7 @@ class OpenAICompatibleProvider:
             runtime={
                 "finish_reason": first_choice.get("finish_reason"),
                 "prompt_tokens": usage.get("prompt_tokens"),
-                "completion_tokens": usage.get("completion_tokens"),
+                "completion_tokens": reported_completion_tokens(usage),
                 "total_tokens": usage.get("total_tokens"),
                 "rate_limit": dict(self._last_rate_limit),
             },
@@ -969,7 +970,7 @@ class OpenAICompatibleProvider:
             runtime={
                 "finish_reason": first_choice.get("finish_reason"),
                 "prompt_tokens": usage.get("prompt_tokens"),
-                "completion_tokens": usage.get("completion_tokens"),
+                "completion_tokens": reported_completion_tokens(usage),
                 "total_tokens": usage.get("total_tokens"),
                 "rate_limit": dict(self._last_rate_limit),
             },
@@ -1123,7 +1124,7 @@ class OpenAICompatibleProvider:
         yield ChatFinished(
             finish_reason=reason,
             prompt_tokens=_count(usage.get("prompt_tokens")),
-            completion_tokens=_count(usage.get("completion_tokens")),
+            completion_tokens=_count(reported_completion_tokens(usage)),
             cached_tokens=_count(details.get("cached_tokens")),
             rate_limit=dict(self._last_rate_limit),
         )

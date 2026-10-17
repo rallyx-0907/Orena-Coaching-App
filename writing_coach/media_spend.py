@@ -41,7 +41,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-from writing_coach import cost_tier, policies
+from writing_coach import cost_env, cost_tier, policies
 
 _LOCKS: dict[str, threading.Lock] = {}
 _LOCKS_GUARD = threading.Lock()
@@ -179,7 +179,8 @@ class SpendLedger:
                 raise SpendCapReached("caption_quota", limit=float(cap), spent=float(used), scope="day")
             events.append({"at": _now().isoformat(), "kind": kind, "usd": 0.0, "batch_id": "captions",
                            "media_id": media_id, "units": 1.0, "provider": provider[:40],
-                           "free_tier": cost_tier.is_free_tier(provider, self._env)})
+                           "free_tier": cost_tier.is_free_tier(provider, self._env),
+                           "environment": cost_env.label(self._env)})
             self._write(events)
 
     def check_requests(self, cap: int, kind: str = KIND_SUPADATA) -> None:
@@ -200,6 +201,7 @@ class SpendLedger:
             "units": round(float(units), 3),
             "provider": provider[:40],
             "free_tier": cost_tier.is_free_tier(provider, self._env),
+            "environment": cost_env.label(self._env),   # D-221: one provider key, many environments
         }
         with self._lock:
             events = self._read()
@@ -269,11 +271,21 @@ class SpendLedger:
             for key in ("real_usd", "free_tier_usd", "unknown_tier_usd"):
                 row[key] = round(row[key], 6)
         tiers = cost_tier.split(events, tier_at=tier_at)
+        # D-221: which environment wrote the events (None: written before the tag). Another environment's ledger is a
+        # different file, so this is only ever this one's own spend.
+        environments: dict[str | None, dict[str, Any]] = {}
+        for event in events:
+            name = str(event.get("environment") or "") or None
+            row = environments.setdefault(name, {"environment": name, "events": 0, "usd": 0.0})
+            row["events"] += 1
+            row["usd"] += float(event.get("usd") or 0)
         return {
             "days": bounded, "since": since, "currency": "USD",
             "real_usd": round(tiers[cost_tier.TIER_REAL], 6),
             "free_tier_usd": round(tiers[cost_tier.TIER_FREE], 6),
             "unknown_tier_usd": round(tiers[cost_tier.TIER_UNKNOWN], 6),
             "by_provider": sorted(providers.values(), key=lambda r: (-(r["real_usd"] + r["free_tier_usd"]), r["provider"])),
+            "by_environment": [dict(row, usd=round(row["usd"], 6)) for row in
+                               sorted(environments.values(), key=lambda r: (-r["usd"], str(r["environment"])))],
             "estimated": True,
         }
