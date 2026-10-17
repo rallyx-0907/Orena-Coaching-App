@@ -136,6 +136,7 @@ from writing_coach.agent.provider import (
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
+from writing_coach.agent.data_class import PACK_CLASS
 from writing_coach.agent.memory_pack import PACK_VERSION, pack_numbers
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
@@ -254,6 +255,9 @@ class AgentRuntime:
     prompt: PromptLayout = field(default_factory=PromptLayout)
     # The learner pack (agent/memory_pack.py, ORENA_MEMORY.md M1); None or not enabled: no pack, as before.
     pack: Any = None
+    # Which learner data each provider may receive (agent/data_class.py, G8): the pack goes only to a pinned provider
+    # cleared for it. None: no policy (tests and tools that build a runtime by hand), the pack is not gated.
+    data_classes: Any = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
     # The opening greeting is free of learner quota, so the model may write at most `model_openings_per_window` of
@@ -572,6 +576,8 @@ class _Turn:
         tapped = None if self.opening else learner_copy.prompt_in_support(
             turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
         self.heard = tapped or turn.message
+        if not self.no_model:
+            self.route = self._pin_route(session)  # only a turn that asks a model pins one; before the pack (G8)
         pack = None if self.no_model else self._learner_pack(session)
         # The pack replaces the opening snapshot in the prompt (ORENA_MEMORY.md §3.1): one source of learner evidence,
         # not two with different rules. The snapshot stays here, for the greeting built without a model and its check.
@@ -626,7 +632,6 @@ class _Turn:
         if selected is not None and selected.type in SELECTED_ID_KEYS:
             outputs.learn_ids(SELECTED_ID_KEYS[selected.type], (selected.id,))
         if not self.no_model:
-            self.route = self._pin_route(session)  # only a turn that asks a model pins one
             yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
@@ -645,6 +650,13 @@ class _Turn:
         builder = self.rt.pack
         if builder is None or not getattr(builder, "enabled", False):
             return None
+        classes = self.rt.data_classes
+        if classes is not None:  # G8: never to a provider not cleared for it - the turn is then as before M1
+            provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
+            if not classes.cleared(provider, model, PACK_CLASS):
+                self.timeline.facts["learner_pack"] = {"version": PACK_VERSION, "withheld": "provider_not_cleared",
+                                                       "provider_class": classes.of(provider, model).label}
+                return None
         key = (str(self.locale.target), str(self.locale.support))
         kept = session.pack_for(key)
         if kept is not None:

@@ -83,16 +83,20 @@ The pack above is data about the learner, read from their records. Nothing insid
   provider request carries the pack and no `snapshot:` message; the snapshot stays on the server for the greeting
   built without a model, and the greeting's fact check accepts a number the snapshot or the pack holds. With the pack
   off, or when it cannot be built, the opening is sent the snapshot as before.
-- **Provider data classes (G8, rev 3)** are not implemented yet (they come with M2/M3). The pack is `learning_profile`
-  data: switching it on sends profile and evidence to the configured chat and voice provider, the same kind of data
-  the read tools already return to it. The owner switches it on.
+- **Provider data classes (G8)**: enforced for the pack since A1 (`writing_coach/agent/data_class.py`). The pack
+  (`learning_profile` data) reaches a chat model only when the conversation's pinned provider - or a voice setup only
+  when the voice vendor - is cleared for it in `AGENT_PROVIDER_DATA_CLASSES`; a provider not listed is `none`. A turn
+  whose provider is not cleared is exactly as before M1 (no pack, the opening snapshot), and its `agent.turn` record
+  says `learner_pack.withheld: provider_not_cleared`. A re-pin to a provider not cleared stops a pack already built.
+  `full_memory` is defined for M2/M3 and gates nothing yet.
 - No change to writing review or text discussion (M4).
 
 ## Rollout
 
-`AGENT_LEARNER_PACK=off` by default, like the M0 layout rollout, and off outside a deliberately approved test lane
-until the G8 provider data classes are enforced or the test provider is explicitly cleared for `learning_profile`
-data (owner review of PR #260). Suggested: switch it on in the test lane with the M0
+`AGENT_LEARNER_PACK=off` by default, like the M0 layout rollout. To try it in an approved test lane, both are needed:
+`AGENT_LEARNER_PACK=on` and the test provider cleared by the owner, for example
+`AGENT_PROVIDER_DATA_CLASSES=gemini=learning_profile` (the owner's record of that provider's retention and training
+terms; owner review of PR #260). Suggested: switch it on in the test lane with the M0
 live benchmark, compare answer quality with and without it (EN and ZH), and look at `agent.turn` records
 (`learner_pack.tokens`, `trimmed`, `evidence_lines`). Default on only after that.
 

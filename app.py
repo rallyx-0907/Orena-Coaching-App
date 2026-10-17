@@ -992,6 +992,7 @@ from writing_coach.agent.retention import TurnTelemetryRetention, sweep_enabled 
 from writing_coach.agent.limits import DEFAULT_LIMITS as _AGENT_DEFAULT_LIMITS, LiveAgentLimits  # noqa: E402
 from writing_coach.agent.prompts import PromptLayout  # noqa: E402
 from writing_coach.agent.memory_pack import PackBuilder, PackSources, pack_enabled_from_env  # noqa: E402
+from writing_coach.agent.data_class import ProviderDataClasses  # noqa: E402
 from writing_coach.agent.budget import LiveSpendGuard  # noqa: E402
 
 
@@ -1208,6 +1209,8 @@ configure_agent(_with_voice(
         # ORENA_MEMORY.md M1: the learner pack, off unless AGENT_LEARNER_PACK=on. Each read runs inside the learner's
         # request context, through the same compositions the routes and the read tools use.
         pack=PackBuilder(enabled=pack_enabled_from_env(os.environ), sources=_agent_pack_sources()),
+        # G8: which provider may receive the pack (learning_profile); a provider not listed is `none`.
+        data_classes=ProviderDataClasses.from_env(os.environ),
     )
     if agent_enabled(os.environ)
     else None
