@@ -1,6 +1,6 @@
 # Orena Memory: one learner context pack for every model and channel
 
-Status: PROPOSAL rev 4.1 (issue #256). Rev 2 (`7ddb5718`) APPROVED for M0 and M1 (both merged, with A1 and A2). Rev 3
+Status: PROPOSAL rev 4.1 (issue #256); its decisions are D-222, ACCEPTED by the owner 2026-10-17 on PR #265. Rev 2 (`7ddb5718`) APPROVED for M0 and M1 (both merged, with A1 and A2). Rev 3
 (`061868e0`) answered the owner's four points; its architecture review asked for changes (12 P1, F1-F12). Rev 4 answers
 them (§13); M2/M3 schema work waits for its review.
 Lane: Orena Intelligence (D-085, D-086). Rev 1 2026-10-17 on `main` 18023079; revs 2, 3 and 4 2026-10-17.
@@ -668,7 +668,7 @@ head). `downgrade()` drops learner data and is for rehearsal only.
 | G10 | continuity TTL 14 days, 10 summaries per learner and language; raw learner statements only | APPROVED |
 
 Agreed by the owner in the Intelligence-lane session on 2026-10-17 ("đồng ý 3 mục"). Rev 4 records them; each becomes
-binding when the owner writes "D-xxx: ACCEPTED" on the Decision Log entry this PR proposes:
+binding as D-222 (ACCEPTED by the owner on PR #265, 2026-10-17):
 
 - **G8 test clearance.** Gemini is cleared for `learning_profile` in the approved test lane:
   `AGENT_PROVIDER_DATA_CLASSES=gemini=learning_profile` with `AGENT_LEARNER_PACK=on` there. Not `full_memory`, not
