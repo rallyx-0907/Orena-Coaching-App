@@ -44,7 +44,7 @@ os.environ.setdefault("PERSISTENCE_BACKEND", "sqlite")
 
 from writing_coach.agent.fake_provider import FakeAgentTurnProvider, call_tools, reply  # noqa: E402
 from writing_coach.agent.platform_provider import wire_message, wire_tool  # noqa: E402
-from writing_coach.agent.prompts import PromptLayout  # noqa: E402
+from writing_coach.agent.prompts import TURN_CONTEXT_HEAD, PromptLayout  # noqa: E402
 from writing_coach.agent.provider import (  # noqa: E402
     ProviderTurnRequest,
     ToolCallRequest,
@@ -63,6 +63,7 @@ LAYOUTS = {
     "stable": PromptLayout(cache_stable=True, stable_tools=False),
     "stable+tools": PromptLayout(cache_stable=True, stable_tools=True),
 }
+CONTEXT_HEADS = ("context: ", TURN_CONTEXT_HEAD)
 MIN_CACHEABLE_TOKENS = 1024  # the smallest prefix the OpenAI-compatible providers cache implicitly
 
 SCRIPTS = {
@@ -223,11 +224,11 @@ def prefix_reuse(requests: list[ProviderTurnRequest]) -> dict[str, Any]:
     composition = {
         "tools": estimate_tokens(json.dumps([wire_tool(t) for t in last.tools], ensure_ascii=False)),
         "instruction": estimate_tokens(last.messages[0].content),
-        "context": sum(estimate_tokens(m.content) for m in last.messages if m.content.startswith("context: ")),
+        "context": sum(estimate_tokens(m.content) for m in last.messages if m.content.startswith(CONTEXT_HEADS)),
         "conversation": sum(estimate_tokens(m.content) for m in last.messages[1:]
                             if m.role in ("user", "assistant", "tool")),
         "other_system": sum(estimate_tokens(m.content) for m in last.messages[1:]
-                            if m.role == "system" and not m.content.startswith("context: ")),
+                            if m.role == "system" and not m.content.startswith(CONTEXT_HEADS)),
     }
     return {"requests": len(requests), "input_tokens_est": total, "reusable_prefix_tokens_est": reusable,
             "last_request_composition_est": composition,

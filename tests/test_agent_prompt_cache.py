@@ -137,20 +137,39 @@ def test_stable_tools_list_the_same_tools_every_round_and_every_turn():
 
 
 def test_stable_tools_still_refuse_what_the_turn_does_not_allow():
-    # An opening turn reads nothing (§3.2): a read the model asks for is answered "unavailable" and never runs.
-    seen = []
+    # resolve_pending is listed though no offer is open: a call to it is answered "unavailable" and nothing runs.
     rounds = [
-        (ToolCallRequest("c1", "get_test_items", {"limit": 1}), TurnFinished(0, 5, "tool_calls")),
-        reply("Chào bạn."),
+        (ToolCallRequest("c1", "resolve_pending", {"id": "p1", "decision": "confirm"}), TurnFinished(0, 5, "tool_calls")),
+        reply("Ok."),
     ]
     rt, provider = runtime(rounds)
     rt.prompt = PromptLayout(stable_tools=True)
-    original = rt.tools.invoke
-    rt.tools.invoke = lambda *a, **k: seen.append(a) or original(*a, **k)  # type: ignore[method-assign]
-    run(rt, _open_request())
-    assert seen == []
+    events = run(rt)
+    assert not [e for e in events if e.name == "action"]
     answered = [m.content for m in provider.requests[1].messages if m.role == "tool"]
     assert answered == ["unavailable: not offered in this turn"]
+
+
+def test_a_call_on_the_last_round_despite_tool_choice_none_never_runs():
+    limits = AgentLimits(max_tool_iterations_per_turn=1)
+    seen = []
+    rounds = [call_tools(("c1", "get_test_items", {"limit": 1})), call_tools(("c2", "get_test_items", {"limit": 1}))]
+    rt, provider = runtime(rounds, limits=limits)
+    rt.prompt = PromptLayout(stable_tools=True)
+    original = rt.tools.invoke
+    rt.tools.invoke = lambda *a, **k: seen.append(a) or original(*a, **k)  # type: ignore[method-assign]
+    events = run(rt)
+    assert provider.requests[1].tool_choice == "none" and len(seen) == 1  # the first round's read only
+    assert events[-1].name == "error"  # nothing was answered: the turn fails closed, it does not loop
+
+
+def test_an_opening_is_not_shown_tools_it_may_not_call():
+    # Each refused call would be one more model round of a turn that is free to the learner.
+    rt, provider = runtime([reply("Chào bạn.")])
+    rt.prompt = PromptLayout(stable_tools=True)
+    run(rt, _open_request())
+    names = {t.name for t in provider.requests[0].tools}
+    assert "get_test_items" not in names and "remember_note" not in names and "resolve_pending" not in names
 
 
 def test_layout_from_the_environment_refuses_to_guess():
@@ -210,6 +229,48 @@ def test_a_pinned_model_that_can_no_longer_stream_is_pinned_again():
     run(rt, turn_request("q2", session_id=session_of(first)))
     assert provider.requests[1].route == B
     assert records[-1]["model_route"] == {"provider": "groq", "model": "openai/gpt-oss-120b", "pinned": "repinned"}
+
+
+def test_after_a_provider_failure_the_moved_selection_is_pinned():
+    from writing_coach.agent.errors import ProviderUnavailable
+    from writing_coach.agent.fake_provider import fail
+
+    rt, provider = runtime([reply("a1"), fail(ProviderUnavailable("model retired")), reply("a3")])
+    rt.router = Router(A)
+    first, = conversation(rt, "q1")
+    sid = session_of(first)
+    run(rt, turn_request("q2", session_id=sid))  # fails on A
+    rt.router.selection = B  # the operator moves the selection to fix it
+    run(rt, turn_request("q3", session_id=sid))
+    assert [r.route for r in provider.requests] == [A, A, B]
+
+
+def test_a_pinned_model_kept_when_the_selection_moves_without_a_failure():
+    rt, provider = runtime([reply("a1"), reply("a2")])
+    rt.router = Router(A)
+    first, = conversation(rt, "q1")
+    rt.router.selection = B
+    run(rt, turn_request("q2", session_id=session_of(first)))
+    assert provider.requests[1].route == A
+
+
+def test_a_turn_that_asks_no_model_pins_nothing():
+    rt, provider = runtime([])
+    rt.router = Router(A)
+    records = []
+    rt.record_turn = lambda user, record: records.append(record)
+    run(rt, turn_request("Bạn là ai?"))  # an identity question is answered from copy
+    assert provider.requests == [] and "model_route" not in records[-1]
+
+
+def test_a_pricer_that_takes_no_route_still_prices_the_turn():
+    rt, provider = runtime([reply("a1")])
+    rt.router = Router(A)
+    rt.price_summary = lambda i, o: {"provider": "gemini", "model": "m", "cost": 0.001}
+    records = []
+    rt.record_turn = lambda user, record: records.append(record)
+    run(rt)
+    assert records[-1]["cost_upper_bound"] == 0.001
 
 
 def test_without_a_router_nothing_is_pinned():

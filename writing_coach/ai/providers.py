@@ -1012,6 +1012,8 @@ class OpenAICompatibleProvider:
             "stream": True,
             "max_tokens": max_output_tokens,
         }
+        if tools and tool_choice == "none" and self.id not in _TOOL_CHOICE_PROVIDERS:
+            tools = []  # not known to take tool_choice: no tools at all, as before the stable tool list
         if tools:
             body["tools"] = tools
             if tool_choice is not None:
@@ -1150,6 +1152,9 @@ def _error_detail(response: Any) -> str:
 # (`stream_options.include_usage`). Groq reports it unasked (`x_groq.usage`).
 # Gemini's OpenAI-compatible endpoint: verified by the agent's live run, 2026-09-28.
 _STREAM_USAGE_PROVIDERS = frozenset({"openai", "deepseek", "gemini"})
+# Endpoints whose chat/completions take `tool_choice: "none"` (documented OpenAI-compatible). Any other is sent no
+# tools instead on a round that may not call one: the same answer, without the risk of a 400 on that last round.
+_TOOL_CHOICE_PROVIDERS = frozenset({"openai", "deepseek", "groq"})
 
 
 def _tool_call_key(part: dict[str, Any], position: int, order: list[object]) -> object:

@@ -495,6 +495,20 @@ def test_tool_choice_is_sent_only_with_tools(monkeypatch):
     assert "tool_choice" not in seen[1][1]["json"] and "tool_choice" not in seen[2][1]["json"]
 
 
+def test_an_endpoint_not_known_to_take_tool_choice_gets_no_tools_on_that_round(monkeypatch):
+    seen = []
+    post_returning(monkeypatch, StreamResponse([finish("stop")]), seen)
+    tools = [{"type": "function", "function": {"name": "get_x", "description": "x", "parameters": {"type": "object"}}}]
+    run(provider(monkeypatch, "gemini"), tools=tools, tool_choice="none")
+    body = seen[0][1]["json"]
+    assert "tools" not in body and "tool_choice" not in body  # as before the stable tool list: no 400 risk
+
+
+def test_a_route_to_a_model_the_allowlist_refuses_is_not_usable(monkeypatch):
+    monkeypatch.setattr(platform, "providers", lambda: {"openrouter": Selected(provider_id="openrouter")})
+    assert not platform.agent_route_usable(("openrouter", "openrouter/auto"))
+
+
 def test_a_pinned_route_streams_on_its_own_provider_not_the_selection(monkeypatch, telemetry):
     events = [ChatFinished("stop", prompt_tokens=5, completion_tokens=1)]
     pinned, selected = Selected(events=events, provider_id="groq"), Selected(events=events)

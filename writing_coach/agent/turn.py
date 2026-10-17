@@ -495,6 +495,9 @@ class _Turn:
             raise
         except AgentError as exc:
             self._notes_unresolved()
+            if isinstance(exc, ProviderUnavailable) and self.route is not None:
+                self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                        lambda state: state.with_route_outcome(self.route, failed=True))  # fmt: skip
             if not self.should_stop():
                 if not released:
                     yield opened
@@ -570,7 +573,7 @@ class _Turn:
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
             budget_tokens=self.rt.limits.max_input_tokens_per_turn, cache_stable=self.rt.prompt.cache_stable,
         )
-        self.route = self._pin_route(session)
+
         answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
         if (self.focused and word_in_view and not answering
                 and (asks_about_status(turn.message) or asks_to_go(turn.message))):  # fmt: skip
@@ -614,6 +617,7 @@ class _Turn:
         if selected is not None and selected.type in SELECTED_ID_KEYS:
             outputs.learn_ids(SELECTED_ID_KEYS[selected.type], (selected.id,))
         if not self.no_model:
+            self.route = self._pin_route(session)  # only a turn that asks a model pins one
             yield from self._rounds(messages, outputs)
         if self.should_stop():
             return
@@ -633,21 +637,31 @@ class _Turn:
         if router is None:
             return None
         pinned = session.model_route
-        if pinned is not None and router.usable(pinned):
-            self.timeline.facts["model_route"] = {**pinned.public(), "pinned": "kept"}
-            return pinned
         try:
-            route = router.current()
+            current = router.current()
         except Exception:  # noqa: BLE001 - no route: the round reads the selection itself, as before M0
             _log.warning("agent route not chosen", exc_info=True, extra={"trace_id": self.trace_id})
-            route = None
-        if route is None:
+            current = None
+        # Kept while it can stream here - unless its last turn failed at the provider and Admin has since selected
+        # another model: that is the outage the selection was moved for.
+        moved_after_failure = session.model_route_failed and current is not None and current != pinned
+        if pinned is not None and router.usable(pinned) and not moved_after_failure:
+            self._route_fact(pinned, "kept")
+            return pinned
+        if current is None:
             self.timeline.facts["model_route"] = {"provider": None, "model": None, "pinned": "none"}
             return None
-        self.timeline.facts["model_route"] = {**route.public(), "pinned": "repinned" if pinned else "new"}
+        route = current
+        self._route_fact(route, "repinned" if pinned else "new")
         self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
                                 lambda state: state.with_model_route(route))  # fmt: skip
         return route
+
+    def _route_fact(self, route: ModelRoute, how: str) -> None:
+        from writing_coach.ai.control_plane import safe_model_display
+
+        model, _ = safe_model_display(route.model)  # the same operator-safe label the round telemetry keeps
+        self.timeline.facts["model_route"] = {"provider": route.provider, "model": model or None, "pinned": how}
 
     def _opening_snapshot(self) -> dict | None:
         """S13 is built on the learner's snapshot: read here, by the server, not asked of the model."""
@@ -719,7 +733,10 @@ class _Turn:
         if self.screen_help:
             # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
             reply_specs = tuple(spec for spec in reply_specs if spec.name in SCREEN_HELP_REPLY_TOOLS)
-        listed = self._listed_tools() if self.rt.prompt.stable_tools else None
+        # An opening or a screen-help turn is not shown tools it may not call: each refused call would be one more
+        # model round, and an opening is free to the learner. Those turns keep the per-round list.
+        listed = (self._listed_tools() if self.rt.prompt.stable_tools and not self.opening and not self.screen_help
+                  else None)
         self.timeline.facts["prompt_layout"] = self.rt.prompt.version
         limit = self.rt.limits.max_tool_iterations_per_turn
         nudged = notes_nudged = evidence_nudged = False
@@ -1128,6 +1145,8 @@ class _Turn:
                 state = state.with_outcome(live=self.live, settle=self.settle, new_offer=self.new_offer, ran=self.ran)
             for record in self.records:
                 state = state.with_tool_result(record, limit=limit)
+            if self.route is not None:  # the conversation's model answered: it is not in an outage
+                state = state.with_route_outcome(self.route, failed=False)
             return state
 
         # None when it expired meanwhile: the next turn opens a new one.
@@ -1199,7 +1218,10 @@ class _Turn:
             return none
         try:
             if self.route is not None:
-                return self.rt.price_summary(input_tokens, output_tokens, route=self.route)
+                try:
+                    return self.rt.price_summary(input_tokens, output_tokens, route=self.route)
+                except TypeError:  # a pricer that takes no route prices the selection, as before M0
+                    pass
             return self.rt.price_summary(input_tokens, output_tokens)
         except Exception:
             return none

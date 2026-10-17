@@ -69,6 +69,7 @@ from writing_coach.ai.routing import (
 from writing_coach.ai.providers import (
     OpenAICompatibleProvider,
     build_providers,
+    check_model_allowed,
     get_provider_definition,
     normalize_openai_base_url,
     provider_definitions,
@@ -575,6 +576,10 @@ def agent_route_usable(route: tuple[str, str]) -> bool:
 
     item = providers().get(route[0])
     if item is None or getattr(item, "kind", "") != "cloud" or not item.configured or not route[1]:
+        return False
+    try:
+        check_model_allowed(item.id, route[1])  # e.g. an OpenRouter free model since dropped from the catalogue
+    except (AICapabilityError, AIProviderError):
         return False
     definition = get_provider_definition(item.id)
     return bool(definition is not None and definition.supports(AIOperation.AGENT_TURN)
