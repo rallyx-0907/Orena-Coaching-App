@@ -1,6 +1,6 @@
 # PR-MON-10: Polar card subscriptions, the launch path for plans (design)
 
-**Status: DESIGNING, revision 3 (docs only), for a targeted delta re-review of §4.8.** Revision 2 answered the review of `6396fef3` (4 P1) and recorded the owner's answers to Q1-Q4 (§0). Revision 3 answers the review of `29ef5a4e` (1 P1): the Polar customer clean-up is an obligation of the deleted incarnation, with its own durable marker (§4.8). Base: `main` `2dc57aa3`. Owner decision: D-MON-032 (plans
+**Status: DESIGNING, revision 3.1 (docs only), for a targeted delta re-review of §4.8's discovery rule.** Revision 2 answered the review of `6396fef3` (4 P1) and recorded the owner's answers to Q1-Q4 (§0). Revision 3 answers the review of `29ef5a4e` (1 P1): the Polar customer clean-up is an obligation of the deleted incarnation, with its own durable marker (§4.8). Base: `main` `2dc57aa3`. Owner decision: D-MON-032 (plans
 are auto-renewing card subscriptions through Polar; SePay only tops up Credits). This is a payment and entitlement
 change, so it needs independent review before code. Nothing is enabled. `BILLING_ENABLED` stays off on every shared
 runtime, and Polar Live is a human gate.
@@ -20,6 +20,7 @@ runtime, and Polar Live is a human gate.
 | **P1-2:** Q2 not a concrete contract | §4.5: Polar portal settings are `allow_customer_updates=true`, `update_plan=true`, `proration_behavior=invoice`. `product_id` is the source of truth. An unknown product id gives `event_undecided`, never a fallback to the old plan. |
 | **P1-3:** the checkout's trial and discount defaults | §4.1: checkout always sends `allow_discount_codes=false` and `allow_trial=false` (both default to true on Polar). |
 | **Rev 3 / P1 (review of `29ef5a4e`):** the clean-up was found through subscription mappings and confirmed by the commerce state `ended`, which proves nothing (a subscription can end before the deletion) | §4.8 rewritten. The obligation belongs to the **deleted incarnation**, found from the incarnation itself, including incarnations whose subscription already ended. Completion is a **separate durable marker**, never inferred from `ended`. The obligation survives restart and restore. A new incarnation's checkout waits for its predecessor's clean-up. `ACCOUNT_DELETION_RUNBOOK.md` gains the step. |
+| **Rev 3.1 / P1 (review of `b99715c4`):** discovery required a Polar order or mapping, which a restore to a backup taken before the checkout loses, so a real Polar customer would never be cleaned up | Discovery is **every deleted incarnation without a `complete` marker** (§4.8). An incarnation that never used Polar costs one DELETE answered 404. The `platform_settings` marker is accepted for v1. |
 | **P1-4:** deletion lifecycle for `external_customer_id` | §4.8: when an incarnation is deleted, Orena calls `DELETE /v1/customers/external/{incarnation}` (scope `customers:write`). This immediately cancels active subscriptions and revokes benefits, with `anonymize=true`. It is retried until done, and recorded. |
 
 ## 1. Goal
@@ -193,17 +194,20 @@ DELETE /v1/customers/external/{incarnation}?anonymize=true      (scope customers
       +-- PENDING past the bound (24 h from the first attempt) -> operator item, retries continue
 ```
 
-**Discovery: derived, so it cannot be lost.**
-- Pending clean-up is computed, not queued: every incarnation with `status = 'deleted'` that ever started a Polar
-  checkout (a `billing_orders` row with `gateway = 'polar'`) or has a Polar subscription mapping, **whatever that
-  subscription's state**, and that has no `complete` marker.
-- An incarnation whose subscription ended long before the deletion is therefore still cleaned up: its Polar customer
-  exists and holds personal data.
-- It over-approximates: a checkout that was never paid may have created no customer. The answer is then 404, which is
-  complete.
-- Because the obligation is derived from the deleted incarnation, it survives a restart. It also survives a restore:
-  the deletion journal reapplies the deletion before anything is served (`deletion_journal.py`, D-054), and the
-  derivation finds the obligation again.
+**Discovery: every deleted incarnation, so it cannot be lost (revision 3.1).**
+- Pending clean-up is computed, not queued: **every incarnation with `status = 'deleted'` that has no `complete`
+  marker** is a Polar clean-up obligation. There is no condition on Polar orders or mappings.
+- **Why no Polar condition.** A restore can drop that evidence. If a backup is taken before the learner's Polar
+  checkout, and the account is deleted afterwards, the restored database has no Polar order or mapping. The deletion
+  journal (which keeps only id, account, epoch and times) reapplies the deletion, but cannot say that a Polar customer
+  exists. An evidence-based rule would then drop a real customer. Deleting by external id needs no evidence.
+- **Cost.** An incarnation that never used Polar costs one DELETE: 404, then `complete`. A subscription that ended long
+  before the deletion is cleaned up the same way.
+- **Restart and restore.** Because the obligation comes from the deleted incarnation alone, it survives a restart. It
+  also survives a restore: the journal reapplies the deletion before anything is served (`deletion_journal.py`,
+  D-054), and the rule finds the obligation again.
+- **Without Polar.** While Polar is not configured (no token), the step does nothing and the obligations stay pending.
+  They are counted, not escalated, and run once Polar is configured.
 
 **The durable marker: an existing primitive, no schema change.**
 - One `platform_settings` row per cleaned incarnation, key `billing.polar.customer_cleanup.<incarnation id>`, written
@@ -268,6 +272,11 @@ The runbook stays DRAFT and keeps its own independent-review gate.
   - a subscription already `ended` before the account is deleted: the Polar customer is still deleted;
   - a deleted incarnation, then a restart: the clean-up is still pending and continues;
   - a lost marker (row removed, or a restore to before completion): the DELETE re-runs, gets 404 and completes;
+  - **restore gap:** a backup taken before the Polar checkout, then the account deleted, then the backup restored: the
+    journal reapplies the deletion, the restored database has no Polar order or mapping, and the clean-up **still**
+    calls DELETE, completing on 204 or 404;
+  - a deleted incarnation that never used Polar: one DELETE, 404, complete, and no further calls;
+  - Polar not configured: no call, the obligation stays pending without escalation;
   - 204 completes; 404 completes and repeating is harmless;
   - a failure retries with back-off, then escalates to one operator item, which resolves on completion;
   - `complete` is written only on 204 or 404, never inferred from a commerce state;
