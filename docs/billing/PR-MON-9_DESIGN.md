@@ -1,6 +1,6 @@
 # PR-MON-9: Plan & usage, Pricing, Billing Sheet and Credits Payment on the real backend (design)
 
-**Status: DESIGNING, revision 2 (docs only), for a targeted re-review.** Base: `main` `75e65863`. Owner decisions:
+**Status: DESIGNING, revision 3 (docs only), for a targeted re-review.** Revision 3 answers the review of `8d6f2985` (2 P1, 1 P2): §4.2 durable operations, §3.6 fail-closed pending changes, §4.1 caching. Base: `main` `75e65863`. Owner decisions:
 D-MON-033. Revision 2 answers the review of `4e4da27b` (4 P1, 2 P2) and records the answers to Q1-Q4 (§0). This PR
 changes learner-facing UI and adds payment-changing backend routes. No code until the design is approved; nothing is
 enabled; gate 7b stays the activation.
@@ -14,6 +14,9 @@ enabled; gate 7b stays the activation.
 | **P1-3** pending-change state machine incomplete; Cancel hidden during a pending change | §3.6: transitions for pending downgrade → cancel, pending downgrade → upgrade, and keep current. **Cancel is always available on a live paid plan.** Webhook reordering is handled by Polar's own revision. |
 | **P1-4** invoice download treated as synchronous; ownership checked through a paginated list | §3.4 and §4.3: GET first; if missing, generate (asynchronous) and answer 202 "preparing"; the client polls within a bound, then redirects. **Ownership is checked by fetching the order by id** and comparing its customer with the incarnation's Polar customer. |
 | **P2-1** checkout state machine | §3.2: summary → embed → "Processing payment…" (on `confirmed`) → overlay closed on `success` (embed told not to redirect) → "Activating your plan…" → `done` on the webhook. Closing the overlay after `confirmed` never reads as a failure. |
+| **Rev 3 / P1-1 (review of `8d6f2985`)** plan-change idempotency not durable | §4.2.1: an operation journal persisted **before** the Polar PATCH, keyed by `operation_id` with a request digest. Same operation and request → the original answer or a reconcile; different request → 409 `operation_conflict`. An ambiguous PATCH outcome (timeout, 5xx, broken connection) → `provider_unknown` → reconciled only by **reading** the Polar subscription, **never a second PATCH**. |
+| **Rev 3 / P1-2** pending downgrade without a fail-closed fallback | §3.6.1: `next_period` changes (downgrade, period down) **ship only if the sandbox proves** that cancel and upgrade while a change is pending are safe on Polar. If not, v1 does not offer a scheduled change: a downgrade is offered only as "cancel at period end, then choose a plan", and a period-down is not offered. No account is put into `active+pending` before the exits are proven. |
+| **Rev 3 / P2** a 30 s cache of the whole subscription answer | §4.1: the commerce and access state is read **fresh from the local record on every request**. Only the Polar enrichment (`pending_update`, payment method, billing email) is cached, 30 s per account. |
 | **P2-2** origins | §4.5: the sandbox gets a stable HTTPS hostname, a Google OAuth client and redirect for it, and that origin in Polar's Embedding allowlist. Production origin likewise. |
 
 **Answers (review and owner, 2026-10-17):**
@@ -190,6 +193,28 @@ the same rule (a shared table of the five rows) only to choose copy, and the ser
 | cancelling | any plan change | refused, 409 `cancelling`: Resume first | unchanged |
 
 - **No state traps the learner:** from every live state, Cancel or Resume is available.
+
+#### 3.6.1 Fail-closed: scheduled changes ship only once their exits are proven
+
+The `active+pending` rows above depend on Polar's behaviour while a change is pending. **Before any account can enter
+`active+pending`**, the first implementation slice proves on the sandbox:
+
+1. a `next_period` change creates a `pending_update`, and the subscription keeps its plan until renewal;
+2. **pending → cancel at period end** is accepted, and at period end the subscription ends (the pending change does
+   not apply);
+3. **pending → an immediate upgrade** is accepted and supersedes the pending update;
+4. (optional) an official, idempotent removal of the pending update, for "Keep {cur}" (Q2).
+
+**The contract:**
+- **1-3 proven:** `next_period` downgrades and period-downs ship, and Keep ships only if 4 is proven too.
+- **1-3 not all proven:** v1 ships **no scheduled change**:
+  - a downgrade (Pro → Plus) is offered as **"Cancel at period end"**, after which the learner chooses Plus once the
+    plan has ended, through a new checkout;
+  - a period-down (yearly → monthly) is not offered, and the gap is recorded;
+  - the server refuses `next_period` (409 `change_unavailable`), whatever the client sends;
+  - no account is ever put into `active+pending`.
+- **The switch is a server constant set from the proof, not a client flag.** The proof is recorded in
+  `PR-MON-9_E2E_EVIDENCE.md`.
 - **Webhook reordering and redelivery:** each event carries Polar's own `modified_at` revision (PR-MON-10). An older
   event never overwrites a newer state, and a redelivery is a duplicate.
 - The `pending_change` the UI shows is read from Polar's `pending_update` on the latest applied event, or from the
@@ -225,7 +250,14 @@ Fields:
 - `payment_method` (§4.4);
 - `billing_email`.
 
-Cached for 30 s per account. A Polar read that fails returns the record's fields with `live: false`.
+**Freshness.**
+- **The commerce and access fields** (`plan`, `period`, `status`, `renews_at`, `cancel_at_period_end`) are read
+  **fresh from the local commerce record on every request**, never cached. The embedded checkout's 2 s activation poll
+  (§3.2) and every sheet's `processing` wait therefore see the webhook's write at once.
+- **Only the Polar enrichment** (`pending_change` from `pending_update`, `payment_method`, `billing_email`) is cached,
+  30 s per account. It is dropped as soon as a route of this account changes the subscription, or a webhook for it
+  arrives.
+- A Polar read that fails returns the local fields with `enrichment: "unavailable"`.
 
 ### 4.2 Plan change
 
@@ -239,8 +271,50 @@ Cached for 30 s per account. A Polar read that fails returns the record's fields
     409 `price_changed`.
   - **Case B:** no amount is taken or checked.
   - It sends `PATCH /v1/subscriptions/{id}` `{product_id, proration_behavior}` from §3.5.
-  - Idempotent by `operation_id`: a repeat returns the first answer and never sends a second PATCH.
+  - Idempotent by `operation_id`, durably (§4.2.1).
   - Polar 402 → 402 `payment_failed`. The state rules of §3.6 → 409 `change_pending` / `cancelling` / `no_change`.
+
+### 4.2.1 The operation journal (durable idempotency)
+
+Every Polar write of §4.2 and §4.3 (`change`, `cancel`, `resume`, `keep`) goes through one journal. It uses an
+existing primitive: one `platform_settings` document per operation, key `billing.polar.op.<operation_id>`, written
+with compare-and-set as the clean-up marker is (PR-MON-10 §4.8). No schema change. If the reviewer wants a table at
+scale, that is a separate schema review; the contract is the same.
+
+**The document** holds no card data and no Polar body:
+- `incarnation`, `action`;
+- `request_digest`: a SHA-256 of the canonical request (action, subscription id, target product, proration
+  behaviour, reason);
+- `state`: `pending` | `sent` | `done` | `refused` | `provider_unknown` | `not_applied`;
+- the Polar status code, and the times.
+
+**The sequence:**
+
+1. **Before any Polar call**, the operation is written `pending` with CAS on a missing key.
+   - The key already exists, for the same incarnation and the same `request_digest` → **no Polar call**. Answer from
+     its state:
+     - `done` / `refused`: the original answer;
+     - `pending` / `sent`: 202 "in progress";
+     - `provider_unknown`: run the reconcile below;
+     - `not_applied`: the original "not applied" answer.
+   - The key exists with a **different** digest or incarnation → **409 `operation_conflict`**, and nothing is sent.
+2. It is marked `sent`, then the PATCH is sent. **This is the only PATCH an operation ever sends.**
+3. On Polar's answer:
+   - 2xx → `done`;
+   - a definite 4xx (402 declined, 409, 422) → `refused`, with the code;
+   - **a timeout, a 5xx or a broken connection** → **`provider_unknown`**.
+4. **Reconciling `provider_unknown`**, by reads only, both inline when the client asks again and in the billing
+   reconciler: `GET /v1/subscriptions/{id}`.
+   - If the subscription shows the operation's effect, the operation is `done`. The effects:
+     - the target product is current or is the `pending_update` (change);
+     - `cancel_at_period_end` is as asked (cancel / resume).
+   - If it does not, and Polar's `modified_at` has not moved past the operation's `sent` time for **15 minutes**, the
+     operation is `not_applied` and the learner may start over **with a new operation id**.
+   - **The same operation is never PATCHed again.**
+   - Money taken by an ambiguous change is Polar's to report: its `order.paid` arrives as evidence (PR-MON-10), and
+     access follows the subscription webhook.
+5. The UI keeps `processing` while an operation is `pending` / `sent` / `provider_unknown`, and polls the local record
+   (§4.1) and the operation.
 
 ### 4.3 Cancel, resume, invoices
 
@@ -347,6 +421,17 @@ token can read the method's brand, last4 and expiry. If not, the row reads "Card
 - the case A/B proof.
 
 ## 7. Open before code
+
+Revision 3 adds to the tests of §6:
+- the operation journal:
+  - same operation and request → no second PATCH;
+  - different request → 409;
+  - timeout → `provider_unknown` → reconciled `done` or `not_applied` by reads only;
+  - redelivery and reconciler races;
+- the fail-closed switch: with scheduled changes off, `next_period` is refused and the downgrade offer is
+  cancel-at-period-end;
+- §4.1: an activation poll sees the webhook's write immediately (no cache on the local fields).
+
 
 Proven on the sandbox in the first implementation slice; each changes a §3/§4 branch, not the shape:
 - case A or B (proration preview);
