@@ -127,7 +127,8 @@ class CheckoutIn(BaseModel):
 
 # A refused checkout's HTTP answer; anything not named is a conflict with the account's state (409).
 _REFUSAL_STATUS = {"catalog_unavailable": 503, "price_unconfirmed": 422, "reconciliation_critical": 503,
-                   "credits_not_ready": 503, "polar_price_mismatch": 503, "polar_unreadable": 503}
+                   "credits_not_ready": 503, "polar_price_mismatch": 503, "polar_unreadable": 503,
+                   "previous_customer_cleanup_pending": 503}
 
 
 class ResolveIn(BaseModel):
@@ -200,6 +201,22 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
     except Exception:  # noqa: BLE001 - the gateway's own failure: say so, change nothing else
         raise orena_http_error(502, "gateway_unavailable", "The payment page could not be opened. Try again.",
                                retryable=True) from None
+
+
+@router.post("/api/admin/billing/polar/customer-cleanup")
+def admin_polar_customer_cleanup(request: Request) -> dict[str, Any]:
+    """PR-MON-10 §4.8: run the Polar customer clean-up of deleted incarnations now (the reconciler also runs it).
+    Counts only: no Polar data, no account data."""
+
+    if _admin is None:
+        raise orena_http_error(503, "billing_off", "Payments are not open on this deployment.", retryable=False)
+    _admin(request)  # the administrator first, then whether billing is on
+    service = _require_service()
+    cleanup = getattr(service, "polar_cleanup", None)
+    if cleanup is None:
+        raise orena_http_error(503, "polar_cleanup_unavailable", "The Polar clean-up is not configured.",
+                               retryable=False)
+    return cleanup.run()
 
 
 @router.post("/api/billing/portal")

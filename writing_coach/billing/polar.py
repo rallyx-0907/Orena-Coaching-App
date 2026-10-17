@@ -158,6 +158,17 @@ class PolarGateway:
         return {"method": "GET", "url": API_BASE[self.environment] + "/v1/products/" + quote(product_id, safe=""),
                 "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip
 
+    def customer_delete_request(self, external_customer_id: str) -> dict:
+        """PR-MON-10 §4.8: `DELETE /v1/customers/external/{id}?anonymize=true` (scope `customers:write`): cancels the
+        customer's subscriptions at once, revokes benefits and anonymizes personal data. 204 deleted, 404 none."""
+
+        from urllib.parse import quote
+
+        return {"method": "DELETE",
+                "url": API_BASE[self.environment] + "/v1/customers/external/" + quote(external_customer_id, safe="")
+                + "?anonymize=true",
+                "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip
+
     def customer_session_request(self, external_customer_id: str, return_url: str) -> dict:
         """PR-MON-10 §4.4: `POST /v1/customer-sessions/` (scope `customer_sessions:write`) answers a pre-authenticated
         `customer_portal_url` that expires; the customer is Orena's incarnation (`external_customer_id`)."""

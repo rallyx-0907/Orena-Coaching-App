@@ -275,9 +275,18 @@ class BillingService:
         self._now = now
         # PR-MON-6 §8: the cost gate per pack. It can only remove a pack from sale (K1, K5); None = not attached.
         self._pack_gate: Any = None
+        # PR-MON-10 §4.8: the Polar customer clean-up of deleted incarnations; None = not attached.
+        self._polar_cleanup: Any = None
 
     def attach_credits(self, credits: Any) -> None:
         self._credits = credits
+
+    def attach_polar_cleanup(self, cleanup: Any) -> None:
+        self._polar_cleanup = cleanup
+
+    @property
+    def polar_cleanup(self) -> Any:
+        return self._polar_cleanup
 
     def attach_pack_gate(self, sellable: Any) -> None:
         """`sellable(pack_key) -> bool` (PR-MON-6 §8): a pack failing the cost gate is not offered and not sold."""
@@ -571,6 +580,12 @@ class BillingService:
                 entry["feed"] = "enabled" if getattr(gateway, "feed_enabled", False) else "disabled"
             if gateway is not None and getattr(gateway, "environment", None):
                 entry["environment"] = gateway.environment
+            if name == "polar" and self._polar_cleanup is not None:
+                try:
+                    # §4.8: reported, never a blocker of other accounts' checkouts
+                    entry["customer_cleanup"] = self._polar_cleanup.counts()
+                except Exception:  # noqa: BLE001
+                    entry["customer_cleanup"] = "unavailable"
             if name == "polar" and gateway is not None:
                 entry["provider_prices"] = self.polar_price_state()
                 if entry["provider_prices"] in ("mismatch", "unreadable"):
@@ -608,6 +623,10 @@ class BillingService:
         if provider in ("mismatch", "unreadable"):
             # R-MON-011: Polar charges its product's own price; one that is not the catalogue's sells nothing.
             raise CheckoutRefused("polar_price_mismatch" if provider == "mismatch" else "polar_unreadable")
+        if self._polar_cleanup is not None and not self._polar_cleanup.settle_account_of(incarnation_id):
+            # §4.8: a re-registered account pays only once its deleted predecessor's Polar customer is gone (the same
+            # email must not meet a customer that still exists).
+            raise CheckoutRefused("previous_customer_cleanup_pending")
         self._refuse_second_subscription(incarnation_id, price, gateway)
         order = self._orders.create_order(operation_id=operation_id, incarnation_id=incarnation_id,
                                           gateway=price.gateway, plan_id=price.plan_id, period=price.period,

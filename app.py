@@ -1379,6 +1379,22 @@ def _sepay_feed(service):
                      orders=service.orders)
 
 
+def _polar_cleanup(service):
+    """PR-MON-10 §4.8: the Polar customer clean-up of deleted incarnations, attached to the service (checkout and
+    readiness) and run by the reconciler. Built wherever billing is; it calls Polar only when Polar is configured."""
+
+    if service is None:
+        return None
+    from writing_coach.billing.polar_cleanup import PolarCustomerCleanup, PostgresDeletedIncarnations
+
+    cleanup = PolarCustomerCleanup(gateway=service.gateways.get("polar"),
+                                   incarnations=PostgresDeletedIncarnations(_persistence_runtime.engine),
+                                   settings=_persistence_runtime.platform_repository,
+                                   items=service.reconciliation)  # fmt: skip
+    service.attach_polar_cleanup(cleanup)
+    return cleanup
+
+
 def _billing_reconciler(service):
     """PR-MON-3: the reconciler runs only where billing does; payOS lookups only with payOS's keys (H3)."""
 
@@ -1390,10 +1406,11 @@ def _billing_reconciler(service):
 
     settings = Settings.from_env(os.environ)
     feed = _sepay_feed(service)
+    cleanup = _polar_cleanup(service)
     reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
                                    lock=PostgresTickLock(_persistence_runtime.engine),
                                    lookups=build_lookups(service.gateways), settings=settings, credits=_credits,
-                                   feed=feed)
+                                   feed=feed, polar_cleanup=cleanup)
     return BillingReconcileSchedule(reconciler, interval=settings.interval)
 
 
