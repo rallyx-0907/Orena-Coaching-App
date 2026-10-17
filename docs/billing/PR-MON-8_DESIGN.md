@@ -707,8 +707,8 @@ passed (with `test_billing.py` and `test_billing_price_integrity.py`: 103).
 
 ## 14. Revision 8 delta: only Polar sells plans; readiness by capability (D-MON-032)
 
-**Status: DESIGNING, revision 8.1 (docs only), for independent re-review.** Revision 8.1 answers the review of
-`6b98df21` (3 P1, 1 P2). Under D-MON-032, plans are card subscriptions through Polar, and the domestic gateway (SePay)
+**Status: DESIGNING, revision 8.2 (docs only), for a targeted delta re-review.** Revision 8.1 answered the review
+of `6b98df21` (3 P1, 1 P2). Revision 8.2 answers the review of `cbb095c9` (1 P1, 1 P2, §14.1). Under D-MON-032, plans are card subscriptions through Polar, and the domestic gateway (SePay)
 only tops up Credits. The two are **separate capabilities** with separate readiness. A Polar-only launch (gate 7b)
 must be able to run while Credits and SePay are off, and a SePay Credits-only setup must be able to become ready
 without any plan price.
@@ -721,6 +721,8 @@ without any plan price.
 | **P1-2:** a SePay Credits-only gateway could never be ready, because readiness required plan prices | Readiness is computed **per capability**, `plans` and `credits`, each with its own blockers (§14.4). |
 | **P1-3:** only `sepay` plan prices were refused; payOS could still be reported ready for a blocked checkout | **Every domestic gateway** (`payos`, `sepay`) is refused as a plan gateway, in `load_prices` and `start_checkout`. Only `polar` sells plans (§14.2). |
 | **P2:** `BILLING_STATUS.md` behind `main` | Synced. |
+| **8.2 / P1 (review of `cbb095c9`):** the top-level `ready` and `blockers` contradicted each other (ready with capability blockers listed) | The top-level `blockers` holds **runtime blockers only**. Capability blockers stay in `capabilities.<name>.blockers` and are never copied up. With no capability ready, the top level adds `no_billing_capability_ready` (§14.4). |
+| **8.2 / P2:** the PR wording said "SePay never sells a plan" | It now says no domestic gateway sells a plan. |
 
 ### 14.2 Only Polar sells plans
 
@@ -756,9 +758,12 @@ capabilities.credits = { ready, blockers }
 
 - The **runtime blockers** (switch, PostgreSQL, account backbone, commerce/orders schema, entitlement source, public
   base URL) apply to both capabilities.
-- `ready` (and `billing_ready()`) is true when **at least one** capability is ready and no runtime blocker remains.
-  `blockers` lists the runtime blockers, then each capability's own blockers prefixed by its name (for example
-  `credits:sepay_va_unset`, `plans:no_polar_price`).
+- **Top level:** `ready = (no runtime blocker) AND (at least one capability is ready)`, and `billing_ready()` is the
+  same.
+  - `blockers` lists the **runtime blockers only**, plus `no_billing_capability_ready` when no capability is ready.
+  - A capability's own blockers stay in `capabilities.<name>.blockers` and are **never** copied to the top level. A
+    capability that is off or unused (for example Credits at a Polar-only launch) leaves the top level clean.
+  - So `ready: true` always comes with `blockers: []`, as the runbooks require.
 - `GET /api/billing/offers` returns plan offers only while `plans` is ready, and credit packs only while `credits` is
   ready. A checkout for a capability that is not ready is refused (`billing_not_ready`).
 - `gateway_report` is unchanged for each gateway, and it no longer decides overall readiness alone.
@@ -779,7 +784,12 @@ capabilities.credits = { ready, blockers }
 - **SePay Credits-only production:** packs, credits ready, a VA and a grace set, and no plan price means
   `capabilities.credits.ready` and the runtime ready.
 - **Credits configured, domestic choice missing:** `credits:domestic_gateway_unset`, with plans unaffected.
-- **Neither ready:** not ready, with each capability's blockers listed.
+- **Top level, four cases:**
+  - Polar-only: `ready=true`, `blockers=[]` (Credits' blockers stay under `capabilities.credits`);
+  - Credits-only: `ready=true`, `blockers=[]`;
+  - both ready: `ready=true`, `blockers=[]`;
+  - neither ready: `ready=false`, `blockers` = the runtime blockers + `no_billing_capability_ready`.
+- **A runtime blocker** (for example `billing_off`) makes `ready=false` whatever the capabilities say.
 - **Offers and checkout by capability:** offers list only the ready capability, and a checkout for the other is
   refused.
 
