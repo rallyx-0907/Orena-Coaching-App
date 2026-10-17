@@ -2,6 +2,9 @@
    Admin's one copy table (copy.js). */
 
 export const en = {
+  ctTranscriptCorrections: 'Transcript corrections', ctCorrectionBefore: 'Before', ctCorrectionAfter: 'After',
+  ctCorrectionState_unavailable: 'Automatic transcript correction was unavailable. The raw transcript is held for review.',
+  ctCorrectionState_failed: 'Automatic transcript correction failed. The raw transcript is held for review.',
   ctStatusReview: 'Needs review', ctStatusProcessing: 'Processing', ctFilter_review: 'Needs review', ctFilter_processing: 'Processing',
   ctRightsSave: 'Save rights review', ctRightsSaved: 'Rights review saved',
   ctMediaRightsHelp: 'Clear rights only with a license or permission note. Unknown or denied rights cannot publish; withdrawing clearance removes live media from learners.',
@@ -53,6 +56,9 @@ export const en = {
 };
 
 export const vi = {
+  ctTranscriptCorrections: 'Các chỗ đã sửa trong bản chép lời', ctCorrectionBefore: 'Trước', ctCorrectionAfter: 'Sau',
+  ctCorrectionState_unavailable: 'Không thể tự động sửa bản chép lời. Bản gốc được giữ để duyệt.',
+  ctCorrectionState_failed: 'Sửa bản chép lời tự động không thành công. Bản gốc được giữ để duyệt.',
   ctStatusReview: 'Cần duyệt', ctStatusProcessing: 'Đang xử lý', ctFilter_review: 'Cần duyệt', ctFilter_processing: 'Đang xử lý',
   ctRightsSave: 'Lưu duyệt quyền sử dụng', ctRightsSaved: 'Đã lưu duyệt quyền sử dụng',
   ctMediaRightsHelp: 'Chỉ xác nhận quyền khi có giấy phép hoặc ghi chú cho phép. Quyền chưa rõ hoặc bị từ chối không được xuất bản; rút xác nhận sẽ gỡ nội dung khỏi người học.',
@@ -104,6 +110,9 @@ export const vi = {
 };
 
 export const zh = {
+  ctTranscriptCorrections: '文字稿修正记录', ctCorrectionBefore: '修正前', ctCorrectionAfter: '修正后',
+  ctCorrectionState_unavailable: '自动文字稿修正不可用。原始文字稿已保留，等待审核。',
+  ctCorrectionState_failed: '自动文字稿修正失败。原始文字稿已保留，等待审核。',
   ctStatusReview: '待审核', ctStatusProcessing: '处理中', ctFilter_review: '待审核', ctFilter_processing: '处理中',
   ctRightsSave: '保存授权审核', ctRightsSaved: '已保存授权审核',
   ctMediaRightsHelp: '仅在有许可或授权说明时确认授权。授权不明或被拒绝的内容不可发布；撤回授权会将内容从学习者界面下架。',

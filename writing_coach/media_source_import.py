@@ -317,11 +317,22 @@ class MediaSourceImporter:
 
     def prepare(self, entry: MediaLibraryEntry, *, declared: bool | None = None, batch_id: str = "") -> MediaLibraryEntry:
         """The same transcript admission step for URL and file imports."""
-        from writing_coach.media_transcript_pipeline import Candidate, lines_from_payload, rights_for_source, usable_transcript
+        from writing_coach.media_transcript_pipeline import (
+            CORRECTION_ADMISSION_KEY, CORRECTION_ADMISSION_NEW_ADMIN, Candidate, lines_from_payload,
+            rights_for_source, usable_transcript,
+        )
 
         rights, basis = rights_for_source(entry.provider, entry.canonical_url, declared=declared)
         valid, reason = usable_transcript(entry)
+        existing = self._store.get(entry.media_id)
+        processing = dict(entry.processing or {})
+        processing.pop(CORRECTION_ADMISSION_KEY, None)
+        imported_by = str((entry.source or {}).get("imported_by") or "").casefold()
+        if (self.pipeline is not None and existing is None and entry.library == "shared"
+                and imported_by not in {"", "learner", "preview"}):
+            processing[CORRECTION_ADMISSION_KEY] = CORRECTION_ADMISSION_NEW_ADMIN
         entry = _entry_with(entry, source={**entry.source, "rights": rights, "rights_basis": basis},
+                            processing=processing,
                             status="processing" if self.pipeline else ("published" if valid and rights == "cleared" else "review"))
         self._store.upsert(entry)
         if self.pipeline:
@@ -624,6 +635,8 @@ class MediaSourceImporter:
                 "original_url": asset.source_url,
                 "creator": acquisition.provenance.get("author", ""),
                 "creator_url": acquisition.provenance.get("author_url", ""),
+                # Optional only: oEmbed has no description, so an absent value stays absent.
+                "description": acquisition.provenance.get("description", ""),
                 # Which caption track the transcript is (manual or auto), or that the provider refused the captions (D-213).
                 "caption_kind": acquisition.provenance.get("caption_kind", ""),
                 "caption_status": acquisition.provenance.get("caption_status", ""),

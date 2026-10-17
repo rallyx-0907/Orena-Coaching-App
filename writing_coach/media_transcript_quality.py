@@ -11,6 +11,7 @@ _ONLY_MARKS = re.compile(r"^[\W_]+$", re.UNICODE)
 _BRACKETED = re.compile(r"^\s*[\[\(（【]\s*(.*?)\s*[\]\)）】]\s*$")
 _TAG = re.compile(r"<[^>]+>")
 _SPACE = re.compile(r"\s+")
+_EN_NOISE = re.compile(r"\[\s*(?:music|applause|laughter|laughs|cheering|cheers)\s*\]", re.IGNORECASE)
 _ZERO_WIDTH = re.compile(r"[\u200b-\u200f\u2060\ufeff]")
 _MUSIC = re.compile(r"[♪♫♬♩]+")
 _CUE_WORDS = {"music","applause","laughter","laughs","cheering","cheers","音乐","音樂","掌声","掌聲","笑声","笑聲","欢呼","歡呼"}
@@ -36,6 +37,18 @@ def clean_caption_text(value: object) -> str:
     if _ONLY_MARKS.fullmatch(text):
         return ""
     return text
+
+
+def repair_english_caption_text(value: object) -> str:
+    """Remove common English auto-caption noise without guessing sentence edges.
+
+    Caption cues are often sentence fragments; punctuation restoration is left
+    to the context-aware corrector. This deterministic pass preserves casing
+    and every lexical token.
+    """
+    text = str(value or "").replace(">>", " ")
+    text = _EN_NOISE.sub(" ", text)
+    return _SPACE.sub(" ", text).strip()
 
 def _primary(value: str) -> str:
     return (value or "").strip().casefold().replace("_", "-").split("-", 1)[0]

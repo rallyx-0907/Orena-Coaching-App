@@ -107,8 +107,8 @@ human gates. Never touch persistent volumes as cleanup.
 
 ## NEXT EXACT TASK
 
-D-129: Reading APPROVED; Listening VERIFIED (461d471). Speaking, Writing, Vocabulary, places, cross-skill: audited,
-fixed, Reviewer-verified; human recording/AI/device check OK. Next: Onboarding (D-129 §2).
+UI: Video Sources Phase2 EN19/ZH18; import6 stopped (VPN/IP TLS). ASR A+B:842 pass/21 skip,
+review APPROVE; live/deploy pending. Next/constraints: `docs/reviews/MEDIA_ASR_CONTEXT_CHECKPOINT_2026-10-17.md`.
 
 D-124: → vi policy open-dsl → vi.wiktionary (strict) → English labelled; built, NOT enabled
 until the human grades docs/reviews/evidence/d124-vi. Licences page + THIRD_PARTY_NOTICES done.

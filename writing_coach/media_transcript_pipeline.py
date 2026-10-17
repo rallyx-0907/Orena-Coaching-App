@@ -39,6 +39,7 @@ import subprocess
 import tempfile
 import threading
 import time
+import unicodedata
 import uuid
 from collections.abc import Callable, Mapping
 from concurrent.futures import ThreadPoolExecutor
@@ -67,9 +68,12 @@ from writing_coach.speech_asr import (
     SpeechAsrSegment,
     SpeechAsrTimedOut,
     SpeechAsrWord,
+    build_asr_prompt,
 )
 
 _logger = logging.getLogger(__name__)
+CORRECTION_ADMISSION_KEY = "transcript_correction_eligibility"
+CORRECTION_ADMISSION_NEW_ADMIN = "new_admin_import"
 
 # The stages, in the order the operator's steps and the learner's sheet show them.
 STAGE_FETCH = "fetch"
@@ -320,9 +324,11 @@ def _asr_cues(results: list[tuple[SpeechAsrResult, float]], language: str = "") 
     return cues, list(screen.words), detected, {"filtered": screen.filtered, "flagged": screen.flagged}
 
 
-def _screen_fields(screen: dict[str, int]) -> dict[str, int]:
+def _screen_fields(screen: dict[str, Any]) -> dict[str, int]:
     """What the ASR screen removed or doubted, recorded so a reviewer sees it (empty for a caption transcript)."""
-    return {"asr_filtered": int(screen["filtered"]), "asr_flagged": int(screen["flagged"])} if screen else {}
+    if not screen or "filtered" not in screen or "flagged" not in screen:
+        return {}
+    return {"asr_filtered": int(screen["filtered"]), "asr_flagged": int(screen["flagged"])}
 
 
 def _stable_segment_id(asset_id: str, start_ms: int, end_ms: int, text: str, occurrence: int) -> str:
@@ -361,6 +367,25 @@ def lines_from_payload(payload: Mapping[str, Any] | None) -> list[Cue]:
     return lines
 
 
+def _unicode_lexemes(text: str) -> list[str]:
+    """Normalize lexical tokens across scripts, retaining combining marks and numbers."""
+    tokens: list[str] = []
+    current: list[str] = []
+    for char in unicodedata.normalize("NFC", text):
+        category = unicodedata.category(char)
+        if category[0] in {"L", "N"} or (category[0] == "M" and current):
+            current.append(char)
+        elif char in {"'", "\u2019"} and current:
+            current.append("'")
+        else:
+            if current:
+                tokens.append("".join(current).casefold())
+                current = []
+    if current:
+        tokens.append("".join(current).casefold())
+    return tokens
+
+
 def usable_transcript(entry: MediaLibraryEntry) -> tuple[bool, str]:
     """Whether a stored entry's transcript passes every deterministic check, and the first reason it does not.
 
@@ -389,6 +414,7 @@ class MediaPipeline:
         english_reading: Callable[[str], str] | None = None,
         workers: int | None = None,
         translation_sink: Callable[[Callable[[str, Any], None]], Any] | None = None,
+        corrector: Any = None,
     ) -> None:
         self._ledger = ledger
         self._asr = asr
@@ -397,6 +423,7 @@ class MediaPipeline:
         self._youtube_audio = youtube_audio
         self._meanings = meanings
         self._english_reading = english_reading
+        self._corrector = corrector
         # Where a translation call reports the tokens it was billed; the provider's own sink unless a caller brings one.
         self._translation_sink = translation_sink if translation_sink is not None else media_translation.usage_sink
         self._sleep: Callable[[float], None] = time.sleep
@@ -443,6 +470,8 @@ class MediaPipeline:
         with self._guard:
             if media_id in self._inflight:
                 return True
+        self._clear_correction_admission(store, media_id)
+        entry = store.get(media_id) or entry
         self._remember_previous(store, entry)
         self.enqueue(store, assets, media_id, batch_id=batch_id or self.new_batch())
         return True
@@ -509,6 +538,24 @@ class MediaPipeline:
         except Exception:  # noqa: BLE001
             _logger.warning("previous state not cleared for %s", media_id, exc_info=True)
 
+    @staticmethod
+    def _clear_correction_admission(store: Any, media_id: str) -> None:
+        def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
+            current = dict(fresh.processing or {})
+            if CORRECTION_ADMISSION_KEY not in current:
+                return fresh
+            current.pop(CORRECTION_ADMISSION_KEY, None)
+            previous = current.get("previous")
+            if isinstance(previous, Mapping):
+                previous = dict(previous)
+                previous.pop(CORRECTION_ADMISSION_KEY, None)
+                current["previous"] = previous
+            return replace(fresh, processing=current)
+        try:
+            store.update_if_present(media_id, change)
+        except Exception:  # noqa: BLE001 - failure must not turn a retry into correction admission
+            _logger.warning("transcript correction admission not cleared for %s", media_id, exc_info=True)
+
     def recover(self, store: Any, assets: BookAssetStore) -> int:
         """Re-queue what a restart interrupted. An item that keeps being interrupted stops after MAX_ATTEMPTS.
 
@@ -528,16 +575,19 @@ class MediaPipeline:
                 # early): nothing is dispatched, settled or slept on, and a later recover() takes it up.
                 continue
             if processing.get("state") not in {STATE_QUEUED, STATE_RUNNING}:
+                self._clear_correction_admission(store, entry.media_id)
                 self._settle_quota(store, entry.media_id, media_quota.hold_of(entry), final=entry)
                 self._rearm_continuation(store, entry)
                 continue
             if int(processing.get("attempts") or 0) >= MAX_ATTEMPTS:
                 if self._restore_previous(store, entry.media_id, "pipeline_interrupted"):
+                    self._clear_correction_admission(store, entry.media_id)
                     self._settle_quota(store, entry.media_id, media_quota.hold_of(entry))
                     continue
                 self._write_processing(store, entry, state=STATE_FAILED, stage=processing.get("stage") or STAGE_FETCH,
                                        reason="pipeline_interrupted", detail="Processing was interrupted too many times.",
                                        status="review")
+                self._clear_correction_admission(store, entry.media_id)
                 self._settle_quota(store, entry.media_id, media_quota.hold_of(entry))
                 continue
             self.enqueue(store, assets, entry.media_id, batch_id=str(processing.get("batch_id") or self.new_batch()))
@@ -686,14 +736,27 @@ class MediaPipeline:
         checks = validate_lines(lines, language=language, duration_ms=int(entry.duration_ms or 0), detected_language=detected)
         reason = first_failure(checks)
         public_checks = [{"id": check["id"], "pass": bool(check["pass"])} for check in checks]
+        correction_state = str(screen.get("transcript_correction_state") or "")
+        if correction_state in {"unavailable", "failed"}:
+            entry = self._store_lesson(store, entry, lines, origin, duration, status="review", words=words)
+            self._write_processing(
+                store, entry, state=STATE_HELD, stage=STAGE_READY,
+                reason=f"transcript_correction_{correction_state}",
+                detail=str(screen.get("transcript_correction_detail") or ""),
+                checks=public_checks, auto_published=False, **_screen_fields(screen), status="review",
+            )
+            self._clear_correction_admission(store, media_id)
+            return
         if reason:
             if self._restore_previous(store, media_id, reason):
+                self._clear_correction_admission(store, media_id)
                 return  # the item had a good transcript; the new one is not kept over it
             # A transcript was made and it is not usable. Keep what was made so an operator can see it; do not publish.
             entry = self._store_lesson(store, entry, lines, origin, duration, status="review", words=words)
             self._write_processing(store, entry, state=STATE_FAILED, stage=STAGE_SEGMENT, reason=reason,
                                    detail="", checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
                                    **_screen_fields(screen))
+            self._clear_correction_admission(store, media_id)
             return
         entry = self._store_lesson(store, entry, lines, origin, duration, status="processing", words=words)
         stop: dict[str, Any] = {}
@@ -712,6 +775,7 @@ class MediaPipeline:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=True, **common, status="published")
         else:
             self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_READY, reason="rights_unknown", detail="", auto_published=False, **common, status="review")
+        self._clear_correction_admission(store, media_id)
 
     def _prepare_model_clips(self, assets: BookAssetStore, entry: MediaLibraryEntry) -> None:
         """Cut each speakable line's model clip once, from the source this item was admitted from.
@@ -750,10 +814,13 @@ class MediaPipeline:
             return
         if entry.status == "archived" or stop.code == "cancelled":
             self._clear_previous(store, media_id)
+            self._clear_correction_admission(store, media_id)
             return
         if self._restore_previous(store, media_id, stop.code, stop.detail):
+            self._clear_correction_admission(store, media_id)
             return
         self._write_processing(store, entry, state=STATE_FAILED, reason=stop.code, detail=stop.detail, status="review", previous={})
+        self._clear_correction_admission(store, media_id)
 
     def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
@@ -807,7 +874,8 @@ class MediaPipeline:
                 if not first_failure(checks):
                     self._write_processing(store, entry, caption_kind=kind, caption_provider=provider,
                                            caption_language=caption_language, caption_fallback="", caption_fallback_detail="")
-                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], {}
+                    lines, correction = self._correct_transcript(store, entry, batch_id, lines, origin=ORIGIN_CAPTION)
+                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], correction
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
                 fallback = "captions_unusable"
                 # Which check refused them, with its own count, so an operator is not left to guess (D-218).
@@ -841,7 +909,153 @@ class MediaPipeline:
         raw = clean_asr_cues(raw, words, language or detected)
         words = normalise_words(words, language or detected)  # the same script as the lines, so taps stay aligned
         lines = segment_lines(raw, language)
-        return lines, ORIGIN_ASR, cost, seconds, detected, words, screen
+        lines, correction = self._correct_transcript(store, entry, batch_id, lines, origin=ORIGIN_ASR)
+        return lines, ORIGIN_ASR, cost, seconds, detected, words, {**screen, **correction}
+
+    @staticmethod
+    def _is_correction_eligible(entry: MediaLibraryEntry) -> bool:
+        """Only a never-published, shared admin import may be corrected automatically."""
+        if entry.library != "shared" or str((entry.source or {}).get("imported_by") or "").casefold() == "learner":
+            return False
+        processing = entry.processing if isinstance(entry.processing, Mapping) else {}
+        if processing.get(CORRECTION_ADMISSION_KEY) != CORRECTION_ADMISSION_NEW_ADMIN:
+            return False
+        previous = processing.get("previous")
+        if isinstance(previous, Mapping) and previous:
+            status = str(previous.get("_status") or previous.get("status") or "").casefold()
+            lesson = previous.get("lesson") if isinstance(previous.get("lesson"), Mapping) else {}
+            if status in {"published", "ready"} or str(lesson.get("status") or "").casefold() == "published":
+                return False
+        # lesson.status is projected as PUBLISHED even for newly acquired media. Durable admission evidence,
+        # created before the first upsert, distinguishes those from legacy and previously admitted records.
+        return True
+
+    def _correct_transcript(
+        self, store: Any, entry: MediaLibraryEntry, batch_id: str, lines: list[Cue], *, origin: str
+    ) -> tuple[list[Cue], dict[str, Any]]:
+        """Correct an eligible admin transcript in bounded, metered batches; raw cues survive any failure."""
+        language = primary_language(entry.language)
+        if language == "zh" and origin != ORIGIN_ASR:
+            return lines, {}
+        if not self._is_correction_eligible(entry):
+            return lines, {}
+        from writing_coach.media_transcript_quality import repair_english_caption_text
+
+        if language not in {"en", "zh"}:
+            return lines, self._correction_failure(store, entry, "unavailable", "unsupported_language")
+        correct = getattr(self._corrector, "correct", None)
+        if not callable(correct):
+            return lines, self._correction_failure(store, entry, "unavailable", "corrector_unconfigured")
+        if getattr(self._corrector, "configured", True) is False:
+            return lines, self._correction_failure(store, entry, "unavailable", "corrector_unconfigured")
+        description = str((entry.source or {}).get("description") or "")[:1000]
+        clean_lines = [Cue(line.start_ms, line.end_ms,
+                            repair_english_caption_text(line.text) if language == "en" else line.text)
+                       for line in lines]
+        if any(not line.text.strip() for line in clean_lines):
+            return lines, self._correction_failure(store, entry, "failed", "empty_cue")
+        batches: list[tuple[int, int]] = []
+        start = 0
+        while start < len(clean_lines):
+            end = start
+            characters = 0
+            while end < len(clean_lines) and end - start < 24:
+                next_size = len(clean_lines[end].text)
+                if next_size > 6_000:
+                    return lines, self._correction_failure(store, entry, "failed", "request_too_large")
+                if end > start and characters + next_size > 6_000:
+                    break
+                characters += next_size
+                end += 1
+            batches.append((start, end))
+            start = end
+
+        normalized = [line.text for line in clean_lines]
+        providers: list[str] = []
+        models: list[str] = []
+        reasons: list[str] = []
+        changed_count = 0
+        token = _unicode_lexemes
+        for start, end in batches:
+            batch_lines = clean_lines[start:end]
+            model = str(getattr(self._corrector, "model_version", "") or getattr(self._corrector, "model", "") or "")
+            context_bytes = len(entry.title.encode("utf-8")) + len(description.encode("utf-8"))
+            estimate_tokens = max(512, min(8192, sum(len(cue.text.encode("utf-8")) for cue in batch_lines) + context_bytes + 1000))
+            estimate = self._ai_cost(model, {"prompt_tokens": estimate_tokens, "completion_tokens": estimate_tokens})
+            try:
+                self._ledger.check(KIND_AI, batch_id, estimate)
+            except SpendCapReached:
+                return lines, self._correction_failure(store, entry, "failed", "spend_cap")
+            except Exception:
+                _logger.warning("transcript correction could not be prepared for %s", entry.media_id, exc_info=True)
+                return lines, self._correction_failure(store, entry, "failed", "correction_unavailable")
+
+            usage: list[tuple[str, Any]] = []
+            usage_recorded = False
+            try:
+                if self._translation_sink is not None:
+                    with self._translation_sink(lambda used_model, value, captured=usage: captured.append((used_model, value))):
+                        result = correct(language=language, cues=tuple(batch_lines), title=entry.title, description=description)
+                else:
+                    result = correct(language=language, cues=tuple(batch_lines), title=entry.title, description=description)
+                if usage:
+                    actual = sum(self._ai_cost(used_model, value) for used_model, value in usage)
+                    usage_recorded = True
+                    self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id,
+                                        units=len(usage), provider="groq")
+                if not isinstance(result, Mapping):
+                    raise ValueError("malformed_result")
+                texts = result.get("texts")
+                if not isinstance(texts, (list, tuple)) or len(texts) != len(batch_lines) or any(not isinstance(text, str) or not text.strip() for text in texts):
+                    raise ValueError("malformed_result")
+                batch_texts = [text.strip() for text in texts]
+                if any(len(text) > max(200, 2 * len(line.text) + 24) for line, text in zip(batch_lines, batch_texts, strict=True)):
+                    raise ValueError("malformed_result")
+                if language == "en":
+                    batch_texts = [repair_english_caption_text(text) for text in batch_texts]
+                    if any(not text.strip() for text in batch_texts):
+                        raise ValueError("empty_cue")
+                    if any(token(before.text) != token(after) for before, after in zip(batch_lines, batch_texts, strict=True)):
+                        raise ValueError("lexemes_changed")
+                changed_count += sum(before.text != after for before, after in zip(batch_lines, batch_texts, strict=True))
+                if language == "zh" and changed_count > max(1, int(len(lines) * 0.2)):
+                    raise ValueError("edit_ratio_exceeded")
+                normalized[start:end] = batch_texts
+                providers.append(str(result.get("provider") or getattr(self._corrector, "provider", "groq"))[:80])
+                models.append(str(result.get("model") or model)[:120])
+                edit_reasons = result.get("reasons")
+                if (not isinstance(edit_reasons, (list, tuple)) or len(edit_reasons) != len(batch_lines)
+                        or any(not isinstance(value, str) or not value.strip() or len(value.strip()) > 240
+                               for value in edit_reasons)):
+                    raise ValueError("malformed_result")
+                reasons.extend(value.strip() for value in edit_reasons)
+            except Exception as exc:  # noqa: BLE001 - stop at the first failed batch and keep the entire raw transcript
+                if usage and not usage_recorded:
+                    actual = sum(self._ai_cost(used_model, value) for used_model, value in usage)
+                    self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id,
+                                        units=len(usage), provider="groq")
+                reason = str(exc) if str(exc) in {"malformed_result", "lexemes_changed", "edit_ratio_exceeded"} else "correction_failed"
+                _logger.warning("transcript correction failed for %s: %s", entry.media_id, reason)
+                return lines, self._correction_failure(store, entry, "failed", reason)
+
+        corrected = [Cue(line.start_ms, line.end_ms, normalized[index]) for index, line in enumerate(lines)]
+        provider = ";".join(dict.fromkeys(providers))[:80]
+        model = ";".join(dict.fromkeys(models))[:120]
+        rows = [
+            {"index": index, "start_ms": before.start_ms, "end_ms": before.end_ms,
+             "before": before.text[:1000], "after": corrected[index].text[:1000], "reason": reasons[index][:240],
+             "provider": provider, "model": model}
+            for index, before in enumerate(lines) if before.text != corrected[index].text
+        ]
+        self._write_processing(store, store.get(entry.media_id) or entry,
+                               transcript_correction_state="applied", transcript_corrections=rows)
+        return corrected, {"transcript_correction_state": "applied", "transcript_corrections": rows}
+
+    def _correction_failure(self, store: Any, entry: MediaLibraryEntry, state: str, detail: str) -> dict[str, Any]:
+        fields = {"transcript_correction_state": state, "transcript_correction_detail": detail,
+                  "transcript_corrections": []}
+        self._write_processing(store, store.get(entry.media_id) or entry, **fields)
+        return fields
 
     def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str, str, str, str]:
         """(cues, why-none, kind, provider, language): the provider's category when it failed, "" when there were simply no
@@ -908,7 +1122,9 @@ class MediaPipeline:
                     raise PipelineStop(capped.code, f"{capped.spent:.2f}/{capped.limit:.2f} USD") from capped
                 try:
                     result = self._asr.transcribe_bytes(
-                        path.read_bytes(), filename=path.name, content_type="audio/mpeg", language=primary_language(entry.language) or None
+                        path.read_bytes(), filename=path.name, content_type="audio/mpeg",
+                        language=primary_language(entry.language) or None,
+                        prompt=build_asr_prompt(entry.title, str((entry.source or {}).get("description") or ""), language=entry.language),
                     )
                 except SpeechAsrTimedOut as exc:
                     raise PipelineStop("asr_timeout") from exc

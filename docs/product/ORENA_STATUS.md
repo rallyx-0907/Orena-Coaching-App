@@ -6,6 +6,14 @@ CURRENT_MILESTONE: ORENA_PRODUCT_COMPLETION
 
 STATUS: IMPLEMENTING
 
+Video Sources / ASR context and transcript review (2026-10-17, UI lane): IMPLEMENTING.
+Whisper receives bounded source context; the configured media text model can repair new shared Admin
+ZH ASR and EN captions, with per-cue before/after/provenance visible in A12. Personal and pre-existing
+records are excluded; failure keeps raw text held. Local media842 pass/21 skip, Ruff/smoke pass;
+independent code review APPROVE. Live quality, matched-audio benchmark and browser fidelity remain
+unverified; no runtime deployment or publication. Trial artifacts report EN19/ZH18 usable; sitting6
+stopped at HTTPS egress preflight with zero new imports. See `docs/reviews/MEDIA_ASR_CONTEXT_CHECKPOINT_2026-10-17.md`.
+
 Current execution program: `docs/project/ROADMAP.md` (D-110–D-113);
 `PRODUCT_COMPLETION_PLAN.md` supplies audit/slice detail and `CURRENT_HANDOFF.md`
 the active position. Historical R21 and separate skill-release sequencing are superseded.
