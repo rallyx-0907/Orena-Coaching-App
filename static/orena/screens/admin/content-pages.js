@@ -171,6 +171,15 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
   const transcript = detail.transcript || { segments: [], segment_count: 0 };
   const corrections = Array.isArray(record.processing?.transcript_corrections) ? record.processing.transcript_corrections : [];
   const correctionState = record.processing?.transcript_correction_state || '';
+  const rejectedCorrections = Array.isArray(record.processing?.transcript_correction_rejected) ? record.processing.transcript_correction_rejected : [];
+  const correctionCode = (code) => (code && t.has(`ctCorrectionDetail_${code}`) ? t(`ctCorrectionDetail_${code}`) : code || '');
+  const correctionHint = ['unavailable', 'failed', 'partial'].includes(correctionState)
+    ? html`<div class="a-hint">${t('ctCorrectionState_' + correctionState)}${record.processing?.transcript_correction_detail ? ` (${correctionCode(record.processing.transcript_correction_detail)})` : ''}</div>` : '';
+  /* Applied edits first-class: a deterministic edit says so in the reader's language, a model edit keeps the model's own reason. */
+  const correctionRows = [
+    ...corrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionAfter')}: ${row.after}`, row.reason_code === 'noise_removed' ? t('ctCorrectionReason_noise_removed') : row.reason, row.provider || row.model ? `${row.provider}/${row.model}` : '', latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
+    ...rejectedCorrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionNotApplied')}: ${row.proposed}`, correctionCode(row.code), latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
+  ].sort((a, b) => (a.start || 0) - (b.start || 0));
   const missing = facts.transcript !== 'available';
   const failedReason = failureReason(record, t);
   const link = learnerLink(record, detail);
@@ -210,7 +219,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
             { id: 'keep', label: t('ctRedoKeep'), sub: '', on: false, disabled: true, tip: t('ctRedoUnsupported') },
           ] },
         ], actions: reprocess ? [{ label: t('ctAct_reprocess'), a: 'lifecycle', data: { intent: 'reprocess' } }] : [] })}
-        ${block({ span: true, title: t('ctTranscript'), body: html`${transcript.segments?.length ? html`<div class="a-rows-scroll" tabindex="0">${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}</div>` : html`<div class="a-hint">${t('ctNoTranscript')}</div>`}${correctionState === 'unavailable' || correctionState === 'failed' ? html`<div class="a-hint">${t('ctCorrectionState_' + correctionState)}</div>` : ''}${corrections.length ? html`<div class="a-rows-scroll" tabindex="0" aria-label="${t('ctTranscriptCorrections')}">${rowList(corrections.map((row) => ({ title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: `${t('ctCorrectionAfter')}: ${row.after} · ${row.reason} · ${row.provider}/${row.model} · ${latency(row.start_ms, ui)}` })))}</div>` : ''}` })}
+        ${block({ span: true, title: t('ctTranscript'), body: html`${transcript.segments?.length ? html`<div class="a-rows-scroll" tabindex="0">${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}</div>` : html`<div class="a-hint">${t('ctNoTranscript')}</div>`}${correctionHint}${correctionRows.length ? html`<div class="a-rows-scroll" tabindex="0" aria-label="${t('ctTranscriptCorrections')}">${rowList(correctionRows)}</div>` : ''}` })}
       </div>
     </section>`,
   };

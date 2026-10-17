@@ -258,7 +258,7 @@ def test_admin_media_corrections_keep_raw_and_flag_each_changed_timed_cue(tmp_pa
     assert stored.processing["transcript_corrections"] == [{
         "index": 0, "start_ms": cues[0].start_ms, "end_ms": cues[0].end_ms,
         "before": "Hello world and welcome back to forest.", "after": "Hello, world and welcome back to forest.", "reason": "Inserted a comma after the greeting.",
-        "provider": "groq", "model": "configured-text-model",
+        "reason_code": "model_edit", "provider": "groq", "model": "configured-text-model",
     }]
 
 
@@ -396,11 +396,12 @@ def test_english_correction_lexical_guard_preserves_unicode_tokens(tmp_path, bef
     )
 
     assert result[0].text == before
-    assert metadata["transcript_correction_state"] == "failed"
+    assert metadata["transcript_correction_state"] == "partial"
     assert metadata["transcript_correction_detail"] == "lexemes_changed"
+    assert [row["code"] for row in metadata["transcript_correction_rejected"]] == ["lexemes_changed"]
 
 
-def test_noise_only_english_cue_is_held_instead_of_claiming_empty_correction(tmp_path):
+def test_transcript_of_only_noise_is_left_raw_without_a_provider_call(tmp_path):
     from dataclasses import replace
     from tests.test_media_lifecycle import _entry
     from writing_coach import media_transcript_pipeline as pipeline_module
@@ -536,8 +537,10 @@ def test_retry_clears_admission_but_recovery_keeps_it_for_unfinished_new_import(
 
 
 @pytest.mark.parametrize("failure", ["provider_error", "malformed_result", "spend_cap", "unconfigured"])
-def test_failed_correction_keeps_raw_transcript_held_even_when_rights_are_cleared(tmp_path, failure):
+@pytest.mark.parametrize("rights", ["cleared", "unknown"])
+def test_failed_correction_never_blocks_the_item_it_goes_on_to_translation(tmp_path, failure, rights):
     from dataclasses import replace
+    from types import SimpleNamespace
     from tests.test_media_lifecycle import _entry
     from writing_coach import media_transcript_pipeline as pipeline_module
     from writing_coach.media_segmentation import Cue
@@ -545,7 +548,7 @@ def test_failed_correction_keeps_raw_transcript_held_even_when_rights_are_cleare
 
     cues = tuple(Cue(index * 3000, index * 3000 + 2500,
                      f"Sentence {index} is ready and waiting for another careful review.") for index in range(8))
-    source = {**_entry().source, "provider": "youtube", "type": "video", "rights": "cleared"}
+    source = {**_entry().source, "provider": "youtube", "type": "video", "rights": rights}
 
     class Corrector:
         model = "configured-text-model"
@@ -560,26 +563,47 @@ def test_failed_correction_keeps_raw_transcript_held_even_when_rights_are_cleare
                 return {"texts": ["bad shape"]}
             raise AssertionError("spend cap must stop before the provider call")
 
+    translated = []
+
+    def meanings(_entry, target):
+        translated.append(target)
+        return SimpleNamespace(status="ready", meanings=(), reason="", retry_after=0.0)
+
     entry = replace(_entry(
         "youtube-failure", provider="youtube", provider_media_id="failure", canonical_url="https://www.youtube.com/watch?v=failure",
         duration_ms=24000, language="en", title="A title", source=source, status="processing",
-        processing={"state": "running", "transcript_correction_eligibility": "new_admin_import"},
+        processing={"state": "running", "transcript_correction_eligibility": "new_admin_import",
+                    "transcript_correction_state": "applied", "transcript_corrections": [{"stale": True}]},
     ))
-    store = FileMediaLibraryStore(tmp_path / f"failure-{failure}")
+    store = FileMediaLibraryStore(tmp_path / f"failure-{failure}-{rights}")
     store.upsert(entry)
-    ledger = SpendLedger(tmp_path / f"spend-failure-{failure}.json")
+    ledger = SpendLedger(tmp_path / f"spend-failure-{failure}-{rights}.json")
     if failure == "spend_cap":
-        ledger.check = lambda *_args: (_ for _ in ()).throw(SpendCapReached("spend_cap_batch_ai", limit=0, spent=0, scope="batch"))
-    pipeline = MediaPipeline(ledger=ledger, corrector=Corrector())
+        checks = []
+
+        def check_once(*_args):
+            checks.append(1)
+            if len(checks) == 1:     # only the correction step meets the cap; the later translation is still allowed
+                raise SpendCapReached("spend_cap_batch_ai", limit=0, spent=0, scope="batch")
+
+        ledger.check = check_once
+    pipeline = MediaPipeline(ledger=ledger, corrector=Corrector(), meanings=meanings)
 
     pipeline._run(store, None, entry.media_id, "batch-1", pipeline_module.Candidate(cues=cues))
 
     stored = store.get(entry.media_id)
     saved = stored.lesson["payload"]["transcript"]["segments"]
-    assert stored.status == "review"
-    assert stored.processing["state"] == "held"
-    assert stored.processing["transcript_correction_state"] == ("unavailable" if failure == "unconfigured" else "failed")
+    assert translated, "translation must run on the best available text"
     assert [segment["original_text"] for segment in saved] == [cue.text for cue in cues]
+    assert stored.processing["transcript_correction_state"] == ("unavailable" if failure == "unconfigured" else "failed")
+    assert stored.processing["transcript_correction_detail"]
+    assert stored.processing["transcript_corrections"] == []
+    assert not str(stored.processing.get("reason") or "").startswith("transcript_correction")
+    if rights == "cleared":
+        assert stored.status == "published" and stored.processing["state"] == "ready"
+    else:
+        assert stored.status == "review" and stored.processing["state"] == "held"
+        assert stored.processing["reason"] == "rights_unknown"
 
 
 def test_transcript_correction_chunks_a_valid_long_video_into_bounded_calls(tmp_path):
@@ -669,5 +693,6 @@ def test_transcript_correction_stops_before_calling_later_batches(tmp_path, fail
     result = pipeline._transcript(store, None, entry, "batch-stop", pipeline_module.Candidate(cues=cues))
 
     assert corrector.calls == (2 if failure == "provider_error" else 1)
-    assert result[-1]["transcript_correction_state"] == "failed"
+    assert result[-1]["transcript_correction_state"] == "partial"
+    assert result[-1]["transcript_correction_detail"] == ("correction_failed" if failure == "provider_error" else "spend_cap")
     assert [line.text for line in result[0]] == [cue.text for cue in cues]

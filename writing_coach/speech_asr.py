@@ -57,6 +57,20 @@ def build_asr_prompt(title: str, description: str, *, language: str | None) -> s
     return _utf8_prefix(prompt, _ASR_PROMPT_MAX_BYTES)
 
 
+# The title prompt is evidence-bounded (2026-10-17 live trial): it fixed the title idiom on 47-78 s clips, and cost a
+# 282 s story 18 % of its Han text plus full-width junk. It is therefore sent only for audio up to this length, and a
+# prompted chunk that shows the junk signature below is transcribed again without the prompt.
+ASR_PROMPT_MAX_SECONDS = 120.0
+# Full-width digits, comparison signs and Latin letters (U+FF10-FF19, FF1C-FF1E, FF20-FF5A): Whisper emits them as garbage
+# in place of punctuation under a prompt. Full-width sentence punctuation (，。！？：；（）) is not in the set.
+_ASR_JUNK = re.compile("[０-９＜-＞＠-ｚ]")
+
+
+def asr_text_has_junk(text: str) -> bool:
+    """Whether recognised text carries the full-width digit/symbol junk signature of a misled prompt."""
+    return bool(_ASR_JUNK.search(text or ""))
+
+
 class SpeechAsrError(Exception):
     pass
 

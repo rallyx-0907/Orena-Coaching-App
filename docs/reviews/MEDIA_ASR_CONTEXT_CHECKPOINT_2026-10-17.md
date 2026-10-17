@@ -24,9 +24,10 @@ product approval or public readiness is claimed.
   requires ASR provenance; existing Chinese captions stay unchanged. English removes speaker/music noise
   and can restore punctuation/case/spacing, with Unicode word/number preservation. Personal, legacy and
   pre-existing records are excluded; retries consume eligibility, unfinished recovery preserves it.
-- One attempt per bounded batch, existing configured media Groq provider/model and output allowance,
-  per-call spend check and actual-usage accounting. No fallback or automatic retry. Failure or absent
-  configuration preserves raw text held for review, before translation/publication.
+- Bounded batches, existing configured media Groq provider/model and output allowance, per-call spend check
+  and actual-usage accounting. No fallback provider. As first built, any failure held the item before
+  translation; the live trial showed that was wrong and "Live trial fixes" below supersedes it: acceptance is
+  per cue, a rate limit is paced, and a correction failure never blocks the item.
 - Each actual edited cue retains before/after, unchanged timing, index, validated per-cue reason and
   provider/model. A12 uses its existing compact rows with escaped text and EN/VI/ZH labels. No CSS changes.
 - Existing D-111 publication policy remains intact. Phase2 operationally keeps every item held with rights
@@ -90,6 +91,56 @@ CROSS_CAPABILITY_STATUS=canonical shared Media Learning shape preserved; no fres
 WHAT_THE_HUMAN_SHOULD_REVIEW=actual corrected text against audio, every flagged edit/reason, A12 rows in
 desktop/phone and both themes, then paced trial outcomes. The milestone is not yet REVIEWABLE.
 
+## Live trial fixes (2026-10-17, after the sitting 6A trial and ASR benchmark)
+
+Owner-approved scope A+B unchanged; no new provider, env flag, schema or migration; no live provider call was made
+for these fixes (tests use fakes, the live-provider lock was not touched). Evidence that drove them: the ASR
+benchmark (4 ZH, 2 EN real cases) and sitting 6A (2 imports held untranslated). Local execution only.
+
+- **Per-cue acceptance (P1-1).** `reject_cue_edit` in `media_transcript_pipeline.py` decides each proposed cue on its
+  own: non-empty and within twice its length, English lexemes (words and numbers, NFC, any script) unchanged,
+  Chinese changed Han characters within an allowance. A refused cue keeps its raw text and is recorded in
+  `processing.transcript_correction_rejected` (index, start_ms, code, before, proposed); every valid repair is kept.
+  Chinese allowance (replaces the global "20 % of all cues" ratio): Levenshtein distance over Han characters only
+  (punctuation edits are free) of at most a quarter of the cue's Han characters, at least 2, at most 4, and always
+  leaving one original character of a cue longer than one. It admits the homophone fixes the trial needed
+  (渡舰->渡江, 床弦->船舷, 舰->剑, 船一正->船身) and refuses the rewrite of a cue; it is a general length-relative rule, not
+  tuned to a video. Homophone plausibility (pypinyin) was considered and left out: the distance bound alone is
+  enough and needs no dictionary.
+- **Never blocks the item (P1-2).** The `transcript_correction_failed/unavailable` hold before translation is gone.
+  The pipeline always continues on the best available text (raw for rejected cues, the accepted repairs and the
+  deterministic noise strip otherwise) to translation and then the normal review/rights rules. Outcome recorded in
+  processing: `transcript_correction_state` = `applied | partial | failed | unavailable` and
+  `transcript_correction_detail` = stable code (`lexemes_changed`, `edit_ratio_exceeded`, `empty_cue`,
+  `rate_limited`, `spend_cap`, `provider_*`, `malformed_result`, ...). Stale values are reset when a run starts.
+- **Pacing (P1-3).** Each batch runs inside the existing `translation_pacing` allowance (D-218 output-token
+  pacing, 150 s shared by all batches, the translation run's own total). A `rate_limited` answer naming a wait of at
+  most 90 s that fits the remaining allowance is slept once (`self._sleep`) and that batch asked once more; any
+  other failure, a longer wait or a second refusal stops the step. Batches already accepted are kept (`partial`);
+  later batches keep raw text. No unbounded retry, spend is checked before every attempt, usage is booked per call.
+- **Title prompt (P1/P2-4).** Cheapest correct design: the prompt is sent only when the audio is at most
+  `ASR_PROMPT_MAX_SECONDS` = 120 s (it helped the 47-78 s clips and hurt the 282 s story), and a prompted chunk whose
+  text carries the full-width digit/symbol/letter junk signature (`asr_text_has_junk`) is transcribed once more
+  without the prompt (extra call checked against the cap and booked). A no-prompt reference pass for every item was
+  rejected as doubling ASR cost. Honest limit: silent content loss on a short clip (no junk) is not detectable
+  without a reference pass; it is not claimed fixed.
+- **Noise (P2-5).** English only: `>>`/`>>>`; any square-bracket group of 1-4 plain words (`[crying]`, `[gasps]`,
+  `[door creaks]`; not `[1]`); a parenthesised group only when it is the whole cue or names a sound from a closed
+  vocabulary (`(music)` yes, `(Paris)`/`(yes)` no). A cue that becomes empty is dropped (as the canonical caption
+  cleaning drops it) and recorded as a row with reason code `noise_removed`; it no longer aborts the repair. Chinese
+  text is never stripped. The deterministic strip also applies when the model is unavailable.
+- **A12 (P2-6).** Rows now carry `reason_code` (`noise_removed` | `model_edit`); a deterministic edit shows a
+  translated reason, not "No change."; the state hint (`failed`, `unavailable`, `partial`) shows the translated
+  detail code; rejected cues appear in the same compact rows ("Not applied: ..."). Copy in EN/VI/ZH in
+  `copy-content.js`; the old "held for review" wording is removed. Existing `rowList`/`a-hint` only, no CSS change.
+
+Local execution (not CI): media pytest target set **879 passed, 0 failed, 21 skipped** (was 842 passed; 37 new
+tests in `tests/test_media_correction_per_cue.py` and the updated integration tests), disposable container,
+repository read-only, tmpfs databases, provider keys empty, 1 GB / 1 CPU, host free RAM above 2 GB checked before
+each run. Ruff on touched Python: PASS. Node admin media review, admin areas, admin control: PASS; browser ESM graph:
+PASS (300 modules). Not done: live re-run of the failing cases, A12 visual check with real applied/partial rows,
+sandbox restart (not allowed). The owner-dirty Design Contract and untracked UX files are not staged.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;
@@ -97,7 +148,7 @@ Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transc
 `writing_coach/media_source_import.py`; `static/orena/screens/admin/content-pages.js`;
 `static/orena/screens/admin/copy-content.js`; `scripts/test_groq_speech_asr.py`;
 `scripts/test_media_transcript_quality.py`; `scripts/test_orena_admin_media_review.mjs`;
-`tests/test_speech_asr_url.py`; `tests/test_media_pipeline_integration.py`;
+`tests/test_speech_asr_url.py`; `tests/test_media_pipeline_integration.py`; `tests/test_media_correction_per_cue.py`;
 `tests/test_media_translation_groq.py`; `tests/test_quota_media_import.py`;
 `tests/test_speech_transcribe_guard.py`.
 
