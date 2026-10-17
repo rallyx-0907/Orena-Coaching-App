@@ -330,3 +330,12 @@ otherwise explicitly. A VA hides the account number, not the owner's name (RR-8.
 webhook, cursor, bank reference, `webhook_success`, QR scan; one Live main-account transfer, paid once and refunded).
 | No production checkout that exposes the main account, and no production claim proven only in Test Mode. |
 `PR-MON-8_DESIGN.md` §13.
+
+
+D-MON-031 | 2026-10-17 | Gate 7 preparation (owner). Launch prices for the SePay domestic gateway are the plan
+catalogue's current values (Plus 199,000 VND a month and 1,590,000 a year; Pro 399,000 and 3,190,000), sold through
+`sepay` as one-time prepaid periods. The production host is chosen after the app is deployed to the VPS. The owner runs
+gate 7 personally (migration 0027 -> 0033, environment, SePay Live webhook, restart, grace 1 h, readiness) from
+`RUNBOOK_SEPAY_ACTIVATION.md`; no agent runs it. The `:8031` sandbox and its quick tunnel were removed. Credits, quota
+and funding enforcement, migration 0034 and the SePay feed stay off. | A price the owner chose explicitly, and a
+launch operated by the owner on a host chosen deliberately. | `RUNBOOK_SEPAY_ACTIVATION.md`.
