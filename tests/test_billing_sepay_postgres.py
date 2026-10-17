@@ -26,8 +26,9 @@ SECRET = "whsec-sepay-pg"
 ACCOUNT = "123456789012"
 GRACE = timedelta(hours=1)
 PACK = {"pack_id": "starter", "credit_units": 500, "currency": "VND", "amount_minor": 50_000, "gateway": "sepay"}
+# Production runs require a VA (§13.3, D-MON-030); receiving still uses the main account.
 SEPAY = SePayGateway(webhook_secret=SECRET, account_number=ACCOUNT, account_name="A", bank_bin="970415",
-                     payment_prefix="ORN")
+                     payment_prefix="ORN", va_number="VQRAB12CD34E")
 
 
 @pytest.fixture

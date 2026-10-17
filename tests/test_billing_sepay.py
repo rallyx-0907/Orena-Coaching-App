@@ -181,12 +181,112 @@ def test_the_vietqr_carries_the_bank_account_exact_amount_and_memo_with_a_valid_
 
 
 @pytest.mark.parametrize("bad", [dict(amount_minor=0), dict(amount_minor=1.5), dict(purpose="x" * 26),
-                                 dict(bank_bin="97041"), dict(account_number="12AB")])
+                                 dict(bank_bin="97041"), dict(account_number="12ab"),
+                                 dict(account_number="12-AB"), dict(account_number="A" * 20)])
 def test_a_vietqr_is_never_built_from_bad_input(bad):
     values = dict(bank_bin="970415", account_number=ACCOUNT, amount_minor=99_000, purpose="SEVQR ORN1")
     values.update(bad)
     with pytest.raises(ValueError):
         vietqr_payload(**values)
+
+
+# ---- revision 7.1 (§13): the QR names a configured virtual account ----------------------------------------------------
+
+VA = "VQRAB12CD34E"
+
+
+def test_with_a_va_the_qr_and_the_checkout_response_name_it_and_never_the_main_account():
+    import binascii
+
+    price = Price(plan_id="plus", period="month", currency="VND", amount_minor=99_000, gateway="sepay")
+    intent = CheckoutIntent(operation_id="op", incarnation_id="inc", price=price, return_url="r", cancel_url="c")
+    start = gateway(va_number=VA).domestic_checkout(intent, {"order_code": 100001})
+    fields = _fields(start["qr"])
+    assert _fields(_fields(fields["38"])["01"]) == {"00": "970415", "01": VA}
+    assert start["transfer"]["account_number"] == VA
+    assert ACCOUNT not in start["qr"] and ACCOUNT not in json.dumps(start)
+    assert fields["63"] == format(binascii.crc_hqx(start["qr"][:-4].encode(), 0xFFFF), "04X")   # independent CRC
+
+
+def test_without_a_va_the_main_account_qr_is_unchanged():
+    price = Price(plan_id="plus", period="month", currency="VND", amount_minor=99_000, gateway="sepay")
+    intent = CheckoutIntent(operation_id="op", incarnation_id="inc", price=price, return_url="r", cancel_url="c")
+    start = gateway().domestic_checkout(intent, {"order_code": 100001})
+    assert _fields(_fields(_fields(start["qr"])["38"])["01"])["01"] == ACCOUNT
+
+
+@pytest.mark.parametrize("bad", ["vqrab12cd34e", "VQR-AB12", "VQR AB12", "A" * 20, "VQRÄB12"])
+def test_a_malformed_va_refuses_the_configuration(bad):
+    with pytest.raises(GatewayNotConfigured):
+        gateway(va_number=bad)
+
+
+def test_production_sepay_without_a_va_fails_closed():
+    sepay_without = gateway()
+    closed = service({"sepay": sepay_without}, domestic="sepay", production=True)
+    assert "sepay_va_unset" in closed.domestic_blockers()
+    assert closed._domestic_sellable("sepay") is False
+    assert closed.gateway_report()["sepay"]["virtual_account"] == "unset"
+    assert closed.gateway_report()["sepay"]["ready"] is False
+    from writing_coach.billing.gateway import Price as P
+
+    priced = service({"sepay": sepay_without}, domestic="sepay", production=True,
+                     prices={"plus:month:sepay": P(plan_id="plus", period="month", currency="VND", amount_minor=99_000,
+                                                   gateway="sepay")})
+    with pytest.raises(LookupError):
+        priced.start_checkout(incarnation_id="inc", price_key="plus:month:sepay",
+                              operation_id="00000000-0000-4000-8000-000000000001", return_url="r", cancel_url="c",
+                              confirmed_amount_minor=99_000, confirmed_currency="VND")
+
+
+def test_production_sepay_with_a_valid_va_has_no_va_blocker_and_dev_keeps_the_fallback():
+    assert "sepay_va_unset" not in service({"sepay": gateway(va_number=VA)}, domestic="sepay",
+                                           production=True).domestic_blockers()
+    assert service({"sepay": gateway()}, domestic="sepay", production=False).domestic_blockers() == []
+
+
+def test_a_production_runtime_without_a_va_is_not_billing_ready():
+    from writing_coach.billing import readiness
+
+    real = service({"sepay": gateway()}, domestic="sepay", production=True)
+    facade = SimpleNamespace(gateway_report=lambda: {"sepay": {"ready": True}}, domestic_blockers=real.domestic_blockers)
+    facts = readiness.RuntimeFacts(switch=True, backend="postgresql", backbone="active",
+                                   commerce_schema=lambda: "present", orders_schema=lambda: "present",
+                                   entitlement_source=lambda: "installed", service=facade,
+                                   public_base_url="https://orena.test", production=True)
+    report = readiness.report(facts)
+    assert report["ready"] is False and "sepay_va_unset" in report["blockers"]
+
+
+def test_no_full_main_account_or_va_appears_in_repr_or_the_readiness_report():
+    sepay = gateway(va_number=VA)
+    text = repr(sepay) + json.dumps(service({"sepay": sepay}, domestic="sepay", production=True).gateway_report())
+    assert ACCOUNT not in text and VA not in text
+    assert "***" + ACCOUNT[-4:] in repr(sepay) and "***" + VA[-4:] in repr(sepay)
+
+
+@pytest.mark.parametrize("va", ["A", "AB12", "AB12C", "VQRAB12CD34E", "Z" * 19])
+def test_repr_never_contains_the_full_va_whatever_its_length(va):
+    """Review P1-1 of 10ff2080: a VA of four characters or fewer is fully redacted; a longer one shows only a suffix."""
+    text = repr(gateway(va_number=va))
+    shown = text.split("va=")[1].split(",")[0]
+    assert va not in shown and ACCOUNT not in text
+    assert shown == ("***" if len(va) <= 4 else "***" + va[-4:])
+
+
+@pytest.mark.parametrize("value", ["1", "1234", "12345", ACCOUNT])
+def test_the_mask_never_returns_a_whole_identifier(value):
+    from writing_coach.billing.sepay import _mask
+
+    assert value not in _mask(value)
+
+
+def test_receiving_still_needs_the_main_account_even_with_a_va():
+    sepay = gateway(va_number=VA)
+    main = sepay.verify(signed(payload()), payload(), now=NOW)
+    assert (main.kind, main.external_reference) == ("payment", "100001")
+    to_va = payload(accountNumber=VA)
+    assert sepay.verify(signed(to_va), to_va, now=NOW).kind == "ignored"   # a VA is never a receiving account
 
 
 def test_a_prefix_that_leaves_no_room_for_the_order_code_is_refused():
