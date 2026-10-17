@@ -53,6 +53,7 @@ with this table. Any table not listed here is a finding for the reviewer.
 | Incarnation-keyed (no cascade) | `works`, `work_turns`, `mutation_receipts`, `change_records`, `language_provenance` | the kept incarnation | delete rows explicitly (`INCARNATION_KEYED_TABLES`); drafts, conversations, notes and highlights, place, private imports live here (`ORENA_ACCOUNT_BACKBONE=on` on :8000) |
 | Not in the enumeration (audit findings; D-170 put `essay_revisions`, `library_collections`, `reading_ability_projections`, `reading_attempts`, `reading_legacy_sessions`, `text_discussions` and `vocabulary_decks` into `ACCOUNT_KEYED_TABLES`, and a test keeps every table the target-language count reads there) | `essay_revisions`, `reading_legacy_sessions` (+ its attempts), `reading_attempts`, `reading_review_events`, `reading_ability_projections`, `vocabulary_decks` (+ `vocabulary_deck_members`), `vocabulary_collections` / `vocabulary_entries` / `vocabulary_collection_memberships` / `vocabulary_sense_localizations` owned by the account, `library_collections` (+ members), `text_discussions` (+ `text_discussion_turns`), `grammar_review_events` owned by the account | account | confirm ownership column per table, then delete rows |
 | Plan and usage | `subscriptions`, `usage_events` | account | delete rows |
+| Billing: Polar customer (PR-MON-10 §4.8, once built) | Polar's customer for the incarnation (`external_customer_id`) | the deleted incarnation | not deleted by hand: after the incarnation is marked deleted, run `POST /api/admin/billing/polar/customer-cleanup` (or wait for the reconciler) and confirm the clean-up marker is `complete` |
 | Cost records | `ai_cost_records` (if the table exists) | `account_id` | delete rows |
 | Audit rows of the account | `audit_logs` where `user_id` is the account: `agent.turn`, `learner.feedback` (ask the reviewer whether admin-action rows about the account stay as the record of the deletion) | `user_id` | for feedback, `platform_repository.delete_feedback_for_account(user_key)` (`persistence/platform_repository.py:794`, no runtime caller today) |
 | File store | personal uploads under `data/media_library` (`MEDIA_LIBRARY_ROOT`): entries with `library='personal'`, provider `upload` or `youtube`, owner token of the account, in every learning language, with their original and thumbnail files | owner token | `writing_coach.media_library_api.delete_all_owned_media(user_key)` (`media_library_api.py:289`, `FILE_STORES`) |
@@ -77,6 +78,8 @@ One database transaction for the SQL part, so a failure leaves nothing half-dele
 
 - Re-run the schema scan: no row left for the account id, `user_key`, incarnation id or email in any table; the store
   lists no personal entry for the owner token.
+- Billing (once PR-MON-10 is built): the Polar customer clean-up marker of the incarnation is `complete`, and no
+  `polar_customer_cleanup_failed` item is open. Do not close the request while it is pending.
 - `runtime_backup.py suppress --check` (deletion holds against the journal) answers that every record holds.
 - Sign-in with the same Google account yields a NEW incarnation with no data (`incarnation_repository.register_new`),
   not the old one.

@@ -1,6 +1,6 @@
 # PR-MON-10: Polar card subscriptions, the launch path for plans (design)
 
-**Status: DESIGNING, revision 2 (docs only), for independent re-review.** Revision 2 answers the review of `6396fef3` (4 P1) and records the owner's answers to Q1-Q4 (§0). Base: `main` `2dc57aa3`. Owner decision: D-MON-032 (plans
+**Status: DESIGNING, revision 3 (docs only), for a targeted delta re-review of §4.8.** Revision 2 answered the review of `6396fef3` (4 P1) and recorded the owner's answers to Q1-Q4 (§0). Revision 3 answers the review of `29ef5a4e` (1 P1): the Polar customer clean-up is an obligation of the deleted incarnation, with its own durable marker (§4.8). Base: `main` `2dc57aa3`. Owner decision: D-MON-032 (plans
 are auto-renewing card subscriptions through Polar; SePay only tops up Credits). This is a payment and entitlement
 change, so it needs independent review before code. Nothing is enabled. `BILLING_ENABLED` stays off on every shared
 runtime, and Polar Live is a human gate.
@@ -19,6 +19,7 @@ runtime, and Polar Live is a human gate.
 | **P1-1:** `unpaid` mapped to `past_due` | Polar's `past_due` is recoverable. When retries run out the subscription is revoked and its status becomes `unpaid`: access must end. `unpaid` (and `revoked` / `canceled` without `cancel_at_period_end`) now map to `ended` (§4.2). |
 | **P1-2:** Q2 not a concrete contract | §4.5: Polar portal settings are `allow_customer_updates=true`, `update_plan=true`, `proration_behavior=invoice`. `product_id` is the source of truth. An unknown product id gives `event_undecided`, never a fallback to the old plan. |
 | **P1-3:** the checkout's trial and discount defaults | §4.1: checkout always sends `allow_discount_codes=false` and `allow_trial=false` (both default to true on Polar). |
+| **Rev 3 / P1 (review of `29ef5a4e`):** the clean-up was found through subscription mappings and confirmed by the commerce state `ended`, which proves nothing (a subscription can end before the deletion) | §4.8 rewritten. The obligation belongs to the **deleted incarnation**, found from the incarnation itself, including incarnations whose subscription already ended. Completion is a **separate durable marker**, never inferred from `ended`. The obligation survives restart and restore. A new incarnation's checkout waits for its predecessor's clean-up. `ACCOUNT_DELETION_RUNBOOK.md` gains the step. |
 | **P1-4:** deletion lifecycle for `external_customer_id` | §4.8: when an incarnation is deleted, Orena calls `DELETE /v1/customers/external/{incarnation}` (scope `customers:write`). This immediately cancels active subscriptions and revokes benefits, with `anonymize=true`. It is retried until done, and recorded. |
 
 ## 1. Goal
@@ -171,27 +172,89 @@ interval with the period.
 The prices file has four Polar entries in USD minor units (999, 7999, 1999, 15999), each with `external_price_id` set
 to its product id. Polar's dashboard webhook subscribes to `subscription.*`, `order.paid` and `refund.*`.
 
-### 4.8 Account deletion: Polar customer clean-up (owner Q4)
+### 4.8 Account deletion: Polar customer clean-up (owner Q4, revision 3)
 
-`external_customer_id` is the account incarnation. When that incarnation is deleted (Orena's account deletion), its
-Polar customer must not keep charging or holding data.
+`external_customer_id` is the account incarnation. When an incarnation is deleted, its Polar customer must be deleted
+and anonymized: no further charge, no benefit, no personal data. The clean-up is an obligation **of the deleted
+incarnation**, not of a subscription. Orena's commerce mapping deliberately outlives the deletion, so that a late
+webhook still resolves to the old incarnation. That mapping is audit and routing state, never a clean-up receipt.
 
-- **The step.** The billing reconciler gains a step that finds each Polar subscription mapping whose incarnation is
-  deleted and whose clean-up is not yet confirmed. For each one it calls
-  `DELETE /v1/customers/external/{incarnation}?anonymize=true`:
-  - **204:** deleted. Polar immediately cancels active subscriptions, revokes benefits and anonymizes the customer's
-    personal data;
-  - **404:** already gone;
-  - anything else, or a timeout: retried at the next tick, with back-off. After a bound (proposed 24 h), an operator
-    item is raised (`event_undecided`, reason `polar_customer_cleanup_failed`).
-- **The record.** Confirmation is the commerce record of that subscription reaching `ended`, either from the
-  `.revoked` / `.canceled` webhook the deletion causes, or recorded by the step itself on 204/404 with `provider_state`
-  `deleted_customer`. Repeating the step is harmless; no schema change is needed.
-- **Money.** A deletion during a paid period ends the subscription at once. Whether a refund is owed follows the
-  existing deleted-account obligation rules (`paid_deleted_account`, the operator's refund path). Polar, as merchant of
-  record, issues any refund from its dashboard.
-- **Order of operations.** The account's own deletion is not blocked by Polar being unreachable. The clean-up is a
-  durable follow-up, like the other deleted-account obligations.
+```text
+incarnation deleted (account_incarnations.status = 'deleted')
+      |
+      v
+obligation: the incarnation had a Polar customer (discovery below) and has no completion marker
+      |
+      v
+DELETE /v1/customers/external/{incarnation}?anonymize=true      (scope customers:write)
+      |
+      +-- 204 / 404  -> marker COMPLETE (204: deleted now; 404: none, or already deleted)
+      +-- other / timeout -> marker PENDING, attempts + 1, next_attempt_at with back-off; retried
+      +-- PENDING past the bound (24 h from the first attempt) -> operator item, retries continue
+```
+
+**Discovery: derived, so it cannot be lost.**
+- Pending clean-up is computed, not queued: every incarnation with `status = 'deleted'` that ever started a Polar
+  checkout (a `billing_orders` row with `gateway = 'polar'`) or has a Polar subscription mapping, **whatever that
+  subscription's state**, and that has no `complete` marker.
+- An incarnation whose subscription ended long before the deletion is therefore still cleaned up: its Polar customer
+  exists and holds personal data.
+- It over-approximates: a checkout that was never paid may have created no customer. The answer is then 404, which is
+  complete.
+- Because the obligation is derived from the deleted incarnation, it survives a restart. It also survives a restore:
+  the deletion journal reapplies the deletion before anything is served (`deletion_journal.py`, D-054), and the
+  derivation finds the obligation again.
+
+**The durable marker: an existing primitive, no schema change.**
+- One `platform_settings` row per cleaned incarnation, key `billing.polar.customer_cleanup.<incarnation id>`, written
+  with the same CAS (`expected_updated_at`) the SePay feed cursor uses (`billing.sepay.feed_cursor`).
+- Value: `{"state": "pending" | "complete", "attempts", "first_attempt_at", "next_attempt_at", "last_status",
+  "completed_at"}`. No personal data, no Polar response body.
+- **A lost marker is safe.** A restore to before a completion, or a removed row, only re-runs the DELETE. That answers
+  404, and the marker is written `complete` again. A marker can never mark something complete that was not deleted,
+  because only a 204 or 404 writes `complete`.
+- **Reviewer choice.** If a per-incarnation key in `platform_settings` is judged the wrong home at scale, the
+  alternative is a dedicated table, which is a schema change and needs its own review. The derivation above is
+  unchanged either way.
+
+**Who runs it.**
+- The billing reconciler tick works through pending clean-ups oldest first, a bounded number per tick, honouring
+  `next_attempt_at`.
+- An admin route `POST /api/admin/billing/polar/customer-cleanup` runs the same step on demand. It is admin-only,
+  returns counts (`complete`, `pending`, `escalated`) and never Polar data.
+- Readiness reports `polar_customer_cleanup_pending` (a count) and `..._escalated`. Neither blocks checkout for other
+  accounts.
+
+**Escalation.** Past the bound, the step raises one operator item (kind `event_undecided`, reason
+`polar_customer_cleanup_failed`, `incarnation_id` set) and keeps retrying. The item is resolved when the marker
+becomes complete.
+
+**Re-registration.** The same person re-registering is a new incarnation B, with its own `external_customer_id`.
+- Before a Polar checkout for B, the service checks whether any deleted incarnation of the **same account** has a
+  pending clean-up. If so, it runs that clean-up inline once:
+  - complete: the checkout continues;
+  - still pending: the checkout is refused, 503 `previous_customer_cleanup_pending`, retryable.
+- This keeps A's customer, which holds the same email, from colliding with B's, and guarantees that A is gone before
+  B pays.
+- **Late webhooks of A never attach to B.** A's subscription mapping names incarnation A. A deleted incarnation's
+  event takes the existing deleted-account path (`paid_deleted_account` / `rejected`, an operator item) and never
+  reaches B: checkout attachment requires the order's own incarnation, and B's orders name B.
+
+**Money.**
+- Deleting the Polar customer cancels any live subscription at once.
+- Whether a refund is owed follows the existing deleted-account rules (the `paid_deleted_account` item and the
+  operator's refund path). Polar, as merchant of record, issues any refund from its dashboard.
+
+**Order of operations.** Account deletion is never blocked by Polar. The incarnation is marked deleted first, and the
+clean-up follows durably.
+
+**Runbook.** `docs/project/ACCOUNT_DELETION_RUNBOOK.md` gains a "Billing: Polar customer" row and a verification
+step:
+- after the incarnation is marked deleted, run the clean-up route (or wait for a tick);
+- confirm the marker is `complete` and no `polar_customer_cleanup_failed` item is open;
+- do not close the request while it is pending.
+
+The runbook stays DRAFT and keeps its own independent-review gate.
 
 ## 5. Tests
 
@@ -201,8 +264,17 @@ Polar customer must not keep charging or holding data.
 - `unpaid` ends access at once (no grace), while `past_due` keeps the grace;
 - the plan comes from the product id; an unknown product id gives `event_undecided` and leaves the record unchanged;
   a monthly → yearly change keeps the subscription;
-- deletion clean-up: 204, 404 and failure with retry; the bound raises an operator item; repeats are harmless; the
-  account deletion itself is never blocked;
+- deletion clean-up (§4.8):
+  - a subscription already `ended` before the account is deleted: the Polar customer is still deleted;
+  - a deleted incarnation, then a restart: the clean-up is still pending and continues;
+  - a lost marker (row removed, or a restore to before completion): the DELETE re-runs, gets 404 and completes;
+  - 204 completes; 404 completes and repeating is harmless;
+  - a failure retries with back-off, then escalates to one operator item, which resolves on completion;
+  - `complete` is written only on 204 or 404, never inferred from a commerce state;
+  - delete A, then register B with the same identity and email: B's checkout runs A's pending clean-up first, then
+    proceeds; with A still failing, B is refused (503 `previous_customer_cleanup_pending`);
+  - a late webhook of A never attaches to B;
+  - the account deletion itself is never blocked;
 - every row of §4.2, from signed fixture webhooks shaped like the captured sandbox payloads (§6);
 
 - the portal route: ok, no subscription, Polar failure, and no URL in the logs;
@@ -226,7 +298,8 @@ On the `:8031` sandbox, with a quick tunnel for the Polar sandbox webhook and th
 5. a failing renewal (a Stripe test card that fails after attaching), if the sandbox allows it: `past_due`, then the
    grace;
 6. a refund from Polar's dashboard: recorded;
-7. delete a test account: the Polar customer is deleted (anonymized), its subscription revoked, and the record ends;
+7. delete a test account (with an already-ended subscription too): the Polar customer is deleted (anonymized), a
+   live subscription revoked, and the marker `complete`; a re-registration's checkout then works;
 8. the Polar-side price check: ready with matching prices, not ready after an edited price.
 
 Polar **Live** (production token, real card) is a later human gate, together with gate 7b.
