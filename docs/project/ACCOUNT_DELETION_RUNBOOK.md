@@ -53,6 +53,7 @@ with this table. Any table not listed here is a finding for the reviewer.
 | Incarnation-keyed (no cascade) | `works`, `work_turns`, `mutation_receipts`, `change_records`, `language_provenance` | the kept incarnation | delete rows explicitly (`INCARNATION_KEYED_TABLES`); drafts, conversations, notes and highlights, place, private imports live here (`ORENA_ACCOUNT_BACKBONE=on` on :8000) |
 | Not in the enumeration (audit findings; D-170 put `essay_revisions`, `library_collections`, `reading_ability_projections`, `reading_attempts`, `reading_legacy_sessions`, `text_discussions` and `vocabulary_decks` into `ACCOUNT_KEYED_TABLES`, and a test keeps every table the target-language count reads there) | `essay_revisions`, `reading_legacy_sessions` (+ its attempts), `reading_attempts`, `reading_review_events`, `reading_ability_projections`, `vocabulary_decks` (+ `vocabulary_deck_members`), `vocabulary_collections` / `vocabulary_entries` / `vocabulary_collection_memberships` / `vocabulary_sense_localizations` owned by the account, `library_collections` (+ members), `text_discussions` (+ `text_discussion_turns`), `grammar_review_events` owned by the account | account | confirm ownership column per table, then delete rows |
 | Plan and usage | `subscriptions`, `usage_events` | account | delete rows |
+| Billing: Polar customer (PR-MON-10 §4.8) | Polar's customer for the incarnation (`external_customer_id`): its card subscriptions, benefits and personal data at Polar | the deleted incarnation | **not deleted by hand.** After the incarnation is marked deleted, run `POST /api/admin/billing/polar/customer-cleanup` (or wait for the billing reconciler). It deletes the customer with `anonymize=true`, which cancels its subscriptions at once; a refund owed for a paid period follows `paid_deleted_account` and is issued from Polar's dashboard |
 | Cost records | `ai_cost_records` (if the table exists) | `account_id` | delete rows |
 | Audit rows of the account | `audit_logs` where `user_id` is the account: `agent.turn`, `learner.feedback` (ask the reviewer whether admin-action rows about the account stay as the record of the deletion) | `user_id` | for feedback, `platform_repository.delete_feedback_for_account(user_key)` (`persistence/platform_repository.py:794`, no runtime caller today) |
 | File store | personal uploads under `data/media_library` (`MEDIA_LIBRARY_ROOT`): entries with `library='personal'`, provider `upload` or `youtube`, owner token of the account, in every learning language, with their original and thumbnail files | owner token | `writing_coach.media_library_api.delete_all_owned_media(user_key)` (`media_library_api.py:289`, `FILE_STORES`) |
@@ -77,6 +78,11 @@ One database transaction for the SQL part, so a failure leaves nothing half-dele
 
 - Re-run the schema scan: no row left for the account id, `user_key`, incarnation id or email in any table; the store
   lists no personal entry for the owner token.
+- **Billing, Polar customer (PR-MON-10 §4.8).** The clean-up marker of the incarnation is `complete`:
+  `SELECT value->>'state' FROM platform_settings WHERE key = 'billing.polar.customer_cleanup.<incarnation id>'`
+  answers `complete` (read-only). And `GET /api/admin/billing/reconciliation` lists no open `event_undecided` item
+  whose reason starts with `polar_customer_cleanup_failed` for it. While the marker is `pending`, run the clean-up
+  route again; **do not close the request while it is pending.** A marker that is missing is pending, not done.
 - `runtime_backup.py suppress --check` (deletion holds against the journal) answers that every record holds.
 - Sign-in with the same Google account yields a NEW incarnation with no data (`incarnation_repository.register_new`),
   not the old one.
@@ -84,7 +90,8 @@ One database transaction for the SQL part, so a failure leaves nothing half-dele
 
 ## 6. Close
 
-Reply to the learner from `orena.support@chillpickle.org` that the account is deleted and what remains (section 4).
+Close only after section 5 holds, including the Polar customer clean-up (`complete`). Reply to the learner from
+`orena.support@chillpickle.org` that the account is deleted and what remains (section 4).
 Record the completion date in the request log. If the 30 days are about to pass, tell the learner why and when.
 
 ## 7. Open items for the reviewer

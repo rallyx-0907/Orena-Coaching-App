@@ -51,17 +51,20 @@ _items: Any = None  # the reconciliation items (PR-MON-3)
 _reconcile: Callable[[], Any] | None = None  # one reconciliation pass
 _credits: Any = None  # the credit service (PR-MON-4), only when credits are enabled
 _sepay_backfill: Callable[[Any, Any], dict] | None = None  # PR-MON-8 §6.4, the operator's SePay recovery
+_email: Callable[[Request], str] | None = None  # the signed-in learner's email, for Polar's checkout (PR-MON-10 §4.1)
 MAX_WEBHOOK_BYTES = 256 * 1024
 
 
 def configure_billing(*, service: Any, backbone: Any, admin_guard: Callable[[Request], Any],
                       public_base_url: str, reconciliation: Any = None,
                       reconcile: Callable[[], Any] | None = None, credits: Any = None,
-                      sepay_backfill: Callable[[datetime, datetime], dict] | None = None) -> None:
-    global _service, _backbone, _admin, _public_base, _items, _reconcile, _credits, _sepay_backfill
+                      sepay_backfill: Callable[[datetime, datetime], dict] | None = None,
+                      email: Callable[[Request], str] | None = None) -> None:
+    global _service, _backbone, _admin, _public_base, _items, _reconcile, _credits, _sepay_backfill, _email
     _service, _backbone, _admin, _public_base = service, backbone, admin_guard, public_base_url.rstrip("/")
     _items, _reconcile, _credits = reconciliation, reconcile, credits
     _sepay_backfill = sepay_backfill
+    _email = email
 
 
 def _billing_ready() -> bool:
@@ -70,6 +73,17 @@ def _billing_ready() -> bool:
     from writing_coach.billing import readiness
 
     return readiness.billing_ready()
+
+
+def _learner_email(request: Request) -> str:
+    """The signed-in learner's email, or "" (Polar then asks for it). Never logged."""
+
+    if _email is None:
+        return ""
+    try:
+        return str(_email(request) or "")
+    except Exception:  # noqa: BLE001 - an email that cannot be read is simply not prefilled
+        return ""
 
 
 def _capability_ready(name: str) -> bool:
@@ -113,7 +127,8 @@ class CheckoutIn(BaseModel):
 
 # A refused checkout's HTTP answer; anything not named is a conflict with the account's state (409).
 _REFUSAL_STATUS = {"catalog_unavailable": 503, "price_unconfirmed": 422, "reconciliation_critical": 503,
-                   "credits_not_ready": 503}
+                   "credits_not_ready": 503, "polar_price_mismatch": 503, "polar_unreadable": 503,
+                   "previous_customer_cleanup_pending": 503}
 
 
 class ResolveIn(BaseModel):
@@ -165,12 +180,17 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
         raise orena_http_error(401, "sign_in_required", "Sign in to pay.", retryable=False)
     incarnation = _incarnation()
     base = _public_base or str(request.base_url).rstrip("/")
+    # PR-MON-10 §4.1: a plan returns to Plan & usage (the page shows the outcome; only a webhook grants);
+    # a credit top-up keeps its existing return page.
+    done, back = ((f"{base}/#/plan?checkout=done", f"{base}/#/plan") if capability == "plans"
+                  else (f"{base}/#/profile", f"{base}/#/profile"))  # fmt: skip
     try:
         return service.start_checkout(incarnation_id=incarnation, price_key=payload.price, operation_id=payload.operation_id,
-                                      return_url=f"{base}/#/profile", cancel_url=f"{base}/#/profile",
+                                      return_url=done, cancel_url=back,
                                       confirmed_amount_minor=payload.amount_minor,
                                       confirmed_currency=payload.currency,
-                                      confirmed_credit_units=payload.credit_units)  # fmt: skip
+                                      confirmed_credit_units=payload.credit_units,
+                                      customer_email=_learner_email(request))  # fmt: skip
     except LookupError:
         raise orena_http_error(404, "price_not_offered", "This price is not offered.", retryable=False) from None
     except CheckoutRefused as refused:
@@ -180,6 +200,45 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
         raise orena_http_error(422, "operation_id_invalid", "An operation id is a UUID.", retryable=False) from None
     except Exception:  # noqa: BLE001 - the gateway's own failure: say so, change nothing else
         raise orena_http_error(502, "gateway_unavailable", "The payment page could not be opened. Try again.",
+                               retryable=True) from None
+
+
+@router.post("/api/admin/billing/polar/customer-cleanup")
+def admin_polar_customer_cleanup(request: Request) -> dict[str, Any]:
+    """PR-MON-10 §4.8: run the Polar customer clean-up of deleted incarnations now (the reconciler also runs it).
+    Counts only: no Polar data, no account data."""
+
+    if _admin is None:
+        raise orena_http_error(503, "billing_off", "Payments are not open on this deployment.", retryable=False)
+    _admin(request)  # the administrator first, then whether billing is on
+    service = _require_service()
+    cleanup = getattr(service, "polar_cleanup", None)
+    if cleanup is None:
+        raise orena_http_error(503, "polar_cleanup_unavailable", "The Polar clean-up is not configured.",
+                               retryable=False)
+    return cleanup.run()
+
+
+@router.post("/api/billing/portal")
+def billing_portal(request: Request) -> dict[str, Any]:
+    """PR-MON-10 §4.4: the signed-in learner's Polar customer portal (cancel, change plan, card, invoices). Managing a
+    subscription that exists is not gated by new-sale readiness."""
+
+    service = _require_service()
+    if current_user_key() in {"", "legacy", "local-admin"}:
+        raise orena_http_error(401, "sign_in_required", "Sign in to manage your plan.", retryable=False)
+    incarnation = _incarnation()
+    base = _public_base or str(request.base_url).rstrip("/")
+    try:
+        return service.customer_portal(incarnation, f"{base}/#/plan")
+    except LookupError:
+        raise orena_http_error(404, "no_subscription", "There is no card subscription to manage.",
+                               retryable=False) from None
+    except CheckoutRefused:
+        raise orena_http_error(503, "portal_unavailable", "Managing a plan is not available right now.",
+                               retryable=True) from None
+    except Exception:  # noqa: BLE001 - Polar's own failure; the link is never logged
+        raise orena_http_error(502, "gateway_unavailable", "The plan page could not be opened. Try again.",
                                retryable=True) from None
 
 

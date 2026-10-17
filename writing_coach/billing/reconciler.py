@@ -152,8 +152,9 @@ class BillingReconciler:
     def __init__(self, *, service: Any, orders: Any, items: Any, lock: Callable[[], Any],
                  lookups: Mapping[str, Callable[[int], Lookup]], settings: Settings = Settings(),
                  now: Callable[[], datetime] = lambda: datetime.now(UTC), credits: Any = None,
-                 feed: Any = None) -> None:
+                 feed: Any = None, polar_cleanup: Any = None) -> None:
         self._service = service
+        self._polar_cleanup = polar_cleanup  # PR-MON-10 §4.8: the Polar customer clean-up of deleted incarnations
         self._feed = feed  # PR-MON-8: the SePay recovery feed, which runs only when switched on (sepay_feed.py)
         self._credits = credits  # PR-MON-4: the credit ledger's step, when credits are enabled
         self._orders = orders
@@ -177,6 +178,8 @@ class BillingReconciler:
                 steps.append(("credit_orders", self._credit_order_step))
             if self._feed is not None and self._feed.enabled:
                 steps.append(("sepay_feed", self._feed.step))
+            if self._polar_cleanup is not None and self._polar_cleanup.configured:
+                steps.append(("polar_cleanup", self._polar_cleanup.step))
             for name, step in steps:
                 if not lock.alive():
                     counts["lock_lost"] += 1

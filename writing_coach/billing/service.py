@@ -29,6 +29,8 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
+import time
 import urllib.request
 import uuid
 from collections.abc import Callable, Mapping
@@ -204,10 +206,32 @@ def late_payment_grace() -> timedelta | None:
     return timedelta(hours=hours)
 
 
+POLAR_CHECK_SECONDS = 300.0  # a matching Polar-side answer is trusted this long (PR-MON-10 §4.6)
+POLAR_RETRY_SECONDS = 60.0   # an unreadable answer is asked again sooner
+
+
+def polar_product_matches(product: Mapping[str, Any], price: Price) -> bool:
+    """R-MON-011: the Polar product the prices file names sells exactly that price: not archived, recurring on the
+    price's period, and exactly one live fixed price of the same amount and currency."""
+
+    if not isinstance(product, Mapping) or product.get("is_archived"):
+        return False
+    if str(product.get("id") or "") != price.external_price_id or product.get("recurring_interval") != price.period:
+        return False
+    live = [entry for entry in product.get("prices") or []
+            if isinstance(entry, Mapping) and not entry.get("is_archived")]  # fmt: skip
+    if len(live) != 1:
+        return False
+    return (live[0].get("amount_type") == "fixed" and live[0].get("price_amount") == price.amount_minor
+            and str(live[0].get("price_currency") or "").upper() == price.currency)  # fmt: skip
+
+
 def _send(request: dict) -> dict:
-    body = json.dumps(request["json"]).encode("utf-8")
+    body = json.dumps(request["json"]).encode("utf-8") if "json" in request else None
+    # A named client: a provider behind Cloudflare refuses the default Python agent (PR-MON-8 #249).
     call = urllib.request.Request(request["url"], data=body, method=request["method"],
-                                  headers={"Content-Type": "application/json", **request["headers"]})  # fmt: skip
+                                  headers={"Content-Type": "application/json", "Accept": "application/json",
+                                           "User-Agent": "Orena-Billing/1.0", **request["headers"]})  # fmt: skip
     with urllib.request.urlopen(call, timeout=20) as response:  # noqa: S310 - fixed https gateway hosts
         return json.loads(response.read(1_000_000).decode("utf-8"))
 
@@ -224,8 +248,15 @@ class BillingService:
                  send: Callable[[dict], dict] = _send, now: Callable[[], datetime] = lambda: datetime.now(UTC),
                  reconciliation: Any = None, credit_packs: Mapping[str, CreditPack] | None = None,
                  credits: Any = None, domestic: str | None = None, production: bool = False,
-                 grace: Callable[[], timedelta | None] = late_payment_grace) -> None:
+                 grace: Callable[[], timedelta | None] = late_payment_grace,
+                 polar_products: Callable[[str], Mapping[str, Any]] | None = None,
+                 clock: Callable[[], float] = time.monotonic) -> None:
         self._orders = orders
+        # PR-MON-10 §4.6: reads one Polar product by id (None: the Polar-side check is not wired, e.g. tests)
+        self._polar_products = polar_products
+        self._clock = clock
+        self._polar_check: tuple[float, str] | None = None
+        self._polar_lock = threading.Lock()
         # PR-MON-8 §5: the explicitly chosen domestic gateway (`BILLING_DOMESTIC_GATEWAY`), and whether this runtime is
         # production (only outside production may a single configured domestic gateway be inferred).
         self._domestic_choice = (domestic or "").strip().casefold() or None
@@ -244,9 +275,18 @@ class BillingService:
         self._now = now
         # PR-MON-6 §8: the cost gate per pack. It can only remove a pack from sale (K1, K5); None = not attached.
         self._pack_gate: Any = None
+        # PR-MON-10 §4.8: the Polar customer clean-up of deleted incarnations; None = not attached.
+        self._polar_cleanup: Any = None
 
     def attach_credits(self, credits: Any) -> None:
         self._credits = credits
+
+    def attach_polar_cleanup(self, cleanup: Any) -> None:
+        self._polar_cleanup = cleanup
+
+    @property
+    def polar_cleanup(self) -> Any:
+        return self._polar_cleanup
 
     def attach_pack_gate(self, sellable: Any) -> None:
         """`sellable(pack_key) -> bool` (PR-MON-6 §8): a pack failing the cost gate is not offered and not sold."""
@@ -417,6 +457,37 @@ class BillingService:
 
         return bool(self._credit_packs) or self._credits is not None
 
+    def polar_price_state(self) -> str:
+        """`match` | `mismatch` | `unreadable` | `unchecked`: every Polar plan price against Polar's own product
+        (R-MON-011), kept POLAR_CHECK_SECONDS (an unreadable answer POLAR_RETRY_SECONDS). Never raises."""
+
+        priced = [price for price in self._prices.values() if price.gateway == "polar"]
+        if self._polar_products is None or "polar" not in self._gateways or not priced:
+            return "unchecked"
+        now = self._clock()
+        cached = self._polar_check
+        if cached is not None and cached[0] > now:
+            return cached[1]
+        with self._polar_lock:
+            cached = self._polar_check
+            if cached is not None and cached[0] > now:
+                return cached[1]
+            state = "match"
+            for price in priced:
+                try:
+                    product = self._polar_products(price.external_price_id)
+                except Exception:  # noqa: BLE001 - an answer that cannot be read sells nothing
+                    _log.warning("billing: Polar product %s cannot be read", price.external_price_id, exc_info=True)
+                    state = "unreadable"
+                    break
+                if not polar_product_matches(product, price):
+                    _log.warning("billing: Polar product %s does not sell %s:%s", price.external_price_id,
+                                 price.plan_id, price.period)  # fmt: skip
+                    state = "mismatch"
+            ttl = POLAR_RETRY_SECONDS if state == "unreadable" else POLAR_CHECK_SECONDS
+            self._polar_check = (now + ttl, state)
+            return state
+
     def plans_capability(self, report: Mapping[str, Mapping[str, Any]] | None = None) -> dict[str, Any]:
         """Plans are sold by Polar only: configured, priced, every price the catalogue's, no critical item on it."""
 
@@ -434,6 +505,10 @@ class BillingService:
             blockers.append("reconciliation_unavailable")
         elif entry.get("reconciliation_critical"):
             blockers.append("reconciliation_critical")
+        if entry.get("provider_prices") == "mismatch":
+            blockers.append("polar_price_mismatch")
+        elif entry.get("provider_prices") == "unreadable":
+            blockers.append("polar_unreadable")
         return {"ready": not blockers, "blockers": blockers}
 
     def credits_capability(self) -> dict[str, Any]:
@@ -505,6 +580,16 @@ class BillingService:
                 entry["feed"] = "enabled" if getattr(gateway, "feed_enabled", False) else "disabled"
             if gateway is not None and getattr(gateway, "environment", None):
                 entry["environment"] = gateway.environment
+            if name == "polar" and self._polar_cleanup is not None:
+                try:
+                    # §4.8: reported, never a blocker of other accounts' checkouts
+                    entry["customer_cleanup"] = self._polar_cleanup.counts()
+                except Exception:  # noqa: BLE001
+                    entry["customer_cleanup"] = "unavailable"
+            if name == "polar" and gateway is not None:
+                entry["provider_prices"] = self.polar_price_state()
+                if entry["provider_prices"] in ("mismatch", "unreadable"):
+                    entry["ready"] = False
             if checks is None:
                 entry["catalog"] = "unavailable"
             report[name] = entry
@@ -534,6 +619,14 @@ class BillingService:
         critical = self._critical_blocked()
         if critical is None or price.gateway in critical:
             raise CheckoutRefused("reconciliation_critical")
+        provider = self.polar_price_state()
+        if provider in ("mismatch", "unreadable"):
+            # R-MON-011: Polar charges its product's own price; one that is not the catalogue's sells nothing.
+            raise CheckoutRefused("polar_price_mismatch" if provider == "mismatch" else "polar_unreadable")
+        if self._polar_cleanup is not None and not self._polar_cleanup.settle_account_of(incarnation_id):
+            # §4.8: a re-registered account pays only once its deleted predecessor's Polar customer is gone (the same
+            # email must not meet a customer that still exists).
+            raise CheckoutRefused("previous_customer_cleanup_pending")
         self._refuse_second_subscription(incarnation_id, price, gateway)
         order = self._orders.create_order(operation_id=operation_id, incarnation_id=incarnation_id,
                                           gateway=price.gateway, plan_id=price.plan_id, period=price.period,
@@ -664,6 +757,8 @@ class BillingService:
             return self._subscription(fact)
         if fact.kind == "refund":
             return self._refund(fact)
+        if fact.kind == "order":
+            return self._order_evidence(fact)
         # other verified events move no money: logged, no effect.
         _log.info("billing event from %s: %s %s", gateway_name, fact.kind, fact.provider_state)
         return WebhookOutcome("ignored", fact.kind)
@@ -708,6 +803,53 @@ class BillingService:
             return WebhookOutcome("recorded", "refund_matched")
         return WebhookOutcome("recorded", "refund_matched" if incarnation else "refund_unmatched")
 
+    def _order_evidence(self, fact: PaymentFact) -> WebhookOutcome:
+        """PR-MON-10 §4.3: Polar's `order.paid` (a first payment or a renewal) is evidence only. It is kept as a
+        durable, terminal receipt of the account it belongs to - never an access change - before it is acknowledged;
+        a write that fails raises, and the webhook answers 503 so Polar delivers it again. The account is the one
+        the subscription's stored mapping names, else Orena's own checkout order for it; neither is an operator
+        item, so nothing verified is acknowledged without a durable trace."""
+
+        extra = fact.extra or {}
+        subscription = str(extra.get("subscription_id") or "")
+        incarnation = None
+        if subscription:
+            mapped = self._commerce.get_provider_subscription(fact.gateway, subscription)
+            incarnation = str(mapped["incarnation_id"]) if mapped else None
+        if incarnation is None:
+            operation = str(extra.get("orena_operation") or "")
+            order = self._orders.order(operation_id=operation) if operation else None
+            incarnation = self._known_checkout(fact, order)
+        what = f"order {fact.external_reference} of subscription {subscription or '(none)'}"
+        if incarnation is None:
+            self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                       provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                       reported_amount_minor=fact.amount_minor, reported_currency=fact.currency,
+                       reason=f"{what} names no account of Orena")  # fmt: skip
+            return WebhookOutcome("unknown", "order_unmatched")
+        outcome = self._commerce.record_evidence(incarnation_id=incarnation, provider=fact.gateway,
+                                                 external_event_id=fact.event_id,
+                                                 external_object_reference=fact.external_reference,
+                                                 payload_digest=fact.payload_digest or None,
+                                                 note=f"evidence {fact.provider_state}")  # fmt: skip
+        status = str(outcome.get("status"))
+        if status in ("recorded", "duplicate") and outcome.get("incarnation_deleted"):
+            # Money Polar took after the account was deleted (a renewal before the clean-up completed): the
+            # deleted-account obligation, recorded with what was paid before the ack - a write that fails raises and
+            # Polar delivers again (the receipt then answers `duplicate`, and the item is recorded once by its key).
+            self._item("paid_deleted_account", fact.gateway, f"order:{fact.external_reference or fact.event_id}",
+                       external_event_id=fact.event_id, reported_amount_minor=fact.amount_minor,
+                       reported_currency=fact.currency, provider_state=fact.provider_state,
+                       payload_digest=fact.payload_digest or None, incarnation_id=incarnation,
+                       reason=f"paid after the account was deleted; {what}; refund from Polar's dashboard")  # fmt: skip
+            return WebhookOutcome("paid_deleted_account", "order_paid")
+        if status in ("recorded", "duplicate"):
+            return WebhookOutcome(status, "order_paid")
+        self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                   provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                   reason=f"{status} {what}", incarnation_id=None if status == "rejected" else incarnation)  # fmt: skip
+        return WebhookOutcome("unknown", status)
+
     def _subscription(self, fact: PaymentFact) -> WebhookOutcome:
         from writing_coach.persistence.commerce_repository import SubscriptionUpdate
 
@@ -724,8 +866,25 @@ class BillingService:
                        provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
                        reason=f"subscription {fact.external_reference} names no checkout of Orena")  # fmt: skip
             return WebhookOutcome("unknown", "no_checkout_for_subscription")
-        # The plan is the one Orena's own order sold, when the order is this account's; signed metadata otherwise.
-        plan = order["plan_id"] if order is not None and str(order["incarnation_id"]) == incarnation else fact.plan_id
+        if fact.gateway in PLAN_GATEWAYS:
+            # PR-MON-10 §4.5: the subscription's product is the source of truth for its plan, on every event (a plan
+            # or period changed in Polar's portal arrives as a new product). An unknown or unpriced product changes
+            # nothing: an operator item, never a fallback to the previous plan or to the checkout's metadata.
+            product = str((fact.extra or {}).get("product_id") or "")
+            plan = self._plan_for_product(product)
+            if plan is None:
+                self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                           provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                           reason=f"unknown_product {product or '(none)'} on subscription {fact.external_reference}",
+                           incarnation_id=incarnation)  # fmt: skip
+                return WebhookOutcome("unknown", "unknown_product")
+            sold = order["plan_id"] if order is not None and str(order["incarnation_id"]) == incarnation else None
+            if sold is not None and sold != plan:
+                _log.warning("billing: %s subscription %s is on plan %s, its checkout sold %s (portal change?)",
+                             fact.gateway, fact.external_reference, plan, sold)  # fmt: skip
+        else:
+            # The plan is the one Orena's own order sold, when the order is this account's; signed metadata otherwise.
+            plan = order["plan_id"] if order is not None and str(order["incarnation_id"]) == incarnation else fact.plan_id
         update = SubscriptionUpdate(state=fact.state or "unknown", plan_id=plan or "free",
                                     external_customer_id=fact.external_customer_id,
                                     external_subscription_id=fact.external_reference,
@@ -743,6 +902,33 @@ class BillingService:
                        # `rejected` is an account the commerce record does not know: nothing to link to.
                        incarnation_id=None if result.status == "rejected" else incarnation)  # fmt: skip
         return result
+
+    # ---- manage and cancel (PR-MON-10 §4.4) ----------------------------------------------------------------------
+
+    def customer_portal(self, incarnation_id: str, return_url: str) -> dict[str, Any]:
+        """A pre-authenticated Polar customer-portal link for this account's card subscription: cancel, change the
+        plan, update the card, read invoices. The link is returned to the learner only: never logged, never stored."""
+
+        gateway = self._gateways.get("polar")
+        if gateway is None:
+            raise CheckoutRefused("portal_unavailable")
+        current = self._commerce.get_subscription(incarnation_id)
+        if not current or current.get("provider") != "polar" or not current.get("external_subscription_id"):
+            raise LookupError("no_subscription")
+        answer = self._send(gateway.customer_session_request(incarnation_id, return_url))
+        url = str(answer.get("customer_portal_url") or "")
+        if not url.startswith("https://"):
+            raise RuntimeError("portal_session_failed")
+        return {"url": url, "expires_at": str(answer.get("expires_at") or "")}
+
+    def _plan_for_product(self, product_id: str) -> str | None:
+        """The plan a Polar product is priced as (`external_price_id` in the prices file), or None."""
+
+        if not product_id:
+            return None
+        plans = {price.plan_id for price in self._prices.values()
+                 if price.gateway in PLAN_GATEWAYS and price.external_price_id == product_id}  # fmt: skip
+        return plans.pop() if len(plans) == 1 else None
 
     @staticmethod
     def _outcome(outcome: Mapping[str, Any], what: str) -> WebhookOutcome:

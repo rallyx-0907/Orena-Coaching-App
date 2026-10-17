@@ -26,7 +26,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Literal, Protocol
 
-FactKind = Literal["subscription", "payment", "refund", "ignored"]
+FactKind = Literal["subscription", "payment", "refund", "order", "ignored"]
 
 
 class WebhookRejected(Exception):

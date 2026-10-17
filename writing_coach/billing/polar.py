@@ -38,13 +38,17 @@ from writing_coach.billing.gateway import (
 
 API_BASE = {"production": "https://api.polar.sh", "sandbox": "https://sandbox-api.polar.sh"}
 TOLERANCE = timedelta(minutes=5)
-# Polar subscription status -> Orena's canonical state (ORENA_COMMERCE_ARCHITECTURE.md §3).
+# Polar subscription status -> Orena's canonical state (ORENA_COMMERCE_ARCHITECTURE.md §3). PR-MON-10 §4.2: `past_due`
+# is recoverable (the learner can update the card) and keeps the billing grace; `unpaid` is Polar's end after its
+# retries are exhausted (the subscription is revoked), so access ends at once.
 STATES = {"incomplete": "pending", "incomplete_expired": "ended", "trialing": "trialing", "active": "active",
-          "past_due": "past_due", "canceled": "ended", "unpaid": "past_due"}  # fmt: skip
+          "past_due": "past_due", "canceled": "ended", "unpaid": "ended"}  # fmt: skip
 SUBSCRIPTION_EVENTS = frozenset({"subscription.created", "subscription.updated", "subscription.active",
                                  "subscription.canceled", "subscription.uncanceled", "subscription.revoked",
-                                 "subscription.past_due"})  # fmt: skip
+                                 "subscription.past_due", "subscription.cycled"})  # fmt: skip
 REFUND_EVENTS = frozenset({"refund.created", "refund.updated"})
+# PR-MON-10 §4.3: a paid order (the first payment or a renewal) is evidence only - receipted, no access change.
+ORDER_EVENTS = frozenset({"order.paid"})
 
 
 def _keys(secret: str) -> list[bytes]:
@@ -122,7 +126,9 @@ class PolarGateway:
         metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
         base = {"gateway": self.name, "event_id": message_id, "payload_digest": body_digest,
                 "incarnation_hint": str(metadata.get("orena_incarnation") or "") or None,
-                "extra": {"orena_operation": str(metadata.get("orena_operation") or "")}}  # fmt: skip
+                # PR-MON-10 §4.5: the subscription's product is the source of truth for its plan
+                "extra": {"orena_operation": str(metadata.get("orena_operation") or ""),
+                          "product_id": str(data.get("product_id") or "")}}  # fmt: skip
         if kind in SUBSCRIPTION_EVENTS:
             status = str(data.get("status") or "")
             return PaymentFact(
@@ -144,15 +150,58 @@ class PolarGateway:
                        "subscription_id": str(data.get("subscription_id") or ""),
                        "order_id": str(data.get("order_id") or "")},
             )  # fmt: skip
+        if kind in ORDER_EVENTS:
+            return PaymentFact(
+                **{key: value for key, value in base.items() if key != "extra"}, kind="order",
+                external_reference=str(data.get("id") or "") or None, provider_state=kind,
+                amount_minor=minor_units(data.get("total_amount")),
+                currency=str(data.get("currency") or "").upper() or None,
+                extra={**base["extra"], "subscription_id": str(data.get("subscription_id") or ""),
+                       "billing_reason": str(data.get("billing_reason") or "")},
+            )  # fmt: skip
         return PaymentFact(**base, kind="ignored", external_reference=None, provider_state=kind or None)
+
+    def product_request(self, product_id: str) -> dict:
+        """PR-MON-10 §4.6 (R-MON-011): a read-only `GET /v1/products/{id}` (scope `products:read`)."""
+
+        from urllib.parse import quote
+
+        return {"method": "GET", "url": API_BASE[self.environment] + "/v1/products/" + quote(product_id, safe=""),
+                "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip
+
+    def customer_delete_request(self, external_customer_id: str) -> dict:
+        """PR-MON-10 §4.8: `DELETE /v1/customers/external/{id}?anonymize=true` (scope `customers:write`): cancels the
+        customer's subscriptions at once, revokes benefits and anonymizes personal data. 204 deleted, 404 none."""
+
+        from urllib.parse import quote
+
+        return {"method": "DELETE",
+                "url": API_BASE[self.environment] + "/v1/customers/external/" + quote(external_customer_id, safe="")
+                + "?anonymize=true",
+                "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip
+
+    def customer_session_request(self, external_customer_id: str, return_url: str) -> dict:
+        """PR-MON-10 §4.4: `POST /v1/customer-sessions/` (scope `customer_sessions:write`) answers a pre-authenticated
+        `customer_portal_url` that expires; the customer is Orena's incarnation (`external_customer_id`)."""
+
+        return {"method": "POST", "url": API_BASE[self.environment] + "/v1/customer-sessions/",
+                "json": {"external_customer_id": external_customer_id, "return_url": return_url},
+                "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip
 
     def checkout_request(self, intent: CheckoutIntent) -> dict:
         if not intent.price.external_price_id:
             raise ValueError("a Polar price is a Polar product id")
+        joiner = "&" if "?" in intent.return_url else "?"
         body = {
-            "products": [intent.price.external_price_id], "success_url": intent.return_url,
+            "products": [intent.price.external_price_id],
+            # PR-MON-10 §4.1: the return page only shows the outcome; access changes only from a verified webhook.
+            "success_url": f"{intent.return_url}{joiner}checkout_id={{CHECKOUT_ID}}", "return_url": intent.cancel_url,
             "metadata": {"orena_incarnation": intent.incarnation_id, "orena_plan": intent.price.plan_id,
                          "orena_operation": intent.operation_id},
+            # Q4: the incarnation is Polar's customer; a deleted account's customer is removed (§4.8).
+            "external_customer_id": intent.incarnation_id,
+            # Q3: no discount code and no trial at launch (both default to true on Polar).
+            "allow_discount_codes": False, "allow_trial": False,
         }  # fmt: skip
         if intent.customer_email:
             body["customer_email"] = intent.customer_email

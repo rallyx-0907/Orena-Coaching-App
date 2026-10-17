@@ -248,7 +248,8 @@ def test_billing_is_ready_only_when_every_runtime_capability_is():
         "capabilities": {"plans": {"ready": True, "blockers": []},
                          "credits": {"ready": False, "blockers": ["credits_not_configured"]}},
         "checks": {"switch": "on", "database": "postgresql", "account_backbone": "active", "commerce_schema": "present",
-                   "orders_schema": "present", "entitlement_source": "installed", "public_base_url": "https"}}  # fmt: skip
+                   "orders_schema": "present", "entitlement_source": "installed", "public_base_url": "https",
+                   "new_sales": "on"}}  # fmt: skip
 
 
 @pytest.mark.parametrize(("override", "blocker"), [
@@ -483,6 +484,26 @@ def test_a_billing_ready_runtime_offers_and_starts_checkout_as_before(billing_ro
     started = client.post("/api/billing/checkout", json=body())
     assert started.status_code == 200 and started.json()["redirect_url"] == "https://pay/x"
     assert len(orders.created) == 1 and len(sent) == 1
+
+
+def test_a_plan_checkout_returns_to_plan_and_usage_and_prefills_the_learners_email(billing_routes, monkeypatch):
+    """PR-MON-10 §4.1: Polar's success page is Plan & usage with the checkout id; the email is the signed-in one."""
+
+    from writing_coach import billing_api
+
+    install = billing_routes
+    orders, sent = Orders(), []
+    service = billing([PLUS_USD], orders=orders, sent=sent)
+    client = install(service, facts(service=service))
+    monkeypatch.setattr(billing_api, "_email", lambda request: "learner@example.test")
+    assert client.post("/api/billing/checkout", json=body()).status_code == 200
+    sent_body = sent[0]["json"]
+    assert sent_body["success_url"] == "https://orena.example/#/plan?checkout=done&checkout_id={CHECKOUT_ID}"
+    assert sent_body["return_url"] == "https://orena.example/#/plan"
+    assert sent_body["customer_email"] == "learner@example.test" and sent_body["external_customer_id"] == "inc-1"
+    monkeypatch.setattr(billing_api, "_email", lambda request: (_ for _ in ()).throw(RuntimeError("no session")))
+    assert client.post("/api/billing/checkout", json=body()).status_code == 200
+    assert "customer_email" not in sent[1]["json"]   # an unreadable email is simply not prefilled
 
 
 def test_a_checkout_for_a_capability_that_is_not_ready_is_refused_while_the_other_sells(billing_routes):

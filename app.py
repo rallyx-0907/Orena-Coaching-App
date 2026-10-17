@@ -1348,7 +1348,22 @@ def _billing_service():
                           reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine),
                           # PR-MON-8 §5: the domestic gateway is an explicit choice; inferred only outside production.
                           domestic=domestic_choice(os.environ),
-                          production=os.getenv("APP_ENV", "").strip().casefold() == "production")
+                          production=os.getenv("APP_ENV", "").strip().casefold() == "production",
+                          # PR-MON-10 §4.6 (R-MON-011): Polar's own products are checked against the prices file
+                          polar_products=_polar_products(os.environ))
+
+
+def _polar_products(env):
+    """A read of one Polar product by id, when Polar is configured; None otherwise."""
+
+    from writing_coach.billing.polar import PolarGateway
+    from writing_coach.billing.service import _send
+
+    try:
+        polar = PolarGateway.from_env(env)
+    except Exception:  # noqa: BLE001 - Polar not configured: nothing to check
+        return None
+    return lambda product_id: _send(polar.product_request(product_id))
 
 
 def _sepay_feed(service):
@@ -1364,6 +1379,22 @@ def _sepay_feed(service):
                      orders=service.orders)
 
 
+def _polar_cleanup(service):
+    """PR-MON-10 §4.8: the Polar customer clean-up of deleted incarnations, attached to the service (checkout and
+    readiness) and run by the reconciler. Built wherever billing is; it calls Polar only when Polar is configured."""
+
+    if service is None:
+        return None
+    from writing_coach.billing.polar_cleanup import PolarCustomerCleanup, PostgresDeletedIncarnations
+
+    cleanup = PolarCustomerCleanup(gateway=service.gateways.get("polar"),
+                                   incarnations=PostgresDeletedIncarnations(_persistence_runtime.engine),
+                                   settings=_persistence_runtime.platform_repository,
+                                   items=service.reconciliation)  # fmt: skip
+    service.attach_polar_cleanup(cleanup)
+    return cleanup
+
+
 def _billing_reconciler(service):
     """PR-MON-3: the reconciler runs only where billing does; payOS lookups only with payOS's keys (H3)."""
 
@@ -1375,10 +1406,11 @@ def _billing_reconciler(service):
 
     settings = Settings.from_env(os.environ)
     feed = _sepay_feed(service)
+    cleanup = _polar_cleanup(service)
     reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
                                    lock=PostgresTickLock(_persistence_runtime.engine),
                                    lookups=build_lookups(service.gateways), settings=settings, credits=_credits,
-                                   feed=feed)
+                                   feed=feed, polar_cleanup=cleanup)
     return BillingReconcileSchedule(reconciler, interval=settings.interval)
 
 
@@ -1465,7 +1497,9 @@ configure_billing(service=_billing, backbone=_account_backbone, admin_guard=requ
                   reconciliation=_billing.reconciliation if _billing is not None else None,
                   reconcile=_billing_reconcile.tick if _billing_reconcile is not None else None, credits=_credits,
                   public_base_url=os.getenv("PUBLIC_BASE_URL", ""),
-                  sepay_backfill=(lambda feed: feed.backfill if feed is not None else None)(_sepay_feed(_billing)))
+                  sepay_backfill=(lambda feed: feed.backfill if feed is not None else None)(_sepay_feed(_billing)),
+                  email=lambda request: str((auth_support.auth_user(str(request.session.get("user_sub") or ""))
+                                             or {}).get("email") or ""))
 
 
 def _schema_state(names):
@@ -1483,6 +1517,8 @@ from writing_coach.product.entitlement import COMMERCE_TABLES as _COMMERCE_TABLE
 
 _billing_readiness.configure(_billing_readiness.RuntimeFacts(
     switch=_billing_enabled(os.environ),
+    # PR-MON-10: pausing new sales keeps webhooks, the portal and the clean-up running (RUNBOOK_POLAR_ACTIVATION)
+    new_sales=os.getenv("BILLING_NEW_SALES", "on").strip().casefold() not in {"0", "false", "no", "off"},
     backend=str(_persistence_runtime.backend or ""),
     backbone=_account_backbone.state,
     commerce_schema=lambda: _schema_state(_COMMERCE_TABLES),
