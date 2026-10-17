@@ -705,36 +705,86 @@ Local evidence (not CI): full SQLite 7328 passed. Every PostgreSQL file: 445 pas
 Tests after the fixes (local, not CI): `tests/test_billing_sepay.py` 98 passed; `tests/test_billing_sepay_postgres.py` 19
 passed (with `test_billing.py` and `test_billing_price_integrity.py`: 103).
 
-## 14. Revision 8 delta: SePay never sells a plan (D-MON-032)
+## 14. Revision 8 delta: only Polar sells plans; readiness by capability (D-MON-032)
 
-**Status: DESIGNING (docs only), for an independent delta review.** Under D-MON-032, plans are card subscriptions
-through Polar and SePay only tops up Credits. Today's code would still sell a plan through SePay if a `sepay` plan
-price were configured. Revision 8 closes that by code, not only by configuration.
+**Status: DESIGNING, revision 8.1 (docs only), for independent re-review.** Revision 8.1 answers the review of
+`6b98df21` (3 P1, 1 P2). Under D-MON-032, plans are card subscriptions through Polar, and the domestic gateway (SePay)
+only tops up Credits. The two are **separate capabilities** with separate readiness. A Polar-only launch (gate 7b)
+must be able to run while Credits and SePay are off, and a SePay Credits-only setup must be able to become ready
+without any plan price.
 
-**The change:**
-- `load_prices` refuses any price whose gateway is `sepay`, with the error "SePay sells Credits only (D-MON-032)". A
-  prices file that lists one fails at startup, as an invalid prices file does today.
-- `start_checkout` refuses a plan price whose gateway is a domestic gateway, with `price_not_offered`. This is a
-  second, independent guard.
-- Credit packs keep `gateway: "sepay"` (`load_credit_packs` accepts the domestic gateways, as today).
-- Readiness: with no plan price on SePay and Credits off, SePay has nothing to sell. Its `ready` stays false, and
-  "no gateway ready" is decided by the gateways that do sell (Polar, once configured).
+### 14.1 Review of `6b98df21` and the answers
 
-**Unchanged:**
+| Finding | Revision 8.1 |
+| --- | --- |
+| **P1-1:** production always required a domestic gateway, so a Polar-only launch was blocked (`domestic_gateway_unset`) | The domestic gateway is required only for the **Credits capability** (§14.3). A production runtime that sells only plans through Polar needs no `BILLING_DOMESTIC_GATEWAY`. This amends PR-MON-8 §5, whose rule assumed SePay sold plans: under D-MON-032 it did not hold. |
+| **P1-2:** a SePay Credits-only gateway could never be ready, because readiness required plan prices | Readiness is computed **per capability**, `plans` and `credits`, each with its own blockers (§14.4). |
+| **P1-3:** only `sepay` plan prices were refused; payOS could still be reported ready for a blocked checkout | **Every domestic gateway** (`payos`, `sepay`) is refused as a plan gateway, in `load_prices` and `start_checkout`. Only `polar` sells plans (§14.2). |
+| **P2:** `BILLING_STATUS.md` behind `main` | Synced. |
+
+### 14.2 Only Polar sells plans
+
+- `load_prices` refuses a price whose gateway is a domestic gateway (`payos` or `sepay`) with "Plans are sold by Polar
+  only (D-MON-032)". A prices file that lists one fails at startup, as an invalid prices file does today.
+- `start_checkout` refuses a plan price on any non-`polar` gateway with `price_not_offered`. This second, independent
+  guard holds even if a price were injected another way.
+- Credit packs keep a domestic gateway (`load_credit_packs` accepts `payos` / `sepay`, as today).
+
+### 14.3 The domestic gateway belongs to the Credits capability
+
+- `BILLING_DOMESTIC_GATEWAY` (and its production requirement) applies **only when the Credits capability is
+  configured**, that is, when credit packs exist (`BILLING_CREDIT_PACKS_FILE`) or `CREDITS_ENABLED` is on.
+  - With credits configured, production behaves as PR-MON-8 §5 and §13 already define:
+    `domestic_gateway_unset` / `_unconfigured`, `late_payment_grace_unset` and `sepay_va_unset` all apply and block
+    Credits.
+  - With no Credits capability, there is no domestic blocker at all, in any mode.
+- A domestic gateway that is configured but sells nothing (no packs) is reported, but it is not a blocker of the plans
+  capability.
+
+### 14.4 Readiness per capability
+
+The readiness report gains `capabilities`:
+
+```text
+capabilities.plans   = { ready, blockers }
+    Polar configured, at least one polar plan price, every plan price matching the catalogue, no open critical
+    reconciliation item on polar (and, with PR-MON-10, the Polar-side price check)
+capabilities.credits = { ready, blockers }
+    credits ready (CREDITS_ENABLED, R-MON-014 privilege), at least one pack, the active domestic gateway configured
+    and sellable (choice, grace, VA in production), no critical item on it or on the credit gaps
+```
+
+- The **runtime blockers** (switch, PostgreSQL, account backbone, commerce/orders schema, entitlement source, public
+  base URL) apply to both capabilities.
+- `ready` (and `billing_ready()`) is true when **at least one** capability is ready and no runtime blocker remains.
+  `blockers` lists the runtime blockers, then each capability's own blockers prefixed by its name (for example
+  `credits:sepay_va_unset`, `plans:no_polar_price`).
+- `GET /api/billing/offers` returns plan offers only while `plans` is ready, and credit packs only while `credits` is
+  ready. A checkout for a capability that is not ready is refused (`billing_not_ready`).
+- `gateway_report` is unchanged for each gateway, and it no longer decides overall readiness alone.
+
+### 14.5 Unchanged
+
 - SePay's webhook, the locked payment decision, the VA QR, the feed and the backfill: they serve credit-pack orders
   exactly as they served plan orders.
-- payOS is untouched. It remains the alternative adapter, and its plan prices stay possible only if a later decision
-  re-enables a domestic plan path.
+- payOS's adapter: it can still be the Credits gateway if chosen. It never sells plans.
 
-**Tests:**
-- a prices file with a `sepay` plan price is refused;
-- a SePay credit pack still loads and checks out;
-- `start_checkout` with a plan priced on a domestic gateway is refused, and nothing is created;
-- existing Polar plan prices load unchanged.
+### 14.6 Tests
 
-**Not in this delta:**
-- Polar's configuration, sandbox E2E and manage/cancel (PR-MON-10);
-- the Billing Sheet's card checkout (PR-MON-9);
-- the Credits screen's switch from a payOS link to the SePay QR (PR-MON-9);
-- enabling Credits (R-MON-014, packs and prices: human gates).
+- **Plan prices on domestic gateways:** a `sepay` plan price and a `payos` plan price are each refused at load. A
+  `polar` plan price loads unchanged.
+- **The checkout guard:** `start_checkout` for a plan on a domestic gateway is refused, and nothing is created.
+- **Polar-only production:** Polar priced and no credit packs means `capabilities.plans.ready` and the runtime ready,
+  with no `domestic_gateway_unset`.
+- **SePay Credits-only production:** packs, credits ready, a VA and a grace set, and no plan price means
+  `capabilities.credits.ready` and the runtime ready.
+- **Credits configured, domestic choice missing:** `credits:domestic_gateway_unset`, with plans unaffected.
+- **Neither ready:** not ready, with each capability's blockers listed.
+- **Offers and checkout by capability:** offers list only the ready capability, and a checkout for the other is
+  refused.
 
+### 14.7 Not in this delta
+
+- Polar's configuration, sandbox E2E, lifecycle, portal and deletion clean-up (PR-MON-10).
+- The Billing Sheet's card checkout and the Credits screen's SePay QR (PR-MON-9).
+- Enabling Credits (R-MON-014, packs and prices: human gates).

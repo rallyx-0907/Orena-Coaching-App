@@ -347,8 +347,9 @@ year like other market apps. The subscription gateway is **Polar** (merchant of 
 adapter exists since PR-MON-1..3). SePay's VietQR bank transfer is used **only to top up Credits**. A domestic
 recurring-card gateway is not chosen now; it may be researched later if many learners lack an international card.
 Consequences:
-- SePay never sells a plan. The code refuses a `sepay` plan price (a small change for review, `PR-MON-8_DESIGN.md`
-  §14).
+- Only Polar sells plans. The code refuses a plan price on any domestic gateway (`sepay`, `payos`), and readiness
+  is computed per capability (plans, credits). The domestic gateway is required only for Credits
+  (`PR-MON-8_DESIGN.md` §14, revision 8.1).
 - D-MON-031's SePay plan prices are withdrawn. The catalogue's USD prices (Plus 9.99/79.99, Pro 19.99/159.99) are the
   candidates for Polar, to be confirmed as Polar products.
 - Gate 7 splits:

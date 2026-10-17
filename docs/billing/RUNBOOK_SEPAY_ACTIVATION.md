@@ -17,7 +17,7 @@ only. It never applies to `:8000`, `:8010` or `:8021` unless the owner names one
 (D-MON-030).
 
 **What stays off:**
-- plans through SePay (refused by code, `PR-MON-8_DESIGN.md` §14);
+- plans through any domestic gateway (refused by code, `PR-MON-8_DESIGN.md` §14.2); plans are Polar's (gate 7b);
 - quota and funding enforcement unless separately decided;
 - migration 0034 unless separately decided;
 - the SePay recovery feed (`SEPAY_FEED_ENABLED`; it needs its own proof before it is turned on).
@@ -28,7 +28,7 @@ only. It never applies to `:8000`, `:8010` or `:8021` unless the owner names one
   - R-MON-014: the runtime connects as a role that cannot bypass the credit ledger (`RUNBOOK_R-MON-014_RUNTIME_ROLE.md`);
   - approved credit packs and prices (`BILLING_CREDIT_PACKS_FILE`; K1 and H-1, none set yet);
   - `CREDITS_ENABLED=on`.
-- **The revision 8 code guard is merged** (§14).
+- **The revision 8.1 code is merged** (§14: only Polar sells plans; readiness per capability).
 
 - **Code.** The host runs `main` at or after `2dc57aa3` (PR-MON-8 with #249 and #250).
 - **Host and URL.** PostgreSQL is the runtime backend, and the account backbone is on (`ORENA_ACCOUNT_BACKBONE=on`). A
