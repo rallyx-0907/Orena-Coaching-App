@@ -345,3 +345,82 @@ def test_the_snapshot_and_weaknesses_are_the_learners_own_in_their_language(engi
             other_weak = tools.invoke("get_learning_weaknesses", learner, {})
         assert other.data["skill_summary"]["speaking"]["latest"] == []
         assert other_weak.data["by_skill"]["Speaking"] == []
+
+
+def test_the_learner_pack_holds_only_the_learners_own_records_in_their_language(learning, engine, app_module):
+    """ORENA_MEMORY.md M1: the pack is read inside the learner's context, so each (learner, language) sees only its own
+    rows - the other language and the other learner see nothing of them."""
+
+    from datetime import UTC, datetime
+
+    from writing_coach.agent.memory_pack import PackSources, build_pack
+
+    specialized, evidence, _ = _skill_tools(app_module, engine)
+    now = datetime.now(UTC)
+    words = [{"word": "面试", "accuracy_score": 40.0, "error_type": "Mispronunciation", "phonemes": []}]
+    with learner_context(ZH):
+        for _ in range(2):
+            _essay(learning, "我昨天去过公司了。", "aspect", "去过")
+            specialized.create_speaking_attempt_record(
+                {
+                    "created_at": now.isoformat(), "language": "zh", "take_id": f"p:{uuid.uuid4().hex}",
+                    "asset_id": "lesson-9", "segment_id": "s1", "reference_text": "我要面试", "transcript_text": "我要面试",
+                    "dimensions": {"pronunciation": 62.0}, "provenance": {}, "evidence": {"pronunciation": {"words": words}},
+                }
+            )  # fmt: skip
+    with learner_context(EN):
+        for _ in range(2):
+            _essay(learning, "Yesterday I go to the market.", "tense", "go")
+
+    sources = PackSources(
+        writing_history=lambda: app_module.api_error_memory(),
+        speaking_attempts=lambda limit: specialized.list_speaking_attempt_records(limit),
+        listening_recent=lambda limit: specialized.list_recent_listening_progress_records(limit),
+        reading_evidence=lambda limit: evidence.list_evidence(limit),
+    )
+
+    def pack_of(learner):
+        with learner_context(learner):
+            pack = build_pack(sources, target=learner.language, support="vi", now=now)
+        return pack, json.loads(pack.text.split(">", 1)[1].split("</orena_learner_pack>")[0])
+
+    zh_pack, zh = pack_of(ZH)
+    en_pack, en = pack_of(EN)
+    other_pack, other = pack_of(OTHER_ZH)
+    assert [e["category"] for e in zh["evidence"]["writing"]["recurring_errors"]] == ["aspect"]
+    # (the module's database also holds this learner's rows from the tests above: the pack reads them too)
+    assert {"word": "面试", "error": "Mispronunciation", "attempts": 2} in zh["evidence"]["pronunciation"]["flagged_words"]
+    assert {"writing_errors", "speaking_attempts"} <= {p["source"] for p in zh_pack.provenance}
+    assert [e["category"] for e in en["evidence"]["writing"]["recurring_errors"]] == ["tense"]
+    assert en["evidence"]["pronunciation"]["attempts"] == 0 and "面试" not in en_pack.text and "aspect" not in en_pack.text
+    assert other["evidence"]["writing"]["recurring_errors"] == []
+    assert other["evidence"]["pronunciation"] == {"attempts": 0, "latest_scores": {}, "flagged_words": []}
+    assert "面试" not in other_pack.text and "aspect" not in other_pack.text and other_pack.provenance == ()
+
+
+def test_the_apps_own_pack_reads_scope_by_learner_and_language(learning, engine, app_module, monkeypatch):
+    """The reads app.py hands the pack builder (`_agent_pack_sources`), on PostgreSQL: a source with no store here is
+    unknown; every other one reads only the learner's own rows in the turn's language."""
+
+    from datetime import UTC, datetime
+
+    from writing_coach.agent.memory_pack import UNKNOWN, build_pack
+
+    specialized, evidence, _ = _skill_tools(app_module, engine)
+    monkeypatch.setattr(app_module, "_specialized_learning_repository", specialized)
+    monkeypatch.setattr(app_module, "_reading_evidence_repository", evidence)
+    sources = app_module._agent_pack_sources()
+    now = datetime.now(UTC)
+    with learner_context(ZH):
+        _essay(learning, "他把书看了完。", "ba_sentence", "看了完")
+        _essay(learning, "我把作业做了完。", "ba_sentence", "做了完")
+        zh = build_pack(sources, target="zh", support="vi", now=now)
+    with learner_context(OTHER_ZH):
+        other = build_pack(sources, target="zh", support="vi", now=now)
+    assert '"category":"ba_sentence"' in zh.text and "ba_sentence" not in other.text
+    for pack in (zh, other):  # every source answered: counted, or unknown where this runtime has no store
+        data = json.loads(pack.text.split(">", 1)[1].split("</orena_learner_pack>")[0])
+        assert set(data["evidence"]) >= {"writing", "vocabulary", "pronunciation", "listening", "reading"}
+        assert data["evidence"]["writing"] != UNKNOWN and data["evidence"]["pronunciation"] != UNKNOWN
+        # nothing saved for these learners: no product default is stated as their choice
+        assert data["profile"]["goal"] is None and data["profile"]["explanation_style"] is None

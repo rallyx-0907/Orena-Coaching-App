@@ -991,6 +991,7 @@ from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E
 from writing_coach.agent.retention import TurnTelemetryRetention, sweep_enabled  # noqa: E402
 from writing_coach.agent.limits import DEFAULT_LIMITS as _AGENT_DEFAULT_LIMITS, LiveAgentLimits  # noqa: E402
 from writing_coach.agent.prompts import PromptLayout  # noqa: E402
+from writing_coach.agent.memory_pack import PackBuilder, PackSources, pack_enabled_from_env  # noqa: E402
 from writing_coach.agent.budget import LiveSpendGuard  # noqa: E402
 
 
@@ -1124,6 +1125,21 @@ def _gemini_key() -> str:
     return str(getattr(provider, "api_key", "") or "")
 
 
+def _agent_pack_sources() -> PackSources:
+    """The learner pack's reads (ORENA_MEMORY.md M1): the same compositions the routes and read tools use, each run
+    inside the learner's request context by the turn."""
+
+    return PackSources(
+        profile=lambda: get_learner_profile(),
+        writing_history=lambda: api_error_memory(),
+        vocabulary_counts=lambda: library_summary().get("summary") or {},
+        vocabulary_items=lambda limit: list_library_vocabulary(limit=limit).get("items") or [],
+        speaking_attempts=lambda limit: _specialized_learning_repository.list_speaking_attempt_records(limit),
+        listening_recent=lambda limit: _specialized_learning_repository.list_recent_listening_progress_records(limit),
+        reading_evidence=lambda limit: _agent_reading_evidence(limit),
+    )
+
+
 def _with_voice(runtime):
     """Live voice, mode A (R28): only where the agent runs and AGENT_VOICE_ENABLED is on."""
 
@@ -1177,6 +1193,9 @@ configure_agent(_with_voice(
         limits=LiveAgentLimits(_AGENT_DEFAULT_LIMITS, lambda: _policies.effective_agent_limits()),
         # ORENA_MEMORY.md §5.4 (M0): the cache-stable layout, and the stable tool list behind its own switch.
         prompt=PromptLayout.from_env(os.environ),
+        # ORENA_MEMORY.md M1: the learner pack, off unless AGENT_LEARNER_PACK=on. Each read runs inside the learner's
+        # request context, through the same compositions the routes and the read tools use.
+        pack=PackBuilder(enabled=pack_enabled_from_env(os.environ), sources=_agent_pack_sources()),
     )
     if agent_enabled(os.environ)
     else None

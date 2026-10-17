@@ -136,6 +136,7 @@ from writing_coach.agent.provider import (
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
+from writing_coach.agent.memory_pack import PACK_VERSION
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
 from writing_coach.agent.timeline import TurnTimeline
@@ -251,6 +252,8 @@ class AgentRuntime:
     # active selection, as before M0.
     router: Any = None
     prompt: PromptLayout = field(default_factory=PromptLayout)
+    # The learner pack (agent/memory_pack.py, ORENA_MEMORY.md M1); None or not enabled: no pack, as before.
+    pack: Any = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
     # The opening greeting is free of learner quota, so the model may write at most `model_openings_per_window` of
@@ -572,6 +575,7 @@ class _Turn:
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
             opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
             budget_tokens=self.rt.limits.max_input_tokens_per_turn, cache_stable=self.rt.prompt.cache_stable,
+            pack=None if self.no_model else self._learner_pack(session),
         )
 
         answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
@@ -627,6 +631,33 @@ class _Turn:
             # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
+
+    def _learner_pack(self, session) -> str | None:
+        """The conversation's learner pack (ORENA_MEMORY.md §5.2): built on its first model turn - and again for another
+        language pair - inside the learner's own context, then the same bytes every round. None when the pack is off
+        or could not be built: the turn goes on without it, as before M1."""
+
+        builder = self.rt.pack
+        if builder is None or not getattr(builder, "enabled", False):
+            return None
+        key = (str(self.locale.target), str(self.locale.support))
+        kept = session.pack_for(key)
+        if kept is not None:
+            self.timeline.facts["learner_pack"] = {"version": PACK_VERSION, "built": False}
+            return kept
+        try:
+            with learner_context(self.learner):
+                pack = builder.build(target=to_internal(self.locale.target), support=to_internal(self.locale.support))
+        except Exception:  # noqa: BLE001 - a pack is never worth the learner's answer
+            _log.warning("learner pack not built", exc_info=True, extra={"trace_id": self.trace_id})
+            return None
+        if pack is None:
+            return None
+        self.timeline.facts["learner_pack"] = {"version": PACK_VERSION, "built": True, "tokens": pack.tokens,
+                                               "evidence_lines": len(pack.provenance), "trimmed": list(pack.trimmed)}
+        self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                lambda state: state.with_learner_pack(pack.text, key))  # fmt: skip
+        return pack.text
 
     def _pin_route(self, session) -> ModelRoute | None:
         """The model this conversation runs on (ORENA_MEMORY.md §7.2): the one it was pinned to, or - on its first
