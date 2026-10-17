@@ -1,6 +1,6 @@
 # Orena Memory: one learner context pack for every model and channel
 
-Status: PROPOSAL rev 4 (issue #256). Rev 2 (`7ddb5718`) APPROVED for M0 and M1 (both merged, with A1 and A2). Rev 3
+Status: PROPOSAL rev 4.1 (issue #256). Rev 2 (`7ddb5718`) APPROVED for M0 and M1 (both merged, with A1 and A2). Rev 3
 (`061868e0`) answered the owner's four points; its architecture review asked for changes (12 P1, F1-F12). Rev 4 answers
 them (§13); M2/M3 schema work waits for its review.
 Lane: Orena Intelligence (D-085, D-086). Rev 1 2026-10-17 on `main` 18023079; revs 2, 3 and 4 2026-10-17.
@@ -177,30 +177,42 @@ Two stores:
 2. **Continuity items** (`learner_memories`, `class = continuity`): the single source of truth for short-term personal
    context. The summariser's `useful_context`, once validated and **grounded** (below), is materialised into
    continuity items in the same transaction as the summary checkpoint; it is never stored in the summary row.
-   TTL 14 days (approved, G10). `temporary_preferences` is **dropped** from the summariser's output (rev 4, F3): a
+   TTL 14 days (approved, G10). **A continuity item holds a code, never free text** (rev 4.1, re-review P1-4): each
+   slot has a closed list of values, and the stored `text` is the code's template, rendered in the learner's
+   language by the UI. First M3 slots and values: `occupation` (a field: `engineering`, `it`, `business`,
+   `education`, `hospitality`, `manufacturing`, `design`, `student`, `other`), `interest` and `example_domain` (the
+   §3.3 closed topic list), `learning_purpose` (`everyday`, `work`, `job_interview`, `exam`, `travel`, `study`).
+   `upcoming_event` is **removed** from the first M3: a free-text event can be health, religion or finance even when
+   the learner said it. A slot or value outside these lists is dropped. `temporary_preferences` is **dropped** from the summariser's output (rev 4, F3): a
    standing preference comes from the learner (explicit memory, §3.2) or a rule (§3.3), never from a summary.
 
-**Grounding before anything is stored** (rev 4, review F7). A `useful_context` value is materialised only if its
-normalised value (NFC, case-folded, whitespace collapsed; for Chinese, the characters) occurs in a **learner-authored
+**Grounding before anything is stored** (rev 4, review F7). A `useful_context` (slot, code) is materialised only if
+the per-slot, per-language phrase matcher (below, "Matcher") yields that same (slot, code) from a **learner-authored
 message field** of that session: the `message` the learner typed or the server-held transcript of what they said.
 Pasted or selected text, the page context, tool results, a coach note and Orena's own replies do not count. A value
 that is not grounded is dropped, never stored. The summariser's input still includes the whole session (it needs it
 to summarise learning), so grounding is checked in code, after the model, against the session's learner fields only.
 
 **Deletion is final** (rev 4, review F1, F2, F4). Deleting a continuity item removes its row and leaves a
-**suppression key** (§4.1): a keyed HMAC of the normalised slot and value, no text, kept for the item's former TTL. A
-later summariser output whose (slot, value) has a live suppression key is not materialised, so a deleted fact cannot
-come back from a later checkpoint, a re-extraction or a retry. A deleted session summary leaves a session tombstone
-(§4.2), so a late checkpoint cannot recreate it. Summary fields are learning-event codes, so they cannot re-carry a
-deleted personal fact; as a backstop, the summary's free content fields (§4.3) run through `agent/redaction.py` and the
-excluded-category list, and the memory view shows every summary so the learner can see and delete it.
+**suppression key** (§4.1): a keyed HMAC of the slot and code, no text, kept for the item's former TTL. A later
+summariser output whose (slot, code) has a live suppression key is not materialised, so a deleted fact cannot come
+back from a later checkpoint, a re-extraction or a retry. The check is exact equality of the HMAC of a known
+(slot, code), which is what the key supports (rev 4.1, re-review P1-2). A deleted session summary leaves a session
+tombstone (§4.2), so a late checkpoint cannot recreate it.
+
+Summaries cannot re-carry a personal fact because of what they may hold, not because of a check against deleted
+values: a summary entry is a closed `event` code plus an `item` that the event's own validator accepts (§4.3), and no
+validator accepts a personal-context slot or free personal text. The memory view shows every summary so the learner
+can see and delete it. If a deleted item's code nevertheless appears in a stored summary entry (for example a
+`job_interview` purpose and an interview practice entry), deleting the item also removes that entry, in the same
+transaction, while the item's code is still in hand, before the item row is deleted.
 
 **Reinforcement and promotion** (G10; rev 4 specifies them, review F8). Both count only raw learner-authored
 statements, and are deterministic:
 
 - **Matcher.** Per slot and per language (EN, ZH, VI), a conservative phrase matcher in code (like `notes.py`) reads
-  the learner's message field only (never pasted or selected text) and yields (slot, normalised value). A statement
-  matches an item when slot and normalised value are equal. Conservative by design: a miss costs only an earlier
+  the learner's message field only (never pasted or selected text) and yields (slot, code) from the slot's closed
+  list. A statement matches an item when slot and code are equal. Conservative by design: a miss costs only an earlier
   expiry.
 - **Counted unit.** Distinct other `agent_session_id`s, kept in the item's `provenance` as a set: a replayed or
   retried turn, or a second statement in the same session, adds nothing.
@@ -208,15 +220,26 @@ statements, and are deterministic:
 - **Promote to explicit.** Never automatic on counts alone. Promotion happens only when the learner confirms Orena's
   proposal to keep it, or pins it in the memory view. Orena may propose it once the item has matching statements in at
   least 2 other sessions (the owner may change the number). The explicit item stores the **learner's verbatim words**
-  from the latest matching statement (bounded, cleaned), not the summariser's paraphrase.
+  from the latest matching statement (bounded, cleaned, through `redaction.py`), not the summariser's paraphrase,
+  and keeps the slot and code.
 - **Never counted:** model output, Orena repeating or quoting the fact, a session summary, a continuity or inferred
   item itself, pasted or selected text, a second extraction from the same session.
 
-**Excluded categories apply to every class** (rev 4, F9): explicit, inferred and continuity items and summary content
-alike: health, sexuality, religion, political views, finances, precise location, other people's personal details, and
-anything not needed for learning. The summariser schema has no field for them; explicit memory refuses them with a
-reason code; a three-language word list is a test backstop, not the control (grounding and the closed vocabularies
-are). Stored text is personal data of the same class as an essay: never in logs or telemetry (counts only), and
+**Excluded categories** (rev 4, F9; rev 4.1, re-review P1-4): health, sexuality, religion, political views,
+finances, precise location, other people's personal details, and anything not needed for learning. How each class
+keeps them out:
+
+- **Continuity, inferred and summaries: by construction.** Every stored value is a code from a closed list (slots
+  above, the §3.3 rules and topic list, the §4.3 event codes and validators). The lists contain no excluded category,
+  so there is no field that could hold one. Adding a slot, code or event is a reviewed code change that must keep it
+  that way.
+- **Explicit memory: the learner's own deliberate words.** Orena never proposes keeping a statement outside the
+  closed slots, so a proposal cannot carry an excluded category. A note the learner asks Orena to keep is their own
+  choice, stored in their words; it is refused with a reason code when a three-language list of excluded-category
+  terms matches. That list is a best-effort filter, not a guarantee, and is stated as such to the owner; the learner
+  sees and deletes every explicit item.
+
+Stored text is personal data of the same class as an essay: never in logs or telemetry (counts only), and
 `redaction.py` drops emails, phone numbers and URLs before anything is stored.
 
 ## 4. Storage (owner gates G1, G2, G3)
@@ -239,8 +262,8 @@ evidence only; there is no fallback to user-only scope.
 | `class` | `explicit`, `inferred`, `continuity` (CHECK) |
 | `kind` | `preference`, `goal`, `plan`, `interest`, `context`, `address` (CHECK) |
 | `slot` | normalised subject key from a closed list per class (for example `explanation_length`, `occupation`, `interest`) |
-| `text` | NOT NULL, at most 200 characters (CHECK): explicit, the learner's words; inferred, the rule template; continuity, the grounded value |
-| `value_key` | HMAC-SHA256 (server secret `AGENT_MEMORY_HMAC_KEY`) of normalised slot and value, for dedupe and suppression |
+| `text` | NOT NULL, at most 200 characters (CHECK): explicit, the learner's words; inferred, the rule template; continuity, the slot's code (rendered by the UI) |
+| `value_key`, `key_version` | HMAC-SHA256 of normalised slot and value (continuity, inferred: slot and code) under the memory key `key_version` (below), for dedupe and suppression |
 | `source` | `learner_asked`, `learner_confirmed`, `learner_pinned`, `rule:<id>/<version>`, `summary` |
 | `evidence_count`, `evidence_window_days`, `confidence` | inferred only (CHECK); null otherwise |
 | `provenance` | JSON, at most 2 KB (CHECK): distinct session ids (a set), signal types, record refs; never learner text |
@@ -249,14 +272,14 @@ evidence only; there is no fallback to user-only scope.
 
 Uniqueness (rev 4, F2(d)): single-valued slots (`explanation_length`, `support_language`, `correction_timing`,
 `occupation`, `learning_purpose`) are unique per (`incarnation_id`, `language_code`, `class`, `slot`); multi-valued
-slots (`interest`, `example_domain`, `upcoming_event`) per (`incarnation_id`, `language_code`, `class`, `slot`,
+slots (`interest`, `example_domain`) per (`incarnation_id`, `language_code`, `class`, `slot`,
 `value_key`); explicit items with no slot per (`incarnation_id`, `language_code`, `value_key`), so a retried
 `remember_note` with the same words does not duplicate (P2). Pinning a continuity item to explicit, when an explicit
 item already holds that single-valued slot, replaces the explicit item (the learner's latest choice wins) in one
 transaction.
 
 **Suppression keys** (rev 4, F2): a separate table `learner_memory_suppressions` (`incarnation_id`, `user_id`,
-`language_code`, `class`, `slot`, `value_key`, `expires_at`; unique on all but `expires_at`), so a suppression never
+`language_code`, `class`, `slot`, `value_key`, `key_version`, `expires_at`; unique on all but `expires_at`), so a suppression never
 collides with a live item's key and holds no text. A keyed HMAC, not a bare hash, so a short low-entropy value cannot
 be recovered by guessing without the server secret. Written when a continuity or inferred item is deleted, expiring
 at the item's former TTL (continuity 14 days, inferred 30 days). Slot-and-value, never slot alone, so a new value for
@@ -267,9 +290,20 @@ Limits per learner and language: 30 explicit (a new one past the limit is refuse
 deletes one first), 10 inferred (the lowest-confidence one is replaced), 20 continuity (the one expiring soonest is
 evicted). CHECKs bound text length and JSON size; the application bounds are not the only guard.
 
-The HMAC secret is a server secret generated per deployment, like `AI_PROVIDER_SECRETS_KEY`, never committed: without
-it memory fails closed (nothing stored). Rotating it voids live suppression keys, so a rotation also deletes the
-continuity and inferred items they guarded.
+**The memory key** (rev 4.1, re-review P1-1). `AGENT_MEMORY_HMAC_KEYS` holds versioned secrets (`v1:<secret>`, later
+`v1:<old>,v2:<new>`); the highest version is current. Each is **generated once per environment and kept across
+deploys and restarts** in that environment's secret store, never committed, never regenerated by a deploy. With no key,
+or a stored row whose `key_version` is not configured, memory fails closed: nothing is read or written, and the start
+check says so.
+
+- Every write computes `value_key` under the current version and stores `key_version`.
+- Dedupe and suppression lookups compute the HMAC under **every configured version** and match a row of the same
+  version, so rows written before a rotation still dedupe and still suppress.
+- **Rotation is an explicit maintenance operation**, never a side effect of deploying: add the new version, then a
+  bounded batch job re-keys every live `learner_memories` row from its stored text and code (explicit included).
+  Suppression rows cannot be re-keyed (no plaintext, by design); they keep their old version and stay valid until
+  they expire (at most 30 days). The old version is removed only when no live row and no unexpired suppression row
+  uses it; the start check refuses a configuration that drops a version still in use.
 
 Indexes (P2): (`incarnation_id`, `language_code`, `class`, `expires_at`) for the pack read; (`expires_at`) for the sweep.
 
@@ -287,16 +321,24 @@ No row is written from model free text without a schema-validated, grounded path
 
 Same scope conventions as §4.1 (`incarnation_id`, `user_id`, fail closed).
 
+**One row per session and learning language** (rev 4.1, re-review P1-3). An agent session can change language pair
+(M1 builds another pack for it), so a summary belongs to (`agent_session_id`, `language_code`), where the language is
+the target language of the turns it covers. `turns_covered` counts that language's learner turns only; each language
+part of a session is checkpointed, finalised, rendered, kept and deleted on its own. Turns in one language never fold
+into another language's summary. Deleting "the session" from the memory view tombstones every language part of it.
+Test: a session switching zh -> en -> zh writes two rows with language-local counts, and a late zh checkpoint after
+the en turns does not touch the en row.
+
 | Column | Note |
 | --- | --- |
 | `id` | uuid |
 | `incarnation_id`, `user_id`, `language_code` | scope; `language_code` NOT NULL |
-| `agent_session_id` | opaque; **unique** with `incarnation_id`: one row per session |
+| `agent_session_id` | opaque; **unique** with (`incarnation_id`, `language_code`): one row per session and language |
 | `state` | `open`, `final`, `deleted` (CHECK). `deleted` is a **tombstone** (rev 4, F1): no summary, kept until `expires_at` |
 | `channel` | `text`, `voice`, `mixed` |
 | `started_at`, `last_checkpoint_at`, `finalised_at` | |
-| `turns_covered` | learner turns folded so far |
-| `summary` | JSON, null for a tombstone; CHECK that its keys are a subset of `practised`, `focus`, `open_task` (F3) and its size at most 1,200 bytes |
+| `turns_covered` | this language's learner turns folded so far |
+| `summary` | JSON, null for a tombstone; CHECK that its key set is exactly `practised`, `focus`, `open_task` (F3; `focus` and `open_task` may be null) and its size at most 1,200 bytes |
 | `expires_at` | NOT NULL: summary 60 days after `finalised_at` (owner may change it); tombstone 2 days after deletion (longer than any session can stay open, 24 h, plus a margin) |
 | `created_at`, `updated_at` | |
 
@@ -306,7 +348,7 @@ Write shape (rev 4, F1, F5 and P2). A checkpoint is one transaction:
 
 1. lock-read the learner's memory state row (§4.4) `FOR SHARE`: if memory is OFF, write nothing;
 2. check the incarnation is active (the guard migration 0034's triggers use): if not, write nothing;
-3. `INSERT ... ON CONFLICT (incarnation_id, agent_session_id) DO UPDATE ... WHERE
+3. `INSERT ... ON CONFLICT (incarnation_id, agent_session_id, language_code) DO UPDATE ... WHERE
    orena_session_summaries.state = 'open' AND orena_session_summaries.turns_covered < EXCLUDED.turns_covered`: a
    tombstone, a finalised row, or a higher checkpoint already stored all make it a no-op;
 4. only if step 3 wrote: materialise grounded `useful_context` items, skipping any with a live suppression key, and
@@ -339,16 +381,26 @@ validated before anything is stored:
 { "practised": [{ "event": "<code>", "item": "<=60 chars | null>" }],
   "focus": { "event": "<code>", "item": "<=60 chars | null>" } | null,
   "open_task": { "event": "<code>", "item": "<=60 chars | null>" } | null,
-  "useful_context": [{ "slot": "occupation|interest|learning_purpose|example_domain|upcoming_event", "value": "<=60 chars" }] }
+  "useful_context": [{ "slot": "occupation|interest|learning_purpose|example_domain", "code": "<a code of that slot's closed list>" }] }
 ```
 
 - `event` is a code from a closed vocabulary (rev 4, F4), for example `grammar_point`, `vocabulary_set`,
   `pronunciation_word`, `writing_revision`, `interview_answer`, `reading_text`, `listening_text`,
   `roleplay_scenario`. At most 4 `practised` entries.
-- `item` is the learning content itself (a grammar point "了/过", a word, a text's title, the open question "Why this
-  company?"), cleaned and bounded; it passes `redaction.py`, the excluded-category list, and a check that it does not
-  contain the value of any live suppression key or any item deleted in this session.
-- `useful_context` slots are an allow-list; each value must pass grounding (§3.4) or it is dropped. Only
+- `item` is checked by **its event's own validator** (rev 4.1, re-review P1-2), and only learning content passes:
+
+  | `event` | `item` accepted only if |
+  | --- | --- |
+  | `grammar_point` | a grammar category or R5 concept id known to Orena |
+  | `vocabulary_set`, `pronunciation_word` | target-language words, each one in the learner's saved words or speaking attempts, or in a turn of this session |
+  | `writing_revision` | an essay id of this learner |
+  | `reading_text`, `listening_text` | a content id this learner opened, rendered as its title from the record |
+  | `interview_answer`, `roleplay_scenario` | a scenario code from a closed list (for example `why_this_company`, `self_introduction`, `ordering_food`); no free text |
+
+  An item that no validator accepts is dropped (the entry keeps its event code). There is no free personal text in a
+  summary, so there is nothing for a suppression check to search; the earlier "does not contain a suppressed value"
+  check is removed because an HMAC cannot support it.
+- `useful_context` is (slot, code) from the closed lists (§3.4); each must pass grounding or it is dropped. Only
   `practised`, `focus` and `open_task` are stored in the summary row.
 - Output over the bounds is rejected, not cut. On failure the previous checkpoint stands. A cheap model is allowed if
   it passes the summary benchmark (§9, M3).
@@ -585,10 +637,10 @@ for `full_memory` (§8). The UI is UI-lane work and needs a contract change (§8
 | M1 | M0 | pack from profile and evidence, chat and voice | **done** (PR #260; off by default) |
 | A1 | M1 | learner-pack clearance per provider (partial G8) | **done** (PR #263) |
 | A2 | M0 | capped live benchmark with answers and pack on/off | **done** (PR #262) |
-| M2-prep | rev 4 approved | pure code, no schema, no behaviour change: the EN/ZH/VI matchers (explicit request, `asks_to_remember`, per-slot statements), normalisation, grounding check (§3.4), HMAC key function, the repository port and an in-memory fake, the pack's explicit/continuity sections over the fake behind the flag, the full G8 gate for chat context, coach notes and history (§8 c), the draft migration in `migrations/proposed/` only | unit tests; the draft migration is not in `versions/`, not in ORM models, not applied |
+| M2-prep | rev 4 approved | pure code, no schema, no behaviour change: the EN/ZH/VI matchers (explicit request, `asks_to_remember`, per-slot statements), normalisation, grounding check (§3.4), versioned HMAC key functions and the start check, the per-event item validators (§4.3), the repository port and an in-memory fake, the pack's explicit/continuity sections over the fake behind the flag, the full G8 gate for chat context, coach notes and history (§8 c), the draft migration in `migrations/proposed/` only | unit tests; the draft migration is not in `versions/`, not in ORM models, not applied |
 | M2 | G1, G3, migration review, contract v9 | `learner_memories` (explicit class), suppression keys, `learner_memory_state`, repository, routes (§6), server-applied notes for v9 clients only | isolation by account and incarnation; fail closed without an incarnation; deletion reaches the next prompt on another worker/device (version); switch semantics incl. delete while OFF; dedupe with device notes; suppression by slot and value; v8 client unchanged |
 | M2b | M2, G9 bounds | `memory_signals`, inferred rules (§3.3) | the false-positive benchmark per rule (EN, ZH, VI); target-language use never creates an item; replay counts once; excluded topics never learned; each rule off until the owner records its bound |
-| M3 | M2, G2, F12 decision, contract v9 §10 | `orena_session_summaries`, `agent_session_summary`, checkpoint/finalise (§4.2), grounded materialisation, reinforcement and promotion (§3.4) | no resurrection by a late checkpoint; delete while in flight; OFF while in flight; grounding/poisoning (pasted text asserting a fact; Orena echoing it); replay-idempotent reinforcement; promotion stores the learner's words; summariser hang and DB error isolation; cost and latency per checkpoint and per session |
+| M3 | M2, G2, F12 decision, contract v9 §10 | `orena_session_summaries`, `agent_session_summary`, checkpoint/finalise (§4.2), grounded materialisation, reinforcement and promotion (§3.4) | no resurrection by a late checkpoint; delete while in flight; OFF while in flight; grounding/poisoning (pasted text asserting a fact; Orena echoing it); replay-idempotent reinforcement; promotion stores the learner's words; a zh -> en -> zh session keeps language-local summaries; a grounded statement outside the closed slot lists (for example an operation next week) stores nothing; summariser hang and DB error isolation; cost and latency per checkpoint and per session |
 | M4 | M1 | writing review (flagged) and text discussion get the pack | writing benchmark: no recall/precision change |
 | M5 | challenger keys, G5 | default chat model and fallback; one-shot routing by capability | the same benchmark script per candidate |
 
@@ -688,3 +740,13 @@ Delegated Architecture Reviewer on #256 (rev 3 at `061868e0`): CHANGES REQUIRED,
 | P2 expiry, finalise, idempotent shape, limits, indexes, summariser isolation, voice, export wording, reason codes, PII, doc sync | each addressed in place | §3.1, §3.4, §4.1-§4.3, §5.1, §6 |
 
 Owner decisions of 2026-10-17 (G8 test clearance, M5 keys, Gemini Live `usageMetadata` for reconciliation only) are in §10.
+
+### Re-review of rev 4 (owner, `df07d996`) → rev 4.1
+
+| Finding | Change | Where |
+| --- | --- | --- |
+| P1-1 HMAC key lifecycle | versioned keys, generated once per environment and kept; fail closed; rotation is an explicit operation that re-keys live rows (explicit included) while old suppression keys stay valid until they expire | §4.1 |
+| P1-2 HMAC cannot support a "contains a suppressed value" check | removed; summary items pass a per-event validator that accepts learning content only; suppression is exact (slot, code); deleting an item removes summary entries carrying its code in the same transaction | §3.4, §4.3 |
+| P1-3 a session that changes language | summaries keyed by (session, language) with language-local `turns_covered`; test zh -> en -> zh | §4.2 |
+| P1-4 sensitive categories through `upcoming_event` | `upcoming_event` removed; every continuity slot is a closed code list; exclusion is by construction for continuity, inferred and summaries; explicit memory's word list stated as best effort | §3.4, §4.3 |
+| key set "subset" vs "exactly"; D-222 count | CHECK on the exact key set; D-222 wording | §4.2, D-222 |
