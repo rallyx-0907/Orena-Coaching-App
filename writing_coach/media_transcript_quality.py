@@ -11,6 +11,18 @@ _ONLY_MARKS = re.compile(r"^[\W_]+$", re.UNICODE)
 _BRACKETED = re.compile(r"^\s*[\[\(（【]\s*(.*?)\s*[\]\)）】]\s*$")
 _TAG = re.compile(r"<[^>]+>")
 _SPACE = re.compile(r"\s+")
+# Bounded sound-tag rule (English captions): a square-bracket group of one to four plain words (letters, space, hyphen,
+# apostrophe) is a non-speech annotation by caption convention ([music], [crying], [gasps], [door creaks]). A group with
+# digits or other punctuation ([1], [sic.]) is left alone. A parenthesised group is stripped only when it is the whole
+# cue or names a sound from the closed vocabulary below, because parentheses can hold real speech.
+_EN_SQUARE_TAG = re.compile(r"\[\s*[^\W\d_]+(?:[ '’-]+[^\W\d_]+){0,3}\s*\]")
+_EN_PAREN_TAG = re.compile(r"\(\s*[^\W\d_]+(?:[ '’-]+[^\W\d_]+){0,3}\s*\)")
+_EN_SOUND_WORDS = frozenset({
+    "music", "applause", "laughter", "laughs", "laughing", "cheering", "cheers", "crying", "cries", "gasps", "gasping",
+    "sighs", "snorts", "coughs", "coughing", "sniffles", "screams", "screaming", "whispers", "silence", "inaudible",
+    "singing", "humming", "clapping", "chuckles", "groans", "sobbing", "beeping", "ringing", "noise",
+})
+_SPEAKER_MARK = re.compile(r">{2,}")
 _ZERO_WIDTH = re.compile(r"[\u200b-\u200f\u2060\ufeff]")
 _MUSIC = re.compile(r"[♪♫♬♩]+")
 _CUE_WORDS = {"music","applause","laughter","laughs","cheering","cheers","音乐","音樂","掌声","掌聲","笑声","笑聲","欢呼","歡呼"}
@@ -36,6 +48,27 @@ def clean_caption_text(value: object) -> str:
     if _ONLY_MARKS.fullmatch(text):
         return ""
     return text
+
+
+def _paren_is_sound(match: re.Match[str], whole_cue: bool) -> str:
+    if whole_cue:
+        return " "
+    words = re.findall(r"[^\W\d_]+", match.group(0).casefold())
+    return " " if words and all(word in _EN_SOUND_WORDS for word in words) else match.group(0)
+
+
+def repair_english_caption_text(value: object) -> str:
+    """Remove English auto-caption noise without guessing sentence edges.
+
+    Strips speaker marks (`>>`), bracketed sound tags by the bounded rule above and spacing. Casing and every lexical
+    token of real speech are preserved; punctuation and case restoration belong to the context-aware corrector. Only
+    English text is passed here: Chinese bracketed text is never stripped by this function.
+    """
+    text = _SPEAKER_MARK.sub(" ", str(value or ""))
+    text = _EN_SQUARE_TAG.sub(" ", text)
+    whole = _SPACE.sub(" ", text).strip()
+    text = _EN_PAREN_TAG.sub(lambda match: _paren_is_sound(match, whole == match.group(0)), text)
+    return _SPACE.sub(" ", text).strip()
 
 def _primary(value: str) -> str:
     return (value or "").strip().casefold().replace("_", "-").split("-", 1)[0]

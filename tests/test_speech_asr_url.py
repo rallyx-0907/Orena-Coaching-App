@@ -39,6 +39,7 @@ def test_groq_can_transcribe_one_https_media_url_with_real_word_timestamps() -> 
     result = provider.transcribe_url(
         "https://media.example.test/audio.m4a?token=signed",
         language="en",
+        prompt="A public media lesson: honey bees.",
     )
 
     assert result.provider == "groq"
@@ -55,6 +56,7 @@ def test_groq_can_transcribe_one_https_media_url_with_real_word_timestamps() -> 
     }
     assert ("timestamp_granularities[]", "segment") in call["data"]
     assert ("timestamp_granularities[]", "word") in call["data"]
+    assert ("prompt", "A public media lesson: honey bees.") in call["data"]
 
 
 @pytest.mark.parametrize(

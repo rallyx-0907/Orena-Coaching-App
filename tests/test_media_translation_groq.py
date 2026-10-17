@@ -82,6 +82,69 @@ def test_translates_a_batch_and_returns_every_segment(monkeypatch: pytest.Monkey
     }
 
 
+def test_transcript_correction_uses_one_bounded_structured_configured_model_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    cues = (SimpleNamespace(text="Hello world"), SimpleNamespace(text="we are ready"))
+    calls = install(monkeypatch, FakeResponse({
+        **envelope({"lines": [
+            {"index": 0, "text": "Hello, world.", "reason": "Inserted a comma after the greeting."},
+            {"index": 1, "text": "We are ready.", "reason": "Restored sentence capitalization."},
+        ]}),
+        "usage": {"prompt_tokens": 90, "completion_tokens": 20},
+    }))
+    provider = mt.GroqTranslationProvider("test-key", model="configured-model")
+    captured: list[tuple[str, dict]] = []
+    with mt.usage_sink(lambda model, usage: captured.append((model, usage))):
+        result = provider.correct(language="en", cues=cues, title="A title", description="A description")
+
+    assert result["texts"] == ["Hello, world.", "We are ready."]
+    assert result["reasons"] == ["Inserted a comma after the greeting.", "Restored sentence capitalization."]
+    assert result["model"] == "configured-model"
+    assert len(calls) == 1
+    body = calls[0]["json"]
+    assert body["model"] == "configured-model"
+    assert body["response_format"] == {"type": "json_object"}
+    assert body["max_completion_tokens"] <= provider._reservation_cap()
+    assert "punctuation" in body["messages"][0]["content"]
+    assert captured == [("configured-model", {"prompt_tokens": 90, "completion_tokens": 20})]
+
+
+def test_transcript_correction_rejects_malformed_result_without_retry(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    cues = (SimpleNamespace(text="Hello world"),)
+    calls = install(monkeypatch, FakeResponse(envelope({"lines": [{"index": 0, "text": "Hello."}, {"index": 0, "text": "Hello!"}]})))
+    provider = mt.GroqTranslationProvider("test-key", model="configured-model")
+
+    with pytest.raises(mt.TranslationProviderError, match="malformed"):
+        provider.correct(language="en", cues=cues)
+    assert len(calls) == 1
+
+
+def test_transcript_correction_requires_truthful_per_line_reasons(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    cues = (SimpleNamespace(text="Hello world"),)
+    calls = install(monkeypatch, FakeResponse(envelope({"lines": [{"index": 0, "text": "Hello, world."}]})))
+    provider = mt.GroqTranslationProvider("test-key", model="configured-model")
+
+    with pytest.raises(mt.TranslationProviderError, match="malformed"):
+        provider.correct(language="en", cues=cues)
+    assert len(calls) == 1
+
+
+def test_transcript_correction_rate_limit_is_one_failed_attempt(monkeypatch: pytest.MonkeyPatch) -> None:
+    from types import SimpleNamespace
+
+    calls = install(monkeypatch, FakeResponse({}, status=429, headers={"retry-after": "1"}))
+    provider = mt.GroqTranslationProvider("test-key", model="configured-model")
+    with pytest.raises(mt.TranslationProviderError) as caught:
+        provider.correct(language="zh", cues=(SimpleNamespace(text="守株待兔"),))
+    assert caught.value.reason == "rate_limited"
+    assert len(calls) == 1
+
+
 def test_the_request_asks_for_json_and_does_not_send_reasoning_effort(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

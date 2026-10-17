@@ -112,7 +112,7 @@ class FakeAsr:
         self.error: Exception | None = None
         self._lock = threading.Lock()
 
-    def transcribe_bytes(self, body: bytes, *, filename: str, content_type: str, language: str | None):
+    def transcribe_bytes(self, body: bytes, *, filename: str, content_type: str, language: str | None, prompt: str | None = None):
         with self._lock:
             self.calls += 1
         if self.error is not None:

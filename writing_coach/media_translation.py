@@ -16,7 +16,7 @@ import re
 import threading
 import time
 from collections.abc import Callable, Iterator, Mapping
-from typing import Protocol
+from typing import Any, Protocol
 
 import requests
 
@@ -611,6 +611,118 @@ class GroqTranslationProvider:
                 raise
         self._salvage_drop(source_language, target_language, segments)
         return {segment.segment_id: merged[segment.segment_id] for segment in segments}
+
+    def correct(
+        self, *, language: str, cues: tuple[Any, ...], title: str = "", description: str = ""
+    ) -> dict[str, object]:
+        """Make one bounded, metered correction request for an admin transcript.
+
+        This deliberately does not use translation batching/retry or another
+        model. It shares this provider's configured model, Groq transport,
+        structured response mode, output allowance, and token usage ledger.
+        """
+        if not self.configured:
+            raise TranslationProviderError("Groq translation is not configured.", reason="not_configured")
+        texts = tuple(str(getattr(cue, "text", "")) for cue in cues)
+        if not texts or len(texts) > 24 or sum(len(text) for text in texts) > 6_000:
+            raise TranslationProviderError("Transcript correction batch exceeds its bound.", reason="request_too_large")
+        language_name = self._language_name(language)
+        if language.casefold().split("-", 1)[0] == "en":
+            instructions = (
+                "Repair English transcript presentation only: punctuation, capitalization, and spacing. "
+                "Every spoken word and number must remain unchanged; do not add or remove any word."
+            )
+        else:
+            instructions = (
+                "Conservatively correct clear homophone or idiom recognition errors in this Simplified Chinese transcript. "
+                "Do not rewrite style, infer unheard speech, or change line order. Keep uncertain text unchanged."
+            )
+        numbered = "\n".join(f"{index}\t{text}" for index, text in enumerate(texts))
+        context = "\n".join(part for part in (
+            f"Source title: {title[:180]}" if title else "",
+            f"Source description: {description[:240]}" if description else "",
+        ) if part)
+        user = (
+            f"Language: {language_name}.\n{context}\n"
+            "Correct each line independently. Return JSON only as "
+            "{\"lines\":[{\"index\":0,\"text\":\"...\",\"reason\":\"...\"}]}. "
+            "Give a concise, truthful reason for each line; for unchanged text use \"No change.\" "
+            "Return each index exactly once and preserve the input count and order.\n\n"
+            f"{numbered}"
+        )
+        wanted = set(range(len(texts)))
+        output_bound = sum(len(text.encode("utf-8")) for text in texts) + 80 * len(texts)
+        max_tokens = min(self._reservation_cap(), max(256, output_bound))
+        body = {
+            "model": self._model,
+            "messages": [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": user},
+            ],
+            "stream": False,
+            "temperature": 0.0,
+            "response_format": {"type": "json_object"},
+            "max_completion_tokens": max_tokens,
+        }
+        reserved = self._reserve_output(max_tokens)
+        started = time.perf_counter()
+        answered = False
+        try:
+            response = requests.post(
+                self._url, json=body,
+                headers={"Authorization": f"Bearer {self._api_key}"}, timeout=self._timeout,
+            )
+            self.last_quota = {
+                key.lower(): value for key, value in response.headers.items()
+                if key.lower().startswith("x-ratelimit-")
+            }
+            if response.status_code in {401, 403, 429}:
+                asked = _retry_after_seconds(response.headers)
+                if response.status_code == 429:
+                    asked = self._learn_from_refusal(response, reserved, asked)
+                error = TranslationProviderError(
+                    "Groq transcript correction is rate limited." if response.status_code == 429
+                    else "Groq refused the configured credentials.",
+                    reason="rate_limited" if response.status_code == 429 else "provider_auth",
+                    retry_after=asked,
+                )
+                self._record(started, "failure", None, error)
+                raise error
+            response.raise_for_status()
+            envelope = response.json()
+            answered = True
+            self._record(started, "success", envelope.get("usage") if isinstance(envelope, dict) else None)
+            choice = envelope["choices"][0]
+            if choice.get("finish_reason") == "length":
+                raise TranslationProviderError("Groq transcript correction output was truncated.", reason="malformed_result")
+            data = json.loads(choice["message"]["content"])
+        except TranslationProviderError:
+            raise
+        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
+            if not answered:
+                self._record(started, "failure", None, exc)
+            reason = "provider_timeout" if isinstance(exc, requests.Timeout) else "provider_error"
+            raise TranslationProviderError("Groq transcript correction is unavailable.", reason=reason) from exc
+        rows = data.get("lines") if isinstance(data, dict) else None
+        if not isinstance(rows, list) or len(rows) != len(texts):
+            raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+        result: dict[int, tuple[str, str]] = {}
+        for row in rows:
+            if not isinstance(row, dict) or type(row.get("index")) is not int or row["index"] not in wanted:
+                raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+            index = row["index"]
+            text = row.get("text")
+            reason = row.get("reason")
+            if (index in result or not isinstance(text, str) or not text.strip()
+                    or len(text) > max(200, 2 * len(texts[index]) + 24)
+                    or not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 240):
+                raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+            result[index] = (text.strip(), reason.strip())
+        if set(result) != wanted:
+            raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+        return {"texts": [result[index][0] for index in range(len(texts))],
+                "reasons": [result[index][1] for index in range(len(texts))], "provider": self.engine_id,
+                "model": self._model}
 
     def batch_output_ceiling(self) -> int | None:
         """The most completion room one request should reserve so two fit a minute, or None while no output-token limit is

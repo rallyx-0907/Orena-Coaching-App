@@ -2,6 +2,12 @@
    Admin's one copy table (copy.js). */
 
 export const en = {
+  ctTranscriptCorrections: 'Transcript corrections', ctCorrectionBefore: 'Before', ctCorrectionAfter: 'After',
+  ctCorrectionState_unavailable: 'Automatic transcript correction was unavailable. The raw transcript was kept.',
+  ctCorrectionState_failed: 'Automatic transcript correction failed. The raw transcript was kept.',
+  ctCorrectionState_partial: 'Automatic transcript correction was partly applied. Cues it could not correct keep their raw text.',
+  ctCorrectionNotApplied: 'Not applied', ctCorrectionReason_noise_removed: 'Noise removed',
+  ctCorrectionDetail_rate_limited: 'the provider is rate limited', ctCorrectionDetail_spend_cap: 'the AI spend cap was reached', ctCorrectionDetail_correction_failed: 'the provider failed', ctCorrectionDetail_correction_unavailable: 'the spend check was unavailable', ctCorrectionDetail_provider_auth: 'the provider refused the credentials', ctCorrectionDetail_provider_timeout: 'the provider timed out', ctCorrectionDetail_provider_error: 'the provider failed', ctCorrectionDetail_malformed_result: 'the answer was malformed', ctCorrectionDetail_request_too_large: 'the request was too large', ctCorrectionDetail_not_configured: 'the provider is not configured', ctCorrectionDetail_corrector_unconfigured: 'no correction provider is configured', ctCorrectionDetail_unsupported_language: 'the language is not supported', ctCorrectionDetail_empty_cue: 'the cue would be empty', ctCorrectionDetail_lexemes_changed: 'it changed the words', ctCorrectionDetail_edit_ratio_exceeded: 'it changed too many characters',
   ctStatusReview: 'Needs review', ctStatusProcessing: 'Processing', ctFilter_review: 'Needs review', ctFilter_processing: 'Processing',
   ctRightsSave: 'Save rights review', ctRightsSaved: 'Rights review saved',
   ctMediaRightsHelp: 'Clear rights only with a license or permission note. Unknown or denied rights cannot publish; withdrawing clearance removes live media from learners.',
@@ -53,6 +59,12 @@ export const en = {
 };
 
 export const vi = {
+  ctTranscriptCorrections: 'Các chỗ đã sửa trong bản chép lời', ctCorrectionBefore: 'Trước', ctCorrectionAfter: 'Sau',
+  ctCorrectionState_unavailable: 'Không thể tự động sửa bản chép lời. Bản gốc đã được giữ lại.',
+  ctCorrectionState_failed: 'Sửa bản chép lời tự động không thành công. Bản gốc đã được giữ lại.',
+  ctCorrectionState_partial: 'Đã sửa bản chép lời tự động một phần. Những dòng không sửa được giữ nguyên bản gốc.',
+  ctCorrectionNotApplied: 'Không áp dụng', ctCorrectionReason_noise_removed: 'Đã xóa tạp âm',
+  ctCorrectionDetail_rate_limited: 'nhà cung cấp đang giới hạn tốc độ', ctCorrectionDetail_spend_cap: 'đã chạm giới hạn chi phí AI', ctCorrectionDetail_correction_failed: 'nhà cung cấp gặp lỗi', ctCorrectionDetail_correction_unavailable: 'không kiểm tra được chi phí', ctCorrectionDetail_provider_auth: 'nhà cung cấp từ chối thông tin xác thực', ctCorrectionDetail_provider_timeout: 'nhà cung cấp phản hồi quá chậm', ctCorrectionDetail_provider_error: 'nhà cung cấp gặp lỗi', ctCorrectionDetail_malformed_result: 'kết quả trả về sai định dạng', ctCorrectionDetail_request_too_large: 'yêu cầu quá lớn', ctCorrectionDetail_not_configured: 'nhà cung cấp chưa được cấu hình', ctCorrectionDetail_corrector_unconfigured: 'chưa cấu hình nhà cung cấp sửa lỗi', ctCorrectionDetail_unsupported_language: 'ngôn ngữ chưa được hỗ trợ', ctCorrectionDetail_empty_cue: 'dòng sẽ bị trống', ctCorrectionDetail_lexemes_changed: 'làm thay đổi các từ', ctCorrectionDetail_edit_ratio_exceeded: 'thay đổi quá nhiều ký tự',
   ctStatusReview: 'Cần duyệt', ctStatusProcessing: 'Đang xử lý', ctFilter_review: 'Cần duyệt', ctFilter_processing: 'Đang xử lý',
   ctRightsSave: 'Lưu duyệt quyền sử dụng', ctRightsSaved: 'Đã lưu duyệt quyền sử dụng',
   ctMediaRightsHelp: 'Chỉ xác nhận quyền khi có giấy phép hoặc ghi chú cho phép. Quyền chưa rõ hoặc bị từ chối không được xuất bản; rút xác nhận sẽ gỡ nội dung khỏi người học.',
@@ -104,6 +116,12 @@ export const vi = {
 };
 
 export const zh = {
+  ctTranscriptCorrections: '文字稿修正记录', ctCorrectionBefore: '修正前', ctCorrectionAfter: '修正后',
+  ctCorrectionState_unavailable: '自动文字稿修正不可用，已保留原始文字稿。',
+  ctCorrectionState_failed: '自动文字稿修正失败，已保留原始文字稿。',
+  ctCorrectionState_partial: '自动文字稿修正已部分应用，未能修正的句子保留原文。',
+  ctCorrectionNotApplied: '未应用', ctCorrectionReason_noise_removed: '已去除噪声标记',
+  ctCorrectionDetail_rate_limited: '服务商限流', ctCorrectionDetail_spend_cap: '已达到 AI 费用上限', ctCorrectionDetail_correction_failed: '服务商出错', ctCorrectionDetail_correction_unavailable: '费用检查不可用', ctCorrectionDetail_provider_auth: '服务商拒绝了凭据', ctCorrectionDetail_provider_timeout: '服务商响应超时', ctCorrectionDetail_provider_error: '服务商出错', ctCorrectionDetail_malformed_result: '返回结果格式错误', ctCorrectionDetail_request_too_large: '请求过大', ctCorrectionDetail_not_configured: '服务商未配置', ctCorrectionDetail_corrector_unconfigured: '未配置修正服务商', ctCorrectionDetail_unsupported_language: '不支持该语言', ctCorrectionDetail_empty_cue: '该句将变为空白', ctCorrectionDetail_lexemes_changed: '改变了词语', ctCorrectionDetail_edit_ratio_exceeded: '改动的字数过多',
   ctStatusReview: '待审核', ctStatusProcessing: '处理中', ctFilter_review: '待审核', ctFilter_processing: '处理中',
   ctRightsSave: '保存授权审核', ctRightsSaved: '已保存授权审核',
   ctMediaRightsHelp: '仅在有许可或授权说明时确认授权。授权不明或被拒绝的内容不可发布；撤回授权会将内容从学习者界面下架。',

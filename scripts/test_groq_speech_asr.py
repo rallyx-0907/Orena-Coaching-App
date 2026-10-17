@@ -28,6 +28,7 @@ except ModuleNotFoundError:
     sys.modules["requests"] = requests
 
 from writing_coach.speech_asr import GroqSpeechAsrProvider
+import writing_coach.speech_asr as speech_asr
 
 
 class FakeResponse:
@@ -61,6 +62,7 @@ result = provider.transcribe_bytes(
     filename="recording.webm",
     content_type="audio/webm",
     language="en",
+    prompt="A public media lesson: honey bees.",
 )
 
 assert result.provider == "groq"
@@ -77,5 +79,22 @@ assert ("response_format", "verbose_json") in kwargs["data"]
 assert ("timestamp_granularities[]", "segment") in kwargs["data"]
 assert ("timestamp_granularities[]", "word") in kwargs["data"]
 assert ("language", "en") in kwargs["data"]
+assert ("prompt", "A public media lesson: honey bees.") in kwargs["data"]
+
+# Chinese context must remain within a conservative prompt budget even though
+# each Han character occupies multiple UTF-8 bytes. Keep the complete title and
+# bound the optional description.
+zh_title = "小熊寻找月亮"
+zh_description = "春天的森林里，小熊和朋友们一起寻找月亮。" * 40
+build_asr_prompt = getattr(speech_asr, "build_asr_prompt", None)
+assert callable(build_asr_prompt), "the bounded source-context prompt builder is missing"
+zh_prompt = build_asr_prompt(zh_title, zh_description, language="zh")
+assert zh_title in zh_prompt
+assert len(zh_prompt.encode("utf-8")) <= 224
+assert "�" not in zh_prompt
+
+empty_prompt = build_asr_prompt("", "", language="zh")
+assert empty_prompt == ""
+assert len(build_asr_prompt("标题😀" * 200, "简介😀" * 200, language="zh").encode("utf-8")) <= 224
 
 print("Groq speech ASR smoke: PASS")
