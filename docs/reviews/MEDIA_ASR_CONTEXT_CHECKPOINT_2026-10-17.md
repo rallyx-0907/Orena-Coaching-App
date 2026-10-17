@@ -4,6 +4,7 @@ MILESTONE=Video Sources Phase 2 / ASR A+B and EN caption cleanup
 STATUS=IMPLEMENTING
 BRANCH=claude/media-asr-context-corrections
 BASE=2cb555ddcd5cc36b14c4fc731f74c341d32a1633
+REVIEWED_APPLICATION_COMMIT=e814a4ec636ae8a104005f6afa6b55fa5997923c
 WEB_URL=http://127.0.0.1:8021/
 WEB_ROUTE=/#/admin/content/media/:id
 HOW_TO_REACH_IT=Admin > Content > Media > item > Transcript
@@ -56,6 +57,8 @@ This is code review, not human product approval or CI evidence.
   Browser ESM graph: PASS, 300 modules linked.
 - Full local Node run: 141/142; Writing workspace gate depends on the owner's uncommitted Design Contract
   edits. That exact gate passes on a clean HEAD archive. The owner's file was not edited or staged.
+  The final committed application snapshot `e814a4ec` was then archived and tested independently:
+  **142/142 Node gates PASS; browser ESM graph PASS (300 modules)**, without the owner's unstaged edits.
 - Two earlier media regressions were reproduced as passing on clean base HEAD, then fixed in this slice;
   both are included in the final 842-pass run. Project-memory and architecture validators: PASS.
   The referenced prior verified commit was independently resolved with host Git (the application image has
@@ -103,3 +106,20 @@ Memory/evidence: this checkpoint; `docs/project/CURRENT_HANDOFF.md`;
 `PROJECT_STATE.md` unchanged. No Decision Log entry: bounded implementation of the explicit owner approval,
 with existing architecture/provider/publication contracts retained. No production/deployment operation.
 The owner-dirty Design Contract and untracked `.agents/`, UX review docs/evidence are excluded from staging.
+
+User changes left at the application checkpoint (`git status --short`):
+
+```text
+ M docs/project/DESIGN_CONTRACT.md
+?? .agents/
+?? docs/UX_REVIEW_AGENT.md
+?? docs/UX_REVIEW_LOG.md
+?? docs/UX_REVIEW_RULES.md
+?? docs/reviews/evidence/cross-skill-audit/
+?? docs/reviews/evidence/onboarding-audit/
+?? docs/reviews/evidence/places-audit/
+?? docs/reviews/evidence/speaking-audit/
+?? docs/reviews/evidence/vocabulary-audit/
+?? docs/reviews/evidence/writing-audit/
+?? docs/ux-review-evidence/
+```
