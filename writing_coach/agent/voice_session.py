@@ -55,6 +55,7 @@ from writing_coach.agent.outputs import (
     reply_tool_specs,
 )
 from writing_coach.agent.locale import to_internal
+from writing_coach.agent.data_class import PACK_CLASS
 from writing_coach.agent.memory_pack import VOICE_BUDGET
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
 from writing_coach.agent.provider import ProviderToolSpec
@@ -636,6 +637,10 @@ class VoiceService:
 
         builder = getattr(self.runtime, "pack", None)
         if builder is None or not getattr(builder, "enabled", False):
+            return None
+        classes = getattr(self.runtime, "data_classes", None)
+        # G8: the voice vendor is Gemini Live (the one-use token is minted there); its class is the owner's record.
+        if classes is not None and not classes.cleared("gemini", self.model, PACK_CLASS):
             return None
         locale = request.context.locale
         kept = session_state.pack_for((str(locale.target), str(locale.support)))
