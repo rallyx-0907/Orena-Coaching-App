@@ -1,8 +1,8 @@
 # Orena Memory: one learner context pack for every model and channel
 
-Status: PROPOSAL rev 2, for owner re-review (issue #256). Nothing here is implemented. M0/M1 do not start until this
-revision is reviewed.
-Lane: Orena Intelligence (D-085, D-086). Rev 1 2026-10-17 on `main` 18023079; rev 2 2026-10-17, same base.
+Status: PROPOSAL rev 3 (issue #256). Rev 2 (`7ddb5718`) APPROVED by the owner 2026-10-17 for M0 and M1. Rev 3 adds
+the four changes the owner required before M2/M3 (§12); M2/M3 wait for its review.
+Lane: Orena Intelligence (D-085, D-086). Rev 1 2026-10-17 on `main` 18023079; rev 2 and rev 3 2026-10-17.
 Authority: AGENTS.md §7 (learner-data persistence is reserved), D-104 (approved learner records),
 `AGENT_CONTRACT.md` v8 §5.4 and §10 (coach notes and history are device memory today).
 Owner review of rev 1 (2026-10-17): **APPROVE DIRECTION, CHANGES REQUIRED BEFORE IMPLEMENTATION.** §11 maps each
@@ -124,8 +124,10 @@ Orena may derive a preference or pattern from repeated behaviour. It never turns
 - Each item carries: rule id and version, evidence count and window (for example 12 of 15 turns in 30 days),
   confidence (computed by the rule: the share of supporting signals with a minimum count), provenance (the signal
   type and the session ids it came from), created and updated time, `expires_at`.
-- Default TTL 45 days, extended by each reinforcement; an item whose confidence falls below the rule's floor, or whose
-  TTL passes, is deleted.
+- Default TTL 45 days (approved, G9), extended by each reinforcement; an item whose confidence falls below its
+  rule's floor, or whose TTL passes, is deleted.
+- **Thresholds are per rule** (G9, rev 3): each rule declares its own minimum signal count, window and confidence
+  floor in code, reviewed with the rule. There is no global threshold.
 - An explicit item on the same subject always wins; a contradicting inferred item is not created.
 - Learner-visible with its reason ("vì 12/15 lần gần đây bạn chọn câu trả lời ngắn") and deletable; a deleted
   inferred item is not re-derived for 30 days (a suppression row: `class = inferred`, `state = suppressed`, no text).
@@ -134,9 +136,14 @@ Initial rules (each needs signals the server already sees or the turn already ca
 
 | Rule | Signal | Creates |
 | --- | --- | --- |
-| `support_language_explanations/1` | the learner's own messages and follow-ups in the support vs the target language, in 30 days | `prefers explanations in <support>` / `in <target>` |
+| `explanation_language/1` | **explicit explanation-language requests only**: "giải thích bằng tiếng Việt", "explain in English", "用中文解释", and follow-ups that ask for the explanation again in another language. The language the learner writes or speaks in is **never** a signal: writing in the target language is usually practice, not a preference (rev 3) | `prefers explanations in <language>` |
 | `concise_explanations/1` | follow-ups asking for shorter vs longer answers ("ngắn thôi", "explain more"), counted by `notes.py`-style rules | `prefers concise` / `prefers detailed` |
-| `examples_topic/1` | topics the learner raises for examples, by keyword class, 3+ times | `examples about <topic>` |
+| `examples_topic/1` | topics the learner raises for examples, by keyword class | `examples about <topic>` |
+
+Each rule ships with its thresholds and a **false-positive benchmark** before it is enabled in production: a labelled
+set of EN, ZH and VI-support conversations (including target-language practice with no preference stated), run
+through the rule; the rule stays off until its false-positive rate on that set is at or below the bound the owner
+sets for it.
 
 Rules are added by code review, not at runtime. A rule that reads a signal the server does not hold yet (for example
 which answer the learner continued with) is listed as a gap, not approximated.
@@ -148,13 +155,28 @@ dở câu 'Why this company?'", "là kỹ sư automation, muốn ví dụ PLC".
 
 Two stores:
 
-1. **Session summary** (`orena_session_summaries`, §4.2): one structured summary per agent session.
-2. **Continuity items** (`learner_memories`, `class = continuity`): short facts the summariser extracts as
-   `useful_context` (§4.3), TTL 14 days, extended when the next sessions use or repeat them.
+1. **Session summary** (`orena_session_summaries`, §4.2): one structured summary per agent session. It is the source
+   of **learning continuity only** (`practised`, `focus`, `open_task`); that is all a pack ever renders from it.
+2. **Continuity items** (`learner_memories`, `class = continuity`): the single source of truth for short-term personal
+   context. The summariser's `useful_context` (§4.3), once validated, is **materialised** into continuity items in the
+   same transaction as the summary checkpoint and is then not kept in, or rendered from, the summary row (rev 3).
+   TTL 14 days (approved, G10).
 
-Promotion to explicit memory needs one of: the learner states it again in a later session, the learner confirms it
-when Orena proposes keeping it, or the learner pins it in the memory view. Promotion is never automatic on one
-session. Excluded at extraction, in both stores: health, sexuality, religion, political views, finances, precise
+Single source of truth (rev 3): a fact lives in exactly one row. Deleting a continuity item removes it from every
+later model call, and nothing can bring it back from a summary: the summary row does not hold it, the pack never reads
+`useful_context` from summaries, and a later summariser output with the same slot and value is suppressed for that
+item's former TTL (a suppression row, as for inferred items, no text).
+
+**Reinforcement and promotion count only raw learner-authored statements** (G10, rev 3). A continuity item's TTL is
+extended, and it is promoted to explicit memory, only by:
+
+- the learner's own words, verbatim in a learner turn of a **different** agent session, matching the same slot and the
+  same normalised value (deterministic match in code, not a model judgement); or
+- the learner confirming it when Orena proposes keeping it; or
+- the learner pinning it in the memory view.
+
+Never counted: model output, Orena repeating or quoting the fact, a session summary, a continuity or inferred item
+itself, or a second extraction from the same session. Promotion is never automatic on one session. Excluded at extraction, in both stores: health, sexuality, religion, political views, finances, precise
 location, other people's personal details, and anything not needed for learning (§4.3 schema forbids these fields;
 a classifier-free word list backs it as a test, not as the only guard).
 
@@ -189,6 +211,7 @@ free text without a schema-validated path (§4.3) or a learner action.
 | `id` | uuid |
 | `user_id`, `account_incarnation`, `language_code` | scope |
 | `agent_session_id` | opaque; **unique** with (user, incarnation): one row per session, upserted |
+| (no `useful_context` column) | materialised into `learner_memories` at checkpoint (§3.4), never stored here |
 | `channel` | `text`, `voice`, `mixed` (voice and text share a session, contract v6) |
 | `started_at`, `last_checkpoint_at`, `finalised_at` | `finalised_at` null while open |
 | `turns_covered` | learner turns folded so far; a checkpoint only writes when it is higher (idempotent, monotonic) |
@@ -374,9 +397,21 @@ contract change (§8).
 
 - Never in a pack: email, name unless the learner gave it as an address term (already handled per turn, never stored,
   §5.6 of the contract), account ids, payment data, other people's data, the §3.4 excluded categories.
-- Retention and training terms are per provider and are recorded in the provider catalogue by the owner; a provider
-  whose terms allow training on paid-tier input is not given the pack (the pack is then empty except profile). Which
-  terms each configured provider has is an owner check (G8), not verified here.
+- **Provider data-class policy (rev 3, replaces "an unsafe provider still gets the profile").** Every configured
+  provider/model carries one data class, set by the owner after reading its retention and training terms:
+
+  | Data class | May receive |
+  | --- | --- |
+  | `none` | no learner data at all: no pack, no profile, no learner text beyond the request's own content (for example a word to look up) |
+  | `learning_profile` | profile and learning evidence (pack without explicit, inferred or continuity items and without session summaries) |
+  | `full_memory` | the full pack, and session turns for the summariser |
+
+  Each call declares the data class it needs (chat with memory on: `full_memory`; chat with memory off, writing review:
+  `learning_profile`; dictionary: `none`). The router sends a call only to a provider whose class is at least that;
+  if the pinned or fallback provider is not cleared for it, the call is not trimmed to fit - it fails over to a
+  cleared provider or answers the existing "unavailable" path. A provider with no recorded class is `none`. Where the
+  class is stored is a UI-lane/Admin question (the provider catalogue is in `ai/platform.py`); until it exists this
+  lane reads it from configuration and opens an issue for the Admin field.
 - Switching provider sends the same pack; nothing is stored at a provider that Orena would need back.
 - Contract: `AGENT_CONTRACT.md` v8 says coach notes and history are device memory and the account store is out of
   scope (§3, §5.4, §10). Server memory needs a contract bump on `codex/work` (this lane never edits the contract):
@@ -390,7 +425,7 @@ contract change (§8).
 | M0 | revised proposal reviewed | cache-stable layout (§5.4), fixed tool order, conversation model pin, telemetry: cached and uncached input tokens, output tokens, rounds per turn, tool calls, cost per turn, first-token and full-response latency, cache hit ratio where exposed. No schema | a before/after benchmark on the same scripted EN and ZH conversations with the same model; tool-selection parity; no cost claim beyond what it measured |
 | M1 | M0 | pack builder with profile and evidence (§3.1, §5.1); injected into text chat and voice; replaces the opening-only snapshot. No schema | deterministic bytes; budget trimming; EN and ZH; no cross-language and no cross-user leak (PostgreSQL); unknown ≠ zero; each evidence line traced to its records; no unsupported inference (score-only attempts produce no sound/tone line); prompt-injection payloads in learner-derived fields stay data |
 | M2 | G1, G3, migration and architecture review | `learner_memories` + repository + explicit memory (server applies `remember_note`/`forget_note`), inferred rules (§3.3), memory routes and switch; contract v9 request to `codex/work` | isolation by account and incarnation; deletion reaches the next prompt; switch semantics (§6); dedupe with device notes; suppression |
-| M3 | G2 | session summaries: `agent_session_summary` capability, checkpoint/finalise (§4.2), continuity items, promotion | restart mid-session keeps the last checkpoint; repeated and late writes are idempotent; schema rejects excluded categories; summary benchmark for the chosen model |
+| M3 | G2, rev 3 review | session summaries: `agent_session_summary` capability, checkpoint/finalise (§4.2), materialised continuity items, promotion by raw learner statements only | restart mid-session keeps the last checkpoint; repeated and late writes are idempotent; schema rejects excluded categories; a deleted continuity item never returns (from a summary, a re-extraction or a retry); model/summary/Orena text never reinforces; **cost and latency of checkpoint summarisation measured** (per checkpoint and per session); **a summariser failure or timeout never fails or delays the learner's turn** (runs after the answer, outside the turn lock, as compaction does today) |
 | M4 | M1 | writing review (flagged) and text discussion get the pack; issue to the UI lane for media explain | writing benchmark: no recall/precision change from the pack |
 | M5 | challenger benchmark, G5 | default chat model and fallback; one-shot routing by capability | the benchmark itself, same script per candidate |
 
@@ -407,12 +442,12 @@ contract change (§8).
 | G7 | evidence-derived facts recomputed; behavioural personalisation by rule with evidence, confidence, provenance, TTL; arbitrary model opinion never stored as durable truth | APPROVED WITH REVISED RULE (§3.1, §3.3) |
 | G8 | sending the pack to providers | APPROVED CONDITIONALLY; conditions documented in §8; the owner records each provider's retention/training terms |
 
-New, for the owner:
+Added in rev 2, decided 2026-10-17:
 
-- **G9.** The initial inferred rules of §3.3 (support language, explanation length, example topic), TTL 45 days,
-  confidence floor 0.7 with at least 8 signals. Adding a rule later is a reviewed code change.
-- **G10.** Continuity TTL 14 days; session summaries kept 10 per learner and language; promotion by repetition,
-  confirmation or pin (§3.4).
+- **G9.** Inferred personalisation: APPROVED IN CONCEPT, TTL 45 days approved; thresholds per rule, explanation
+  language from explicit requests only, false-positive benchmark per rule before production (§3.3, rev 3).
+- **G10.** APPROVED: continuity TTL 14 days, 10 session summaries per learner and language; repetition counts raw
+  learner statements in another session only (§3.4, rev 3).
 
 Still reserved and not decided here: transcript persistence, multi-device sync protocol, export format, the
 account-deletion runtime (the new tables join the D-055 enumeration either way), and trusting client-reported Gemini
@@ -432,3 +467,15 @@ Live `usageMetadata` (issue #256 §3).
 | P2 caching expectation is a hypothesis; M0 benchmark | §5.4, §9 M0 |
 | P2 model selection not decided | §7.2, §9 M5, §10 G5 |
 | P2 summary model is its own capability | §4.3, §7.2 |
+
+## 12. Rev 2 approval → rev 3 (before M2/M3)
+
+Owner, 2026-10-17: rev 2 at `7ddb5718` APPROVED for M0 and M1. Before M2/M3:
+
+| Owner point | Where answered |
+| --- | --- |
+| 1. Continuity has one source of truth; summaries render learning continuity only; `useful_context` is materialised into `learner_memories(class=continuity)`; a deleted item never returns from a summary | §3.4, §4.2 |
+| 2. G9 approved in concept with TTL 45 days; thresholds per rule; explanation language only from explicit requests, never from the language the learner uses; false-positive benchmark before production | §3.3 |
+| 3. G10 approved (14 days, 10 summaries per language); repetition counts only raw learner statements in another session, same slot and value; nothing generated reinforces itself | §3.4 |
+| 4. G8 as a provider data-class policy (`none`, `learning_profile`, `full_memory`); a call routes only to a cleared provider | §8 |
+| M3 measures checkpoint summarisation cost/latency; a summary failure never fails the learner's turn | §9 M3 |
