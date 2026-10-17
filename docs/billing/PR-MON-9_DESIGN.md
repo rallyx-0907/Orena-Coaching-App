@@ -1,6 +1,6 @@
 # PR-MON-9: Plan & usage, Pricing, Billing Sheet and Credits Payment on the real backend (design)
 
-**Status: DESIGNING, revision 3 (docs only), for a targeted re-review.** Revision 3 answers the review of `8d6f2985` (2 P1, 1 P2): §4.2 durable operations, §3.6 fail-closed pending changes, §4.1 caching. Base: `main` `75e65863`. Owner decisions:
+**Status: DESIGNING, revision 3.1 (docs only), for a targeted re-review of §4.2.1.** Revision 3 answered the review of `8d6f2985`. Revision 3.1 answers the review of `eb86c1a2` (1 P1, 1 P2): the journal's crash recovery (leases, stale `pending` and `sent`), an explicit operation id on every write route, and the journal's retention. Base: `main` `75e65863`. Owner decisions:
 D-MON-033. Revision 2 answers the review of `4e4da27b` (4 P1, 2 P2) and records the answers to Q1-Q4 (§0). This PR
 changes learner-facing UI and adds payment-changing backend routes. No code until the design is approved; nothing is
 enabled; gate 7b stays the activation.
@@ -16,6 +16,8 @@ enabled; gate 7b stays the activation.
 | **P2-1** checkout state machine | §3.2: summary → embed → "Processing payment…" (on `confirmed`) → overlay closed on `success` (embed told not to redirect) → "Activating your plan…" → `done` on the webhook. Closing the overlay after `confirmed` never reads as a failure. |
 | **Rev 3 / P1-1 (review of `8d6f2985`)** plan-change idempotency not durable | §4.2.1: an operation journal persisted **before** the Polar PATCH, keyed by `operation_id` with a request digest. Same operation and request → the original answer or a reconcile; different request → 409 `operation_conflict`. An ambiguous PATCH outcome (timeout, 5xx, broken connection) → `provider_unknown` → reconciled only by **reading** the Polar subscription, **never a second PATCH**. |
 | **Rev 3 / P1-2** pending downgrade without a fail-closed fallback | §3.6.1: `next_period` changes (downgrade, period down) **ship only if the sandbox proves** that cancel and upgrade while a change is pending are safe on Polar. If not, v1 does not offer a scheduled change: a downgrade is offered only as "cancel at period end, then choose a plan", and a period-down is not offered. No account is put into `active+pending` before the exits are proven. |
+| **Rev 3.1 / P1 (review of `eb86c1a2`)** `pending` and `sent` could stay forever after a crash; the operation identity of cancel, resume and keep was implicit | §4.2.1, "Ownership and crash recovery": a `pending` operation carries a lease. A **stale `pending`** (never sent) may be claimed by CAS and sends the **first** PATCH, within 10 minutes of its creation; after that it becomes `not_applied`. A **stale `sent`** is ambiguous and is reconciled by GET only. The same operation is never PATCHed twice. **Every write route takes a client `operation_id`**. Crash and concurrency tests are added. |
+| **Rev 3.1 / P2** the journal's keyspace grows without bound | §4.2.1, "Retention": terminal documents are deleted by the reconciler after 90 days. Unresolved ones are kept and counted. |
 | **Rev 3 / P2** a 30 s cache of the whole subscription answer | §4.1: the commerce and access state is read **fresh from the local record on every request**. Only the Polar enrichment (`pending_update`, payment method, billing email) is cached, 30 s per account. |
 | **P2-2** origins | §4.5: the sandbox gets a stable HTTPS hostname, a Google OAuth client and redirect for it, and that origin in Polar's Embedding allowlist. Production origin likewise. |
 
@@ -288,9 +290,14 @@ scale, that is a separate schema review; the contract is the same.
 - `state`: `pending` | `sent` | `done` | `refused` | `provider_unknown` | `not_applied`;
 - the Polar status code, and the times.
 
+**Operation identity.** **Every write route** (`change`, `cancel`, `resume`, `keep`) **requires a client-generated
+`operation_id`** (a UUID; a retry of the same click reuses it). There is no implicit or derived key: a route without
+one answers 422.
+
 **The sequence:**
 
-1. **Before any Polar call**, the operation is written `pending` with CAS on a missing key.
+1. **Before any Polar call**, the operation is written `pending` with CAS on a missing key, together with its
+   **lease**: `owner` (a random token of this request) and `lease_until` = now + 30 s.
    - The key already exists, for the same incarnation and the same `request_digest` → **no Polar call**. Answer from
      its state:
      - `done` / `refused`: the original answer;
@@ -298,7 +305,9 @@ scale, that is a separate schema review; the contract is the same.
      - `provider_unknown`: run the reconcile below;
      - `not_applied`: the original "not applied" answer.
    - The key exists with a **different** digest or incarnation → **409 `operation_conflict`**, and nothing is sent.
-2. It is marked `sent`, then the PATCH is sent. **This is the only PATCH an operation ever sends.**
+2. Its owner marks it `sent`, by CAS on the document's version **and** its own `owner` token, and only then
+   sends the PATCH. A CAS that fails means another worker owns it, and this worker sends nothing. **This is the only
+   PATCH an operation ever sends.**
 3. On Polar's answer:
    - 2xx → `done`;
    - a definite 4xx (402 declined, 409, 422) → `refused`, with the code;
@@ -316,9 +325,32 @@ scale, that is a separate schema review; the contract is the same.
 5. The UI keeps `processing` while an operation is `pending` / `sent` / `provider_unknown`, and polls the local record
    (§4.1) and the operation.
 
+**Ownership and crash recovery.** A process can die between any two steps. Each state that can be left behind has
+one rule:
+
+| Left behind | What it means | Who may act | What they do |
+| --- | --- | --- | --- |
+| `pending`, lease live | its owner is working | nobody else | a repeat of the same request answers 202 "in progress" |
+| `pending`, lease expired, created **< 10 min** ago | **no PATCH was ever sent**, because `sent` is written before the PATCH | the client's repeat request, or the reconciler | **claim** it by CAS (version, expired lease → new `owner`, new lease), then step 2: mark `sent`, send the **first** PATCH |
+| `pending`, lease expired, created **≥ 10 min** ago | the learner has long left | the reconciler | `not_applied` by CAS; **no PATCH**; a new click is a new operation |
+| `sent` (any age, no answer recorded) | **ambiguous**: the PATCH may or may not have reached Polar | the reconciler, or a repeat request | treated as `provider_unknown`: **reconciled by GET only (step 4), never resent** |
+| `provider_unknown` | ambiguous | the same | step 4 |
+
+**Concurrency:** two workers that both see an expired lease race on CAS. Exactly one claims it; the other's CAS fails
+and it sends nothing. A claimed operation's `sent` CAS still requires the claimer's own `owner` token. **At most one
+PATCH per operation, ever.**
+
+**Retention.** The keyspace is bounded by the reconciler:
+- terminal documents (`done`, `refused`, `not_applied`) are deleted **90 days** after their last write;
+- `pending`, `sent` and `provider_unknown` are never deleted while unresolved;
+- readiness reports their counts (`polar_ops_unresolved`), and one older than 24 h raises one `event_undecided`
+  operator item, as the clean-up does.
+
+The table alternative stays a separate schema review.
+
 ### 4.3 Cancel, resume, invoices
 
-- **`POST /api/billing/subscription/cancel`** `{reason}` → `PATCH {cancel_at_period_end: true,
+- **`POST /api/billing/subscription/cancel`** `{operation_id, reason}` → `PATCH {cancel_at_period_end: true,
   customer_cancellation_reason}`, with the closed mapping:
 
   | Chip | Polar reason |
@@ -329,8 +361,8 @@ scale, that is a separate schema review; the contract is the same.
   | Taking a break | `other` |
 
   No comment field is sent.
-- **`POST /api/billing/subscription/resume`** → `PATCH {cancel_at_period_end: false}`.
-- **`POST /api/billing/subscription/keep`**: only if Q2's proof passes, with the proven operation.
+- **`POST /api/billing/subscription/resume`** `{operation_id}` → `PATCH {cancel_at_period_end: false}`.
+- **`POST /api/billing/subscription/keep`** `{operation_id}`: only if Q2's proof passes, with the proven operation.
 - **`GET /api/billing/invoices?page=`** → `GET /v1/orders/?customer_id=<the incarnation's Polar customer>`, paginated.
 - **`GET /api/billing/invoices/{order_id}`:**
   1. `GET /v1/orders/{order_id}`; 404 unless `order.customer_id` is this incarnation's Polar customer. **A direct
@@ -424,6 +456,15 @@ token can read the method's brand, last4 and expiry. If not, the row reads "Card
 
 Revision 3 adds to the tests of §6:
 - the operation journal:
+  - **crash recovery:**
+    - a crash after `pending` (before `sent`) → a claim within 10 min sends exactly one PATCH; after 10 min →
+      `not_applied`, no PATCH;
+    - a crash after `sent` → GET-only reconcile, never resent;
+    - a crash after the PATCH, before `done` → GET-only reconcile → `done`;
+  - **concurrency:** two claimers on one expired lease → exactly one PATCH (PostgreSQL CAS, real threads); a request
+    and the reconciler racing on the same stale operation → one PATCH or none;
+  - a write route without `operation_id` → 422;
+  - retention: terminal documents older than 90 days deleted; unresolved ones kept, counted, and escalated after 24 h;
   - same operation and request → no second PATCH;
   - different request → 409;
   - timeout → `provider_unknown` → reconciled `done` or `not_applied` by reads only;
