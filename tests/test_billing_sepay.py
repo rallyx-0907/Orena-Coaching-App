@@ -249,6 +249,16 @@ def test_a_token_alone_adds_no_feed_step_to_the_reconciler():
     assert not any(key.startswith("sepay_feed") for key in counts)
 
 
+def test_the_feed_names_itself_so_sepays_cloudflare_does_not_refuse_it():
+    """SePay test mode, 2026-10-17: Cloudflare in front of SePay's API answers Error 1010 (403) to Python's default
+    User-Agent. Every feed and backfill request carries Orena's own User-Agent and asks for JSON."""
+    from writing_coach.billing.sepay import USER_AGENT
+
+    headers = gateway().feed_request(since_id=None, date_from=NOW)["headers"]
+    assert headers["User-Agent"] == USER_AGENT and not headers["User-Agent"].startswith("Python-urllib")
+    assert headers["Accept"] == "application/json" and headers["Authorization"] == f"Bearer {TOKEN}"
+
+
 def test_no_secret_reaches_a_repr_a_report_a_request_error_or_a_log(caplog):
     from writing_coach.billing.sepay_feed import FeedHTTPError
 
