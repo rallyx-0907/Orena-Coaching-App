@@ -21,6 +21,9 @@ def session_of(events):
     return next(e for e in events if e.name == "session").session_id
 
 
+STABLE = PromptLayout(cache_stable=True)
+
+
 def conversation(rt, *messages, **extra):
     session_id, out = None, []
     for message in messages:
@@ -53,6 +56,7 @@ def shared_prefix(a, b) -> int:
 
 def test_the_context_follows_the_conversation_so_the_turns_before_it_are_a_stable_prefix():
     rt, provider = runtime([reply("a1"), reply("a2"), reply("a3")])
+    rt.prompt = STABLE
     conversation(rt, "q1", "q2", "q3")
     first, second, third = provider.requests
     assert first.messages[0].content == INSTRUCTION
@@ -66,8 +70,7 @@ def test_the_context_follows_the_conversation_so_the_turns_before_it_are_a_stabl
 
 
 def test_the_legacy_layout_keeps_the_whole_context_second():
-    rt, provider = runtime([reply("a1"), reply("a2")])
-    rt.prompt = PromptLayout(cache_stable=False)
+    rt, provider = runtime([reply("a1"), reply("a2")])  # legacy is the default (review of PR #259)
     conversation(rt, "q1", "q2")
     second = provider.requests[1]
     assert second.messages[1].content.startswith("context: ") and '"selection"' in second.messages[1].content
@@ -77,6 +80,7 @@ def test_the_legacy_layout_keeps_the_whole_context_second():
 def test_a_change_in_this_turns_context_keeps_the_conversation_reusable():
     # A new selection changes this turn's part only: the setting and the turns said before stay the same bytes.
     rt, provider = runtime([reply("a1"), reply("a2")])
+    rt.prompt = STABLE
     (first,) = conversation(rt, "q1")
     request = turn_request("q2", session_id=session_of(first))
     request = request.model_copy(update={"context": request.context.model_copy(
@@ -89,6 +93,7 @@ def test_a_change_in_this_turns_context_keeps_the_conversation_reusable():
 
 def test_an_opening_turn_also_ends_with_its_context_before_the_trigger():
     rt, provider = runtime([reply("Chào bạn.")])
+    rt.prompt = STABLE
     run(rt, _open_request())
     (sent,) = provider.requests
     assert sent.messages[0].content == INSTRUCTION and sent.messages[1].content.startswith("context: ")
@@ -173,7 +178,9 @@ def test_an_opening_is_not_shown_tools_it_may_not_call():
 
 
 def test_layout_from_the_environment_refuses_to_guess():
-    assert PromptLayout.from_env({}) == PromptLayout(cache_stable=True, stable_tools=False)
+    # legacy until the live benchmark shows no regression (review of PR #259)
+    assert PromptLayout.from_env({}) == PromptLayout(cache_stable=False, stable_tools=False) == PromptLayout()
+    assert PromptLayout.from_env({"AGENT_PROMPT_LAYOUT": "stable"}) == STABLE
     assert PromptLayout.from_env({"AGENT_PROMPT_LAYOUT": "legacy", "AGENT_STABLE_TOOLS": "on"}) == PromptLayout(
         cache_stable=False, stable_tools=True)
     with pytest.raises(ValueError):
@@ -302,7 +309,7 @@ def test_the_turn_record_carries_what_the_benchmark_reads():
     rt.record_turn = lambda user, record: records.append(record)
     run(rt)
     (record,) = records
-    assert record["prompt_layout"] == "orena-prompt/2"
+    assert record["prompt_layout"] == "orena-prompt/1"  # the default, legacy
     assert record["tools_digest"] and len(record["tools_digest"]) == 16
     assert record["model_route"] == {"provider": "gemini", "model": "gemini-3.5-flash-lite", "pinned": "new"}
     # The fake counts the input itself; the cached part is what the provider reported.
@@ -313,3 +320,24 @@ def test_the_turn_record_carries_what_the_benchmark_reads():
     assert record["cost_upper_bound"] == 0.0026
     assert [r["cached_input_tokens"] for r in record["rounds"]] == [3500, 4000]
     assert all(r["first_event_ms"] is not None and r["end_ms"] is not None for r in record["rounds"])
+
+
+def test_the_stable_layout_keeps_the_assembled_prompt_inside_the_input_budget(monkeypatch):
+    # The budget trimming of tests/test_agent_review_92.py, with this turn's context in the tail (stable layout).
+    import tests.test_agent_review_92 as budget_case
+
+    plain = budget_case.runtime
+
+    def stable_runtime(*args, **kwargs):
+        rt, provider = plain(*args, **kwargs)
+        rt.prompt = STABLE
+        return rt, provider
+
+    monkeypatch.setattr(budget_case, "runtime", stable_runtime)
+    budget = budget_case.base_tokens() + 2_500
+    sent = budget_case.long_conversation(budget)
+    assert budget_case.tokens(sent) <= budget
+    assert sent.messages[-1].content == "đoạn thứ 3 có yếu không?"
+    assert any(m.content.startswith(budget_case.CARRIED_HEAD) and "TÓM TẮT" in m.content for m in sent.messages)
+    at = context_at(sent)
+    assert sent.messages[at - 1].role == "assistant"  # the newest exchange stays, just before this turn's context

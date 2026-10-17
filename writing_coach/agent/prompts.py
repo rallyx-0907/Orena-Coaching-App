@@ -15,9 +15,9 @@ said; what this turn changes - what is in view and selected, what earlier reads
 found, an open offer, the focus - is `context (this turn):` after them, next to
 the learner's words. The instruction, the setting and the conversation so far
 are then the same bytes from one round and one turn to the next. The legacy
-layout (`cache_stable=False`) sends the whole context in one message second,
-so one changed field ends the reusable prefix before the conversation; it is
-kept as a switch for the before/after benchmark and as a rollback.
+layout (`cache_stable=False`, the default until a live benchmark shows no
+regression) sends the whole context in one message second, so one changed
+field ends the reusable prefix before the conversation.
 """
 
 from __future__ import annotations
@@ -292,7 +292,7 @@ class PromptLayout:
     server on the calls instead, and the last round sends `tool_choice: none`. Off by default until the live benchmark
     shows it does not change tool selection or latency."""
 
-    cache_stable: bool = True
+    cache_stable: bool = False  # the legacy layout until the live benchmark (review of PR #259)
     stable_tools: bool = False
 
     @property
@@ -301,10 +301,11 @@ class PromptLayout:
 
     @classmethod
     def from_env(cls, environ: Mapping[str, str]) -> PromptLayout:
-        """`AGENT_PROMPT_LAYOUT` = stable (default) | legacy; `AGENT_STABLE_TOOLS` = off (default) | on. Any other
-        value refuses to start rather than guess."""
+        """`AGENT_PROMPT_LAYOUT` = legacy (default) | stable; `AGENT_STABLE_TOOLS` = off (default) | on. Any other
+        value refuses to start rather than guess. `stable` is the default only once a live benchmark shows no
+        regression in provider compatibility, tool selection, quality or latency (review of PR #259)."""
 
-        layout = (environ.get("AGENT_PROMPT_LAYOUT") or "stable").strip().lower()
+        layout = (environ.get("AGENT_PROMPT_LAYOUT") or "legacy").strip().lower()
         tools = (environ.get("AGENT_STABLE_TOOLS") or "off").strip().lower()
         if layout not in ("stable", "legacy"):
             raise ValueError("AGENT_PROMPT_LAYOUT must be 'stable' or 'legacy'")
@@ -437,7 +438,7 @@ def opening_messages(
     snapshot: dict | None = None,
     screen_help: bool = False,
     budget_tokens: int | None = None,
-    cache_stable: bool = True,
+    cache_stable: bool = False,
 ) -> list[ProviderMessage]:
     """The messages of a turn. `budget_tokens` bounds the whole assembled prompt: what is added from the conversation
     (the older turns, then the carried pasted text) gives way to the fixed parts, the summary and the learner's words.

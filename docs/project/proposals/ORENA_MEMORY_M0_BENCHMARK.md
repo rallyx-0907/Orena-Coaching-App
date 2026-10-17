@@ -5,10 +5,14 @@ Proposal: `ORENA_MEMORY.md` §5.4, §7.2, §9 (M0). Script: `scripts/agent_promp
 
 ## What M0 changed
 
-1. **Prompt layout** (`AGENT_PROMPT_LAYOUT`, default `stable`): the per-turn context is split by how often it changes.
+1. **Prompt layout** (`AGENT_PROMPT_LAYOUT`, default **`legacy`**; `stable` is opt-in): with `stable` the per-turn
+   context is split by how often it changes.
    The conversation's setting (languages, screen, what it offers, address, coach notes) is `context:` right after the
    instruction; this turn's part (in view, selection, earlier reads, open offer, focus, what was sent) is
-   `context (this turn; ...):` after the conversation. `legacy` restores the single context message second.
+   `context (this turn; ...):` after the conversation. `legacy` keeps the single context message second, as before M0.
+   Owner review of PR #259 (2026-10-17): `legacy` stays the default; `stable` is enabled explicitly for the capped
+   live benchmark and becomes the default only once real-provider compatibility, tool-selection parity, quality and
+   latency show no material regression.
 2. **Stable tool list** (`AGENT_STABLE_TOOLS`, default `off`): every round and turn lists the same tools in one order;
    the turn's rules are enforced on the calls (a call the round does not allow is answered "unavailable: not offered
    in this turn" and never runs) and the last round sends `tool_choice: none` - to OpenAI, DeepSeek and Groq only;

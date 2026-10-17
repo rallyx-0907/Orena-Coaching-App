@@ -4,7 +4,7 @@ Runs the same scripted conversations - six learner turns in English and six in C
 learner scripts of the 2026-10-17 model study (issue #256) - through the real agent runtime under each prompt layout:
 
 - `legacy`        the layout before M0: the per-turn context second, the tools the round allows;
-- `stable`        M0's default: the context after the conversation;
+- `stable`        opt-in (`AGENT_PROMPT_LAYOUT=stable`): the context split around the conversation;
 - `stable+tools`  plus one fixed tool list for every round (`AGENT_STABLE_TOOLS`).
 
 Offline (the default) no provider is called. A scripted model answers, and the script measures what a provider's
