@@ -7,9 +7,10 @@ M1 holds two of the proposal's four kinds of knowledge, both from records that a
   goal, explanation style and pinyin the learner saved (`user_language_profiles`); a product default is not the
   learner's choice and is not stated;
 - **learning evidence**, recomputed on every build from the domain records, each line with the records that prove
-  it (`LearnerPack.provenance`, kept on the server, never rendered):
-  - writing: error categories the learner's stored reviews recorded at least twice (the category is what the record
-    holds; no R5 lesson is named, D-100);
+  it (`LearnerPack.provenance`, kept on the server, never rendered; one entry for every claim the pack renders,
+  `claims()` names them):
+  - writing: the (at most 3) error categories the learner's stored reviews recorded at least twice in the window
+    (the category is what the record holds; no R5 lesson is named, D-100);
   - vocabulary: due, learning and mastered counts, and words forgotten at least twice (`lapse_count`);
   - pronunciation: the latest stored scores, and words the provider itself flagged in at least two attempts with the
     provider's error type (D-084: flagged is the provider's own flag). No sound or tone is stated: a score does not
@@ -46,6 +47,9 @@ UNKNOWN = "unknown"  # a source that could not be read: never 0, never empty
 WINDOW_DAYS = 30
 RECURRING = 2  # a pattern counts from its second record
 MAX_ITEMS = 5
+MAX_WRITING = 3  # ORENA_MEMORY.md §3.1: the top 3 categories
+MAX_IDS = 50  # ids kept in one provenance entry
+META_KEYS = frozenset({"window_days", "as_of", "left_out_for_size"})
 MAX_TEXT = 60  # characters of any string taken from a record
 SPEAKING_READ = 50
 LISTENING_READ = 100
@@ -67,7 +71,8 @@ class PackSources:
     repositories scope it by learner and language. A reader that raises is a source that is unknown here."""
 
     profile: Callable[[], Mapping[str, Any]] = _unreadable  # becoming_memory.get_learner_profile
-    writing_history: Callable[[], Mapping[str, Any]] = _unreadable  # app.api_error_memory: {items: [{category, total, last_seen}]}
+    # One row per error a stored review recorded: {category, created_at, essay_id} (app._agent_writing_error_events).
+    writing_events: Callable[[], Sequence[Mapping[str, Any]]] = _unreadable
     vocabulary_counts: Callable[[], Mapping[str, Any]] = _unreadable  # becoming_library.library_summary()["summary"]
     vocabulary_items: Callable[[int], Sequence[Mapping[str, Any]]] = _unreadable  # saved words, with lapse_count
     speaking_attempts: Callable[[int], Sequence[Mapping[str, Any]]] = _unreadable  # newest first
@@ -182,47 +187,11 @@ def _profile(profile: Mapping[str, Any] | None, target: str, support: str) -> di
     }
 
 
-def _writing(history: Mapping[str, Any] | None, proof: list[dict[str, Any]]) -> Any:
-    if history is None:
-        return UNKNOWN
-    items = [item for item in history.get("items") or () if isinstance(item, Mapping)]
-    recurring = sorted(
-        (item for item in items if int(_number(item.get("total")) or 0) >= RECURRING and item.get("category")),
-        key=lambda item: (-int(_number(item.get("total")) or 0), str(item.get("category"))),
-    )[:MAX_ITEMS]
-    out = []
-    for item in recurring:
-        category = clean(item.get("category"), 40)
-        times = int(_number(item.get("total")) or 0)
-        out.append({"category": category, "times": times, "last_seen": _day(item.get("last_seen"))})
-        proof.append({"line": f"writing.{category}", "source": "writing_errors", "category": category, "times": times,
-                      "revisions_read": int(_number(history.get("revision_count")) or 0)})  # fmt: skip
-    return {"recurring_errors": out, "window": "all_reviews"}
+Proof = dict[str, dict[str, Any]]  # claim -> the records or query that prove it
 
 
-def _vocabulary(counts: Mapping[str, Any] | None, items: Sequence[Mapping[str, Any]] | None,
-                proof: list[dict[str, Any]]) -> Any:  # fmt: skip
-    if counts is None and items is None:
-        return UNKNOWN
-    out: dict[str, Any] = {}
-    if counts is None:
-        out["counts"] = UNKNOWN
-    else:
-        out["counts"] = {key: int(_number(counts.get(key)) or 0) for key in ("due", "learning", "mastered")}
-    if items is None:
-        out["often_forgotten"] = UNKNOWN
-    else:
-        forgotten = sorted(
-            (row for row in items if int(_number(row.get("lapse_count")) or 0) >= RECURRING and row.get("word")),
-            key=lambda row: (-int(_number(row.get("lapse_count")) or 0), clean(row.get("word"))),
-        )[:MAX_ITEMS]
-        out["often_forgotten"] = []
-        for row in forgotten:
-            word, lapses = clean(row.get("word")), int(_number(row.get("lapse_count")) or 0)
-            out["often_forgotten"].append({"word": word, "times_forgotten": lapses})
-            proof.append({"line": f"vocabulary.forgotten.{word}", "source": "saved_words", "word": word,
-                          "lapse_count": lapses})  # fmt: skip
-    return out
+def _ids(values: Any) -> list[str]:
+    return sorted({str(value) for value in values if value is not None})[:MAX_IDS]
 
 
 def _within(value: Any, since: datetime) -> bool:
@@ -230,16 +199,78 @@ def _within(value: Any, since: datetime) -> bool:
     return moment is not None and moment >= since
 
 
-def _pronunciation(attempts: Sequence[Mapping[str, Any]] | None, since: datetime, proof: list[dict[str, Any]]) -> Any:
+def _writing(events: Sequence[Mapping[str, Any]] | None, since: datetime, proof: Proof) -> Any:
+    if events is None:
+        proof["writing"] = {"source": "writing_errors", "status": "unreadable"}
+        return UNKNOWN
+    recent = [row for row in events if row.get("category") and _within(row.get("created_at"), since)]
+    times: Counter[str] = Counter()
+    essays: dict[str, set[str]] = {}
+    last: dict[str, str] = {}
+    for row in recent:
+        category = clean(row.get("category"), 40)
+        times[category] += 1
+        essays.setdefault(category, set()).add(str(row.get("essay_id")))
+        last[category] = max(last.get(category, ""), _day(row.get("created_at")) or "")
+    recurring = sorted(((c, n) for c, n in times.items() if n >= RECURRING), key=lambda pair: (-pair[1], pair[0]))
+    out = []
+    for category, count in recurring[:MAX_WRITING]:
+        out.append({"category": category, "times": count, "last_seen": last[category] or None})
+        proof[f"writing.recurring_errors.{category}"] = {"source": "writing_errors", "category": category,
+                                                         "times": count, "essay_ids": _ids(essays[category])}
+    proof["writing.recurring_errors"] = {"source": "writing_errors", "query": "errors of stored reviews in the window, "
+                                         "categories recorded 2+ times, top 3", "window_days": WINDOW_DAYS,
+                                         "errors_read": len(recent), "essay_ids": _ids(r.get("essay_id") for r in recent)}
+    return {"recurring_errors": out}
+
+
+def _vocabulary(counts: Mapping[str, Any] | None, items: Sequence[Mapping[str, Any]] | None, proof: Proof) -> Any:
+    if counts is None and items is None:
+        proof["vocabulary"] = {"source": "saved_words", "status": "unreadable"}
+        return UNKNOWN
+    out: dict[str, Any] = {}
+    if counts is None:
+        out["counts"] = UNKNOWN
+        proof["vocabulary.counts"] = {"source": "saved_words", "status": "unreadable"}
+    else:
+        out["counts"] = {key: int(_number(counts.get(key)) or 0) for key in ("due", "learning", "mastered")}
+        proof["vocabulary.counts"] = {"source": "saved_words", "query": "library_summary: due now, learning, mastered",
+                                      "values": dict(out["counts"])}
+    if items is None:
+        out["often_forgotten"] = UNKNOWN
+        proof["vocabulary.often_forgotten"] = {"source": "saved_words", "status": "unreadable"}
+        return out
+    forgotten = sorted(
+        (row for row in items if int(_number(row.get("lapse_count")) or 0) >= RECURRING and row.get("word")),
+        key=lambda row: (-int(_number(row.get("lapse_count")) or 0), clean(row.get("word"))),
+    )[:MAX_ITEMS]
+    out["often_forgotten"] = []
+    for row in forgotten:
+        word, lapses = clean(row.get("word")), int(_number(row.get("lapse_count")) or 0)
+        out["often_forgotten"].append({"word": word, "times_forgotten": lapses})
+        proof[f"vocabulary.often_forgotten.{word}"] = {"source": "saved_words", "word": word, "lapse_count": lapses}
+    proof["vocabulary.often_forgotten"] = {"source": "saved_words", "query": f"lapse_count >= {RECURRING} among the "
+                                           f"newest {VOCABULARY_READ} saved words", "words_read": len(items)}
+    return out
+
+
+def _pronunciation(attempts: Sequence[Mapping[str, Any]] | None, since: datetime, proof: Proof) -> Any:
     if attempts is None:
+        proof["pronunciation"] = {"source": "speaking_attempts", "status": "unreadable"}
         return UNKNOWN
     recent = [row for row in attempts if _within(row.get("created_at"), since)]
     recent.sort(key=lambda row: (str(_instant(row.get("created_at"))), str(row.get("id"))), reverse=True)
+    query = {"source": "speaking_attempts", "window_days": WINDOW_DAYS, "read_limit": SPEAKING_READ}
+    proof["pronunciation.attempts"] = {**query, "attempt_ids": _ids(row.get("id") for row in recent)}
     latest: dict[str, Any] = {}
     if recent:
         dimensions = recent[0].get("dimensions") if isinstance(recent[0].get("dimensions"), Mapping) else {}
         latest = {clean(name, 24): _score(value) for name, value in sorted(dimensions.items())
                   if _score(value) is not None}  # fmt: skip
+        proof["pronunciation.latest_scores"] = {"source": "speaking_attempts", "attempt_id": str(recent[0].get("id")),
+                                                "dimensions": sorted(latest)}  # fmt: skip
+    else:
+        proof["pronunciation.latest_scores"] = {**query, "attempt_id": None, "reason": "no attempt in the window"}
     times: Counter[str] = Counter()
     kinds: dict[str, Counter[str]] = {}
     seen_in: dict[str, list[str]] = {}
@@ -263,35 +294,67 @@ def _pronunciation(attempts: Sequence[Mapping[str, Any]] | None, since: datetime
             continue
         error = sorted(kinds[text].items(), key=lambda pair: (-pair[1], pair[0]))[0][0]
         flagged.append({"word": text, "error": error, "attempts": count})
-        proof.append({"line": f"pronunciation.flagged.{text}", "source": "speaking_attempts", "word": text,
-                      "attempt_ids": sorted(seen_in[text])})  # fmt: skip
+        proof[f"pronunciation.flagged_words.{text}"] = {"source": "speaking_attempts", "word": text,
+                                                         "attempt_ids": _ids(seen_in[text])}  # fmt: skip
+    proof["pronunciation.flagged_words"] = {**query, "query": f"words the provider flagged (error_type) in {RECURRING}+ "
+                                            "attempts"}
     return {"attempts": len(recent), "latest_scores": latest, "flagged_words": flagged}
 
 
-def _listening(rows: Sequence[Mapping[str, Any]] | None, since: datetime, proof: list[dict[str, Any]]) -> Any:
+def _listening(rows: Sequence[Mapping[str, Any]] | None, since: datetime, proof: Proof) -> Any:
     if rows is None:
+        proof["listening"] = {"source": "listening_progress", "status": "unreadable"}
         return UNKNOWN
     worked = [row for row in rows if _within(row.get("updated_at"), since)
               and (int(_number(row.get("checked_attempt_count")) or 0) or row.get("revealed"))]  # fmt: skip
     verified = [row for row in worked if str(row.get("score_source") or "") == "server"]
     exact = [row for row in verified if row.get("best_exact") is True]
-    if verified:
-        proof.append({"line": "listening", "source": "listening_progress",
-                      "lines": sorted(f"{row.get('asset_id')}#{row.get('segment_id')}" for row in verified)})  # fmt: skip
+
+    def lines(chosen: Sequence[Mapping[str, Any]]) -> list[str]:
+        return _ids(f"{row.get('asset_id')}#{row.get('segment_id')}" for row in chosen)
+
+    query = {"source": "listening_progress", "window_days": WINDOW_DAYS, "read_limit": LISTENING_READ}
+    proof["listening.lines_checked"] = {**query, "query": "lines the server scored", "lines": lines(verified)}
+    proof["listening.exact"] = {**query, "query": "server-scored lines matched exactly", "lines": lines(exact)}
+    proof["listening.not_verified"] = {**query, "query": "lines worked on with no server score",
+                                       "lines": lines([r for r in worked if r not in verified])}
     return {"lines_checked": len(verified), "exact": len(exact), "not_verified": len(worked) - len(verified)}
 
 
-def _reading(rows: Sequence[Mapping[str, Any]] | None, since: datetime, proof: list[dict[str, Any]]) -> Any:
+def _reading(rows: Sequence[Mapping[str, Any]] | None, since: datetime, proof: Proof) -> Any:
     if rows is None:
+        proof["reading"] = {"source": "reading_attempts", "status": "unreadable"}
         return UNKNOWN
     answered = [row for row in rows if int(_number(row.get("total")) or 0) > 0 and _within(row.get("created_at"), since)]
-    if answered:
-        proof.append({"line": "reading", "source": "reading_attempts", "ids": sorted(str(r.get("id")) for r in answered)})
+    query = {"source": "reading_attempts", "window_days": WINDOW_DAYS, "read_limit": READING_READ,
+             "ids": _ids(row.get("id") for row in answered)}
+    for claim in ("checks_answered", "questions", "correct"):
+        proof[f"reading.{claim}"] = query
     return {
         "checks_answered": len(answered),
         "questions": sum(int(_number(row.get("total")) or 0) for row in answered),
         "correct": sum(int(_number(row.get("correct_count")) or 0) for row in answered),
     }
+
+
+def claims(data: Mapping[str, Any]) -> set[str]:
+    """Every evidence claim the pack renders, by name: a section that is unknown; each part of a section (a count, the
+    scores, a list as a whole - an empty one says "none"); each item of a list, by its category or word. Each needs a
+    provenance entry of the same name (`LearnerPack.provenance`)."""
+
+    found: set[str] = set()
+    for section, value in (data.get("evidence") or {}).items():
+        if section in META_KEYS:
+            continue
+        if not isinstance(value, Mapping):
+            found.add(section)
+            continue
+        for key, part in value.items():
+            found.add(f"{section}.{key}")
+            if isinstance(part, list):
+                found |= {f"{section}.{key}.{item.get('category') or item.get('word')}" for item in part
+                          if isinstance(item, Mapping)}  # fmt: skip
+    return found
 
 
 # --- the pack ------------------------------------------------------------------------------------------------
@@ -360,14 +423,14 @@ def build_pack(sources: PackSources, *, target: str, support: str, now: datetime
     """The learner's pack, read now through `sources` (inside the learner's request context)."""
 
     since = now - timedelta(days=WINDOW_DAYS)
-    proof: list[dict[str, Any]] = []
+    proof: Proof = {}
     data: dict[str, Any] = {
         "version": PACK_VERSION,
         "profile": _profile(_read(sources.profile), target, support),
         "evidence": {
             "window_days": WINDOW_DAYS,
             "as_of": now.astimezone(UTC).date().isoformat(),
-            "writing": _writing(_read(sources.writing_history), proof),
+            "writing": _writing(_read(sources.writing_events), since, proof),
             "vocabulary": _vocabulary(_read(sources.vocabulary_counts), _read(sources.vocabulary_items, VOCABULARY_READ),
                                       proof),  # fmt: skip
             "pronunciation": _pronunciation(_read(sources.speaking_attempts, SPEAKING_READ), since, proof),
@@ -378,28 +441,36 @@ def build_pack(sources: PackSources, *, target: str, support: str, now: datetime
     }
     data, dropped = _trimmed(data, budget_tokens)
     text = render(data)
-    kept = {line["line"] for line in proof if _still_there(data, line["line"])}
-    return LearnerPack(text=text, data=data, provenance=tuple(p for p in proof if p["line"] in kept),
-                       trimmed=dropped, tokens=pack_tokens(text))  # fmt: skip
+    rendered = claims(data)  # a claim the budget left out keeps no provenance
+    provenance = tuple({"line": claim, **proof[claim]} for claim in sorted(proof) if claim in rendered)
+    return LearnerPack(text=text, data=data, provenance=provenance, trimmed=dropped, tokens=pack_tokens(text))
 
 
-def _still_there(data: Mapping[str, Any], line: str) -> bool:
-    """Whether an evidence line survived the budget (its provenance is kept only then)."""
+def pack_numbers(text: str | None) -> set[int]:
+    """The whole numbers a pack's evidence states: what an opening greeting may cite from it (agent/greeting.py)."""
 
-    evidence = data.get("evidence") or {}
-    kind, _, rest = line.partition(".")
-    section = evidence.get(kind)
-    if not isinstance(section, Mapping):
-        return False
-    if kind == "writing":
-        return any(item.get("category") == rest for item in section.get("recurring_errors") or ())
-    if kind == "vocabulary":
-        word = rest.partition(".")[2]
-        return any(item.get("word") == word for item in section.get("often_forgotten") or ())
-    if kind == "pronunciation":
-        word = rest.partition(".")[2]
-        return any(item.get("word") == word for item in section.get("flagged_words") or ())
-    return True
+    if not text or PACK_OPEN not in text or PACK_CLOSE not in text:
+        return set()
+    try:
+        data = json.loads(text[text.index(PACK_OPEN) + len(PACK_OPEN): text.index(PACK_CLOSE)])
+    except ValueError:
+        return set()
+    found: set[int] = set()
+
+    def walk(value: Any) -> None:
+        if isinstance(value, bool):
+            return
+        if isinstance(value, int) and value > 0:
+            found.add(value)
+        elif isinstance(value, Mapping):
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    walk(data.get("evidence"))
+    return found
 
 
 @dataclass

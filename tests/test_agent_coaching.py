@@ -258,7 +258,7 @@ def test_the_opening_turn_is_built_on_the_snapshot_and_reads_nothing_itself(monk
     snap = next(m.content for m in request.messages if m.content.startswith("snapshot: "))
     assert json.loads(snap[len("snapshot: "):])["review_due"] == 3
     assert not {t.name for t in request.tools} & {"build_learning_snapshot", "get_due_review_summary"}  # no read tools
-    assert "Never state a\n  number the snapshot does not hold" in next(m.content for m in request.messages if "opening turn" in m.content)
+    assert "Never state a number it does not hold" in next(m.content for m in request.messages if "opening turn" in m.content)
 
 
 

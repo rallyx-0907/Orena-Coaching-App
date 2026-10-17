@@ -52,8 +52,11 @@ def numbers_in(text: str) -> set[int]:
     return found
 
 
-def states_a_fact(text: str, snapshot: Mapping[str, Any] | None) -> bool:
-    allowed = facts(snapshot)
+def states_a_fact(text: str, snapshot: Mapping[str, Any] | None, *, also: set[int] | frozenset[int] = frozenset()) -> bool:
+    """A number the snapshot - or, when the turn was given one, the learner pack (`also`) - holds is in the greeting,
+    and no other number."""
+
+    allowed = facts(snapshot) | set(also)
     said = numbers_in(text)
     return bool(said & allowed) and said <= allowed | {WINDOW_DAYS}
 

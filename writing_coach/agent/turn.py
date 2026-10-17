@@ -136,7 +136,7 @@ from writing_coach.agent.provider import (
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.memory_pack import PACK_VERSION
+from writing_coach.agent.memory_pack import PACK_VERSION, pack_numbers
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
 from writing_coach.agent.timeline import TurnTimeline
@@ -343,6 +343,7 @@ class _Turn:
         self.unaccented_keep = False  # a keep request typed without diacritics: asked back, not kept
         self.coach_notes: tuple[CoachNote, ...] = ()
         self.snapshot: dict | None = None
+        self.pack_facts: set[int] = set()  # the numbers the learner pack states, when the turn was given one
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
         self.address: Address = default_address(request.context.locale.support)
         self.deadline = runtime.clock() + runtime.limits.turn_timeout_seconds
@@ -571,11 +572,15 @@ class _Turn:
         tapped = None if self.opening else learner_copy.prompt_in_support(
             turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
         self.heard = tapped or turn.message
+        pack = None if self.no_model else self._learner_pack(session)
+        # The pack replaces the opening snapshot in the prompt (ORENA_MEMORY.md §3.1): one source of learner evidence,
+        # not two with different rules. The snapshot stays here, for the greeting built without a model and its check.
+        self.pack_facts = pack_numbers(pack)
         messages = opening_messages(
             replace(turn, message=tapped) if tapped else turn, tier1, [c for c in here if c], session,
-            opening=self.opening, snapshot=snapshot, screen_help=self.screen_help,
+            opening=self.opening, snapshot=None if pack else snapshot, screen_help=self.screen_help,
             budget_tokens=self.rt.limits.max_input_tokens_per_turn, cache_stable=self.rt.prompt.cache_stable,
-            pack=None if self.no_model else self._learner_pack(session),
+            pack=pack,
         )
 
         answering = self.live is not None or bool(session.recent_runs())  # an open offer, or one just sent
@@ -1059,7 +1064,7 @@ class _Turn:
             greeting = offer_instead("".join(self.text), None, interface=self.locale.interface, support=support,
                                      pending=bool(outputs.actions), action=action_type, nothing=nothing,
                                      address=self.address)  # fmt: skip
-            if not states_a_fact(greeting, self.snapshot):  # never a generic greeting (agent/greeting.py)
+            if not states_a_fact(greeting, self.snapshot, also=self.pack_facts):  # never generic (agent/greeting.py)
                 greeting = built_greeting(self.snapshot, interface=self.locale.interface, support=support,
                                           address=self._address(support))  # fmt: skip
             text = _fit_greeting(greeting + (" " + inline if inline else ""))

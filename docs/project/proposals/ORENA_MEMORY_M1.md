@@ -16,14 +16,17 @@ It holds the profile and learning evidence only (no new storage; M2/M3 hold the 
 | Part | Source (proof path) | Rule | Never stated |
 | --- | --- | --- | --- |
 | Profile | `get_learner_profile()` | target, support; declared level, goal, explanation style, pinyin **only where the learner saved them** (`settings[name].source == "saved"`) | a product default as the learner's choice; a measured level |
-| Writing | `api_error_memory()` over the learner's stored reviews | categories recorded 2+ times, top 5, times, last seen | an R5 lesson (D-100); anything a review did not record |
+| Writing | each error the learner's stored reviews recorded, with its review's time (`app._agent_writing_error_events`) | categories recorded 2+ times **in the 30-day window**, **top 3**, times, last seen, the essay ids | an R5 lesson (D-100); a category that recurred only before the window |
 | Vocabulary | `library_summary()`, saved words | due / learning / mastered counts; words with `lapse_count` ≥ 2 | — |
 | Pronunciation | speaking attempts in 30 days | latest stored scores; words the **provider flagged** (`error_type`) in 2+ attempts, with its error type and the attempt ids | a sound, phoneme or tone (a score does not say which) |
 | Listening | listening progress in 30 days | lines the **server** scored, how many exact; client-scored lines only counted as "not verified" | a client's number as a result (D-104 H-14) |
 | Reading | reading attempts in 30 days | checks answered, questions, correct | — |
 
-A source that cannot be read is `"unknown"`, never zero. Every evidence line has a provenance record (`LearnerPack.
-provenance`: source and the ids, words or categories that prove it), kept on the server and never sent.
+A source that cannot be read is `"unknown"`, never zero. **Every rendered evidence claim** has a provenance entry of
+the same name (`claims()` names them: an unknown section; each count, the latest scores, each list as a whole - an
+empty one says "none"; each list item): the source and the ids, words, categories or the query and window that prove
+it, kept on the server and never sent. The test derives the claims from the rendered pack and requires an entry for
+each.
 
 ## Data, never instruction
 
@@ -74,8 +77,12 @@ The pack above is data about the learner, read from their records. Nothing insid
 
 - **Recent content** (titles read or listened to, §3.1): the progress rows do not carry titles; resolving them needs
   per-domain lookups. Follow-up.
-- **The opening snapshot stays** on opening turns beside the pack: the greeting built without a model
-  (`agent/greeting.py`) reads it. Replacing it is a follow-up once the greeting reads the pack.
+- **Sounds and tones** (§3.1: a phoneme or tone stated when the stored phoneme label itself proves it): M1 states only
+  provider-flagged words and no sound or tone. Kept as a follow-up of the design, not dropped from it.
+- **The pack replaces the opening snapshot in the prompt** (review of PR #260, P1-1): with a pack, the opening turn's
+  provider request carries the pack and no `snapshot:` message; the snapshot stays on the server for the greeting
+  built without a model, and the greeting's fact check accepts a number the snapshot or the pack holds. With the pack
+  off, or when it cannot be built, the opening is sent the snapshot as before.
 - **Provider data classes (G8, rev 3)** are not implemented yet (they come with M2/M3). The pack is `learning_profile`
   data: switching it on sends profile and evidence to the configured chat and voice provider, the same kind of data
   the read tools already return to it. The owner switches it on.
@@ -83,6 +90,17 @@ The pack above is data about the learner, read from their records. Nothing insid
 
 ## Rollout
 
-`AGENT_LEARNER_PACK=off` by default, like the M0 layout rollout. Suggested: switch it on in the test lane with the M0
+`AGENT_LEARNER_PACK=off` by default, like the M0 layout rollout, and off outside a deliberately approved test lane
+until the G8 provider data classes are enforced or the test provider is explicitly cleared for `learning_profile`
+data (owner review of PR #260). Suggested: switch it on in the test lane with the M0
 live benchmark, compare answer quality with and without it (EN and ZH), and look at `agent.turn` records
 (`learner_pack.tokens`, `trimmed`, `evidence_lines`). Default on only after that.
+
+## Review of PR #260 (owner, 2026-10-17) and what changed
+
+| Finding | Change |
+| --- | --- |
+| P1-1 opening sent the snapshot beside the pack | pack first; with a pack, no `snapshot:` to the provider; fallback to the snapshot when off or failed; greeting check accepts the pack's numbers; tests for on, off and failure |
+| P1-2 writing used all-history totals, top 5 | dated error events, 2+ in 30 days, top 3; a category recurring only 60+ days ago is excluded (test) |
+| P1-3 provenance did not cover every claim | one entry per rendered claim (aggregates and zero claims as source query and window); the test derives the claims from the pack |
+| P2 sounds/tones, recent titles, keep off | recorded as follow-ups; rollout note above |

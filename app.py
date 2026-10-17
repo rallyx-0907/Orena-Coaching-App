@@ -1125,13 +1125,25 @@ def _gemini_key() -> str:
     return str(getattr(provider, "api_key", "") or "")
 
 
+def _agent_writing_error_events() -> list[dict[str, Any]]:
+    """Each error the learner's stored reviews recorded, with its review's time: the rows `error_memory` counts, so the
+    pack can apply its own window (ORENA_MEMORY.md §3.1: 2+ in 30 days)."""
+
+    categories = active_error_categories()
+    return [
+        {"category": error["category"], "created_at": row["created_at"], "essay_id": row["id"]}
+        for row in _learning_repository.list_essays(0, ascending=True)
+        for error in parse_persisted_error_events(row["errors_json"], error_categories=categories)
+    ]
+
+
 def _agent_pack_sources() -> PackSources:
     """The learner pack's reads (ORENA_MEMORY.md M1): the same compositions the routes and read tools use, each run
     inside the learner's request context by the turn."""
 
     return PackSources(
         profile=lambda: get_learner_profile(),
-        writing_history=lambda: api_error_memory(),
+        writing_events=lambda: _agent_writing_error_events(),
         vocabulary_counts=lambda: library_summary().get("summary") or {},
         vocabulary_items=lambda limit: list_library_vocabulary(limit=limit).get("items") or [],
         speaking_attempts=lambda limit: _specialized_learning_repository.list_speaking_attempt_records(limit),

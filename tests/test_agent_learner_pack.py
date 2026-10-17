@@ -23,8 +23,10 @@ from writing_coach.agent.memory_pack import (
     PackBuilder,
     PackSources,
     build_pack,
+    claims,
     clean,
     pack_enabled_from_env,
+    pack_numbers,
 )
 from tests.test_agent_turn import VI, hermetic, run, runtime, turn_request  # noqa: F401 - fixture
 
@@ -55,14 +57,20 @@ def saved_profile(**chosen):
                                    for name, value in values.items()}}  # fmt: skip
 
 
+def error(category, essay_id, day):
+    """One error a stored review recorded (app._agent_writing_error_events)."""
+
+    return {"category": category, "essay_id": essay_id, "created_at": f"{day}T08:00:00+00:00"}
+
+
 def sources(**over):
     base = dict(
         profile=lambda: saved_profile(declared_level="HSK3", goal="work", style="concise", pinyin="on"),
-        writing_history=lambda: {"revision_count": 9, "items": [
-            {"category": "aspect", "total": 6, "last_seen": "2026-10-15"},
-            {"category": "particle", "total": 2, "last_seen": "2026-10-01"},
-            {"category": "measure_word", "total": 1, "last_seen": "2026-10-10"},
-        ]},
+        writing_events=lambda: (
+            [error("aspect", f"e{i}", "2026-10-1" + str(i)) for i in range(6)]
+            + [error("particle", "e7", "2026-10-01"), error("particle", "e8", "2026-10-02")]
+            + [error("measure_word", "e9", "2026-10-10")]  # once: not recurring
+        ),
         vocabulary_counts=lambda: {"due": 12, "learning": 40, "mastered": 10, "saved": 50},
         vocabulary_items=lambda limit: [{"word": "加班", "lapse_count": 3}, {"word": "面试", "lapse_count": 2},
                                         {"word": "老板", "lapse_count": 1}],
@@ -120,8 +128,8 @@ def test_the_pack_states_what_the_records_show_and_only_that():
     evidence = data["evidence"]
     assert evidence["writing"]["recurring_errors"] == [
         {"category": "aspect", "times": 6, "last_seen": "2026-10-15"},
-        {"category": "particle", "times": 2, "last_seen": "2026-10-01"},
-    ]  # recorded twice or more; the category the record holds, no lesson named
+        {"category": "particle", "times": 2, "last_seen": "2026-10-02"},
+    ]  # recorded twice or more in the window; the category the record holds, no lesson named
     assert evidence["vocabulary"] == {"counts": {"due": 12, "learning": 40, "mastered": 10},
                                       "often_forgotten": [{"word": "加班", "times_forgotten": 3},
                                                           {"word": "面试", "times_forgotten": 2}]}  # fmt: skip
@@ -146,23 +154,42 @@ def test_no_sound_or_tone_is_stated_from_a_score():
     assert body(pack)["evidence"]["pronunciation"]["flagged_words"] == []
     for word in ("tone", "phoneme", "i3", '"sh"'):
         assert word not in pack.text
-    assert not [p for p in pack.provenance if p["source"] == "speaking_attempts"]
+    assert not [p for p in pack.provenance if p["line"].startswith("pronunciation.flagged_words.")]
 
 
-def test_every_evidence_line_names_the_records_that_prove_it():
-    pack = build()
-    by_line = {p["line"]: p for p in pack.provenance}
-    assert by_line["writing.aspect"] == {"line": "writing.aspect", "source": "writing_errors", "category": "aspect",
-                                         "times": 6, "revisions_read": 9}  # fmt: skip
-    assert by_line["vocabulary.forgotten.加班"]["lapse_count"] == 3
-    assert by_line["pronunciation.flagged.面试"]["attempt_ids"] == ["a2", "a3"]  # the attempts that hold the flag
-    assert by_line["listening"]["lines"] == ["m1#s1", "m1#s2"]  # the server-scored lines only
-    assert by_line["reading"]["ids"] == ["r1"]
-    rendered = body(pack)["evidence"]
-    stated = ({f"writing.{i['category']}" for i in rendered["writing"]["recurring_errors"]}
-              | {f"vocabulary.forgotten.{i['word']}" for i in rendered["vocabulary"]["often_forgotten"]}
-              | {f"pronunciation.flagged.{i['word']}" for i in rendered["pronunciation"]["flagged_words"]})  # fmt: skip
-    assert stated <= set(by_line)  # nothing stated without its proof
+def test_every_rendered_claim_has_its_provenance():
+    # Derived from what the pack renders, not a hand-picked list: each claim has an entry of the same name.
+    for src in (sources(), PackSources(), sources(speaking_attempts=lambda limit: [], listening_recent=lambda limit: [],
+                                                  reading_evidence=lambda limit: [], writing_events=lambda: [])):
+        pack = build(src)
+        rendered = claims(pack.data)
+        assert rendered and rendered == {p["line"] for p in pack.provenance}
+
+
+def test_the_provenance_names_the_records_and_queries():
+    by_line = {p["line"]: p for p in build().provenance}
+    assert by_line["writing.recurring_errors.aspect"]["essay_ids"] == [f"e{i}" for i in range(6)]
+    assert by_line["writing.recurring_errors"]["window_days"] == 30
+    assert by_line["vocabulary.counts"]["values"] == {"due": 12, "learning": 40, "mastered": 10}
+    assert by_line["vocabulary.often_forgotten.加班"]["lapse_count"] == 3
+    assert by_line["pronunciation.attempts"]["attempt_ids"] == ["a1", "a2", "a3"]  # a0 is outside the window
+    assert by_line["pronunciation.latest_scores"] == {"line": "pronunciation.latest_scores", "source": "speaking_attempts",
+                                                      "attempt_id": "a3", "dimensions": ["fluency", "pronunciation"]}
+    assert by_line["pronunciation.flagged_words.面试"]["attempt_ids"] == ["a2", "a3"]
+    assert by_line["listening.lines_checked"]["lines"] == ["m1#s1", "m1#s2"]  # the server-scored lines only
+    assert by_line["listening.exact"]["lines"] == ["m1#s1"] and by_line["listening.not_verified"]["lines"] == ["m1#s3"]
+    assert by_line["reading.checks_answered"]["ids"] == ["r1"]
+
+
+def test_writing_counts_only_the_window_and_at_most_three_categories():
+    old = [error("tense", f"o{i}", "2026-08-10") for i in range(5)]  # recurring, but 60+ days ago
+    recent = [error(c, f"{c}{i}", "2026-10-12") for c in ("aspect", "particle", "complement", "conjunction")
+              for i in range(2)]
+    recent += [error("aspect", "aspect9", "2026-10-13")]
+    pack = build(sources(writing_events=lambda: old + recent))
+    shown = [e["category"] for e in body(pack)["evidence"]["writing"]["recurring_errors"]]
+    assert shown == ["aspect", "complement", "conjunction"]  # by times, then name; never the old one; three at most
+    assert "tense" not in pack.text
 
 
 # --- unknown is never zero ----------------------------------------------------------------------------------------------
@@ -182,7 +209,7 @@ def test_a_source_that_cannot_be_read_is_unknown_not_zero():
 
 
 def test_a_learner_with_no_records_has_zeros_that_were_counted():
-    empty = sources(writing_history=lambda: {"revision_count": 0, "items": []}, vocabulary_items=lambda limit: [],
+    empty = sources(writing_events=lambda: [], vocabulary_items=lambda limit: [],
                     vocabulary_counts=lambda: {}, speaking_attempts=lambda limit: [], listening_recent=lambda limit: [],
                     reading_evidence=lambda limit: [])  # fmt: skip
     evidence = body(build(empty))["evidence"]
@@ -208,8 +235,8 @@ def test_an_english_learner_and_a_chinese_learner():
 
 def test_the_budget_drops_the_later_evidence_first_and_never_the_profile():
     many = sources(
-        writing_history=lambda: {"revision_count": 40, "items": [
-            {"category": f"category_{i:02d}", "total": 10 + i, "last_seen": "2026-10-15"} for i in range(9)]},
+        writing_events=lambda: [error(f"category_{i:02d}", f"e{i}{n}", "2026-10-15") for i in range(3)
+                                for n in range(2 + i)],
         vocabulary_items=lambda limit: [{"word": f"word{i:02d}" * 3, "lapse_count": 5} for i in range(9)],
     )
     full = build(many)
@@ -220,8 +247,7 @@ def test_the_budget_drops_the_later_evidence_first_and_never_the_profile():
     assert small.trimmed[0] == "evidence.reading" and "reading" not in data["evidence"]
     assert data["evidence"]["left_out_for_size"] == [
         t.removeprefix("evidence.").replace("[partial]", " (more not shown)") for t in small.trimmed]
-    kept_lines = {p["line"] for p in small.provenance}
-    assert all(not line.startswith("pronunciation") or "pronunciation" in data["evidence"] for line in kept_lines)
+    assert {p["line"] for p in small.provenance} == claims(small.data)  # nothing left out keeps its provenance
 
 
 def test_the_full_pack_fits_its_chat_budget():
@@ -244,7 +270,7 @@ INJECTIONS = [
 def test_text_from_a_record_stays_data(payload):
     src = sources(
         vocabulary_items=lambda limit: [{"word": payload, "lapse_count": 5}],
-        writing_history=lambda: {"revision_count": 2, "items": [{"category": payload, "total": 3, "last_seen": "x"}]},
+        writing_events=lambda: [error(payload, "e1", "2026-10-15"), error(payload, "e2", "2026-10-16")],
         profile=lambda: saved_profile(declared_level=payload, goal=payload, style=payload),
     )
     pack = build(src)
@@ -371,3 +397,59 @@ def test_voice_without_the_pack_is_unchanged():
     post = Post()
     _service(post).open(_body(), LEARNER)
     assert PACK_OPEN not in post.calls[0][2]["bidiGenerateContentSetup"]["systemInstruction"]["parts"][0]["text"]
+
+
+# --- the pack replaces the opening snapshot in the prompt (review of PR #260, P1-1) -------------------------------
+
+
+def _opening_runtime(pack_builder, monkeypatch):
+    from tests.test_agent_coaching import SUMMARY, _runtime
+    from writing_coach import becoming_library
+
+    monkeypatch.setattr(becoming_library, "library_summary", lambda: {"summary": {"due": 12}})
+    rt, provider = _runtime([reply("Chào bạn, hôm nay có 12 từ đến hạn ôn.")], learner_summary=lambda window: SUMMARY)
+    rt.pack = pack_builder
+    return rt, provider
+
+
+def _open(rt):
+    from tests.test_agent_coaching import ZH, _request
+
+    return list(rt.run(_request(None, trigger="open"), ZH))
+
+
+def _sent(provider):
+    return [m.content for m in provider.requests[0].messages]
+
+
+def test_with_a_pack_the_opening_is_sent_the_pack_not_the_snapshot(monkeypatch):
+    rt, provider = _opening_runtime(Counting(), monkeypatch)
+    events = _open(rt)
+    sent = _sent(provider)
+    assert any(c.startswith(PACK_OPEN) for c in sent) and not any(c.startswith("snapshot: ") for c in sent)
+    # the greeting cites a number the pack holds (12 due): it is the model's, not replaced by the built one
+    assert next(e for e in events if e.name == "segment_end").text == "Chào bạn, hôm nay có 12 từ đến hạn ôn."
+
+
+def test_with_the_pack_off_the_opening_snapshot_is_unchanged(monkeypatch):
+    rt, provider = _opening_runtime(PackBuilder(sources=sources(), enabled=False), monkeypatch)
+    _open(rt)
+    sent = _sent(provider)
+    assert any(c.startswith("snapshot: ") for c in sent) and not any(c.startswith(PACK_OPEN) for c in sent)
+
+
+def test_a_pack_that_fails_falls_back_to_the_snapshot(monkeypatch):
+    class Broken(PackBuilder):
+        def build(self, **kw):
+            raise RuntimeError("store down")
+
+    rt, provider = _opening_runtime(Broken(enabled=True), monkeypatch)
+    _open(rt)
+    sent = _sent(provider)
+    assert any(c.startswith("snapshot: ") for c in sent) and not any(c.startswith(PACK_OPEN) for c in sent)
+
+
+def test_the_numbers_a_pack_states():
+    numbers = pack_numbers(build().text)
+    assert {12, 40, 10, 6, 2, 3, 70} <= numbers and 0 not in numbers
+    assert pack_numbers(None) == set() and pack_numbers("not a pack") == set()

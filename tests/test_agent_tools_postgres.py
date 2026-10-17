@@ -98,11 +98,11 @@ def learning(engine, app_module, monkeypatch):
     return repository
 
 
-def _essay(repository, text_: str, category: str, fragment: str) -> dict:
+def _essay(repository, text_: str, category: str, fragment: str, created_at: str = "2026-09-28T08:00:00+00:00") -> dict:
     error = {"fragment": fragment, "suggestion": fragment, "explanation_vi": "…", "category": category}
     return repository.create_essay(
         {
-            "created_at": "2026-09-28T08:00:00+00:00", "prompt": "", "text": text_, "word_count": 12,
+            "created_at": created_at, "prompt": "", "text": text_, "word_count": 12,
             "target_cefr": "", "grammar": 60.0, "vocabulary": 60.0, "coherence": 60.0,
             "task_achievement": 60.0, "naturalness": 60.0, "overall": 60.0, "cefr_estimate": "B1",
             "evaluator": "test", "summary_vi": "", "strengths_json": "[]", "strength_evidence_json": "[]",
@@ -360,7 +360,7 @@ def test_the_learner_pack_holds_only_the_learners_own_records_in_their_language(
     words = [{"word": "面试", "accuracy_score": 40.0, "error_type": "Mispronunciation", "phonemes": []}]
     with learner_context(ZH):
         for _ in range(2):
-            _essay(learning, "我昨天去过公司了。", "aspect", "去过")
+            _essay(learning, "我昨天去过公司了。", "aspect", "去过", now.isoformat())
             specialized.create_speaking_attempt_record(
                 {
                     "created_at": now.isoformat(), "language": "zh", "take_id": f"p:{uuid.uuid4().hex}",
@@ -370,10 +370,10 @@ def test_the_learner_pack_holds_only_the_learners_own_records_in_their_language(
             )  # fmt: skip
     with learner_context(EN):
         for _ in range(2):
-            _essay(learning, "Yesterday I go to the market.", "tense", "go")
+            _essay(learning, "Yesterday I go to the market.", "tense", "go", now.isoformat())
 
     sources = PackSources(
-        writing_history=lambda: app_module.api_error_memory(),
+        writing_events=lambda: app_module._agent_writing_error_events(),
         speaking_attempts=lambda limit: specialized.list_speaking_attempt_records(limit),
         listening_recent=lambda limit: specialized.list_recent_listening_progress_records(limit),
         reading_evidence=lambda limit: evidence.list_evidence(limit),
@@ -395,7 +395,10 @@ def test_the_learner_pack_holds_only_the_learners_own_records_in_their_language(
     assert en["evidence"]["pronunciation"]["attempts"] == 0 and "面试" not in en_pack.text and "aspect" not in en_pack.text
     assert other["evidence"]["writing"]["recurring_errors"] == []
     assert other["evidence"]["pronunciation"] == {"attempts": 0, "latest_scores": {}, "flagged_words": []}
-    assert "面试" not in other_pack.text and "aspect" not in other_pack.text and other_pack.provenance == ()
+    assert "面试" not in other_pack.text and "aspect" not in other_pack.text
+    # the other learner's provenance names queries only: no record of theirs, and none of the first learner's
+    for proof in other_pack.provenance:
+        assert all(not proof.get(key) for key in ("essay_ids", "attempt_ids", "ids", "lines", "attempt_id", "word"))
 
 
 def test_the_apps_own_pack_reads_scope_by_learner_and_language(learning, engine, app_module, monkeypatch):
@@ -412,8 +415,8 @@ def test_the_apps_own_pack_reads_scope_by_learner_and_language(learning, engine,
     sources = app_module._agent_pack_sources()
     now = datetime.now(UTC)
     with learner_context(ZH):
-        _essay(learning, "他把书看了完。", "ba_sentence", "看了完")
-        _essay(learning, "我把作业做了完。", "ba_sentence", "做了完")
+        _essay(learning, "他把书看了完。", "ba_sentence", "看了完", now.isoformat())
+        _essay(learning, "我把作业做了完。", "ba_sentence", "做了完", now.isoformat())
         zh = build_pack(sources, target="zh", support="vi", now=now)
     with learner_context(OTHER_ZH):
         other = build_pack(sources, target="zh", support="vi", now=now)
