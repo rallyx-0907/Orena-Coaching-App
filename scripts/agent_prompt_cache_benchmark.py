@@ -16,8 +16,11 @@ say nothing about tool selection.
 Live (`--live`) the same conversations go to a real provider, one model for all layouts, and the script records what
 only the provider can show: cached and uncached input tokens per round, output tokens, rounds and tool calls per turn
 (for tool-selection parity between layouts), first-token and full-response latency, and the cost at the prices given
-on the command line. It will not run without `--approved` and `--cap-usd`, adds each round's worst case to the spend
-before sending it, and stops at the cap. The key is read from the provider's environment variable and never printed.
+on the command line. It will not run without `--approved` and `--cap-usd`. Before each round is sent, its worst case
+(every input byte a token, at the uncached rate, plus the round's whole output allowance) is reserved against the cap;
+a round whose reservation would cross the cap is never sent and the run stops. When the round ends, its reservation is
+replaced by its measured cost; a round that ended without reported usage keeps its reservation (counted, not
+measured). `spent_usd` is the measured cost only; `unmeasured_reserved_usd` is what was held for rounds without usage. The key is read from the provider's environment variable and never printed.
 Results go to a JSON file outside the repository.
 
 Answer quality (A2, issue #256): every turn's learner message and Orena's answer are kept in the result (cut to
@@ -42,7 +45,7 @@ import os
 import sys
 import time
 from datetime import UTC, datetime
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -67,6 +70,7 @@ from writing_coach.agent.schemas import TurnRequest  # noqa: E402
 from writing_coach.agent.summary import INSTRUCTION as _SUMMARY_INSTRUCTION  # noqa: E402
 
 SUMMARY_HEAD = _SUMMARY_INSTRUCTION[:40]
+from writing_coach.agent.tokens import estimate_tokens as byte_tokens  # noqa: E402 - an upper bound: one per byte
 from writing_coach.agent.tools import LearnerScope, ToolRegistry  # noqa: E402
 
 LAYOUTS = {
@@ -153,24 +157,52 @@ class Recorder:
     requests: list[ProviderTurnRequest] = field(default_factory=list)
     rounds: list[dict[str, Any]] = field(default_factory=list)
     answers: list[dict[str, Any]] = field(default_factory=list)  # per learner turn: the message and Orena's answer
-    before_round: Callable[[ProviderTurnRequest], None] | None = None
+    ledger: CostLedger | None = None  # live: the cap, reserved per round before it is sent
 
     def stream(self, req: ProviderTurnRequest, *, should_stop: Callable[[], bool] = never_stop) -> Iterator[Any]:
-        if self.before_round is not None:
-            self.before_round(req)
+        reserved = self.ledger.reserve(req) if self.ledger is not None else 0.0  # raises before anything is sent
         self.requests.append(req)
         started = time.perf_counter()
         record: dict[str, Any] = {"first_event_s": None, "tool_calls": [], "tool_choice": req.tool_choice}
         self.rounds.append(record)
-        for event in self.inner.stream(req, should_stop=should_stop):
-            if record["first_event_s"] is None:
-                record["first_event_s"] = round(time.perf_counter() - started, 3)
-            if isinstance(event, ToolCallRequest):
-                record["tool_calls"].append(event.name)
-            elif isinstance(event, TurnFinished):
-                record.update(total_s=round(time.perf_counter() - started, 3), input_tokens=event.input_tokens,
-                              cached_input_tokens=event.cached_input_tokens, output_tokens=event.output_tokens)
-            yield event
+        try:
+            for event in self.inner.stream(req, should_stop=should_stop):
+                if record["first_event_s"] is None:
+                    record["first_event_s"] = round(time.perf_counter() - started, 3)
+                if isinstance(event, ToolCallRequest):
+                    record["tool_calls"].append(event.name)
+                elif isinstance(event, TurnFinished):
+                    record.update(total_s=round(time.perf_counter() - started, 3), input_tokens=event.input_tokens,
+                                  cached_input_tokens=event.cached_input_tokens, output_tokens=event.output_tokens)
+                yield event
+        finally:
+            if self.ledger is not None:
+                self.ledger.settle(reserved, record)
+
+
+class CostLedger:
+    """The live run's cap, held per round: a round's worst case is reserved before it is sent, and replaced by its
+    measured cost when it ends; one that ends without reported usage keeps its reservation."""
+
+    def __init__(self, cap_usd: float, price: Callable[[int, int, int], float]) -> None:
+        self.cap_usd, self.price = cap_usd, price
+        self.measured = 0.0  # what rounds with reported usage cost
+        self.held = 0.0  # reservations of rounds in flight, or ended without usage
+
+    def reserve(self, req: ProviderTurnRequest) -> float:
+        worst = self.price(byte_tokens(wire(req)), 0, req.max_output_tokens)
+        if self.measured + self.held + worst > self.cap_usd:
+            raise SystemExit(f"stopped at the cost cap: {self.measured:.4f} USD measured, {self.held:.4f} held, "
+                             f"next round up to {worst:.4f} (cap {self.cap_usd:.4f})")  # fmt: skip
+        self.held += worst
+        return worst
+
+    def settle(self, reserved: float, record: Mapping[str, Any]) -> None:
+        if record.get("input_tokens") is None or record.get("output_tokens") is None:
+            return  # no usage reported: the reservation stays counted
+        self.held -= reserved
+        self.measured += self.price(record["input_tokens"], record.get("cached_input_tokens") or 0,
+                                    record["output_tokens"])  # fmt: skip
 
 
 class OfflineModel:
@@ -351,15 +383,10 @@ class LiveProvider:
 def live(args: argparse.Namespace) -> dict[str, Any]:
     if not args.approved or args.cap_usd is None or None in (args.price_in, args.price_cached, args.price_out):
         raise SystemExit("--live needs --approved, --cap-usd, --price-in, --price-cached and --price-out")
-    spent = {"usd": 0.0}
-
     def price(inp: int, cached: int, out: int) -> float:
         return ((inp - cached) * args.price_in + cached * args.price_cached + out * args.price_out) / 1_000_000
 
-    def guard(req: ProviderTurnRequest) -> None:
-        worst = price(estimate_tokens(wire(req)), 0, req.max_output_tokens)
-        if spent["usd"] + worst > args.cap_usd:
-            raise SystemExit(f"stopped at the cost cap: spent {spent['usd']:.4f} USD, next round up to {worst:.4f}")
+    ledger = CostLedger(args.cap_usd, price)
 
     provider = LiveProvider(args.provider, args.model)
     packs = {"off": (False,), "on": (True,), "both": (False, True)}[args.pack]
@@ -368,7 +395,7 @@ def live(args: argparse.Namespace) -> dict[str, Any]:
     for repeat in range(args.repeat):
         for name, with_pack in ((n, p) for n in args.layouts.split(",") for p in packs):
             for language in SCRIPTS:
-                recorder = Recorder(provider, before_round=guard)
+                recorder = Recorder(provider, ledger=ledger)
                 recorder, per_turn = run_conversation(recorder, LAYOUTS[name], language, args.turns, pack=with_pack,
                                                       exclude=excluded)  # fmt: skip
                 key = f"{name}{'+pack' if with_pack else ''}/{language}"
@@ -377,7 +404,6 @@ def live(args: argparse.Namespace) -> dict[str, Any]:
                 cached = sum(r.get("cached_input_tokens") or 0 for r in rounds)
                 out = sum(r.get("output_tokens") or 0 for r in rounds)
                 cost = price(inp, cached, out)
-                spent["usd"] += cost
                 results.setdefault(key, []).append({
                     "repeat": repeat, "rounds_per_turn": per_turn, "input_tokens": inp, "cached_input_tokens": cached,
                     "uncached_input_tokens": inp - cached, "output_tokens": out, "cost_usd": round(cost, 6),
@@ -388,7 +414,8 @@ def live(args: argparse.Namespace) -> dict[str, Any]:
                     "prefix_reuse_upper_bound": prefix_reuse(recorder.requests)["reusable_share"],
                     "answers": recorder.answers,
                 })
-    return {"mode": "live", "provider": args.provider, "model": args.model, "spent_usd": round(spent["usd"], 6),
+    return {"mode": "live", "provider": args.provider, "model": args.model, "spent_usd": round(ledger.measured, 6),
+            "unmeasured_reserved_usd": round(ledger.held, 6), "cap_usd": args.cap_usd,
             "prices_per_million": {"in": args.price_in, "cached": args.price_cached, "out": args.price_out},
             "excluded_tools": sorted(excluded), "results": results}
 
