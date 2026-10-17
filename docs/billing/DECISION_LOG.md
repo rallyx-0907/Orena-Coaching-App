@@ -330,3 +330,33 @@ otherwise explicitly. A VA hides the account number, not the owner's name (RR-8.
 webhook, cursor, bank reference, `webhook_success`, QR scan; one Live main-account transfer, paid once and refunded).
 | No production checkout that exposes the main account, and no production claim proven only in Test Mode. |
 `PR-MON-8_DESIGN.md` §13.
+
+
+D-MON-031 | 2026-10-17 | Gate 7 preparation (owner). Launch prices for the SePay domestic gateway are the plan
+catalogue's current values (Plus 199,000 VND a month and 1,590,000 a year; Pro 399,000 and 3,190,000), sold through
+`sepay` as one-time prepaid periods. The production host is chosen after the app is deployed to the VPS. The owner runs
+gate 7 personally (migration 0027 -> 0033, environment, SePay Live webhook, restart, grace 1 h, readiness) from
+`RUNBOOK_SEPAY_ACTIVATION.md`; no agent runs it. The `:8031` sandbox and its quick tunnel were removed. Credits, quota
+and funding enforcement, migration 0034 and the SePay feed stay off. | A price the owner chose explicitly, and a
+launch operated by the owner on a host chosen deliberately. | `RUNBOOK_SEPAY_ACTIVATION.md`.
+
+
+D-MON-032 | 2026-10-17 | Payment model (owner). **Plans are card subscriptions; only Credits use a bank-transfer
+QR.** Plus/Pro are sold as auto-renewing subscriptions on a card the learner registers in billing, charged every month or
+year like other market apps. The subscription gateway is **Polar** (merchant of record, international cards, USD; the
+adapter exists since PR-MON-1..3). SePay's VietQR bank transfer is used **only to top up Credits**. A domestic
+recurring-card gateway is not chosen now; it may be researched later if many learners lack an international card.
+Consequences:
+- Only Polar sells plans. The code refuses a plan price on any domestic gateway (`sepay`, `payos`), and readiness
+  is computed per capability (plans, credits). The domestic gateway is required only for Credits
+  (`PR-MON-8_DESIGN.md` §14, revision 8.2).
+- D-MON-031's SePay plan prices are withdrawn. The catalogue's USD prices (Plus 9.99/79.99, Pro 19.99/159.99) are the
+  candidates for Polar, to be confirmed as Polar products.
+- Gate 7 splits:
+  - **7a**, Credits by SePay: needs Credits enabled, R-MON-014, approved credit packs and prices;
+  - **7b**, subscriptions by Polar: needs PR-MON-10 (Polar configuration, sandbox E2E, manage/cancel) and PR-MON-9
+    (the Billing Sheet's card checkout).
+- `RUNBOOK_SEPAY_ACTIVATION.md` is rewritten for 7a. Nothing is enabled. | Recurring revenue without monthly manual
+  transfers, and one clear place for QR payments. | `PR-MON-8_DESIGN.md` §14, `BILLING_STATUS.md`,
+  `RUNBOOK_SEPAY_ACTIVATION.md`.
+

@@ -245,17 +245,80 @@ def test_production_sepay_with_a_valid_va_has_no_va_blocker_and_dev_keeps_the_fa
     assert service({"sepay": gateway()}, domestic="sepay", production=False).domestic_blockers() == []
 
 
-def test_a_production_runtime_without_a_va_is_not_billing_ready():
+# ---- PR-MON-8 §14.4 (revision 8.2): readiness per capability ----------------------------------------------
+
+def _pack():
+    from writing_coach.billing.service import CreditPack
+
+    return CreditPack(pack_id="small", credit_units=100, currency="VND", amount_minor=50_000, gateway="sepay")
+
+
+def capability_service(*, polar=False, credits=False, sepay=None, domestic="sepay", production=True):
+    """A real BillingService: Polar priced at the catalogue's Plus month, and/or SePay with one credit pack."""
+
+    from tests.test_billing import POLAR
+    from writing_coach.product.catalog import PLANS
+
+    gateways, prices, extra = {}, {}, {}
+    if polar:
+        gateways["polar"] = POLAR
+        prices["plus:month:polar"] = Price(plan_id="plus", period="month", currency="USD", amount_minor=999,
+                                           gateway="polar", external_price_id="prod-plus-month")
+    if credits:
+        gateways["sepay"] = sepay if sepay is not None else gateway(va_number=VA)
+        extra = {"credit_packs": {_pack().key: _pack()},
+                 "credits": SimpleNamespace(status=lambda: {"ready": True})}
+    return service(gateways, domestic=domestic if credits else None, production=production, prices=prices,
+                   catalog=lambda: PLANS, **extra)
+
+
+def capability_report(billing):
     from writing_coach.billing import readiness
 
-    real = service({"sepay": gateway()}, domestic="sepay", production=True)
-    facade = SimpleNamespace(gateway_report=lambda: {"sepay": {"ready": True}}, domestic_blockers=real.domestic_blockers)
-    facts = readiness.RuntimeFacts(switch=True, backend="postgresql", backbone="active",
-                                   commerce_schema=lambda: "present", orders_schema=lambda: "present",
-                                   entitlement_source=lambda: "installed", service=facade,
-                                   public_base_url="https://orena.test", production=True)
-    report = readiness.report(facts)
-    assert report["ready"] is False and "sepay_va_unset" in report["blockers"]
+    return readiness.report(readiness.RuntimeFacts(
+        switch=True, backend="postgresql", backbone="active", commerce_schema=lambda: "present",
+        orders_schema=lambda: "present", entitlement_source=lambda: "installed", service=billing,
+        public_base_url="https://orena.test", production=True))
+
+
+@pytest.mark.parametrize(("polar", "credits", "plans_ready", "credits_ready"), [
+    (True, False, True, False),    # Polar-only launch (gate 7b): Credits and SePay off
+    (False, True, False, True),    # SePay Credits-only: no plan price at all
+    (True, True, True, True),      # both
+])
+def test_a_ready_capability_makes_the_runtime_ready_with_no_top_level_blocker(polar, credits, plans_ready,
+                                                                                credits_ready):
+    report = capability_report(capability_service(polar=polar, credits=credits))
+    assert report["ready"] is True and report["blockers"] == []
+    assert report["capabilities"]["plans"]["ready"] is plans_ready
+    assert report["capabilities"]["credits"]["ready"] is credits_ready
+
+
+def test_neither_capability_ready_names_only_runtime_blockers_and_no_billing_capability_ready():
+    report = capability_report(capability_service())
+    assert report["ready"] is False and report["blockers"] == ["no_billing_capability_ready"]
+    assert report["capabilities"]["plans"]["blockers"] == ["polar_unconfigured", "no_polar_price"]
+    assert report["capabilities"]["credits"]["blockers"] == ["credits_not_configured"]
+
+
+def test_a_polar_only_production_runtime_needs_no_domestic_gateway():
+    """Revision 8.1 P1-1: the domestic gateway belongs to Credits; a plans-only runtime never sees its blockers."""
+
+    billing = capability_service(polar=True)
+    report = capability_report(billing)
+    assert report["ready"] is True
+    text = json.dumps(report)
+    assert "domestic_gateway_unset" not in text and "sepay_va_unset" not in text
+    assert [offer["key"] for offer in billing.offered()] == ["plus:month:polar"]
+
+
+def test_a_production_runtime_without_a_va_keeps_credits_closed_and_plans_open():
+    billing = capability_service(polar=True, credits=True, sepay=gateway())
+    report = capability_report(billing)
+    assert "sepay_va_unset" in report["capabilities"]["credits"]["blockers"]
+    assert report["capabilities"]["credits"]["ready"] is False and billing.credit_offers() == []
+    assert report["ready"] is True and report["blockers"] == []   # plans still sell
+    assert report["capabilities"]["plans"]["ready"] is True
 
 
 def test_no_full_main_account_or_va_appears_in_repr_or_the_readiness_report():
@@ -399,18 +462,16 @@ def test_the_domestic_gateway_is_explicit_in_production():
     assert service({"polar": POLAR}, production=True).domestic_blockers() == ["domestic_gateway_unset"]
 
 
-def test_a_production_runtime_is_not_billing_ready_on_polar_alone_without_the_domestic_choice():
-    from tests.test_billing import POLAR
-    from writing_coach.billing import readiness
+def test_credits_configured_without_the_domestic_choice_name_the_blocker_under_credits_only():
+    """Revision 8.1 (§14.3): with Credits configured, production still requires the explicit domestic choice - as a
+    Credits blocker; plans are unaffected."""
 
-    real = service({"polar": POLAR}, production=True)
-    facade = SimpleNamespace(gateway_report=lambda: {"polar": {"ready": True}}, domestic_blockers=real.domestic_blockers)
-    facts = readiness.RuntimeFacts(switch=True, backend="postgresql", backbone="active",
-                                   commerce_schema=lambda: "present", orders_schema=lambda: "present",
-                                   entitlement_source=lambda: "installed", service=facade,
-                                   public_base_url="https://orena.test", production=True)
-    report = readiness.report(facts)
-    assert report["ready"] is False and "domestic_gateway_unset" in report["blockers"]
+    billing = capability_service(polar=True, credits=True, domestic=None)
+    billing._domestic_choice = None
+    report = capability_report(billing)
+    assert "domestic_gateway_unset" in report["capabilities"]["credits"]["blockers"]
+    assert report["capabilities"]["plans"] == {"ready": True, "blockers": []}
+    assert report["ready"] is True and "domestic_gateway_unset" not in report["blockers"]
 
 
 def test_an_unconfigured_grace_closes_sepay_and_names_the_blocker(monkeypatch):
