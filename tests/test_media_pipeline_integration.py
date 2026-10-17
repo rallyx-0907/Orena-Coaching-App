@@ -598,12 +598,92 @@ def test_failed_correction_never_blocks_the_item_it_goes_on_to_translation(tmp_p
     assert stored.processing["transcript_correction_state"] == ("unavailable" if failure == "unconfigured" else "failed")
     assert stored.processing["transcript_correction_detail"]
     assert stored.processing["transcript_corrections"] == []
-    assert not str(stored.processing.get("reason") or "").startswith("transcript_correction")
-    if rights == "cleared":
+    if rights == "cleared" and failure == "unconfigured":
+        # Nothing was attempted (no corrector on this deployment), so there is no failed correction to hold the item for.
         assert stored.status == "published" and stored.processing["state"] == "ready"
+        assert stored.processing["auto_published"] is True
+    elif rights == "cleared":
+        # Rights were cleared for the corrected text. A failed correction must not publish the raw text by itself:
+        # the item still reaches translation, then waits for a person.
+        assert stored.status == "review" and stored.processing["state"] == "held"
+        assert stored.processing["reason"] == "transcript_correction_incomplete"
+        assert stored.processing["detail"] == "failed" and stored.processing["auto_published"] is False
+        assert stored.processing["message"]
     else:
         assert stored.status == "review" and stored.processing["state"] == "held"
         assert stored.processing["reason"] == "rights_unknown"
+
+
+@pytest.mark.parametrize("rejected_cue", [False, True])
+def test_cleared_item_publishes_by_itself_only_when_the_correction_fully_applied(tmp_path, rejected_cue):
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from tests.test_media_lifecycle import _entry
+    from writing_coach import media_transcript_pipeline as pipeline_module
+    from writing_coach.media_segmentation import Cue
+
+    cues = tuple(Cue(index * 3000, index * 3000 + 2500,
+                     f"Sentence {index} is ready and waiting for another careful review.") for index in range(8))
+    source = {**_entry().source, "provider": "youtube", "type": "video", "rights": "cleared"}
+
+    class Corrector:
+        model = "configured-text-model"
+
+        def correct(self, *, cues, **_kwargs):
+            texts = [cue.text for cue in cues]
+            if rejected_cue:
+                texts[0] = "A different sentence."          # one lexeme-changing cue is refused, the others stand
+            return {"texts": texts, "reasons": ["Restored text." for _ in cues], "provider": "groq", "model": self.model}
+
+    entry = replace(_entry(
+        "youtube-applied", provider="youtube", provider_media_id="applied", canonical_url="https://www.youtube.com/watch?v=applied",
+        duration_ms=24000, language="en", title="A title", source=source, status="processing",
+        processing={"state": "running", "transcript_correction_eligibility": "new_admin_import"},
+    ))
+    store = FileMediaLibraryStore(tmp_path / f"applied-{rejected_cue}")
+    store.upsert(entry)
+    meanings = lambda _entry, _target: SimpleNamespace(status="ready", meanings=(), reason="", retry_after=0.0)  # noqa: E731
+    pipeline = MediaPipeline(ledger=SpendLedger(tmp_path / f"applied-spend-{rejected_cue}.json"), corrector=Corrector(), meanings=meanings)
+
+    pipeline._run(store, None, entry.media_id, "batch-applied", pipeline_module.Candidate(cues=cues))
+
+    stored = store.get(entry.media_id)
+    if rejected_cue:
+        assert stored.processing["transcript_correction_state"] == "partial"
+        assert stored.status == "review" and stored.processing["state"] == "held"
+        assert stored.processing["reason"] == "transcript_correction_incomplete" and stored.processing["detail"] == "partial"
+        assert stored.processing["auto_published"] is False
+    else:
+        assert stored.processing["transcript_correction_state"] == "applied"
+        assert stored.status == "published" and stored.processing["state"] == "ready"
+        assert stored.processing["auto_published"] is True
+
+
+def test_correction_incomplete_hold_never_applies_to_a_learners_own_import(tmp_path):
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from tests.test_media_lifecycle import _entry
+    from writing_coach import media_transcript_pipeline as pipeline_module
+    from writing_coach.media_segmentation import Cue
+
+    cues = tuple(Cue(index * 3000, index * 3000 + 2500,
+                     f"Sentence {index} is ready and waiting for another careful review.") for index in range(8))
+    # A stale value (it is reset when a run starts) must not turn a learner's own import into a held one.
+    source = {**_entry().source, "provider": "youtube", "type": "video", "imported_by": "learner"}
+    entry = replace(_entry("youtube-personal-stale", provider="youtube", provider_media_id="personal-stale",
+                           canonical_url="https://www.youtube.com/watch?v=personal-stale", language="en", library="personal",
+                           title="A title", duration_ms=24000, source=source),
+                    status="processing", processing={"state": "running", "transcript_correction_state": "failed"})
+    store = FileMediaLibraryStore(tmp_path / "personal-stale")
+    store.upsert(entry)
+    meanings = lambda _entry, _target: SimpleNamespace(status="ready", meanings=(), reason="", retry_after=0.0)  # noqa: E731
+    pipeline = MediaPipeline(ledger=SpendLedger(tmp_path / "personal-stale-spend.json"), meanings=meanings)
+
+    pipeline._run(store, None, entry.media_id, "batch-personal", pipeline_module.Candidate(cues=cues))
+
+    stored = store.get(entry.media_id)
+    assert stored.status == "published" and stored.processing["state"] == "ready"
+    assert stored.processing.get("reason", "") == ""
 
 
 def test_transcript_correction_chunks_a_valid_long_video_into_bounded_calls(tmp_path):

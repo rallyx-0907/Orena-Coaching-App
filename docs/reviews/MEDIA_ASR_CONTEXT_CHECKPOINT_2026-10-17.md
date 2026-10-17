@@ -141,6 +141,32 @@ each run. Ruff on touched Python: PASS. Node admin media review, admin areas, ad
 PASS (300 modules). Not done: live re-run of the failing cases, A12 visual check with real applied/partial rows,
 sandbox restart (not allowed). The owner-dirty Design Contract and untracked UX files are not staged.
 
+## Review of `7a0957fe`: CHANGES REQUIRED, P1 fixed (2026-10-17)
+
+The independent review of `7a0957fe` returned **CHANGES REQUIRED: one P1 and five P2**. The earlier APPROVE above covers
+`e814a4ec` only and does not cover this code. The reviewer's full text was reported in the owner's CLI session and is not
+in the repository; only the P1 was relayed, so **the five P2 findings are open and unaddressed**.
+
+- **P1 (fixed in this working tree, not yet re-reviewed).** A shared item with `rights=cleared` whose correction did not
+  finish was published automatically with uncorrected text. Rights are cleared for the corrected transcript, and D-111
+  allows automatic publication only when every check passed. Now, when `transcript_correction_state` is `partial` or
+  `failed`, `_run` still translates, then holds the item (`state=held`, `status=review`, `auto_published=False`) with the
+  reason `transcript_correction_incomplete` and `detail` set to the correction state; model clips are not cut for it.
+  `applied` publishes as before. `unavailable` (unsupported language, no corrector configured) is not an attempt that
+  failed, so it does not hold. Learner-owned imports are never held by it. A person publishes or reprocesses the held item.
+  Decision for the owner: any single refused cue (`partial`) holds the item; this is the strictest reading and can be
+  relaxed by editing `CORRECTION_HOLD_STATES`.
+- Admin A12: the stored reason has copy in EN/VI/ZH (`impErr_transcript_correction_incomplete`), the held banner is titled
+  "Needs review" rather than "Failed", and a rights hold keeps its existing presentation.
+- Tests: the old integration test that asserted a failed correction still publishes a cleared item now asserts the hold;
+  added cleared-item publishes only on `applied`, no learner-import hold, reason message and 3-language copy.
+
+Local execution (not CI), same target set, same disposable container recipe, host RAM checked above 2 GB first:
+media pytest **883 passed, 0 failed, 21 skipped** (879 before; 4 new). Ruff on the three touched Python files, Node admin
+media review, Node admin areas, browser ESM graph (300 modules) and `validate_project_memory.py`: PASS. Not done: live
+provider re-run (the earlier agent died on a provider rate limit, and a paid run needs the owner's go-ahead), A12 visual
+check, review of the five P2 findings, independent re-review of this P1 fix (the implementer may not approve it).
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;

@@ -256,3 +256,11 @@ def test_a_prompted_chunk_with_full_width_junk_is_heard_again_without_the_prompt
     stored = FileMediaLibraryStore(tmp_path / "index").list(library="personal", status=None)[0]
     text = "".join(s["original_text"] for s in stored.lesson["payload"]["transcript"]["segments"])
     assert "０" not in text and "＝" not in text and stored.processing["cost_usd"] > 0
+
+
+def test_the_correction_incomplete_hold_has_a_stored_message_and_words_in_all_three_languages():
+    from pathlib import Path
+
+    assert pipeline_module.reason_message(pipeline_module.REASON_CORRECTION_INCOMPLETE)
+    imports = (Path(__file__).resolve().parents[1] / "static" / "orena" / "screens" / "admin" / "copy-imports.js").read_text(encoding="utf-8")
+    assert imports.count("impErr_transcript_correction_incomplete:") == 3

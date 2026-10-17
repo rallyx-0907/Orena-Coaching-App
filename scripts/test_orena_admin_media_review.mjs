@@ -58,4 +58,21 @@ for (const [name, pack] of [['en', en], ['vi', vi], ['zh', zh]]) {
   assert.ok(markup.includes(pack.ctCorrectionDetail_edit_ratio_exceeded) && markup.includes(`${pack.ctCorrectionNotApplied}: &lt;b&gt;z&lt;/b&gt;`), `${name}: a rejected cue is shown, escaped`);
   assert.ok(!markup.includes('No change.'), `${name}: never "No change." for a deterministic edit`);
 }
+/* Review P1: cleared rights + an unfinished correction is held, not failed; the operator is told why in every language. */
+const { en: importsEn, vi: importsVi, zh: importsZh } = await import('../static/orena/screens/admin/copy-imports.js');
+for (const [name, pack, importsPack] of [['en', en, importsEn], ['vi', vi, importsVi], ['zh', zh, importsZh]]) {
+  assert.equal(typeof importsPack.impErr_transcript_correction_incomplete, 'string', `${name}: held-for-correction reason has copy`);
+  const held = {
+    ...detail.record, status: 'review',
+    outcome: { state: 'held', reason: 'transcript_correction_incomplete', message: 'English fallback', detail: 'partial' },
+    processing: { ...detail.record.processing, transcript_correction_state: 'partial' },
+  };
+  const merged = { ...pack, ...importsPack };
+  const markup = String(mediaPage({ detail: { ...detail, record: held }, view: { busy: false, error: '' }, t: speak(merged), ui: { locale: name }, href: () => '#/admin' }).markup);
+  assert.ok(markup.includes(importsPack.impErr_transcript_correction_incomplete), `${name}: the held banner says why it was not published`);
+  assert.ok(!markup.includes('English fallback'), `${name}: the stored English sentence is only a fallback`);
+}
+const rightsHeld = { ...detail.record, status: 'review', outcome: { state: 'held', reason: 'rights_unknown', message: 'rights unknown' } };
+const rightsMarkup = String(mediaPage({ detail: { ...detail, record: rightsHeld }, view: { busy: false, error: '' }, t: speak(en), ui: { locale: 'en' }, href: () => '#/admin' }).markup);
+assert.ok(!rightsMarkup.includes('rights unknown'), 'a rights hold keeps its existing presentation (no new banner)');
 console.log('Admin media review Publish uses canonical status API: PASS');

@@ -126,7 +126,9 @@ export function bookPage({ detail, view, t, ui, href }) {
    an item can fail after its transcript was kept (a language mismatch keeps what was heard). */
 function failureReason(record, t) {
   const outcome = record.outcome || {};
-  if (outcome.state !== 'failed' || !outcome.reason) return '';
+  /* A held item with cleared rights whose automatic correction did not finish says so: it was not published by itself. */
+  const heldForCorrection = outcome.state === 'held' && outcome.reason === 'transcript_correction_incomplete';
+  if ((outcome.state !== 'failed' && !heldForCorrection) || !outcome.reason) return '';
   const text = t.has(`impErr_${outcome.reason}`) ? t(`impErr_${outcome.reason}`) : outcome.message || '';
   /* The failing check and its counts (ids and numbers, no copy), when the pipeline recorded them (D-218). */
   return outcome.detail ? `${text} (${outcome.detail})` : text;
@@ -190,7 +192,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
     markup: html`<section class="a-page" data-screen-label="A12 Media detail">
       ${pageHead({ back: { href: href('adminMedia'), label: t('ctMedia') }, title: record.title, sub: record.subtitle || '', pills: [statusPill(t, record), missing ? { label: t('ctTranscriptMissing'), tone: 'warn' } : { label: t('ctTranscriptReady'), tone: 'ok' }], actions: lifecycleButtons(t, record, 'media').filter((action) => action.data.intent !== 'reprocess').map((action) => ({ ...action, disabled: view.busy })) })}
       ${view.error ? html`<div class="a-error" role="alert">${view.error}</div>` : ''}
-      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : !missing && failedReason ? banner({ tone: 'warn', title: t('impFailed'), text: failedReason }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${failedReason || t('ctMissingText')}</div></div></div>` : ''}
+      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : !missing && failedReason ? banner({ tone: 'warn', title: t(record.outcome?.state === 'held' ? 'ctStatusReview' : 'impFailed'), text: failedReason }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${failedReason || t('ctMissingText')}</div></div></div>` : ''}
       ${['queued', 'running'].includes(record.processing?.state) ? processingProgressMarkup(record.processing.stage, Object.fromEntries(['fetch', 'transcribe', 'segment', 'translate', 'ready'].map((stage) => [stage, t(`impMediaStage_${stage}`)]))) : ''}
       <div class="a-blocks">
         ${block({ title: t('ctDetails'), body: kv([

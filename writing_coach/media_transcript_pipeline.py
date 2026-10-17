@@ -93,6 +93,13 @@ CORRECTION_PROVIDER_REASONS = frozenset({"rate_limited", "provider_auth", "provi
 ZH_EDIT_FLOOR = 2
 ZH_EDIT_CAP = 4
 ZH_EDIT_SHARE = 0.25
+# A correction that was attempted and did not finish as `applied` never blocks the item: it is translated on the best
+# available text. It does stop AUTOMATIC publication, because a person cleared the rights of the corrected transcript, not
+# of the raw one (D-111: auto-publish only when every check passed). The item is held with this reason and a person
+# publishes it, or retries it, knowing the text may still carry recognition errors. `unavailable` (an unsupported language,
+# or no corrector configured on this deployment) is not an attempt that failed - nothing was tried - so it does not hold.
+CORRECTION_HOLD_STATES = frozenset({"partial", "failed"})
+REASON_CORRECTION_INCOMPLETE = "transcript_correction_incomplete"
 _HAN_CHARACTER = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 
 # The stages, in the order the operator's steps and the learner's sheet show them.
@@ -164,6 +171,7 @@ CONTINUATION_PACING_SECONDS = 150.0
 # operator's language (`impErr_<code>`); a code not listed here has no stored message, never a made-up one.
 REASON_MESSAGES: dict[str, str] = {
     "rights_unknown": "The transcript is ready; rights are unknown, so it is held until a person confirms them.",
+    "transcript_correction_incomplete": "Rights are cleared, but the automatic transcript correction did not finish, so the item is held instead of publishing uncorrected text.",
     "audio_unavailable": "The audio of this source could not be downloaded.",
     "captions_blocked": "The provider refused to give the captions, and the audio could not be downloaded either.",
     "asr_unconfigured": "Speech recognition is not configured on this deployment.",
@@ -807,11 +815,18 @@ class MediaPipeline:
         rights = str(entry.source.get("rights") or RIGHTS_UNKNOWN)
         common = dict(previous={}, checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
                       translation=translation, translation_counts=translation_counts, rights=rights, **_screen_fields(screen))
-        if personal or rights == RIGHTS_CLEARED:
+        # Only an eligible shared item has a correction state (a learner's own import never does). Anything but `applied`
+        # means the cleared rights do not yet cover the text a learner would read, so it is not published by itself.
+        correction_state = str((entry.processing or {}).get("transcript_correction_state") or "")
+        correction_incomplete = correction_state in CORRECTION_HOLD_STATES
+        if personal or (rights == RIGHTS_CLEARED and not correction_incomplete):
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
             self._prepare_model_clips(assets, entry)
         if personal:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=False, **common, status="published")
+        elif rights == RIGHTS_CLEARED and correction_incomplete:
+            self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_READY, reason=REASON_CORRECTION_INCOMPLETE, detail=correction_state,
+                                   auto_published=False, **common, status="review")
         elif rights == RIGHTS_CLEARED:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=True, **common, status="published")
         else:

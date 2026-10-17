@@ -9,8 +9,9 @@ STATUS: IMPLEMENTING
 Video Sources / ASR context and transcript review (2026-10-17, UI lane): IMPLEMENTING.
 Whisper receives bounded source context; the configured media text model can repair new shared Admin
 ZH ASR and EN captions, with per-cue before/after/provenance visible in A12. Personal and pre-existing
-records are excluded; failure keeps raw text held. Local media842 pass/21 skip, Ruff/smoke pass;
-independent code review APPROVE. Live quality, matched-audio benchmark and browser fidelity remain
+records are excluded; a correction that fails never blocks translation, but a cleared item is then held, not
+auto-published. Local media883 pass/21 skip, Ruff/Node pass. Independent review of `7a0957fe`: CHANGES REQUIRED
+(1 P1 fixed, not re-reviewed; 5 P2 open). Live quality, matched-audio benchmark and browser fidelity remain
 unverified; no runtime deployment or publication. Trial artifacts report EN19/ZH18 usable; sitting6
 stopped at HTTPS egress preflight with zero new imports. See `docs/reviews/MEDIA_ASR_CONTEXT_CHECKPOINT_2026-10-17.md`.
 
