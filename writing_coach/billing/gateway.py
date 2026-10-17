@@ -66,6 +66,8 @@ class CheckoutIntent:
     return_url: str
     cancel_url: str
     customer_email: str = ""
+    # PR-MON-9 §3.2: Polar's embedded checkout runs only on this configured origin (never a client-supplied value)
+    embed_origin: str = ""
 
 
 @dataclass(frozen=True)
