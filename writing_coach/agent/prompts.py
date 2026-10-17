@@ -1,16 +1,30 @@
-"""What the model is told: one stable instruction, then this turn's context.
+"""What the model is told: one stable instruction, the conversation, then this turn's context.
 
 The instruction never changes between learners or turns, so a provider can
 cache it (spec §10). Everything that varies - languages, where the learner is,
-what is selected, their coach notes, what the last turns read - goes in a
-second message as JSON, redacted before it leaves (spec §36). Nothing here
-depends on the learner having typed something.
+what is selected, their coach notes, what the last turns read - goes in one
+message as JSON, redacted before it leaves (spec §36). Nothing here depends on
+the learner having typed something.
+
+Layout (ORENA_MEMORY.md §5.4, M0): a provider's prefix cache serves the part of
+a request that an earlier request already sent, from its start. So the context
+is split by how often it changes. What holds for the whole conversation on a
+screen - the languages, the screen and what it offers, the address, the coach
+notes - is `context:` right after the instruction, before the turns already
+said; what this turn changes - what is in view and selected, what earlier reads
+found, an open offer, the focus - is `context (this turn):` after them, next to
+the learner's words. The instruction, the setting and the conversation so far
+are then the same bytes from one round and one turn to the next. The legacy
+layout (`cache_stable=False`) sends the whole context in one message second,
+so one changed field ends the reusable prefix before the conversation; it is
+kept as a switch for the before/after benchmark and as a rollback.
 """
 
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 
 from writing_coach.agent.capability_registry import CapabilityEntry
 from writing_coach.agent.context import Tier1Context, TurnInput
@@ -263,6 +277,39 @@ whether it worked: if they ask about it or say it again, say it was sent and the
 is saved or done, and do not send it again."""
 
 
+@dataclass(frozen=True)
+class PromptLayout:
+    """How a turn's request is laid out (ORENA_MEMORY.md §5.4, M0). Both are switches for the before/after benchmark
+    and for rollback.
+
+    `cache_stable`: the context split into the conversation's setting, before the conversation, and this turn's part,
+    after it (module docstring). `stable_tools`: every round of every
+    turn lists the same tools in the same order - the turn's own rules (an opening reads nothing, a screen-help turn
+    reads nothing, the last round only answers, `resolve_pending` only while an offer is open) are enforced by the
+    server on the calls instead, and the last round sends `tool_choice: none`. Off by default until the live benchmark
+    shows it does not change tool selection or latency."""
+
+    cache_stable: bool = True
+    stable_tools: bool = False
+
+    @property
+    def version(self) -> str:
+        return f"orena-prompt/{'2' if self.cache_stable else '1'}{'+tools' if self.stable_tools else ''}"
+
+    @classmethod
+    def from_env(cls, environ: Mapping[str, str]) -> PromptLayout:
+        """`AGENT_PROMPT_LAYOUT` = stable (default) | legacy; `AGENT_STABLE_TOOLS` = off (default) | on. Any other
+        value refuses to start rather than guess."""
+
+        layout = (environ.get("AGENT_PROMPT_LAYOUT") or "stable").strip().lower()
+        tools = (environ.get("AGENT_STABLE_TOOLS") or "off").strip().lower()
+        if layout not in ("stable", "legacy"):
+            raise ValueError("AGENT_PROMPT_LAYOUT must be 'stable' or 'legacy'")
+        if tools not in ("on", "off", "true", "false", "1", "0"):
+            raise ValueError("AGENT_STABLE_TOOLS must be 'on' or 'off'")
+        return cls(cache_stable=layout == "stable", stable_tools=tools in ("on", "true", "1"))
+
+
 OPENING_TRIGGER = "[The learner opened Orena. There is no message from them: this is the opening turn.]"
 
 
@@ -363,6 +410,20 @@ def earlier_in_conversation(summary: str, pasted: str | None) -> str:
     return f"{CARRIED_HEAD}\n" + "\n\n".join(parts) if parts else ""
 
 
+# The parts of the context that change within a conversation (they go after it, cache-stable layout); the rest is
+# the conversation's setting and stays before it. A key absent from both lists is part of the setting.
+TURN_CONTEXT_KEYS = ("in_view", "selection", "earlier_in_session", "offered_last_turn", "sent_to_app_just_now",
+                     "conversation_focus", "pending_interaction")
+TURN_CONTEXT_HEAD = "context (this turn; the rest of the context above):"
+
+
+def split_context(document: dict) -> tuple[dict, dict]:
+    """(the setting, this turn's part) of a context document, each in the document's own key order."""
+
+    turn = {key: value for key, value in document.items() if key in TURN_CONTEXT_KEYS}
+    return {key: value for key, value in document.items() if key not in TURN_CONTEXT_KEYS}, turn
+
+
 def opening_messages(
     turn: TurnInput,
     tier1: Tier1Context,
@@ -373,15 +434,22 @@ def opening_messages(
     snapshot: dict | None = None,
     screen_help: bool = False,
     budget_tokens: int | None = None,
+    cache_stable: bool = True,
 ) -> list[ProviderMessage]:
     """The messages of a turn. `budget_tokens` bounds the whole assembled prompt: what is added from the conversation
-    (the older turns, then the carried pasted text) gives way to the fixed parts, the summary and the learner's words."""
+    (the older turns, then the carried pasted text) gives way to the fixed parts, the summary and the learner's words.
+    `cache_stable` splits the context around the conversation (module docstring); False is the legacy layout."""
 
-    context = json.dumps(context_document(turn, tier1, capabilities, session, opening=opening), ensure_ascii=False)
-    messages = [
-        ProviderMessage(role="system", content=INSTRUCTION),
-        ProviderMessage(role="system", content=f"context: {context}"),
-    ]
+    document = context_document(turn, tier1, capabilities, session, opening=opening)
+    if cache_stable:
+        setting, now = split_context(document)
+        head = ProviderMessage(role="system", content=f"context: {json.dumps(setting, ensure_ascii=False)}")
+        context_message = ProviderMessage(role="system",
+                                          content=f"{TURN_CONTEXT_HEAD} {json.dumps(now, ensure_ascii=False)}")
+    else:
+        head = ProviderMessage(role="system", content=f"context: {json.dumps(document, ensure_ascii=False)}")
+        context_message = head
+    messages = [ProviderMessage(role="system", content=INSTRUCTION), head]
     if snapshot is not None:  # the opening turn is built on the learner's snapshot (S13), read by the server
         messages.append(
             ProviderMessage(role="system", content="snapshot: " + json.dumps(redact_for_provider(snapshot), ensure_ascii=False))
@@ -394,11 +462,15 @@ def opening_messages(
         # A request of system messages alone is refused by some providers (Gemini: "contents is not
         # specified"). The trigger is stated as a fixed user message; it carries no learner text.
         support_name = _language_name(tier1.contract_locale.support, target=False)
+        if cache_stable:
+            messages.append(context_message)
         messages.append(ProviderMessage(role="user", content=opening_trigger(support_name)))
+    # What follows the conversation: the context (cache-stable layout), then the style, selection and the words.
+    after = [context_message] if cache_stable and not opening else []
     if session is not None and turn.message is not None and not opening:
         whole = session.focus.pasted
         turns = list(session.recent_turns)
-        tail = _tail_messages(turn, tier1, session, opening=opening, screen_help=screen_help)
+        tail = after + _tail_messages(turn, tier1, session, opening=opening, screen_help=screen_help)
         room: int | None = None  # characters of the pasted text that fit, once the budget makes it matter
 
         def conversation(kept: list) -> list[ProviderMessage]:
@@ -432,7 +504,7 @@ def opening_messages(
             while over(turns) > 0 and turns:
                 turns = turns[1:]
         messages += conversation(turns)
-    messages += _tail_messages(turn, tier1, session, opening=opening, screen_help=screen_help)
+    messages += after + _tail_messages(turn, tier1, session, opening=opening, screen_help=screen_help)
     return messages
 
 

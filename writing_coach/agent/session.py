@@ -30,6 +30,7 @@ from typing import Any
 from writing_coach.agent.focus import Focus
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
 from writing_coach.agent.pending import RUN_WINDOW_TURNS, RUNS_KEPT, SETTLED_KEPT, PendingInteraction
+from writing_coach.agent.provider import ModelRoute
 from writing_coach.agent.schemas import AppContextSnapshot, SelectedItem
 
 
@@ -94,6 +95,10 @@ class AgentSessionState:
     # What came before the recent turns, folded (agent/summary.py): only the talk. The offer, the focus and the sent
     # actions are kept apart and never depend on it.
     summary: str = ""
+    # The model this conversation is pinned to (ORENA_MEMORY.md §7.2): chosen when its first model turn runs, kept
+    # for every round after - a change in Admin applies to new conversations. Kept across a change of target language
+    # (the conversation goes on). Infrastructure only, never shown to the learner.
+    model_route: ModelRoute | None = None
 
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
@@ -125,6 +130,9 @@ class AgentSessionState:
 
     def with_address_asked(self) -> AgentSessionState:
         return replace(self, address_asked=True)
+
+    def with_model_route(self, route: ModelRoute) -> AgentSessionState:
+        return replace(self, model_route=route)
 
     def with_turn(self) -> AgentSessionState:
         return replace(self, turn_count=self.turn_count + 1)

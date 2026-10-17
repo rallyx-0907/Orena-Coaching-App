@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from tests.agent_prompt_context import context_of as merged_context
 import json
 
 import pytest
@@ -241,7 +242,7 @@ def test_the_notes_reach_the_model_with_their_ids_and_not_the_address():
     ]  # fmt: skip
     rt, provider = _runtime([reply("Ok.")])
     list(rt.run(_request("Chào.", notes=notes), ZH))
-    context = json.loads(next(m.content for m in provider.requests[0].messages if m.content.startswith("context: "))[9:])
+    context = merged_context(provider.requests[0].messages)
     assert context["coach_notes"] == [{"id": "n-1", "kind": "preference", "text": "Giải thích ngắn"}]
 
 

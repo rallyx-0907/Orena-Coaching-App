@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from writing_coach.agent.provider import (
     NORMAL_FINISH,
     AgentTurnProvider,
+    ModelRoute,
     ProviderMessage,
     ProviderTurnRequest,
     TextDelta,
@@ -70,6 +71,7 @@ def summarize(
     *,
     limit: int,
     should_stop=never_stop,
+    route: ModelRoute | None = None,
 ) -> Summarized:
     """The new summary; `text` is None when it could not be made (the conversation is left as it is)."""
 
@@ -81,6 +83,7 @@ def summarize(
         max_output_tokens=SUMMARY_OUTPUT_TOKENS,
         temperature=0.0,
         timeout_seconds=SUMMARY_TIMEOUT_SECONDS,
+        route=route,  # the conversation's own model: the rolling summary is part of that conversation
     )
     parts: list[str] = []
     used_in = used_out = 0

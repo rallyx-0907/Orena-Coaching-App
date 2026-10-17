@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from tests.agent_prompt_context import context_of as merged_context
+from writing_coach.agent.prompts import TURN_CONTEXT_HEAD
 import itertools
 import socket
 from types import MappingProxyType
@@ -316,10 +318,13 @@ def test_an_unknown_session_opens_a_new_one():
 def test_the_model_is_told_who_it_is_and_where_the_learner_is_without_a_message_dependency():
     rt, provider = runtime([reply("Được.")])
     run(rt)
-    system, context, style, selected, user = provider.requests[0].messages
+    # The context in two parts (agent/prompts.py, cache-stable layout): the conversation's setting before the turns
+    # said so far (none yet), and what this turn has in view after them.
+    system, context, now, style, selected, user = provider.requests[0].messages
     assert system.role == "system" and "You are Orena" in system.content
     assert '"surface": "speaking.word_detail"' in context.content and '"code": "zh-CN"' in context.content
     assert "speaking.pronunciation.tone" in context.content  # the capabilities here, chosen from surface and language
+    assert now.content.startswith(TURN_CONTEXT_HEAD) and '"selection": {"type": "word", "text": "是"' in now.content
     # the voice in the support language, last before the learner's words (the live run: English rules lost)
     assert style.role == "system" and 'Xưng "mình", gọi người học là "bạn"' in style.content
     assert "Bộ chấm chưa đánh dấu lỗi nào" in style.content and 'Không tự viết câu mời "Bấm …"' in style.content
@@ -333,7 +338,8 @@ def test_a_support_language_without_a_style_block_gets_the_instruction_alone():
     body["context"]["locale"].update(interface="en", support="en")
     rt, provider = runtime([reply("Ok.")])
     run(rt, TurnRequest.model_validate(body))
-    assert [m.role for m in provider.requests[0].messages] == ["system", "system", "system", "user"]  # + selection
+    # instruction, context (setting), context (this turn), selection, words: no style block
+    assert [m.role for m in provider.requests[0].messages] == ["system", "system", "system", "system", "user"]
 
 
 def test_text_streams_even_when_a_round_also_asks_for_extras():
@@ -621,10 +627,8 @@ def test_a_calls_provider_data_goes_back_with_it_in_the_next_round():
 
 
 def _context_of(provider):
-    import json
-
     system = [m.content for m in provider.requests[0].messages if m.role == "system"]
-    return json.loads(next(c for c in system if c.startswith("context: "))[len("context: "):])
+    return merged_context(system)
 
 
 def test_a_accepted_action_is_offered_as_a_button_never_as_done():

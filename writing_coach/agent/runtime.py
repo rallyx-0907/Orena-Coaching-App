@@ -28,7 +28,8 @@ from writing_coach.agent.grammar_tools import (
     grammar_tools,
 )
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
-from writing_coach.agent.platform_provider import PlatformAgentTurnProvider
+from writing_coach.agent.platform_provider import PlatformAgentTurnProvider, PlatformModelRouter
+from writing_coach.agent.prompts import PromptLayout
 from writing_coach.agent.provider import AgentTurnProvider
 from writing_coach.agent.read_tools import WritingHistoryReader, WritingReviewReader, more_read_tools, read_tools
 from writing_coach.agent.session import SessionCache
@@ -124,8 +125,10 @@ def build_agent_runtime(
     limits: AgentLimits = DEFAULT_LIMITS,
     record_turn: Callable[[str, dict], None] | None = None,
     record_summary: Callable[[str, dict], None] | None = None,
-    price_summary: Callable[[int, int], dict] | None = None,
+    price_summary: Callable[..., dict] | None = None,
     spend_guard: Callable[[], float | None] | None = None,
+    prompt: PromptLayout = PromptLayout(),
+    router: object | None = None,
 ) -> AgentRuntime:
     tools = build_tool_registry(
         writing_review=writing_review, writing_history=writing_history, reads=reads, limits=limits
@@ -137,6 +140,10 @@ def build_agent_runtime(
 
     return AgentRuntime(
         provider=provider or PlatformAgentTurnProvider(),
+        # The platform's provider pins each conversation to the selection it opened on (ORENA_MEMORY.md §7.2); a
+        # provider handed in (a test's fake) is pinned only when a router is handed in too.
+        router=router if router is not None else (PlatformModelRouter() if provider is None else None),
+        prompt=prompt,
         tools=tools,
         capabilities=load_capability_registry(registered_tools=tools.names()),
         sessions=SessionCache(limits=limits),

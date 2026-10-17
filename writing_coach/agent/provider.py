@@ -14,7 +14,9 @@ provider-to-provider fallback, ARCHITECTURE_INVARIANTS).
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterator, Mapping
+import hashlib
+import json
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal, Protocol
 
@@ -75,6 +77,18 @@ class ProviderToolSpec:
 
 
 @dataclass(frozen=True)
+class ModelRoute:
+    """The provider and model a conversation is pinned to (ORENA_MEMORY.md §7.2, M0). Infrastructure only: never
+    shown to the learner (contract §10)."""
+
+    provider: str
+    model: str
+
+    def public(self) -> dict[str, str]:
+        return {"provider": self.provider, "model": self.model}
+
+
+@dataclass(frozen=True)
 class ProviderTurnRequest:
     messages: tuple[ProviderMessage, ...]
     tools: tuple[ProviderToolSpec, ...] = ()
@@ -83,6 +97,21 @@ class ProviderTurnRequest:
     # What is left of the turn's budget: a provider waits no longer than this
     # for a response or for its next piece.
     timeout_seconds: float | None = None
+    # "none": the tools are listed (so the request keeps the same prefix) but the model may not call one this round.
+    # None leaves it to the provider's default.
+    tool_choice: Literal["none"] | None = None
+    # The conversation's pinned model; None is the legacy active selection, read each round.
+    route: ModelRoute | None = None
+
+
+def tools_digest(tools: Sequence[ProviderToolSpec]) -> str | None:
+    """A short fingerprint of the tool list as sent, in order: two requests with the same digest share that part of
+    their prefix (telemetry for the cache benchmark). None for no tools."""
+
+    if not tools:
+        return None
+    wired = [[t.name, t.description, t.parameters] for t in tools]
+    return hashlib.sha256(json.dumps(wired, sort_keys=True, ensure_ascii=False).encode()).hexdigest()[:16]
 
 
 def never_stop() -> bool:

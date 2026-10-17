@@ -987,6 +987,7 @@ class OpenAICompatibleProvider:
         temperature: float | None = None,
         should_stop: Callable[[], bool] = lambda: False,
         read_timeout: float | None = None,
+        tool_choice: str | None = None,
     ) -> Iterator[ChatStreamEvent]:
         """One streamed chat round with native tool calls (Orena Intelligence, D-085).
 
@@ -1013,6 +1014,9 @@ class OpenAICompatibleProvider:
         }
         if tools:
             body["tools"] = tools
+            if tool_choice is not None:
+                # "none": the tools stay in the request (its cacheable prefix is unchanged) and none may be called.
+                body["tool_choice"] = tool_choice
         if temperature is not None:
             body["temperature"] = temperature
         if self.id in _STREAM_USAGE_PROVIDERS:

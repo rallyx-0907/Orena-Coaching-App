@@ -4,6 +4,7 @@ answer about what is in view unless asked, and give a heading when one is asked 
 
 from __future__ import annotations
 
+from tests.agent_prompt_context import context_of as merged_context
 import json
 
 import pytest
@@ -43,7 +44,7 @@ def test_the_model_is_told_which_sentence_here_means():
     system = [m.content for m in provider.requests[0].messages if m.role == "system"]
     line = next(s for s in system if s.startswith("The learner has selected the word"))
     assert json.dumps(SENTENCE, ensure_ascii=False) in line and "meaning in that sentence first" in line
-    context = json.loads(next(m.content for m in provider.requests[0].messages if m.content.startswith("context: "))[9:])
+    context = merged_context(provider.requests[0].messages)
     assert context["selection"]["sentence"] == SENTENCE
 
 

@@ -990,6 +990,7 @@ from writing_coach.ai.audio_telemetry import record_audio_operation  # noqa: E40
 from writing_coach.agent.runtime import AppReads, build_agent_runtime  # noqa: E402
 from writing_coach.agent.retention import TurnTelemetryRetention, sweep_enabled  # noqa: E402
 from writing_coach.agent.limits import DEFAULT_LIMITS as _AGENT_DEFAULT_LIMITS, LiveAgentLimits  # noqa: E402
+from writing_coach.agent.prompts import PromptLayout  # noqa: E402
 from writing_coach.agent.budget import LiveSpendGuard  # noqa: E402
 
 
@@ -1093,13 +1094,17 @@ def _record_agent_summary(user_key: str, record: dict) -> None:
                payload=record)
 
 
-def _price_agent_summary(input_tokens: int, output_tokens: int) -> dict:
-    """The provider and model the agent runs on, and what a call of this size is estimated to cost."""
+def _price_agent_summary(input_tokens: int, output_tokens: int, route=None) -> dict:
+    """The provider and model the agent runs on - the conversation's pinned route when given, else the active
+    selection - and what a call of this size is estimated to cost."""
 
     from writing_coach.ai.platform import active_selection, estimate_token_cost
 
-    item, model = active_selection()
-    provider = str(getattr(item, "id", "") or "") or None
+    if route is not None:
+        provider, model = route.provider, route.model
+    else:
+        item, model = active_selection()
+        provider = str(getattr(item, "id", "") or "") or None
     usage = {"prompt_tokens": input_tokens, "completion_tokens": output_tokens}
     return {"provider": provider, "model": model or None, "cost": estimate_token_cost(provider, model, usage)}
 
@@ -1170,6 +1175,8 @@ configure_agent(_with_voice(
         spend_guard=_agent_spend_guard(),
         # D-172: the operator-tunable limits (turns a minute, openings, input budget) are read at each use.
         limits=LiveAgentLimits(_AGENT_DEFAULT_LIMITS, lambda: _policies.effective_agent_limits()),
+        # ORENA_MEMORY.md §5.4 (M0): the cache-stable layout, and the stable tool list behind its own switch.
+        prompt=PromptLayout.from_env(os.environ),
     )
     if agent_enabled(os.environ)
     else None

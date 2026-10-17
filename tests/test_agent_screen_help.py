@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import json
+from tests.agent_prompt_context import context_of as merged_context
 
 import pytest
 
@@ -61,7 +61,7 @@ def test_screen_help_is_answered_from_the_screen_with_no_tool_offered(surface, i
     assert seen == [], "no learner data is read"
     system = [m.content for m in request.messages if m.role == "system"]
     assert SCREEN_HELP in system
-    context = json.loads(next(c for c in system if c.startswith("context: "))[len("context: "):])
+    context = merged_context(system)
     ui = INTERFACE_LOCALE[interface][0]
     assert context["screen"]["purpose"] == surfaces.purpose(surface, ui), "the published purpose, as written"
     assert events[-1].name == "done"

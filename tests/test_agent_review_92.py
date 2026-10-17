@@ -313,7 +313,11 @@ def test_the_assembled_prompt_stays_inside_the_input_budget():
     assert sent.messages[-1].content == "đoạn thứ 3 có yếu không?"  # the learner's words always stay
     carried = [m.content for m in sent.messages if m.content.startswith(CARRIED_HEAD)]
     assert carried and "TÓM TẮT" in carried[0]  # the summary stays
-    assert any(m.role == "assistant" for m in sent.messages[-3:])  # the newest exchange stays, the oldest went
+    # the newest exchange stays, the oldest went: the conversation ends with an answer, just before this turn's context
+    from writing_coach.agent.prompts import TURN_CONTEXT_HEAD
+
+    at = next(i for i, m in enumerate(sent.messages) if m.content.startswith(TURN_CONTEXT_HEAD))
+    assert sent.messages[at - 1].role == "assistant"
 
 
 def test_the_pasted_text_is_cut_to_what_fits_not_sent_whole():

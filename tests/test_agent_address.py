@@ -3,7 +3,7 @@
 
 from __future__ import annotations
 
-import json
+from tests.agent_prompt_context import context_of as merged_context
 
 import pytest
 
@@ -65,7 +65,7 @@ def runtime(rounds):
 
 def context_of(provider, index=0):
     system = [m.content for m in provider.requests[index].messages if m.role == "system"]
-    return json.loads(next(c for c in system if c.startswith("context: "))[len("context: "):])
+    return merged_context(system)
 
 
 # --- the rules ------------------------------------------------------------------------------
