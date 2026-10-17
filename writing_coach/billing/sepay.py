@@ -47,6 +47,9 @@ PURPOSE_LIMIT = 25
 ORDER_CODE_DIGITS = 12   # the order sequence starts at 100001; 12 digits is far beyond any real order count
 _PREFIX = re.compile(r"^[A-Z]{2,8}$")
 _ACCOUNT = re.compile(r"^[0-9]{6,19}$")
+# The VietQR / NAPAS beneficiary identifier: the main account, or a configured virtual account (PR-MON-8 §13.3). One
+# observed VA is not a format invariant; this is the field's own shape (published `PSP...` vectors are alphanumeric).
+_BENEFICIARY = re.compile(r"^[0-9A-Z]{1,19}$")
 _BIN = re.compile(r"^[0-9]{6}$")
 _NAPAS_GUID = "A000000727"
 _TRANSFER_TO_ACCOUNT = "QRIBFTTA"
@@ -72,8 +75,8 @@ def crc16_ccitt_false(data: bytes) -> int:
 def vietqr_payload(*, bank_bin: str, account_number: str, amount_minor: int, purpose: str) -> str:
     """A dynamic VietQR (NAPAS 247, transfer to an account) for an exact VND amount and memo. Pure and deterministic."""
 
-    if not _BIN.match(bank_bin) or not _ACCOUNT.match(account_number):
-        raise ValueError("a VietQR needs a 6-digit bank BIN and a numeric account number")
+    if not _BIN.match(bank_bin) or not _BENEFICIARY.match(account_number):
+        raise ValueError("a VietQR needs a 6-digit bank BIN and a beneficiary of 1-19 characters of 0-9 and A-Z")
     if type(amount_minor) is not int or amount_minor <= 0:
         raise ValueError("a VietQR amount is a positive whole number of dong")
     if not purpose or len(purpose) > PURPOSE_LIMIT or not purpose.isascii():
@@ -119,12 +122,17 @@ class SePayGateway:
     kind = "domestic"
 
     def __init__(self, *, webhook_secret: str, account_number: str, account_name: str, bank_bin: str,
-                 payment_prefix: str, api_token: str = "", api_base: str = API_BASE, feed_enabled: bool = False) -> None:
+                 payment_prefix: str, api_token: str = "", api_base: str = API_BASE, feed_enabled: bool = False,
+                 va_number: str = "") -> None:
         if not (webhook_secret and account_number and account_name and bank_bin and payment_prefix):
             raise GatewayNotConfigured("SePay needs SEPAY_WEBHOOK_SECRET, SEPAY_ACCOUNT_NUMBER, SEPAY_ACCOUNT_NAME, "
                                        "SEPAY_BANK_BIN and SEPAY_PAYMENT_PREFIX")
         if not _ACCOUNT.match(account_number) or not _BIN.match(bank_bin):
             raise GatewayNotConfigured("SEPAY_ACCOUNT_NUMBER is digits and SEPAY_BANK_BIN six digits")
+        va = va_number.strip()
+        if va and not _BENEFICIARY.match(va):
+            # §13.3: a malformed VA never becomes a QR with a guessed account; nothing about it is printed
+            raise GatewayNotConfigured("SEPAY_VA_NUMBER is 1-19 characters of 0-9 and A-Z")
         prefix = payment_prefix.strip().upper()
         if not _PREFIX.match(prefix):
             raise GatewayNotConfigured("SEPAY_PAYMENT_PREFIX is 2-8 letters")
@@ -132,7 +140,9 @@ class SePayGateway:
             raise GatewayNotConfigured("SEPAY_PAYMENT_PREFIX leaves no room for the order code in the VietQR memo")
         self._secret = webhook_secret
         self._token = api_token
-        self.account_number = account_number
+        self.account_number = account_number   # the main account: receiving and matching only, never shown with a VA
+        # §13: the virtual account a learner is shown instead of the main account; "" when none is configured.
+        self.va_number = va
         self.account_name = account_name.strip()
         self.bank_bin = bank_bin
         self.prefix = prefix
@@ -142,8 +152,20 @@ class SePayGateway:
         # The operator's date-range backfill (§6.4) needs only the token: it is the recovery path while the feed is off.
         self.has_api_token = bool(api_token)
 
-    def __repr__(self) -> str:  # never the secret or the token
-        return f"SePayGateway(account=***{self.account_number[-4:]}, prefix={self.prefix!r}, feed={self.feed_enabled})"
+    @property
+    def has_va(self) -> bool:
+        return bool(self.va_number)
+
+    @property
+    def qr_account(self) -> str:
+        """What a learner is shown: the VA when one is configured, otherwise the main account (dev/test only in
+        production terms - production without a VA is closed by `BillingService.domestic_blockers`)."""
+
+        return self.va_number or self.account_number
+
+    def __repr__(self) -> str:  # never the secret, the token, or a full account number (masked last four only)
+        va = f", va=***{self.va_number[-4:]}" if self.va_number else ""
+        return f"SePayGateway(account=***{self.account_number[-4:]}{va}, prefix={self.prefix!r}, feed={self.feed_enabled})"
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> SePayGateway:
@@ -154,7 +176,8 @@ class SePayGateway:
                    account_name=get("SEPAY_ACCOUNT_NAME"), bank_bin=get("SEPAY_BANK_BIN"),
                    payment_prefix=get("SEPAY_PAYMENT_PREFIX"), api_token=get("SEPAY_API_TOKEN"),
                    api_base=get("SEPAY_API_BASE") or API_BASE,
-                   feed_enabled=get("SEPAY_FEED_ENABLED").casefold() in {"1", "true", "yes", "on"})  # fmt: skip
+                   feed_enabled=get("SEPAY_FEED_ENABLED").casefold() in {"1", "true", "yes", "on"},
+                   va_number=get("SEPAY_VA_NUMBER"))  # fmt: skip
 
     # ---- identity ---------------------------------------------------------------------------------------------
 
@@ -254,9 +277,10 @@ class SePayGateway:
         memo = self.memo(code)
         return {
             "redirect_url": "",
-            "qr": vietqr_payload(bank_bin=self.bank_bin, account_number=self.account_number,
+            # §13.3: with a VA configured the main account appears in neither the QR nor this response
+            "qr": vietqr_payload(bank_bin=self.bank_bin, account_number=self.qr_account,
                                  amount_minor=intent.price.amount_minor, purpose=memo),
-            "transfer": {"bank_bin": self.bank_bin, "account_number": self.account_number,
+            "transfer": {"bank_bin": self.bank_bin, "account_number": self.qr_account,
                          "account_name": self.account_name, "amount_minor": intent.price.amount_minor,
                          "currency": "VND", "memo": memo},
         }
