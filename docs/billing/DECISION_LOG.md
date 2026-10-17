@@ -349,7 +349,7 @@ recurring-card gateway is not chosen now; it may be researched later if many lea
 Consequences:
 - Only Polar sells plans. The code refuses a plan price on any domestic gateway (`sepay`, `payos`), and readiness
   is computed per capability (plans, credits). The domestic gateway is required only for Credits
-  (`PR-MON-8_DESIGN.md` §14, revision 8.1).
+  (`PR-MON-8_DESIGN.md` §14, revision 8.2).
 - D-MON-031's SePay plan prices are withdrawn. The catalogue's USD prices (Plus 9.99/79.99, Pro 19.99/159.99) are the
   candidates for Polar, to be confirmed as Polar products.
 - Gate 7 splits:
