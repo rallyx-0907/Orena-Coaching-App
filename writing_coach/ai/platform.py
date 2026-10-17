@@ -372,6 +372,11 @@ def _persist_operation_telemetry(telemetry: dict[str, Any]) -> None:
         free = (cost_tier.is_free_tier(provider) if cost_tier.flag_key(provider)
                 else is_free_model(provider, telemetry.get("model")))
         telemetry = {**telemetry, "free_tier": free}
+    if isinstance(telemetry, dict):
+        # D-221: the environment that wrote this event; the provider key is shared by every environment.
+        from writing_coach import cost_env
+
+        telemetry = {**telemetry, "environment": cost_env.label()}
     safe = sanitize_telemetry(telemetry)
     recorder = getattr(_platform_repository, "record_ai_operation", None)
     if safe is None or not callable(recorder):
@@ -1267,6 +1272,11 @@ COST_REPORT_GAPS = (
     ("audio_before", "Calls before 2026-10-04 for speech recognition and pronunciation scoring were never recorded."),
     ("free_tier_tier", "Free tier: an amount on a free plan is shown at its list price, apart from real spend. Calls "
      "recorded before the tier was stamped (2026-10-16) are counted as unknown tier, in neither."),
+    ("environment_shared", "Environment: this page reads one environment's database and media ledger. The same "
+     "provider key is spent from every other environment (staging, preview, sandboxes, other lanes, scripts), which "
+     "record elsewhere, so the provider's own console total is larger than this page by design."),
+    ("voice_ceiling", "Orena voice (Gemini Live) is recorded as the session's token life at a ceiling rate: the "
+     "vendor reports its real audio and text usage only to the browser, which the server never sees."),
     ("account_tier", "Cost by account has no tier column (its schema is a human gate): the tier is read from the "
      "flag's change history in the audit log, at the time of each record."),
 )
@@ -1325,6 +1335,14 @@ def cost_report(rows: list[dict[str, Any]], *, days: int, since: datetime) -> di
     }
 
 
+def environment_report(rows: list[dict[str, Any]], *, current: str) -> dict[str, Any]:
+    """D-221: the events of this database by the environment that wrote them, with this process's own marked. An
+    environment of None wrote before the tag existed. Other environments record into other databases and never appear."""
+
+    return {"current": current,
+            "by_environment": [{**row, "current": row.get("environment") == current} for row in rows]}
+
+
 @router.get("/costs")
 def admin_ai_costs(request: Request, days: int = 30) -> dict[str, Any]:
     """AI cost by day and by feature, provider and model, from the shared ledger (no UI yet: UI_BACKEND_GAPS)."""
@@ -1341,6 +1359,14 @@ def admin_ai_costs(request: Request, days: int = 30) -> dict[str, Any]:
         rows = _place_unstamped_rows(repository, rows, timeline, since, now)
     report = cost_report(rows, days=bounded, since=since)
     report["media"] = _media_spend_totals(bounded, timeline.tier_at if timeline is not None else None)
+    from writing_coach import cost_env
+
+    environments = getattr(repository, "ai_cost_environments", None)
+    try:
+        env_rows = environments(since) if callable(environments) else []
+    except Exception:  # noqa: BLE001 - the environment block never fails the cost report
+        env_rows = []
+    report["environments"] = environment_report(env_rows, current=cost_env.label())
     return report
 
 
@@ -1503,6 +1529,7 @@ def admin_ai_test(payload: AIConfigIn, request: Request) -> dict[str, Any]:
         "required": ["ok", "message"],
     }
 
+    test_started = perf_counter()
     try:
         result = item.generate_json(
             messages=[
@@ -1524,6 +1551,14 @@ def admin_ai_test(payload: AIConfigIn, request: Request) -> dict[str, Any]:
         raise HTTPException(502, "AI provider request failed.") from exc
     _record_admin_event(admin, "admin.ai.selection.test", entity_type="ai_selection", entity_id="learner_default",
                         payload={**target, "outcome": "ok"})
+    # D-221: the connection test is a real, billed completion. It was the one Gemini call path with no cost row; it is
+    # recorded as an operator test (never an account's spend, still in the provider's total).
+    from writing_coach.ai.audio_telemetry import record_token_operation, telemetry_origin
+
+    with telemetry_origin("operator_test"):
+        record_token_operation("ai_connection_test", provider=provider_id, model=model, outcome="success",
+                               latency_ms=int((perf_counter() - test_started) * 1000), usage=result.runtime,
+                               billable_attempt=True)
 
     displayed_model, model_redacted = safe_model_display(result.model)
 

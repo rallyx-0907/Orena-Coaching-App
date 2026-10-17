@@ -106,6 +106,7 @@ class PlatformRepository(Protocol):
     ) -> None: ...
     def delete_provider_credential(self, provider_id: str) -> None: ...
     def record_ai_operation(self, telemetry: dict) -> None: ...
+    def ai_cost_environments(self, since: datetime) -> list[dict]: ...
     def get_setting(self, key: str) -> dict | None: ...
     def set_setting(self, key: str, value: dict, *, updated_by: str = "", expected_updated_at: object = ...,
                     audit: dict | None = None) -> dict: ...
@@ -407,6 +408,9 @@ class SQLitePlatformRepository:
 
     def ai_cost_rows(self, since: datetime) -> list[dict]:
         # Telemetry is PostgreSQL-only: nothing to report from the archive store.
+        return []
+
+    def ai_cost_environments(self, since: datetime) -> list[dict]:
         return []
 
     def ai_spend_for_capability(self, capability: str) -> float:
@@ -916,6 +920,22 @@ class PostgresPlatformRepository:
             }
             for row in rows
         ]
+
+    def ai_cost_environments(self, since: datetime) -> list[dict]:
+        """The cost events since `since` grouped by the environment that wrote them (D-221). `environment` is None for
+        an event written before the tag. Only this database's own events: another environment records elsewhere."""
+
+        query = text(
+            "WITH ops AS (SELECT payload::jsonb AS p FROM audit_logs "
+            "WHERE action = 'ai.operation' AND created_at >= :since) "
+            "SELECT p ->> 'environment' AS environment, COUNT(*) AS calls, "
+            "COALESCE(SUM((p -> 'cost' ->> 'amount')::numeric), 0) AS usd "
+            "FROM ops WHERE p ->> 'provider' IS NOT NULL GROUP BY 1 ORDER BY usd DESC, 1"
+        )
+        with self.engine.connect() as connection:
+            rows = connection.execute(query, {"since": since}).mappings().all()
+        return [{"environment": row["environment"], "calls": int(row["calls"]), "usd": round(float(row["usd"]), 8)}
+                for row in rows]
 
     # ---- AI cost per account (AC-2; migration 20261005_0026) -------------------------------------
 
