@@ -652,7 +652,12 @@ The approval does not establish Live VA support: that is gate 8.
 1. the VA exists on the Live account, and v2 reports it in `va`;
 2. a banking app paid it;
 3. the Live webhook was answered 200, and the transaction appears in Live v2 with `webhook_success = 1`;
-4. `code = ORN100004`, and the v2 `reference_number` equals the order's payment event id;
+4. `code = ORN100004`. The **raw bank reference** is v2 `reference_number`, which is the webhook's `referenceCode`.
+   Orena's **payment event identity** is derived from it as `sepay:ref:<main account>:<reference>` and stored as the
+   order's `paid_event_id`. The check was `paid_event_id == "sepay:ref:" + <main account> + ":" + <v2
+   reference_number>`, and it held. Because `paid_event_id` was derived from the webhook's `referenceCode`, this also
+   proves that the webhook `referenceCode` equals the v2 `reference_number`. No account or reference value was printed
+   (correction of the review of `10ff2080`, P1-2; the evidence is the same check, worded precisely);
 5. the v2 `account_number` is the main account, with the VA as separate metadata, and the order was paid;
 6. a signed re-delivery of the same transfer through the tunnel answered 200 and left the order unchanged (same event,
    `paid_at` and `paid_sequence`, no item, plan still active).
@@ -687,3 +692,15 @@ Tests in `tests/test_billing_sepay.py` (89, hermetic):
 `tests/test_billing_sepay_postgres.py`: 19 passed, with the production fixture now carrying a VA.
 
 Local evidence (not CI): full SQLite 7328 passed. Every PostgreSQL file: 445 passed plus 1 inherited failure (#160).
+
+### 13.10 Implementation review of `10ff2080` (ChatGPT / GPT-5.6 Sol): REQUEST CHANGES (3 P1), and the fixes
+
+| Finding | Fix |
+| --- | --- |
+| **P1-1:** a VA of 1-4 characters appeared in full in `repr` (`***` + last four) | One helper, `_mask`, is used for both identifiers: four characters or fewer are fully redacted (`***`); a longer value shows at most its last four. Parameterized tests for VA lengths 1, 4, 5, 12 and 19 assert the full VA is never in `repr`, and `_mask` never returns a whole identifier. |
+| **P1-2:** gate 8 evidence named the wrong relationship (reference = event id) | §13.8 now separates the raw bank reference (v2 `reference_number` = webhook `referenceCode`) from Orena's derived payment event id (`sepay:ref:<account>:<reference>`). The existing check already verified exactly that derivation, so no new money transfer was needed. |
+| **P1-3:** `BILLING_STATUS.md` was stale | Updated to the current `main`, #249 merged, revision 7.1 approved, #250's implementation state and review, gate 8 and the current evidence. History is preserved. |
+
+
+Tests after the fixes (local, not CI): `tests/test_billing_sepay.py` 98 passed; `tests/test_billing_sepay_postgres.py` 19
+passed (with `test_billing.py` and `test_billing_price_integrity.py`: 103).

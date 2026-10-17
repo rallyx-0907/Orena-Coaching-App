@@ -55,6 +55,14 @@ _NAPAS_GUID = "A000000727"
 _TRANSFER_TO_ACCOUNT = "QRIBFTTA"
 
 
+def _mask(identifier: str) -> str:
+    """An account or VA for a log or a report: never the whole value. Four characters or fewer are fully redacted;
+    longer values show at most their last four (review P1-1 of `10ff2080`)."""
+
+    value = str(identifier or "")
+    return "***" if len(value) <= 4 else f"***{value[-4:]}"
+
+
 def _tlv(tag: str, value: str) -> str:
     if len(value) > 99:
         raise ValueError(f"EMVCo field {tag} is longer than 99 characters")
@@ -163,9 +171,9 @@ class SePayGateway:
 
         return self.va_number or self.account_number
 
-    def __repr__(self) -> str:  # never the secret, the token, or a full account number (masked last four only)
-        va = f", va=***{self.va_number[-4:]}" if self.va_number else ""
-        return f"SePayGateway(account=***{self.account_number[-4:]}{va}, prefix={self.prefix!r}, feed={self.feed_enabled})"
+    def __repr__(self) -> str:  # never the secret, the token, or a full account number or VA (masked, see _mask)
+        va = f", va={_mask(self.va_number)}" if self.va_number else ""
+        return f"SePayGateway(account={_mask(self.account_number)}{va}, prefix={self.prefix!r}, feed={self.feed_enabled})"
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> SePayGateway:

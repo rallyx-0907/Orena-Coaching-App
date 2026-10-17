@@ -265,6 +265,22 @@ def test_no_full_main_account_or_va_appears_in_repr_or_the_readiness_report():
     assert "***" + ACCOUNT[-4:] in repr(sepay) and "***" + VA[-4:] in repr(sepay)
 
 
+@pytest.mark.parametrize("va", ["A", "AB12", "AB12C", "VQRAB12CD34E", "Z" * 19])
+def test_repr_never_contains_the_full_va_whatever_its_length(va):
+    """Review P1-1 of 10ff2080: a VA of four characters or fewer is fully redacted; a longer one shows only a suffix."""
+    text = repr(gateway(va_number=va))
+    shown = text.split("va=")[1].split(",")[0]
+    assert va not in shown and ACCOUNT not in text
+    assert shown == ("***" if len(va) <= 4 else "***" + va[-4:])
+
+
+@pytest.mark.parametrize("value", ["1", "1234", "12345", ACCOUNT])
+def test_the_mask_never_returns_a_whole_identifier(value):
+    from writing_coach.billing.sepay import _mask
+
+    assert value not in _mask(value)
+
+
 def test_receiving_still_needs_the_main_account_even_with_a_va():
     sepay = gateway(va_number=VA)
     main = sepay.verify(signed(payload()), payload(), now=NOW)
