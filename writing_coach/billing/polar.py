@@ -47,6 +47,8 @@ SUBSCRIPTION_EVENTS = frozenset({"subscription.created", "subscription.updated",
                                  "subscription.canceled", "subscription.uncanceled", "subscription.revoked",
                                  "subscription.past_due", "subscription.cycled"})  # fmt: skip
 REFUND_EVENTS = frozenset({"refund.created", "refund.updated"})
+# PR-MON-10 §4.3: a paid order (the first payment or a renewal) is evidence only - receipted, no access change.
+ORDER_EVENTS = frozenset({"order.paid"})
 
 
 def _keys(secret: str) -> list[bytes]:
@@ -147,6 +149,15 @@ class PolarGateway:
                 extra={**base["extra"], "refund_id": str(data.get("id") or ""),
                        "subscription_id": str(data.get("subscription_id") or ""),
                        "order_id": str(data.get("order_id") or "")},
+            )  # fmt: skip
+        if kind in ORDER_EVENTS:
+            return PaymentFact(
+                **{key: value for key, value in base.items() if key != "extra"}, kind="order",
+                external_reference=str(data.get("id") or "") or None, provider_state=kind,
+                amount_minor=minor_units(data.get("total_amount")),
+                currency=str(data.get("currency") or "").upper() or None,
+                extra={**base["extra"], "subscription_id": str(data.get("subscription_id") or ""),
+                       "billing_reason": str(data.get("billing_reason") or "")},
             )  # fmt: skip
         return PaymentFact(**base, kind="ignored", external_reference=None, provider_state=kind or None)
 

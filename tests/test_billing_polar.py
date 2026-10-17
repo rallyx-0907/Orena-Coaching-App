@@ -432,3 +432,146 @@ def test_a_late_webhook_of_a_deleted_incarnation_never_attaches_to_its_re_regist
     late = subscription_event("canceled", metadata={"orena_incarnation": "inc-1", "orena_operation": "op-1"})
     billing.handle_webhook("polar", *polar_request(late))
     assert [event["incarnation_id"] for event in commerce.events] == ["inc-A"]
+
+
+# ---- review of fdb613b0 -----------------------------------------------------------------------------------------
+
+class EvidenceCommerce:
+    """The commerce record's receipts: `record_evidence` is exactly-once per event id; it can be made to fail."""
+
+    def __init__(self, mapped=None, fail=False):
+        self.mapped, self.fail = mapped, fail
+        self.receipts: dict = {}
+        self.events: list = []
+
+    def get_provider_subscription(self, provider, external_id):
+        return self.mapped
+
+    def record_event(self, **kwargs):
+        self.events.append(kwargs)
+        return {"status": "apply"}
+
+    def record_evidence(self, **kwargs):
+        if self.fail:
+            raise OSError("database down")
+        key = (kwargs["provider"], kwargs["external_event_id"])
+        if key in self.receipts:
+            return {"status": "duplicate"}
+        self.receipts[key] = kwargs
+        return {"status": "recorded"}
+
+
+def order_paid(*, subscription="sub_1", metadata=None, reason="subscription_cycle"):
+    return {"type": "order.paid", "data": {
+        "id": "ord_1", "status": "paid", "billing_reason": reason, "subscription_id": subscription,
+        "total_amount": 499, "currency": "usd", "customer_id": "cus_1", "product_id": "prod_123",
+        "metadata": metadata if metadata is not None else {}}}
+
+
+def evidence_service(commerce, items=None):
+    return BillingService(orders=FakeOrders(), commerce=commerce, gateways={"polar": POLAR},
+                          prices={"premium:month:polar": USD_MONTH}, now=lambda: NOW,
+                          reconciliation=items if items is not None else FakeItems())  # fmt: skip
+
+
+def test_a_renewal_order_paid_is_a_durable_receipt_and_changes_no_access():
+    """Review P1-1: evidence only, but logged AND receipted before it is acknowledged."""
+
+    from tests.test_billing import polar_request
+
+    commerce = EvidenceCommerce(mapped={"incarnation_id": "inc-1"})
+    billing = evidence_service(commerce)
+    outcome = billing.handle_webhook("polar", *polar_request(order_paid()))
+    assert (outcome.status, outcome.detail) == ("recorded", "order_paid")
+    [receipt] = commerce.receipts.values()
+    assert receipt["incarnation_id"] == "inc-1" and receipt["external_object_reference"] == "ord_1"
+    assert receipt["external_event_id"] == "msg_1" and receipt["payload_digest"]
+    assert commerce.events == []   # never an access change
+    again = billing.handle_webhook("polar", *polar_request(order_paid()))   # Polar redelivers the same message
+    assert again.status == "duplicate" and len(commerce.receipts) == 1
+
+
+def test_a_first_payment_order_is_receipted_through_orenas_own_checkout():
+    from tests.test_billing import polar_request
+
+    commerce = EvidenceCommerce(mapped=None)   # the subscription event has not landed yet
+    first = order_paid(reason="subscription_create",
+                       metadata={"orena_incarnation": "inc-1", "orena_operation": "op-1", "orena_plan": "premium"})
+    assert evidence_service(commerce).handle_webhook("polar", *polar_request(first)).status == "recorded"
+    assert [r["incarnation_id"] for r in commerce.receipts.values()] == ["inc-1"]
+
+
+def test_an_order_naming_no_account_of_orena_is_an_operator_item_never_a_silent_ack():
+    from tests.test_billing import polar_request
+
+    items = FakeItems()
+    outcome = evidence_service(EvidenceCommerce(), items).handle_webhook("polar", *polar_request(order_paid()))
+    assert (outcome.status, outcome.detail) == ("unknown", "order_unmatched")
+    [item] = items.recorded
+    assert item["kind"] == "event_undecided" and item["reported_amount_minor"] == 499
+
+
+def test_an_order_paid_that_cannot_be_recorded_is_answered_503_for_a_retry(monkeypatch):
+    from tests.test_billing import polar_request
+
+    monkeypatch.setattr(billing_api, "_service", evidence_service(EvidenceCommerce(mapped={"incarnation_id": "inc-1"},
+                                                                                   fail=True)))
+    app = FastAPI()
+    app.include_router(billing_api.router)
+    headers, body = polar_request(order_paid())
+    answer = TestClient(app).post("/api/billing/webhooks/polar", content=body, headers=headers)
+    assert answer.status_code == 503   # nothing durable: Polar must deliver it again
+
+
+def test_paused_sales_close_checkout_but_webhooks_and_the_portal_keep_working(monkeypatch):
+    """Review P1-2: the rollback closes new sales only; a live subscription's lifecycle is still followed."""
+
+    from tests.test_billing import polar_request, subscription_event
+    from tests.test_billing_price_integrity import facts
+    from writing_coach.billing import readiness
+
+    commerce = EvidenceCommerce(mapped={"incarnation_id": "inc-1"})
+    service = checked(product())[0]
+    service._commerce = commerce
+    service._commerce.get_subscription = lambda incarnation: CARD
+    service._send = lambda request: {"customer_portal_url": PORTAL, "expires_at": "t"}
+    paused = facts(service=service, new_sales=False)
+    report = readiness.report(paused)
+    assert report["ready"] is False and report["blockers"] == ["new_sales_paused"]
+    assert report["checks"]["new_sales"] == "paused"
+    readiness.configure(paused)
+    try:
+        monkeypatch.setattr(billing_api, "_service", service)
+        monkeypatch.setattr(billing_api, "_ready", None)
+        monkeypatch.setattr(billing_api, "_public_base", "https://orena.example")
+        monkeypatch.setattr(billing_api, "current_user_key", lambda: "learner-1")
+        monkeypatch.setattr(billing_api, "_incarnation", lambda: "inc-1")
+        app = FastAPI()
+        app.include_router(billing_api.router)
+        client = TestClient(app)
+        assert client.get("/api/billing/offers").json()["offers"] == []
+        refused = client.post("/api/billing/checkout", json={
+            "price": "plus:month:polar", "operation_id": "6f1c1a2e-0000-4000-8000-000000000001", "amount_minor": 999,
+            "currency": "USD"})  # fmt: skip
+        assert refused.status_code == 503 and "billing_not_ready" in refused.text
+        event = subscription_event(product="prod_123")
+        received = client.post("/api/billing/webhooks/polar", content=polar_request(event)[1],
+                               headers=polar_request(event)[0])
+        assert received.status_code == 200 and received.json()["status"] == "apply"
+        assert client.post("/api/billing/portal").json()["url"] == PORTAL
+    finally:
+        readiness.configure(None)
+
+
+def test_an_escalated_item_is_closed_even_when_the_marker_was_lost():
+    """Review P2: marker removed after escalation, the DELETE answers 404 - the open item is still resolved."""
+
+    clock = [NOW]
+    worker, settings, items, _ = cleanup(500, 500, 404, clock=lambda: clock[0])
+    worker.clean("inc-old")
+    clock[0] = NOW + timedelta(hours=25)
+    worker.clean("inc-old")
+    assert len(items.recorded) == 1
+    settings.rows.clear()   # the marker (and its `escalated` flag) is lost
+    assert worker.clean("inc-old") == "complete"
+    assert [r["dedupe_key"] for r in items.resolved] == ["polar_customer_cleanup_failed:inc-old"]

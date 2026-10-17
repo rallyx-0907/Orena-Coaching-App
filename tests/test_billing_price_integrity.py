@@ -248,7 +248,8 @@ def test_billing_is_ready_only_when_every_runtime_capability_is():
         "capabilities": {"plans": {"ready": True, "blockers": []},
                          "credits": {"ready": False, "blockers": ["credits_not_configured"]}},
         "checks": {"switch": "on", "database": "postgresql", "account_backbone": "active", "commerce_schema": "present",
-                   "orders_schema": "present", "entitlement_source": "installed", "public_base_url": "https"}}  # fmt: skip
+                   "orders_schema": "present", "entitlement_source": "installed", "public_base_url": "https",
+                   "new_sales": "on"}}  # fmt: skip
 
 
 @pytest.mark.parametrize(("override", "blocker"), [

@@ -183,7 +183,9 @@ class PolarCustomerCleanup:
         except SettingConflict:
             return "conflict"
         if document["state"] == "complete":
-            if value.get("escalated") and self._items is not None:
+            # Always, not only when this marker says it escalated: a marker lost after escalation (a restore, a
+            # removed row) must not leave its operator item open (review P2 of fdb613b0). Closing none is harmless.
+            if self._items is not None:
                 self._items.auto_resolve(kind="event_undecided", gateway="polar", dedupe_key=self._dedupe(incarnation_id),
                                          outcome="recorded", note="the Polar customer clean-up completed",
                                          now=now)  # fmt: skip

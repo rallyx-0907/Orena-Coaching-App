@@ -48,6 +48,10 @@ class RuntimeFacts:
     service: Any | None  # the BillingService, None where billing is not built
     public_base_url: str
     production: bool
+    # PR-MON-10 rollback: `BILLING_NEW_SALES=off` closes new checkouts only. Webhooks, the customer portal, the
+    # reconciler and the Polar customer clean-up keep running - a live card subscription still renews on Polar,
+    # so its lifecycle must still be received (review P1-2 of fdb613b0).
+    new_sales: bool = True
 
 
 def _url_state(url: str) -> str:
@@ -66,10 +70,13 @@ def report(facts: RuntimeFacts) -> dict[str, Any]:
         "orders_schema": facts.orders_schema(),
         "entitlement_source": facts.entitlement_source(),
         "public_base_url": _url_state(facts.public_base_url),
+        "new_sales": "on" if facts.new_sales else "paused",
     }
     blockers: list[str] = []
     if not facts.switch:
         blockers.append("billing_off")
+    elif not facts.new_sales:
+        blockers.append("new_sales_paused")
     if facts.backend != "postgresql":
         blockers.append("database_not_postgresql")
     if facts.backbone != "active":

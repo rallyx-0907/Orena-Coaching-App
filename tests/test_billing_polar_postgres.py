@@ -117,3 +117,29 @@ def test_two_writers_of_one_marker_cannot_both_complete_it(world):
     world.settings.set_setting(marker_key(gone), {"state": "complete"}, updated_by="a", expected_updated_at=version)
     with pytest.raises(SettingConflict):
         world.settings.set_setting(marker_key(gone), {"state": "pending"}, updated_by="b", expected_updated_at=version)
+
+
+def test_order_paid_evidence_is_one_terminal_receipt_and_never_an_access_change(world):
+    """Review P1-1 of fdb613b0: a durable, idempotent receipt; the subscription record is untouched."""
+
+    from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
+
+    commerce = PostgresCommerceRepository(world.runtime)
+    owner = world.account()
+    before = world.sql("SELECT COUNT(*) AS n FROM commerce_subscriptions")[0]["n"]
+    first = commerce.record_evidence(incarnation_id=owner, provider="polar", external_event_id="msg_ord_1",
+                                     external_object_reference="ord_1", payload_digest="d1", note="evidence order.paid")
+    assert first["status"] == "recorded"
+    again = commerce.record_evidence(incarnation_id=owner, provider="polar", external_event_id="msg_ord_1",
+                                     external_object_reference="ord_1", payload_digest="d1", note="evidence order.paid")
+    assert again["status"] == "duplicate"
+    other = commerce.record_evidence(incarnation_id=owner, provider="polar", external_event_id="msg_ord_1",
+                                     external_object_reference="ord_1", payload_digest="d2", note="evidence order.paid")
+    assert other["status"] == "payload_conflict"
+    [row] = world.sql("SELECT processing_state, incarnation_id::text AS inc, external_object_reference AS ref "
+                      "FROM commerce_billing_event_receipts WHERE provider = 'polar' AND external_event_id = 'msg_ord_1'")
+    assert (row["processing_state"], row["inc"], row["ref"]) == ("ignored", owner, "ord_1")
+    assert world.sql("SELECT COUNT(*) AS n FROM commerce_subscriptions")[0]["n"] == before
+    missing = commerce.record_evidence(incarnation_id=str(uuid.uuid4()), provider="polar", external_event_id="msg_x",
+                                       external_object_reference=None, payload_digest=None, note="evidence")
+    assert missing["status"] == "rejected"

@@ -229,6 +229,41 @@ class PostgresCommerceRepository:
             {'inc': incarnation_id},
         ).mappings().one())
 
+    def record_evidence(self, *, incarnation_id: str, provider: str, external_event_id: str,
+                        external_object_reference: str | None, payload_digest: str | None,
+                        note: str) -> CommerceOutcome:
+        """A verified event that changes nothing (PR-MON-10 §4.3: Polar's `order.paid`), kept as a terminal
+        `ignored` receipt of its account: exactly once per (provider, event id), committed when this returns.
+        `recorded` the first time, `duplicate` on a redelivery, `payload_conflict` for a reused id with other
+        content, `rejected` for an incarnation that does not exist."""
+
+        with self._engine.begin() as connection:
+            if connection.execute(text('SELECT 1 FROM account_incarnations WHERE id = :inc'),
+                                  {'inc': incarnation_id}).first() is None:
+                return CommerceOutcome(status='rejected', reason='unknown_incarnation')
+            inserted = connection.execute(
+                text(
+                    'INSERT INTO commerce_billing_event_receipts '
+                    '(id, incarnation_id, provider, external_event_id, external_object_reference, '
+                    'payload_digest, processing_state, sanitized_failure_reason, received_at) VALUES '
+                    "(:id, :inc, :provider, :event, :ref, :digest, 'ignored', :note, :now) "
+                    'ON CONFLICT (provider, external_event_id) DO NOTHING RETURNING id'
+                ),
+                {'id': uuid.uuid4(), 'inc': incarnation_id, 'provider': provider, 'event': external_event_id,
+                 'ref': external_object_reference, 'digest': payload_digest, 'note': note[:400],
+                 'now': datetime.now(UTC)},
+            ).first()
+            if inserted is not None:
+                return CommerceOutcome(status='recorded')
+            stored = connection.execute(
+                text('SELECT payload_digest FROM commerce_billing_event_receipts '
+                     'WHERE provider = :provider AND external_event_id = :event'),
+                {'provider': provider, 'event': external_event_id},
+            ).scalar_one()
+            if stored and payload_digest and stored != payload_digest:
+                return CommerceOutcome(status='payload_conflict')
+            return CommerceOutcome(status='duplicate')
+
     def record_event(
         self, *, incarnation_id: str, provider: str, external_event_id: str,
         event_object_version: int | None, update: SubscriptionUpdate,

@@ -100,5 +100,20 @@ Any blocker names what is missing: fix it and recheck. Never work around a block
 
 ## Rollback
 
-Set `BILLING_ENABLED=off` and restart. New checkouts close, existing subscriptions keep renewing on Polar, and their
-webhooks are still received and recorded. To stop renewals, cancel the subscriptions on Polar.
+**Pause new sales (the safe rollback).** Set `BILLING_NEW_SALES=off` and restart.
+- Readiness then reports `new_sales_paused`: no offer, and every new checkout answers `503 billing_not_ready`.
+- Everything a live subscription needs keeps running:
+  - Polar webhooks are verified, recorded and applied (renewals, cancellations, `past_due`, revocations,
+    `order.paid` receipts);
+  - learners can still open the customer portal from Plan & usage to cancel or change their card;
+  - the reconciler and the deleted-account clean-up keep running.
+- Undo: `BILLING_NEW_SALES=on` (or empty) and restart.
+
+**Full stop (`BILLING_ENABLED=off`) is not a rollback for live subscriptions.** With billing off the application
+builds no billing service:
+- webhooks answer `503 billing_off`, and Polar retries them and may disable the endpoint;
+- the portal and the clean-up stop;
+- subscriptions keep renewing on Polar while Orena stops following them.
+
+Use it only after every subscription is cancelled on Polar, or for a short outage measured against Polar's webhook
+retry window, then replay the failed deliveries from Polar's dashboard.

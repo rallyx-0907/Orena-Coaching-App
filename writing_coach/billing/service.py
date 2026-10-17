@@ -757,6 +757,8 @@ class BillingService:
             return self._subscription(fact)
         if fact.kind == "refund":
             return self._refund(fact)
+        if fact.kind == "order":
+            return self._order_evidence(fact)
         # other verified events move no money: logged, no effect.
         _log.info("billing event from %s: %s %s", gateway_name, fact.kind, fact.provider_state)
         return WebhookOutcome("ignored", fact.kind)
@@ -800,6 +802,43 @@ class BillingService:
                 note="matched to its subscription's account; access follows subscription events", now=self._now()):
             return WebhookOutcome("recorded", "refund_matched")
         return WebhookOutcome("recorded", "refund_matched" if incarnation else "refund_unmatched")
+
+    def _order_evidence(self, fact: PaymentFact) -> WebhookOutcome:
+        """PR-MON-10 §4.3: Polar's `order.paid` (a first payment or a renewal) is evidence only. It is kept as a
+        durable, terminal receipt of the account it belongs to - never an access change - before it is acknowledged;
+        a write that fails raises, and the webhook answers 503 so Polar delivers it again. The account is the one
+        the subscription's stored mapping names, else Orena's own checkout order for it; neither is an operator
+        item, so nothing verified is acknowledged without a durable trace."""
+
+        extra = fact.extra or {}
+        subscription = str(extra.get("subscription_id") or "")
+        incarnation = None
+        if subscription:
+            mapped = self._commerce.get_provider_subscription(fact.gateway, subscription)
+            incarnation = str(mapped["incarnation_id"]) if mapped else None
+        if incarnation is None:
+            operation = str(extra.get("orena_operation") or "")
+            order = self._orders.order(operation_id=operation) if operation else None
+            incarnation = self._known_checkout(fact, order)
+        what = f"order {fact.external_reference} of subscription {subscription or '(none)'}"
+        if incarnation is None:
+            self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                       provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                       reported_amount_minor=fact.amount_minor, reported_currency=fact.currency,
+                       reason=f"{what} names no account of Orena")  # fmt: skip
+            return WebhookOutcome("unknown", "order_unmatched")
+        outcome = self._commerce.record_evidence(incarnation_id=incarnation, provider=fact.gateway,
+                                                 external_event_id=fact.event_id,
+                                                 external_object_reference=fact.external_reference,
+                                                 payload_digest=fact.payload_digest or None,
+                                                 note=f"evidence {fact.provider_state}")  # fmt: skip
+        status = str(outcome.get("status"))
+        if status in ("recorded", "duplicate"):
+            return WebhookOutcome(status, "order_paid")
+        self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                   provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                   reason=f"{status} {what}", incarnation_id=None if status == "rejected" else incarnation)  # fmt: skip
+        return WebhookOutcome("unknown", status)
 
     def _subscription(self, fact: PaymentFact) -> WebhookOutcome:
         from writing_coach.persistence.commerce_repository import SubscriptionUpdate

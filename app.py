@@ -1517,6 +1517,8 @@ from writing_coach.product.entitlement import COMMERCE_TABLES as _COMMERCE_TABLE
 
 _billing_readiness.configure(_billing_readiness.RuntimeFacts(
     switch=_billing_enabled(os.environ),
+    # PR-MON-10: pausing new sales keeps webhooks, the portal and the clean-up running (RUNBOOK_POLAR_ACTIVATION)
+    new_sales=os.getenv("BILLING_NEW_SALES", "on").strip().casefold() not in {"0", "false", "no", "off"},
     backend=str(_persistence_runtime.backend or ""),
     backbone=_account_backbone.state,
     commerce_schema=lambda: _schema_state(_COMMERCE_TABLES),
