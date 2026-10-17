@@ -127,7 +127,7 @@ class CheckoutIn(BaseModel):
 
 # A refused checkout's HTTP answer; anything not named is a conflict with the account's state (409).
 _REFUSAL_STATUS = {"catalog_unavailable": 503, "price_unconfirmed": 422, "reconciliation_critical": 503,
-                   "credits_not_ready": 503}
+                   "credits_not_ready": 503, "polar_price_mismatch": 503, "polar_unreadable": 503}
 
 
 class ResolveIn(BaseModel):

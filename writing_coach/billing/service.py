@@ -29,6 +29,8 @@ from __future__ import annotations
 import json
 import logging
 import re
+import threading
+import time
 import urllib.request
 import uuid
 from collections.abc import Callable, Mapping
@@ -204,6 +206,26 @@ def late_payment_grace() -> timedelta | None:
     return timedelta(hours=hours)
 
 
+POLAR_CHECK_SECONDS = 300.0  # a matching Polar-side answer is trusted this long (PR-MON-10 §4.6)
+POLAR_RETRY_SECONDS = 60.0   # an unreadable answer is asked again sooner
+
+
+def polar_product_matches(product: Mapping[str, Any], price: Price) -> bool:
+    """R-MON-011: the Polar product the prices file names sells exactly that price: not archived, recurring on the
+    price's period, and exactly one live fixed price of the same amount and currency."""
+
+    if not isinstance(product, Mapping) or product.get("is_archived"):
+        return False
+    if str(product.get("id") or "") != price.external_price_id or product.get("recurring_interval") != price.period:
+        return False
+    live = [entry for entry in product.get("prices") or []
+            if isinstance(entry, Mapping) and not entry.get("is_archived")]  # fmt: skip
+    if len(live) != 1:
+        return False
+    return (live[0].get("amount_type") == "fixed" and live[0].get("price_amount") == price.amount_minor
+            and str(live[0].get("price_currency") or "").upper() == price.currency)  # fmt: skip
+
+
 def _send(request: dict) -> dict:
     body = json.dumps(request["json"]).encode("utf-8") if "json" in request else None
     # A named client: a provider behind Cloudflare refuses the default Python agent (PR-MON-8 #249).
@@ -226,8 +248,15 @@ class BillingService:
                  send: Callable[[dict], dict] = _send, now: Callable[[], datetime] = lambda: datetime.now(UTC),
                  reconciliation: Any = None, credit_packs: Mapping[str, CreditPack] | None = None,
                  credits: Any = None, domestic: str | None = None, production: bool = False,
-                 grace: Callable[[], timedelta | None] = late_payment_grace) -> None:
+                 grace: Callable[[], timedelta | None] = late_payment_grace,
+                 polar_products: Callable[[str], Mapping[str, Any]] | None = None,
+                 clock: Callable[[], float] = time.monotonic) -> None:
         self._orders = orders
+        # PR-MON-10 §4.6: reads one Polar product by id (None: the Polar-side check is not wired, e.g. tests)
+        self._polar_products = polar_products
+        self._clock = clock
+        self._polar_check: tuple[float, str] | None = None
+        self._polar_lock = threading.Lock()
         # PR-MON-8 §5: the explicitly chosen domestic gateway (`BILLING_DOMESTIC_GATEWAY`), and whether this runtime is
         # production (only outside production may a single configured domestic gateway be inferred).
         self._domestic_choice = (domestic or "").strip().casefold() or None
@@ -419,6 +448,37 @@ class BillingService:
 
         return bool(self._credit_packs) or self._credits is not None
 
+    def polar_price_state(self) -> str:
+        """`match` | `mismatch` | `unreadable` | `unchecked`: every Polar plan price against Polar's own product
+        (R-MON-011), kept POLAR_CHECK_SECONDS (an unreadable answer POLAR_RETRY_SECONDS). Never raises."""
+
+        priced = [price for price in self._prices.values() if price.gateway == "polar"]
+        if self._polar_products is None or "polar" not in self._gateways or not priced:
+            return "unchecked"
+        now = self._clock()
+        cached = self._polar_check
+        if cached is not None and cached[0] > now:
+            return cached[1]
+        with self._polar_lock:
+            cached = self._polar_check
+            if cached is not None and cached[0] > now:
+                return cached[1]
+            state = "match"
+            for price in priced:
+                try:
+                    product = self._polar_products(price.external_price_id)
+                except Exception:  # noqa: BLE001 - an answer that cannot be read sells nothing
+                    _log.warning("billing: Polar product %s cannot be read", price.external_price_id, exc_info=True)
+                    state = "unreadable"
+                    break
+                if not polar_product_matches(product, price):
+                    _log.warning("billing: Polar product %s does not sell %s:%s", price.external_price_id,
+                                 price.plan_id, price.period)  # fmt: skip
+                    state = "mismatch"
+            ttl = POLAR_RETRY_SECONDS if state == "unreadable" else POLAR_CHECK_SECONDS
+            self._polar_check = (now + ttl, state)
+            return state
+
     def plans_capability(self, report: Mapping[str, Mapping[str, Any]] | None = None) -> dict[str, Any]:
         """Plans are sold by Polar only: configured, priced, every price the catalogue's, no critical item on it."""
 
@@ -436,6 +496,10 @@ class BillingService:
             blockers.append("reconciliation_unavailable")
         elif entry.get("reconciliation_critical"):
             blockers.append("reconciliation_critical")
+        if entry.get("provider_prices") == "mismatch":
+            blockers.append("polar_price_mismatch")
+        elif entry.get("provider_prices") == "unreadable":
+            blockers.append("polar_unreadable")
         return {"ready": not blockers, "blockers": blockers}
 
     def credits_capability(self) -> dict[str, Any]:
@@ -507,6 +571,10 @@ class BillingService:
                 entry["feed"] = "enabled" if getattr(gateway, "feed_enabled", False) else "disabled"
             if gateway is not None and getattr(gateway, "environment", None):
                 entry["environment"] = gateway.environment
+            if name == "polar" and gateway is not None:
+                entry["provider_prices"] = self.polar_price_state()
+                if entry["provider_prices"] in ("mismatch", "unreadable"):
+                    entry["ready"] = False
             if checks is None:
                 entry["catalog"] = "unavailable"
             report[name] = entry
@@ -536,6 +604,10 @@ class BillingService:
         critical = self._critical_blocked()
         if critical is None or price.gateway in critical:
             raise CheckoutRefused("reconciliation_critical")
+        provider = self.polar_price_state()
+        if provider in ("mismatch", "unreadable"):
+            # R-MON-011: Polar charges its product's own price; one that is not the catalogue's sells nothing.
+            raise CheckoutRefused("polar_price_mismatch" if provider == "mismatch" else "polar_unreadable")
         self._refuse_second_subscription(incarnation_id, price, gateway)
         order = self._orders.create_order(operation_id=operation_id, incarnation_id=incarnation_id,
                                           gateway=price.gateway, plan_id=price.plan_id, period=price.period,

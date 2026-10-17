@@ -1348,7 +1348,22 @@ def _billing_service():
                           reconciliation=PostgresReconciliationRepository(_persistence_runtime.engine),
                           # PR-MON-8 §5: the domestic gateway is an explicit choice; inferred only outside production.
                           domestic=domestic_choice(os.environ),
-                          production=os.getenv("APP_ENV", "").strip().casefold() == "production")
+                          production=os.getenv("APP_ENV", "").strip().casefold() == "production",
+                          # PR-MON-10 §4.6 (R-MON-011): Polar's own products are checked against the prices file
+                          polar_products=_polar_products(os.environ))
+
+
+def _polar_products(env):
+    """A read of one Polar product by id, when Polar is configured; None otherwise."""
+
+    from writing_coach.billing.polar import PolarGateway
+    from writing_coach.billing.service import _send
+
+    try:
+        polar = PolarGateway.from_env(env)
+    except Exception:  # noqa: BLE001 - Polar not configured: nothing to check
+        return None
+    return lambda product_id: _send(polar.product_request(product_id))
 
 
 def _sepay_feed(service):
