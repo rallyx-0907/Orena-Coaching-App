@@ -308,6 +308,9 @@ class BillingService:
         blockers = [blocker] if blocker else []
         if active == "sepay" and self._grace() is None:
             blockers.append("late_payment_grace_unset")
+        if active == "sepay" and self._production and not getattr(self._gateways.get("sepay"), "has_va", False):
+            # D-MON-030 / §13.3: production never shows a learner the main account - no VA, no SePay checkout
+            blockers.append("sepay_va_unset")
         return blockers
 
     def _domestic_sellable(self, gateway_name: str) -> bool:
@@ -436,6 +439,7 @@ class BillingService:
                     entry["ready"] = False
             if name == "sepay" and gateway is not None:
                 entry["late_payment_grace"] = "set" if self._grace() is not None else "unset"
+                entry["virtual_account"] = "set" if getattr(gateway, "has_va", False) else "unset"
                 entry["feed"] = "enabled" if getattr(gateway, "feed_enabled", False) else "disabled"
             if gateway is not None and getattr(gateway, "environment", None):
                 entry["environment"] = gateway.environment

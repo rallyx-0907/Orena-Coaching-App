@@ -523,3 +523,184 @@ An approved design authorizes implementation only, never a merge or an activatio
 - The public URL for test mode, and the live small-value transfer.
 - The late-payment grace: decided as 1 hour, to be configured explicitly on each runtime.
 - Production activation and every runtime migration.
+
+## 13. Revision 7 delta: the QR names a configured virtual account (owner decisions of 2026-10-17)
+
+**Status: DESIGNING (docs only), revision 7.1, for an independent delta re-review.** Revision 7.1 answers the review
+of `5b396941`: 2 P1, 2 P2 (§13.6). The delta changes only which identifier the VietQR carries, its validation, and a
+production readiness rule. Payment matching, locking, identity, the feed, reconciliation and secrets are unchanged.
+
+### 13.1 Facts observed (sandbox `:8031`, 2026-10-17)
+
+**SePay Test Mode:**
+- **The linked bank is VPBank**, the only bank that can currently be linked to SePay for the owner. Its NAPAS BIN is
+  `970432`. `SEPAY_BANK_BIN` was configured accordingly; the BIN was always configuration, never inferred.
+- **QR to the main account.** A banking app showed the bank, account, amount and memo correctly (gate 5 passed).
+- **VA transfers.** A test-mode transfer to a VPBank VA was matched and paid by today's code, unchanged:
+  - the webhook's and the v2 `account_number` are the **main** account;
+  - the VA is reported separately (v2 `va` / `va_id`);
+  - the reference, the code and `webhook_success` were as for a main-account transfer.
+- **The VA observed in this test was alphanumeric.** A VietQR naming it was accepted by a banking app, which showed the
+  VA, the amount and the memo, but **the owner's own name** as beneficiary. A VA hides the account number, not the
+  name.
+
+**SePay Live (gate 6):** one real small-value transfer to the **main account** was verified, paid once and refunded.
+No VA was tried in Live.
+
+**SePay's documentation** lists VPBank official VA as supported in **Test Mode**, but **not supported** in the current
+**Live** webhook support table. It also warns that Test Mode allows VA capabilities Live may not. A Test Mode VA
+therefore proves nothing about production.
+
+### 13.2 Owner decisions
+
+- Production uses **VPBank** through SePay (supersedes the VietinBank assumption of D-MON-024 / §3; the adapter was
+  bank-agnostic by configuration).
+- The memo keeps `SEVQR <PREFIX><code>`. `SEVQR` is a VietinBank requirement; it is harmless with VPBank, and SePay
+  parsed the code through it in Test Mode.
+- **The learner must not see the owner's main account number in production.** In production, SePay checkout is
+  therefore available **only with a VA**: without a valid VA it fails closed (§13.3).
+
+**Not decided:** that production *uses a VPBank VA*. That is a deployment fact still to be proven on the real Live
+account (gate 8, §13.5). If Live cannot provide a VA, production SePay checkout stays closed. The owner then chooses
+explicitly, by a new decision, between accepting main-account exposure (which amends D-MON-030) and another route
+(for example a household or business account, or a bank whose VA is supported in Live). Code never makes that choice.
+
+### 13.3 The change
+
+**Implemented capability.** Orena can generate a VietQR whose beneficiary is an explicitly configured VA:
+- **`SEPAY_VA_NUMBER`** (a value is a human gate). When it is set and valid, the VietQR's beneficiary (tag 38/01/01)
+  and the `transfer.account_number` returned by checkout are the VA.
+- **Receiving is unchanged.** A payment is accepted only when the webhook's or feed's `accountNumber` is
+  `SEPAY_ACCOUNT_NUMBER` (the main account), and it is matched only by the exact payment code, as in revisions 5-6. A
+  VA does not become a second receiving account; no amount or VA matching is added.
+- **Beneficiary validation.** The VietQR/NAPAS beneficiary identifier is accepted as `[0-9A-Z]{1,19}`; the main
+  account stays digits only, 6-19. No VA length or shape is assumed beyond that: one observed VA is not a format
+  invariant.
+- **A malformed VA** makes SePay not configured (`GatewayNotConfigured`), never a QR with a guessed account. The check
+  prints no secret and no account number.
+
+**Production rule (fail closed).**
+- With `APP_ENV=production` and SePay as the active domestic gateway, a missing VA adds the readiness blocker
+  **`sepay_va_unset`**. SePay is then not sellable, there is no checkout, and the runtime is not billing-ready.
+- A malformed VA makes the gateway not configured (above), so it is not ready either.
+- Outside production (development, test, the sandbox), checkout without a VA keeps today's main-account QR, for
+  compatibility.
+
+**Privacy contract.**
+- With a VA configured, the main account number appears in no QR and no checkout or API response.
+- **The full main account number is never logged**, in any mode. The gateway's `repr` and readiness show at most a
+  masked last-four suffix of the main account (`***1234`); the VA is shown masked the same way. Neither number is
+  ever logged in full.
+
+### 13.4 Tests
+
+- **VA in the QR:** with a VA, tag 38/01/01 is the VA, and the main account appears nowhere in the QR or the checkout
+  response. The CRC is checked with an independent implementation (`binascii.crc_hqx`, CRC-16/CCITT-FALSE).
+- **Without a VA, outside production:** today's QR and the two published known-answer vectors are unchanged.
+- **Production without a VA:** `sepay_va_unset` is a readiness blocker; SePay is not sellable; checkout is refused
+  (`price_not_offered`); the runtime is not billing-ready.
+- **Malformed VA:** lower case, punctuation or more than 19 characters means the gateway is not configured.
+- **Valid VA in production:** SePay can become ready, subject to the remaining gates.
+- **Logging:** `repr` and readiness never contain the full main account or the full VA.
+- **Receiving:** a webhook whose `accountNumber` is the main account and whose code names the order is paid. A
+  webhook whose `accountNumber` is the VA (not observed, but never trusted) is `ignored`, as today.
+
+### 13.5 Activation gate 8: the VA on the real Live account
+
+Production activation with `SEPAY_VA_NUMBER` requires evidence, from the **real Live SePay-linked account**, that:
+1. the VA exists and belongs to that account;
+2. a banking app can transfer to it;
+3. SePay observes the transaction (webhook and v2);
+4. the payment code and bank-reference behaviour stay correct;
+5. Orena receives the transaction under the expected main-account identity, with the VA as metadata;
+6. exactly-once payment still holds (a re-delivery is a duplicate).
+
+This review authorizes no live-money test. Gate 8 is a later human gate, run like gate 6 (one small-value transfer,
+then the operator's refund).
+
+### 13.6 Review of `5b396941` and the answers (revision 7.1)
+
+| Finding | Revision 7.1 |
+| --- | --- |
+| **P1-1:** Test Mode VA treated as a production fact; Live does not list VPBank official VA as supported | §13.1 separates Test Mode, Live and documentation evidence. §13.2 no longer says production uses a VPBank VA. §13.3 calls the VA an implemented capability. §13.5 adds activation gate 8. |
+| **P1-2:** VA optional while D-MON-030 forbids exposing the main account | The recommended contract: production plus SePay without a valid VA fails closed (`sepay_va_unset`); development/test keep the fallback. D-MON-030 is restated to match. Accepting exposure would need a new, explicit owner decision. |
+| **P2-1:** "not in a log" was ambiguous against `repr`'s masked suffix | The contract says the full main account number is never logged, and a masked last-four is acceptable. A test asserts it. |
+| **P2-2:** "12 alphanumeric characters" read as an invariant | Reworded: the observed VA was alphanumeric, and the identifier is accepted as `[0-9A-Z]{1,19}`. |
+
+### 13.7 Not changed, and residual
+
+- **RR-8.2.** The payer still sees the owner's own name. A household or business account removes that; it is outside
+  PR-MON-8.
+- **RR-8.3.** Live VPBank VA support is not established (§13.5). Production SePay checkout stays closed until gate 8
+  passes or the owner decides otherwise.
+- `SEVQR` stays in the memo (owner decision).
+- The User-Agent fix (#249) is separate and independent of this delta.
+
+### 13.8 Delta re-review of `eed8e3a7`: APPROVED FOR IMPLEMENTATION
+
+Reviewer: ChatGPT / GPT-5.6 Sol. P0 0, P1 0, blocking P2 0; CI 38994062827. All four findings of the `5b396941` review
+are closed. Approved scope:
+- `SEPAY_VA_NUMBER`, an alphanumeric VietQR beneficiary, and the VA in the QR and the checkout response;
+- the production `sepay_va_unset` blocker, so production checkout fails closed without a VA;
+- masking, and tests for it;
+- unchanged main-account-only receiving and matching.
+
+The approval does not establish Live VA support: that is gate 8.
+
+**Gate 8 evidence (2026-10-17, owner-authorized, `:8031` sandbox on `main` `9ebd25f3`, Live credentials):** one real
+2,000 VND transfer to the Live VPBank VA (order 100004) passed all six conditions:
+1. the VA exists on the Live account, and v2 reports it in `va`;
+2. a banking app paid it;
+3. the Live webhook was answered 200, and the transaction appears in Live v2 with `webhook_success = 1`;
+4. `code = ORN100004`. The **raw bank reference** is v2 `reference_number`, which is the webhook's `referenceCode`.
+   Orena's **payment event identity** is derived from it as `sepay:ref:<main account>:<reference>` and stored as the
+   order's `paid_event_id`. The check was `paid_event_id == "sepay:ref:" + <main account> + ":" + <v2
+   reference_number>`, and it held. Because `paid_event_id` was derived from the webhook's `referenceCode`, this also
+   proves that the webhook `referenceCode` equals the v2 `reference_number`. No account or reference value was printed
+   (correction of the review of `10ff2080`, P1-2; the evidence is the same check, worded precisely);
+5. the v2 `account_number` is the main account, with the VA as separate metadata, and the order was paid;
+6. a signed re-delivery of the same transfer through the tunnel answered 200 and left the order unchanged (same event,
+   `paid_at` and `paid_sequence`, no item, plan still active).
+
+The operator then refunded the transfer and recorded it: the order is `refunded` and the access ended. No number or
+secret was printed during the checks.
+
+### 13.9 Implementation of revision 7.1 (for independent implementation review)
+
+The implementation is code commit `f4f1d5e5`, synced with `main` afterwards. Changes:
+- **`writing_coach/billing/sepay.py`:**
+  - `_BENEFICIARY = [0-9A-Z]{1,19}` for the VietQR beneficiary (the main account stays digits 6-19);
+  - `SEPAY_VA_NUMBER` (`va_number`): a malformed value raises `GatewayNotConfigured`;
+  - `has_va` and `qr_account`;
+  - `domestic_checkout` puts the VA (when set) in the QR and in `transfer.account_number`;
+  - `repr` masks both numbers to the last four.
+- **`writing_coach/billing/service.py`:** `domestic_blockers` adds `sepay_va_unset` in production with SePay active
+  and no VA (so SePay is not sellable and there is no checkout); `gateway_report` shows `virtual_account` as
+  set/unset.
+- **`.env.example`:** the variable name.
+
+Tests in `tests/test_billing_sepay.py` (89, hermetic):
+- with a VA, the QR and the checkout response name it and never the main account, with an independent CRC check
+  (`binascii.crc_hqx`);
+- without a VA, the QR is unchanged;
+- a malformed VA (lower case, `-`, space, 20 characters, non-ASCII) refuses the configuration;
+- production without a VA: `sepay_va_unset`, not sellable, checkout refused, readiness not billing-ready;
+- production with a valid VA has no VA blocker, and development keeps the fallback;
+- no full main account and no full VA in `repr` or the readiness report;
+- a webhook to the VA's number is `ignored`, so receiving stays the main account.
+
+`tests/test_billing_sepay_postgres.py`: 19 passed, with the production fixture now carrying a VA.
+
+Local evidence (not CI): full SQLite 7328 passed. Every PostgreSQL file: 445 passed plus 1 inherited failure (#160).
+
+### 13.10 Implementation review of `10ff2080` (ChatGPT / GPT-5.6 Sol): REQUEST CHANGES (3 P1), and the fixes
+
+| Finding | Fix |
+| --- | --- |
+| **P1-1:** a VA of 1-4 characters appeared in full in `repr` (`***` + last four) | One helper, `_mask`, is used for both identifiers: four characters or fewer are fully redacted (`***`); a longer value shows at most its last four. Parameterized tests for VA lengths 1, 4, 5, 12 and 19 assert the full VA is never in `repr`, and `_mask` never returns a whole identifier. |
+| **P1-2:** gate 8 evidence named the wrong relationship (reference = event id) | §13.8 now separates the raw bank reference (v2 `reference_number` = webhook `referenceCode`) from Orena's derived payment event id (`sepay:ref:<account>:<reference>`). The existing check already verified exactly that derivation, so no new money transfer was needed. |
+| **P1-3:** `BILLING_STATUS.md` was stale | Updated to the current `main`, #249 merged, revision 7.1 approved, #250's implementation state and review, gate 8 and the current evidence. History is preserved. |
+
+
+Tests after the fixes (local, not CI): `tests/test_billing_sepay.py` 98 passed; `tests/test_billing_sepay_postgres.py` 19
+passed (with `test_billing.py` and `test_billing_price_integrity.py`: 103).
