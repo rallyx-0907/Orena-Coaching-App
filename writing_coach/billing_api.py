@@ -34,7 +34,7 @@ from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from writing_coach.billing.service import CheckoutRefused
+from writing_coach.billing.service import CREDIT_PREFIX, CheckoutRefused
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_user_key
 from writing_coach.persistence.ids import stable_uuid
@@ -70,6 +70,16 @@ def _billing_ready() -> bool:
     from writing_coach.billing import readiness
 
     return readiness.billing_ready()
+
+
+def _capability_ready(name: str) -> bool:
+    """`plans` or `credits` (PR-MON-8 §14.4): offers and checkouts open per capability, never the other's."""
+
+    if _ready is not None:
+        return bool(_ready())
+    from writing_coach.billing import readiness
+
+    return readiness.capability_ready(name)
 
 
 def _require_service() -> Any:
@@ -136,15 +146,19 @@ class RefundIn(BaseModel):
 @router.get("/api/billing/offers")
 def billing_offers() -> dict[str, Any]:
     ready = _service is not None and _billing_ready()
-    return {"enabled": _service is not None, "ready": ready, "offers": _service.offered() if ready else [],
-            # PR-MON-5 (K5): credit packs, only while credits are ready and packs are configured
-            "credit_packs": _service.credit_offers() if ready else []}
+    plans = ready and _capability_ready("plans")
+    credits = ready and _capability_ready("credits")
+    return {"enabled": _service is not None, "ready": ready, "offers": _service.offered() if plans else [],
+            # PR-MON-5 (K5): credit packs, only while the Credits capability is ready (PR-MON-8 §14.4)
+            "credit_packs": _service.credit_offers() if credits else []}
 
 
 @router.post("/api/billing/checkout")
 def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
     service = _require_service()
-    if not _billing_ready():  # before an order is written or a gateway is called
+    capability = "credits" if payload.price.startswith(CREDIT_PREFIX) else "plans"
+    # before an order is written or a gateway is called; a capability that is not ready sells nothing (§14.4)
+    if not _billing_ready() or not _capability_ready(capability):
         raise orena_http_error(503, "billing_not_ready", "Payments are not open right now. Try again later.",
                                retryable=True)
     if current_user_key() in {"", "legacy", "local-admin"}:
