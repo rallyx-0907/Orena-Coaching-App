@@ -101,6 +101,7 @@ for (const ui of ['en', 'vi', 'zh']) {
   const money = (value) => new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(value);
   const markup = String(costsPage({ report, accounts, days: 30, failed: false, ui, href }));
   assert.ok(markup.includes(escape(words.costReal)) && markup.includes(escape(money(0.5))), `${ui}: real spend is a metric`);
+  assert.ok(markup.includes('data-to="#/adminPolicies"'), `${ui}: the cost page offers Policies & limits, where the free-tier flags are`);
   assert.ok(markup.includes(escape(words.costFreeValue)) && markup.includes(escape(money(1))), `${ui}: free-tier value is its own metric`);
   assert.ok(markup.includes(escape(words.costUnknownTier.replace('{amount}', money(0.25)))), `${ui}: the unstamped total is told apart`);
   for (const amount of [1, 0.4, 0.2]) assert.ok(markup.includes(`${escape(words.costFreeTier)}</span> ${escape(words.costListAt.replace('{amount}', money(amount)))}`), `${ui}: a row says Free tier, ~${amount} at list price, on its own line with the pill`);
@@ -128,5 +129,14 @@ for (const provider of ['groq', 'supadata', 'gemini']) assert.ok(policies.includ
 
 const css = fs.readFileSync('static/orena/screens/admin/admin.css', 'utf8');
 assert.match(css, /@media \(max-width: 720px\) \{\s*\.a-metrics \{\s*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/, 'the metrics strip reflows to two by two on a phone');
+
+/* The AI page offers the same two places in its header (D-220): cost and Policies & limits. */
+{
+  const { listPage } = await import('../static/orena/screens/admin/ai-pages.js');
+  copyIndex.setLanguages({ ui: 'en', support: 'en' });
+  const { t } = await import('../static/orena/screens/admin/copy.js');
+  const markup = String(listPage({ state: { providers: [], routes: [], capabilities: [], tokens: null, usage: null, status: {} }, view: { tab: 'prov', query: '' }, t, ui: 'en', href, now: Date.now() }).markup);
+  assert.ok(markup.includes('data-to="#/adminAiCosts"') && markup.includes('data-to="#/adminPolicies"'), 'the AI page header offers AI cost and Policies & limits');
+}
 
 console.log('admin cost tier gate: ok');

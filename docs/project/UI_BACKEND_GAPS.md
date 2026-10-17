@@ -6350,6 +6350,10 @@ The pinned admin design (`Orena-Admin.dc.html`) draws no cost page (D-128), so t
 
 Backend gaps: (1) `ai_cost_records` has no tier column and a column is a schema change (a human gate); the per-account split is derived from the flag's audit history and is approximate by that much. (2) Events written before 2026-10-16 carry no stamp: they are shown as "Before the tier was recorded", in neither real spend nor free-tier value. (3) Supadata is billed in credits, not dollars; its free-tier value cannot be shown in dollars, only as request counts.
 
+## Admin: Policies & limits reachable from the AI, cost and Operations pages (D-220, 2026-10-16)
+
+Owner report: on `#/admin/ai` there was no "Policies & limits" (it was the last row of the Operations page). The pinned admin design draws neither page (D-128, D-172), so no frame says where the link belongs. The kit's existing page-head action (the pattern the Users page uses for Plans and Feedback) now carries "Policies & limits" on the AI page and on the AI cost page; the Operations page lists it first in its nav card (#247). No new component. Open for the human: whether the design wants a dedicated Spend entry in the area navigation instead.
+
 
 ## Admin page blocks: two independent columns, not the design's row grid (owner request 2026-10-16)
 

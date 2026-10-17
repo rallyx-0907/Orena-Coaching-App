@@ -12,7 +12,9 @@ bucket a computed amount is reported in:
 
 * `real`     - the event was stamped `free_tier: false`; this is what is actually spent;
 * `free`     - stamped `free_tier: true`; the estimated value of what the free plan covered;
-* `unknown`  - no stamp (an event written before D-219). Reported apart, never added to real spend or to free value.
+* `unknown`  - no stamp (an event written before D-219) AND no way to tell from the flag's history (D-220, PROPOSED:
+               an unstamped event is otherwise placed by the history, see `FlagTimeline.tier_at`). Reported apart,
+               never added to real spend or to free value.
 
 Where a stamp lives: the media spend ledger (a JSON file) and the `ai.operation` telemetry payload (JSON) carry it.
 `ai_cost_records` has no free-form column and its schema is a human gate, so its tier is DERIVED from the flag's
@@ -20,7 +22,7 @@ change history in the audit log (`FlagTimeline`), at the instant of each record.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime
 from typing import Any
 
@@ -59,22 +61,62 @@ def stamp(provider: object, env: Mapping[str, str] | None = None) -> dict[str, A
     return {"provider": _provider(provider)[:40], "free_tier": is_free_tier(provider, env)}
 
 
-def tier_of(event: Mapping[str, Any]) -> str:
-    """`free`, `real` or `unknown` for one stamped (or unstamped) event."""
+def _event_time(event: Mapping[str, Any]) -> datetime | None:
+    try:
+        when = datetime.fromisoformat(str(event.get("at") or ""))
+    except ValueError:
+        return None
+    return when if when.tzinfo else when.replace(tzinfo=UTC)
+
+
+def tier_of(event: Mapping[str, Any], tier_at: Callable[[object, datetime], str] | None = None) -> str:
+    """`free`, `real` or `unknown` for one stamped (or unstamped) event.
+
+    A stamp always wins. An event with no stamp (written before D-219) is `unknown` unless `tier_at` is given
+    (D-220, PROPOSED): then it takes the tier the flag's history gives for its provider at its time, which is `real`
+    for a provider whose flag was never on (or that has no flag) and `free` for one whose flag was always on."""
     flag = event.get("free_tier")
     if flag is True:
         return TIER_FREE
     if flag is False:
         return TIER_REAL
-    return TIER_UNKNOWN
+    when = _event_time(event)
+    if tier_at is None or when is None:
+        return TIER_UNKNOWN
+    return tier_at(event.get("provider"), when)
 
 
-def split(events: list[Mapping[str, Any]], amount: str = "usd") -> dict[str, float]:
+def split(events: list[Mapping[str, Any]], amount: str = "usd",
+          tier_at: Callable[[object, datetime], str] | None = None) -> dict[str, float]:
     """Sum `amount` of events into the three buckets."""
     totals = {TIER_REAL: 0.0, TIER_FREE: 0.0, TIER_UNKNOWN: 0.0}
     for event in events:
-        totals[tier_of(event)] += float(event.get(amount) or 0)
+        totals[tier_of(event, tier_at)] += float(event.get(amount) or 0)
     return {name: round(value, 8) for name, value in totals.items()}
+
+
+def reclassify_unstamped(rows: list[dict[str, Any]], pieces: list[tuple[datetime, list[dict[str, Any]]]],
+                         tier_at: Callable[[object, datetime], str], *, last_unknown: bool = False) -> list[dict[str, Any]]:
+    """Move the unstamped amount of report rows out of `usd_unknown` by the flag's history (D-220, PROPOSED).
+
+    `rows` are `ai_cost_rows` rows (by day, capability, provider, model); `pieces` are `(start, unstamped rows)` for each
+    stretch of time between two flag changes, the rows having the same keys and a `usd` that is the unstamped amount.
+    Each piece is classified by `tier_at(provider, start)`. Nothing is added or removed from `usd`, so no cap moves."""
+    keyed = {(r["day"], r["capability"], r["provider"], r["model"]): r for r in rows}
+    names = {TIER_REAL: "usd_real", TIER_FREE: "usd_free", TIER_UNKNOWN: "usd_unknown"}
+    for index, (start, unstamped) in enumerate(pieces):
+        ambiguous = last_unknown and index == len(pieces) - 1
+        for item in unstamped:
+            target = keyed.get((item["day"], item["capability"], item["provider"], item["model"]))
+            if target is None:
+                continue
+            amount = float(item.get("usd") or 0)
+            tier = TIER_UNKNOWN if ambiguous else tier_at(item["provider"], start)
+            if tier == TIER_UNKNOWN:
+                continue
+            target["usd_unknown"] = round(target["usd_unknown"] - amount, 8)
+            target[names[tier]] = round(target[names[tier]] + amount, 8)
+    return rows
 
 
 # --- the flag's history, for a record that carries no stamp -------------------------------------------------------
@@ -118,6 +160,8 @@ class FlagTimeline:
         stored value yet no retained audit row explains it: the history is missing, and calling it free could hide real
         spend. A flag that is OFF, or that is its untouched default, needs no history."""
         name = _provider(provider)
+        if not name:
+            return TIER_UNKNOWN  # an event that names no provider cannot be placed on any plan
         if name in PROVIDERS and name not in self._changes and name in self._stored and self._current.get(name) and name not in self._pinned:
             return TIER_UNKNOWN
         return TIER_FREE if self.is_free(provider, at) else TIER_REAL

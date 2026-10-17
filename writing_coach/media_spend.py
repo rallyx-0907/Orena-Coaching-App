@@ -238,11 +238,13 @@ class SpendLedger:
             "estimated": True,
         }
 
-    def totals(self, days: int = 30) -> dict[str, Any]:
+    def totals(self, days: int = 30, tier_at: Any = None) -> dict[str, Any]:
         """Spend over the last `days` UTC days split by tier, for the Admin cost page (D-219).
 
         `real_usd` sums only events stamped `free_tier: false`; `free_tier_usd` is the list-price value of the
-        free-plan events; `unknown_tier_usd` is events with no stamp. `requests` counts the credit-priced Supadata rows,
+        free-plan events; `unknown_tier_usd` is events with no stamp that the flag's history cannot place. With `tier_at`
+        (`FlagTimeline.tier_at`, D-220 PROPOSED) an unstamped event is placed by its provider's flag at its time:
+        a paid provider's past spend is real, a free plan's is free. `requests` counts the credit-priced Supadata rows,
         which have no dollar amount."""
         bounded = max(1, min(int(days), 365))
         today = _now().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -255,7 +257,7 @@ class SpendLedger:
             row = providers.setdefault(name, {"provider": name, "real_usd": 0.0, "free_tier_usd": 0.0,
                                               "unknown_tier_usd": 0.0, "events": 0, "requests": 0,
                                               "requests_by_tier": {"real": 0, "free": 0, "unknown": 0}})
-            tier = cost_tier.tier_of(event)
+            tier = cost_tier.tier_of(event, tier_at)
             key = {cost_tier.TIER_REAL: "real_usd", cost_tier.TIER_FREE: "free_tier_usd",
                    cost_tier.TIER_UNKNOWN: "unknown_tier_usd"}[tier]
             row[key] += float(event.get("usd") or 0)
@@ -266,7 +268,7 @@ class SpendLedger:
         for row in providers.values():
             for key in ("real_usd", "free_tier_usd", "unknown_tier_usd"):
                 row[key] = round(row[key], 6)
-        tiers = cost_tier.split(events)
+        tiers = cost_tier.split(events, tier_at=tier_at)
         return {
             "days": bounded, "since": since, "currency": "USD",
             "real_usd": round(tiers[cost_tier.TIER_REAL], 6),

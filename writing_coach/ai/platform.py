@@ -1333,28 +1333,66 @@ def admin_ai_costs(request: Request, days: int = 30) -> dict[str, Any]:
     bounded = max(1, min(int(days), 90))
     now = datetime.now(UTC)
     since = datetime(now.year, now.month, now.day, tzinfo=UTC) - timedelta(days=bounded - 1)
-    reader = getattr(_installed_platform_repository(), "ai_cost_rows", None)
+    repository = _installed_platform_repository()
+    reader = getattr(repository, "ai_cost_rows", None)
     rows = reader(since) if callable(reader) else []
+    timeline = _flag_timeline(repository)
+    if timeline is not None:
+        rows = _place_unstamped_rows(repository, rows, timeline, since, now)
     report = cost_report(rows, days=bounded, since=since)
-    report["media"] = _media_spend_totals(bounded)
+    report["media"] = _media_spend_totals(bounded, timeline.tier_at if timeline is not None else None)
     return report
+
+
+def _flag_timeline(repository: Any) -> Any:
+    """The free-tier flags' history from the audit log, or None where it cannot be read (the archive store)."""
+
+    history = getattr(repository, "policy_change_history", None)
+    if not callable(history):
+        return None
+    from writing_coach import cost_tier
+    from writing_coach import policies as _policies
+
+    # The whole history is read (the table is a handful of rows): a flag stored ON that no audit row explains is
+    # "unknown" for the window, never silently free.
+    return cost_tier.timeline_from_audit(
+        history(datetime(2000, 1, 1, tzinfo=UTC)),
+        pinned=frozenset(name for name in cost_tier.PROVIDERS if _policies.is_pinned(cost_tier.flag_key(name))),
+        stored=frozenset(name for name in cost_tier.PROVIDERS if _policies.has_admin_value(cost_tier.flag_key(name))))
+
+
+def _place_unstamped_rows(repository: Any, rows: list[dict[str, Any]], timeline: Any, since: datetime,
+                          now: datetime) -> list[dict[str, Any]]:
+    """D-220 (PROPOSED): events written before D-219 carry no stamp. Place them by the flag's history instead of leaving
+    them "unknown": a paid provider's past spend is real, a free plan's is free; a history that cannot say stays unknown.
+    The total `usd` (and so every cap) is untouched."""
+
+    from writing_coach import cost_tier
+
+    reader = getattr(repository, "ai_unstamped_cost_rows", None)
+    if not callable(reader) or not any(row.get("usd_unknown") for row in rows):
+        return rows
+    boundaries = timeline.boundaries(since, now)
+    edges = [since, *boundaries[:200], now + timedelta(seconds=1)]
+    pieces = [(start, reader(start, end)) for start, end in zip(edges, edges[1:], strict=False)]
+    return cost_tier.reclassify_unstamped(rows, pieces, timeline.tier_at, last_unknown=len(boundaries) > 200)
 
 
 # The media processing spend lives in its own ledger (media_spend.py); app.py registers its reader here so the one cost
 # page can show both stores without this module importing the media pipeline.
-_media_spend_reader: Callable[[int], dict[str, Any]] | None = None
+_media_spend_reader: Callable[..., dict[str, Any]] | None = None
 
 
-def register_media_spend_reader(reader: Callable[[int], dict[str, Any]] | None) -> None:
+def register_media_spend_reader(reader: Callable[..., dict[str, Any]] | None) -> None:
     global _media_spend_reader
     _media_spend_reader = reader
 
 
-def _media_spend_totals(days: int) -> dict[str, Any] | None:
+def _media_spend_totals(days: int, tier_at: Any = None) -> dict[str, Any] | None:
     if _media_spend_reader is None:
         return None
     try:
-        return _media_spend_reader(days)
+        return _media_spend_reader(days, tier_at)
     except Exception:  # noqa: BLE001 - an unreadable ledger leaves the block out; it never fails the report
         return None
 
