@@ -16,13 +16,25 @@ say nothing about tool selection.
 Live (`--live`) the same conversations go to a real provider, one model for all layouts, and the script records what
 only the provider can show: cached and uncached input tokens per round, output tokens, rounds and tool calls per turn
 (for tool-selection parity between layouts), first-token and full-response latency, and the cost at the prices given
-on the command line. It will not run without `--approved` and `--cap-usd`, adds each round's worst case to the spend
-before sending it, and stops at the cap. The key is read from the provider's environment variable and never printed.
+on the command line. It will not run without `--approved` and `--cap-usd`. Before each round is sent, its worst case
+(every input byte a token, at the uncached rate, plus the round's whole output allowance) is reserved against the cap;
+a round whose reservation would cross the cap is never sent and the run stops. When the round ends, its reservation is
+replaced by its measured cost; a round that ended without reported usage keeps its reservation (counted, not
+measured). `spent_usd` is the measured cost only; `unmeasured_reserved_usd` is what was held for rounds without usage. The key is read from the provider's environment variable and never printed.
 Results go to a JSON file outside the repository.
+
+Answer quality (A2, issue #256): every turn's learner message and Orena's answer are kept in the result (cut to
+`ANSWER_CHARS`), and `--answers-md` writes them side by side - per turn, one column per layout and pack setting - for
+a person to read. `--pack on|both` adds the learner pack (writing_coach/agent/memory_pack.py) built from a fixed
+fixture learner per language (`PACK_FIXTURES`; no database), so the same conversation can be read with and without
+it. `--exclude-tools` drops tools this environment cannot serve (for example `get_word_detail` where the library
+repository is not installed), so their errors do not change the rounds after them.
 
     python scripts/agent_prompt_cache_benchmark.py
     python scripts/agent_prompt_cache_benchmark.py --live --provider gemini --model gemini-3.5-flash-lite \\
         --approved --cap-usd 0.30 --price-in 0.30 --price-cached 0.03 --price-out 2.50 --repeat 2 --out /tmp/m0.json
+    python scripts/agent_prompt_cache_benchmark.py --live ... --layouts legacy --pack both \\
+        --exclude-tools get_word_detail --out /tmp/pack.json --answers-md /tmp/pack_answers.md
 """
 
 from __future__ import annotations
@@ -32,7 +44,8 @@ import json
 import os
 import sys
 import time
-from collections.abc import Callable, Iterator
+from datetime import UTC, datetime
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -43,6 +56,7 @@ sys.path.insert(0, str(ROOT))
 os.environ.setdefault("PERSISTENCE_BACKEND", "sqlite")
 
 from writing_coach.agent.fake_provider import FakeAgentTurnProvider, call_tools, reply  # noqa: E402
+from writing_coach.agent.memory_pack import PackBuilder, PackSources  # noqa: E402
 from writing_coach.agent.platform_provider import wire_message, wire_tool  # noqa: E402
 from writing_coach.agent.prompts import TURN_CONTEXT_HEAD, PromptLayout  # noqa: E402
 from writing_coach.agent.provider import (  # noqa: E402
@@ -56,7 +70,8 @@ from writing_coach.agent.schemas import TurnRequest  # noqa: E402
 from writing_coach.agent.summary import INSTRUCTION as _SUMMARY_INSTRUCTION  # noqa: E402
 
 SUMMARY_HEAD = _SUMMARY_INSTRUCTION[:40]
-from writing_coach.agent.tools import LearnerScope  # noqa: E402
+from writing_coach.agent.tokens import estimate_tokens as byte_tokens  # noqa: E402 - an upper bound: one per byte
+from writing_coach.agent.tools import LearnerScope, ToolRegistry  # noqa: E402
 
 LAYOUTS = {
     "legacy": PromptLayout(cache_stable=False, stable_tools=False),
@@ -141,24 +156,53 @@ class Recorder:
     inner: Any
     requests: list[ProviderTurnRequest] = field(default_factory=list)
     rounds: list[dict[str, Any]] = field(default_factory=list)
-    before_round: Callable[[ProviderTurnRequest], None] | None = None
+    answers: list[dict[str, Any]] = field(default_factory=list)  # per learner turn: the message and Orena's answer
+    ledger: CostLedger | None = None  # live: the cap, reserved per round before it is sent
 
     def stream(self, req: ProviderTurnRequest, *, should_stop: Callable[[], bool] = never_stop) -> Iterator[Any]:
-        if self.before_round is not None:
-            self.before_round(req)
+        reserved = self.ledger.reserve(req) if self.ledger is not None else 0.0  # raises before anything is sent
         self.requests.append(req)
         started = time.perf_counter()
         record: dict[str, Any] = {"first_event_s": None, "tool_calls": [], "tool_choice": req.tool_choice}
         self.rounds.append(record)
-        for event in self.inner.stream(req, should_stop=should_stop):
-            if record["first_event_s"] is None:
-                record["first_event_s"] = round(time.perf_counter() - started, 3)
-            if isinstance(event, ToolCallRequest):
-                record["tool_calls"].append(event.name)
-            elif isinstance(event, TurnFinished):
-                record.update(total_s=round(time.perf_counter() - started, 3), input_tokens=event.input_tokens,
-                              cached_input_tokens=event.cached_input_tokens, output_tokens=event.output_tokens)
-            yield event
+        try:
+            for event in self.inner.stream(req, should_stop=should_stop):
+                if record["first_event_s"] is None:
+                    record["first_event_s"] = round(time.perf_counter() - started, 3)
+                if isinstance(event, ToolCallRequest):
+                    record["tool_calls"].append(event.name)
+                elif isinstance(event, TurnFinished):
+                    record.update(total_s=round(time.perf_counter() - started, 3), input_tokens=event.input_tokens,
+                                  cached_input_tokens=event.cached_input_tokens, output_tokens=event.output_tokens)
+                yield event
+        finally:
+            if self.ledger is not None:
+                self.ledger.settle(reserved, record)
+
+
+class CostLedger:
+    """The live run's cap, held per round: a round's worst case is reserved before it is sent, and replaced by its
+    measured cost when it ends; one that ends without reported usage keeps its reservation."""
+
+    def __init__(self, cap_usd: float, price: Callable[[int, int, int], float]) -> None:
+        self.cap_usd, self.price = cap_usd, price
+        self.measured = 0.0  # what rounds with reported usage cost
+        self.held = 0.0  # reservations of rounds in flight, or ended without usage
+
+    def reserve(self, req: ProviderTurnRequest) -> float:
+        worst = self.price(byte_tokens(wire(req)), 0, req.max_output_tokens)
+        if self.measured + self.held + worst > self.cap_usd:
+            raise SystemExit(f"stopped at the cost cap: {self.measured:.4f} USD measured, {self.held:.4f} held, "
+                             f"next round up to {worst:.4f} (cap {self.cap_usd:.4f})")  # fmt: skip
+        self.held += worst
+        return worst
+
+    def settle(self, reserved: float, record: Mapping[str, Any]) -> None:
+        if record.get("input_tokens") is None or record.get("output_tokens") is None:
+            return  # no usage reported: the reservation stays counted
+        self.held -= reserved
+        self.measured += self.price(record["input_tokens"], record.get("cached_input_tokens") or 0,
+                                    record["output_tokens"])  # fmt: skip
 
 
 class OfflineModel:
@@ -183,6 +227,48 @@ class OfflineModel:
         return FakeAgentTurnProvider([self._round]).stream(req, should_stop=should_stop)
 
 
+ANSWER_CHARS = 1200  # of each answer kept in the result
+PACK_NOW = datetime(2026, 10, 17, 9, 0, tzinfo=UTC)
+_RECENT = "2026-10-15T08:00:00+00:00"
+
+
+def _saved(**chosen: str) -> dict[str, Any]:
+    return {**chosen, "settings": {name: {"value": value, "source": "saved"} for name, value in chosen.items()}}
+
+
+def _flagged(word: str) -> dict[str, Any]:
+    return {"word": word, "error_type": "Mispronunciation", "accuracy_score": 40.0, "phonemes": []}
+
+
+# A fixed learner per language for the pack (no database): what a learner preparing a job interview might have.
+PACK_FIXTURES: dict[str, PackSources] = {
+    "en": PackSources(
+        profile=lambda: _saved(declared_level="B1", goal="work", style="concise"),
+        writing_events=lambda: [{"category": "tense", "essay_id": f"e{i}", "created_at": _RECENT} for i in range(4)]
+        + [{"category": "article", "essay_id": f"a{i}", "created_at": _RECENT} for i in range(2)],
+        vocabulary_counts=lambda: {"due": 8, "learning": 30, "mastered": 12},
+        vocabulary_items=lambda limit: [{"word": "deadline", "lapse_count": 3}, {"word": "colleague", "lapse_count": 2}],
+        speaking_attempts=lambda limit: [{"id": f"s{i}", "created_at": _RECENT, "dimensions": {"pronunciation": 68},
+                                          "evidence": {"pronunciation": {"words": [_flagged("schedule")]}}}
+                                         for i in range(2)],
+        listening_recent=lambda limit: [],
+        reading_evidence=lambda limit: [{"id": "r1", "created_at": _RECENT, "total": 5, "correct_count": 3}],
+    ),
+    "zh": PackSources(
+        profile=lambda: _saved(declared_level="HSK3", goal="work", style="concise", pinyin="on"),
+        writing_events=lambda: [{"category": "aspect", "essay_id": f"e{i}", "created_at": _RECENT} for i in range(4)]
+        + [{"category": "particle", "essay_id": f"p{i}", "created_at": _RECENT} for i in range(2)],
+        vocabulary_counts=lambda: {"due": 12, "learning": 40, "mastered": 10},
+        vocabulary_items=lambda limit: [{"word": "加班", "lapse_count": 3}, {"word": "面试", "lapse_count": 2}],
+        speaking_attempts=lambda limit: [{"id": f"s{i}", "created_at": _RECENT, "dimensions": {"pronunciation": 62},
+                                          "evidence": {"pronunciation": {"words": [_flagged("面试")]}}}
+                                         for i in range(2)],
+        listening_recent=lambda limit: [],
+        reading_evidence=lambda limit: [{"id": "r1", "created_at": _RECENT, "total": 5, "correct_count": 3}],
+    ),
+}
+
+
 def script(language: str, turns: int) -> list[str]:
     """The learner's messages: the six of the study, repeated (numbered) to reach `turns`."""
 
@@ -190,10 +276,25 @@ def script(language: str, turns: int) -> list[str]:
     return [base[i % len(base)] + (f" ({i // len(base) + 1})" if i >= len(base) else "") for i in range(turns)]
 
 
-def run_conversation(provider: Any, layout: PromptLayout, language: str, turns: int = 6) -> tuple[Recorder, list[int]]:
+def _without(runtime: Any, excluded: frozenset[str]) -> None:
+    """Drop tools this environment cannot serve, before the conversation starts."""
+
+    if not excluded:
+        return
+    kept = ToolRegistry(limits=runtime.limits)
+    for tool in runtime.tools.tools():
+        if tool.name not in excluded:
+            kept.register(tool)
+    runtime.tools = kept  # the capability registry stays as built: it only names what each screen offers
+
+
+def run_conversation(provider: Any, layout: PromptLayout, language: str, turns: int = 6, *, pack: bool = False,
+                     exclude: frozenset[str] = frozenset()) -> tuple[Recorder, list[int]]:  # fmt: skip
     recorder = provider if isinstance(provider, Recorder) else Recorder(provider)
+    builder = PackBuilder(sources=PACK_FIXTURES[language], enabled=True, clock=lambda: PACK_NOW) if pack else None
     runtime = build_agent_runtime(writing_review=lambda essay_id: None, record_usage=None, provider=recorder,
-                                  prompt=layout)
+                                  prompt=layout, pack=builder)
+    _without(runtime, exclude)
     learner = LearnerScope(user_key="benchmark", language=language, interface="vi")
     session_id, per_turn = None, []
     for message in script(language, turns):
@@ -204,6 +305,9 @@ def run_conversation(provider: Any, layout: PromptLayout, language: str, turns: 
         if errors:
             raise SystemExit(f"turn failed: {errors[0].error_class}")
         per_turn.append(len(recorder.requests) - before)
+        answer = " ".join(e.text for e in events if e.name == "segment_end")
+        recorder.answers.append({"learner": message, "orena": answer[:ANSWER_CHARS],
+                                 "tools": [r["tool_calls"] for r in recorder.rounds[before:]]})  # fmt: skip
     return recorder, per_turn
 
 
@@ -279,30 +383,28 @@ class LiveProvider:
 def live(args: argparse.Namespace) -> dict[str, Any]:
     if not args.approved or args.cap_usd is None or None in (args.price_in, args.price_cached, args.price_out):
         raise SystemExit("--live needs --approved, --cap-usd, --price-in, --price-cached and --price-out")
-    spent = {"usd": 0.0}
-
     def price(inp: int, cached: int, out: int) -> float:
         return ((inp - cached) * args.price_in + cached * args.price_cached + out * args.price_out) / 1_000_000
 
-    def guard(req: ProviderTurnRequest) -> None:
-        worst = price(estimate_tokens(wire(req)), 0, req.max_output_tokens)
-        if spent["usd"] + worst > args.cap_usd:
-            raise SystemExit(f"stopped at the cost cap: spent {spent['usd']:.4f} USD, next round up to {worst:.4f}")
+    ledger = CostLedger(args.cap_usd, price)
 
     provider = LiveProvider(args.provider, args.model)
+    packs = {"off": (False,), "on": (True,), "both": (False, True)}[args.pack]
+    excluded = frozenset(name.strip() for name in args.exclude_tools.split(",") if name.strip())
     results: dict[str, Any] = {}
     for repeat in range(args.repeat):
-        for name in args.layouts.split(","):
+        for name, with_pack in ((n, p) for n in args.layouts.split(",") for p in packs):
             for language in SCRIPTS:
-                recorder = Recorder(provider, before_round=guard)
-                recorder, per_turn = run_conversation(recorder, LAYOUTS[name], language, args.turns)
+                recorder = Recorder(provider, ledger=ledger)
+                recorder, per_turn = run_conversation(recorder, LAYOUTS[name], language, args.turns, pack=with_pack,
+                                                      exclude=excluded)  # fmt: skip
+                key = f"{name}{'+pack' if with_pack else ''}/{language}"
                 rounds = recorder.rounds
                 inp = sum(r.get("input_tokens") or 0 for r in rounds)
                 cached = sum(r.get("cached_input_tokens") or 0 for r in rounds)
                 out = sum(r.get("output_tokens") or 0 for r in rounds)
                 cost = price(inp, cached, out)
-                spent["usd"] += cost
-                results.setdefault(f"{name}/{language}", []).append({
+                results.setdefault(key, []).append({
                     "repeat": repeat, "rounds_per_turn": per_turn, "input_tokens": inp, "cached_input_tokens": cached,
                     "uncached_input_tokens": inp - cached, "output_tokens": out, "cost_usd": round(cost, 6),
                     "cache_hit_ratio": round(cached / inp, 3) if inp else None,
@@ -310,10 +412,35 @@ def live(args: argparse.Namespace) -> dict[str, Any]:
                     "first_event_s": [r["first_event_s"] for r in rounds],
                     "total_s": [r.get("total_s") for r in rounds],
                     "prefix_reuse_upper_bound": prefix_reuse(recorder.requests)["reusable_share"],
+                    "answers": recorder.answers,
                 })
-    return {"mode": "live", "provider": args.provider, "model": args.model, "spent_usd": round(spent["usd"], 6),
+    return {"mode": "live", "provider": args.provider, "model": args.model, "spent_usd": round(ledger.measured, 6),
+            "unmeasured_reserved_usd": round(ledger.held, 6), "cap_usd": args.cap_usd,
             "prices_per_million": {"in": args.price_in, "cached": args.price_cached, "out": args.price_out},
-            "results": results}
+            "excluded_tools": sorted(excluded), "results": results}
+
+
+def answers_markdown(result: dict[str, Any]) -> str:
+    """Per language and repeat: each learner turn, then each setting's answer, for a person to compare."""
+
+    lines = [f"# Orena answers side by side ({result.get('provider')} {result.get('model')})", ""]
+    by_language: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    for key, runs in result["results"].items():
+        setting, _, language = key.rpartition("/")
+        by_language.setdefault(language, {})[setting] = runs
+    for language, settings in sorted(by_language.items()):
+        repeats = max(len(runs) for runs in settings.values())
+        for repeat in range(repeats):
+            lines += [f"## {language}, repeat {repeat}", ""]
+            first = next(iter(settings.values()))[repeat]["answers"]
+            for turn, asked in enumerate(first):
+                lines += [f"### Turn {turn + 1}", "", f"> Learner: {asked['learner']}", ""]
+                for setting, runs in settings.items():
+                    if repeat < len(runs) and turn < len(runs[repeat]["answers"]):
+                        said = runs[repeat]["answers"][turn]
+                        tools = ", ".join(t for r in said["tools"] for t in r) or "none"
+                        lines += [f"**{setting}** (tools: {tools})", "", said["orena"] or "(no answer)", ""]
+    return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -330,15 +457,23 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--turns", type=int, default=6, help="learner turns per live conversation")
     parser.add_argument("--layouts", default=",".join(LAYOUTS))
     parser.add_argument("--out", type=Path)
+    parser.add_argument("--pack", choices=("off", "on", "both"), default="off",
+                        help="live: run each layout without and/or with the fixture learner pack")
+    parser.add_argument("--exclude-tools", default="", help="live: comma-separated tools to leave out")
+    parser.add_argument("--answers-md", type=Path, help="live: write the answers side by side (outside the repo)")
     args = parser.parse_args(argv)
-    if args.out is not None and ROOT in args.out.resolve().parents:
-        raise SystemExit("--out must be outside the repository")
+    for path in (args.out, args.answers_md):
+        if path is not None and ROOT in path.resolve().parents:
+            raise SystemExit("--out and --answers-md must be outside the repository")
     result = live(args) if args.live else offline(args)
     text = json.dumps(result, ensure_ascii=False, indent=2)
     if args.out is not None:
         args.out.write_text(text, encoding="utf-8")
+    if args.answers_md is not None and result["mode"] == "live":
+        args.answers_md.write_text(answers_markdown(result), encoding="utf-8")
     summary = {key: {k: v for k, v in value.items() if k not in ("per_request_share", "rounds_per_turn")}
-               if isinstance(value, dict) else value for key, value in result["results"].items()}
+               if isinstance(value, dict) else [{k: v for k, v in run.items() if k != "answers"} for run in value]
+               for key, value in result["results"].items()}
     print(json.dumps({**result, "results": summary}, ensure_ascii=False, indent=2))
     return 0
 
