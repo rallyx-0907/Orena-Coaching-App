@@ -724,8 +724,25 @@ class BillingService:
                        provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
                        reason=f"subscription {fact.external_reference} names no checkout of Orena")  # fmt: skip
             return WebhookOutcome("unknown", "no_checkout_for_subscription")
-        # The plan is the one Orena's own order sold, when the order is this account's; signed metadata otherwise.
-        plan = order["plan_id"] if order is not None and str(order["incarnation_id"]) == incarnation else fact.plan_id
+        if fact.gateway in PLAN_GATEWAYS:
+            # PR-MON-10 §4.5: the subscription's product is the source of truth for its plan, on every event (a plan
+            # or period changed in Polar's portal arrives as a new product). An unknown or unpriced product changes
+            # nothing: an operator item, never a fallback to the previous plan or to the checkout's metadata.
+            product = str((fact.extra or {}).get("product_id") or "")
+            plan = self._plan_for_product(product)
+            if plan is None:
+                self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
+                           provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
+                           reason=f"unknown_product {product or '(none)'} on subscription {fact.external_reference}",
+                           incarnation_id=incarnation)  # fmt: skip
+                return WebhookOutcome("unknown", "unknown_product")
+            sold = order["plan_id"] if order is not None and str(order["incarnation_id"]) == incarnation else None
+            if sold is not None and sold != plan:
+                _log.warning("billing: %s subscription %s is on plan %s, its checkout sold %s (portal change?)",
+                             fact.gateway, fact.external_reference, plan, sold)  # fmt: skip
+        else:
+            # The plan is the one Orena's own order sold, when the order is this account's; signed metadata otherwise.
+            plan = order["plan_id"] if order is not None and str(order["incarnation_id"]) == incarnation else fact.plan_id
         update = SubscriptionUpdate(state=fact.state or "unknown", plan_id=plan or "free",
                                     external_customer_id=fact.external_customer_id,
                                     external_subscription_id=fact.external_reference,
@@ -743,6 +760,15 @@ class BillingService:
                        # `rejected` is an account the commerce record does not know: nothing to link to.
                        incarnation_id=None if result.status == "rejected" else incarnation)  # fmt: skip
         return result
+
+    def _plan_for_product(self, product_id: str) -> str | None:
+        """The plan a Polar product is priced as (`external_price_id` in the prices file), or None."""
+
+        if not product_id:
+            return None
+        plans = {price.plan_id for price in self._prices.values()
+                 if price.gateway in PLAN_GATEWAYS and price.external_price_id == product_id}  # fmt: skip
+        return plans.pop() if len(plans) == 1 else None
 
     @staticmethod
     def _outcome(outcome: Mapping[str, Any], what: str) -> WebhookOutcome:

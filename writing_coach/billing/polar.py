@@ -38,12 +38,14 @@ from writing_coach.billing.gateway import (
 
 API_BASE = {"production": "https://api.polar.sh", "sandbox": "https://sandbox-api.polar.sh"}
 TOLERANCE = timedelta(minutes=5)
-# Polar subscription status -> Orena's canonical state (ORENA_COMMERCE_ARCHITECTURE.md §3).
+# Polar subscription status -> Orena's canonical state (ORENA_COMMERCE_ARCHITECTURE.md §3). PR-MON-10 §4.2: `past_due`
+# is recoverable (the learner can update the card) and keeps the billing grace; `unpaid` is Polar's end after its
+# retries are exhausted (the subscription is revoked), so access ends at once.
 STATES = {"incomplete": "pending", "incomplete_expired": "ended", "trialing": "trialing", "active": "active",
-          "past_due": "past_due", "canceled": "ended", "unpaid": "past_due"}  # fmt: skip
+          "past_due": "past_due", "canceled": "ended", "unpaid": "ended"}  # fmt: skip
 SUBSCRIPTION_EVENTS = frozenset({"subscription.created", "subscription.updated", "subscription.active",
                                  "subscription.canceled", "subscription.uncanceled", "subscription.revoked",
-                                 "subscription.past_due"})  # fmt: skip
+                                 "subscription.past_due", "subscription.cycled"})  # fmt: skip
 REFUND_EVENTS = frozenset({"refund.created", "refund.updated"})
 
 
@@ -122,7 +124,9 @@ class PolarGateway:
         metadata = data.get("metadata") if isinstance(data.get("metadata"), dict) else {}
         base = {"gateway": self.name, "event_id": message_id, "payload_digest": body_digest,
                 "incarnation_hint": str(metadata.get("orena_incarnation") or "") or None,
-                "extra": {"orena_operation": str(metadata.get("orena_operation") or "")}}  # fmt: skip
+                # PR-MON-10 §4.5: the subscription's product is the source of truth for its plan
+                "extra": {"orena_operation": str(metadata.get("orena_operation") or ""),
+                          "product_id": str(data.get("product_id") or "")}}  # fmt: skip
         if kind in SUBSCRIPTION_EVENTS:
             status = str(data.get("status") or "")
             return PaymentFact(
@@ -149,10 +153,17 @@ class PolarGateway:
     def checkout_request(self, intent: CheckoutIntent) -> dict:
         if not intent.price.external_price_id:
             raise ValueError("a Polar price is a Polar product id")
+        joiner = "&" if "?" in intent.return_url else "?"
         body = {
-            "products": [intent.price.external_price_id], "success_url": intent.return_url,
+            "products": [intent.price.external_price_id],
+            # PR-MON-10 §4.1: the return page only shows the outcome; access changes only from a verified webhook.
+            "success_url": f"{intent.return_url}{joiner}checkout_id={{CHECKOUT_ID}}", "return_url": intent.cancel_url,
             "metadata": {"orena_incarnation": intent.incarnation_id, "orena_plan": intent.price.plan_id,
                          "orena_operation": intent.operation_id},
+            # Q4: the incarnation is Polar's customer; a deleted account's customer is removed (§4.8).
+            "external_customer_id": intent.incarnation_id,
+            # Q3: no discount code and no trial at launch (both default to true on Polar).
+            "allow_discount_codes": False, "allow_trial": False,
         }  # fmt: skip
         if intent.customer_email:
             body["customer_email"] = intent.customer_email

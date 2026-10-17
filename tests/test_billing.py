@@ -49,10 +49,10 @@ def polar_request(event: dict, *, at: datetime = NOW, key: bytes = POLAR_KEY) ->
     return {"webhook-id": "msg_1", "webhook-timestamp": stamp, "webhook-signature": sign(key, "msg_1", stamp, body)}, body
 
 
-def subscription_event(status="active", *, metadata=None, modified="2026-10-05T11:00:00Z") -> dict:
+def subscription_event(status="active", *, metadata=None, modified="2026-10-05T11:00:00Z", product="prod_123") -> dict:
     return {"type": "subscription.updated", "data": {
         "id": "sub_1", "status": status, "modified_at": modified, "current_period_end": "2026-11-05T11:00:00Z",
-        "cancel_at_period_end": False, "customer_id": "cus_1",
+        "cancel_at_period_end": False, "customer_id": "cus_1", "product_id": product,
         "metadata": metadata if metadata is not None else {"orena_incarnation": "inc-1", "orena_plan": "premium",
                                                             "orena_operation": "op-1"}}}  # fmt: skip
 
@@ -129,9 +129,30 @@ def test_polar_a_past_due_subscription_is_paid_only_until_the_payment_failed():
     assert POLAR.verify(*polar_request(event), now=NOW).paid_through == datetime(2026, 10, 5, 11, tzinfo=UTC)
     del event["data"]["current_period_start"]
     assert POLAR.verify(*polar_request(event), now=NOW).paid_through is None, "the record keeps the last paid end"
-    unpaid = subscription_event("unpaid")
-    unpaid["data"]["current_period_start"] = "2026-10-05T11:00:00Z"
-    assert POLAR.verify(*polar_request(unpaid), now=NOW).paid_through == datetime(2026, 10, 5, 11, tzinfo=UTC)
+
+
+@pytest.mark.parametrize(("status", "kind", "state"), [
+    ("past_due", "subscription.past_due", "past_due"),   # recoverable: the grace applies
+    ("unpaid", "subscription.updated", "ended"),         # retries exhausted, Polar revokes: no grace
+    ("unpaid", "subscription.revoked", "ended"),
+    ("canceled", "subscription.revoked", "ended"),
+    ("active", "subscription.cycled", "active"),
+])
+def test_polar_unpaid_ends_access_and_only_past_due_keeps_the_grace(status, kind, state):
+    """PR-MON-10 §4.2 (review P1-1 of 6396fef3)."""
+
+    event = subscription_event(status)
+    event["type"] = kind
+    assert POLAR.verify(*polar_request(event), now=NOW).state == state
+
+
+def test_polar_cancel_at_period_end_keeps_access_until_the_period_ends():
+    event = subscription_event("active")
+    event["type"] = "subscription.canceled"
+    event["data"]["cancel_at_period_end"] = True
+    fact = POLAR.verify(*polar_request(event), now=NOW)
+    assert (fact.state, fact.cancel_at_period_end) == ("active", True)
+    assert fact.paid_through == datetime(2026, 11, 5, 11, tzinfo=UTC)
 
 
 def test_polar_checkout_carries_orenas_account_plan_and_operation():
@@ -140,6 +161,22 @@ def test_polar_checkout_carries_orenas_account_plan_and_operation():
     body = POLAR.checkout_request(intent)["json"]
     assert body["products"] == ["prod_123"]
     assert body["metadata"] == {"orena_incarnation": "inc-1", "orena_plan": "premium", "orena_operation": "op-1"}
+
+
+def test_polar_checkout_names_the_customer_the_return_pages_and_allows_no_discount_or_trial():
+    """PR-MON-10 §4.1 (owner Q3, Q4)."""
+
+    intent = CheckoutIntent(operation_id="op-1", incarnation_id="inc-1", price=USD_MONTH,
+                            return_url="https://o/#/plan?checkout=done", cancel_url="https://o/#/plan",
+                            customer_email="learner@example.test")  # fmt: skip
+    body = POLAR.checkout_request(intent)["json"]
+    assert body["external_customer_id"] == "inc-1" and body["customer_email"] == "learner@example.test"
+    assert body["success_url"] == "https://o/#/plan?checkout=done&checkout_id={CHECKOUT_ID}"
+    assert body["return_url"] == "https://o/#/plan"
+    assert body["allow_discount_codes"] is False and body["allow_trial"] is False
+    plain = POLAR.checkout_request(CheckoutIntent(operation_id="op-1", incarnation_id="inc-1", price=USD_MONTH,
+                                                  return_url="https://o/r", cancel_url="https://o/c"))["json"]
+    assert plain["success_url"] == "https://o/r?checkout_id={CHECKOUT_ID}" and "customer_email" not in plain
 
 
 # ---- prepaid periods ---------------------------------------------------------------------------------------
@@ -216,8 +253,38 @@ class FakeItems:
 
 def service(commerce=None, orders=None, items=None):
     return BillingService(orders=orders or FakeOrders(), commerce=commerce or FakeCommerce(),
-                          gateways={"payos": PAYOS, "polar": POLAR}, prices={}, now=lambda: NOW,
+                          gateways={"payos": PAYOS, "polar": POLAR}, prices={"premium:month:polar": USD_MONTH},
+                          now=lambda: NOW,
                           reconciliation=items if items is not None else FakeItems())  # fmt: skip
+
+
+def test_the_plan_comes_from_the_subscriptions_product_on_every_event():
+    """PR-MON-10 §4.5 (owner Q2): a plan or period changed in the portal arrives as a new product."""
+
+    from writing_coach.billing.service import BillingService
+
+    pro_year = Price(plan_id="pro", period="year", currency="USD", amount_minor=15_999, gateway="polar",
+                     external_price_id="prod_pro_year")
+    commerce = FakeCommerce(mapped={"incarnation_id": "inc-1"})   # the stored mapping, once the first event landed
+    billing = BillingService(orders=FakeOrders(), commerce=commerce, gateways={"polar": POLAR},
+                             prices={"premium:month:polar": USD_MONTH, "pro:year:polar": pro_year}, now=lambda: NOW,
+                             reconciliation=FakeItems())  # fmt: skip
+    assert billing.handle_webhook("polar", *polar_request(subscription_event())).status == "apply"
+    assert commerce.events[-1]["update"].plan_id == "premium"
+    changed = subscription_event(modified="2026-10-06T11:00:00Z", product="prod_pro_year", metadata={})
+    assert billing.handle_webhook("polar", *polar_request(changed)).status == "apply"
+    assert commerce.events[-1]["update"].plan_id == "pro"   # the product, not the checkout's metadata or order
+
+
+@pytest.mark.parametrize("product", ["prod_unknown", None])
+def test_an_unknown_product_is_an_operator_item_and_changes_nothing(product):
+    commerce, items = FakeCommerce(), FakeItems()
+    event = subscription_event(product=product)
+    outcome = service(commerce, items=items).handle_webhook("polar", *polar_request(event))
+    assert (outcome.status, outcome.detail) == ("unknown", "unknown_product")
+    assert commerce.events == []   # never a fallback to the previous plan or to metadata
+    assert [item["kind"] for item in items.recorded] == ["event_undecided"]
+    assert "unknown_product" in items.recorded[0]["reason"]
 
 
 def test_a_first_subscription_event_attaches_only_to_an_account_orenas_checkout_named():

@@ -84,7 +84,8 @@ def test_an_undecidable_subscription_event_is_kept_for_an_operator():
     items = FakeItems()
     commerce = Undecided(mapped={"incarnation_id": "inc-owner"})
     headers, body = polar_request({"type": "subscription.updated", "data": {"id": "sub_1", "status": "active",
-                                                                             "modified_at": "2026-10-05T11:00:00Z"}})
+                                                                             "modified_at": "2026-10-05T11:00:00Z",
+                                                                             "product_id": "prod_123"}})
     assert service(commerce, items=items).handle_webhook("polar", headers, body).status == "foreign_incarnation"
     assert items.recorded[0]["kind"] == "event_undecided" and items.recorded[0]["incarnation_id"] == "inc-owner"
 

@@ -1465,7 +1465,9 @@ configure_billing(service=_billing, backbone=_account_backbone, admin_guard=requ
                   reconciliation=_billing.reconciliation if _billing is not None else None,
                   reconcile=_billing_reconcile.tick if _billing_reconcile is not None else None, credits=_credits,
                   public_base_url=os.getenv("PUBLIC_BASE_URL", ""),
-                  sepay_backfill=(lambda feed: feed.backfill if feed is not None else None)(_sepay_feed(_billing)))
+                  sepay_backfill=(lambda feed: feed.backfill if feed is not None else None)(_sepay_feed(_billing)),
+                  email=lambda request: str((auth_support.auth_user(str(request.session.get("user_sub") or ""))
+                                             or {}).get("email") or ""))
 
 
 def _schema_state(names):
