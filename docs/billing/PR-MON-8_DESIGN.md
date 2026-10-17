@@ -704,3 +704,37 @@ Local evidence (not CI): full SQLite 7328 passed. Every PostgreSQL file: 445 pas
 
 Tests after the fixes (local, not CI): `tests/test_billing_sepay.py` 98 passed; `tests/test_billing_sepay_postgres.py` 19
 passed (with `test_billing.py` and `test_billing_price_integrity.py`: 103).
+
+## 14. Revision 8 delta: SePay never sells a plan (D-MON-032)
+
+**Status: DESIGNING (docs only), for an independent delta review.** Under D-MON-032, plans are card subscriptions
+through Polar and SePay only tops up Credits. Today's code would still sell a plan through SePay if a `sepay` plan
+price were configured. Revision 8 closes that by code, not only by configuration.
+
+**The change:**
+- `load_prices` refuses any price whose gateway is `sepay`, with the error "SePay sells Credits only (D-MON-032)". A
+  prices file that lists one fails at startup, as an invalid prices file does today.
+- `start_checkout` refuses a plan price whose gateway is a domestic gateway, with `price_not_offered`. This is a
+  second, independent guard.
+- Credit packs keep `gateway: "sepay"` (`load_credit_packs` accepts the domestic gateways, as today).
+- Readiness: with no plan price on SePay and Credits off, SePay has nothing to sell. Its `ready` stays false, and
+  "no gateway ready" is decided by the gateways that do sell (Polar, once configured).
+
+**Unchanged:**
+- SePay's webhook, the locked payment decision, the VA QR, the feed and the backfill: they serve credit-pack orders
+  exactly as they served plan orders.
+- payOS is untouched. It remains the alternative adapter, and its plan prices stay possible only if a later decision
+  re-enables a domestic plan path.
+
+**Tests:**
+- a prices file with a `sepay` plan price is refused;
+- a SePay credit pack still loads and checks out;
+- `start_checkout` with a plan priced on a domestic gateway is refused, and nothing is created;
+- existing Polar plan prices load unchanged.
+
+**Not in this delta:**
+- Polar's configuration, sandbox E2E and manage/cancel (PR-MON-10);
+- the Billing Sheet's card checkout (PR-MON-9);
+- the Credits screen's switch from a payOS link to the SePay QR (PR-MON-9);
+- enabling Credits (R-MON-014, packs and prices: human gates).
+

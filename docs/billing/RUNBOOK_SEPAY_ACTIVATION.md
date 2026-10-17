@@ -1,4 +1,4 @@
-# Runbook: gate 7, SePay production activation (operator task)
+# Runbook: gate 7a, SePay production activation for Credits top-up (operator task)
 
 **Status: prepared, not executed.** This is gate 7 of PR-MON-8 (`PR-MON-8_DESIGN.md` §12). Gates 1-6 and 8 passed on
 the `:8031` sandbox on 2026-10-17.
@@ -9,17 +9,26 @@ the `:8031` sandbox on 2026-10-17.
 **Where.** The production host is chosen after the app is deployed to the VPS. Run this runbook once, on that host
 only. It never applies to `:8000`, `:8010` or `:8021` unless the owner names one of them as production.
 
-**What it enables:**
-- domestic bank-transfer payments for Plus/Pro through SePay + VPBank, with the QR naming the VA (D-MON-030);
-- one-time prepaid periods (a month or a year).
+> **Revised by D-MON-032 (2026-10-17).** Plans are card subscriptions through Polar (gate 7b, after PR-MON-9 and
+> PR-MON-10). SePay only tops up Credits. **This runbook cannot run yet**: Credits must be enabled first, and that
+> needs three human gates (step 0).
+
+**What it enables:** Credits top-up by VietQR bank transfer through SePay + VPBank, with the QR naming the VA
+(D-MON-030).
 
 **What stays off:**
-- Credits (`CREDITS_ENABLED`; R-MON-014 is only needed before Credits);
-- quota and funding enforcement;
-- migration 0034;
+- plans through SePay (refused by code, `PR-MON-8_DESIGN.md` §14);
+- quota and funding enforcement unless separately decided;
+- migration 0034 unless separately decided;
 - the SePay recovery feed (`SEPAY_FEED_ENABLED`; it needs its own proof before it is turned on).
 
 ## 0. Preconditions
+
+- **Credits gates (human), all three before this runbook:**
+  - R-MON-014: the runtime connects as a role that cannot bypass the credit ledger (`RUNBOOK_R-MON-014_RUNTIME_ROLE.md`);
+  - approved credit packs and prices (`BILLING_CREDIT_PACKS_FILE`; K1 and H-1, none set yet);
+  - `CREDITS_ENABLED=on`.
+- **The revision 8 code guard is merged** (§14).
 
 - **Code.** The host runs `main` at or after `2dc57aa3` (PR-MON-8 with #249 and #250).
 - **Host and URL.** PostgreSQL is the runtime backend, and the account backbone is on (`ORENA_ACCOUNT_BACKBONE=on`). A
@@ -38,22 +47,16 @@ Follow `RUNBOOK_MIGRATION_0027_0033.md` exactly:
 
 **Do this before the restart on the new code.** Migration 0034 is **not** applied: it stays proposed.
 
-## 2. Prices file (owner decision 2026-10-17: the catalogue's prices)
+## 2. Credit packs file (owner decision pending: K1 / H-1)
 
-A JSON file on the host, for example `/etc/orena/billing_prices.json`, with amounts in whole dong:
+A JSON list of packs for `BILLING_CREDIT_PACKS_FILE`, each with `gateway: "sepay"` and `currency: "VND"`. For example
+(the numbers are placeholders, **not** decided):
 
 ```json
-[
-  {"plan_id": "plus", "period": "month", "currency": "VND", "amount_minor": 199000, "gateway": "sepay"},
-  {"plan_id": "plus", "period": "year",  "currency": "VND", "amount_minor": 1590000, "gateway": "sepay"},
-  {"plan_id": "pro",  "period": "month", "currency": "VND", "amount_minor": 399000, "gateway": "sepay"},
-  {"plan_id": "pro",  "period": "year",  "currency": "VND", "amount_minor": 3190000, "gateway": "sepay"}
-]
+[{"pack_id": "<id>", "credit_units": <units>, "currency": "VND", "amount_minor": <whole dong>, "gateway": "sepay"}]
 ```
 
-Every amount must equal the plan catalogue **in force** on that host: Admin → Plans & pricing, where an Admin edit
-overrides the built-in values. A single mismatch closes the gateway (`price_mismatch`). Readiness (step 6) shows the
-comparison for each price.
+**No plan price is listed for SePay** (D-MON-032; the code refuses one). Plan prices belong to Polar (gate 7b).
 
 ## 3. Environment (names here; the values stay on the host, never in Git or chat)
 
@@ -61,7 +64,7 @@ comparison for each price.
 | --- | --- |
 | `BILLING_ENABLED` | `on` |
 | `BILLING_DOMESTIC_GATEWAY` | `sepay` |
-| `BILLING_PRICES_FILE` | the path from step 2 |
+| `BILLING_CREDIT_PACKS_FILE` | the path from step 2 |
 | `SEPAY_WEBHOOK_SECRET` | the **Live** webhook's HMAC secret (step 4) |
 | `SEPAY_ACCOUNT_NUMBER` | the linked VPBank main account (receiving and matching only) |
 | `SEPAY_ACCOUNT_NAME` | the account holder |
@@ -71,7 +74,7 @@ comparison for each price.
 | `SEPAY_API_TOKEN` | a token created in **Live** (not Test Mode), dedicated to production; used by the operator backfill |
 | `SEPAY_API_BASE` | `https://userapi.sepay.vn/v2` |
 | `SEPAY_FEED_ENABLED` | empty (off) |
-| `CREDITS_ENABLED` | empty (off) |
+| `CREDITS_ENABLED` | `on` (only after its gates, step 0) |
 
 Use separate credentials for test and production. Revoke the token and rotate the webhook secret if either is exposed.
 
@@ -100,20 +103,21 @@ Use separate credentials for test and production. Revoke the token and rotate th
 Open `GET /api/admin/billing/readiness` as an administrator. It must show:
 - `ready: true` and `blockers: []`;
 - `gateways.sepay`: `configured: true`, `active_domestic: true`, `virtual_account: "set"`, `late_payment_grace: "set"`,
-  `feed: "disabled"`, `ready: true`;
-- each price `matches: true`.
+  `feed: "disabled"`;
+- credits ready, and the configured packs offered by `GET /api/billing/offers` (`credit_packs`).
 
 Any blocker names what is missing: fix it and recheck. Never work around a blocker.
 
 ## 7. First real purchase (owner, optional but recommended)
 
-1. As a signed-in test learner, buy Plus monthly.
+1. As a signed-in test learner, buy the smallest credit pack.
 2. Pay the QR. The banking app must show the VA, the amount and `SEVQR ORN<code>`.
 3. Confirm:
    - the order is `paid`;
-   - the plan is active;
+   - the credits are posted once;
    - `GET /api/admin/billing/reconciliation` has no new item.
-4. Refund it by your own transfer back, then `POST /api/admin/billing/orders/<code>/refund`. Access ends.
+4. Refund it by your own transfer back, then `POST /api/admin/billing/orders/<code>/refund`. The credits are
+   reversed.
 
 ## Rollback
 

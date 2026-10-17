@@ -339,3 +339,23 @@ gate 7 personally (migration 0027 -> 0033, environment, SePay Live webhook, rest
 `RUNBOOK_SEPAY_ACTIVATION.md`; no agent runs it. The `:8031` sandbox and its quick tunnel were removed. Credits, quota
 and funding enforcement, migration 0034 and the SePay feed stay off. | A price the owner chose explicitly, and a
 launch operated by the owner on a host chosen deliberately. | `RUNBOOK_SEPAY_ACTIVATION.md`.
+
+
+D-MON-032 | 2026-10-17 | Payment model (owner). **Plans are card subscriptions; only Credits use a bank-transfer
+QR.** Plus/Pro are sold as auto-renewing subscriptions on a card the learner registers in billing, charged every month or
+year like other market apps. The subscription gateway is **Polar** (merchant of record, international cards, USD; the
+adapter exists since PR-MON-1..3). SePay's VietQR bank transfer is used **only to top up Credits**. A domestic
+recurring-card gateway is not chosen now; it may be researched later if many learners lack an international card.
+Consequences:
+- SePay never sells a plan. The code refuses a `sepay` plan price (a small change for review, `PR-MON-8_DESIGN.md`
+  §14).
+- D-MON-031's SePay plan prices are withdrawn. The catalogue's USD prices (Plus 9.99/79.99, Pro 19.99/159.99) are the
+  candidates for Polar, to be confirmed as Polar products.
+- Gate 7 splits:
+  - **7a**, Credits by SePay: needs Credits enabled, R-MON-014, approved credit packs and prices;
+  - **7b**, subscriptions by Polar: needs PR-MON-10 (Polar configuration, sandbox E2E, manage/cancel) and PR-MON-9
+    (the Billing Sheet's card checkout).
+- `RUNBOOK_SEPAY_ACTIVATION.md` is rewritten for 7a. Nothing is enabled. | Recurring revenue without monthly manual
+  transfers, and one clear place for QR payments. | `PR-MON-8_DESIGN.md` §14, `BILLING_STATUS.md`,
+  `RUNBOOK_SEPAY_ACTIVATION.md`.
+
