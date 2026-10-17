@@ -659,6 +659,8 @@ def test_f8_the_exempt_routes_are_exactly_the_ones_that_write_no_learner_rows():
     assert non_admin == {
         ("PATCH", "/api/account-settings"), ("POST", "/api/auth/native/exchange"), ("POST", "/api/billing/checkout"),
         ("POST", "/api/billing/webhooks/{gateway}"), ("POST", "/api/feedback"), ("POST", "/api/platform/language"),
+        # PR-MON-10 §4.4: opening Polar's customer portal writes no learner row
+        ("POST", "/api/billing/portal"),
     }, sorted(non_admin)
     for route in [("POST", "/api/evaluate"), ("PUT", "/api/learner-profile"), ("PATCH", "/api/learner-profile"),
                   ("POST", "/api/agent/turn"), ("PUT", "/api/drafts/{key}"), ("POST", "/api/library/vocabulary"),
