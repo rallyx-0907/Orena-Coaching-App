@@ -575,3 +575,46 @@ def test_an_escalated_item_is_closed_even_when_the_marker_was_lost():
     settings.rows.clear()   # the marker (and its `escalated` flag) is lost
     assert worker.clean("inc-old") == "complete"
     assert [r["dedupe_key"] for r in items.resolved] == ["polar_customer_cleanup_failed:inc-old"]
+
+
+# ---- review of 06675882: money taken after a deletion -----------------------------------------------------------
+
+class DeletedEvidenceCommerce(EvidenceCommerce):
+    def record_evidence(self, **kwargs):
+        outcome = super().record_evidence(**kwargs)
+        return {**outcome, "incarnation_deleted": True}
+
+
+def test_an_order_paid_after_the_account_was_deleted_is_a_paid_deleted_account_item():
+    """Deleted A, its mapping kept, a renewal charged before the clean-up completed: an operator's refund
+    obligation with what was paid - never ordinary evidence, never an access change."""
+
+    from tests.test_billing import polar_request
+
+    commerce, items = DeletedEvidenceCommerce(mapped={"incarnation_id": "inc-A"}), FakeItems()
+    billing = evidence_service(commerce, items)
+    outcome = billing.handle_webhook("polar", *polar_request(order_paid()))
+    assert (outcome.status, outcome.detail) == ("paid_deleted_account", "order_paid")
+    [item] = items.recorded
+    assert item["kind"] == "paid_deleted_account" and item["dedupe_key"] == "order:ord_1"
+    assert (item["reported_amount_minor"], item["reported_currency"]) == (499, "USD")
+    assert item["incarnation_id"] == "inc-A" and item["external_event_id"] == "msg_1"
+    assert commerce.events == []
+    again = billing.handle_webhook("polar", *polar_request(order_paid()))   # a redelivery stays on this path
+    assert again.status == "paid_deleted_account" and len(commerce.receipts) == 1
+    assert {i["dedupe_key"] for i in items.recorded} == {"order:ord_1"}   # the repository keeps one item per key
+
+
+def test_a_deleted_accounts_order_whose_item_cannot_be_recorded_is_answered_503(monkeypatch):
+    from tests.test_billing import polar_request
+
+    class Broken(FakeItems):
+        def record(self, **kwargs):
+            raise OSError("database down")
+
+    monkeypatch.setattr(billing_api, "_service",
+                        evidence_service(DeletedEvidenceCommerce(mapped={"incarnation_id": "inc-A"}), Broken()))
+    app = FastAPI()
+    app.include_router(billing_api.router)
+    headers, body = polar_request(order_paid())
+    assert TestClient(app).post("/api/billing/webhooks/polar", content=body, headers=headers).status_code == 503

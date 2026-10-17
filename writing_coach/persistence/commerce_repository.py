@@ -235,12 +235,16 @@ class PostgresCommerceRepository:
         """A verified event that changes nothing (PR-MON-10 §4.3: Polar's `order.paid`), kept as a terminal
         `ignored` receipt of its account: exactly once per (provider, event id), committed when this returns.
         `recorded` the first time, `duplicate` on a redelivery, `payload_conflict` for a reused id with other
-        content, `rejected` for an incarnation that does not exist."""
+        content, `rejected` for an incarnation that does not exist. `incarnation_deleted` says, on every answer
+        (a redelivery too), whether the account was deleted: money taken after a deletion is the caller's
+        operator obligation, never ordinary evidence (review P1 of 06675882)."""
 
         with self._engine.begin() as connection:
-            if connection.execute(text('SELECT 1 FROM account_incarnations WHERE id = :inc'),
-                                  {'inc': incarnation_id}).first() is None:
+            owner = connection.execute(text('SELECT status FROM account_incarnations WHERE id = :inc FOR SHARE'),
+                                       {'inc': incarnation_id}).first()
+            if owner is None:
                 return CommerceOutcome(status='rejected', reason='unknown_incarnation')
+            deleted = owner[0] != 'active'
             inserted = connection.execute(
                 text(
                     'INSERT INTO commerce_billing_event_receipts '
@@ -254,15 +258,15 @@ class PostgresCommerceRepository:
                  'now': datetime.now(UTC)},
             ).first()
             if inserted is not None:
-                return CommerceOutcome(status='recorded')
+                return CommerceOutcome(status='recorded', incarnation_deleted=deleted)
             stored = connection.execute(
                 text('SELECT payload_digest FROM commerce_billing_event_receipts '
                      'WHERE provider = :provider AND external_event_id = :event'),
                 {'provider': provider, 'event': external_event_id},
             ).scalar_one()
             if stored and payload_digest and stored != payload_digest:
-                return CommerceOutcome(status='payload_conflict')
-            return CommerceOutcome(status='duplicate')
+                return CommerceOutcome(status='payload_conflict', incarnation_deleted=deleted)
+            return CommerceOutcome(status='duplicate', incarnation_deleted=deleted)
 
     def record_event(
         self, *, incarnation_id: str, provider: str, external_event_id: str,

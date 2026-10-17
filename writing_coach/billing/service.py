@@ -833,6 +833,16 @@ class BillingService:
                                                  payload_digest=fact.payload_digest or None,
                                                  note=f"evidence {fact.provider_state}")  # fmt: skip
         status = str(outcome.get("status"))
+        if status in ("recorded", "duplicate") and outcome.get("incarnation_deleted"):
+            # Money Polar took after the account was deleted (a renewal before the clean-up completed): the
+            # deleted-account obligation, recorded with what was paid before the ack - a write that fails raises and
+            # Polar delivers again (the receipt then answers `duplicate`, and the item is recorded once by its key).
+            self._item("paid_deleted_account", fact.gateway, f"order:{fact.external_reference or fact.event_id}",
+                       external_event_id=fact.event_id, reported_amount_minor=fact.amount_minor,
+                       reported_currency=fact.currency, provider_state=fact.provider_state,
+                       payload_digest=fact.payload_digest or None, incarnation_id=incarnation,
+                       reason=f"paid after the account was deleted; {what}; refund from Polar's dashboard")  # fmt: skip
+            return WebhookOutcome("paid_deleted_account", "order_paid")
         if status in ("recorded", "duplicate"):
             return WebhookOutcome(status, "order_paid")
         self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,

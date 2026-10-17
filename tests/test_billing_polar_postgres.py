@@ -143,3 +143,43 @@ def test_order_paid_evidence_is_one_terminal_receipt_and_never_an_access_change(
     missing = commerce.record_evidence(incarnation_id=str(uuid.uuid4()), provider="polar", external_event_id="msg_x",
                                        external_object_reference=None, payload_digest=None, note="evidence")
     assert missing["status"] == "rejected"
+
+
+def test_an_order_paid_after_deletion_is_one_open_paid_deleted_account_item_and_no_access_change(world):
+    """Review P1 of 06675882 on PostgreSQL: deleted A, Orena's own checkout order for A, Polar's renewal charge
+    arrives - one receipt, one open `paid_deleted_account` item with the amount, the subscription untouched, and a
+    redelivery changes nothing."""
+
+    from tests.test_billing import polar_request
+    from writing_coach.billing.gateway import Price
+    from writing_coach.billing.service import BillingService
+    from writing_coach.persistence.commerce_repository import PostgresCommerceRepository
+
+    owner = world.account()
+    world.delete(owner)
+
+    class Orders:
+        def order(self, *, order_code=None, operation_id=None):
+            return {"incarnation_id": owner, "gateway": "polar", "plan_id": "plus"} if operation_id == "op-A" else None
+
+    price = Price(plan_id="plus", period="month", currency="USD", amount_minor=999, gateway="polar",
+                  external_price_id="prod_plus")
+    billing = BillingService(orders=Orders(), commerce=PostgresCommerceRepository(world.runtime),
+                             gateways={"polar": POLAR}, prices={"plus:month:polar": price},
+                             reconciliation=world.items)  # fmt: skip
+    event = {"type": "order.paid", "data": {
+        "id": "ord_after_delete", "status": "paid", "billing_reason": "subscription_cycle", "subscription_id": "",
+        "total_amount": 999, "currency": "usd", "product_id": "prod_plus",
+        "metadata": {"orena_incarnation": owner, "orena_operation": "op-A", "orena_plan": "plus"}}}
+    before = world.sql("SELECT COUNT(*) AS n FROM commerce_subscriptions")[0]["n"]
+    headers, body = polar_request(event, at=datetime.now(UTC))
+    assert billing.handle_webhook("polar", headers, body).status == "paid_deleted_account"
+    headers, body = polar_request(event, at=datetime.now(UTC))
+    assert billing.handle_webhook("polar", headers, body).status == "paid_deleted_account"
+    items = world.sql("SELECT kind, state, reported_amount_minor AS amount, reported_currency AS currency, "
+                      "incarnation_id::text AS inc FROM billing_reconciliation_items WHERE kind = 'paid_deleted_account'")
+    assert [dict(item) for item in items] == [{"kind": "paid_deleted_account", "state": "open", "amount": 999,
+                                               "currency": "USD", "inc": owner}]
+    receipts = world.sql("SELECT processing_state FROM commerce_billing_event_receipts WHERE provider = 'polar'")
+    assert [r["processing_state"] for r in receipts] == ["ignored"]
+    assert world.sql("SELECT COUNT(*) AS n FROM commerce_subscriptions")[0]["n"] == before
