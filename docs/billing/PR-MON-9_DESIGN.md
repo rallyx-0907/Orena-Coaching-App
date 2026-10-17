@@ -273,7 +273,15 @@ token can read the method's brand, last4 and expiry. If not, the row reads "Card
 
 ### 4.5 Origins, OAuth and embedding (sandbox and production)
 
-- **Sandbox:** a **stable HTTPS hostname** (a named tunnel or the VPS's sandbox subdomain, owner's choice), with:
+- **Sandbox, chosen until a deploy host exists (owner, 2026-10-17): `http://localhost:8031` as the stable browser
+  origin.**
+  - Google OAuth accepts a loopback redirect: a sandbox-only OAuth client with origin `http://localhost:8031` and
+    redirect `http://localhost:8031/auth/google/callback`.
+  - Polar's Embedding allowlist accepts HTTP for local hosts (`localhost:8031`, the port included).
+  - The deployment guard accepts loopback with sign-in on.
+  - Only Polar's webhook needs a public URL: a quick tunnel carries `/api/billing/webhooks/polar` alone. Its URL is
+    updated in Polar's sandbox webhook settings per test session, and it never touches OAuth or embedding.
+- **Sandbox, alternative once a host exists:** a **stable HTTPS hostname** (a named tunnel or the VPS's sandbox subdomain, owner's choice), with:
   - a Google OAuth client whose redirect URI is that hostname's `/auth/callback`;
   - `PUBLIC_BASE_URL` set to it, so the deployment guard accepts public exposure with sign-in;
   - the hostname listed in Polar's sandbox **Settings → Preferences → Embedding**.
