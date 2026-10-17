@@ -315,3 +315,14 @@ granted, and the transaction can be reconciled and refunded safely. Nothing is a
 lanes stop treating model quality as a payment blocker, and a payment never depends on which model answered. |
 `BILLING_STATUS.md` (boundary, sequence, payment-ready list), `BILLING_LANE.md`, `PR-MON-7_DESIGN.md` header.
 
+
+D-MON-030 | 2026-10-17 | Domestic bank and QR account (owner, after SePay test mode on the `:8031` sandbox). Production
+uses **VPBank** through SePay, the only bank the owner can currently link (supersedes the VietinBank assumption of
+D-MON-024; the SePay adapter was bank-agnostic by configuration and is unchanged; NAPAS BIN `970432`). The memo keeps
+`SEVQR <PREFIX><code>` (harmless with VPBank; SePay parsed the code through it). The learner should not see the owner's
+main account number: the VietQR names a VPBank static virtual account (`SEPAY_VA_NUMBER`), while payments are still
+received and matched only on the main account and the exact payment code. Test mode showed a VA hides the main account
+number but not the owner's name; showing another name needs a household or business account (a human/legal step,
+RR-8.2). Gates 1-5 passed in test mode (webhook, cursor, bank reference, `webhook_success`, QR scan); gates 6-7 remain.
+| A bank the owner can actually link, and a QR that does not expose the main account. | `PR-MON-8_DESIGN.md` §13.
+

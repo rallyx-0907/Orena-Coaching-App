@@ -523,3 +523,63 @@ An approved design authorizes implementation only, never a merge or an activatio
 - The public URL for test mode, and the live small-value transfer.
 - The late-payment grace: decided as 1 hour, to be configured explicitly on each runtime.
 - Production activation and every runtime migration.
+
+## 13. Revision 7 delta: the QR names a VPBank virtual account (owner decisions of 2026-10-17)
+
+**Status: DESIGNING (docs only), for an independent delta review.** It changes only which account number the VietQR
+carries, and the validation of that number. Payment matching, locking, identity, the feed, reconciliation, secrets and
+the activation gates are unchanged.
+
+### 13.1 Facts from SePay test mode (sandbox `:8031`, 2026-10-17)
+
+- **The linked bank is VPBank**, the only bank that can currently be linked to SePay for the owner. Its NAPAS BIN is
+  `970432`. `SEPAY_BANK_BIN` was configured accordingly; the BIN was always configuration, never inferred.
+- **QR to the main account.** A banking app showed the bank, account, amount and memo correctly (gate 5 passed).
+- **VA transfers.** SePay offers static virtual accounts (VA) for VPBank personal and household accounts. A test
+  transfer to a VA was matched and paid by today's code, unchanged:
+  - the webhook's and the v2 `account_number` are the **main** account;
+  - the VA is reported separately (v2 `va` / `va_id`);
+  - the reference, the code and `webhook_success` were as for a main-account transfer.
+- **The VA number is 12 alphanumeric characters.** A VietQR naming it was accepted by a banking app, which showed the
+  VA, the amount and the memo, but **the owner's own name** as beneficiary. A VA hides the main account number, not
+  the name. A different displayed name needs a household or business account in that name: a human/legal step,
+  outside code.
+
+### 13.2 Owner decisions
+
+- Production uses **VPBank** through SePay (supersedes the VietinBank assumption of D-MON-024 / §3; the adapter was
+  bank-agnostic by configuration).
+- The memo keeps `SEVQR <PREFIX><code>`. `SEVQR` is a VietinBank requirement; it is harmless with VPBank, and SePay
+  parsed the code through it in test mode.
+- The learner should not see the owner's main account number. The QR names a VA.
+
+### 13.3 The change
+
+- **`SEPAY_VA_NUMBER`** (optional, a value is a human gate). When set, the VietQR's beneficiary account (tag 38/01/01)
+  and the `transfer.account_number` returned by checkout are the VA. When unset, they are the main account, as today.
+- **The main account is never sent to a learner when a VA is configured:** not in the QR, not in the checkout
+  response, not in a log.
+- **Receiving is unchanged.** A payment is accepted only when the webhook's or feed's `accountNumber` is
+  `SEPAY_ACCOUNT_NUMBER` (the main account), and it is matched only by the exact payment code, as in revisions 5-6. A
+  VA does not become a second receiving account, and no amount or VA matching is added.
+- **Beneficiary validation.** The QR beneficiary is 1-19 characters of `[0-9A-Z]` (the main account stays digits only,
+  6-19). This is NAPAS's account field, which also carries alphanumeric accounts (the published MoMo `PSP...` vectors).
+- **Configuration check.** A VA that is not `[0-9A-Z]{1,19}` makes SePay not configured (`GatewayNotConfigured`),
+  never a QR with a guessed account. No secret or account number is printed by the check.
+
+### 13.4 Tests
+
+- With a VA, the QR's tag 38/01/01 is the VA. The main account appears nowhere in the QR or in the checkout response.
+  The CRC is checked with an independent implementation (`binascii.crc_hqx`, CRC-16/CCITT-FALSE).
+- Without a VA, today's QR and the two published known-answer vectors are unchanged.
+- A malformed VA (lower case, punctuation, longer than 19) refuses the configuration.
+- Receiving: a webhook whose `accountNumber` is the main account and whose code names the order is paid; a webhook
+  whose `accountNumber` is the VA (not observed, but never trusted) is `ignored`, as today.
+
+### 13.5 Not changed, and residual
+
+- **RR-8.2.** The payer still sees the owner's own name. A household or business account removes that; it is outside
+  PR-MON-8.
+- `SEVQR` stays in the memo (owner decision).
+- The User-Agent fix (#249) is separate and independent of this delta.
+
