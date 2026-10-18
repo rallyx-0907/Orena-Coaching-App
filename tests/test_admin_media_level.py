@@ -25,7 +25,7 @@ def test_english_level_is_set_and_shown_to_learners(setup):  # noqa: F811
     before = setup["store"].get(MEDIA_ID)
     result = _post(setup, "b1")
     assert result.status_code == 200
-    assert result.json()["record"]["level"] == "B1"
+    assert result.json()["record"]["facts"]["level"] == "B1"
     after = setup["store"].get(MEDIA_ID)
     assert after.level == "B1"
     assert stored_media_metadata(after)["reviewed_level"] == "B1"
