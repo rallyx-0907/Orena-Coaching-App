@@ -6367,3 +6367,7 @@ The pinned admin design draws no cost page (D-128). The "Where this spend was ma
 ## Admin: a media item's reviewed level (2026-10-18)
 
 The backend can now set or clear the reviewed CEFR / HSK level of an existing shared-library media item (`POST /api/admin/console/content/media/{id}/level`, audited as `admin.content.level`; stored in the entry's `level` field, shown to learners as `reviewed_level`). Until now a level could only be written at import, so published pilot items imported without one had no way to get it. The pinned Admin design draws no media level control, so no UI was added. Owner/design decision needed: where a level control belongs on the Media admin, if at all.
+
+## Word Quick Sheet: which meaning line comes first (2026-10-18)
+
+The pinned design's `Word Quick Sheet` (`Orena.dc.html`, `qs.meaning` / `qs.vi`, and `qsWC.meaning` / `qsWC.vi` on a saved word) draws the English meaning first (16px) and the Vietnamese meaning second (13px, muted). The app draws the support-language meaning first and the English original second, as the quieter line. Under D-068 (the design's words are sample content) this is defensible, but it is a deviation in order and weight. Left as built; for the human to decide (#199).

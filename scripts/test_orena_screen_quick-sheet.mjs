@@ -298,10 +298,15 @@ assert.equal(noteTypeColorKey('anything-else'), 'var(--muted)');
 {
   const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
   const wordSheet = sheetSrc.slice(sheetSrc.indexOf('export async function openWordSheet'), sheetSrc.indexOf('Sentence Quick Sheet --'));
-  assert.match(wordSheet, /if \(next\.hasContent\) \{ detail = enriched; card = next; void keepContextualMeaning\(\); \}/, 'an arrived contextual meaning is kept on the saved card');
+  assert.match(wordSheet, /if \(next\.hasContent\) \{ detail = answer; card = next; void keepContextualMeaning\(\); \}/, 'an arrived contextual meaning is kept on the saved card');
   const keeper = wordSheet.slice(wordSheet.indexOf('async function keepContextualMeaning'), wordSheet.indexOf('async function toggleSave'));
-  assert.match(keeper, /!card\.saved \|\| !card\.meaningIsContextual/, 'only a saved card with a contextual meaning is re-saved');
-  assert.match(keeper, /api\.saveLibraryVocabulary\(wordSavePayload\(card, sentence, source\)\)/, 'through the save the sheet already uses');
+  assert.match(keeper, /readOnly \|\| busy \|\| !keptNow \|\| !card\.meaningIsContextual/, 'only a word still kept by the learner, with no save in flight, is re-saved');
+  assert.match(keeper, /api\.saveLibraryVocabulary\(\{\s*word: card\.word,\s*definition: card\.meaning,\s*source_kind: stored\.source_kind/, 'through the save the sheet already uses, definition only: the stored source is sent back, never the sheet\'s own');
+  assert.doesNotMatch(keeper, /wordSavePayload/, 'the whole payload (source fragment, kind, phonetic) is not re-sent');
+  // Unsave while "Why here?" is pending: the arriving answer says saved, but the learner's unsave wins, so no POST.
+  const toggler = wordSheet.slice(wordSheet.indexOf('async function toggleSave'), wordSheet.indexOf('async function openStroke'));
+  assert.match(toggler, /deleteLibraryVocabulary\(card\.word\);\s*keptNow = false;/, 'an unsave clears the learner flag');
+  assert.match(wordSheet, /\{ \.\.\.enriched, saved: keptNow \}/, 'an answer never overrides the learner flag with its own saved:true');
   assert.match(keeper, /readOnly/, 'a read-only sheet never writes');
 }
 
