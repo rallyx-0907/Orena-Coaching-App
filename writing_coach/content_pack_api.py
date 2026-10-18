@@ -187,7 +187,7 @@ async def import_pack(request: Request, file: UploadFile | None = File(default=N
     reading._same_origin(request)
     pack = _verified(await _read_upload(file))
     pack_id = str(pack.manifest.get("pack_id") or "")
-    order = {"reading_source": 0, "reading_article": 1, "vocabulary_collection": 2}
+    order = {"reading_source": 0, "reading_article": 1, "vocabulary_collection": 2, "media_item": 3}
     results = []
     results.extend(_media_rows(pack, overwrite=overwrite, dry_run=False, actor=reading._actor(admin)))
     for item in sorted(pack.items, key=lambda entry: order[entry.kind]):
