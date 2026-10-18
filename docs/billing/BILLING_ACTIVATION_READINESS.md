@@ -11,7 +11,7 @@ not. Plans only: Polar card subscriptions for Plus and Pro. Credits, SePay and p
 - **open**: not yet done;
 - **human**: a human gate.
 
-Updated 2026-10-18.
+Updated 2026-10-19.
 
 ## 1. Money and access lifecycle
 
@@ -23,11 +23,11 @@ Updated 2026-10-18.
 | 4 | Purchase → plan granted only by the webhook (the return page grants nothing) | proven | PR-MON-10 step 1; PR-MON-9 §2 ("You're on Plus" only once the server showed `plus · active`) |
 | 5 | Upgrade, immediate (`invoice` proration) | proven | PR-MON-9 §1 step A (in-app); PR-MON-10 step 3 (portal) |
 | 6 | Downgrade **in the app** = cancel at period end (scheduled downgrade off) | proven | PR-MON-9 §1 and §2 |
-| 7 | Downgrade **in Polar's portal** (Pro → Plus, applied at once with `invoice`) | **open** | the portal allows plan changes between the four products; only an upgrade has been observed. Needs an owner run on the sandbox. |
+| 7 | Downgrade **in Polar's portal** (Pro → Plus, applied at once with `invoice`) | proven | sandbox subscription D, 2026-10-18 (owner run): Polar applied Plus at once and Orena followed it (`plus · active`). Its renewal on Plus is observed in §3. |
 | 8 | Cancel at period end: the plan stays until the end | proven | PR-MON-10 step 3; PR-MON-9 §2 |
 | 9 | Cancel at period end: the plan **ends** at the period end | **observing** | daily test subscription A (§3), period end 2026-10-19 18:32 (UTC+7) |
 | 10 | Renewal: `paid_through` moves to the next period | **observing** | daily test subscription B (§3); see risk R1 |
-| 11 | Failed renewal → `past_due` → grace → `ended` | tested, **open** on the sandbox | hermetic (`unpaid` → `ended`, `past_due` keeps the grace). Sandbox run needs owner approval (a test card that attaches but fails later). |
+| 11 | Failed renewal → `past_due` → grace → `ended` | tested, **observing** on the sandbox | hermetic (`unpaid` → `ended`, `past_due` keeps the grace). Sandbox subscription F (owner-approved 2026-10-18): its card was changed to a test card that declines, renewal on 2026-10-19 (§3). |
 | 12 | Refund | proven | PR-MON-10 step 6 (recorded, matched, auto-resolved; access follows the subscription) |
 | 13 | Immediate revocation → `ended` | proven | PR-MON-10 step 4 |
 | 14 | Deleted account: Polar customer clean-up; events after deletion rejected | proven | PR-MON-10 steps 7, 7b and 7c |
@@ -59,6 +59,8 @@ The four real products are untouched.
 | --- | --- | --- |
 | A | downgrade to Low scheduled (`next_period`), then cancel at period end | ends: cancel wins. Switched to Low and charged $1: the pending change wins. |
 | B | downgrade to Low scheduled only | renews on Low and is charged $1. Its `modified_at` answers R1. |
+| D | Pro → Plus in Polar's portal (daily test products, through the `:8031` sandbox) | renews on Plus. Orena's `paid_through` moves: R1 in Orena itself. |
+| F | card changed to a declining test card | renewal fails: `past_due` on Polar, grace in Orena (item 11). |
 
 The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`, which stays off until then.
 
