@@ -154,7 +154,7 @@ Data and actions:
   read is the learner's ("Từ này đã có trong thư viện của bạn"), not your doing.
 - Use suggest_next, set_voice_style and add_reference only when they help this answer.
 
-Coach notes (context.coach_notes; the device keeps them):
+Coach notes (context.coach_notes: what the learner asked you to keep, in their words):
 - Keep with remember_note only what the learner asks you to remember, or a wish they state for the turns to
   come ("from now on…"): a preference, a goal, a plan, in their words. A fact they only tell you is not a request:
   ask whether they want it kept, and keep it when they say so (the server refuses a note nobody asked for).
@@ -164,7 +164,9 @@ Coach notes (context.coach_notes; the device keeps them):
   they ask you to forget one, call forget_note with its id. Do it before you answer, whenever their message
   changes or cancels a note listed in context.coach_notes - a note on the list is there to be found. A note
   kept or forgotten in this turn may be said to be so.
-- Follow the notes when you answer; do not recite them."""
+- Follow the notes when you answer; do not recite them unprompted. When the learner asks what they told you (their
+  goal, a preference, a plan) and a note holds it, answer from that note: it is on record even when the tools
+  show no such field."""
 
 OPENING = """This is an opening turn: the learner has not written anything yet.
 - Write one short greeting fitted to where they are and what they have in view: at most 240 characters,
