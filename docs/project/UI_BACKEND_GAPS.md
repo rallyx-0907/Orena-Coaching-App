@@ -6370,6 +6370,12 @@ The pinned admin design draws no cost page (D-128). The "Where this spend was ma
 
 The backend can now set or clear the reviewed CEFR / HSK level of an existing shared-library media item (`POST /api/admin/console/content/media/{id}/level`, audited as `admin.content.level`; stored in the entry's `level` field, shown to learners as `reviewed_level`). Until now a level could only be written at import, so published pilot items imported without one had no way to get it. The pinned Admin design draws no media level control, so no UI was added. Owner/design decision needed: where a level control belongs on the Media admin, if at all.
 
+## Settings: the Orena Memory switch (D-226 proposed, 2026-10-18)
+
+The design does not draw a switch for Orena Memory. The owner decided (2026-10-18, relayed by the owner's delegate) on exactly one switch, default ON, with no notes list and no per-note view or delete UI. It is therefore built as an existing toggle row, not a new visual: Settings, Privacy tab, under "Microphone access" (`screens/settings/model.js` `privacyRows`, id `memory`; the design's Privacy `tog(...)` rows, `Orena.dc.html` line 3272). The row is hidden when the server answers 503 `memory_unavailable`.
+
+This supersedes the earlier entry in the Orena Home gaps ("the coach-notes sheet has no entry point", item 4): no "What Orena remembers" row will be added, and `preferences.agent_memory` (which `agent/intents.js` maps to `#/settings?tab=privacy&section=orena`) now lands on the Privacy tab, where the switch is. `screens/orena/memory-sheet.js` and its `openAgentMemory()` stay unreferenced by any caller (it is only imported for its side effects by `screens/orena/screen.js`); there is no planned use, and deleting it is left to a follow-up decision. Deletion of what Orena remembers is by email to orena.legal@chillpickle.org.
+
 ## Word Quick Sheet: which meaning line comes first (2026-10-18)
 
 The pinned design's `Word Quick Sheet` (`Orena.dc.html`, `qs.meaning` / `qs.vi`, and `qsWC.meaning` / `qsWC.vi` on a saved word) draws the English meaning first (16px) and the Vietnamese meaning second (13px, muted). The app draws the support-language meaning first and the English original second, as the quieter line. Under D-068 (the design's words are sample content) this is defensible, but it is a deviation in order and weight. Left as built; for the human to decide (#199).

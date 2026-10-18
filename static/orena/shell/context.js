@@ -9,6 +9,7 @@
    Nothing here is invented: an unknown level shows no level, a count that cannot be read is 0
    and the badge is not drawn (Design Contract rule 40). */
 import { request } from '../infrastructure/api.js';
+import { setMemoryOwner } from '../agent/memory-switch.js';
 import { learnerMemory, setPlaceSink } from '../product/memory.js';
 import { learningLanguage } from '../product/languages.js';
 import { chooseInterface, setSupportFromProfile } from '../copy/index.js';
@@ -80,6 +81,7 @@ export async function loadContext(storage = window.localStorage) {
   state.initial = initialOf(state.name);
   state.picture = typeof user?.picture === 'string' && /^https:\/\//.test(user.picture) ? user.picture : '';
   state.owner = user?.email || user?.mode || 'local';
+  setMemoryOwner(state.owner);
   state.language = learningLanguage(bootstrap?.language?.active);
   state.activeLanguage = String(bootstrap?.language?.active || '').trim();
   state.languageOptions = Array.isArray(bootstrap?.language?.options) ? bootstrap.language.options : [];
