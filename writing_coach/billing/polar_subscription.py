@@ -189,12 +189,31 @@ class PolarSubscriptions:
             "pending_change": ({"plan": target[0], "period": target[1],
                                 "applies_at": pending.get("applies_at") or live.get("current_period_end")}
                                if target else None),
-            # §4.4: the card summary only where Polar exposes it to an organization token (proved on the sandbox)
-            "payment_method": None,
+            # §4.4 (proved on the sandbox, 2026-10-18): brand, last4 and expiry only - never more of the card
+            "payment_method": self._card(str(live.get("customer_id") or "")),
             "billing_email": customer.get("email") or None,
         }  # fmt: skip
         self._enrichment[incarnation_id] = (self._now() + timedelta(seconds=ENRICHMENT_SECONDS), value)
         return value
+
+    def _card(self, customer_id: str) -> dict[str, Any] | None:
+        """The default card's summary (`GET /v1/customers/{id}/payment-methods`), or None when unreadable."""
+
+        if not customer_id:
+            return None
+        try:
+            status, body = self._call(self._request("GET", f"/v1/customers/{quote(customer_id, safe='')}/payment-methods"))
+        except Exception:  # noqa: BLE001 - the row then reads "Card on file"
+            return None
+        items = (body or {}).get("items") if isinstance(body, dict) else body
+        if status != 200 or not isinstance(items, list) or not items:
+            return None
+        chosen = next((m for m in items if isinstance(m, dict) and m.get("is_default")), items[0])
+        card = chosen.get("method_metadata") if isinstance(chosen, dict) else None
+        if not isinstance(card, dict) or not card.get("last4"):
+            return None
+        return {"brand": str(card.get("brand") or ""), "last4": str(card["last4"])[-4:],
+                "exp_month": card.get("exp_month"), "exp_year": card.get("exp_year")}
 
     def forget(self, incarnation_id: str) -> None:
         """Drop the enrichment (a route of this account changed the subscription, or its webhook arrived)."""

@@ -57,6 +57,10 @@ class Polar:
 
     def __call__(self, request):
         method, url = request["method"], request["url"]
+        if method == "GET" and url.endswith("/payment-methods"):
+            return 200, {"items": [{"id": "pm_1", "is_default": True, "type": "card",
+                                    "method_metadata": {"brand": "visa", "last4": "4242", "exp_month": 8,
+                                                        "exp_year": 2028, "wallet": None}}]}
         if method == "GET" and "/v1/subscriptions/" in url:
             self.reads += 1
             return 200, dict(self.live)
@@ -511,3 +515,12 @@ def test_the_embed_origin_comes_from_configuration_only():
     plain = CheckoutIntent(operation_id="op", incarnation_id="inc-1", price=PRICES["plus:month:polar"],
                            return_url="r", cancel_url="c")
     assert "embed_origin" not in POLAR.checkout_request(plain)["json"]
+
+
+def test_the_card_summary_is_brand_last4_and_expiry_only():
+    """§4.4, proved on the sandbox 2026-10-18: an organization token reads the customer's payment methods."""
+
+    worker, _ = subs(Polar(customer_id="cus_1"))
+    assert worker.view("inc-1")["payment_method"] == {"brand": "visa", "last4": "4242", "exp_month": 8, "exp_year": 2028}
+    without, _ = subs(Polar())
+    assert without.view("inc-1")["payment_method"] is None
