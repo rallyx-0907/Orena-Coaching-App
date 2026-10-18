@@ -52,7 +52,7 @@ received card data.
 | **Resume** | banner gone, pill "Active", Cancel plan back. *The "You're staying on Pro" toast was not captured: unverified.* |
 | **Invoice download** | 202 `preparing`, then 200 `ready` with a URL on Polar's invoice store |
 | **First purchase through the embed** (after revoking the Pro subscription through the sandbox API) | "Continue to payment" opened Polar's form **inside the app** (the Embedding allowlist holds `localhost:8031`), with no discount field and no trial, $9.99/mo. After the owner subscribed: the overlay closed, the app did not navigate, and "All set / You're on Plus / New limits are active now" appeared only once the server showed `plus · active · month`. Done → Plan & usage, which showed Plus, "Monthly · $9.99 / month" and a fourth invoice. |
-| **Update card → portal** | `POST /api/billing/portal` answered 200 to a scripted click; a scripted click is not a user gesture, so the new tab may have been blocked. The real click timed out in the browser tool. **Confirmed by the owner by hand:** pending. |
+| **Update card → portal** | `POST /api/billing/portal` answered 200 to a scripted click; a scripted click is not a user gesture, so the new tab may have been blocked. The real click timed out in the browser tool. **Confirmed by the owner by hand (2026-10-18): Polar's customer portal opened in a new tab.** |
 
 **Notes:**
 - The page header's title wraps on a phone next to "See all plans". The shared header predates this PR.
