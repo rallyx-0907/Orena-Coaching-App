@@ -398,6 +398,34 @@ above the owner's 1 GB floor, `--timeout=60`): media set plus admin route tests 
 **Still open:** independent re-review of this small diff; restart of `:8021` on the final head and the remaining live cases (3, 4, 5, one real
 hold/retry observation); the A12 visual check (this machine has no browser); the five first-review P2 findings (no recorded text). PR #261 stays Draft.
 
+## Review of `558d192a`: APPROVE; live re-run of cases 3 and 4 on the final code (2026-10-18)
+
+Independent review of `558d192a`: **APPROVE, P0 0, P1 0, no new P2**. CI #833 on that SHA was `success` (checked with `gh` before the
+run). `:8021` was restarted on it (loads `_otpm_request_too_large` and `correction_ceiling`; health 200; the test file holds no
+real account id) and cases 3, 4 and 5 were started within the owner's approval (USD 0.10 cap, no new item, no publication, rights
+unchanged, stop at the first anomaly). **The run stopped after case 4 on a rate limit; case 5 was not run.** Spend on the benchmark
+batch so far: **USD 0.0348** of 0.10. Method as before: the pipeline's own `_correct_transcript` on the transcript already stored,
+with a temporary eligibility marker removed afterwards. Stored transcript text, status and rights are unchanged (checked after the run).
+
+| Case | Item | Result | Reader's judgement |
+| --- | --- | --- | --- |
+| 3 ZH with numbers | `youtube-rbLlUXT72C4` HSK1, 51 cues | **`applied`**, 129.6 s, USD 0.0086; 8 accepted, 0 rejected | **better**: punctuation and 他 -> 她 where context needs it; the three cues with numbers (18, 38, 35) untouched |
+| 4 EN caption | `youtube-4HGNqFdaD34` Sharks 101, 49 cues | `partial` (`rate_limited`), 120.1 s, USD 0.0055; 1 accepted, 1 noise cue cleaned, 1 rejected | **unchanged to slightly better**: one comma fixed, `[Narrator]` removed; "it's lower jaw" -> "its" refused as `lexemes_changed` (correct grammar, but the EN guard forbids changing a word by design) |
+| 5 EN caption, previously failed | `youtube-n6wpNhyreDE` | **not run** | not judged |
+
+What the raw answers show for case 3: batch 1 (24 cues) was answered in full (`stop`, 869 tokens); the next request met the
+minute-full refusal and was waited for once; after the limit was learned the requests carried `max_completion_tokens` 500 and 11
+cues instead of 24, and every answer ended `stop`. The earlier cut-off answers did not recur, and neither did the refusal that was
+never learned. Case 4 stopped because, after case 3 had used the minute, the second item ran into the per-call wait cap and the shared 150 s
+total: the bounded behaviour working as designed, not a defect.
+
+**Not done:** case 5; one real observation of the hold/retry behaviour (the run called the correction directly, so no item carries
+`transcript_correction_unresolved`; and an item with `rights=unknown` is held for rights whatever the correction did, so the
+correction-incomplete hold itself can only be observed on a `cleared` item, which this approval does not allow us to create);
+the A12 visual check (this machine has no browser). Five items now carry real correction rows on `:8021` for A12:
+`youtube-2HRoo7akLsU` (applied), `youtube-rbLlUXT72C4` (applied, 51 cues), `youtube-cZbVZFJ7UrI` (partial, 6 refused cues),
+`youtube-4HGNqFdaD34` (partial, one refused cue and one noise cue), `youtube-n6wpNhyreDE` (failed from an earlier run).
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;

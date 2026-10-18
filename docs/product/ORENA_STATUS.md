@@ -11,8 +11,8 @@ Whisper receives bounded source context; the configured media text model can rep
 ZH ASR and EN captions, with per-cue before/after/provenance visible in A12. Personal and pre-existing
 records are excluded; a correction that fails never blocks translation, but a cleared item is then held, not
 auto-published, also across retry. Local media+admin1292 pass/21 skip, Ruff/Node pass. `fc728b6f` was APPROVED
-(CI green); the live re-run on :8021 then found a second Groq refusal form (fixed in 4be80e66, CI green; its review
-found a real account id in a test fixture, now synthetic, not yet re-reviewed); cases 3-5 and A12 to run; 5 first-review P2 have no recorded text). Live quality, matched-audio benchmark and browser fidelity remain
+(CI green); the live re-run on :8021 then found a second Groq refusal form (fixed in 4be80e66 and 558d192a, APPROVED,
+CI green); live cases 3 (ZH, applied) and 4 (EN, partial, rate limit) done, case 5 and A12 to run; 5 first-review P2 have no recorded text). Live quality, matched-audio benchmark and browser fidelity remain
 unverified; no runtime deployment or publication. Trial artifacts report EN19/ZH18 usable; sitting6
 stopped at HTTPS egress preflight with zero new imports. See `docs/reviews/MEDIA_ASR_CONTEXT_CHECKPOINT_2026-10-17.md`.
 
