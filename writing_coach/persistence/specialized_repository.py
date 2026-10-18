@@ -1952,28 +1952,44 @@ class PostgresSpecializedLearningRepository:
                      "prior_contract":r.prior_contract,"replaced_by_fingerprint":r.replaced_by_fingerprint,"review":dict(r.review or {})} for r in rows]
 
     def list_product_activity_events(self, since: datetime) -> list[dict[str, Any]]:
-        """Read aggregate inputs across learners without selecting raw content."""
+        """Read aggregate inputs across learners without selecting raw content.
+
+        Each row carries only identifiers and counters: the skill, the time, a pseudonymous participant code
+        (never the email or name), the target language the event belonged to (the row's own language scope) and the
+        account's interface language, as two separate fields. No prose, transcript or audio reference is selected."""
+        from writing_coach.product_activity import participant_code
+
         with Session(self.engine) as s:
+            interface = {str(uid): str(lang or "") for uid, lang in s.execute(select(User.id, User.interface_language)).all()}
             events: list[dict[str, Any]] = []
-            for essay_id, occurred, uid in s.execute(select(Essay.id, Essay.created_at, Essay.user_id).where(Essay.created_at >= since)).all():
-                events.append({"skill": "writing", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": True})
-                events.extend({"skill": "writing", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": stage, "funnel_key": str(essay_id), "funnel_only": True} for stage in ("attempted", "completed"))
+
+            def who(uid: Any, target_lang: Any) -> dict[str, Any]:
+                return {"learner_key": str(uid), "participant_code": participant_code(str(uid)),
+                        "target_lang": str(target_lang or ""), "interface_lang": interface.get(str(uid), "")}
+
+            for essay_id, occurred, uid, lang in s.execute(select(Essay.id, Essay.created_at, Essay.user_id, Essay.language_code).where(Essay.created_at >= since)).all():
+                at, ctx = self._iso(occurred), who(uid, lang)
+                events.append({"skill": "writing", "occurred_at": at, **ctx, "completed": True})
+                events.extend({"skill": "writing", "occurred_at": at, **ctx, "funnel_stage": stage, "funnel_key": str(essay_id), "funnel_only": True} for stage in ("attempted", "completed"))
             # Reading reads the canonical evidence only (D-082): one submitted
             # attempt per row, so it is attempted and completed at once. There
             # is no "started" record - a row exists only once submitted - and
             # the funnel says so rather than inventing one.
-            for attempt_id, occurred, uid in s.execute(select(ReadingAttempt.id, ReadingAttempt.created_at, ReadingAttempt.user_id).where(ReadingAttempt.created_at >= since)).all():
-                events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": True})
+            for attempt_id, occurred, uid, lang in s.execute(select(ReadingAttempt.id, ReadingAttempt.created_at, ReadingAttempt.user_id, ReadingAttempt.language_code).where(ReadingAttempt.created_at >= since)).all():
+                at, ctx = self._iso(occurred), who(uid, lang)
+                events.append({"skill": "reading", "occurred_at": at, **ctx, "completed": True})
                 for stage in ("attempted", "completed"):
-                    events.append({"skill": "reading", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": stage, "funnel_key": str(attempt_id), "funnel_only": True})
-            for asset_id, segment_id, occurred, uid, revealed, checked in s.execute(select(ListeningProgress.asset_id, ListeningProgress.segment_id, ListeningProgress.updated_at, ListeningProgress.user_id, ListeningProgress.revealed, ListeningProgress.checked_attempt_count).where(ListeningProgress.updated_at >= since)).all():
+                    events.append({"skill": "reading", "occurred_at": at, **ctx, "funnel_stage": stage, "funnel_key": str(attempt_id), "funnel_only": True})
+            for asset_id, segment_id, occurred, uid, lang, revealed, checked in s.execute(select(ListeningProgress.asset_id, ListeningProgress.segment_id, ListeningProgress.updated_at, ListeningProgress.user_id, ListeningProgress.language_code, ListeningProgress.revealed, ListeningProgress.checked_attempt_count).where(ListeningProgress.updated_at >= since)).all():
                 completed = bool(revealed or (checked or 0) > 0)
-                events.append({"skill": "listening", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": completed})
+                at, ctx = self._iso(occurred), who(uid, lang)
+                events.append({"skill": "listening", "occurred_at": at, **ctx, "completed": completed})
                 funnel_key = f"{asset_id}:{segment_id}"
-                events.append({"skill": "listening", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "attempted", "funnel_key": funnel_key, "funnel_only": True})
+                events.append({"skill": "listening", "occurred_at": at, **ctx, "funnel_stage": "attempted", "funnel_key": funnel_key, "funnel_only": True})
                 if completed:
-                    events.append({"skill": "listening", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "completed", "funnel_key": funnel_key, "funnel_only": True})
-            for take_id, occurred, uid in s.execute(select(SpeakingAttempt.take_id, SpeakingAttempt.created_at, SpeakingAttempt.user_id).where(SpeakingAttempt.created_at >= since)).all():
-                events.append({"skill": "speaking", "occurred_at": self._iso(occurred), "learner_key": str(uid), "completed": True})
-                events.append({"skill": "speaking", "occurred_at": self._iso(occurred), "learner_key": str(uid), "funnel_stage": "completed", "funnel_key": str(take_id), "funnel_only": True})
+                    events.append({"skill": "listening", "occurred_at": at, **ctx, "funnel_stage": "completed", "funnel_key": funnel_key, "funnel_only": True})
+            for take_id, occurred, uid, lang in s.execute(select(SpeakingAttempt.take_id, SpeakingAttempt.created_at, SpeakingAttempt.user_id, SpeakingAttempt.language_code).where(SpeakingAttempt.created_at >= since)).all():
+                at, ctx = self._iso(occurred), who(uid, lang)
+                events.append({"skill": "speaking", "occurred_at": at, **ctx, "completed": True})
+                events.append({"skill": "speaking", "occurred_at": at, **ctx, "funnel_stage": "completed", "funnel_key": str(take_id), "funnel_only": True})
             return events

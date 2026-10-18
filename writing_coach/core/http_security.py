@@ -15,6 +15,7 @@ Two small rules the whole app keeps, so no route has to remember them:
 
 from __future__ import annotations
 
+import ipaddress
 from collections.abc import Mapping
 from urllib.parse import urlsplit
 
@@ -127,3 +128,59 @@ def _rate_group(method: str, path: str) -> tuple[str, int, int] | None:
         if path in exact or path.startswith(tuple(prefix for prefix in prefixes if not prefix.endswith("#"))):
             return name, limit, window
     return None
+
+
+# ---- a per-client-IP brake on sign-in (open-public readiness item d) ----------------------------------------------
+# The sign-in start and callback are GETs and the native exchange carries no session, so the per-account groups above
+# never see them. They are limited per client address instead; the count of each is operator policy (Platform Admin).
+# The answer is the same 429 the per-account groups give, whatever the account: no limit message says who exists.
+
+SIGNIN_GROUPS: tuple[tuple[str, str, frozenset[str], int, int], ...] = (
+    # (group, policy key, (method, path) pairs as "METHOD path", default requests, window seconds)
+    ("signin_start", "rate.signin_start_per_10min", frozenset({"GET /auth/google"}), 20, 600),
+    ("signin_callback", "rate.signin_callback_per_10min", frozenset({"GET /auth/google/callback"}), 30, 600),
+    ("signin_exchange", "rate.signin_exchange_per_10min", frozenset({"POST /api/auth/native/exchange"}), 30, 600),
+)
+
+
+def signin_group(method: str, path: str) -> tuple[str, int, int] | None:
+    """(group, requests the effective policy allows now, window seconds) for a sign-in request, or None."""
+    from writing_coach import policies
+
+    request_key = f"{method.upper()} {path.rstrip('/') or '/'}"
+    for name, policy_key, requests, default, window in SIGNIN_GROUPS:
+        if request_key in requests:
+            try:
+                limit = int(policies.value(policy_key))
+            except Exception:
+                limit = default
+            return name, limit, window
+    return None
+
+
+def _ip(value: object) -> str | None:
+    try:
+        address = ipaddress.ip_address(str(value or "").strip())
+    except ValueError:
+        return None
+    mapped = getattr(address, "ipv4_mapped", None)
+    return str(mapped if mapped is not None else address)
+
+
+def client_address(peer: object, headers: Mapping[str, str]) -> str:
+    """The address a sign-in request counts against.
+
+    The transport peer is the truth. Only when that peer is itself a non-public (private, loopback, link-local) hop (the
+    Cloudflare tunnel's connector, Docker's port proxy) is `CF-Connecting-IP` read, because only then is it set by the
+    edge and not by the caller; a directly connected public peer cannot choose its own key. `X-Forwarded-For` is
+    never read: any client can write it. With no usable address the key is a single shared "unknown" bucket, which
+    fails closed rather than open."""
+    direct = _ip(peer)
+    if direct is None:
+        return "unknown"
+    address = ipaddress.ip_address(direct)
+    if not address.is_global:
+        edge = _ip(headers.get("cf-connecting-ip"))
+        if edge is not None:
+            return edge
+    return direct
