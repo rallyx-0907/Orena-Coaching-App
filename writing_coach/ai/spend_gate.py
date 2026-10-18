@@ -38,8 +38,9 @@ DEFAULT_WARN_RATIO = 0.8
 # and word audio (ai/audio_telemetry.py), media AI and ASR. What it stops: Orena chat and voice (agent/budget.py); every
 # paid rung of the router - a routed primary, a backup, a rung of an uncapped capability (ai/platform.py
 # `_funded_gate`); a single paid request, legacy selection or an agent round (`_require_paid_funding`); paid media
-# steps (media_spend.py); Groq translation for Listening and Reading (media_translation.py); Speaking recognition,
-# pronunciation scoring and word audio (`require_below_ceiling`, beside their funding backstop). Local and free models
+# steps (media_spend.py); Groq translation for Listening and Reading (media_translation.py); Speaking recognition and
+# pronunciation scoring (`require_below_ceiling`, beside their funding backstop); new Azure word audio, which gives way
+# to the local or device voice (word_audio_azure.py). Local and free models
 # are never stopped. Not stopped: the Admin's own provider test (admin_ai_test), an operator action.
 _ceiling: DailySpendGuard | None = None
 CEILING_REASON = "system_ceiling"
