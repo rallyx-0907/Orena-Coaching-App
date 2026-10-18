@@ -455,6 +455,9 @@ class ReplyOutputs:
     server_notes: Any = None
     stored: str | None = None
     memory_off: bool = False  # the learner switched Orena Memory OFF: no note is kept anywhere (§6)
+    # Server mode: the coach notes that are the device's, not yet placed by the learner (contract v9 §3/§10). A change
+    # to one is applied by the device (`stored: "device"`), never stored on the server.
+    device_notes: frozenset[str] = frozenset()
     note_texts: Mapping[str, str] = field(default_factory=dict)  # coach note id -> its text (a server remove carries it)
     # A turn the server read as correcting these notes (agent/notes.py): a correction replaces, it never forgets.
     correcting: tuple[str, ...] = ()
@@ -770,7 +773,7 @@ class ReplyOutputs:
             return "refused: the learner's message does not correct that note"
         if self._note_updates() >= MAX_NOTE_UPDATES:
             return f"refused: at most {MAX_NOTE_UPDATES} notes a turn"
-        if self.server_notes is not None:
+        if self.server_notes is not None and (replaces is None or str(replaces) not in self.device_notes):
             return self._keep_on_server(str(kind), text.strip(), None if replaces is None else str(replaces))
         weight = min(1.0, self.notes[str(replaces)] + REINFORCE) if replaces is not None else NEW_NOTE_WEIGHT
         note = {
@@ -810,6 +813,11 @@ class ReplyOutputs:
         note = {"id": item.id, "kind": item.kind, "text": item.text, "weight": 1.0,
                 "last_reinforced": item.created_at.isoformat(), "expires_at": None}  # fmt: skip
         self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note, stored="server"))
+        # The learner kept, in so many words, what an unplaced device note says: it is the account's now, and the
+        # device drops its copy - a note is never both on the device and on the server (contract §5.4).
+        for device_id in sorted(self.device_notes):
+            if same_note(self.note_texts.get(device_id, ""), item.text):
+                self.memory_updates.append(MemoryUpdateEvent(op="remove", note={"id": device_id}, stored="device"))
         return f"accepted: kept as {item.id}; you may say it is noted"
 
     def _forget(self, args: Mapping[str, Any]) -> str:
@@ -825,7 +833,7 @@ class ReplyOutputs:
                     "remember_note with replaces set to its id and the new wish")  # fmt: skip
         if note_id not in self.asked or self.notes_intent != FORGET:
             return "refused: the learner did not ask to forget that note"
-        if self.server_notes is not None:
+        if self.server_notes is not None and note_id not in self.device_notes:
             try:
                 forgotten = self.server_notes.forget(note_id)
             except Exception:  # noqa: BLE001 - MemoryUnavailable or a store error never fails the turn
