@@ -21,21 +21,21 @@ $ErrorActionPreference = 'Stop'
 if (-not (Test-Path -LiteralPath $BackupScript)) { Write-Host "  $BackupScript not found." -ForegroundColor Red; exit 1 }
 $BackupScript = (Resolve-Path -LiteralPath $BackupScript).Path
 
-$arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $BackupScript
-$command = @"
-`$action  = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '$arguments'
-`$trigger = New-ScheduledTaskTrigger -Daily -At '$Time'
-`$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew
-Register-ScheduledTask -TaskName '$TaskName' -Action `$action -Trigger `$trigger -Settings `$settings -Description 'Orena :8000 daily pg_dump and data volume copy' -Force
-"@
+$arguments = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}"' -f $BackupScript
 
 Write-Host "The task would be registered with:`n"
-Write-Host $command
+Write-Host "`$action   = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '$arguments'"
+Write-Host "`$trigger  = New-ScheduledTaskTrigger -Daily -At '$Time'"
+Write-Host "`$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew"
+Write-Host "Register-ScheduledTask -TaskName '$TaskName' -Action `$action -Trigger `$trigger -Settings `$settings -Description 'Orena :8000 daily backup' -Force"
 
 if (-not $Apply) {
     Write-Host "`nNothing was registered. Re-run with -Apply to register it." -ForegroundColor Yellow
     exit 0
 }
 
-Invoke-Expression $command | Out-Null
+$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
+$trigger = New-ScheduledTaskTrigger -Daily -At $Time
+$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew
+Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description 'Orena :8000 daily backup' -Force | Out-Null
 Write-Host "`nRegistered '$TaskName' for $Time daily." -ForegroundColor Green

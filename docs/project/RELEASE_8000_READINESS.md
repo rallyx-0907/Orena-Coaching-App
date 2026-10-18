@@ -390,20 +390,29 @@ YouTube model clips (S-27); Onboarding polish.
 (`orena-8000-<UTC stamp>.dump`, `orena-8000-data-<UTC stamp>.tar.gz`). It stops, recreates and removes nothing, and never
 writes a volume. Only the human runs or schedules it (D-127); the lane only wrote it.
 
-- **Run:** `powershell -ExecutionPolicy Bypass -File scripts\daily_backup_8000.ps1` (`-KeepDays 14`, `-MinFreeRamGB 2`,
-  `-MinFreeDiskGB 5` are the defaults). With less than 2 GB free RAM or 5 GB free disk it logs one line and exits 2
-  without touching Docker.
-- **Schedule (03:30 local):** `scripts\register_daily_backup_8000.ps1` prints the `Register-ScheduledTask` command;
-  `-Apply` registers task `OrenaDailyBackup8000`.
-- **Exit codes:** 0 done, 1 a step failed (partial files removed), 2 skipped for RAM or disk, 3 prerequisite missing.
-- **Verify:** the last line of `%USERPROFILE%\.orena\backups\backup.log` reads `exit 0: backup complete`; the script has
-  already run `pg_restore --list` on the dump (a dump that cannot be listed is deleted and the run fails). Also check the
-  dump's size is not shrinking day over day, and look at the log weekly for `exit 1` or `exit 2` lines.
-- **Retention:** newest 14 of each kind; only files named `orena-8000-*` are ever removed.
-- **Restore (incident operation, needs authorisation):** run `python scripts/runtime_backup.py suppress` first so deleted
-  accounts stay deleted. Rehearse on a throwaway Postgres (`scripts\product_migration_rehearsal.ps1`) before any real
-  restore. A real restore: stop web and worker, `docker cp` the dump into the Postgres container, then
-  `pg_restore --clean --if-exists --no-owner -U becoming -d becoming <file>`, restart. Data volume: extract the tar into
-  an empty volume with `docker run --rm -v <volume>:/data -v <backupdir>:/in alpine tar xzf /in/<file> -C /data`.
-  A restore loses everything written since the backup. Never `docker compose down -v`.
+- **Run:** `powershell -ExecutionPolicy Bypass -File scripts\daily_backup_8000.ps1` (`-KeepCount 14`, `-MinFreeRamGB 2`,
+  `-MinFreeDiskGB 5` are the defaults; one run a day, so 14 files is 14 days). With less than 2 GB free RAM or 5 GB free
+  disk it logs one line and exits 2 without touching Docker. The disk check is a fixed floor, not sized from the volume;
+  keep headroom. The helper container is the already-local `postgres:17-alpine` (nothing is pulled; exit 3 if absent).
+- **Schedule (03:30 local):** `scripts\register_daily_backup_8000.ps1` prints the `Register-ScheduledTask` commands (hidden
+  window, runs on battery); `-Apply` registers task `OrenaDailyBackup8000`.
+- **Exit codes:** 0 done, 1 a step failed, 2 skipped for RAM or disk, 3 prerequisite missing. A dump failure removes the
+  partial files; a data-volume failure exits 1 but keeps the verified dump. The volume is live, so tar exit 1 ("file
+  changed as we read it") is only a logged warning and the archive is kept.
+- **Verify:** the last line of `%USERPROFILE%\.orena\backups\backup.log` reads `exit 0: backup complete`. The script has
+  already run `pg_restore --list` on the dump and compared the host copy's size with the container file (a dump that
+  fails either check is deleted and the run fails). Check that the dump's size is not shrinking day over day, and read
+  the log weekly for `exit 1` or `exit 2`.
+- **Limits:** the dump and the tar are taken one after the other, so they are not point-in-time consistent with each
+  other. Backups are unencrypted and stay on this machine; an off-machine copy is the owner's decision. Retention keeps
+  the newest 14 of each kind and removes only files named `orena-8000-*`.
+- **Restore (incident operation, needs authorisation), in this order:** (1) before touching anything, capture the
+  deletions journal: `python scripts/runtime_backup.py deletions --out <path outside Git>`; (2) rehearse on a throwaway
+  Postgres (`scripts\product_migration_rehearsal.ps1`); (3) stop web and worker, `docker cp` the dump into the Postgres
+  container, `pg_restore --clean --if-exists --no-owner -U becoming -d becoming <file>`; (4)
+  `python scripts/runtime_backup.py suppress --deletions <journal> --into <restored database url>` so deleted accounts stay
+  deleted; (5) the same command with `--check` added must exit 0; (6) only then restart and serve. Data volume: extract
+  the tar into an empty volume with
+  `docker run --rm -v <volume>:/data -v <backupdir>:/in postgres:17-alpine tar xzf /in/<file> -C /data`. A restore
+  loses everything written since the backup. Never remove either named volume.
 - The folder holds learner data: keep it access-controlled and outside the repository.
