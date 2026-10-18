@@ -471,3 +471,16 @@ def test_a_placement_that_is_not_kept_leaves_the_device_note_alone(failure):
     store.add_explicit = lambda *a, **k: (_ for _ in ()).throw(error)
     events = run(rt, v9_request("Từ giờ ghi nhớ giúp mình là giải thích thật ngắn gọn"))
     assert updates(events) == []  # no server upsert and no device remove: the device keeps its note
+
+
+def test_a_question_about_a_kept_note_is_answered_from_it():
+    """:8021 smoke step 5 (2026-10-18): the note reached the model (a forget by its id worked), yet "what am I learning
+    English for?" was answered from the records ("no goal on record"). The model is told the notes are the learner's
+    own words and answer a question about them, and no longer that the device keeps them (server mode keeps them)."""
+    rt, provider, store = wired([reply("a1")])
+    keep(store, rt.memory, text="Mình học để phỏng vấn")
+    run(rt, v9_request("Mình học tiếng Trung để làm gì nhỉ?"))
+    system = provider.requests[0].messages[0].content
+    assert seen(provider, "Mình học để phỏng vấn")
+    assert "the device keeps them" not in system
+    assert "asks what they told you" in system and "answer from that note" in system
