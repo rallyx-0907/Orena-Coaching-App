@@ -15,7 +15,7 @@ import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy } from '../../copy/shell.js';
 import { t } from './copy.js';
-import { AREAS, STAR_COUNT, TEXT_LIMIT, ratingKey, toggleArea, clampText, canSend, history, starsText, sendBody, errorKey, prepend } from './model.js';
+import { AREAS, STAR_COUNT, TEXT_LIMIT, ratingKey, toggleArea, clampText, canSend, history, reportDraft, starsText, sendBody, errorKey, prepend } from './model.js';
 
 function whenOf(iso, ui) {
   const date = new Date(iso);
@@ -66,7 +66,7 @@ export function feedbackMarkup({ stars = 0, areas = [], text = '', items = [], s
 export default async function feedback(element, ctx) {
   await useStyles('screens/feedback/feedback.css');
   if (!ctx.isCurrent()) return undefined;
-  const draft = { stars: 0, hover: 0, areas: [], text: '', items: [], sending: false, hint: '' };
+  const draft = { stars: 0, hover: 0, items: [], sending: false, hint: '', ...reportDraft(ctx.query) };
 
   mount(element, feedbackMarkup(draft));
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
