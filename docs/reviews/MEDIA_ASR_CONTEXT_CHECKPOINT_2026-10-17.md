@@ -128,9 +128,11 @@ benchmark (4 ZH, 2 EN real cases) and sitting 6A (2 imports held untranslated). 
   without the prompt (extra call checked against the cap and booked). A no-prompt reference pass for every item was
   rejected as doubling ASR cost. Honest limit: silent content loss on a short clip (no junk) is not detectable
   without a reference pass; it is not claimed fixed.
-- **Noise (P2-5).** English only: `>>`/`>>>`; any square-bracket group of 1-4 plain words (`[crying]`, `[gasps]`,
-  `[door creaks]`; not `[1]`); a parenthesised group only when it is the whole cue or names a sound from a closed
-  vocabulary (`(music)` yes, `(Paris)`/`(yes)` no). A cue that becomes empty is dropped (as the canonical caption
+- **Noise (P2-5).** English only: `>>`/`>>>`; a square-bracket group only when all its words are in the closed sound
+  vocabulary (`[crying]`, `[gasps]`, `[door creaks]`, `[Applause]`) or it is a speaker label (one or two capitalised
+  words of the closed label vocabulary: `[MAN]`, `[Narrator]`, `[Male Voice]`); `[sic]`, `[the president]`, `[1]` and
+  lower-case `[man]` stay; a parenthesised group only when all its words are in the closed sound vocabulary, whole cue
+  or not (`(music)` yes, `(Paris)`/`(yes)` no, also as a whole cue). A cue that becomes empty is dropped (as the canonical caption
   cleaning drops it) and recorded as a row with reason code `noise_removed`; it no longer aborts the repair. Chinese
   text is never stripped. The deterministic strip also applies when the model is unavailable.
 - **A12 (P2-6).** Rows now carry `reason_code` (`noise_removed` | `model_edit`); a deterministic edit shows a
@@ -474,6 +476,21 @@ Memory/evidence: this checkpoint; `docs/project/CURRENT_HANDOFF.md`;
 `PROJECT_STATE.md` unchanged. No Decision Log entry: bounded implementation of the explicit owner approval,
 with existing architecture/provider/publication contracts retained. No production/deployment operation.
 The owner-dirty Design Contract and untracked `.agents/`, UX review docs/evidence are excluded from staging.
+
+## P2 closure (audit of 8a56bb8e)
+
+- P2-1: a corrector that returns None without raising is now `malformed_result` (state `failed`, or `partial` after an
+  accepted batch), no longer a silent skip; the cleared item is held by `CORRECTION_HOLD_STATES`. Copy for the code
+  already exists in EN/VI/ZH.
+- P2-3: for English the proposed cue text goes through `repair_english_caption_text` before `reject_cue_edit`, so a
+  re-added `>>` or sound tag is cleaned, not counted as a changed word.
+- P2-4: stripping narrowed as in the Noise line above (closed sound vocabulary, closed speaker-label vocabulary).
+- P2-5: a cue returned unchanged with an invalid reason is accepted, not counted as a rejection; a changed cue with
+  an invalid reason is still rejected. Tests added for None, spend check before the retry, booking of a failed
+  attempt, and both reason cases.
+  Local execution (not CI), disposable container (`--memory 1g --cpus 1`, provider keys empty, host free RAM 5.0 GB):
+  media set plus admin route tests, authorization matrix and `tests/test_groq_translation_bounds.py` **1311 passed,
+  0 failed, 21 skipped** (12 new tests). Ruff, Node admin media review, ESM graph and project-memory validator: PASS.
 
 User changes left at the application checkpoint (`git status --short`):
 

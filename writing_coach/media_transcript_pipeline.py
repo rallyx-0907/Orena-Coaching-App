@@ -1193,7 +1193,9 @@ class MediaPipeline:
                                 result = correct(language=language, cues=batch_cues, title=entry.title, description=description)
                         else:
                             result = correct(language=language, cues=batch_cues, title=entry.title, description=description)
-                    failure = ""
+                    # A corrector that returns nothing and raises nothing has still not answered: a stable failure, never a
+                    # silent skip of the batch.
+                    failure = "" if result is not None else "malformed_result"
                 except Exception as exc:  # noqa: BLE001 - the provider's stable reason is kept, never its message
                     code = str(getattr(exc, "reason", "") or "")
                     failure = code if code in CORRECTION_PROVIDER_REASONS else "correction_failed"
@@ -1255,17 +1257,25 @@ class MediaPipeline:
                 or not isinstance(edit_reasons, (list, tuple)) or len(edit_reasons) != len(batch)
                 or any(not isinstance(text, str) for text in texts)):
             return "malformed_result"
+        from writing_coach.media_transcript_quality import repair_english_caption_text
         providers.append(str(result.get("provider") or "groq")[:80])
         models.append(str(result.get("model") or model)[:120])
         for (index, cue), proposed, why in zip(batch, texts, edit_reasons, strict=True):
             proposed = proposed.strip()
+            if language == "en":
+                # The model may re-add what the deterministic repair removed (`>>`, a sound tag): clean it the same way.
+                proposed = repair_english_caption_text(proposed)
             code = reject_cue_edit(language, cue.text, proposed)
-            if not code and (not isinstance(why, str) or not why.strip() or len(why.strip()) > 240):
+            unchanged = proposed == cue.text
+            # A cue the model left as it was needs no reason: an invalid reason beside unchanged text is not an edit to refuse.
+            if not code and not unchanged and (not isinstance(why, str) or not why.strip() or len(why.strip()) > 240):
                 code = "malformed_result"
             if code:
                 rejected.append({"index": index, "start_ms": cue.start_ms, "code": code, "before": cue.text[:1000], "proposed": proposed[:1000]})
                 continue
             accepted[index] = proposed
+            if unchanged:
+                continue
             # Stored as a code from the closed list (the Admin screen words it in EN/VI/ZH); a sentence is never kept.
             reason_code = why.strip().casefold().replace("-", "_").replace(" ", "_")
             reasons[index] = reason_code if reason_code in media_translation.CORRECTION_REASON_CODES else "other"

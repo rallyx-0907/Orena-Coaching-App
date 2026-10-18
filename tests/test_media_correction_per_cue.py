@@ -359,9 +359,24 @@ def test_chinese_allowance_is_a_quarter_of_the_cue_capped_at_four():
     (">> [music]", ""), ("[crying] I am fine", "I am fine"), ("so [gasps] it ran [door creaks] away", "so it ran away"),
     ("(music)", ""), ("hello (applause) there", "hello there"), ("see [1] and (Paris) now", "see [1] and (Paris) now"),
     ("it is (yes) true", "it is (yes) true"), (">>> Then he left", "Then he left"),
+    # P2-4: a whole cue is stripped only when it is a sound or a speaker label, never real speech in brackets
+    ("(yes)", "(yes)"), ("(Paris)", "(Paris)"), ("[sic]", "[sic]"), ("[the president]", "[the president]"),
+    ("he said [sic] twice", "he said [sic] twice"), ("[the president] spoke", "[the president] spoke"),
+    ("[MAN] where are you going", "where are you going"), ("[Narrator] It was late", "It was late"),
+    ("[man] is lower case speech", "[man] is lower case speech"), ("[Male Voice] come here", "come here"),
+    ("[Applause]", ""), ("[music playing] hello", "hello"),
 ])
 def test_english_noise_rule_is_bounded(raw, clean):
     assert repair_english_caption_text(raw) == clean
+
+
+def test_a_model_that_re_adds_speaker_marks_or_sound_tags_is_cleaned_before_the_check(tmp_path):
+    cues = [Cue(0, 2000, "hello again my friends"), Cue(2000, 4000, "we are so glad")]
+    answers = {"hello again my friends": ">> Hello again, my friends.", "we are so glad": "[music] We are so glad."}
+    store, entry, pipeline, _ = _world(tmp_path, Echo(lambda t: (answers[t], "punctuation")))
+    lines, meta = pipeline._correct_transcript(store, entry, "b", cues, origin=pipeline_module.ORIGIN_CAPTION)
+    assert [line.text for line in lines] == ["Hello again, my friends.", "We are so glad."]
+    assert meta["transcript_correction_state"] == "applied" and meta["transcript_correction_rejected"] == []
 
 
 def test_noise_only_cues_are_dropped_and_do_not_abort_the_repair(tmp_path):
@@ -459,6 +474,100 @@ def test_provider_reason_codes_are_kept(tmp_path):
     store, entry, pipeline, _ = _world(tmp_path, corrector)
     _, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
     assert meta["transcript_correction_detail"] == "provider_auth"
+
+
+# -- P2 closure: no answer, spend before a retry, booked failed attempts, reason beside unchanged text ------------
+
+class Silent(Echo):
+    """A corrector that returns None and raises nothing."""
+
+    def correct(self, **_kwargs):
+        return None
+
+
+def test_a_corrector_that_returns_nothing_is_a_malformed_failure_not_a_silent_skip(tmp_path):
+    store, entry, pipeline, _ = _world(tmp_path, Silent())
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
+    assert meta["transcript_correction_state"] == "failed" and meta["transcript_correction_detail"] == "malformed_result"
+    assert [line.text for line in lines] == [cue.text for cue in _english(3)]
+
+
+def test_a_none_after_an_accepted_batch_is_partial_malformed_result(tmp_path):
+    class SecondSilent(Echo):
+        def correct(self, **kwargs):
+            if self.calls:
+                return None
+            return super().correct(**kwargs)
+
+    store, entry, pipeline, _ = _world(tmp_path, SecondSilent(lambda t: (t.capitalize(), "capitalization")))
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _english(30), origin=pipeline_module.ORIGIN_CAPTION)
+    assert meta["transcript_correction_state"] == "partial" and meta["transcript_correction_detail"] == "malformed_result"
+    assert lines[0].text.startswith("Cue") and lines[29].text.startswith("cue")
+
+
+def test_the_spend_check_runs_before_the_retry_attempt_and_stops_it(tmp_path):
+    from writing_coach.media_spend import SpendCapReached
+
+    corrector = Flaky([_limit(62.0), _limit(62.0)])
+    store, entry, pipeline, slept = _world(tmp_path, corrector)
+    checks = []
+    real = pipeline._ledger.check
+
+    def check(*args, **kwargs):
+        checks.append(True)
+        if len(checks) == 2:                                   # the check for the retry attempt
+            raise SpendCapReached("cap", limit=1.0, spent=1.0, scope="day")
+        return real(*args, **kwargs)
+
+    pipeline._ledger.check = check
+    _, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
+    assert len(checks) == 2 and corrector.attempts == 1       # the retry was never asked once the check refused it
+    assert slept == [62.0]
+    assert meta["transcript_correction_state"] == "failed" and meta["transcript_correction_detail"] == "spend_cap"
+
+
+def test_the_usage_of_a_failed_attempt_is_booked(tmp_path):
+    from writing_coach import media_translation as mt
+
+    class BillsThenFails(Echo):
+        def correct(self, **_kwargs):
+            mt._USAGE_SINK.get()("openai/gpt-oss-120b", {"prompt_tokens": 100, "completion_tokens": 50})
+            raise TranslationProviderError("no", reason="provider_error")
+
+    store, entry, pipeline, _ = _world(tmp_path, BillsThenFails())
+    booked = []
+    real = pipeline._ledger.record
+
+    def record(kind, amount, **kwargs):
+        booked.append((amount, kwargs.get("units")))
+        return real(kind, amount, **kwargs)
+
+    pipeline._ledger.record = record
+    _, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
+    assert meta["transcript_correction_state"] == "failed"
+    assert len(booked) == 1 and booked[0][0] > 0 and booked[0][1] == 1
+
+
+def test_an_invalid_reason_beside_unchanged_text_is_not_a_rejection(tmp_path):
+    answers = {"cue number 1 has some plain words": ("cue number 1 has some plain words", "")}   # unchanged, no reason
+
+    def edit(text):
+        return answers.get(text, (text.capitalize() + ".", "punctuation"))
+
+    store, entry, pipeline, _ = _world(tmp_path, Echo(edit))
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
+    assert meta["transcript_correction_state"] == "applied" and meta["transcript_correction_rejected"] == []
+    assert lines[1].text == "cue number 1 has some plain words"
+
+
+def test_an_invalid_reason_beside_a_changed_text_is_still_a_rejection(tmp_path):
+    def edit(text):
+        return (text.capitalize() + ".", "") if text.startswith("cue number 1 ") else (text, "No change.")
+
+    store, entry, pipeline, _ = _world(tmp_path, Echo(edit))
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
+    assert [(r["index"], r["code"]) for r in meta["transcript_correction_rejected"]] == [(1, "malformed_result")]
+    assert lines[1].text == "cue number 1 has some plain words"
 
 
 # -- P1/P2-4 title prompt ------------------------------------------------------------------------------
