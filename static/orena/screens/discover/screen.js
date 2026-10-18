@@ -264,7 +264,10 @@ export default async function discover(element, ctx) {
     let cursor;
     for (let page = 0; page < 20; page += 1) {
       const value = await api.readingArticles(code, cursor).catch(() => null);
-      if (!value) break;
+      if (!value) {
+        if (!page) failed.add('articles');
+        break;
+      }
       items.push(...(value.items || []));
       cursor = value.next_cursor;
       if (!cursor) break;
@@ -276,6 +279,9 @@ export default async function discover(element, ctx) {
      waits for every source): a slow or failed source leaves only its own section late or out, never
      the others (D-167). The bucket order is the order the tabs and the sections list their cards. */
   const buckets = { articles: [], books: [], media: [], collections: [] };
+  // The catalogue sources whose request failed: when none answered, that is a failed load, not zero results.
+  const failed = new Set();
+  const emptyOnFailure = (key) => () => { failed.add(key); return { items: [] }; };
   function compose() {
     const textEntries = (memory?.value?.imports || []).map((item) => entryFromTextImport(item));
     const mediaEntries = (memory?.value?.mediaImports || []).map((item) => entryFromMediaImport(item, continuation));
@@ -303,14 +309,20 @@ export default async function discover(element, ctx) {
     if (!practice) compose();
     const [, , , , speaking] = await Promise.all([
       bucketed('articles', allReadingArticles(language)),
-      bucketed('books', api.libraryBooks(language).catch(() => ({ items: [] }))),
-      bucketed('media', api.listeningLibrary(language).catch(() => ({ items: [] }))),
-      bucketed('collections', api.vocabularyLibraryCollections(language).catch(() => ({ items: [] }))),
+      bucketed('books', api.libraryBooks(language).catch(emptyOnFailure('books'))),
+      bucketed('media', api.listeningLibrary(language).catch(emptyOnFailure('media'))),
+      bucketed('collections', api.vocabularyLibraryCollections(language).catch(emptyOnFailure('collections'))),
       pronunciation ? api.speakingLibrary(language).catch(() => ({items:[]})) : Promise.resolve({items:[]}),
       // The account's imports: a deletion made on another device leaves this list (no deletion is offered here).
       syncImports(memory, language).catch(() => false).then((value) => { arrived(); return value; }),
     ]);
     compose();
+    // Every catalogue request failed and nothing saved on this device stands in for it: the router's load-error
+    // card (Back / Retry, retried by itself when the connection returns), never "0 results".
+    if (failed.size >= 4 && !state.entries.length) {
+      element.replaceChildren();
+      throw Object.assign(new Error('Discover catalogue unavailable'), { name: 'CatalogueUnavailable' });
+    }
     if (practice) {
       const privateMedia = await Promise.all((practice === 'listening' ? [] : memory?.value?.mediaImports || []).map(async item => {
         try {

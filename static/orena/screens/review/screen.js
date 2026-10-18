@@ -120,6 +120,16 @@ function statTile(key, n, tone) {
   return html`<div class="s-review-stat"><div class="s-review-stat__n s-review-stat__n--${tone}">${n}</div><div class="s-review-stat__label">${t(key)}</div></div>`;
 }
 
+/* The due queue, or null when it could not be read (a failure is not an empty queue). */
+export async function readDueQueue() {
+  try {
+    const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 });
+    return buildQueue(page?.items);
+  } catch {
+    return null;
+  }
+}
+
 export default async function mountReview(element, ctx) {
   await Promise.all([useStyles('screens/review/review.css'), useStyles('kit/vocabulary-card.css')]);
   element.classList.add('s-review-root');
@@ -153,12 +163,12 @@ export default async function mountReview(element, ctx) {
 
   let queue;
   if (scope.mode === 'word') {
-    const page = await api.libraryVocabulary({ query: scope.word, limit: 5, order: 'word' }).catch(() => null);
+    const page = await api.libraryVocabulary({ query: scope.word, limit: 5, order: 'word' });
     const target = String(scope.word).trim().toLowerCase();
     const row = (page?.items || []).find((r) => String(r.word || '').trim().toLowerCase() === target);
     queue = buildQueue(row ? [row] : []);
   } else if (scope.mode === 'words') {
-    const page = await api.libraryVocabulary({ limit: 100, order: 'recent' }).catch(() => null);
+    const page = await api.libraryVocabulary({ limit: 100, order: 'recent' });
     queue = buildQueue(filterByWordSet(page?.items, new Set(scope.words)));
   } else if (scope.mode === 'collection') {
     const collectionPayload = await readCollection(scope.collection,
@@ -166,10 +176,12 @@ export default async function mountReview(element, ctx) {
     if (collectionPayload.language_code !== ctx.context.language) throw new Error('Collection language changed');
     queue = buildQueue(collectionPayload.review_items);
   } else {
-    const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }).catch(() => null);
+    const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 });
     queue = buildQueue(page?.items);
   }
   if (!ctx.isCurrent()) return undefined;
+  // A failed read throws above, to the router's load-error card (Back / Retry; it loads again on 'online'): a
+  // failure is never turned into an empty queue.
 
   const state = { index: 0, revealed: false, hintOn: false, stats: initialStats(), grading: false, nextTimes: [] };
   let audio = null;
@@ -286,12 +298,18 @@ export default async function mountReview(element, ctx) {
       );
       bindHeader();
       element.querySelector('[data-restart]').addEventListener('click', async () => {
-        reset();
+        let fresh = null;
         if (scope.mode === 'due') {
-          const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }).catch(() => null);
+          // Read first: a failed read leaves the finished session untouched (never reset, never replayed).
+          fresh = await readDueQueue();
           if (!ctx.isCurrent()) return;
-          queue = buildQueue(page?.items);
+          if (!fresh) {
+            toast(shellCopy(navigator.onLine === false ? 'stillOffline' : 'errorServer'));
+            return;
+          }
         }
+        reset();
+        if (fresh) queue = fresh;
         paint();
       });
       element.querySelector('[data-to-library]').addEventListener('click', () => ctx.go(ctx.href('library', {}, { tab: 'due' })));
