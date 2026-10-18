@@ -120,6 +120,16 @@ function statTile(key, n, tone) {
   return html`<div class="s-review-stat"><div class="s-review-stat__n s-review-stat__n--${tone}">${n}</div><div class="s-review-stat__label">${t(key)}</div></div>`;
 }
 
+/* The due queue, or null when it could not be read (a failure is not an empty queue). */
+export async function readDueQueue() {
+  try {
+    const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 });
+    return buildQueue(page?.items);
+  } catch {
+    return null;
+  }
+}
+
 export default async function mountReview(element, ctx) {
   await Promise.all([useStyles('screens/review/review.css'), useStyles('kit/vocabulary-card.css')]);
   element.classList.add('s-review-root');
@@ -288,13 +298,18 @@ export default async function mountReview(element, ctx) {
       );
       bindHeader();
       element.querySelector('[data-restart]').addEventListener('click', async () => {
-        reset();
+        let fresh = null;
         if (scope.mode === 'due') {
-          // A failed read keeps the session as it was: it is not an empty queue.
-          const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }).catch(() => null);
+          // Read first: a failed read leaves the finished session untouched (never reset, never replayed).
+          fresh = await readDueQueue();
           if (!ctx.isCurrent()) return;
-          if (page) queue = buildQueue(page.items);
+          if (!fresh) {
+            toast(shellCopy(navigator.onLine === false ? 'stillOffline' : 'errorServer'));
+            return;
+          }
         }
+        reset();
+        if (fresh) queue = fresh;
         paint();
       });
       element.querySelector('[data-to-library]').addEventListener('click', () => ctx.go(ctx.href('library', {}, { tab: 'due' })));

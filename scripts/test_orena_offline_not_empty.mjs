@@ -51,9 +51,19 @@ api.libraryVocabulary = original;
 const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8');
 assert.match(read('../static/orena/shell/router.js'), /if \(offline\) \{\s*window\.addEventListener\('online'/, 'router retries a failed page on online');
 
+// "Review again": a failed refetch yields null (not an empty or stale queue); an answer yields rows.
+const { readDueQueue } = await import('../static/orena/screens/review/screen.js');
+api.libraryVocabulary = async () => { throw offline(); };
+assert.equal(await readDueQueue(), null, 'failed refetch is null, not []');
+api.libraryVocabulary = async () => ({ items: [{ word: 'a' }] });
+assert.deepEqual(await readDueQueue(), [{ word: 'a' }]);
+api.libraryVocabulary = original;
+
 // Source guards.
 const review = read('../static/orena/screens/review/screen.js');
 const loaders = review.slice(review.indexOf('let queue;'), review.indexOf('const state = {'));
+const restart = review.slice(review.indexOf('[data-restart]'), review.indexOf('[data-to-library]'));
+assert.ok(restart.indexOf('readDueQueue()') < restart.indexOf('reset()') && /if \(!fresh\) \{[^}]*return;/.test(restart), 'restart reads before reset and stops on failure');
 assert.ok(!/\.catch\(/.test(loaders), 'review queue loaders do not swallow a failure');
 const discover = read('../static/orena/screens/discover/screen.js');
 assert.match(discover, /failed\.size >= 4 && !state\.entries\.length/, 'discover throws when every catalogue source failed');
