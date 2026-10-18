@@ -196,6 +196,23 @@ def test_media_publish_rechecks_latest_rights_inside_store_transaction(setup, mo
     assert original_get(entry.media_id).status == "review"
 
 
+def test_a_person_publishing_a_correction_held_item_by_hand_ends_the_hold(setup):
+    from dataclasses import replace
+    store = setup["store"]
+    entry = store.get("youtube-abcdefghijk")
+    held = replace(entry, status="review", source={**entry.source, "rights": "cleared"},
+                   lesson={"payload": {"transcript": {"segments": [
+                       {"start_ms": 0, "end_ms": 42000, "original_text": "各位旅客请注意，开往北京的列车马上到站，请准备上车。"}]}}},
+                   processing={"state": "held", "reason": "transcript_correction_incomplete",
+                               "transcript_correction_unresolved": True})
+    store.upsert(held)
+    result = call(setup["app"], "POST", "/api/admin/console/content/media/youtube-abcdefghijk/status", json={"status": "published"})
+    assert result.status_code == 200
+    stored = store.get(entry.media_id)
+    assert stored.status == "published"
+    assert "transcript_correction_unresolved" not in (stored.processing or {})
+
+
 def test_every_console_route_requires_an_administrator(setup):
     for path in READ_ROUTES:
         assert call(setup["app"], "GET", f"/api/admin/console{path}", admin=False).status_code == 403, path

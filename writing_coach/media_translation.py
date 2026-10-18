@@ -16,7 +16,7 @@ import re
 import threading
 import time
 from collections.abc import Callable, Iterator, Mapping
-from typing import Protocol
+from typing import Any, Protocol
 
 import requests
 
@@ -66,6 +66,11 @@ OTPM_MARGIN_SECONDS = 2.0
 # minute idle between requests).
 OTPM_REQUEST_SHARE = 2
 MAX_SALVAGED_LINES = 512
+# Why a model changed a transcript line: a closed list, so the Admin screen words each reason in its own language (EN, VI,
+# ZH) instead of showing a sentence in whatever language the model chose. `other` is what any unlisted answer is stored as.
+CORRECTION_REASON_CODES = (
+    "punctuation", "capitalization", "spacing", "homophone", "idiom", "proper_noun", "no_change", "other",
+)
 
 # Time is read and slept through these two so a test can drive a virtual clock.
 _monotonic: Callable[[], float] = time.monotonic
@@ -283,6 +288,18 @@ def _error_detail(response: object) -> str:
 def _otpm_refusal(response: object) -> tuple[int, int] | None:
     """(limit, used) when a 429 says the output-tokens-per-minute allowance refused the request, else None."""
     found = _OTPM_REFUSAL.search(_error_message(response))
+    return (int(found.group(1)), int(found.group(2))) if found else None
+
+
+# The second sentence Groq answers with (seen live 2026-10-18, `qwen/qwen3.8-27b`): one request alone expects more output than
+# the whole per-minute allowance, so there is no `Used` count - the minute is not the problem, the request is. Same limit, a
+# different remedy: ask for less, do not wait for a window to clear.
+_OTPM_TOO_LARGE = re.compile(r"\(OTPM\)\s*:\s*Limit\s+(\d+)\s*,\s*Requested\s+(\d+)", re.IGNORECASE)
+
+
+def _otpm_request_too_large(response: object) -> tuple[int, int] | None:
+    """(limit, requested) when a 429 says this one request is larger than the output-tokens-per-minute allowance, else None."""
+    found = _OTPM_TOO_LARGE.search(_error_message(response))
     return (int(found.group(1)), int(found.group(2))) if found else None
 
 
@@ -612,6 +629,132 @@ class GroqTranslationProvider:
         self._salvage_drop(source_language, target_language, segments)
         return {segment.segment_id: merged[segment.segment_id] for segment in segments}
 
+    def correct(
+        self, *, language: str, cues: tuple[Any, ...], title: str = "", description: str = ""
+    ) -> dict[str, object]:
+        """Make one bounded, metered correction request for an admin transcript.
+
+        This deliberately does not use translation batching/retry or another
+        model. It shares this provider's configured model, Groq transport,
+        structured response mode, output allowance, and token usage ledger.
+        """
+        if not self.configured:
+            raise TranslationProviderError("Groq translation is not configured.", reason="not_configured")
+        texts = tuple(str(getattr(cue, "text", "")) for cue in cues)
+        if not texts or len(texts) > 24 or sum(len(text) for text in texts) > 6_000:
+            raise TranslationProviderError("Transcript correction batch exceeds its bound.", reason="request_too_large")
+        language_name = self._language_name(language)
+        if language.casefold().split("-", 1)[0] == "en":
+            instructions = (
+                "Repair English transcript presentation only: punctuation, capitalization, and spacing. "
+                "Every spoken word and number must remain unchanged; do not add or remove any word."
+            )
+        else:
+            instructions = (
+                "Conservatively correct clear homophone or idiom recognition errors in this Simplified Chinese transcript. "
+                "Do not rewrite style, infer unheard speech, or change line order. Keep uncertain text unchanged."
+            )
+        numbered = "\n".join(f"{index}\t{text}" for index, text in enumerate(texts))
+        context = "\n".join(part for part in (
+            f"Source title: {title[:180]}" if title else "",
+            f"Source description: {description[:240]}" if description else "",
+        ) if part)
+        user = (
+            f"Language: {language_name}.\n{context}\n"
+            "Correct each line independently. Return JSON only as "
+            "{\"lines\":[{\"index\":0,\"text\":\"...\",\"reason\":\"...\"}]}. "
+            "The reason of each line must be exactly one code from this list, never a sentence: "
+            f"{', '.join(CORRECTION_REASON_CODES)}. Use no_change for unchanged text. "
+            "Return each index exactly once and preserve the input count and order.\n\n"
+            f"{numbered}"
+        )
+        wanted = set(range(len(texts)))
+        output_bound = sum(len(text.encode("utf-8")) for text in texts) + 80 * len(texts)
+        max_tokens = min(self._reservation_cap(), max(256, output_bound))
+        body = {
+            "model": self._model,
+            "messages": [
+                {"role": "system", "content": instructions},
+                {"role": "user", "content": user},
+            ],
+            "stream": False,
+            "temperature": 0.0,
+            "response_format": {"type": "json_object"},
+            "max_completion_tokens": max_tokens,
+        }
+        reserved = self._reserve_output(max_tokens)
+        started = time.perf_counter()
+        answered = False
+        try:
+            response = requests.post(
+                self._url, json=body,
+                headers={"Authorization": f"Bearer {self._api_key}"}, timeout=self._timeout,
+            )
+            self.last_quota = {
+                key.lower(): value for key, value in response.headers.items()
+                if key.lower().startswith("x-ratelimit-")
+            }
+            if response.status_code in {401, 403, 429}:
+                asked = _retry_after_seconds(response.headers)
+                too_large = False
+                if response.status_code == 429:
+                    asked = self._learn_from_refusal(response, reserved, asked)
+                    too_large = _otpm_request_too_large(response) is not None
+                if too_large:
+                    # The request itself exceeds the allowance: waiting does not help, asking for less does. The limit is
+                    # learned above, so the caller's next `correction_output_ceiling()` is smaller; no wait is asked for.
+                    error = TranslationProviderError(
+                        "Groq transcript correction request exceeds the output allowance.",
+                        reason="request_too_large", retry_after=0.0,
+                    )
+                else:
+                    error = TranslationProviderError(
+                        "Groq transcript correction is rate limited." if response.status_code == 429
+                        else "Groq refused the configured credentials.",
+                        reason="rate_limited" if response.status_code == 429 else "provider_auth",
+                        retry_after=asked,
+                    )
+                self._record(started, "failure", None, error)
+                raise error
+            response.raise_for_status()
+            envelope = response.json()
+            answered = True
+            self._record(started, "success", envelope.get("usage") if isinstance(envelope, dict) else None)
+            choice = envelope["choices"][0]
+            if choice.get("finish_reason") == "length":
+                raise TranslationProviderError("Groq transcript correction output was truncated.", reason="malformed_result")
+            data = json.loads(choice["message"]["content"])
+        except TranslationProviderError:
+            raise
+        except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as exc:
+            if not answered:
+                self._record(started, "failure", None, exc)
+            reason = "provider_timeout" if isinstance(exc, requests.Timeout) else "provider_error"
+            raise TranslationProviderError("Groq transcript correction is unavailable.", reason=reason) from exc
+        rows = data.get("lines") if isinstance(data, dict) else None
+        if not isinstance(rows, list) or len(rows) != len(texts):
+            raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+        result: dict[int, tuple[str, str]] = {}
+        for row in rows:
+            if not isinstance(row, dict) or type(row.get("index")) is not int or row["index"] not in wanted:
+                raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+            index = row["index"]
+            text = row.get("text")
+            reason = row.get("reason")
+            if (index in result or not isinstance(text, str) or not text.strip()
+                    or len(text) > max(200, 2 * len(texts[index]) + 24)
+                    or not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 240):
+                raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+            # The reason is a code from a closed list the operator's screen words in its own language; whatever else the
+            # model writes (a sentence in any language) is stored as the neutral `other`, never shown as free text.
+            code = reason.strip().casefold().replace("-", "_").replace(" ", "_")
+            result[index] = (text.strip(), code if code in CORRECTION_REASON_CODES else "other")
+        if set(result) != wanted:
+            raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
+        return {"texts": [result[index][0] for index in range(len(texts))],
+                "reasons": [result[index][1] for index in range(len(texts))], "provider": self.engine_id,
+                "model": self._model}
+
     def batch_output_ceiling(self) -> int | None:
         """The most completion room one request should reserve so two fit a minute, or None while no output-token limit is
         known. A caller that cuts a transcript into batches sizes them to this (D-218)."""
@@ -621,6 +764,14 @@ class GroqTranslationProvider:
     def _reservation_cap(self) -> int:
         ceiling = self.batch_output_ceiling()
         return self._max_completion_tokens if ceiling is None else min(self._max_completion_tokens, ceiling)
+
+    def correction_output_ceiling(self) -> int:
+        """The most output tokens one transcript-correction request can really be given: the configured per-request
+        completion cap, and when the model's output-token allowance is known, its per-request share of the minute. A
+        batch whose answer is estimated above this is cut off mid-JSON (`finish_reason: length`) and unusable, so a caller
+        sizes its batches to it - never only to `batch_output_ceiling`, which is None while no allowance is known although
+        the per-request cap always applies. It is exactly what `correct` reserves (`_reservation_cap`)."""
+        return self._reservation_cap()
 
     def _salvage_key(self, source_language: str, target_language: str, segment: TranslatableSegment) -> tuple[str, str, str, str]:
         return (source_language, target_language, segment.segment_id, segment.original_text)
@@ -728,13 +879,25 @@ class GroqTranslationProvider:
                                        reason="rate_limited", retry_after=OTPM_WINDOW_SECONDS + OTPM_MARGIN_SECONDS)
 
     def _learn_from_refusal(self, response: object, reserved: list[float] | None, asked: float) -> float:
-        """A 429 that names the output-tokens-per-minute allowance teaches this process its limit and its use, and is
-        answered with a wait that clears the whole window (never the shorter `retry-after`, which the trial showed leaves
-        the window full again)."""
+        """A 429 that names the output-tokens-per-minute allowance teaches this process its limit. Groq words it two ways:
+
+        * the minute is full (`Limit N, Used M, Requested R`): the limit and the use are learned, the window is held, and
+          the answer is a wait that clears the whole window (never the shorter `retry-after`, which the trial showed
+          leaves the window full again);
+        * one request is larger than the whole allowance (`Limit N, Requested R`, no `Used`): only the limit is learned.
+          Nothing was admitted, so there is no use to sync and no window to hold, and `asked` comes back unchanged: the
+          caller asks for less (`batch_output_ceiling` now answers) instead of waiting.
+
+        Any other 429 teaches nothing and also returns `asked`."""
         if reserved is not None:
             self._otpm.release(reserved)   # it was not admitted: it spent nothing of the minute
         refusal = _otpm_refusal(response)
         if refusal is None:
+            too_large = _otpm_request_too_large(response)
+            if too_large is not None:
+                # Only the limit is learned: a request that was not admitted spent nothing of the minute, so there is no
+                # `used` to sync and no window to block - the caller asks for less (`batch_output_ceiling` now answers).
+                self._otpm.set_limit(too_large[0])
             return asked
         limit, used = refusal
         self._otpm.set_limit(limit)

@@ -49,7 +49,7 @@ class CountingAsr:
     def __init__(self):
         self.calls = []
 
-    def transcribe_bytes(self, audio_bytes, *, filename, content_type, language):
+    def transcribe_bytes(self, audio_bytes, *, filename, content_type, language, prompt=None):
         self.calls.append(len(audio_bytes))
         return SpeechAsrResult(provider="fake-asr", model="fake", language=language or "en", text="hello there",
                                segments=(), words=())

@@ -14,6 +14,63 @@ import requests
 from urllib.parse import urlsplit
 
 
+_ASR_PROMPT_MAX_BYTES = 224
+
+
+def _utf8_prefix(value: str, budget: int) -> str:
+    """Return a codepoint-safe prefix that fits the byte budget."""
+    pieces: list[str] = []
+    used = 0
+    for character in value:
+        size = len(character.encode("utf-8"))
+        if used + size > budget:
+            break
+        pieces.append(character)
+        used += size
+    return "".join(pieces)
+
+
+def build_asr_prompt(title: str, description: str, *, language: str | None) -> str:
+    """Build a small same-language Whisper vocabulary hint from source metadata.
+
+    Groq caps Whisper prompts at 224 tokens. A conservative character limit keeps
+    even Han-heavy metadata bounded; titles take priority and descriptions fill
+    only the remaining space. No metadata means no prompt.
+    """
+    lang = (language or "").casefold().split("-", 1)[0]
+    title_text = " ".join(str(title or "").split())
+    description_text = " ".join(str(description or "").split())
+    if not title_text and not description_text:
+        return ""
+    if lang == "zh":
+        prefix, title_label, description_label = "相关视频标题：", "。", "视频简介："
+    else:
+        prefix, title_label, description_label = "Video title: ", ". ", "Description: "
+    prompt = prefix
+    if title_text:
+        room = _ASR_PROMPT_MAX_BYTES - len(prompt.encode("utf-8")) - len(title_label.encode("utf-8"))
+        prompt += _utf8_prefix(title_text, max(0, room)) + title_label
+    if description_text and len(prompt.encode("utf-8")) < _ASR_PROMPT_MAX_BYTES:
+        room = _ASR_PROMPT_MAX_BYTES - len(prompt.encode("utf-8")) - len(description_label.encode("utf-8"))
+        if room > 0:
+            prompt += description_label + _utf8_prefix(description_text, room)
+    return _utf8_prefix(prompt, _ASR_PROMPT_MAX_BYTES)
+
+
+# The title prompt is evidence-bounded (2026-10-17 live trial): it fixed the title idiom on 47-78 s clips, and cost a
+# 282 s story 18 % of its Han text plus full-width junk. It is therefore sent only for audio up to this length, and a
+# prompted chunk that shows the junk signature below is transcribed again without the prompt.
+ASR_PROMPT_MAX_SECONDS = 120.0
+# Full-width digits, comparison signs and Latin letters (U+FF10-FF19, FF1C-FF1E, FF20-FF5A): Whisper emits them as garbage
+# in place of punctuation under a prompt. Full-width sentence punctuation (，。！？：；（）) is not in the set.
+_ASR_JUNK = re.compile("[０-９＜-＞＠-ｚ]")
+
+
+def asr_text_has_junk(text: str) -> bool:
+    """Whether recognised text carries the full-width digit/symbol junk signature of a misled prompt."""
+    return bool(_ASR_JUNK.search(text or ""))
+
+
 class SpeechAsrError(Exception):
     pass
 
@@ -77,6 +134,7 @@ class SpeechAsrProvider(Protocol):
         filename: str,
         content_type: str,
         language: str | None,
+        prompt: str | None = None,
     ) -> SpeechAsrResult: ...
 
 
@@ -258,7 +316,7 @@ class GroqSpeechAsrProvider:
         return result
 
     @classmethod
-    def from_env(cls) -> "GroqSpeechAsrProvider | None":
+    def from_env(cls) -> GroqSpeechAsrProvider | None:
         api_key = os.getenv("GROQ_API_KEY", "").strip()
         if not api_key:
             return None
@@ -276,6 +334,7 @@ class GroqSpeechAsrProvider:
         filename: str,
         content_type: str,
         language: str | None,
+        prompt: str | None = None,
     ) -> SpeechAsrResult:
         if not audio_bytes:
             raise SpeechAsrMalformed()
@@ -291,6 +350,8 @@ class GroqSpeechAsrProvider:
         ]
         if language:
             fields.append(("language", language))
+        if prompt and prompt.strip():
+            fields.append(("prompt", _utf8_prefix(prompt, _ASR_PROMPT_MAX_BYTES)))
 
         try:
             from writing_coach.ai.audio_telemetry import mark_sent
@@ -330,6 +391,7 @@ class GroqSpeechAsrProvider:
         audio_url: str,
         *,
         language: str | None,
+        prompt: str | None = None,
     ) -> SpeechAsrResult:
         """Transcribe one public media-file URL without proxying bytes through Orena."""
         try:
@@ -354,6 +416,8 @@ class GroqSpeechAsrProvider:
         ]
         if language:
             fields.append(("language", language))
+        if prompt and prompt.strip():
+            fields.append(("prompt", _utf8_prefix(prompt, _ASR_PROMPT_MAX_BYTES)))
 
         try:
             from writing_coach.ai.audio_telemetry import mark_sent
