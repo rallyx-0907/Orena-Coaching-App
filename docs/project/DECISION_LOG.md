@@ -7397,3 +7397,15 @@ Decision.
 3. Placement. The design draws no such switch, so it is placed as an existing toggle row: Settings, Privacy tab, directly under "Microphone access", in the same `listRow` + `s-settings-toggle` pattern (the design's `tog(...)` rows, `Orena.dc.html` line 3272, Privacy). No new visual (CLAUDE.md rules 4 and 7); recorded in `UI_BACKEND_GAPS.md`.
 4. Failure behaviour. A server without memory (503 `memory_unavailable`) hides the row entirely. A failed save (503, 429, network) puts the switch back and shows Settings' existing save-failed line. When the switch is OFF the client sends no device `coach_notes`; this is hygiene only, the server already withholds notes and refuses to remember.
 5. `screens/orena/memory-sheet.js` (the coach-notes list) stays unreferenced by any caller; deleting it is left to a follow-up decision.
+
+## D-227 - Word tap: zero-cost choice among a word's stored senses (amends D-195 clause 1) (2026-10-18)
+
+**Status: PROPOSED.** Needs the owner's "D-227: ACCEPTED". Implemented by PR #293 (refs #194); independent review APPROVE. No schema, no migration, no UI change, no contract change.
+
+Owner decision of 2026-10-18 (via the delegate, delegation confirmed by the owner): a word tap keeps a neutral basic meaning; the contextual sense is picked only for an ambiguous polysemous word, at zero cost first.
+
+1. A tap picks among the word's already-stored senses (the published vocabulary senses, the English dictionary senses, the CC-CEDICT entries) using the local tagger's part of speech for the word in its sentence and, for Chinese, the reading the tagger gave it there. A sense of the tagged class wins; among equals, one with a meaning in the support language wins.
+2. No tag, a tie, or no match keeps the neutral first sense.
+3. The sentence stays in-process and never reaches AI. The `word_translation` seam and its word-only input (D-195 clause 1) are unchanged, and it is still reached only when every deterministic layer missed.
+4. No word-keyed cache holds the choice: the lookup is not cached by the word, so two sentences give two senses.
+5. NOT included: the cheapest-model fallback with the sentence. It would change the capability contract and the cache key and needs its own decision.

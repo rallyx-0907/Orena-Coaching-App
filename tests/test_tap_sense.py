@@ -56,7 +56,10 @@ def test_catalogue_pick_prefers_the_support_language_then_the_class_then_the_fir
     assert pick_catalogue_entry([noun, verb], "", "vi") is noun  # no class: neutral first sense
     assert pick_catalogue_entry([noun, verb], "adverb", "vi") is noun
     no_vi = _entry("plan", "verb", en="to plan")
-    assert pick_catalogue_entry([no_vi, noun], "verb", "vi") is noun  # a sense in the learner's language wins
+    assert pick_catalogue_entry([no_vi, noun], "verb", "vi") is no_vi  # the tagged class beats availability
+    assert pick_catalogue_entry([no_vi, noun], "", "vi") is noun  # no class: a sense in the learner's language wins
+    verb_vi = _entry("plan", "verb", vi="lên kế hoạch")
+    assert pick_catalogue_entry([no_vi, verb_vi], "verb", "vi") is verb_vi  # equal class: the localised one
     assert pick_catalogue_entry([], "verb", "vi") is None
 
 
@@ -71,6 +74,21 @@ def test_chinese_entry_is_chosen_by_the_reading_the_tagger_gave_in_the_sentence(
     assert pick_chinese_entry([xing, hang], "xíng") is xing
     assert pick_chinese_entry([xing, hang], "") is xing  # no reading: neutral first entry
     assert pick_chinese_entry([xing, hang], "zhòng") is xing  # no entry has it: neutral first entry
+
+
+def test_chinese_multi_token_and_other_homographs_match_on_the_whole_reading() -> None:
+    def entry(word: str, pinyin: str) -> chinese_lexicon.LexiconEntry:
+        return chinese_lexicon.LexiconEntry(word, word, pinyin, ("x",), False)
+
+    bank, walk = entry("银行", "yín háng"), entry("银行", "yín xíng")
+    assert pick_chinese_entry([walk, bank], "yín háng") is bank  # two tokens, joined reading
+    assert pick_chinese_entry([walk, bank], "yin2 hang2") is bank
+    heavy, again = entry("重", "zhòng"), entry("重", "chóng")
+    assert pick_chinese_entry([heavy, again], "chóng") is again
+    assert pick_chinese_entry([heavy, again], "zhòng") is heavy
+    long_, grow = entry("长", "cháng"), entry("长", "zhǎng")
+    assert pick_chinese_entry([long_, grow], "zhǎng") is grow
+    assert pick_chinese_entry([long_, grow], "cháng") is long_
 
 
 # --- through the lookup ------------------------------------------------------------------------------------------

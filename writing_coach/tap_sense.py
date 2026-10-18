@@ -65,8 +65,9 @@ def pick_catalogue_entry(entries: Sequence[Mapping[str, Any]], tagged_pos: str, 
     """The authored sense to show among a word's published senses.
 
     A sense with a meaning in the support language beats one without (the pack's own localization is shown instead
-    of a machine's or an English gloss); among those, the sense whose class is the word's class in the sentence wins;
-    ties keep the catalogue's order, which is the neutral first sense."""
+    of a machine's or an English gloss) - but only among senses of the same class: the sense whose class is the word's
+    class in the sentence wins first, even with no meaning in the support language (the layers below localise it).
+    Ties keep the catalogue's order, which is the neutral first sense."""
 
     if not entries:
         return None
@@ -76,7 +77,7 @@ def pick_catalogue_entry(entries: Sequence[Mapping[str, Any]], tagged_pos: str, 
         index, entry = indexed
         has_target = 0 if _target_text(entry, target) else 1
         pos_match = 0 if wanted and canonical_pos(entry.get("part_of_speech")) == wanted else 1
-        return (has_target, pos_match, index)
+        return (pos_match, has_target, index)
 
     return min(enumerate(entries), key=rank)[1]
 
