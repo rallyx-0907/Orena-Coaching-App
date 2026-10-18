@@ -142,6 +142,22 @@ def test_environment_example_remains_a_usable_development_configuration() -> Non
     assert (root / "VERSION").read_text(encoding="utf-8").strip() == "1.4.0"
 
 
+def test_the_web_service_receives_the_plans_billing_configuration_off_by_default():
+    """Gate 7b sets these in the host's .env: compose must hand them to the app, empty (billing off) unless set.
+    Credits and the domestic gateway's secrets (gate 7a) are not passed."""
+
+    import re
+
+    root = Path(__file__).resolve().parents[1]
+    compose = (root / "compose.yaml").read_text(encoding="utf-8")
+    web = compose.split("\n  writing-coach:\n", 1)[1].split("\n  reading-worker:\n", 1)[0]
+    for name in ("BILLING_ENABLED", "BILLING_NEW_SALES", "BILLING_PRICES_FILE", "BILLING_DOMESTIC_GATEWAY",
+                 "POLAR_ACCESS_TOKEN", "POLAR_WEBHOOK_SECRET", "POLAR_ENVIRONMENT"):
+        assert re.search(rf"\n\s+{name}: \$\{{{name}:-\}}\n", web), f"{name} is not passed through, empty by default"
+    for name in ("CREDITS_ENABLED", "SEPAY_API_TOKEN", "SEPAY_WEBHOOK_SECRET", "PAYOS_API_KEY"):
+        assert name not in web
+
+
 def test_the_reading_worker_runs_as_its_own_restarting_service_on_the_shared_data_volume():
     root = Path(__file__).resolve().parents[1]
     compose = (root / "compose.yaml").read_text(encoding="utf-8")
