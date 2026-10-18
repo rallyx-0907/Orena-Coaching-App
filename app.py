@@ -269,7 +269,7 @@ async def refuse_cross_site_changes_and_harden_responses(request: Request, call_
     headers (writing_coach/core/http_security.py)."""
 
     from writing_coach.agent.ratelimit import SlidingWindowLimiter
-    from writing_coach.core.http_security import hardening_headers, origin_refusal, rate_group
+    from writing_coach.core.http_security import client_address, hardening_headers, origin_refusal, rate_group, signin_group
 
     refusal = origin_refusal(request.method, request.url.path, request.headers)
     # Real accounts only: the single-user local mode (tests, a lane runtime) has no one to protect from.
@@ -281,6 +281,14 @@ async def refuse_cross_site_changes_and_harden_responses(request: Request, call_
         limiter = _ROUTE_LIMITERS.setdefault(name, SlidingWindowLimiter(limit, window, max_keys=50_000))
         limiter.limit = limit  # the effective policy now (Platform Admin, D-172), not the limit it was built with
         wait = limiter.check(account)
+    # Sign-in is limited per client address (no session exists yet); the same 429 whatever the account.
+    signin = signin_group(request.method, request.url.path) if wait is None and AUTH_ENABLED else None
+    if signin is not None:
+        name, limit, window = signin
+        limiter = _ROUTE_LIMITERS.setdefault(name, SlidingWindowLimiter(limit, window, max_keys=50_000))
+        limiter.limit = limit
+        peer = (request.scope.get("client") or (None,))[0]
+        wait = limiter.check(client_address(peer, request.headers))
     if wait is not None:
         response = JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait) + 1))}, content={
             "detail": error_detail("rate_limited", "Too many requests; try again in a moment.", retryable=True)})

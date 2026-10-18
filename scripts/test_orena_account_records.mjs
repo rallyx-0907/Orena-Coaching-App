@@ -10,11 +10,8 @@ const draftSync = await import('../static/orena/product/draft-sync.js');
 const calls = [];
 let state = 'active';
 let saveAnnotations = async () => ({ version: 1 });
-let annotationsGet = async () => {
-  const error = new Error('none');
-  error.status = 404;
-  throw error;
-};
+/* Nothing kept yet is an explicit empty body (`annotation: null`), not a 404. */
+let annotationsGet = async () => ({ annotation: null });
 const stub = {
   accountBackbone: async () => ({ state }),
   annotations: async (id) => { calls.push(['get', id]); return annotationsGet(id); },

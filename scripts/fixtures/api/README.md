@@ -66,7 +66,7 @@ Rules:
 | `listening_library_lesson.zh.json` | `GET /api/listening/library/{lessonId}?target_language=zh` | 2026-09-28 |
 | `listening_progress.json` | `GET /api/listening/progress?asset_id=...` (captured after Dictation's own real `POST` from a live Check - `checked_attempt_count:1`, `best_accuracy_percent:44`, `last_answer` is the exact partial answer typed) | 2026-09-28 |
 | `listening_shadowing_progress.json` | `GET /api/listening/shadowing-progress?asset_id=...` (one row per shadowed segment: `segment_id`, `completed_rounds`, `updated_at`; captured after real rounds of Shadowing completed on the isolated app) | 2026-09-29 |
-| `reading_practice_article_set.json` | `GET /api/reading/practice/articles/{id}` (404 `reading_set_not_available` - the real shape while no article has an approved set; see `reading_practice_next.json`) | 2026-09-28 |
+| `reading_practice_article_set.json` | `GET /api/reading/practice/articles/{id}` (200 `{set: null, ...}` - the real shape while an article has no approved set; 404 `reading_set_not_available` only for an unknown article; see `reading_practice_next.json`) | 2026-09-28 |
 | `practice_recommendation.json` | `GET /api/practice-recommendation` | 2026-09-28 |
 | `essays.json` | `GET /api/essays` (empty - see "Content/data gaps this sandbox cannot fill") | 2026-09-28 |
 | `practice_outcomes.json` | `GET /api/practice-outcomes?limit=5` (empty, same reason: needs an essay) | 2026-09-28 |

@@ -4,7 +4,7 @@
    The question set comes from the canonical Reading practice contract
    (writing_coach/reading_practice_api.py, writing_coach/persistence/reading_evidence_repository.py):
    `GET /api/reading/practice/articles/{articleId}` answers `{set, submit_enabled, support_language}`
-   or 404 when the article has no approved set (Free Reading). `set.questions[]` carries
+   with `set: null` when the article has no approved set (Free Reading); 404 only for an unknown article. `set.questions[]` carries
    `{id, rank, question_type, prompt, options}` - no answer key until a question is graded
    (`POST .../grade`), which is itself gated by the same `submit_enabled` flag (`ORENA_READING_PRACTICE_SUBMIT`)
    as the final `POST /attempts` - "the disabled state must be honest" (task brief): this screen

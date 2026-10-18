@@ -8,6 +8,7 @@
    pause (`waiting` holds the seconds); `language_mismatch` hands the learner's message back unsent
    (`unsent`), for the panel to return to the composer once the learning language is re-read;
    `absent` means Orena is off (`absent`), which the panel answers by closing, not by an error. */
+import { memoryOn } from './memory-switch.js';
 import { CONTRACT_VERSION, EVENTS, CLIENT_EVENTS, fallbackOf, toContractLang, SELECTED_ITEM_TYPES, normalizeAddress } from './contract.js';
 
 const CONTEXT_FIELDS = ['surface', 'activity_type', 'lesson_id', 'content_id', 'attempt_id', 'take_ref', 'essay_id', 'client_evidence'];
@@ -61,7 +62,8 @@ export function buildRequest({ trigger = 'message', message = '', context = {}, 
     if (normalized) ctx.address = normalized;
   }
   request.context = ctx;
-  if (notes.length) request.coach_notes = notes;
+  // Memory off (D-226): no device notes leave the device. The server enforces it too; this is hygiene.
+  if (notes.length && memoryOn()) request.coach_notes = notes;
   return request;
 }
 
