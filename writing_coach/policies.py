@@ -136,6 +136,10 @@ POLICIES: tuple[Policy, ...] = (
     _p("rate.essay_ai_per_10min", "rates", "int", 30, unit="count", low=1, high=5000),
     _p("rate.dictionary_ai_per_10min", "rates", "int", 120, unit="count", low=1, high=5000),
     _p("rate.reading_ai_per_10min", "rates", "int", 300, unit="count", low=1, high=5000),
+    # --- sign-in, per client address, per 10 minutes (open-public readiness item d)
+    _p("rate.signin_start_per_10min", "rates", "int", 120, unit="count", low=1, high=5000),
+    _p("rate.signin_callback_per_10min", "rates", "int", 200, unit="count", low=1, high=5000),
+    _p("rate.signin_exchange_per_10min", "rates", "int", 200, unit="count", low=1, high=5000),
     # --- feedback and retention
     _p("feedback.daily_limit", "feedback", "int", 10, unit="count", low=1, high=100),
     _p("feedback.retention_sweep", "feedback", "bool", False, env="FEEDBACK_RETENTION_SWEEP", danger="delete"),

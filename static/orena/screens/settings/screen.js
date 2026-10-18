@@ -40,6 +40,7 @@ import { t } from './copy.js';
 import { TABS, tabFromQuery, rowsForTab, usesPicker } from './model.js';
 import { listVoices, chosenVoice, chooseVoice } from '../../agent/live-voice.js';
 import { toContractLang } from '../../agent/contract.js';
+import { readMemoryEnabled, writeMemoryEnabled } from '../../agent/memory-switch.js';
 
 const TAB_LABEL_KEY = { languages: 'tabLanguages', appearance: 'tabAppearance', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', privacy: 'tabPrivacy' };
 /* Every row's sub reads t(`${id}Sub`); a row listed here reads another key (none today). */
@@ -171,15 +172,17 @@ export default async function settingsScreen(element, ctx) {
     }
   }
 
-  const [languagesData, mic, voices] = await Promise.all([
+  const [languagesData, mic, voices, memoryOn] = await Promise.all([
     api.languages().catch(() => null),
     readMicState(),
     listVoices(toContractLang(copyLanguages().ui)),
+    readMemoryEnabled(ctx.context.language).catch(() => null), // times out to null: a slow server only hides the row
   ]);
   if (!ctx.isCurrent()) return undefined;
   state.languagesData = languagesData;
   state.mic = mic;
   state.voices = voices;
+  state.memoryOn = memoryOn;
 
   function buildInputs() {
     const context = ctx.context;
@@ -212,6 +215,7 @@ export default async function settingsScreen(element, ctx) {
       privacy: {
         micOn: state.mic.on,
         micState: state.mic.state,
+        memoryOn: state.memoryOn,
         lang: copyLanguages().ui,
       },
     };
@@ -364,6 +368,26 @@ export default async function settingsScreen(element, ctx) {
     });
   }
 
+  /* Orena Memory (D-226): one account-wide switch, one PUT. A failed save puts the switch back and says so with
+     Settings' own save-failed line. */
+  async function onMemoryToggle() {
+    const before = state.memoryOn;
+    if (typeof before !== 'boolean' || state.memoryBusy) return;
+    state.memoryBusy = true;
+    state.memoryOn = !before;
+    paintTab();
+    try {
+      state.memoryOn = await writeMemoryEnabled(!before);
+    } catch (error) {
+      state.memoryOn = before;
+      // A 401 already reached the global signed-out handling in request(); no second message.
+      if (error?.status !== 401 && ctx.isCurrent()) toast(t('saveError'));
+    } finally {
+      state.memoryBusy = false;
+    }
+    if (ctx.isCurrent()) paintTab();
+  }
+
   const REVIEW_FIELD = { targetMeaning: 'typing', sourceAware: 'cloze', audioWord: 'dictation' };
 
   function onToggle(id) {
@@ -372,6 +396,7 @@ export default async function settingsScreen(element, ctx) {
     if (id === 'autoscroll' || id === 'meaning') return onStageToggle(id);
     if (REVIEW_FIELD[id]) return onReviewModeToggle(REVIEW_FIELD[id]);
     if (id === 'mic') return onMicToggle();
+    if (id === 'memory') return onMemoryToggle();
   }
 
   function onAction(id) {

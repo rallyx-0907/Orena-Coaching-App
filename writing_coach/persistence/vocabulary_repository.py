@@ -265,6 +265,7 @@ class VocabularyRepository(Protocol):
         offset: int = 0,
     ) -> dict[str, Any] | None: ...
     def find_entry(self, language_code: str, normalized_term: str) -> dict[str, Any] | None: ...
+    def find_entries(self, language_code: str, normalized_term: str, *, limit: int = 8) -> list[dict[str, Any]]: ...
     def find_neighbours(
         self, language_code: str, normalized_term: str, *, limit: int = 12
     ) -> list[dict[str, Any]]: ...
@@ -1386,10 +1387,24 @@ class SQLAlchemyVocabularyRepository:
                 offset=offset,
             )
 
+    def find_entries(
+        self, language_code: str, normalized_term: str, *, limit: int = 8
+    ) -> list[dict[str, Any]]:
+        """Every published sense of a term (one row per sense identity), in identity order, with localizations.
+
+        The tap picks among them by the word's part of speech in its sentence and by the support language
+        (the zero-cost sense choice); `find_entry` stays the first of them."""
+
+        return self._find_entry_rows(language_code, normalized_term, limit)
+
     def find_entry(self, language_code: str, normalized_term: str) -> dict[str, Any] | None:
+        found = self._find_entry_rows(language_code, normalized_term, 1)
+        return found[0] if found else None
+
+    def _find_entry_rows(self, language_code: str, normalized_term: str, limit: int) -> list[dict[str, Any]]:
         self._require_available()
         with Session(self.engine) as session:
-            entry = session.scalar(
+            rows = session.scalars(
                 select(VocabularyEntry)
                 .join(
                     VocabularyCollectionMembership,
@@ -1413,11 +1428,15 @@ class SQLAlchemyVocabularyRepository:
                 # is the same answer without asking the database to compare
                 # documents.
                 .order_by(VocabularyEntry.identity_key)
-                .limit(1)
-            )
-            if entry is None:
-                return None
-            return self._with_localizations(session, [_entry_dict(entry)])[0]
+                .limit(limit * 4)  # a sense in several published collections joins to several rows
+            ).all()
+            distinct: dict[Any, Any] = {}
+            for entry in rows:
+                distinct.setdefault(entry.id, entry)
+            chosen = list(distinct.values())[:limit]
+            if not chosen:
+                return []
+            return self._with_localizations(session, [_entry_dict(entry) for entry in chosen])
 
     def search_entries(
         self, language_code: str, query: str, *, limit: int = 20

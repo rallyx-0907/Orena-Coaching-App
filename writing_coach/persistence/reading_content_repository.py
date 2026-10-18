@@ -607,6 +607,34 @@ class ReadingContentRepository:
                 return None
         return self.get_source(source_id)
 
+    def set_source_rights(
+        self, source_id: str, rights: dict[str, Any], *, actor: str, now: datetime | None = None
+    ) -> dict[str, Any] | None:
+        """Correct the rights recorded on an existing source (the columns `create_source` writes).
+
+        Only the source row changes. Texts already ingested keep the rights snapshot taken on their
+        source item; the new answers reach texts ingested afterwards. A source whose rights no longer
+        allow automation stops polling in the same transaction (the invariant `set_polling` enforces
+        and the CHECK constraint backs). No article status moves. Returns None for an unknown source.
+        """
+        if _lookup_uuid(source_id) is None:
+            return None
+        values: dict[str, Any] = {
+            "automation_allowed": bool(rights.get("automation_allowed")),
+            "can_republish": bool(rights.get("can_republish")),
+            "can_adapt": bool(rights.get("can_adapt")),
+            "attribution_required": bool(rights.get("attribution_required", True)),
+            "license_note": str(rights.get("license_note", "")),
+            "updated_at": _now(now),
+        }
+        if not values["automation_allowed"]:
+            values["polling_enabled"] = False
+        with self.engine.begin() as connection:
+            updated = connection.execute(
+                update(ReadingSource).where(ReadingSource.id == _uuid(source_id)).values(**values)
+            ).rowcount
+        return self.get_source(source_id) if updated else None
+
     def set_source_state(
         self, source_id: str, state: str, *, actor: str, now: datetime | None = None
     ) -> dict[str, Any] | None:

@@ -8,6 +8,7 @@
    session while the device's thread is empty), coach-note upserts from `memory_update`, and the
    one dispatcher every Orena action button runs through. */
 import { createSession, buildRequest } from '../../agent/session.js';
+import { refreshMemoryEnabled } from '../../agent/memory-switch.js';
 import { voiceSessionBody, voiceThread, chosenVoice } from '../../agent/live-voice.js';
 import { turn } from '../../agent/transport.js';
 import { sharedMemory } from './memory-store.js';
@@ -72,6 +73,8 @@ async function runTurn(trigger, message, { retry = false } = {}) {
   const inst = getHomeSession();
   if (inst.sending) return;
   inst.sending = true;
+  // Orena Memory's switch, read from the server once per account and language (D-226), before notes are chosen.
+  await refreshMemoryEnabled(requestLanguages().target);
   const support = toContractLang(languages().support);
   const address = inst.memory.addressFor(support);
   const request = buildRequest({

@@ -16,7 +16,7 @@ const KEYS = [
   'audioWordLabel', 'audioWordSub', 'sessionLengthLabel', 'sessionLengthSub',
   'dueReviewLabel', 'dueReviewSub', 'writingReviewLabel', 'writingReviewSub',
   'mediaReadyLabel', 'mediaReadySub', 'systemLabel', 'systemSub',
-  'micLabel', 'micSub', 'micDeniedToast',
+  'micLabel', 'micSub', 'micDeniedToast', 'memoryLabel', 'memorySub',
   'learnerAudioLabel', 'learnerAudioSub', 'historyLabel', 'historySub',
   'privacyPolicyLabel', 'termsOfServiceLabel', 'deleteAccountLabel',
   'licencesLabel', 'licencesSub', 'licencesData', 'licencesContent', 'licencesAudio', 'licencesNone', 'licencesLoadError',
@@ -50,6 +50,7 @@ export const t = defineCopy('settings', {
     mediaReadyLabel: 'Media ready', mediaReadySub: 'Imported transcript or translation finished',
     systemLabel: 'System and account', systemSub: 'Plan, privacy, updates',
 
+    memoryLabel: 'Memory', memorySub: 'Let Orena use your content to personalise',
     micLabel: 'Microphone access', micSub: 'Needed for Speaking and Shadowing',
     micDeniedToast: "Blocked — allow it in your browser's site settings",
     learnerAudioLabel: 'Learner audio',
@@ -88,6 +89,7 @@ export const t = defineCopy('settings', {
     mediaReadyLabel: 'Nội dung đã sẵn sàng', mediaReadySub: 'Bản chép lời hoặc bản dịch đã nhập xong',
     systemLabel: 'Hệ thống và tài khoản', systemSub: 'Gói, quyền riêng tư, cập nhật',
 
+    memoryLabel: 'Trí nhớ', memorySub: 'Cho phép Orena dùng nội dung của bạn để cá nhân hoá',
     micLabel: 'Quyền dùng micro', micSub: 'Cần cho phần Nói và Nói theo',
     micDeniedToast: 'Đang bị chặn — hãy cho phép trong cài đặt trang của trình duyệt',
     learnerAudioLabel: 'Bản ghi âm của bạn',
@@ -126,6 +128,7 @@ export const t = defineCopy('settings', {
     mediaReadyLabel: '内容已就绪', mediaReadySub: '导入的转录或翻译已完成',
     systemLabel: '系统与账户', systemSub: '套餐、隐私、更新',
 
+    memoryLabel: '记忆', memorySub: '允许 Orena 使用你的内容进行个性化',
     micLabel: '麦克风权限', micSub: '口语和跟读练习需要',
     micDeniedToast: '已被阻止——请在浏览器的网站设置中允许',
     learnerAudioLabel: '你的录音',

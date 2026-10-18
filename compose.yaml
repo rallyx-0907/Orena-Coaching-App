@@ -88,6 +88,16 @@ services:
       AZURE_PRONUNCIATION_TIMEOUT_SECONDS: ${AZURE_PRONUNCIATION_TIMEOUT_SECONDS:-30}
       AZURE_PRONUNCIATION_MAX_BYTES: ${AZURE_PRONUNCIATION_MAX_BYTES:-8388608}
       AZURE_PRONUNCIATION_MAX_REFERENCE_CHARS: ${AZURE_PRONUNCIATION_MAX_REFERENCE_CHARS:-1200}
+      # Plans on Polar (gate 7b, docs/billing/RUNBOOK_POLAR_ACTIVATION.md). Off unless an operator turns it on
+      # after the gate. BILLING_PRICES_FILE is a path inside the container, on the data volume
+      # (/data/billing/prices.json). Credits and the domestic gateway (gate 7a) are not passed here.
+      BILLING_ENABLED: ${BILLING_ENABLED:-}
+      BILLING_NEW_SALES: ${BILLING_NEW_SALES:-}
+      BILLING_PRICES_FILE: ${BILLING_PRICES_FILE:-}
+      BILLING_DOMESTIC_GATEWAY: ${BILLING_DOMESTIC_GATEWAY:-}
+      POLAR_ACCESS_TOKEN: ${POLAR_ACCESS_TOKEN:-}
+      POLAR_WEBHOOK_SECRET: ${POLAR_WEBHOOK_SECRET:-}
+      POLAR_ENVIRONMENT: ${POLAR_ENVIRONMENT:-}
     depends_on:
       postgres:
         condition: service_healthy

@@ -446,6 +446,12 @@ FLOWS: dict[str, list[tuple[str, str, dict, str | None, dict]]] = {
         ("zh-CN", "forget", VI, "Quên ghi chú về ví dụ đó đi.", {}),
         ("zh-CN", "after", VI, "Cho mình một ví dụ với 朋友.", {}),
     ],
+    # :8021 smoke step 5 (2026-10-18): a goal is kept, then a NEW conversation asks about it; the answer must come
+    # from the note (in device mode, the client's coach_notes). Judged by `recall_verdict`.
+    "notes-recall": [
+        ("zh-CN", "remember", VI, "Nhớ giúp mình: mình học tiếng Trung để phỏng vấn xin việc.", {}),
+        ("zh-CN", "ask", VI, "Mình học tiếng Trung để làm gì nhỉ?", {"new_session": True}),
+    ],
     # Conversation kernel slice 2 (agent/pending.py): an offer survives a question in between, is run once on the
     # learner's yes, dropped on a no, and not run twice. Each flow is one session; judged by `pending_verdict`.
     "pending-save": [
@@ -626,6 +632,21 @@ def notes_verdict(rows: list[dict]) -> dict:
     verdict["after"] = bool(after) and not after.get("error") and not ops("after")
     verdict["pass"] = all(verdict[k] for k in ("complete", "remember", "correct", "forget", "after"))
     return verdict
+
+
+RECALL_WORDS = ("phỏng vấn",)  # the kept goal's words the answer must carry
+
+
+def recall_verdict(rows: list[dict]) -> dict:
+    """The recall flow: a note kept, then a new conversation's answer that uses it. Empty when the flow did not run."""
+
+    steps = {row["step"]: row for row in rows if row.get("flow") == "notes-recall"}
+    if not steps:
+        return {}
+    kept = any(m.get("op") == "upsert" for m in (steps.get("remember") or {}).get("memory_update", []))
+    ask = steps.get("ask") or {}
+    used = any(word in str(ask.get("text", "")).casefold() for word in RECALL_WORDS)
+    return {"kept": kept, "used": used, "pass": kept and used and not ask.get("error")}
 
 
 def pending_verdict(rows: list[dict]) -> dict:
@@ -1053,7 +1074,8 @@ def finish(rows: list[dict], spent: float, out: str) -> int:
                     "spent_bound_usd": round(spent, 4), "price": [PRICE_IN, PRICE_OUT],
                     "lock": LOCK_NOTES, "notes_verdict": notes_verdict(rows) if any(r.get("flow") == "notes" for r in rows)
                     else None, "pending_verdict": pending_verdict(rows) or None,
-                    "conversation_verdict": conversation_verdict(rows) or None, "timing": timing(rows), "turns": rows},
+                    "conversation_verdict": conversation_verdict(rows) or None,
+                    "recall_verdict": recall_verdict(rows) or None, "timing": timing(rows), "turns": rows},
                    ensure_ascii=False, indent=2),  # fmt: skip
         encoding="utf-8",
     )
@@ -1063,6 +1085,8 @@ def finish(rows: list[dict], spent: float, out: str) -> int:
         print(f"conversation verdict: {conversation_verdict(rows)}")
     if any(str(r.get("flow", "")).startswith("pending") for r in rows):
         print(f"pending verdict: {pending_verdict(rows)}")
+    if recall_verdict(rows):
+        print(f"recall verdict: {recall_verdict(rows)}")
     print(f"timing: {timing(rows)}")
     print(f"results: {out}  (spend bound ${spent:.4f})")
     return 0

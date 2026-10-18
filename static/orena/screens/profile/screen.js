@@ -41,6 +41,7 @@ import { listRow } from '../../kit/components.js';
 import { useStyles } from '../../kit/styles.js';
 import { loadOffers } from '../../product/credit-topup.js';
 import { api } from '../../infrastructure/api.js';
+import { clearMemoryState } from '../../agent/memory-switch.js';
 import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { buildProfileModel, profileActions, weekdayAbbrevs, WEEKLY_GOAL_TARGET } from './model.js';
@@ -208,6 +209,7 @@ function actionRow(action, ctx) {
    With sign-in off there is no session to end: the same address opens the local learner again. */
 async function signOut() {
   let destination = SIGN_OUT_NEXT;
+  clearMemoryState();
   try {
     destination = signedOutDestination(await api.logout(SIGN_OUT_NEXT));
   } catch (error) {

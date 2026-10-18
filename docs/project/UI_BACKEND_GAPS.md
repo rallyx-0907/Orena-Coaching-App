@@ -5761,6 +5761,8 @@ environment" (so operations can pin production, as `staging_8000_deploy.ps1` alr
 | `rate.writing_ai_per_10min` / `rate.essay_ai_per_10min` | 30 / 30 | 1-5 000 | - | same |
 | `rate.dictionary_ai_per_10min` / `rate.reading_ai_per_10min` | 120 / 300 | 1-5 000 | - | same |
 | `rate.media_learning_per_hour` | 30 | 1-1 000 | - | same |
+| `rate.signin_start_per_10min` / `rate.signin_callback_per_10min` / `rate.signin_exchange_per_10min` | 120 / 200 / 200 | 1-5 000 | - | `http_security.signin_group` + `client_address` (per client address, app middleware; a shared NAT shares the limit) |
+| analytics `interface_lang` | - | - | - | the account's current setting, not its value at event time (no event-time record without a schema change) |
 | `media.asr_max_seconds` | 5 400 | 60-43 200 s | `MEDIA_ASR_MAX_SECONDS` | `max_asr_seconds()` (pipeline, `media_quota`) |
 | `media.model_clips_enabled` | on | on/off | `MEDIA_MODEL_CLIPS` | `_prepare_model_clips` |
 | `media.model_clip_max_lines` | 500 | 10-5 000 | `MEDIA_MODEL_CLIP_MAX_LINES` | `_prepare_model_clips` |
@@ -6367,6 +6369,12 @@ The pinned admin design draws no cost page (D-128). The "Where this spend was ma
 ## Admin: a media item's reviewed level (2026-10-18)
 
 The backend can now set or clear the reviewed CEFR / HSK level of an existing shared-library media item (`POST /api/admin/console/content/media/{id}/level`, audited as `admin.content.level`; stored in the entry's `level` field, shown to learners as `reviewed_level`). Until now a level could only be written at import, so published pilot items imported without one had no way to get it. The pinned Admin design draws no media level control, so no UI was added. Owner/design decision needed: where a level control belongs on the Media admin, if at all.
+
+## Settings: the Orena Memory switch (D-226 proposed, 2026-10-18)
+
+The design does not draw a switch for Orena Memory. The owner decided (2026-10-18, relayed by the owner's delegate) on exactly one switch, default ON, with no notes list and no per-note view or delete UI. It is therefore built as an existing toggle row, not a new visual: Settings, Privacy tab, under "Microphone access" (`screens/settings/model.js` `privacyRows`, id `memory`; the design's Privacy `tog(...)` rows, `Orena.dc.html` line 3272). The row is hidden when the server answers 503 `memory_unavailable`.
+
+This supersedes the earlier entry in the Orena Home gaps ("the coach-notes sheet has no entry point", item 4): no "What Orena remembers" row will be added, and `preferences.agent_memory` (which `agent/intents.js` maps to `#/settings?tab=privacy&section=orena`) now lands on the Privacy tab, where the switch is. `screens/orena/memory-sheet.js` and its `openAgentMemory()` stay unreferenced by any caller (it is only imported for its side effects by `screens/orena/screen.js`); there is no planned use, and deleting it is left to a follow-up decision. Deletion of what Orena remembers is by email to orena.legal@chillpickle.org.
 
 ## Word Quick Sheet: which meaning line comes first (2026-10-18)
 

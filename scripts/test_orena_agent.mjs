@@ -17,6 +17,20 @@ import assert from 'node:assert/strict';
   assert.equal('sentence' in bare.context.selected_item, false);
 }
 
+// D-226: with Orena Memory off the request carries no device coach notes; on, it does.
+{
+  const { buildRequest } = await import('../static/orena/agent/session.js');
+  const sw = await import('../static/orena/agent/memory-switch.js');
+  const note = [{ id: 'n1', kind: 'preference', text: 'Likes short answers' }];
+  const languages = { interface: 'en', support: 'vi', target: 'zh' };
+  sw.__reset();
+  assert.deepEqual(buildRequest({ context: { surface: 'home' }, languages, notes: note }).coach_notes, note, 'memory on (the default): notes are sent');
+  await sw.writeMemoryEnabled(false, async () => ({ enabled: false, version: 2 }));
+  assert.ok(!('coach_notes' in buildRequest({ context: { surface: 'home' }, languages, notes: note })), 'memory off: no coach_notes');
+  await sw.writeMemoryEnabled(true, async () => ({ enabled: true, version: 3 }));
+  assert.ok('coach_notes' in buildRequest({ context: { surface: 'home' }, languages, notes: note }), 'back on: notes are sent again');
+}
+
 // LEX-028: a turn never leaves an idle panel - Orena thinks until the reply starts, an empty turn is a retry,
 // and a server that goes quiet is stopped with a retry.
 {
