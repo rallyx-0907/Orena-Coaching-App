@@ -1109,7 +1109,7 @@ def _agent_spend_guard():
     # The system-wide ceiling (ai/spend_gate.py, owner 2026-10-18) is checked first: a turn stops once the whole system's
     # daily spend is reached, whatever the agent's own cap; that check also raises the system's 80% warning.
     return LiveSpendGuard(lambda: _policies.value_strict("agent.daily_spend_cap_usd"),
-                          reader if callable(reader) else None, ceiling=_spend_gate.ceiling_wait,
+                          reader if callable(reader) else None, ceiling=_spend_gate.ceiling_check,
                           warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
 
 

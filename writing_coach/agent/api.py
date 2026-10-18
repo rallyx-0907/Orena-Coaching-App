@@ -119,9 +119,16 @@ async def _declared_version(request: Request) -> int:
 
     try:
         declared = json.loads(await request.body() or b"{}").get("contract_version")
+        if isinstance(declared, bool):
+            return 0
+        if isinstance(declared, float):
+            return int(declared) if declared.is_integer() else 0  # 10.0 validates as 10 (pydantic lax mode)
         return int(declared) if isinstance(declared, int | str) else 0
     except Exception:  # noqa: BLE001 - a body that does not parse is answered by validation, after this check
         return 0
+
+
+FAULT_RETRY_SECONDS = 60  # a spend limit that cannot be checked: refused (fail closed), then tried again soon
 
 
 async def _spend_refused(request: Request, runtime: AgentRuntime) -> None:
@@ -132,14 +139,17 @@ async def _spend_refused(request: Request, runtime: AgentRuntime) -> None:
     if guard is None:
         return
     check = getattr(guard, "check", None)
+    # The guard reads the ledger and the settings store (database reads): never on the event loop (review of #304).
     if callable(check):
-        refused = check()
+        refused = await run_in_threadpool(check)
     else:
-        wait = guard()
-        refused = (wait, "agent") if wait is not None else None
+        wait = await run_in_threadpool(guard)
+        refused = (wait, "agent", False) if wait is not None else None
     if refused is None:
         return
-    wait, scope = refused
+    wait, scope, fault = refused
+    if fault:  # a cap or ledger that cannot be read is not "AI off until midnight": wait briefly, then send again
+        raise HTTPException(status_code=429, detail="rate_limited", headers={"Retry-After": str(FAULT_RETRY_SECONDS)})
     retry = max(1, math.ceil(wait))
     headers = {"Retry-After": str(retry)}
     if await _declared_version(request) >= DAILY_AI_LIMIT_VERSION:
@@ -254,8 +264,15 @@ def _voice(runtime: AgentRuntime, *, new_sessions: bool = False) -> VoiceService
     return runtime.voice
 
 
-def _voice_session_allowed(runtime: AgentRuntime = Depends(_turn_allowed)) -> VoiceService:
-    return _voice(runtime, new_sessions=True)  # the daily spend cap and the learner's turn window count a session as a turn
+def _voice_present(runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRuntime:
+    if runtime.voice is None:  # absent: the routes are not there, before any cap or window (review of #304)
+        raise HTTPException(status_code=404, detail="Not Found")
+    return runtime
+
+
+async def _voice_session_allowed(request: Request, runtime: AgentRuntime = Depends(_voice_present)) -> VoiceService:
+    await _turn_allowed(request, runtime)  # the daily spend cap and the learner's turn window count a session as a turn
+    return _voice(runtime, new_sessions=True)
 
 
 def _voice_list_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> VoiceService:
@@ -267,7 +284,7 @@ def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> Voice
 
 
 async def _voice_extend_allowed(request: Request,
-                                runtime: AgentRuntime = Depends(_require_runtime)) -> VoiceService:  # fmt: skip
+                                runtime: AgentRuntime = Depends(_voice_present)) -> VoiceService:  # fmt: skip
     # A renewal mints a paid token, so the daily spend cap applies to it as to an opening; but it carries on a
     # conversation the learner already opened, so it is not counted as one more turn of their window.
     await _spend_refused(request, runtime)

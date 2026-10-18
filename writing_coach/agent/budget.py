@@ -56,7 +56,7 @@ class DailySpendGuard:
     # A warning once per UTC day when today's spend reaches this share of the cap (owner, 2026-10-18: 80%); None: none.
     warn_ratio: float | None = None
     label: str = "agent"  # in the log lines: "agent" or "system"
-    _cached: tuple[float, float | None] | None = field(default=None, init=False)
+    _cached: tuple[float, float | None, bool] | None = field(default=None, init=False)  # (at, verdict, a fault)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
     _warned_day: datetime | None = field(default=None, init=False)
     _reached_day: datetime | None = field(default=None, init=False)
@@ -65,9 +65,17 @@ class DailySpendGuard:
     def __call__(self) -> float | None:
         """Seconds until the cap resets when today's spend is at or over it; None when a turn may run."""
 
+        refused = self.refusal()
+        return refused[0] if refused is not None else None
+
+    def refusal(self) -> tuple[float, bool] | None:
+        """(seconds until it resets, True when the refusal is a fault - the ledger could not be read - rather than the
+        cap reached), or None when a turn may run."""
+
         with self._lock:
             if self._cached is not None and self.monotonic() - self._cached[0] < CACHE_SECONDS:
-                return self._cached[1]
+                return None if self._cached[1] is None else (self._cached[1], self._cached[2])
+            fault = False
             moment = self.now()
             midnight = datetime(moment.year, moment.month, moment.day, tzinfo=UTC)
             until_reset = max(1.0, (midnight + timedelta(days=1) - moment).total_seconds())
@@ -88,9 +96,9 @@ class DailySpendGuard:
             except Exception:  # the ledger cannot be read: fail closed
                 _log.warning("%s daily spend ledger unreadable; refused", self.label, exc_info=True)
                 self._last = None  # no stale spend shown beside the refusal
-                verdict = until_reset
-            self._cached = (self.monotonic(), verdict)
-            return verdict
+                verdict, fault = until_reset, True
+            self._cached = (self.monotonic(), verdict, fault)
+            return None if verdict is None else (verdict, fault)
 
     def status(self) -> dict[str, Any]:
         """Today's spend against the cap, for an administrator: read through the same 5-second cache."""
@@ -110,8 +118,8 @@ class LiveSpendGuard:
     always allowed, exactly as when the guard did not exist."""
 
     def __init__(self, cap: Callable[[], float | None], read: SpendReader | None, *,
-                 ceiling: Callable[[], float | None] | None = None, **guard: Any) -> None:  # fmt: skip
-        """`ceiling`: the system-wide guard (ai/spend_gate.py `ceiling_wait`), checked first - a turn stops once the
+                 ceiling: Callable[[], tuple[float, bool] | None] | None = None, **guard: Any) -> None:  # fmt: skip
+        """`ceiling`: the system-wide guard (ai/spend_gate.py `ceiling_check`), checked first - a turn stops once the
         whole system's daily spend is reached, whatever this cap is."""
         self._cap = cap
         self._read = read
@@ -124,31 +132,32 @@ class LiveSpendGuard:
         refused = self.check()
         return refused[0] if refused is not None else None
 
-    def check(self) -> tuple[float, str] | None:
-        """(seconds until it resets, which limit refused: "system" or "agent"), or None when a turn may run."""
+    def check(self) -> tuple[float, str, bool] | None:
+        """(seconds until it resets, which limit refused - "system" or "agent" -, True when it is a fault: a cap or a
+        ledger that cannot be read, not a limit reached), or None when a turn may run."""
 
         if self._ceiling is not None:
-            wait = self._ceiling()
-            if wait is not None:
-                return wait, "system"
-        wait = self._own()
-        return (wait, "agent") if wait is not None else None
+            hit = self._ceiling()
+            if hit is not None:
+                return hit[0], "system", hit[1]
+        hit = self._own()
+        return (hit[0], "agent", hit[1]) if hit is not None else None
 
-    def _own(self) -> float | None:
+    def _own(self) -> tuple[float, bool] | None:
         try:
             cap = self._cap()
         except Exception:  # noqa: BLE001 - an unreadable cap setting is not "no cap" for a guard that exists
             _log.warning("agent daily spend cap unreadable; turns refused", exc_info=True)
-            return 3600.0
+            return 3600.0, True
         if cap is None:
             return None
         if self._read is None:  # a cap with no ledger to read refuses every turn: it fails closed
-            return 3600.0
+            return 3600.0, True
         with self._lock:
             if self._current is None or self._current[0] != cap:
                 self._current = (cap, DailySpendGuard(cap_usd=cap, read=self._read, **self._guard))
             guard = self._current[1]
-        return guard()
+        return guard.refusal()
 
     def status(self) -> dict[str, Any]:
         """The agent cap now and today's spend against it, for an administrator; {"cap_usd": None} with no cap."""
