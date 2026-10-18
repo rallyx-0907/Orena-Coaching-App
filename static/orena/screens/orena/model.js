@@ -6,7 +6,7 @@ import { intentRoute } from '../../agent/intents.js';
 import { ACTIONS } from '../../agent/contract.js';
 import { byId } from '../../shell/routes.js';
 import { shellCopy } from '../../copy/shell.js';
-import { quotaMessage } from '../plan/quota-notice.js';
+import { pausedMessage, quotaMessage } from '../plan/quota-notice.js';
 
 /* The route title a §6.1 surface id opens, in the live interface language - the same name
    AGENT_CONTRACT §6.2 publishes (static/orena/copy/surfaces.json), read straight from the shell's
@@ -183,6 +183,7 @@ export function thinkingText(tool, fallback) {
 export function errorText(error, fallbackText) {
   // The plan's limit of Orena messages (D-163): the server's own figures, in the interface language.
   if (error?.quota) return quotaMessage({ context: error.quota });
+  if (error?.paused) return pausedMessage(error.paused.resets_at);
   return String(error?.message || '').trim() || fallbackText;
 }
 

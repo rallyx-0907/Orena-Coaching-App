@@ -28,6 +28,21 @@ export function quotaMessage(error) {
   return t('exhausted_generic');
 }
 
+/* HTTP 429 `daily_ai_limit` (contract v10, D-232): Orena's AI is paused for everyone until `resets_at`. Not the learner's
+   plan: told once in one line, in the interface language, with `resets_at` in the learner's local time (the server's
+   `message` is an English fallback and is never shown); never waited out or resent, no way to the plans. */
+export function isDailyAiLimit(error) {
+  return Boolean(error) && error.status === 429 && error.category === 'daily_ai_limit';
+}
+
+export function pausedMessage(resetsAt) {
+  const at = new Date(resetsAt);
+  const time = Number.isNaN(at.getTime())
+    ? ''
+    : new Intl.DateTimeFormat(languages().ui, { hour: 'numeric', minute: '2-digit' }).format(at);
+  return t('aiPaused', { time });
+}
+
 export function seePlansLabel() {
   return t('seePlans');
 }

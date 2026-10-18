@@ -453,6 +453,21 @@ assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409
   run = await drive([answer(429, envelope('quota_exhausted', limit), { 'Retry-After': '3600', 'Content-Type': 'application/json' })]);
   assert.deepEqual([run.events, run.sent.length, run.slept], [['error:quota_exhausted:none'], 1, []], '429 quota_exhausted: told, not waited out or resent');
   assert.deepEqual(run.items[0].data.quota, limit, 'the server figures travel with the refusal');
+  // D-232 (contract v10): daily_ai_limit is told once and never waited out or resent, whatever Retry-After says.
+  const paused = { scope: 'system', resets_at: '2026-10-19T00:00:00Z' };
+  run = await drive([answer(429, envelope('daily_ai_limit', paused), { 'Retry-After': '3600', 'Content-Type': 'application/json' }), answer(200, SSE_OK)]);
+  assert.deepEqual([run.events, run.sent.length, run.slept], [['error:daily_ai_limit:none'], 1, []], '429 daily_ai_limit: told, not waited out or resent');
+  assert.deepEqual(run.items[0].data.paused, paused, 'scope and resets_at travel with the refusal');
+  assert.ok(!('quota' in run.items[0].data), 'no way to the plans: not the learner plan');
+  {
+    const { pausedMessage } = await import('../static/orena/screens/plan/quota-notice.js');
+    const { errorText } = await import('../static/orena/screens/orena/model.js');
+    const text = errorText({ class: 'daily_ai_limit', message: '', fallback: 'none', paused }, 'x');
+    assert.equal(text, pausedMessage(paused.resets_at), 'the error line is the interface-language sentence, not the server message');
+    assert.ok(text.includes('Orena') && !text.includes('{time}'), 'the sentence carries the time');
+    const planCopy = fs.readFileSync('static/orena/screens/plan/copy.js', 'utf8');
+    for (const line of ["Orena's AI is paused for today. Back after {time}.", 'Hôm nay Orena tạm dừng AI, sẽ có lại sau {time}.', 'Orena 今日 AI 已暂停，{time} 后恢复。']) assert.ok(planCopy.includes(line), line);
+  }
   run = await drive([answer(409, envelope('operation_finished'), { 'Content-Type': 'application/json' })]);
   assert.deepEqual([run.events, run.sent.length], [['error:transport:retry'], 1], '409 operation_*: a retry (a new send is a new key), not a language change');
   run = await drive([answer(409, envelope('account_not_ready'), { 'Content-Type': 'application/json' })]);
