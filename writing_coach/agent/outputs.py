@@ -214,6 +214,9 @@ SET_ADDRESS = "set_address"
 OFFER_ADDRESS = "offer_address"
 REMEMBER_NOTE = "remember_note"
 FORGET_NOTE = "forget_note"
+NOTE_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE})
+# G8 (ORENA_MEMORY.md §8 b): a provider not cleared for full_memory may not keep, change or forget a coach note.
+NOTES_UNAVAILABLE = "refused: coach notes are not available in this conversation - say nothing about notes"
 RESOLVE_PENDING = "resolve_pending"
 REPLY_TOOL_NAMES = frozenset(
     {
@@ -441,6 +444,7 @@ class ReplyOutputs:
     address_asked: bool = False  # already offered in this session
     address_chosen: bool = False  # the learner already chose a pair (or said no): no offer
     notes: Mapping[str, float] = field(default_factory=dict)  # coach note id -> weight, as the device sent them
+    notes_available: bool = True  # G8: the provider may read and change coach notes (cleared for full_memory)
     # A turn the server read as correcting these notes (agent/notes.py): a correction replaces, it never forgets.
     correcting: tuple[str, ...] = ()
     # The notes this message names as changed, and how (agent/notes.py): what a replace or a forget may touch (3.2).
@@ -722,6 +726,8 @@ class ReplyOutputs:
 
         if self.opening:
             return "refused: not in an opening turn"
+        if not self.notes_available:
+            return NOTES_UNAVAILABLE
         kind, text, replaces = args.get("kind"), args.get("text"), args.get("replaces")
         if replaces is None and len(self.correcting) == 1:
             replaces = self.correcting[0]  # the learner corrected this very note: the new words replace it
@@ -764,6 +770,8 @@ class ReplyOutputs:
     def _forget(self, args: Mapping[str, Any]) -> str:
         if self.opening:
             return "refused: not in an opening turn"
+        if not self.notes_available:
+            return NOTES_UNAVAILABLE
         note_id = str(args.get("id") or "")
         if note_id not in self.notes or note_id.startswith("address-"):
             return "refused: no such coach note (an address is changed with set_address)"

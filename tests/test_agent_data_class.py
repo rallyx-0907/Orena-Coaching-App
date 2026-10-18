@@ -9,8 +9,15 @@ from __future__ import annotations
 
 import pytest
 
-from writing_coach.agent.data_class import GOVERNED_PAYLOADS, NOT_YET_GOVERNED, DataClass, ProviderDataClasses
-from writing_coach.agent.fake_provider import reply
+from writing_coach.agent.data_class import (
+    GOVERNED_PAYLOADS,
+    NOT_YET_GOVERNED,
+    DataClass,
+    ProviderDataClasses,
+    gating_on,
+    pack_class,
+)
+from writing_coach.agent.fake_provider import call_tools, reply
 from writing_coach.agent.memory_pack import PACK_OPEN, PackBuilder
 from writing_coach.agent.provider import ModelRoute
 from tests.test_agent_learner_pack import NOW, sources
@@ -131,8 +138,8 @@ def test_the_gate_is_staged_and_none_is_not_a_privacy_guarantee(monkeypatch):
     """G8 is staged (A1, review of PR #263; M2-prep 2b): the payloads in NOT_YET_GOVERNED still reach a `none`
     provider. When a later slice gates one of them, it moves it into GOVERNED_PAYLOADS and changes this test with the
     code that gates it."""
-    assert GOVERNED_PAYLOADS == ("learner_pack", "coach_notes", "conversation_history")
-    assert NOT_YET_GOVERNED == ("opening_snapshot", "chat_context", "learner_text", "tool_results")
+    assert GOVERNED_PAYLOADS == ("learner_pack", "coach_notes", "conversation_history", "chat_context")
+    assert NOT_YET_GOVERNED == ("opening_snapshot", "learner_text", "tool_results")
     assert not set(GOVERNED_PAYLOADS) & set(NOT_YET_GOVERNED)
     # the learner's own text reaches a provider that is cleared for nothing
     rt, provider, _ = pack_runtime([reply("a1")], classes=ProviderDataClasses.parse("gemini=none"))
@@ -190,6 +197,77 @@ def test_asking_to_change_a_withheld_note_is_answered_plainly_and_changes_nothin
     assert not any(e.name == "memory_update" for e in events) and not sent_notes(provider.requests[0])
 
 
+@pytest.mark.parametrize("call", [
+    ("c1", "forget_note", {"id": "n1"}),
+    ("c1", "remember_note", {"kind": "preference", "text": "Giải thích dài hơn", "replaces": "n1"}),
+    ("c1", "remember_note", {"kind": "preference", "text": "Giải thích dài hơn"}),
+])
+def test_below_full_memory_a_note_tool_call_never_changes_a_note(call):
+    """Review of #268 P1-1: enforced where notes change, not only in the words - the tools are not offered, and a
+    stray call is refused."""
+    rt, provider, _ = pack_runtime([call_tools(call), reply("Được.")],
+                                   classes=ProviderDataClasses.parse("gemini=learning_profile"))
+    events = run(rt, with_notes("Quên ghi chú về giải thích ngắn gọn đi, ghi nhớ giúp mình là giải thích dài hơn"))
+    assert not any(e.name == "memory_update" for e in events)
+    offered = {spec.name for spec in provider.requests[0].tools}
+    assert not offered & {"remember_note", "forget_note"}
+    text = "".join(e.text_delta for e in events if e.name == "segment_delta")
+    assert "chưa thể đọc hay sửa ghi chú" in text
+
+
+def test_asking_to_keep_a_note_below_full_memory_is_answered_plainly():
+    rt, _, _ = pack_runtime([reply("Mình đã ghi nhớ.")], classes=ProviderDataClasses.parse("gemini=learning_profile"))
+    events = run(rt, with_notes("Từ giờ ghi nhớ giúp mình là giải thích bằng tiếng Việt"))
+    assert not any(e.name == "memory_update" for e in events)
+    assert "chưa thể đọc hay sửa ghi chú" in "".join(e.text_delta for e in events if e.name == "segment_delta")
+
+
+def test_at_full_memory_the_note_tools_work_as_before():
+    rt, provider, _ = pack_runtime([call_tools(("c1", "forget_note", {"id": "n1"})), reply("Đã xoá.")],
+                                   classes=ProviderDataClasses.parse("gemini=full_memory"))
+    events = run(rt, with_notes("Quên ghi chú đó đi"))
+    assert {spec.name for spec in provider.requests[0].tools} >= {"remember_note", "forget_note"}
+    assert any(e.name == "memory_update" for e in events)
+
+
+def test_a_refused_repin_is_never_kept_so_an_eligible_provider_takes_the_conversation_back():
+    """Review of #268 P1-3: Gemini (learning_profile) sent the pack; an outage moves the selection to Groq (none),
+    refused; Gemini returns while Groq is still usable; the next turn runs on Gemini."""
+    classes = ProviderDataClasses.parse("gemini=learning_profile,groq=none")
+    rt, provider, _ = pack_runtime([reply("a1"), reply("a3")], classes=classes)
+    first = run(rt)
+    session_id = next(e.session_id for e in first if e.name == "session")
+    rt.router.selection, rt.router.is_usable = GROQ, (lambda route: route != GEMINI)  # Gemini out
+    refused = run(rt, turn_request("hỏi tiếp", session_id=session_id))
+    assert any(e.name == "error" for e in refused) and len(provider.requests) == 1
+    rt.router.selection, rt.router.is_usable = GEMINI, (lambda route: True)  # Gemini back, Groq still usable
+    run(rt, turn_request("hỏi lại", session_id=session_id))
+    assert provider.requests[1].route == GEMINI and has_pack(provider.requests[1])
+
+
+def test_the_chat_context_learning_evidence_goes_only_to_learning_profile():
+    from writing_coach.agent.session import ToolResultRecord
+
+    for record, sent in (("gemini=none", False), ("gemini=learning_profile", True)):
+        rt, provider, _ = pack_runtime([reply("a1"), reply("a2")], classes=ProviderDataClasses.parse(record))
+        first = run(rt)
+        session_id = next(e.session_id for e in first if e.name == "session")
+        rt.sessions.update(session_id, "learner-1", lambda st: st.with_tool_result(
+            ToolResultRecord(tool="vocabulary_summary", summary="12 từ đến hạn ôn"), limit=5))
+        run(rt, turn_request("hỏi tiếp", session_id=session_id))
+        carried = any("12 từ đến hạn ôn" in m.content for m in provider.requests[-1].messages)
+        assert carried is sent, record
+
+
+def test_the_m2_edges_are_explicit():
+    """Review of #268 P2: before M2 nothing passes the memory flag, and a memory-bearing pack needs full_memory."""
+    classes = ProviderDataClasses.parse("")
+    assert not gating_on(None, classes) and gating_on(None, classes, memory_on=True)
+    assert not gating_on(None, None, memory_on=True)
+    assert pack_class(with_memory=False) is DataClass.LEARNING_PROFILE
+    assert pack_class(with_memory=True) is DataClass.FULL_MEMORY
+
+
 def test_a_conversation_that_sent_notes_is_not_continued_below_full_memory():
     classes = ProviderDataClasses.parse("gemini=full_memory,groq=learning_profile")
     rt, provider, _ = pack_runtime([reply("a1"), reply("a2")], classes=classes)
@@ -241,4 +319,22 @@ def test_voice_gets_coach_notes_only_when_cleared_and_does_not_continue_a_conver
     assert NOTE["text"] in opened("gemini=full_memory")
     with pytest.raises(VoiceUnavailable):
         opened("gemini=learning_profile", sent_class=2)
+
+
+def test_voice_below_full_memory_offers_no_note_tool_and_refuses_one():
+    from tests.test_agent_voice_session import LEARNER, Post, _body, _service
+
+    post = Post()
+    service = _service(post)
+    service.runtime.pack = PackBuilder(sources=sources(), enabled=True, clock=lambda: NOW)
+    service.runtime.data_classes = ProviderDataClasses.parse("gemini=learning_profile")
+    body = _body()
+    body["coach_notes"] = [NOTE]
+    sid = service.open(body, LEARNER)["voice_session_id"]
+    setup = post.calls[0][2]["bidiGenerateContentSetup"]
+    declared = {f["name"] for tool in setup.get("tools", []) for f in tool.get("functionDeclarations", [])}
+    assert not declared & {"remember_note", "forget_note"}
+    forget = {"id": "c1", "name": "forget_note", "args": {"id": "n1"}}
+    answer = service.relay(sid, [forget], LEARNER, heard="Quên ghi chú về giải thích ngắn gọn đi")
+    assert answer["events"] == [] and not answer["responses"][0]["response"]["result"].startswith("accepted")
 

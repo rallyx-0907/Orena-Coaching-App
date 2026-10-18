@@ -55,7 +55,7 @@ from writing_coach.agent.outputs import (
     reply_tool_specs,
 )
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.data_class import NOTES_CLASS, PACK_CLASS, gating_on
+from writing_coach.agent.data_class import CONTEXT_EVIDENCE_CLASS, NOTES_CLASS, PACK_CLASS, gating_on
 from writing_coach.agent.errors import VoiceUnavailable
 from writing_coach.agent.memory_pack import VOICE_BUDGET
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
@@ -476,20 +476,20 @@ class VoiceService:
         request = TurnRequest.model_validate({**dict(body), "trigger": "open"})
         turn = TurnInput.from_request(request)
         session_state, _ = self.runtime.sessions.open(request.session_id, learner.user_key)
-        tier1 = self._gate_data_classes(build_tier1(turn, session_state.for_target(request.context.locale.target)),
-                                        session_state)  # fmt: skip
+        tier1, session_state, notes_available = self._gate_data_classes(
+            build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state)
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
         pack = self._learner_pack(session_state, learner, request)
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
         self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes)
-        specs = self._tool_specs(request, learner)
+        specs = self._tool_specs(request, learner, notes=notes_available)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
                            languages=recognition_languages(locale.support, locale.target))  # fmt: skip
         outputs = ReplyOutputs(
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
-            address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
+            notes_available=notes_available, address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
             pending=session_state.live_pending(), settled=frozenset(done for done, _ in session_state.settled),
             recent_runs=session_state.recent_runs(),
         )  # fmt: skip
@@ -667,13 +667,16 @@ class VoiceService:
 
         classes = getattr(self.runtime, "data_classes", None)
         if not gating_on(getattr(self.runtime, "pack", None), classes):
-            return tier1
+            return tier1, session_state, True
         level = classes.of("gemini", self.model)  # the voice vendor is Gemini Live
         if level < session_state.data_class_sent:
             raise VoiceUnavailable("the voice vendor is not cleared for the data this conversation carries")
-        if tier1.coach_notes and level < NOTES_CLASS:
-            return replace(tier1, coach_notes=())
-        return tier1
+        notes_available = level >= NOTES_CLASS
+        if not notes_available:  # no note is read, kept, changed or forgotten by voice (owner, 2026-10-18)
+            tier1 = replace(tier1, coach_notes=())
+        if level < CONTEXT_EVIDENCE_CLASS:
+            session_state = replace(session_state, recent_tool_results=())
+        return tier1, session_state, notes_available
 
     def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes) -> None:
         if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None)):
@@ -697,10 +700,11 @@ class VoiceService:
             parts.append(selected)
         return "\n\n".join(parts)
 
-    def _tool_specs(self, request: TurnRequest, learner: LearnerScope) -> list[ProviderToolSpec]:
+    def _tool_specs(self, request: TurnRequest, learner: LearnerScope, *, notes: bool = True) -> list[ProviderToolSpec]:
         reads = [ProviderToolSpec.from_tool(t) for t in self.runtime.tools.tools() if learner.contract_language in t.languages]
+        offered = VOICE_REPLY_TOOLS if notes else VOICE_REPLY_TOOLS - {REMEMBER_NOTE, FORGET_NOTE}
         replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version, pending=True)
-                   if s.name in VOICE_REPLY_TOOLS]  # fmt: skip
+                   if s.name in offered]  # fmt: skip
         actions = request.client.allowed_actions & actions_for_version(request.version)
         intents = request.client.allowed_intents & intents_for_version(request.version)
         spec = do_action_spec(actions, intents)
