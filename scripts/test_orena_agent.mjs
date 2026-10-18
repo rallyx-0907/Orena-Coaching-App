@@ -361,7 +361,7 @@ assert.ok(supportedIntents(new Set(['grammar-concept', 'grammar'])).includes('gr
 // 10. §2.1 HTTP statuses and §4.1 error classes: the tables the UI reads equal the contract text,
 //     and the live transport answers each status as they say (driven with a fake fetch; it stays off).
 const statusRows = [...section('### 2.1 HTTP status', '## 3.').matchAll(/^\| `(\d{3})` \|/gm)].map((m) => Number(m[1]));
-assert.deepEqual(statusRows, [200, 401, 404, 409, 422, 429, 429, 409, 403, 503], '§2.1 statuses (v7 adds the plan-limit rows after their plain-string ones)');
+assert.deepEqual(statusRows, [200, 401, 404, 409, 422, 429, 429, 429, 409, 403, 503], '§2.1 statuses (v7 adds the plan-limit rows after their plain-string ones; v10 adds daily_ai_limit)');
 assert.deepEqual(
   Object.fromEntries([...new Set(statusRows)].map((s) => [s, contract.readStatus(s, '3').kind])),
   { 200: 'stream', 401: 'signed_out', 404: 'absent', 409: 'language_mismatch', 422: 'error', 429: 'wait', 403: 'error', 503: 'error' },
