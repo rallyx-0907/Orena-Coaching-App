@@ -95,3 +95,11 @@ export function scoreSummary(questions, graded, t) {
 export function nextLabel(index, total, t) {
   return index + 1 < total ? t('nextQuestion') : t('seeResult');
 }
+
+/* How long the check took, as the lesson-complete fact: whole minutes from a minute up, and the true seconds
+   below it - a 22-second check is "22 sec", never rounded up to "1 min". */
+export function elapsedFact(elapsedMs, t) {
+  const seconds = Math.max(1, Math.round((Number(elapsedMs) || 0) / 1000));
+  if (seconds < 60) return { value: String(seconds), label: t('secondsLabel') };
+  return { value: String(Math.round(seconds / 60)), label: t('minutesLabel') };
+}
