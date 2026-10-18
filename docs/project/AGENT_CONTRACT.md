@@ -3,10 +3,12 @@
 Governance
 
 Purpose: the single interface between the Orena Intelligence backend (lane `feature/orena-intelligence`, D-085) and the new learner UI that replaces the old one on `codex/work` (D-086). Both sides implement this file; neither reads the other's implementation.
-Authority: D-085, D-086, D-092, D-094, D-095, D-096. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
-Change when: a field, event, action, intent or rule below changes. Edit **only on `codex/work`** through a reviewed commit that bumps `contract_version` and records the change in DECISION_LOG.md; the intelligence lane receives it by merging `codex/work` forward. Never edit this file on the intelligence lane.
+Authority: D-085, D-086, D-092, D-094, D-095, D-096, D-222, D-223. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
+Change when: a field, event, action, intent or rule below changes. Edit only through a reviewed pull request to `main` from the UI lane that bumps `contract_version` and records the change in DECISION_LOG.md (D-223 point 9; the practice since v7, D-164; `codex/work` has been dormant since 2026-10-08 - D-223); the intelligence lane receives it by merging `main` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 8`
+`contract_version: 9`
+
+v9 (D-223, builds on D-222 and `proposals/ORENA_MEMORY.md` rev 4.1; 2026-10-18): the account can hold Orena Memory, so coach notes may live on the server. A client opts in by declaring `contract_version >= 9` in the request. For such a client `coach_notes` (§3) is optional and `memory_update` (§5.4) reports a note the server already applied, and §10 now names the routes under `/api/agent/memory` through which the learner sees, keeps, deletes and switches off what Orena remembers. `POST /api/agent/voice/end` (§9) accepts an optional advisory `usage_metadata`. A client that declares `contract_version` <= 8 is served exactly as under v8: it sends `coach_notes`, the device stores the notes from `memory_update`, and the server stores nothing; a note is never both on the device and on the server. No action, intent or other event changed.
 
 v8 (D-169, 2026-10-10): live voice is charged by duration against the same plan limit of Orena messages (`orena.message`): one message per `voice_seconds_per_message` seconds (the server's catalogue; 60 to begin with). A voice session is now a chain of short vendor tokens, **chunks**: each token lives `2 x voice_seconds_per_message` seconds (never under 60; two minutes to begin with), is reserved and charged whole when it is minted, and the session is at most 900 seconds in all its chunks. The client asks for the next chunk with the new `POST /api/agent/voice/extend` shortly before the token it holds dies and carries the conversation onto it with the vendor's session resumption; `POST /api/agent/voice/end` only stops further chunks and refunds nothing, because the server cannot see the vendor socket and a token is what it lets the learner hold. `POST /api/agent/voice/session` (§9) can now answer `429 quota_exhausted` (not even one message left today: no token is minted, the voice conversation does not start, and the client does not fall back to its cascade, whose turns would be refused too) and `503 quota_unavailable`; `extend` answers the same two when a next chunk cannot be had, and the client then ends the session when the token it holds dies. The 503 `quota_voice_not_metered` of v7 is gone. `max_seconds` is now the life of the token just minted (a v7 client reads it as its session cap and so ends its voice session after one chunk, then falls back to its cascade), and the answer gains `chunk`, `session_max_seconds`, `renew_in` and `last`. `Idempotency-Key` and `X-Orena-Timezone` (§3) also apply to the voice session request and the timezone to `extend`. No event, action or intent changed.
 
@@ -29,8 +31,8 @@ v2 (D-092, 2026-09-27): the Orena destination (`orena.home`), an opening turn wi
 | Concern | Owner |
 |---|---|
 | `/api/agent/*` endpoints, tool gateway, evidence, capability registry content, provider routing, metering | Intelligence lane |
-| Agent panel, rendering of every event, action dispatcher, intent → screen mapping, device memory for conversation and coach notes, the take store that mints `take_ref`, mic/voice UI state, the mock agent | UI lane (`codex/work`, new UI) |
-| This contract | `codex/work`, changed only as above |
+| Agent panel, rendering of every event, action dispatcher, intent → screen mapping, device memory for conversation and coach notes, the take store that mints `take_ref`, mic/voice UI state, the mock agent | UI lane (new UI) |
+| This contract | the UI lane, by reviewed PR to `main`, changed only as above |
 
 The old UI has no agent and gets none. Only the new UI integrates the agent.
 
@@ -75,7 +77,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `rate_limited
 
 ```json
 {
-  "contract_version": 7,
+  "contract_version": 9,
   "session_id": "optional, from a previous session event",
   "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
@@ -93,7 +95,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `rate_limited
     "address": { "self": "chị", "user": "em", "lang": "vi" },
     "client_evidence": { "pitch_contour_ref": "optional; measured client-side, never invented" }
   },
-  "coach_notes": [
+  "coach_notes": [   // optional from v9, see below
     { "id": "n1", "kind": "preference | goal | plan", "text": "…", "weight": 0.7, "last_reinforced": "ISO-8601", "expires_at": "ISO-8601 | null" }
   ]
 }
@@ -116,7 +118,8 @@ Rules:
   A word selected in a text may also carry `sentence`: the sentence it was selected in, as the learner sees it (≤ 500 characters, optional). "What does this word mean here?" is answered from that sentence; without it the agent knows only the word and the content (LEX-006).
 - `attempt_id` is the id of the audio-free record the server stored for an assessed speaking take (`POST /api/speech/attempts` returns it). While no read-by-id exists (backend gap N-9), the client sends it only together with `content_id` and `selected_item.id` (the line), so the tool gateway can find the record through the existing filtered list. Evidence always comes from the server's record, never from client-supplied scores. When no record was stored, `attempt_id` is omitted.
 - `take_ref` names a speaking take the new UI holds for the session (the server stores no take audio, D-076). It is minted by the client; the agent may only echo back a `take_ref` it received.
-- `coach_notes` live in device memory (D-085 lane spec D7/D18); send at most 20, most weighted first, total ≤ 2 KB. They are of kind `preference`, `goal` or `plan`; the `address` note is never among them (§5.6).
+- `coach_notes` live in device memory for a client that declares `contract_version` <= 8 (D-085 lane spec D7/D18); send at most 20, most weighted first, total ≤ 2 KB. They are of kind `preference`, `goal` or `plan`; the `address` note is never among them (§5.6).
+- `coach_notes` (v9) is **optional**. A client that declares `contract_version >= 9` stops sending it, or sends it empty, once the account holds the learner's notes (§5.4, §10); the server ignores it for such a client whose memory is ON and server-backed (pending: answers once slice M2 ships; until then the server behaves as under v8 for every client). A v9 client sends the device notes the learner has not yet placed (§10, "Device notes") exactly as a v8 client does, except while Orena Memory is OFF or the model in use is below `full_memory` (§10): then it sends none. A client that declares `contract_version` <= 8 is unchanged: it sends `coach_notes` as above and the server stores nothing.
 - `address` is the learner's chosen way for Orena to say "I" and "you" in the support language (§5.6); omitted means that language's default.
 
 ### 3.1 Client capabilities are binding
@@ -168,7 +171,7 @@ tool_result    { name, summary, evidence_ids[] }
 evidence       { id, source, ref, excerpt, display? }        # §5.3, §5.5
 action         { id, type, label, payload, risk, display? }  # §7, §5.5
 suggestion     { label, intent }                    # intent is a prompt intent, not a navigation intent
-memory_update  { op: "upsert" | "remove", note }    # §5.4
+memory_update  { op: "upsert" | "remove", note }    # §5.4: the device stores it (v8), or the server already did (v9)
 voice_state    { state: "listening" | "thinking" | "speaking" | "interrupted" }   # voice only
 audio_chunk    { index, format: "pcm16_24k", data_base64 }                         # voice cascade only
 metered        { turn_ordinal, budget_state: "ok" | "soft_limited" }
@@ -244,7 +247,15 @@ Every statement that a learner made an error cites at least one evidence item. N
 
 ### 5.4 Coach notes
 
-The agent proposes; the device stores. `upsert` carries a full note (§3 shape, with a new or existing `id`); `remove` carries `{ id }`. The client applies it, keeps weights and expiry, and drops notes whose weight decays below its threshold. The agent only proposes notes the learner stated directly; never emotions, circumstances or health. Kinds are `preference | goal | plan`, plus `address` (§5.6), which follows its own rules.
+`memory_update` is the one event for both versions; who stores the note depends on the contract version the client declared (§3).
+
+- **v8 client (`contract_version` <= 8).** The agent proposes; the device stores. `upsert` carries a full note (§3 shape, with a new or existing `id`); `remove` carries `{ id }`. The client applies it, keeps weights and expiry, and drops notes whose weight decays below its threshold. The server stores nothing.
+- **v9 client (`contract_version >= 9`) with Orena Memory ON and server-backed (v9).** The server has already applied `remember_note` / `forget_note` to `learner_memories` (explicit class, `ORENA_MEMORY.md` rev 4.1 §6) before it emits the event. `memory_update` reports what was applied - the same `{ op, note }` shape, the `id` being the server item's - so the reply may say it is applied (S14) and the UI may show it. Such an event carries `stored: "server"`. The client does **not** store the note on the device: the account holds it, and the learner reads and deletes it through the memory routes (§10). The UI keeps no second copy.
+- **`memory_update.stored: "server" | "device"` (v9).** `"server"`: the account already applied the change and the device must not store it. `"device"`: today's behaviour, the device stores it. The field is absent from a server at v8 or lower and for a client at v8 or lower; absent reads as `"device"`. The server sends `"server"` only when it actually wrote to `learner_memories` (the client declared v9, memory is ON, an active incarnation exists and the provider is cleared for `full_memory`); every other case is `"device"` or absent. A `remove` with `stored=server` deletes the device copy too, if one has the same id **and** the same text (the remove event may carry the note's `text`); an id alone is not enough, because a device note's id is minted by an earlier v8 reply and could equal a server item's id, and an unrelated device note is never deleted. When the server wants the device copy gone, its `stored=server` remove carries the note's `text` exactly as the device holds it. Without `text`, or with different text, the device keeps its note and the learner removes it from the memory view; the match is exact, so text the server normalised or redacted will not match. `stored` is new in v9, beyond `ORENA_MEMORY.md` rev 4.1 and D-222, agreed with the Intelligence lane (D-223 point 3; https://github.com/rallyx-0907/Orena-Coaching-App/pull/271#issuecomment-6247153997). Pending: `stored: "server"` is sent only once slice M2 ships.
+- A note is never both on the device and on the server. A device delete never leaves a server copy, and a server delete never leaves a device copy.
+- When the model in use is below `full_memory` (G8; owner decision of 2026-10-18, pending PR #272, which reverses `ORENA_MEMORY.md` rev 4.1 §8's "no note can be kept"), coach notes are not sent to the model, `forget_note` is not offered and a forget or a replace is refused, and a learner who asks to change or forget a note is told so in the server's fixed copy (`notes.unavailable`, a support-language segment, no `memory_update`); a new note the learner asks for is still kept (owner decision relayed by the Intelligence lane, which reverses the earlier block of new notes in its PR #272). Such a note is not written to `learner_memories`, so its `memory_update` is `stored: "device"` or carries no `stored`. Documented here only.
+
+The agent only proposes notes the learner stated directly; never emotions, circumstances or health. Kinds are `preference | goal | plan`, plus `address` (§5.6), which follows its own rules (it is not a server-held note in v9: it keeps travelling as `context.address`).
 
 ### 5.5 Display (actions and evidence, optional)
 
@@ -348,7 +359,7 @@ The UI owns its places and says what they are, once. For every §6.1 id it publi
   ```
 
 - A gate regenerates the file from the copy and fails on any difference, a §6.1 id without a `name`, or a `purpose` over the limit.
-- The server reads names and purposes from this file (it arrives with `codex/work` merged forward) for "what is this screen for?" answers and for naming a place, and keeps no copies of its own. A surface without a `purpose` gets its name only; the server never writes a purpose of its own.
+- The server reads names and purposes from this file (it arrives with `main` merged forward) for "what is this screen for?" answers and for naming a place, and keeps no copies of its own. A surface without a `purpose` gets its name only; the server never writes a purpose of its own.
 - Purposes are written once `docs/design/canonical-ui/IMPLEMENTATION_MAP.md` is stable - every screen a §6.1 id opens is built - so each describes a place that exists as drawn. Until then the file carries names only.
 
 ---
@@ -414,7 +425,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
 
 1. **Open a session.**
    - Request: `POST /api/agent/voice/session` with a turn body without `message`:
-     `{ contract_version, session_id?, client, context, coach_notes }`.
+     `{ contract_version, session_id?, client, context, coach_notes? }` (`coach_notes` is optional from v9, §3).
    - 200 response:
      `{ voice_session_id, mode: "s2s", transport: "websocket", connect: { url, ephemeral_token, expires_at, setup }, max_seconds, chunk, session_max_seconds, renew_in, last }`.
    - The session is a chain of chunks (v8). Each answer (this one and `extend`'s) carries the token of one chunk:
@@ -531,7 +542,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - Any chunk index but the next, and but the one just answered, is a 409. A failed or refused attempt does not use the
      index up: the client may ask for the same chunk again.
 7. **End.**
-   - `POST /api/agent/voice/end { voice_session_id, transcript? }` answers `{ voice_session_id, seconds }`. The client sends it
+   - `POST /api/agent/voice/end { voice_session_id, transcript?, usage_metadata? }` answers `{ voice_session_id, seconds }`. The client sends it
      when the learner stops, leaves (sendBeacon on pagehide), the socket closes, or the last token's `max_seconds` pass. It
      only stops further chunks: nothing is refunded (every chunk was charged when its token was minted) and nothing more
      is owed. `seconds` is the wall-clock time from the first token to the end, at most the seconds minted.
@@ -540,6 +551,12 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      conversation by `utterance`, never by the words, so each reply sits behind the words it answers and a typed turn
      or an earlier spoken one with the same words is never taken for it. An item that is not a turn is ignored; each
      text is cut to 4,000 characters. The `pagehide` beacon carries none.
+   - `usage_metadata` (v9, optional) is the vendor's final `usageMetadata` for the session, as the client received it
+     (D-222 point 4). It is **advisory, for reconciliation only, never billing authority**: the server records it next to
+     its own wall-clock ceiling, labelled `client_reported`, and rejects (and counts) a report with a negative count or one
+     above the token equivalent of the session's server-measured seconds. Spend caps and quotas keep counting the server's
+     ceiling, so a client can never lower what it is charged against a cap. The client sends it when it has it and omits it
+     otherwise; the `pagehide` beacon carries none, and a refused report does not change the answer of `end`.
    - The server records each chunk in the shared AI ledger when its token is minted, at the seconds the token lives (the most the vendor can charge for it). A session never ended costs the same.
    - Plan (v8): there is no settlement at the end. A session the learner left open, or whose client vanished, costs
      exactly the chunks it minted, and the server forgets it when its newest token dies.
@@ -559,8 +576,23 @@ Rules:
 - Learner-facing name is **Orena**. No segment, `error.message` or fixed copy names a provider or model - evidence is described by what was measured ("Âm 是 bị đánh dấu …") - and the UI never displays a provider or model name taken from a reply. Provider metadata, if ever shown, comes from runtime metadata outside this contract.
 - The address terms (§5.6) are used for the turn only and never logged or stored by the server.
 - The client sends the minimum context in §3; the server applies its own redaction.
-- Conversation history and coach notes are device memory; the account store is out of scope until an architecture review under ORENA_ACCOUNT_DATA_ARCHITECTURE.md.
-- `preferences.agent_memory` lists coach notes and lets the learner delete them. It is not a feature; it is the privacy exit.
+- Conversation history is device memory; transcripts are never stored by the server (D-222 point 1).
+- **Orena Memory (v9; D-222, `proposals/ORENA_MEMORY.md` rev 4.1 §6, §8).** The account may hold the learner's explicit notes, inferred personalisation, continuity items and session summaries. **Pending: the routes below answer only once slice M2 ships (summaries, pin and session delete: M3).** Everything below is behind `AGENT_ENABLED` (404 while off, §2.1), uses the learner's own session, and is scoped by account and incarnation. A mutating route uses the same cookie-session origin/CSRF handling as the other `/api/agent` POSTs. **Every route bumps the memory version**, so a deletion reaches the next prompt on another worker or device.
+
+  | Route | Does |
+  | --- | --- |
+  | `GET /api/agent/memory?language=<code>` | the items by kind (`explicit`, `inferred`, `continuity`); each item has its **reason as a code plus parameters** (`source`, `evidence_count`, `confidence`, `expires_at`) and never a server-written sentence - the UI renders it in English, Chinese and Vietnamese. Also the evidence digest ("what Orena sees from your learning"), the session summaries (M3) and the switch `{ enabled }` |
+  | `DELETE /api/agent/memory/items/{id}` | deletes one item; deleting a continuity or inferred item leaves a suppression key so it does not return |
+  | `POST /api/agent/memory/items/{id}/pin` | promotes a continuity item to explicit (M3; listed now) |
+  | `DELETE /api/agent/memory/sessions/{id}` | turns one session summary into a tombstone across all its language parts (M3) |
+  | `DELETE /api/agent/memory?scope=items\|sessions\|all` | bulk delete of Orena Memory, never of learning records; suppression keys are kept |
+  | `PUT /api/agent/memory/settings` `{ enabled: bool }` | the switch |
+
+  The M3 routes (pin, session delete, summaries in the listing) are part of this contract from v9 but answer only once slice M3 ships; the listing then carries no summaries. Personalisation from the learner's learning (profile, evidence) is not Orena Memory and is not affected by the switch.
+- **Memory OFF.** Nothing new is written (no item, signal or summary). Nothing from memory goes into any model call, and device coach notes are not sent either. Stored items stay, untouched, until the learner deletes them or turns memory on again, which uses them again; nothing written while OFF is back-filled. **Deleting, and the switch itself, still work while OFF.**
+- **Device notes (G4), UI side.** In the memory view the learner chooses once, per note or for all: "Keep in my account", "Keep on this device" or "Delete". Nothing is uploaded silently. Dedupe: a device note whose normalised text (`notes.same_note`) or slot matches a server item is shown once, as the server item, and the client stops sending it. Until the learner chooses, device notes are sent as today (§3), except while memory is OFF or the model in use is below `full_memory` (§5.4).
+- A v8 client has no memory view. It never reaches these routes' write paths for notes: its notes stay on the device (§5.4), and `preferences.agent_memory` below remains its privacy exit.
+- `preferences.agent_memory` lists device coach notes and lets the learner delete them. It is not a feature; it is the privacy exit. For a v9 client the memory view above is that exit.
 
 ---
 

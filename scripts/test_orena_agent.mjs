@@ -312,6 +312,21 @@ assert.ok(sent.length <= 20 && JSON.stringify(sent).length <= 2048, 'at most 20 
 assert.equal(sent[0].id, 'n29', 'most weighted first');
 memory.applyUpdate({ op: 'remove', note: { id: 'n29' } }, now);
 assert.ok(!memory.notes(now).some((n) => n.id === 'n29'), 'removed');
+// §5.4 stored: absent or "device" stores; "server" does not; a server remove still drops a same-id device copy.
+const storedMemory = agentMemory({ getItem: () => null, setItem: () => {} }, 'stored@example.com');
+const sn = { id: 's1', kind: 'goal', text: 'x', weight: 0.8, last_reinforced: new Date(now).toISOString(), expires_at: null };
+storedMemory.applyUpdate({ op: 'upsert', note: sn, stored: 'server' }, now);
+assert.equal(storedMemory.notes(now).length, 0, 'stored=server upsert is not kept on the device');
+storedMemory.applyUpdate({ op: 'upsert', note: sn }, now);
+assert.equal(storedMemory.notes(now).length, 1, 'absent stored keeps the v8 behaviour');
+storedMemory.applyUpdate({ op: 'upsert', note: { ...sn, id: 's2' }, stored: 'device' }, now);
+assert.equal(storedMemory.notes(now).length, 2, 'stored=device keeps the v8 behaviour');
+storedMemory.applyUpdate({ op: 'remove', note: { id: 's1' }, stored: 'server' }, now);
+assert.equal(storedMemory.notes(now).length, 2, 'stored=server remove by id alone deletes nothing');
+storedMemory.applyUpdate({ op: 'remove', note: { id: 's1', text: 'other' }, stored: 'server' }, now);
+assert.equal(storedMemory.notes(now).length, 2, 'a colliding id with other text deletes nothing');
+storedMemory.applyUpdate({ op: 'remove', note: { id: 's1', text: 'x' }, stored: 'server' }, now);
+assert.deepEqual(storedMemory.notes(now).map((n) => n.id), ['s2'], 'stored=server remove drops the device copy with the same id and text');
 assert.ok(memory.notes(now + 60 * 86400000).length === 0, 'unreinforced notes fade out');
 for (let i = 0; i < 50; i += 1) memory.appendMessage({ role: 'learner', text: String(i) });
 assert.equal(memory.thread().length, 40, 'the thread keeps its last 40 messages');
