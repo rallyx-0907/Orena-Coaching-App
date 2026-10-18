@@ -1210,6 +1210,14 @@ class MediaPipeline:
                     pace.remaining -= retry_after
                     self._sleep(retry_after)
                     continue
+                # One request that is larger than the model's whole output allowance (a refusal with no window to wait for):
+                # waiting does not help, asking for less does. The refusal taught the provider its limit, so the next attempt
+                # re-reads the ceiling and sends a smaller batch at once, with no wait and no draw on the allowance. Only
+                # when the ceiling really went down: the same request would be refused the same way.
+                if (failure == "request_too_large" and attempt + 1 < CORRECTION_ATTEMPTS
+                        and (correction_ceiling(self._corrector) or 0) > 0
+                        and len(fit_correction_batch(batch, correction_ceiling(self._corrector))) < len(batch)):
+                    continue
                 break
             if skipped:
                 continue

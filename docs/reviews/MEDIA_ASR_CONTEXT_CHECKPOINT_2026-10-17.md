@@ -332,6 +332,45 @@ Local execution (not CI), disposable container (read-only repository, tmpfs data
 Still open: independent re-review of this fix; the live benchmark on `:8021` (cases 3, 4, 5, one real hold/retry observation; `:8021`
 still runs `5ca4ac43` and needs a restart) and the A12 visual check. PR #261 stays Draft.
 
+## Review of `fc728b6f`: APPROVE; the live re-run then found a second refusal form (fixed, not yet reviewed)
+
+Independent review of `fc728b6f`: **APPROVE, no P0, no P1**, one bookkeeping/docs P2 (its text was not given to the implementer; not
+claimed closed). CI #829 on that SHA was `success`, checked with `gh` by the implementer. `:8021` was restarted on it (it loads
+`correction_ceiling` and `correction_output_ceiling`) and cases 3-5 were started within the owner's approval (USD 0.10 cap, no new
+item, no publication, rights unchanged). **Case 3 stopped the run at the first anomaly; cases 4 and 5 were not run.**
+
+Case 3 (HSK1, 51 cues) on the new code: `partial` (`rate_limited`), 90.6 s, USD 0.0038; 5 edits accepted (punctuation, 他 -> 她 three times),
+0 rejected, the three cues with numbers (18, 38, 35) unchanged. The earlier cut-off answers (`finish_reason: length`) did **not** recur.
+Total spend on the benchmark batch: **USD 0.0207** of 0.10. Stored text, status and rights are unchanged; the temporary marker was removed.
+
+Cause of the stop, from the recorded raw answers replayed offline through the provider's own parsing (no provider call): Groq refuses an
+output allowance in **two forms**. The form seen before, `Rate limit reached ... (OTPM): Limit 1000, Used 829, Requested 444`, carries a
+`Used` count and the provider learned its limit from it. The form seen now, `Request too large ... (OTPM): Limit 1000, Requested 1816.
+The request's expected output tokens exceed the enforced limit; reduce max_tokens`, has **no `Used`**: `_OTPM_REFUSAL` did not match it, the
+limit was never learned, the ceiling stayed at the request cap of 2048, and every attempt sent the same 24 cues and was refused again
+(calls 1, 3 and 4 of 4). The estimate for a request is the cap Groq prices (1816 expected for the 24 short cues, 869 written), so only learning the limit
+shrinks the request. This is not specific to correction: translation shares `_learn_from_refusal` and had the same gap since D-218.
+My earlier test only knew the first form, so it could not catch this; that was the test's gap, not the data's.
+
+Fix (not yet reviewed): `_otpm_request_too_large()` reads `Limit N, Requested M`; `_learn_from_refusal()` learns the limit from it and
+nothing else (no `used` to sync and no window to block: a request that was not admitted spent nothing of the minute), and returns the asked wait
+unchanged, so translation is unaffected; the correction path reports this refusal as `request_too_large` with no wait instead of
+`rate_limited`, and the pipeline retries it **once, at once** (no sleep, no draw on the 150 s allowance) only when the re-read ceiling
+really narrows the batch, so it never repeats a request that would be refused the same way. The window-full form keeps its wait,
+its sync and its single bounded retry. Tests (`tests/test_media_groq_refusal_forms.py`, 7): the two recorded sentences verbatim (organisation id as
+recorded) are each read and not confused; the too-large form learns the limit (ceiling 500) with no wait and nothing blocked or used; the window-full form still
+waits and syncs; translation's shared path learns it and returns the asked wait; through the real provider HTTP path a too-large refusal is retried at once with
+a smaller batch (no sleep, cap at most 500, every cue asked once more, each provider wait within 90 s and 150 s in total); a single cue refused as too large is not
+retried; the window-full refusal keeps its named wait and one retry. The HTTP-path tests run on a virtual clock after the first draft of one waited a real minute inside
+the provider's own pacing and was killed by a test timeout - a test defect, now fixed.
+
+Local execution (not CI), disposable container (read-only repository, tmpfs databases, provider keys empty, 1 GB / 1 CPU, host RAM 1.23 GB,
+above the owner's 1 GB floor, `--timeout=60`): media set plus admin route tests and `tests/test_groq_translation_bounds.py`
+**1291 passed, 0 failed, 21 skipped**. Ruff on touched Python, Node admin media review, Node admin areas and browser ESM graph (300 modules): PASS.
+
+**Still open:** independent review of this fix; re-run of cases 3, 4 and 5 on `:8021` (needs a restart after the review), one real hold/retry observation; the A12 visual check
+(this machine has no browser); the bookkeeping P2 of the `fc728b6f` review; the five first-review P2 findings (no recorded text). PR #261 stays Draft; neither gate has passed.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;

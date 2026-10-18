@@ -291,6 +291,18 @@ def _otpm_refusal(response: object) -> tuple[int, int] | None:
     return (int(found.group(1)), int(found.group(2))) if found else None
 
 
+# The second sentence Groq answers with (seen live 2026-10-18, `qwen/qwen3.8-27b`): one request alone expects more output than
+# the whole per-minute allowance, so there is no `Used` count - the minute is not the problem, the request is. Same limit, a
+# different remedy: ask for less, do not wait for a window to clear.
+_OTPM_TOO_LARGE = re.compile(r"\(OTPM\)\s*:\s*Limit\s+(\d+)\s*,\s*Requested\s+(\d+)", re.IGNORECASE)
+
+
+def _otpm_request_too_large(response: object) -> tuple[int, int] | None:
+    """(limit, requested) when a 429 says this one request is larger than the output-tokens-per-minute allowance, else None."""
+    found = _OTPM_TOO_LARGE.search(_error_message(response))
+    return (int(found.group(1)), int(found.group(2))) if found else None
+
+
 @dataclass(frozen=True)
 class _TranslationLine:
     segment_id: str
@@ -684,14 +696,24 @@ class GroqTranslationProvider:
             }
             if response.status_code in {401, 403, 429}:
                 asked = _retry_after_seconds(response.headers)
+                too_large = False
                 if response.status_code == 429:
                     asked = self._learn_from_refusal(response, reserved, asked)
-                error = TranslationProviderError(
-                    "Groq transcript correction is rate limited." if response.status_code == 429
-                    else "Groq refused the configured credentials.",
-                    reason="rate_limited" if response.status_code == 429 else "provider_auth",
-                    retry_after=asked,
-                )
+                    too_large = _otpm_request_too_large(response) is not None
+                if too_large:
+                    # The request itself exceeds the allowance: waiting does not help, asking for less does. The limit is
+                    # learned above, so the caller's next `correction_output_ceiling()` is smaller; no wait is asked for.
+                    error = TranslationProviderError(
+                        "Groq transcript correction request exceeds the output allowance.",
+                        reason="request_too_large", retry_after=0.0,
+                    )
+                else:
+                    error = TranslationProviderError(
+                        "Groq transcript correction is rate limited." if response.status_code == 429
+                        else "Groq refused the configured credentials.",
+                        reason="rate_limited" if response.status_code == 429 else "provider_auth",
+                        retry_after=asked,
+                    )
                 self._record(started, "failure", None, error)
                 raise error
             response.raise_for_status()
@@ -864,6 +886,11 @@ class GroqTranslationProvider:
             self._otpm.release(reserved)   # it was not admitted: it spent nothing of the minute
         refusal = _otpm_refusal(response)
         if refusal is None:
+            too_large = _otpm_request_too_large(response)
+            if too_large is not None:
+                # Only the limit is learned: a request that was not admitted spent nothing of the minute, so there is no
+                # `used` to sync and no window to block - the caller asks for less (`batch_output_ceiling` now answers).
+                self._otpm.set_limit(too_large[0])
             return asked
         limit, used = refusal
         self._otpm.set_limit(limit)
