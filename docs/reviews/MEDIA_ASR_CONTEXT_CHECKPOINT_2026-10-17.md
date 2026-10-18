@@ -426,6 +426,38 @@ the A12 visual check (this machine has no browser). Five items now carry real co
 `youtube-2HRoo7akLsU` (applied), `youtube-rbLlUXT72C4` (applied, 51 cues), `youtube-cZbVZFJ7UrI` (partial, 6 refused cues),
 `youtube-4HGNqFdaD34` (partial, one refused cue and one noise cue), `youtube-n6wpNhyreDE` (failed from an earlier run).
 
+## Live benchmark, case 5 and closing summary (2026-10-18)
+
+Owner decision after cases 3 and 4: run case 5 (correction step only) and **accept pytest as the evidence for the hold/retry behaviour**;
+the owner then checks A12 and decides on merging #261. CI #834 on the documentation commit `6caafd6e` was `success`.
+
+Case 5, `youtube-n6wpNhyreDE` (EN caption, 49 cues, failed in an earlier run): `partial` (`rate_limited`), 7.5 s, USD 0.0049, **0 edits
+accepted, 0 rejected**; the text is unchanged, so the quality of the English correction on this item is **not judged**. Raw answers: batch 1 (24
+cues) answered in full but needed **1105** output tokens (English cues carry more text than the Chinese ones, 869); the next
+24-cue request was refused `Request too large (Limit 1000, Requested 1105)`, which the provider now reads and learns from; the batch was cut to
+6 cues with a 500-token cap as designed, and that request met the minute-full refusal (`Used 929`, wait 1.2 s) while the minute still held case 4's
+tokens, and the run's own wait allowance for this item was spent, so it stopped. Stored text, status (`review`), rights (`unknown`)
+and state (`held`) are unchanged; the temporary marker was removed. **Total spend on the benchmark batch: USD 0.0397 of 0.10.**
+
+**Known limit, not a defect and not fixed here (owner: no further work on this branch).** On the free-tier allowance of 1000 output
+tokens a minute for this model, a roughly 50-cue English item cannot be corrected in one run: each batch costs 400 to 1100 output tokens and the minute holds
+about two. Long items will often end `partial` instead of `applied`; a `cleared` item is then held for a person (the designed safe outcome) rather than published
+uncorrected. Remedies are an operational choice, not made here: a larger output allowance from the provider, smaller batches, or accepting `partial` for long
+items. Whether the correction should be skipped, rather than half done, for an item that cannot finish is a product question for the owner.
+
+**Live benchmark, final state** (all on stored transcripts, no new item, no publication, rights unchanged, USD 0.0397 of the 0.10 cap):
+case 1 ZH idiom `applied` (better); case 2 ZH 灰姑娘 `partial` (better, six many-error cues refused by design); case 3 ZH with numbers `applied`
+(better, numbers untouched); case 4 EN caption `partial` (unchanged to slightly better); case 5 EN caption `partial` (not judged).
+**Hold/retry on a real item was not observed**: it needs a `cleared` item run through the full pipeline (caption fetch, Whisper, translation), which is
+outside the approved scope and would need the owner to clear rights; it is covered by pytest instead (a cleared item with a partial or failed correction is held,
+a retry cannot publish the raw text, a hand publish clears the marker), by the owner's decision.
+
+**Gates, as they stand.** Live benchmark: run on five items, two of them with a fix found by the run itself; case 5 and the hold/retry observation are
+not a PASS and are recorded as such. A12 visual check: **not done** (this machine has no browser); five items on `:8021` carry real correction rows for it:
+`youtube-2HRoo7akLsU` (applied), `youtube-rbLlUXT72C4` (applied), `youtube-cZbVZFJ7UrI` (partial, 6 refused cues), `youtube-4HGNqFdaD34` (partial, a refused
+cue and a noise cue), `youtube-n6wpNhyreDE` (partial, no rows). Open and unchanged: the five first-review P2 findings (no recorded text); the real organisation id remains in
+the already pushed history of `4be80e66` (a history rewrite is the owner's call). No P0 or P1 is open on the reviewed head `558d192a`.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;
