@@ -235,6 +235,27 @@ def test_asking_to_keep_the_same_words_again_renews_the_retention(mem):
     assert [i.id for i in s.items(a, "zh", T0 + EXPLICIT_TTL + timedelta(days=1))] == [first.id]
 
 
+def test_after_expiry_the_same_words_and_a_new_slot_value_can_be_kept(mem):
+    """Review of #292 P1-1: an expired row still holds the unique (value_key) and single-slot indexes until it is
+    deleted, so keeping again after expiry clears the learner's own expired notes first."""
+    s, a = mem.store, mem.a
+    old = add(s, a, "Phỏng vấn xin việc")
+    add(s, a, "concise", kind="preference", slot="explanation_length")
+    later = T0 + EXPLICIT_TTL + timedelta(days=1)
+    again = add(s, a, "Phỏng vấn xin việc", now=later)
+    slot = add(s, a, "concise", kind="preference", slot="explanation_length", now=later)
+    assert again.id != old.id and again.expires_at == later + EXPLICIT_TTL
+    assert sorted(i.id for i in s.items(a, "zh", later)) == sorted([again.id, slot.id])
+
+
+def test_expired_notes_do_not_count_against_the_limit(mem):
+    s, a = mem.store, mem.a
+    for n in range(LIMITS[EXPLICIT]):
+        add(s, a, f"ghi chú số {n}")
+    later = T0 + EXPLICIT_TTL
+    assert add(s, a, "ghi chú mới", now=later).text == "ghi chú mới"
+
+
 def test_explicit_past_the_limit_is_refused(mem):
     s, a = mem.store, mem.a
     for n in range(LIMITS[EXPLICIT]):

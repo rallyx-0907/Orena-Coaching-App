@@ -332,6 +332,9 @@ class InMemoryMemoryStore:
             learner = self._learner(scope)
             if not learner.state.enabled:
                 raise MemoryOff
+            for gone in [i for i in learner.items.values() if i.cls == EXPLICIT and i.language_code == language
+                         and i.expires_at is not None and i.expires_at <= now]:  # as the repository: expired go first
+                del learner.items[gone.id]
             held = self._holder(learner, language, EXPLICIT, slot, text, now)
             if held is not None and self._same_value(held, slot, text):
                 # A retried remember_note (same words) does not duplicate; asked again, it is kept from now.

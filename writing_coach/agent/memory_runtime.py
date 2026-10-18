@@ -20,9 +20,10 @@ Orena Memory and every turn is exactly as before M2.
 from __future__ import annotations
 
 import logging
+import threading
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from writing_coach.agent.contract import (
@@ -44,6 +45,7 @@ from writing_coach.agent.memory_store import (
     memory_section,
 )
 from writing_coach.agent.notes import same_note
+from writing_coach.agent.retention import sweep_enabled
 from writing_coach.agent.schemas import CoachNote, coach_notes_bytes
 from writing_coach.product import quota
 
@@ -122,11 +124,64 @@ class ServerNotes:
         return self.store.delete_item(self._in_scope(), item_id, self.clock())
 
 
+MEMORY_SWEEP_SWITCH = "AGENT_MEMORY_RETENTION_SWEEP"
+
+
+def _in_background(work: Callable[[], None]) -> None:
+    threading.Thread(target=work, name="orena-memory-retention", daemon=True).start()
+
+
+class ExpiredMemorySweep:
+    """Expired memory rows are deleted at most once a day per process, off the request thread, in bounded batches
+    (`sweep_expired`: expired rows only, `SKIP LOCKED`). The pilot keeps learner data up to 6 months (owner, PRE-005,
+    2026-10-18); a kept note expires `EXPLICIT_TTL` after it was last asked for. Off unless
+    AGENT_MEMORY_RETENTION_SWEEP is on: automatic deletion is a destructive lifecycle change, switched on by the
+    owner, as the agent.turn sweep (agent/retention.py). A failing sweep is logged and tried the next day."""
+
+    MAX_BATCHES = 20
+    BATCH = 500
+
+    def __init__(self, sweep: Callable[[datetime, int], int], *, clock: Callable[[], datetime],
+                 run: Callable[[Callable[[], None]], None] = _in_background) -> None:  # fmt: skip
+        self._sweep, self._clock, self._run = sweep, clock, run
+        self._lock = threading.Lock()
+        self._last: datetime | None = None
+        self._removed: int | None = None
+
+    def maybe_sweep(self) -> int | None:
+        """Start a sweep if one is due. With an inline runner it returns how many rows went (None: none ran)."""
+
+        now = self._clock()
+        with self._lock:
+            if self._last is not None and now - self._last < timedelta(days=1):
+                return None
+            self._last = now  # claimed before it runs: one sweep a day, even when it fails
+        self._removed = None
+        self._run(lambda: self._batches(now))
+        return self._removed
+
+    def _batches(self, now: datetime) -> None:
+        removed = 0
+        try:
+            for _ in range(self.MAX_BATCHES):
+                gone = self._sweep(now, self.BATCH)
+                removed += gone
+                if gone < self.BATCH:
+                    break
+        except Exception:  # noqa: BLE001 - never a learner's turn; tried again the next day
+            _log.warning("orena memory sweep failed after %d rows", removed, exc_info=True)
+            return
+        self._removed = removed
+        if removed:
+            _log.info("orena memory: %d expired rows removed", removed)
+
+
 @dataclass
 class MemoryRuntime:
     store: MemoryRepository
     incarnations: Any  # resolve(account) -> str | None; ensure_active(account) -> str (account_backbone)
     clock: Callable[[], datetime] = field(default=lambda: datetime.now(UTC))
+    sweep: ExpiredMemorySweep | None = None  # the daily deletion of expired rows; None while it is switched off
 
     def scope(self, user_key: str, *, create: bool = False) -> MemoryScope | None:
         account = account_id(user_key)
@@ -140,6 +195,11 @@ class MemoryRuntime:
         """One turn's view: the probe (§5.2) and whether the server applies notes. A store that cannot be read
         gives no scope - memory is off for the turn, never guessed."""
 
+        if self.sweep is not None:
+            try:
+                self.sweep.maybe_sweep()  # at most once a day, off the request thread
+            except Exception:  # noqa: BLE001 - the sweep never costs a turn
+                _log.warning("orena memory sweep not started", exc_info=True)
         scope = self.scope(user_key)
         if scope is None:
             return MemoryTurn(None, None)
@@ -195,9 +255,16 @@ class MemoryRuntime:
         matches, so it can neither dedupe nor suppress wrongly."""
 
         keys = MemoryKeys.from_env(environ)
+        sweeping = sweep_enabled(environ, MEMORY_SWEEP_SWITCH)  # an unclear value refuses to start, memory or not
         if keys is None or backbone is None or not getattr(backbone, "is_active", False):
             return None
-        return cls(store=store(keys), incarnations=backbone.incarnations)
+        repository = store(keys)
+        runtime = cls(store=repository, incarnations=backbone.incarnations)
+        if sweeping:
+            if not callable(getattr(repository, "sweep_expired", None)):
+                raise ValueError(f"{MEMORY_SWEEP_SWITCH} is on but this memory store cannot sweep")
+            runtime.sweep = ExpiredMemorySweep(repository.sweep_expired, clock=runtime.clock)
+        return runtime
 
 
 def with_device_notes(account: tuple[CoachNote, ...],
