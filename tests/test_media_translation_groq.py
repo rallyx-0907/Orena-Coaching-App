@@ -88,7 +88,7 @@ def test_transcript_correction_uses_one_bounded_structured_configured_model_call
     cues = (SimpleNamespace(text="Hello world"), SimpleNamespace(text="we are ready"))
     calls = install(monkeypatch, FakeResponse({
         **envelope({"lines": [
-            {"index": 0, "text": "Hello, world.", "reason": "Inserted a comma after the greeting."},
+            {"index": 0, "text": "Hello, world.", "reason": "punctuation"},
             {"index": 1, "text": "We are ready.", "reason": "Restored sentence capitalization."},
         ]}),
         "usage": {"prompt_tokens": 90, "completion_tokens": 20},
@@ -99,7 +99,10 @@ def test_transcript_correction_uses_one_bounded_structured_configured_model_call
         result = provider.correct(language="en", cues=cues, title="A title", description="A description")
 
     assert result["texts"] == ["Hello, world.", "We are ready."]
-    assert result["reasons"] == ["Inserted a comma after the greeting.", "Restored sentence capitalization."]
+    # A code from the closed list is kept; a sentence (in any language) is stored as the neutral `other`, never as free text.
+    assert result["reasons"] == ["punctuation", "other"]
+    prompt = calls[0]["json"]["messages"][1]["content"]
+    assert "exactly one code" in prompt and "homophone" in prompt and "No change." not in prompt
     assert result["model"] == "configured-model"
     assert len(calls) == 1
     body = calls[0]["json"]

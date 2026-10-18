@@ -225,7 +225,7 @@ def test_admin_media_corrections_keep_raw_and_flag_each_changed_timed_cue(tmp_pa
             self.calls.append((language, cues, title, description))
             return {
                 "texts": ["Hello, world and welcome back to forest.", *(cue.text for cue in cues[1:])],
-                "reasons": ["Inserted a comma after the greeting.", *("No change." for _ in cues[1:])],
+                "reasons": ["punctuation", *("no_change" for _ in cues[1:])],
                 "provider": self.provider,
                 "model": self.model,
             }
@@ -257,7 +257,7 @@ def test_admin_media_corrections_keep_raw_and_flag_each_changed_timed_cue(tmp_pa
     stored = store.get(entry.media_id)
     assert stored.processing["transcript_corrections"] == [{
         "index": 0, "start_ms": cues[0].start_ms, "end_ms": cues[0].end_ms,
-        "before": "Hello world and welcome back to forest.", "after": "Hello, world and welcome back to forest.", "reason": "Inserted a comma after the greeting.",
+        "before": "Hello world and welcome back to forest.", "after": "Hello, world and welcome back to forest.", "reason": "punctuation",
         "reason_code": "model_edit", "provider": "groq", "model": "configured-text-model",
     }]
 
@@ -657,6 +657,76 @@ def test_cleared_item_publishes_by_itself_only_when_the_correction_fully_applied
         assert stored.processing["transcript_correction_state"] == "applied"
         assert stored.status == "published" and stored.processing["state"] == "ready"
         assert stored.processing["auto_published"] is True
+
+
+@pytest.mark.parametrize("retry_corrector", ["fails_again", "unconfigured", "succeeds"])
+def test_a_retry_cannot_publish_the_raw_text_of_an_item_held_for_an_unfinished_correction(tmp_path, retry_corrector):
+    """Review P1 on d7aed04f: retry clears the eligibility marker and `_run` resets the correction state, so a cleared item
+    that was held for `failed` met no correction state on the retry and auto-published the raw text."""
+    from dataclasses import replace
+    from types import SimpleNamespace
+    from tests.test_media_lifecycle import _entry
+    from writing_coach import media_transcript_pipeline as pipeline_module
+    from writing_coach.media_segmentation import Cue
+
+    cues = tuple(Cue(index * 3000, index * 3000 + 2500,
+                     f"Sentence {index} is ready and waiting for another careful review.") for index in range(8))
+    source = {**_entry().source, "provider": "youtube", "type": "video", "rights": "cleared"}
+
+    class Corrector:
+        model = "configured-text-model"
+        mode = "fails"
+
+        @property
+        def configured(self):
+            return self.mode != "unconfigured"
+
+        def correct(self, *, cues, **_kwargs):
+            if self.mode == "fails":
+                raise RuntimeError("provider unavailable")
+            return {"texts": [cue.text for cue in cues], "reasons": ["no_change" for _ in cues],
+                    "provider": "groq", "model": self.model}
+
+    corrector = Corrector()
+    meanings = lambda _entry, _target: SimpleNamespace(status="ready", meanings=(), reason="", retry_after=0.0)  # noqa: E731
+    entry = replace(_entry(
+        "youtube-retry-held", provider="youtube", provider_media_id="retry-held",
+        canonical_url="https://www.youtube.com/watch?v=retry-held", duration_ms=24000, language="en", title="A title",
+        source=source, status="processing",
+        processing={"state": "running", "transcript_correction_eligibility": "new_admin_import"},
+    ))
+    store = FileMediaLibraryStore(tmp_path / f"retry-held-{retry_corrector}")
+    store.upsert(entry)
+    pipeline = MediaPipeline(ledger=SpendLedger(tmp_path / f"retry-held-spend-{retry_corrector}.json"),
+                             corrector=corrector, meanings=meanings)
+    pipeline._sleep = lambda _seconds: None
+
+    pipeline._run(store, None, entry.media_id, "batch-1", pipeline_module.Candidate(cues=cues))
+    first = store.get(entry.media_id)
+    assert first.status == "review" and first.processing["reason"] == "transcript_correction_incomplete"
+    assert first.processing["transcript_correction_unresolved"] is True
+
+    corrector.mode = {"fails_again": "fails", "unconfigured": "unconfigured", "succeeds": "ok"}[retry_corrector]
+    monkeypatched = []
+    pipeline.enqueue = lambda target, _assets, media_id, **_kw: monkeypatched.append(media_id)   # run the job ourselves
+    assert pipeline.retry(store, None, entry.media_id, batch_id="manual-retry")
+    retried = store.get(entry.media_id)
+    # The correction is owed again, so the retry is eligible to correct (and the marker still blocks raw publication).
+    assert retried.processing["transcript_correction_eligibility"] == "new_admin_import"
+    assert retried.processing["transcript_correction_unresolved"] is True
+
+    pipeline._run(store, None, entry.media_id, "batch-2", pipeline_module.Candidate(cues=cues))
+    final = store.get(entry.media_id)
+    if retry_corrector == "succeeds":
+        assert final.processing["transcript_correction_state"] == "applied"
+        assert final.status == "published" and final.processing["auto_published"] is True
+        assert final.processing["transcript_correction_unresolved"] is False
+    else:
+        assert final.status == "review" and final.processing["state"] == "held"
+        assert final.processing["reason"] == "transcript_correction_incomplete"
+        assert final.processing["auto_published"] is False
+        assert final.processing["transcript_correction_unresolved"] is True
+
 
 
 def test_correction_incomplete_hold_never_applies_to_a_learners_own_import(tmp_path):

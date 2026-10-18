@@ -51,7 +51,7 @@ def test_one_dropped_word_rejects_only_that_cue_and_keeps_the_other_repairs(tmp_
     def edit(text):
         if text.startswith("cue number 1 "):
             return "Cue number 1 has plain words.", "capitalised"          # dropped "some"
-        return text.capitalize() + ".", "restored punctuation"
+        return text.capitalize() + ".", "punctuation"
     store, entry, pipeline, _ = _world(tmp_path, Echo(edit))
     lines, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
     assert [line.text for line in lines] == ["Cue number 0 has some plain words.", "cue number 1 has some plain words",
@@ -114,14 +114,14 @@ def test_english_noise_rule_is_bounded(raw, clean):
 def test_noise_only_cues_are_dropped_and_do_not_abort_the_repair(tmp_path):
     cues = [Cue(0, 1000, ">> [music]"), Cue(1000, 3000, ">> Hello there everyone"), Cue(3000, 4000, "[crying]"),
             Cue(4000, 6000, "and welcome back")]
-    store, entry, pipeline, _ = _world(tmp_path, Echo(lambda t: (t[0].upper() + t[1:] + ".", "restored punctuation")))
+    store, entry, pipeline, _ = _world(tmp_path, Echo(lambda t: (t[0].upper() + t[1:] + ".", "punctuation")))
     lines, meta = pipeline._correct_transcript(store, entry, "b", cues, origin=pipeline_module.ORIGIN_CAPTION)
     assert [line.text for line in lines] == ["Hello there everyone.", "And welcome back."]
     assert meta["transcript_correction_state"] == "applied"
     rows = {row["index"]: row for row in meta["transcript_corrections"]}
     assert rows[0]["after"] == "" and rows[0]["reason_code"] == "noise_removed"
     assert rows[2]["reason_code"] == "noise_removed"
-    assert rows[1]["reason_code"] == "model_edit" and rows[1]["reason"] == "restored punctuation"
+    assert rows[1]["reason_code"] == "model_edit" and rows[1]["reason"] == "punctuation"
 
 
 def test_deterministic_only_edit_has_a_noise_reason_not_no_change(tmp_path):
@@ -183,7 +183,7 @@ def test_a_named_rate_limit_wait_is_slept_once_and_the_batch_is_retried(tmp_path
 
 def test_a_wait_beyond_the_cap_is_not_slept_and_keeps_the_accepted_batch(tmp_path):
     def edit(text):
-        return text.capitalize(), "capitalised"
+        return text.capitalize(), "capitalization"
     corrector = Flaky([None, _limit(600.0)])
     corrector.edit = edit
     store, entry, pipeline, slept = _world(tmp_path, corrector)

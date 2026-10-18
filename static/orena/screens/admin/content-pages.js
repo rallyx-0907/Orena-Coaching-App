@@ -175,11 +175,18 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
   const correctionState = record.processing?.transcript_correction_state || '';
   const rejectedCorrections = Array.isArray(record.processing?.transcript_correction_rejected) ? record.processing.transcript_correction_rejected : [];
   const correctionCode = (code) => (code && t.has(`ctCorrectionDetail_${code}`) ? t(`ctCorrectionDetail_${code}`) : code || '');
+  /* The reason is a stable code worded in the operator's language, never the model's own sentence: a stored code the copy does
+     not know yet reads as the generic "other", and a row written before codes existed shows no reason rather than foreign text. */
+  const correctionReasonText = (row) => {
+    const code = row.reason_code === 'noise_removed' ? 'noise_removed' : row.reason;
+    if (!code) return '';
+    return t.has(`ctCorrectionReason_${code}`) ? t(`ctCorrectionReason_${code}`) : t('ctCorrectionReason_other');
+  };
   const correctionHint = ['unavailable', 'failed', 'partial'].includes(correctionState)
     ? html`<div class="a-hint">${t('ctCorrectionState_' + correctionState)}${record.processing?.transcript_correction_detail ? ` (${correctionCode(record.processing.transcript_correction_detail)})` : ''}</div>` : '';
   /* Applied edits first-class: a deterministic edit says so in the reader's language, a model edit keeps the model's own reason. */
   const correctionRows = [
-    ...corrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionAfter')}: ${row.after}`, row.reason_code === 'noise_removed' ? t('ctCorrectionReason_noise_removed') : row.reason, row.provider || row.model ? `${row.provider}/${row.model}` : '', latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
+    ...corrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionAfter')}: ${row.after}`, correctionReasonText(row), row.provider || row.model ? `${row.provider}/${row.model}` : '', latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
     ...rejectedCorrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionNotApplied')}: ${row.proposed}`, correctionCode(row.code), latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
   ].sort((a, b) => (a.start || 0) - (b.start || 0));
   const missing = facts.transcript !== 'available';

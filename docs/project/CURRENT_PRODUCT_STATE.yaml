@@ -50,7 +50,7 @@
   "current_primary_workstream": {
     "id": "orena_video_sources_phase2",
     "status": "in_progress",
-    "next_task": "Video Sources Phase 2: trial artifacts report 37 usable (EN19/ZH18), EN11/ZH12 still needed. ASR A+B and EN caption cleanup: independent review of 7a0957fe is CHANGES REQUIRED (1 P1 fixed locally, awaiting re-review; 5 P2 open); local media883 pass/21 skip, not deployed or live-benchmarked. Sitting6 stopped before any import/provider call at the container HTTPS egress check (SSL EOF); verify VPN/egress before resuming. Refresh Supadata ledger and take the live-provider lock; one held item at a time, 2-3 minute gaps, stop on first anomaly. Finish live text-quality/matched-audio benchmark and real A12 review. No new provider/env/schema, no publishing, no Intelligence lane changes."
+    "next_task": "Video Sources Phase 2: trial artifacts report 37 usable (EN19/ZH18), EN11/ZH12 still needed. ASR A+B and EN caption cleanup: independent review of d7aed04f is REQUEST CHANGES (P1 retry bypass and P2 reason language fixed, awaiting re-review; 5 earlier P2 unaddressed); local media+admin1240 pass/21 skip, not deployed or live-benchmarked. Sitting6 stopped before any import/provider call at the container HTTPS egress check (SSL EOF); verify VPN/egress before resuming. Refresh Supadata ledger and take the live-provider lock; one held item at a time, 2-3 minute gaps, stop on first anomaly. Finish live text-quality/matched-audio benchmark and real A12 review. No new provider/env/schema, no publishing, no Intelligence lane changes."
   },
   "design": {
     "web_is_visual_source_of_truth": true,

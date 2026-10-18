@@ -167,6 +167,35 @@ media review, Node admin areas, browser ESM graph (300 modules) and `validate_pr
 provider re-run (the earlier agent died on a provider rate limit, and a paid run needs the owner's go-ahead), A12 visual
 check, review of the five P2 findings, independent re-review of this P1 fix (the implementer may not approve it).
 
+## Review of `d7aed04f`: REQUEST CHANGES, P1 and P2 fixed (2026-10-17)
+
+A second independent review (Delegated Architecture Reviewer, read-only, no code run) of `d7aed04f` returned
+**REQUEST CHANGES: one P1 and one P2**. It could not certify the five P2 findings of the earlier review one by one, because
+their text is not in the repository. **Those five remain unaddressed.** The reviewer used `2cb555ddc` as the base; in that
+checkout `origin/main` pointed at a different commit.
+
+- **P1 - retry/reprocess bypassed the hold (fixed, not yet re-reviewed).** `retry()` cleared the eligibility marker and
+  `_run` reset the correction state, so a `cleared` item held for a `failed` correction met no correction state on the
+  retry and auto-published the raw text. Now a shared item that finishes with its correction incomplete carries the durable
+  marker `transcript_correction_unresolved`. While it is set, `_run` holds the item unless that very run ends `applied`
+  (a retry whose corrector fails again, or is not configured, stays held). `retry()` grants the correction admission again
+  to such an item so it can finish `applied`. A person publishing by hand through the Admin status route clears the marker
+  (their decision, after checking the transcript). Learner-owned imports never carry it.
+- **P2 - A12 showed model-written reasons verbatim (fixed).** The reason is now a code from the closed list
+  `CORRECTION_REASON_CODES` (`punctuation`, `capitalization`, `spacing`, `homophone`, `idiom`, `proper_noun`, `no_change`,
+  `other`): the prompt asks for exactly one code, any other answer is stored as `other`, and A12 words the code from
+  `copy-content.js` in EN, VI and ZH. A row stored before this change, holding a sentence, reads as "Other correction"
+  instead of foreign text. No CSS change.
+- Tests: retry of a held cleared item with a corrector that fails again, is unconfigured, or succeeds (only the last
+  publishes, and clears the marker); the Admin status route clears the marker; the Node gate checks the reason in EN/VI/ZH, that a
+  model sentence is never shown, and that an unknown reason reads as the generic one.
+
+Local execution (not CI), disposable container (repository read-only, tmpfs databases, provider keys empty, 1 GB / 1 CPU,
+host RAM 3.76 GB checked first): media pytest set plus `tests/test_admin_console_routes.py` and
+`tests/test_admin_authorization_matrix.py` **1240 passed, 0 failed, 21 skipped**. Ruff on touched Python, Node admin media
+review, Node admin areas, browser ESM graph (300 modules): PASS. Not done: independent re-review of this fix (the implementer
+may not approve it), the five earlier P2 findings, the live provider re-run (a paid run needs the owner's go-ahead), A12 visual check.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;

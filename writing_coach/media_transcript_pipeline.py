@@ -100,6 +100,11 @@ ZH_EDIT_SHARE = 0.25
 # or no corrector configured on this deployment) is not an attempt that failed - nothing was tried - so it does not hold.
 CORRECTION_HOLD_STATES = frozenset({"partial", "failed"})
 REASON_CORRECTION_INCOMPLETE = "transcript_correction_incomplete"
+# The hold must survive a retry or a reprocess: a re-run resets the correction state and (as a retry consumes eligibility)
+# would otherwise meet a cleared item with no correction state at all and publish the raw text. This durable marker is set
+# whenever a shared item finished with its correction incomplete, and cleared only when a run ends with the correction
+# `applied` or when a person publishes the item by hand (their decision, after checking the transcript).
+CORRECTION_UNRESOLVED_KEY = "transcript_correction_unresolved"
 _HAN_CHARACTER = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 
 # The stages, in the order the operator's steps and the learner's sheet show them.
@@ -529,7 +534,13 @@ class MediaPipeline:
         with self._guard:
             if media_id in self._inflight:
                 return True
-        self._clear_correction_admission(store, media_id)
+        entry = store.get(media_id) or entry
+        if entry.library == "shared" and (entry.processing or {}).get(CORRECTION_UNRESOLVED_KEY):
+            # Held because its correction did not finish (never published): the correction runs again on this retry, so
+            # the item can finish `applied`. Whatever happens, it cannot auto-publish without that (see `_run`).
+            self._grant_correction_admission(store, media_id)
+        else:
+            self._clear_correction_admission(store, media_id)
         entry = store.get(media_id) or entry
         self._remember_previous(store, entry)
         self.enqueue(store, assets, media_id, batch_id=batch_id or self.new_batch())
@@ -596,6 +607,17 @@ class MediaPipeline:
             store.update_if_present(media_id, change)
         except Exception:  # noqa: BLE001
             _logger.warning("previous state not cleared for %s", media_id, exc_info=True)
+
+    @staticmethod
+    def _grant_correction_admission(store: Any, media_id: str) -> None:
+        def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
+            current = dict(fresh.processing or {})
+            current[CORRECTION_ADMISSION_KEY] = CORRECTION_ADMISSION_NEW_ADMIN
+            return replace(fresh, processing=current)
+        try:
+            store.update_if_present(media_id, change)
+        except Exception:  # noqa: BLE001 - without it the retry runs uncorrected and the hold marker still stops publication
+            _logger.warning("transcript correction admission not granted for %s", media_id, exc_info=True)
 
     @staticmethod
     def _clear_correction_admission(store: Any, media_id: str) -> None:
@@ -816,9 +838,13 @@ class MediaPipeline:
         common = dict(previous={}, checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
                       translation=translation, translation_counts=translation_counts, rights=rights, **_screen_fields(screen))
         # Only an eligible shared item has a correction state (a learner's own import never does). Anything but `applied`
-        # means the cleared rights do not yet cover the text a learner would read, so it is not published by itself.
+        # means the cleared rights do not yet cover the text a learner would read, so it is not published by itself. An item
+        # already held for an unfinished correction stays held until a run ends `applied`: a retry that did not correct
+        # (no state, or `unavailable`) must not turn the raw text into an automatic publication.
         correction_state = str((entry.processing or {}).get("transcript_correction_state") or "")
-        correction_incomplete = correction_state in CORRECTION_HOLD_STATES
+        owed = bool((entry.processing or {}).get(CORRECTION_UNRESOLVED_KEY)) and not personal
+        correction_incomplete = correction_state in CORRECTION_HOLD_STATES or (owed and correction_state != "applied")
+        common[CORRECTION_UNRESOLVED_KEY] = bool(correction_incomplete and not personal)
         if personal or (rights == RIGHTS_CLEARED and not correction_incomplete):
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
             self._prepare_model_clips(assets, entry)
@@ -1143,7 +1169,9 @@ class MediaPipeline:
                 rejected.append({"index": index, "start_ms": cue.start_ms, "code": code, "before": cue.text[:1000], "proposed": proposed[:1000]})
                 continue
             accepted[index] = proposed
-            reasons[index] = why.strip()
+            # Stored as a code from the closed list (the Admin screen words it in EN/VI/ZH); a sentence is never kept.
+            reason_code = why.strip().casefold().replace("-", "_").replace(" ", "_")
+            reasons[index] = reason_code if reason_code in media_translation.CORRECTION_REASON_CODES else "other"
         return ""
 
     def _finish_correction(

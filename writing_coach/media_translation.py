@@ -66,6 +66,11 @@ OTPM_MARGIN_SECONDS = 2.0
 # minute idle between requests).
 OTPM_REQUEST_SHARE = 2
 MAX_SALVAGED_LINES = 512
+# Why a model changed a transcript line: a closed list, so the Admin screen words each reason in its own language (EN, VI,
+# ZH) instead of showing a sentence in whatever language the model chose. `other` is what any unlisted answer is stored as.
+CORRECTION_REASON_CODES = (
+    "punctuation", "capitalization", "spacing", "homophone", "idiom", "proper_noun", "no_change", "other",
+)
 
 # Time is read and slept through these two so a test can drive a virtual clock.
 _monotonic: Callable[[], float] = time.monotonic
@@ -646,7 +651,8 @@ class GroqTranslationProvider:
             f"Language: {language_name}.\n{context}\n"
             "Correct each line independently. Return JSON only as "
             "{\"lines\":[{\"index\":0,\"text\":\"...\",\"reason\":\"...\"}]}. "
-            "Give a concise, truthful reason for each line; for unchanged text use \"No change.\" "
+            "The reason of each line must be exactly one code from this list, never a sentence: "
+            f"{', '.join(CORRECTION_REASON_CODES)}. Use no_change for unchanged text. "
             "Return each index exactly once and preserve the input count and order.\n\n"
             f"{numbered}"
         )
@@ -717,7 +723,10 @@ class GroqTranslationProvider:
                     or len(text) > max(200, 2 * len(texts[index]) + 24)
                     or not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 240):
                 raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
-            result[index] = (text.strip(), reason.strip())
+            # The reason is a code from a closed list the operator's screen words in its own language; whatever else the
+            # model writes (a sentence in any language) is stored as the neutral `other`, never shown as free text.
+            code = reason.strip().casefold().replace("-", "_").replace(" ", "_")
+            result[index] = (text.strip(), code if code in CORRECTION_REASON_CODES else "other")
         if set(result) != wanted:
             raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
         return {"texts": [result[index][0] for index in range(len(texts))],

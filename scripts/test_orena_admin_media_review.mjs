@@ -22,7 +22,9 @@ const detail = {
   source: { original_url: 'https://example.test/media' },
   transcript: { segments: [{ text: correction.after, start_ms: correction.start_ms, end_ms: correction.end_ms }] },
 };
-const page = String(mediaPage({ detail, view: { busy: false, error: '' }, t: (key) => key, ui: { locale: 'en' }, href: () => '#/admin' }).markup);
+/* The Admin's real translator always has `has`; a key it does not know reads as the key itself. */
+const keyOnly = Object.assign((key) => key, { has: () => false });
+const page = String(mediaPage({ detail, view: { busy: false, error: '' }, t: keyOnly, ui: { locale: 'en' }, href: () => '#/admin' }).markup);
 assert.ok(page.includes('Hello world'), 'A12 shows the source text for each changed cue');
 assert.ok(page.includes('&lt;script&gt;'), 'A12 escapes correction text as plain text');
 assert.ok(page.includes('configured-text-model'), 'A12 shows correction provenance');
@@ -46,7 +48,10 @@ const partial = {
   transcript_correction_state: 'partial', transcript_correction_detail: 'lexemes_changed',
   transcript_corrections: [
     { index: 0, start_ms: 1000, end_ms: 2500, before: '>> hello there', after: 'hello there', reason: '', reason_code: 'noise_removed', provider: '', model: '' },
-    { index: 1, start_ms: 3000, end_ms: 4500, before: 'a b', after: 'A, b.', reason: 'restored punctuation', reason_code: 'model_edit', provider: 'groq', model: 'm' },
+    { index: 1, start_ms: 3000, end_ms: 4500, before: 'a b', after: 'A, b.', reason: 'punctuation', reason_code: 'model_edit', provider: 'groq', model: 'm' },
+    { index: 3, start_ms: 7000, end_ms: 8500, before: 'c d', after: 'C d', reason: 'other', reason_code: 'model_edit', provider: 'groq', model: 'm' },
+    /* A row stored before reasons were codes: a model sentence in any language must never be shown as free text. */
+    { index: 4, start_ms: 9000, end_ms: 10500, before: 'e f', after: 'E f', reason: 'Đã thêm dấu phẩy sau lời chào', reason_code: 'model_edit', provider: 'groq', model: 'm' },
   ],
   transcript_correction_rejected: [{ index: 2, start_ms: 5000, code: 'edit_ratio_exceeded', before: 'x y', proposed: '<b>z</b>' }],
 };
@@ -57,6 +62,15 @@ for (const [name, pack] of [['en', en], ['vi', vi], ['zh', zh]]) {
   assert.ok(markup.includes(pack.ctCorrectionReason_noise_removed), `${name}: deterministic edit has its own reason`);
   assert.ok(markup.includes(pack.ctCorrectionDetail_edit_ratio_exceeded) && markup.includes(`${pack.ctCorrectionNotApplied}: &lt;b&gt;z&lt;/b&gt;`), `${name}: a rejected cue is shown, escaped`);
   assert.ok(!markup.includes('No change.'), `${name}: never "No change." for a deterministic edit`);
+  /* P2 (review of d7aed04f): a model edit's reason is a code worded in the operator's language, never the model's sentence. */
+  assert.ok(markup.includes(pack.ctCorrectionReason_punctuation), `${name}: a model-edit reason is translated`);
+  assert.ok(markup.includes(pack.ctCorrectionReason_other), `${name}: an unknown reason reads as the generic one`);
+  assert.ok(!markup.includes('Đã thêm dấu phẩy'), `${name}: a model-written sentence is never shown`);
+}
+for (const pack of [en, vi, zh]) {
+  for (const code of ['punctuation', 'capitalization', 'spacing', 'homophone', 'idiom', 'proper_noun', 'no_change', 'other']) {
+    assert.equal(typeof pack[`ctCorrectionReason_${code}`], 'string', `A12 reason copy ${code} exists in EN, VI and ZH`);
+  }
 }
 /* Review P1: cleared rights + an unfinished correction is held, not failed; the operator is told why in every language. */
 const { en: importsEn, vi: importsVi, zh: importsZh } = await import('../static/orena/screens/admin/copy-imports.js');

@@ -1258,6 +1258,10 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
             if current.source.get("rights") != "cleared":
                 raise orena_http_error(409, "media_rights_required", "Source rights must be cleared before publishing.")
         processing = dict(current.processing or {})
+        if target == "published":
+            # A person publishing by hand has checked the transcript: the hold for an unfinished correction ends here.
+            from writing_coach.media_transcript_pipeline import CORRECTION_UNRESOLVED_KEY
+            processing.pop(CORRECTION_UNRESOLVED_KEY, None)
         if target == "archived" and processing.get("state") in {"queued", "running"}:
             processing.update(state="cancelled", reason="archived")
         transition.update({"from": previous, "to": target, "outcome": "unchanged" if previous == target else "ok"})
