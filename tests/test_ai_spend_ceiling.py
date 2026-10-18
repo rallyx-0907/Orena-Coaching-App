@@ -88,9 +88,9 @@ def test_an_unreadable_ledger_fails_closed_and_unpriced_calls_count():
 
 def test_the_agent_stops_at_the_system_ceiling_even_below_its_own_cap():
     ceiling(5.0, Ledger(usd=5.0))
-    agent = LiveSpendGuard(lambda: 50.0, Ledger(usd=5.0), ceiling=spend_gate.ceiling_wait)
+    agent = LiveSpendGuard(lambda: 50.0, Ledger(usd=5.0), ceiling=spend_gate.ceiling_check)
     assert agent() is not None  # its own $50 is far off; the system's $5 is reached
-    assert LiveSpendGuard(lambda: None, None, ceiling=spend_gate.ceiling_wait)() is not None
+    assert LiveSpendGuard(lambda: None, None, ceiling=spend_gate.ceiling_check)() is not None
 
 
 def test_the_lock_lifts_at_utc_midnight_and_the_warning_comes_again_the_next_day(caplog):
@@ -158,3 +158,26 @@ def test_the_admin_view_is_admin_only_and_reports_both_limits(monkeypatch):
 
     monkeypatch.setattr(app_module, "require_admin", refuse)
     assert client.get("/api/admin/ai-spend").status_code == 403
+
+
+def test_check_says_which_limit_refused_and_whether_it_is_a_fault():
+    """Review of #304, P2-5: the real LiveSpendGuard.check, not a stub."""
+    read_cap = []
+
+    def cap():
+        read_cap.append(1)
+        return 1.0
+
+    ceiling(5.0, Ledger(usd=5.0))
+    reached = LiveSpendGuard(cap, Ledger(usd=0.0), ceiling=spend_gate.ceiling_check)
+    wait, scope, fault = reached.check()
+    assert scope == "system" and fault is False and wait > 0 and read_cap == []  # the agent cap is not even read
+    assert reached() == wait
+    spend_gate.configure_ceiling(None, read=None)
+    assert LiveSpendGuard(lambda: 1.0, Ledger(usd=1.0)).check()[1:] == ("agent", False)
+    assert LiveSpendGuard(lambda: 1.0, Ledger(usd=0.1)).check() is None
+    unreadable = LiveSpendGuard(lambda: (_ for _ in ()).throw(ValueError("bad")), Ledger())
+    assert unreadable.check() == (3600.0, "agent", True)
+    assert LiveSpendGuard(lambda: 1.0, Ledger(fail=True)).check()[1:] == ("agent", True)
+    spend_gate.configure_ceiling(5.0, read=Ledger(fail=True))
+    assert LiveSpendGuard(lambda: None, None, ceiling=spend_gate.ceiling_check).check()[1:] == ("system", True)

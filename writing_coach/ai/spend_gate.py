@@ -86,6 +86,12 @@ def ceiling_wait() -> float | None:
     return _ceiling() if _ceiling is not None else None
 
 
+def ceiling_check() -> tuple[float, bool] | None:
+    """(seconds until it resets, True when the ledger could not be read), or None when spending may go on."""
+
+    return _ceiling.refusal() if _ceiling is not None else None
+
+
 def ceiling_reached() -> bool:
     """True when today's whole-system AI spend has reached the ceiling (or cannot be read): no paid call now."""
 
