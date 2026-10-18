@@ -7327,7 +7327,7 @@ Status: ACCEPTED (owner wrote "D-222: ACCEPTED" on PR #265 at rev 4.1 `92224381`
 
 ## D-223 - AGENT_CONTRACT v9: server-held Orena Memory reaches the agent interface; the contract is edited by reviewed PR to `main` (2026-10-18)
 
-Status: PROPOSED. Not binding until the owner writes "D-223: ACCEPTED" on the PR. Drafted by the UI lane (`claude/agent-contract-v9`) at the request of the Intelligence lane (issue #256), because D-086 forbids the Intelligence lane from editing the contract. No schema, migration, provider, credential or runtime change is made by this entry; the server and UI changes it describes are separate slices (M2, M3, UI memory view) that wait for it.
+Status: ACCEPTED (owner wrote "D-223: ACCEPTED" on 2026-10-18, after an independent review APPROVE on PR #271 and green CI). Drafted by the UI lane (`claude/agent-contract-v9`) at the request of the Intelligence lane (issue #256), because D-086 forbids the Intelligence lane from editing the contract. No schema, migration, provider, credential or runtime change is made by this entry; the server and UI changes it describes are separate slices (M2, M3, UI memory view) that wait for it.
 
 It implements what `proposals/ORENA_MEMORY.md` rev 4.1 (§6, §8, §9, §10, §13 "Re-review of rev 4") and D-222 require of the contract (rev 3 review F12(b), F12(c)).
 
