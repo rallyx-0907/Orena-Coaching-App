@@ -38,7 +38,13 @@ from typing import Any, Protocol
 from writing_coach.agent import learner_copy, surfaces
 from writing_coach.agent.context import TurnInput, build_tier1
 from writing_coach.agent.context_gate import carried_state, without_carried_state
-from writing_coach.agent.contract import SURFACES, WORD_ACTIONS, actions_for_version, intents_for_version
+from writing_coach.agent.contract import (
+    MEMORY_STORED_VERSION,
+    SURFACES,
+    WORD_ACTIONS,
+    actions_for_version,
+    intents_for_version,
+)
 from writing_coach.agent.events import Event, ToolCallEvent, ToolResultEvent, EvidenceEvent, Display
 from writing_coach.agent.focus import focus_after, lookup_word
 from writing_coach.agent.pending import CANCELLED, COMPLETED, CONFIRM, action_key
@@ -56,9 +62,17 @@ from writing_coach.agent.outputs import (
     reply_tool_specs,
 )
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.data_class import CONTEXT_EVIDENCE_CLASS, NOTES_CLASS, PACK_CLASS, gating_on
+from writing_coach.agent.data_class import (
+    CONTEXT_EVIDENCE_CLASS,
+    NOTES_CLASS,
+    PACK_CLASS,
+    DataClass,
+    gating_on,
+    pack_class,
+)
 from writing_coach.agent.errors import VoiceUnavailable
 from writing_coach.agent.memory_pack import VOICE_BUDGET
+from writing_coach.agent.memory_runtime import STORED_DEVICE, MemoryTurn, carries_memory, without_explicit
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.redaction import redact_for_provider
@@ -477,13 +491,16 @@ class VoiceService:
         request = TurnRequest.model_validate({**dict(body), "trigger": "open"})
         turn = TurnInput.from_request(request)
         session_state, _ = self.runtime.sessions.open(request.session_id, learner.user_key)
+        memory = self._memory_turn(learner, request)
         tier1, session_state, notes_available = self._gate_data_classes(
-            turn, build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state)
+            turn, build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state,
+            memory_on=getattr(self.runtime, "memory", None) is not None)  # fmt: skip
+        tier1 = self._with_memory(tier1, memory, request)
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
-        pack = self._learner_pack(session_state, learner, request)
+        pack, pack_memory = self._learner_pack(session_state, learner, request, memory)
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
         self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes,
-                                     context=carried_state(turn, tier1, session_state))  # fmt: skip
+                                     context=carried_state(turn, tier1, session_state), memory=pack_memory)  # fmt: skip
         specs = self._tool_specs(request, learner, notes=notes_available)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
@@ -491,7 +508,10 @@ class VoiceService:
         outputs = ReplyOutputs(
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
-            notes_available=notes_available, address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
+            notes_available=notes_available, server_notes=self._server_notes(memory, learner, request),
+            memory_off=memory is not None and memory.off,
+            stored=STORED_DEVICE if request.version >= MEMORY_STORED_VERSION else None,
+            note_texts={note.id: note.text for note in tier1.coach_notes}, address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
             pending=session_state.live_pending(), settled=frozenset(done for done, _ in session_state.settled),
             recent_runs=session_state.recent_runs(),
         )  # fmt: skip
@@ -635,40 +655,77 @@ class VoiceService:
         target = tier1.contract_locale.target
         return tuple(entry.id for entry in self.runtime.capabilities.for_surface(tier1.surface, target))
 
-    def _learner_pack(self, session_state, learner: LearnerScope, request: TurnRequest) -> str | None:
+    def _learner_pack(self, session_state, learner: LearnerScope, request: TurnRequest,
+                      memory: MemoryTurn | None = None) -> tuple[str | None, bool]:
         """The learner pack (agent/memory_pack.py) for the voice setup: the conversation's own when its text turns
-        built one for this language pair - the same learner, the same bytes - else one at the voice size. None when
-        the pack is off or cannot be built: the session opens without it."""
+        built one for this language pair and memory version - the same learner, the same bytes - else one at the voice
+        size, with Orena Memory only when the vendor is cleared for it. (text, carries memory); (None, False) when the
+        pack is off or cannot be built: the session opens without it."""
 
         builder = getattr(self.runtime, "pack", None)
         if builder is None or not getattr(builder, "enabled", False):
-            return None
+            return None, False
         classes = getattr(self.runtime, "data_classes", None)
         # G8: the voice vendor is Gemini Live (the one-use token is minted there); its class is the owner's record.
         if classes is not None and not classes.cleared("gemini", self.model, PACK_CLASS):
-            return None
+            return None, False
         locale = request.context.locale
-        kept = session_state.pack_for((str(locale.target), str(locale.support)))
+        # Only a v9 client in server mode (ON, cleared for full_memory): a v8-or-lower client is served exactly as
+        # before, device notes only - it has no way to forget an account note (D-223; review of #279).
+        with_memory = memory is not None and memory.server
+        key = (str(locale.target), str(locale.support), memory.marker if memory is not None else "m-")
+        kept = session_state.pack_for(key)
         if kept is not None:
-            return kept
+            return kept, with_memory and session_state.learner_pack_memory
         from writing_coach.agent.turn import learner_context  # the turn's own scoping, as its tools run under it
 
         try:
             with learner_context(learner):
                 pack = builder.build(target=to_internal(locale.target), support=to_internal(locale.support),
-                                     budget_tokens=VOICE_BUDGET)  # fmt: skip
+                                     budget_tokens=VOICE_BUDGET, memory=with_memory,
+                                     shape=without_explicit if memory is not None and memory.server else None)
         except Exception:  # noqa: BLE001 - the voice session opens without it
             _log.warning("learner pack not built for voice", exc_info=True)
-            return None
-        return pack.text if pack is not None else None
+            return None, False
+        if pack is None:
+            return None, False
+        return pack.text, carries_memory(pack)
 
-    def _gate_data_classes(self, turn: TurnInput, tier1, session_state):
+    def _memory_turn(self, learner: LearnerScope, request: TurnRequest) -> MemoryTurn | None:
+        """Orena Memory for this voice session, as for a turn (agent/turn.py `_memory_turn`): the vendor is Gemini Live,
+        so its record decides whether the session may carry memory."""
+
+        runtime_memory = getattr(self.runtime, "memory", None)
+        if runtime_memory is None:
+            return None
+        classes = getattr(self.runtime, "data_classes", None)
+        cleared = classes is not None and classes.cleared("gemini", self.model, DataClass.FULL_MEMORY)
+        return runtime_memory.turn(learner.user_key, version=request.version, cleared=cleared)
+
+    def _with_memory(self, tier1, memory: MemoryTurn | None, request: TurnRequest):
+        """Memory OFF: no device note reaches the vendor (§6). Server notes: the account's notes are the coach notes."""
+
+        if memory is None:
+            return tier1
+        if memory.off:
+            return replace(tier1, coach_notes=())
+        if memory.server:
+            target = to_internal(request.context.locale.target)
+            return replace(tier1, coach_notes=self.runtime.memory.notes(memory, target))
+        return tier1
+
+    def _server_notes(self, memory: MemoryTurn | None, learner: LearnerScope, request: TurnRequest):
+        if memory is None or not memory.server:
+            return None
+        return self.runtime.memory.server_notes(learner.user_key, to_internal(request.context.locale.target))
+
+    def _gate_data_classes(self, turn: TurnInput, tier1, session_state, *, memory_on: bool = False):
         """G8 for the voice setup (ORENA_MEMORY.md §8 b, c), while the gate is on: a conversation that has sent a class
         of data is not continued by a voice vendor cleared for less (the session does not open: text goes on), and
         coach notes reach the vendor only when it is cleared for `full_memory`."""
 
         classes = getattr(self.runtime, "data_classes", None)
-        if not gating_on(getattr(self.runtime, "pack", None), classes):
+        if not gating_on(getattr(self.runtime, "pack", None), classes, memory_on=memory_on):
             return tier1, session_state, True
         level = classes.of("gemini", self.model)  # the voice vendor is Gemini Live
         if level < session_state.data_class_sent:
@@ -681,10 +738,12 @@ class VoiceService:
         return tier1, session_state, notes_available
 
     def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes,
-                                context: bool) -> None:  # fmt: skip
-        if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None)):
+                                context: bool, memory: bool = False) -> None:  # fmt: skip
+        if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None),
+                         memory_on=memory or getattr(self.runtime, "memory", None) is not None):  # fmt: skip
             return
-        level = max(PACK_CLASS if pack else 0, NOTES_CLASS if notes else 0, CONTEXT_EVIDENCE_CLASS if context else 0)
+        level = max(pack_class(with_memory=memory) if pack else 0, NOTES_CLASS if notes else 0,
+                    CONTEXT_EVIDENCE_CLASS if context else 0)  # fmt: skip
         if level > session_state.data_class_sent:
             self.runtime.sessions.update(session_state.agent_session_id, learner.user_key,
                                          lambda state: state.with_data_class_sent(level))  # fmt: skip

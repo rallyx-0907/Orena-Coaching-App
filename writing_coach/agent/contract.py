@@ -138,6 +138,7 @@ AUDIO_FORMATS = frozenset({"pcm16_24k"})
 BUDGET_STATES = frozenset({"ok", "soft_limited"})
 ERROR_FALLBACKS = frozenset({"retry", "text_only", "none"})
 MEMORY_OPS = frozenset({"upsert", "remove"})
+MEMORY_STORED_VERSION = 9  # `memory_update.stored` and server-applied notes (§5.4, v9)
 
 
 # --- §5 payload types --------------------------------------------------------

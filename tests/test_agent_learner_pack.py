@@ -388,7 +388,8 @@ def test_the_voice_setup_carries_the_pack_at_the_voice_size():
     service.open(_body(), LEARNER)
     instruction = post.calls[0][2]["bidiGenerateContentSetup"]["systemInstruction"]["parts"][0]["text"]
     assert PACK_OPEN in instruction and instruction.index(PACK_OPEN) < instruction.index("context: ")
-    assert service.runtime.pack.calls == [{"target": "zh", "support": "vi", "budget_tokens": VOICE_BUDGET}]
+    assert service.runtime.pack.calls == [{"target": "zh", "support": "vi", "budget_tokens": VOICE_BUDGET,
+                                           "memory": False, "shape": None}]  # no Orena Memory on this server
 
 
 def test_voice_without_the_pack_is_unchanged():

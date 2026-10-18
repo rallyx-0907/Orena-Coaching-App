@@ -115,13 +115,14 @@ NOT_YET_GOVERNED = ("opening_snapshot", "learner_text", "tool_results")
 
 def pack_class(*, with_memory: bool) -> DataClass:
     """What a pack needs: `learning_profile` for profile and evidence (M1); `full_memory` once it carries Orena Memory
-    (orena-pack/2, §5.1). M2 wiring checks this before building a memory-bearing pack (TODO M2)."""
+    (orena-pack/2, §5.1). The M2 wiring builds a memory-bearing pack only for a model cleared for it."""
 
     return DataClass.FULL_MEMORY if with_memory else PACK_CLASS
 
 
 def gating_on(pack_builder: Any, classes: ProviderDataClasses | None, *, memory_on: bool = False) -> bool:
-    """The gate applies only with a record and the learner pack - or, from M2, the memory switch - on (§8 a).
-    Nothing passes `memory_on` before M2 wires the memory flag (TODO M2)."""
+    """The gate applies only with a record and the learner pack on - or, from M2, Orena Memory on this server (§8 a):
+    callers pass `memory_on` whenever the server has memory, whatever the pack flag, so a note or memory sent with the
+    pack off still raises the conversation's class and blocks a lower provider."""
 
     return classes is not None and (bool(getattr(pack_builder, "enabled", False)) or memory_on)

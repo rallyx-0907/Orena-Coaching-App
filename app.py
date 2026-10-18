@@ -1288,6 +1288,21 @@ def _backbone_tables():
 _account_backbone = build_backbone(_persistence_runtime.engine, _backbone_tables())
 configure_work(_account_backbone)
 
+# Orena Memory (ORENA_MEMORY.md M2): only with AGENT_MEMORY_HMAC_KEYS and an active account backbone; otherwise none,
+# and every agent turn is as before. Unreadable keys refuse to start. Nothing is read from the database here (D-002).
+from writing_coach.agent.api import configure_memory as _configure_agent_memory  # noqa: E402
+from writing_coach.agent.memory_runtime import MemoryRuntime as _MemoryRuntime  # noqa: E402
+
+
+
+def _memory_store(keys):
+    from writing_coach.persistence.memory_repository import PostgresMemoryRepository
+
+    return PostgresMemoryRepository(_persistence_runtime.engine, keys)
+
+
+_configure_agent_memory(_MemoryRuntime.from_env(os.environ, _account_backbone, _memory_store))
+
 
 def _reading_cache_incarnation(user_key: str) -> str | None:
     """The account's active incarnation for the Reading cache scope; never creates one (PR-MON-7D1)."""
