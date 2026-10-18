@@ -49,7 +49,8 @@ def test_the_feature_tier_wins_over_the_billing_period(current, target, kind, pr
 class Polar:
     def __init__(self, product="prod-plus-month", **live):
         self.live = {"id": "sub_1", "product_id": product, "cancel_at_period_end": False, "pending_update": None,
-                     "recurring_interval": "month", "customer": {"email": "learner@example.test"}, **live}
+                     "recurring_interval": "month", "customer": {"email": "learner@example.test"},
+                     "modified_at": "2026-10-17T00:00:00Z", **live}
         self.patches: list = []
         self.answers: list = []   # PATCH answers to give, in order: an int status or an Exception
         self.reads = 0
@@ -76,6 +77,9 @@ class Polar:
         raise AssertionError(f"unexpected {method} {url}")
 
     def apply(self, body):
+        # Polar's revision moves only on an applied change; stamped at the send (NOW), so a later operation sent at NOW
+        # sees no movement after its own send unless a test moves it explicitly.
+        self.live["modified_at"] = "2026-10-17T11:59:59Z"
         if "product_id" in body:
             if body["proration_behavior"] == "next_period":
                 self.live["pending_update"] = {"product_id": body["product_id"]}
@@ -348,6 +352,9 @@ class Index:
         self.deleted.append(key)
         self.settings.rows.pop(key, None)
 
+    def incarnation_deleted(self, incarnation):
+        return False
+
 
 def test_terminal_operations_are_deleted_after_the_retention_and_unresolved_ones_escalate():
     from tests.test_billing_polar import Items
@@ -401,9 +408,10 @@ def routes(monkeypatch):
 
     from writing_coach import billing_api
 
-    def install(worker, *, user="learner-1"):
+    def install(worker, *, user="learner-1", ready=True):
         service = type("Service", (), {"polar_subscriptions": worker})()
         monkeypatch.setattr(billing_api, "_service", service)
+        monkeypatch.setattr(billing_api, "_ready", lambda: ready)
         monkeypatch.setattr(billing_api, "current_user_key", lambda: user)
         monkeypatch.setattr(billing_api, "_incarnation", lambda: "inc-1")
         app = FastAPI()
@@ -530,3 +538,152 @@ def test_the_card_summary_is_brand_last4_and_expiry_only():
     assert worker.view("inc-1")["payment_method"] == {"brand": "visa", "last4": "4242", "exp_month": 8, "exp_year": 2028}
     without, _ = subs(Polar())
     assert without.view("inc-1")["payment_method"] is None
+
+
+# ---- review of 4a3b0438 -----------------------------------------------------------------------------------------
+
+OP2 = "6f1c1a2e-0000-4000-8000-000000000002"
+
+
+def test_a_second_operation_on_the_same_subscription_waits_for_the_first():
+    """P1-1: one unresolved Polar write per subscription - different operation ids cannot both PATCH."""
+
+    clock = [NOW]
+    worker, polar = subs(clock=lambda: clock[0])
+    polar.answers = [TimeoutError("lost")]
+    assert worker.change("inc-1", "pro:month:polar", OP)["state"] == "provider_unknown"
+    with pytest.raises(SubscriptionRefused, match="operation_in_progress"):
+        worker.change("inc-1", "pro:year:polar", OP2)
+    with pytest.raises(SubscriptionRefused, match="operation_in_progress"):
+        worker.cancel("inc-1", None, "6f1c1a2e-0000-4000-8000-000000000003")
+    assert len(polar.patches) == 1
+    clock[0] = NOW + UNKNOWN_SETTLE + timedelta(seconds=1)
+    assert worker.operation("inc-1", OP)["state"] == "not_applied"   # nothing moved on Polar: it did not happen
+    assert worker.change("inc-1", "pro:year:polar", OP2)["state"] == "done"   # the fence is free again
+    assert len(polar.patches) == 2
+
+
+def test_a_fence_claimed_by_a_crashed_request_frees_after_the_lease():
+    from writing_coach.billing.polar_subscription import FENCE_PREFIX
+
+    clock = [NOW]
+    worker, polar = subs(clock=lambda: clock[0])
+    worker._settings.set_setting(FENCE_PREFIX + "sub_1", {"operation_id": "ghost", "claimed_at": NOW.isoformat()},
+                                 expected_updated_at=None)
+    with pytest.raises(SubscriptionRefused, match="operation_in_progress"):
+        worker.change("inc-1", "pro:month:polar", OP)
+    clock[0] = NOW + LEASE + timedelta(seconds=1)
+    assert worker.change("inc-1", "pro:month:polar", OP)["state"] == "done" and len(polar.patches) == 1
+
+
+def test_two_operations_racing_on_one_subscription_send_one_patch():
+    settings, polar = Settings(), Polar()
+    workers = [subs(polar, settings=settings)[0] for _ in range(2)]
+    barrier = threading.Barrier(2)
+    calls = [lambda w: w.change("inc-1", "pro:month:polar", OP), lambda w: w.cancel("inc-1", None, OP2)]
+    refused = []
+
+    def run(worker, call):
+        barrier.wait()
+        try:
+            call(worker)
+        except SubscriptionRefused as error:
+            refused.append(error.code)
+
+    threads = [threading.Thread(target=run, args=(w, c)) for w, c in zip(workers, calls, strict=True)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(polar.patches) + len(refused) == 2 and len(polar.patches) >= 1
+    assert set(refused) <= {"operation_in_progress"}
+
+
+def test_an_unknown_operation_overtaken_on_polar_is_never_called_not_applied():
+    """P1-2: A applied and its answer was lost; then the subscription moved again. A's target is gone, but Polar's
+    revision moved after A was sent: A stays provider_unknown and goes to an operator at once."""
+
+    from tests.test_billing_polar import Items
+
+    clock = [NOW]
+    settings, items = Settings(), Items()
+    worker, polar = subs(clock=lambda: clock[0], settings=settings, items=items, index=Index(settings))
+    original = polar.__call__
+
+    down = [False]
+
+    def applied_then_lost(request):
+        if request["method"] == "PATCH":
+            polar.patches.append(request["json"])
+            polar.apply(request["json"])
+            down[0] = True   # Polar unreachable right after: the first reconcile reads nothing
+            raise TimeoutError("answer lost after the charge")
+        if down[0]:
+            raise OSError("Polar unreachable for the first reconcile")
+        return original(request)
+
+    worker._call = applied_then_lost
+    assert worker.change("inc-1", "pro:month:polar", OP)["state"] == "provider_unknown"
+    # overtaken: changed again on Polar (the portal, another device) after A was sent
+    polar.live.update(product_id="prod-pro-year", modified_at="2026-10-17T12:05:00Z")
+    down[0] = False
+    clock[0] = NOW + UNKNOWN_SETTLE + timedelta(minutes=5)
+    assert worker.operation("inc-1", OP)["state"] == "provider_unknown"
+    assert doc(worker)["moved"] is True
+    worker.step(Counter())
+    assert [i["dedupe_key"] for i in items.recorded] == [f"polar_op_unresolved:{OP}"]   # at once, not after 24 h
+    with pytest.raises(SubscriptionRefused, match="operation_in_progress"):
+        worker.cancel("inc-1", None, OP2)   # the subscription stays fenced: never treated as if nothing happened
+
+
+def test_an_unreadable_revision_fails_closed():
+    clock = [NOW]
+    worker, polar = subs(clock=lambda: clock[0])
+    polar.answers = [TimeoutError("lost")]
+    worker.change("inc-1", "pro:month:polar", OP)
+    del polar.live["modified_at"]
+    clock[0] = NOW + UNKNOWN_SETTLE + timedelta(minutes=1)
+    assert worker.operation("inc-1", OP)["state"] == "provider_unknown"
+
+
+def test_an_in_app_change_closes_with_sales_but_cancel_and_resume_stay_open(routes):
+    """P1-3: BILLING_NEW_SALES=off (or plans not ready) closes the change and its preview; cancel stays open."""
+
+    worker, polar = subs()
+    closed = routes(worker, ready=False)
+    for path, body in (("/api/billing/subscription/change", {"price": "pro:month:polar", "operation_id": OP}),
+                       ("/api/billing/subscription/change/preview", {"price": "pro:month:polar"})):
+        answer = closed.post(path, json=body)
+        assert answer.status_code == 503 and "billing_not_ready" in answer.text
+    assert polar.patches == []
+    assert closed.post("/api/billing/subscription/cancel", json={"operation_id": OP2}).status_code == 200
+    assert polar.patches == [{"cancel_at_period_end": True}]
+
+
+def test_the_invoice_marker_is_claimed_before_polar_is_asked():
+    """P2: two concurrent first requests ask Polar to generate once."""
+
+    from writing_coach.persistence.platform_repository import SettingConflict
+
+    polar = InvoicePolar()
+    worker, _ = subs(polar)
+    original = worker._settings.set_setting
+
+    def lose_the_race(key, value, **kwargs):
+        if key.startswith("billing.polar.invoice_asked."):
+            raise SettingConflict(key)
+        return original(key, value, **kwargs)
+
+    worker._settings.set_setting = lose_the_race
+    assert worker.invoice("inc-1", "ord_1") == {"state": "preparing"}
+    assert polar.generated == 0   # the winner asks; the loser does not
+
+
+def test_a_deleted_accounts_terminal_operations_are_scrubbed():
+    settings = Settings()
+    index = Index(settings)
+    index.incarnation_deleted = lambda incarnation: incarnation == "inc-1"
+    worker, _ = subs(settings=settings, index=index)
+    worker.change("inc-1", "pro:month:polar", OP)
+    worker.step(Counter())
+    assert doc(worker) is None

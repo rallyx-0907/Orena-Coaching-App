@@ -43,6 +43,9 @@ SCHEDULED_CHANGES = False
 PRORATION_PREVIEW = False
 
 OP_PREFIX = "billing.polar.op."
+# Review P1-1 of 4a3b0438: one unresolved Polar write per subscription. A new operation claims the subscription's
+# fence by compare-and-set; while the fence names an operation that is not terminal, another is refused.
+FENCE_PREFIX = "billing.polar.op_fence."
 INVOICE_PREFIX = "billing.polar.invoice_asked."
 LEASE = timedelta(seconds=30)
 CLAIM_WINDOW = timedelta(minutes=10)
@@ -82,6 +85,14 @@ def classify(current: tuple[str, str], target: tuple[str, str]) -> dict[str, str
     if PERIODS[to_period] < PERIODS[period]:
         return {"kind": "period_down", "proration": "next_period", "effect": "renewal"}
     return {"kind": "none", "proration": "", "effect": ""}
+
+
+def _parse_time(value: Any) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00")) if value else None
+    except ValueError:
+        return None
+    return parsed if parsed is None or parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 def _digest(request: Mapping[str, Any]) -> str:
@@ -326,6 +337,9 @@ class PolarSubscriptions:
                 raise SubscriptionRefused("operation_conflict")
             return self._resume_existing(operation_id, doc, version)
         body, expect = build()
+        self._claim_fence(subscription, operation_id)
+        # Our own canonical PATCH fields (product, proration, the cancel flag, the closed-list reason) - never a
+        # Polar response body, never card data.
         request = {"action": action, "subscription": subscription, "body": body}
         now = self._now()
         owner = secrets.token_hex(16)
@@ -340,6 +354,34 @@ class PolarSubscriptions:
                 raise SubscriptionRefused("operation_conflict")
             return self._resume_existing(operation_id, doc, version)
         return self._send(operation_id, doc, version, owner)
+
+    def _claim_fence(self, subscription: str, operation_id: str) -> None:
+        """At most one unresolved Polar write per subscription (review P1-1): the fence is free when it is absent,
+        when its operation is terminal, or when it names an operation that was never written and its claim is older
+        than LEASE (a crash between the claim and the journal write). Claimed by compare-and-set; a lost race and a
+        held fence both refuse with `operation_in_progress` - nothing is sent."""
+
+        from writing_coach.persistence.platform_repository import SettingConflict
+
+        key = f"{FENCE_PREFIX}{subscription}"
+        stored = self._settings.get_setting(key)
+        now = self._now()
+        if stored:
+            held = dict(stored.get("value") or {})
+            other = str(held.get("operation_id") or "")
+            if other and other != operation_id:
+                other_doc, _ = self._load(other)
+                claimed = datetime.fromisoformat(held.get("claimed_at") or now.isoformat())
+                free = (other_doc is not None and other_doc.get("state") in TERMINAL) or (
+                    other_doc is None and now - claimed >= LEASE)
+                if not free:
+                    raise SubscriptionRefused("operation_in_progress")
+        try:
+            self._settings.set_setting(key, {"operation_id": operation_id, "claimed_at": now.isoformat()},
+                                       updated_by="billing-polar-op",
+                                       expected_updated_at=stored.get("updated_at") if stored else None)  # fmt: skip
+        except SettingConflict:
+            raise SubscriptionRefused("operation_in_progress") from None
 
     def _send(self, operation_id: str, doc: dict[str, Any], version: Any, owner: str) -> dict[str, Any]:
         """Mark `sent` (CAS on version AND owner), then the operation's only PATCH."""
@@ -402,8 +444,13 @@ class PolarSubscriptions:
         return self._send(operation_id, claimed, version, owner)
 
     def _reconcile(self, operation_id: str) -> dict[str, Any]:
-        """`sent` or `provider_unknown`: reads only. The effect visible on Polar -> done; none, and Polar's own
-        revision has not moved for UNKNOWN_SETTLE -> not_applied. Never a second PATCH."""
+        """`sent` or `provider_unknown`: reads only, never a second PATCH.
+        - the effect is visible on Polar -> `done`;
+        - not visible, and Polar's own revision (`modified_at`) has NOT moved past the send for UNKNOWN_SETTLE ->
+          `not_applied` (nothing happened; the learner may start over);
+        - not visible, but the subscription changed after the send (or its revision cannot be read) -> it stays
+          `provider_unknown` and is marked `moved` for an operator at once: the operation may have applied and been
+          overtaken, so it is never presented as one that did not happen (review P1-2 of 4a3b0438)."""
 
         doc, version = self._load(operation_id)
         if doc is None or doc.get("state") in TERMINAL or doc.get("state") == "pending":
@@ -418,13 +465,17 @@ class PolarSubscriptions:
             return self._answer({**doc, "state": "provider_unknown"})
         expect = doc.get("expect") or {}
         seen = all(self._shows(live, key, value) for key, value in expect.items())
+        modified = _parse_time(live.get("modified_at"))
+        moved = modified is None or modified > sent_at
         if seen:
             final = {**doc, "state": "done", "updated_at": now.isoformat()}
+        elif moved:
+            final = {**doc, "state": "provider_unknown", "moved": True, "updated_at": now.isoformat()}
         elif now - sent_at >= UNKNOWN_SETTLE:
             final = {**doc, "state": "not_applied", "updated_at": now.isoformat()}
         else:
             final = {**doc, "state": "provider_unknown", "updated_at": now.isoformat()}
-        if final["state"] != doc.get("state"):
+        if final["state"] != doc.get("state") or final.get("moved") != doc.get("moved"):
             self._write(operation_id, final, version)
         return self._answer(final)
 
@@ -460,6 +511,14 @@ class PolarSubscriptions:
             asked = (self._settings.get_setting(key) or {}).get("value") or {}
             if asked.get("at") and now - datetime.fromisoformat(asked["at"]) >= timedelta(days=1):
                 self._index.delete(key)
+        for key in self._index.keys(FENCE_PREFIX):
+            # A fence names one operation; once that one is terminal (or gone) and the fence is past RETENTION, the
+            # fence goes too - one bounded key per subscription.
+            held = (self._settings.get_setting(key) or {}).get("value") or {}
+            other, _ = self._load(str(held.get("operation_id") or ""))
+            claimed = held.get("claimed_at")
+            if (other is None or other.get("state") in TERMINAL) and claimed                     and now - datetime.fromisoformat(claimed) >= RETENTION:
+                self._index.delete(key)
         for key in self._index.keys(OP_PREFIX):
             operation_id = key[len(OP_PREFIX):]
             if lock is not None and not lock.alive():
@@ -469,9 +528,12 @@ class PolarSubscriptions:
                 continue
             state = doc.get("state")
             if state in TERMINAL:
-                if now - datetime.fromisoformat(doc["updated_at"]) >= RETENTION:
+                # Retention, and a deleted account's terminal records go at once (review P2: the deletion runbook
+                # leaves no incarnation data); an unresolved one is a money question and stays until it resolves.
+                deleted = bool(doc.get("incarnation")) and self._index.incarnation_deleted(str(doc["incarnation"]))
+                if deleted or now - datetime.fromisoformat(doc["updated_at"]) >= RETENTION:
                     self._index.delete(self._key(operation_id))
-                    counts["polar_op_expired"] += 1
+                    counts["polar_op_expired" if not deleted else "polar_op_scrubbed"] += 1
                 continue
             if state == "pending":
                 counts[f"polar_op_{self._claim(operation_id, doc, version)['state']}"] += 1
@@ -479,7 +541,7 @@ class PolarSubscriptions:
                 counts[f"polar_op_{self._reconcile(operation_id)['state']}"] += 1
             doc, _ = self._load(operation_id)
             if (doc and doc.get("state") not in TERMINAL and not doc.get("escalated") and self._items is not None
-                    and now - datetime.fromisoformat(doc["created_at"]) >= ESCALATE_AFTER):
+                    and (doc.get("moved") or now - datetime.fromisoformat(doc["created_at"]) >= ESCALATE_AFTER)):
                 self._items.record(kind="event_undecided", gateway="polar", dedupe_key=f"polar_op_unresolved:{operation_id}",
                                    reason=f"polar_op_unresolved {doc.get('action')}", incarnation_id=doc.get("incarnation"),
                                    now=now)  # fmt: skip
@@ -534,14 +596,15 @@ class PolarSubscriptions:
         asked = self._settings.get_setting(key)
         last = (asked or {}).get("value", {}).get("at")
         if last is None or self._now() - datetime.fromisoformat(last) >= timedelta(minutes=1):
-            self._call(self._request("POST", f"/v1/orders/{quote(order_id, safe='')}/invoice"))
             from writing_coach.persistence.platform_repository import SettingConflict
 
+            # Review P2: the minute's marker is claimed BEFORE asking Polar, so two concurrent requests ask once.
             try:
                 self._settings.set_setting(key, {"at": self._now().isoformat()}, updated_by="billing-polar-op",
                                            expected_updated_at=(asked or {}).get("updated_at"))  # fmt: skip
             except SettingConflict:
-                pass
+                return {"state": "preparing"}
+            self._call(self._request("POST", f"/v1/orders/{quote(order_id, safe='')}/invoice"))
         return {"state": "preparing"}
 
 
@@ -557,8 +620,14 @@ class PostgresOperationIndex:
                                            "LIMIT :n"), {"p": prefix.replace("%", "") + "%", "n": limit}).scalars().all()
         return [str(row) for row in rows]
 
+    def incarnation_deleted(self, incarnation_id: str) -> bool:
+        with self._engine.connect() as connection:
+            status = connection.execute(text("SELECT status FROM account_incarnations WHERE id = CAST(:i AS uuid)"),
+                                        {"i": incarnation_id}).scalar_one_or_none()
+        return status == "deleted"
+
     def delete(self, key: str) -> None:
-        if not key.startswith((OP_PREFIX, INVOICE_PREFIX)):
+        if not key.startswith((OP_PREFIX, INVOICE_PREFIX, FENCE_PREFIX)):
             raise ValueError("only billing operation keys are deleted here")
         with self._engine.begin() as connection:
             connection.execute(text("DELETE FROM platform_settings WHERE key = :k"), {"k": key})

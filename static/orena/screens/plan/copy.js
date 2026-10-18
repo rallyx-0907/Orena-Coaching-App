@@ -22,7 +22,7 @@ const KEYS = [
   'resetsDaily', 'resetsIn', 'resetsOn', 'amountMinutes', 'exhausted_writing_review', 'exhausted_orena_message', 'exhausted_pronunciation_audio', 'exhausted_media_import', 'exhausted_generic', 'reasonLanguageTitle', 'reasonLanguageNone', 'reasonThisPlan', 'reasonHave', 'reasonUpgradeTo', 'reasonUpgradeAny', 'reasonNoUpgrade', 'reasonNothingChanged', 'recordAgain',
   'sheetUpgrade', 'sheetSwitch', 'rowPlan', 'rowPrice', 'dueToday', 'billingNote', 'sheetBack', 'sheetConfirm',
   // PR-MON-9: buying and managing a plan through Polar
-  'continuePayment', 'rowStarts', 'startsToday', 'rowPayment', 'cardOnFile', 'chargedNow', 'chargedNowValue', 'processingPayment', 'activatingPlan', 'confirmingChange', 'doneUpgradeTitle', 'doneUpgradeText', 'fallbackTitle', 'fallbackText', 'done', 'declined', 'genericError', 'changeUnavailable', 'changeUnavailableCta', 'cancelTitle', 'cancelNote', 'cancelKept', 'cancelKeptValue', 'cancelWhy', 'reason_too_expensive', 'reason_not_using', 'reason_missing_feature', 'reason_taking_a_break', 'keepPlan', 'cancelPlan', 'cancelling', 'cancelDoneTitle', 'cancelDoneText', 'bannerCancelling', 'resumePlan', 'resumedToast', 'pillCancels', 'renewsNote', 'renewsNoteCard', 'priceLineMonthly', 'priceLineYearly', 'cardLabel', 'cardExpires', 'billingEmail', 'downloadInvoice', 'preparingInvoice', 'invoiceLater', 'invoice_paid', 'invoice_refunded', 'invoice_pending', 'invoiceLine', 'addedOnSubscribe', 'portalError', 'ctaSwitchCycle_yearly', 'ctaSwitchCycle_monthly', 'loseLine', 'allSet',
+  'continuePayment', 'rowStarts', 'startsToday', 'rowPayment', 'cardOnFile', 'chargedNow', 'chargedNowValue', 'processingPayment', 'activatingPlan', 'confirmingChange', 'doneUpgradeTitle', 'doneUpgradeText', 'fallbackTitle', 'fallbackText', 'done', 'declined', 'genericError', 'changeUnavailable', 'changeUnavailableCta', 'cancelTitle', 'cancelNote', 'cancelKept', 'cancelKeptValue', 'cancelWhy', 'reason_too_expensive', 'reason_not_using', 'reason_missing_feature', 'reason_taking_a_break', 'keepPlan', 'cancelPlan', 'cancelling', 'cancelDoneTitle', 'cancelDoneText', 'bannerCancelling', 'resumePlan', 'resumedToast', 'pillCancels', 'renewsNote', 'renewsNoteCard', 'priceLineMonthly', 'priceLineYearly', 'cardLabel', 'cardExpires', 'billingEmail', 'downloadInvoice', 'preparingInvoice', 'invoiceLater', 'invoice_paid', 'invoice_refunded', 'invoice_pending', 'invoiceLine', 'addedOnSubscribe', 'portalError', 'ctaSwitchCycle_yearly', 'ctaSwitchCycle_monthly', 'loseLine', 'allSet', 'cancelPendingTitle', 'cancelPendingText', 'resumePendingToast',
 ];
 
 export const t = defineCopy('plan', {
@@ -106,6 +106,8 @@ export const t = defineCopy('plan', {
     ctaSwitchCycle_monthly: 'Switch to monthly',
     loseLine: '{from} → {to}',
     allSet: 'All set',
+    cancelPendingTitle: 'Cancellation requested', cancelPendingText: 'Polar has your request. Your plan page will update automatically.',
+    resumePendingToast: 'Your plan will update in a moment.',
   },
   vi: {
     title: 'Gói & mức dùng', seePlans: 'Xem tất cả gói', currentPlan: 'Gói hiện tại', changePlan: 'Đổi gói', upgrade: 'Nâng cấp', noCharge: 'Không tính phí',
@@ -186,6 +188,8 @@ export const t = defineCopy('plan', {
     ctaSwitchCycle_monthly: 'Chuyển sang theo tháng',
     loseLine: '{from} → {to}',
     allSet: 'Hoàn tất',
+    cancelPendingTitle: 'Đã gửi yêu cầu huỷ', cancelPendingText: 'Polar đã nhận yêu cầu của bạn. Trang gói sẽ tự cập nhật.',
+    resumePendingToast: 'Gói của bạn sẽ được cập nhật trong giây lát.',
   },
   zh: {
     title: '套餐与用量', seePlans: '查看全部套餐', currentPlan: '当前套餐', changePlan: '更换套餐', upgrade: '升级', noCharge: '免费',
@@ -266,5 +270,7 @@ export const t = defineCopy('plan', {
     ctaSwitchCycle_monthly: '切换为按月',
     loseLine: '{from} → {to}',
     allSet: '已完成',
+    cancelPendingTitle: '已提交取消请求', cancelPendingText: 'Polar 已收到你的请求。套餐页面会自动更新。',
+    resumePendingToast: '你的套餐将很快更新。',
   },
 });

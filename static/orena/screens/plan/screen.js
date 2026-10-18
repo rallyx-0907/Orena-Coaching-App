@@ -243,12 +243,15 @@ export default async function plan(element, ctx) {
         answer = await api.billingOperation(operation);
       }
       if (answer?.state !== 'done') throw new Error('resume_not_done');
-      for (let tries = 0; tries < 30; tries += 1) {
+      let confirmed = false;
+      for (let tries = 0; tries < 30 && !confirmed; tries += 1) {
         const view = await api.billingSubscription().catch(() => null);
-        if (view && view.cancel_at_period_end === false) break;
-        await wait(2000);
+        confirmed = Boolean(view && view.cancel_at_period_end === false);
+        if (!confirmed) await wait(2000);
       }
-      toast(t('resumedToast', { plan: current ? planName(current) : '' }));
+      // Review P2: "resumed" only once the record shows it; otherwise the neutral sentence.
+      toast(confirmed ? t('resumedToast', { plan: current ? planName(current) : '' }) : t('resumePendingToast'),
+        { iconName: confirmed ? 'check' : 'clock' });
       reload();
     } catch {
       button.disabled = false;

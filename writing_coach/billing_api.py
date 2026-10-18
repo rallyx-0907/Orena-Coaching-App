@@ -279,15 +279,27 @@ def billing_subscription() -> dict[str, Any]:
     return _subscription_call(lambda: subscriptions.view(incarnation))
 
 
+def _plans_open() -> None:
+    """Review P1-3 of 4a3b0438: an in-app plan change charges like a sale, so it closes with sales - the runtime's
+    readiness (BILLING_NEW_SALES=off pauses it) and the Plans capability (price integrity, the Polar-side price,
+    critical reconciliation). Cancel, resume, invoices, the portal and webhooks stay open."""
+
+    if not _billing_ready() or not _capability_ready("plans"):
+        raise orena_http_error(503, "billing_not_ready", "Plan changes are not open right now. Try again later.",
+                               retryable=True)
+
+
 @router.post("/api/billing/subscription/change/preview")
 def billing_change_preview(payload: PreviewIn) -> dict[str, Any]:
     subscriptions, incarnation = _subscriber()
+    _plans_open()
     return _subscription_call(lambda: subscriptions.preview(incarnation, payload.price))
 
 
 @router.post("/api/billing/subscription/change")
 def billing_change(payload: ChangeIn) -> Any:
     subscriptions, incarnation = _subscriber()
+    _plans_open()
     operation = _operation_id(payload.operation_id)
     return _subscription_call(lambda: subscriptions.change(incarnation, payload.price, operation), accepted=True)
 

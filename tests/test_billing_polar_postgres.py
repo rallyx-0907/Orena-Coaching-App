@@ -224,3 +224,38 @@ def test_the_operation_journal_sends_at_most_one_patch_under_real_cas_and_thread
     with pytest.raises(ValueError):
         index.delete("billing.sepay.feed_cursor")   # never another module's key
     assert world.settings.get_setting("billing.sepay.feed_cursor") is not None
+
+
+@pytest.mark.parametrize("second", ["change", "cancel"])
+def test_two_different_operations_on_one_subscription_send_one_patch_under_real_cas(world, second):
+    """PR-MON-9 review P1-1 of 4a3b0438 on PostgreSQL: the per-subscription fence - an upgrade racing another upgrade
+    (or a cancel) under different operation ids sends exactly one PATCH; the other is refused, never sent."""
+
+    import threading
+
+    from tests.test_billing_polar_subscription import Commerce, Polar, subs
+    from writing_coach.billing.polar_subscription import SubscriptionRefused
+
+    polar = Polar()
+    workers = [subs(polar, Commerce(), settings=world.settings)[0] for _ in range(6)]
+    barrier = threading.Barrier(len(workers))
+    refused = []
+
+    def race(index, worker):
+        barrier.wait()
+        operation = f"6f1c1a2e-0000-4000-8000-{index:012d}"
+        try:
+            if second == "cancel" and index % 2:
+                worker.cancel("inc-1", None, operation)
+            else:
+                worker.change("inc-1", "pro:month:polar" if index % 3 else "pro:year:polar", operation)
+        except SubscriptionRefused as error:
+            refused.append(error.code)
+
+    threads = [threading.Thread(target=race, args=(i, w)) for i, w in enumerate(workers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(polar.patches) == 1, polar.patches
+    assert set(refused) <= {"operation_in_progress", "no_change", "cancelling", "not_cancellable"}

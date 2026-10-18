@@ -237,9 +237,11 @@ export function openBillingSheet({ target, current, cycle = 'monthly', subscript
     try {
       const answer = await api.billingCancel({ operation_id: operation, reason: state.reason });
       if ((await settle(operation, answer)) !== 'done') { go({ step: 'form', error: t('genericError') }); return; }
-      await until((view) => view && view.cancel_at_period_end === true);
-      const date = subscription.renewsAt ? formatDate(subscription.renewsAt, locale()) : '';
-      done(t('cancelDoneTitle'), t('cancelDoneText', { plan: planName(current), date }));
+      // Review P2: success copy only once the webhook-fed record shows it; otherwise a neutral, true sentence.
+      if (await until((view) => view && view.cancel_at_period_end === true)) {
+        const date = subscription.renewsAt ? formatDate(subscription.renewsAt, locale()) : '';
+        done(t('cancelDoneTitle'), t('cancelDoneText', { plan: planName(current), date }));
+      } else done(t('cancelPendingTitle'), t('cancelPendingText'));
     } catch (error) {
       go({ step: 'form', error: failure(error) });
     }
