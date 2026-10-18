@@ -7345,7 +7345,7 @@ Consequences. The contract text is pinned equal to the code constant, so this PR
 
 ## D-224 - A media batch Groq cannot take goes to the platform AI router; media Groq reads the Admin-stored credential (2026-10-18)
 
-Status: PROPOSED (the owner accepts or amends it; no agent may mark it accepted). No schema or migration change: the two capabilities are rows of the existing `platform_settings` key-value store, opt-in like `word_translation` (D-195), and absent until the operator saves one in Admin. No new provider and no new credential kind. The spend caps, batch sizing, pacing budget and correction eligibility are unchanged.
+Status: ACCEPTED (owner wrote "D-224: ACCEPTED" on 2026-10-18, after an independent review APPROVE on PR #276 and green CI). No schema or migration change: the two capabilities are rows of the existing `platform_settings` key-value store, opt-in like `word_translation` (D-195), and absent until the operator saves one in Admin. No new provider and no new credential kind. The spend caps, batch sizing, pacing budget and correction eligibility are unchanged.
 
 Owner intent, 2026-10-18: a background process must not be blocked by one provider's limits. Groq is on its free tier with output tokens per minute capped and its pay-per-token tier paused; the owner will add OpenAI, DeepSeek and OpenRouter keys in Admin; Gemini (paid, key configured) is a product model.
 
