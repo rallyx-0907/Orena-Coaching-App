@@ -155,7 +155,7 @@ python scripts/validate_architecture.py
 ### Step 1: M2 promotion PR (once 0 is granted)
 
 1. `git mv` the migration into `versions/` and re-parent it.
-2. Add ORM models with SQLite parity. CI uses `Base.metadata.create_all`, so partial indexes and JSONB need SQLite-compatible fallbacks.
+2. ~~Add ORM models with SQLite parity.~~ As built (PR M2.1, 2026-10-18): no ORM models. The tables follow the 0005 incarnation-keyed pattern (migration + raw-SQL repository + PostgreSQL contract test), because `account_incarnations` has no ORM model and one with that FK would break CI's `create_all` (`ORENA_MEMORY.md` §9, "As built at M2 promotion").
 3. Add the tables to `deletion_enumeration.py` and its test.
 4. Build a PostgreSQL `MemoryRepository` under `writing_coach/persistence/` that passes **the same contract tests** as `InMemoryMemoryStore`. Parametrise `tests/test_agent_memory_store.py` over both implementations.
    - Each method must be one transaction.

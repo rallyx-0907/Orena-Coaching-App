@@ -318,6 +318,23 @@ def test_a_write_on_an_incarnation_deleted_in_flight_writes_nothing(pg):
     assert pg.store.state(pg.a).version == version
 
 
+def test_reads_fail_closed_once_the_incarnation_is_deleted(pg):
+    """Review of M2.1 P2-2: a scope resolved before account deletion reads nothing after it."""
+    from sqlalchemy import text
+
+    add(pg.store, pg.a, "đi làm")
+    pg.continuity(pg.a, "interest", "sport")
+    pg.store.delete_item(pg.a, next(i for i in pg.store.items(pg.a, "zh", T0) if i.code == "sport").id, T0)
+    with pg.engine.begin() as conn:
+        conn.execute(text("UPDATE account_incarnations SET status = 'deleted', deleted_at = now() WHERE id = :i"),
+                     {"i": pg.a.incarnation_id})  # fmt: skip
+    assert pg.store.items(pg.a, "zh", T0) == []
+    snap = pg.store.snapshot(pg.a, "zh", T0, 2)
+    assert snap.items == () and not snap.state.enabled
+    assert memory_section(pg.store, pg.a, "zh", T0) is None
+    assert not pg.store.suppressed(pg.a, "zh", CONTINUITY, "interest", "sport", T0)
+
+
 def test_the_sweep_deletes_only_expired_rows_in_bounded_batches(pg):
     s, a = pg.store, pg.a
     keep = add(s, a, "đi làm")  # explicit: no expiry

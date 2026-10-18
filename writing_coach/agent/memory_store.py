@@ -20,6 +20,10 @@ semantics the proposal fixes can be tested now and the PostgreSQL repository can
   final as a stored transition that bumps the version (a later checkpoint is a no-op); the per-turn `probe` settles
   what came due, so an open conversation sees it; nothing is finalised while memory is OFF.
 
+The PostgreSQL repository (writing_coach/persistence/memory_repository.py) differs from the fake only where the
+database knows more: it raises `MemoryUnavailable` on a write (and reads OFF) when the incarnation is no longer active,
+needs uuid scope ids, and enforces the schema's CHECKs (kind, 200-character text); callers validate before writing.
+
 Pinning (continuity to explicit) is not in this port yet: rev 4.1 §3.4 makes the explicit item the learner's own words
 with the slot and code kept, which needs the M3 representation; it comes with it.
 """

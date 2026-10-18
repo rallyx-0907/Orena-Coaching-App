@@ -658,6 +658,15 @@ per its README, behind the files already waiting there), with in the same PR: th
 migration file, PostgreSQL up/down/up rehearsal, human authorisation, apply before code (startup refuses a schema below
 head). `downgrade()` drops learner data and is for rehearsal only.
 
+**As built at M2 promotion (2026-10-18, PR M2.1): no ORM models.** The memory tables are keyed by
+`account_incarnations`, which has no ORM model, like every incarnation-keyed table of 0005 (`works`,
+`language_provenance`, ...): an ORM model with that foreign key would break CI's `Base.metadata.create_all`. So they
+follow the 0005 pattern instead of "the ORM models with SQLite parity" above: the migration, a raw-SQL repository
+(`writing_coach/persistence/memory_repository.py`), and a contract test run against the fake and PostgreSQL
+(`tests/test_agent_memory_contract.py`, skipped in CI without `ORENA_TEST_POSTGRES_URL`). Do not add ORM models for
+them. M3's revision follows the same pattern. Independent review of the departure: Delegated Architecture Reviewer,
+`docs/reviews/architecture/ORENA_MEMORY_0035_REVIEW_2026-10-18.md`.
+
 ## 10. Owner decisions
 
 | # | Decision | State |

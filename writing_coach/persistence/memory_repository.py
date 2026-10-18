@@ -11,12 +11,17 @@ SQL on an `Engine`, PostgreSQL only.
 - **Scope.** Every statement filters `incarnation_id` and `user_id`. A write whose incarnation is not active (deleted
   while the request was in flight) raises `MemoryUnavailable` and writes nothing. Resolving the scope from the active
   incarnation is the caller's job (`memory_scope`); there is no user-only fallback.
+- **Lock order.** The incarnation row (`FOR SHARE`), then the learner's state row (`FOR UPDATE`), then items. The
+  D-055 deletion runtime, when it is built, must lock the incarnation before it touches memory rows; the reverse
+  order deadlocks with a writer. The expiry sweep takes no learner lock and skips locked rows.
 - **Reads.** `snapshot` reads the state and the items in one `REPEATABLE READ` transaction, so a pack holds exactly
   the items of the version it carries. Expiry is filtered on read; `sweep_expired` deletes in bounded batches and is
   never called at startup (D-002).
 - **Keys.** `value_key` is the HMAC of the normalised slot and value (the code when there is one, else the text)
   under the current key version; dedupe and suppression match a row under its own stored version
   (`MemoryKeys.matches`), so rows written before a rotation still dedupe and suppress.
+- **Reads fail closed.** Every read also requires the incarnation to be active: after an account deletion a scope
+  resolved earlier reads OFF, no items and no suppression.
 - **Session summaries are M3** (their own revision): `summaries` is empty, `snapshot` carries none, a bulk delete of
   `sessions` removes nothing, and `checkpoint`, `finalise` and `delete_summary` raise until that table exists.
 """
@@ -25,7 +30,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import Any
 
@@ -55,6 +61,9 @@ _COLUMNS = ("id, language_code, class, kind, slot, text, code, source, key_versi
             " provenance")  # fmt: skip
 _LIVE = "(expires_at IS NULL OR expires_at > :now)"
 _SCOPE = "incarnation_id = :i AND user_id = :u"
+# Reads fail closed too: a scope resolved before the account was deleted reads nothing after (review of M2.1 P2-2).
+_ACTIVE = ("EXISTS (SELECT 1 FROM account_incarnations ai WHERE ai.id = :i AND ai.user_id = :u"
+           " AND ai.status = 'active')")
 
 
 def _params(scope: MemoryScope, **more: Any) -> dict[str, Any]:
@@ -85,13 +94,27 @@ class PostgresMemoryRepository:
         self._engine = engine
         self._keys = keys
 
+    @contextmanager
+    def _write(self) -> Iterator[Connection]:
+        """A write transaction at READ COMMITTED, pinned rather than left to the engine default: the first-write
+        serialisation (ON CONFLICT DO NOTHING, then FOR UPDATE on a fresh snapshot) depends on it (review P2-4)."""
+
+        with self._engine.connect().execution_options(isolation_level="READ COMMITTED") as conn, conn.begin():
+            yield conn
+
     # --- helpers (inside a transaction) --------------------------------------------------------------------------
 
     @staticmethod
     def _state(conn: Connection, scope: MemoryScope) -> MemoryState:
-        row = conn.execute(sql(f"SELECT enabled, version FROM learner_memory_state WHERE {_SCOPE}"),
+        """The switch and version; an incarnation that is not active reads as OFF (its version kept, so a pack built
+        before the deletion is rebuilt)."""
+
+        row = conn.execute(sql(f"SELECT enabled, version, {_ACTIVE} FROM learner_memory_state WHERE {_SCOPE}"),
                            _params(scope)).first()  # fmt: skip
-        return MemoryState() if row is None else MemoryState(enabled=bool(row[0]), version=int(row[1]))
+        if row is None:
+            active = conn.execute(sql(f"SELECT {_ACTIVE}"), _params(scope)).scalar()
+            return MemoryState() if active else MemoryState(enabled=False)
+        return MemoryState(enabled=bool(row[0]) and bool(row[2]), version=int(row[1]))
 
     @staticmethod
     def _lock(conn: Connection, scope: MemoryScope, now: datetime) -> MemoryState:
@@ -119,7 +142,7 @@ class PostgresMemoryRepository:
 
     @staticmethod
     def _rows(conn: Connection, scope: MemoryScope, where: str, now: datetime, **more: Any) -> list[MemoryItem]:
-        rows = conn.execute(sql(f"SELECT {_COLUMNS} FROM learner_memories WHERE {_SCOPE} AND {_LIVE} AND {where}"
+        rows = conn.execute(sql(f"SELECT {_COLUMNS} FROM learner_memories WHERE {_SCOPE} AND {_LIVE} AND {_ACTIVE} AND {where}"
                                  " ORDER BY class, kind, created_at, id"), _params(scope, now=now, **more))
         return [_item(row) for row in rows.mappings()]
 
@@ -169,7 +192,7 @@ class PostgresMemoryRepository:
                    now: datetime) -> bool:  # fmt: skip
         with self._engine.connect() as conn:
             rows = conn.execute(sql(
-                f"SELECT key_version, value_key FROM learner_memory_suppressions WHERE {_SCOPE}"
+                f"SELECT key_version, value_key FROM learner_memory_suppressions WHERE {_SCOPE} AND {_ACTIVE}"
                 " AND language_code = :lang AND class = :cls AND slot = :slot AND expires_at > :now"),
                 _params(scope, lang=language, cls=cls, slot=slot or "", now=now)).all()  # fmt: skip
         return any(self._keys.matches(slot or "", value, int(kv), vk) for kv, vk in rows)
@@ -187,13 +210,13 @@ class PostgresMemoryRepository:
 
     def set_enabled(self, scope: MemoryScope, enabled: bool, now: datetime | None = None) -> MemoryState:
         now = now or datetime.now(UTC)
-        with self._engine.begin() as conn:
+        with self._write() as conn:
             self._lock(conn, scope, now)
             return self._bump(conn, scope, now, enabled=bool(enabled))
 
     def add_explicit(self, scope: MemoryScope, *, language: str, kind: str, text: str, slot: str | None,
                      source: str, now: datetime) -> MemoryItem:  # fmt: skip
-        with self._engine.begin() as conn:
+        with self._write() as conn:
             if not self._lock(conn, scope, now).enabled:
                 raise MemoryOff
             live = self._rows(conn, scope, "language_code = :lang AND class = :cls", now, lang=language, cls=EXPLICIT)
@@ -221,7 +244,7 @@ class PostgresMemoryRepository:
         ident = _uuid(item_id)
         if ident is None:
             return False
-        with self._engine.begin() as conn:  # allowed while memory is OFF (§6)
+        with self._write() as conn:  # allowed while memory is OFF (§6)
             self._lock(conn, scope, now)
             row = conn.execute(sql(f"SELECT {_COLUMNS} FROM learner_memories WHERE id = :id AND {_SCOPE} FOR UPDATE"),
                                _params(scope, id=ident)).mappings().first()  # fmt: skip
@@ -236,7 +259,7 @@ class PostgresMemoryRepository:
 
         if what not in ("items", "sessions", "all"):
             raise ValueError(what)
-        with self._engine.begin() as conn:
+        with self._write() as conn:
             self._lock(conn, scope, now)
             removed = 0
             if what in ("items", "all"):
@@ -252,13 +275,14 @@ class PostgresMemoryRepository:
         """Delete up to `batch` expired items and expired suppression keys. Expired rows are already invisible to
         every read, so the version does not move. Called by an operator job, never at startup."""
 
-        with self._engine.begin() as conn:
+        with self._write() as conn:
             items = conn.execute(sql(
                 "DELETE FROM learner_memories WHERE id IN (SELECT id FROM learner_memories"
-                " WHERE expires_at IS NOT NULL AND expires_at <= :now LIMIT :n)"), {"now": now, "n": batch}).rowcount
+                " WHERE expires_at IS NOT NULL AND expires_at <= :now LIMIT :n FOR UPDATE SKIP LOCKED)"),
+                {"now": now, "n": batch}).rowcount  # fmt: skip
             keys = conn.execute(sql(
                 "DELETE FROM learner_memory_suppressions WHERE id IN (SELECT id FROM learner_memory_suppressions"
-                " WHERE expires_at <= :now LIMIT :n)"), {"now": now, "n": batch}).rowcount
+                " WHERE expires_at <= :now LIMIT :n FOR UPDATE SKIP LOCKED)"), {"now": now, "n": batch}).rowcount
         return int(items or 0) + int(keys or 0)
 
     # --- M3 ------------------------------------------------------------------------------------------------------
