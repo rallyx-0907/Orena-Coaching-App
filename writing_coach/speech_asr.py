@@ -260,7 +260,9 @@ class GroqSpeechAsrProvider:
         timeout_seconds: float = 120.0,
         max_bytes: int = 24 * 1024 * 1024,
         session: requests.Session | None = None,
+        key_source: Callable[[], str] | None = None,
     ) -> None:
+        self._key_source = key_source
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("Groq API key is required.")
         # The key goes into a header: printable ASCII with no space, refused otherwise by a message
@@ -274,6 +276,18 @@ class GroqSpeechAsrProvider:
         self._timeout_seconds = float(timeout_seconds)
         self._max_bytes = int(max_bytes)
         self._session = session or requests.Session()
+
+    def _bearer(self) -> str:
+        """The key of this request: `key_source` (the Admin-stored key first, then the environment: D-224) when it
+        answers a usable one, else the key the provider was built with. Read per request, never logged."""
+        if self._key_source is not None:
+            try:
+                key = str(self._key_source() or "").strip()
+            except Exception:  # noqa: BLE001 - an unreadable store keeps the built-in key
+                key = ""
+            if key and re.fullmatch(r"[!-~]+", key):
+                return key
+        return self._api_key
 
     @property
     def model(self) -> str:
@@ -316,12 +330,21 @@ class GroqSpeechAsrProvider:
         return result
 
     @classmethod
-    def from_env(cls) -> GroqSpeechAsrProvider | None:
+    def from_env(cls, key_source: Callable[[], str] | None = None) -> GroqSpeechAsrProvider | None:
+        """Built when the process has a Groq key at start: `GROQ_API_KEY`, else (with `key_source`) the one saved in
+        Admin. `key_source` is then read at every request, so the Admin key wins and a rotated key needs no restart; a key
+        saved only after a start with none needs one (the provider does not exist yet)."""
         api_key = os.getenv("GROQ_API_KEY", "").strip()
+        if key_source is not None:
+            try:
+                api_key = str(key_source() or "").strip() or api_key
+            except Exception:  # noqa: BLE001
+                pass
         if not api_key:
             return None
         return cls(
             api_key,
+            key_source=key_source,
             model=os.getenv("GROQ_ASR_MODEL", "whisper-large-v3-turbo"),
             timeout_seconds=float(os.getenv("GROQ_ASR_TIMEOUT_SECONDS", "120")),
             max_bytes=int(os.getenv("GROQ_ASR_MAX_BYTES", str(24 * 1024 * 1024))),
@@ -359,7 +382,7 @@ class GroqSpeechAsrProvider:
             mark_sent()   # the transport boundary: from here the request is a billable attempt
             response = self._session.post(
                 "https://api.groq.com/openai/v1/audio/transcriptions",
-                headers={"Authorization": f"Bearer {self._api_key}"},
+                headers={"Authorization": f"Bearer {self._bearer()}"},
                 files={
                     "file": (
                         filename or "recording.webm",
@@ -425,7 +448,7 @@ class GroqSpeechAsrProvider:
             mark_sent()   # the transport boundary: from here the request is a billable attempt
             response = self._session.post(
                 "https://api.groq.com/openai/v1/audio/transcriptions",
-                headers={"Authorization": f"Bearer {self._api_key}"},
+                headers={"Authorization": f"Bearer {self._bearer()}"},
                 files={"url": (None, audio_url)},
                 data=fields,
                 timeout=self._timeout_seconds,

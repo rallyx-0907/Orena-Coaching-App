@@ -16,6 +16,12 @@ CI green); live cases run: ZH applied, EN partial on the 1000 output tokens a mi
 unverified; no runtime deployment or publication. Trial artifacts report EN19/ZH18 usable; sitting6
 stopped at HTTPS egress preflight with zero new imports. See `docs/reviews/MEDIA_ASR_CONTEXT_CHECKPOINT_2026-10-17.md`.
 
+Media AI fallback (2026-10-18, UI lane, `claude/media-ai-fallback`, PROPOSED D-224): IMPLEMENTING. A media translation or
+correction batch Groq cannot take (long rate limit, spent quota, unshrinkable request, 5xx, no key) goes to the platform
+router capabilities `media_translation` / `media_transcript_correction`, chosen in Admin; Groq stays first, the spend check
+runs before every attempt, and the serving provider is recorded per item. Media Groq reads the Admin-stored key first.
+Dormant until the operator configures a capability; ASR fallback is a later PR. Local tests only; no live provider call.
+
 Current execution program: `docs/project/ROADMAP.md` (D-110–D-113);
 `PRODUCT_COMPLETION_PLAN.md` supplies audit/slice detail and `CURRENT_HANDOFF.md`
 the active position. Historical R21 and separate skill-release sequencing are superseded.

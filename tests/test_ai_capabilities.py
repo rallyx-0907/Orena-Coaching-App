@@ -41,6 +41,8 @@ EXPECTED_KEYS = {
     "conversational_speech",
     "text_to_speech",
     "word_translation",
+    "media_translation",
+    "media_transcript_correction",
 }
 
 
