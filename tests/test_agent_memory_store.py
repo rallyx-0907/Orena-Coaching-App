@@ -369,7 +369,7 @@ def test_the_fake_exposes_only_the_port():
 
     port = {name for name in dir(MemoryRepository) if not name.startswith("_")}
     fake = {name for name in dir(InMemoryMemoryStore) if not name.startswith("_")}
-    assert fake - port == {"versions_in_use"}  # pin is deferred to M3 (§3.4): not in the port, not in the fake
+    assert fake == port  # pin is deferred to M3 (§3.4): not in the port, not in the fake
     assert "pin" not in fake
 
 

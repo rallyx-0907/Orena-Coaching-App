@@ -52,6 +52,11 @@ INCARNATION_KEYED_TABLES = (
     "mutation_receipts",
     "change_records",
     "language_provenance",
+    # Orena Memory (0035, ORENA_MEMORY.md §4.1, §4.4): items, the memory switch and version, and the suppression keys
+    # a deleted item leaves. The suppressions hold no text and are deleted with the rest; they are never exported.
+    "learner_memories",
+    "learner_memory_suppressions",
+    "learner_memory_state",
 )
 
 # File-based stores that hold learner-owned content outside PostgreSQL. A SQL deletion never reaches them, so the

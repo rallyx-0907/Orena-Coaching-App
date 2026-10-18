@@ -348,20 +348,23 @@ def test_the_promoted_chain_upgrades_and_downgrades_through_alembic(gate):
     cfg.set_main_option("path_separator", "os")
     cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False).replace("%", "%%"))
     script = ScriptDirectory.from_config(cfg)
-    assert script.get_heads() == ["20261015_0033"]
+    # The Billing chain is exact; later revisions (0035 Orena Memory) may sit above it, so the proof upgrades to
+    # 0033 by name rather than to "head".
+    assert len(script.get_heads()) == 1
+    assert "20261015_0033" in {rev.revision for rev in script.iterate_revisions("heads", "base")}
     assert [script.get_revision(r).down_revision for r in ("20261005_0027", "20261014_0031", "20261014_0032",
                                                          "20261015_0033")] == [
         "20261005_0026", "20261005_0027", "20261014_0031", "20261014_0032"]
     gate.sql(f'CREATE SCHEMA "{schema}"', engine=gate.admin)
     try:
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, "20261015_0033")
         version = "SELECT version_num FROM alembic_version"
         assert gate.sql(version, engine=engine)[0]["version_num"] == "20261015_0033"
         assert gate.sql("SELECT to_regclass('credit_ledger') AS t", engine=engine)[0]["t"] is not None
         command.downgrade(cfg, "20261005_0026")
         assert gate.sql(version, engine=engine)[0]["version_num"] == "20261005_0026"
         assert gate.sql("SELECT to_regclass('billing_orders') AS t", engine=engine)[0]["t"] is None
-        command.upgrade(cfg, "head")
+        command.upgrade(cfg, "20261015_0033")
         assert gate.sql(version, engine=engine)[0]["version_num"] == "20261015_0033"
     finally:
         engine.dispose()

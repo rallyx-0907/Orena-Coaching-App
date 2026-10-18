@@ -14,7 +14,8 @@ D4_TOUCHED = {
     "library_items": ("place", "place_at"),
     "essay_review_history": None,
 }
-INCARNATION_TABLES = {"works", "work_turns", "mutation_receipts", "change_records", "language_provenance"}
+INCARNATION_TABLES = {"works", "work_turns", "mutation_receipts", "change_records", "language_provenance",
+                      "learner_memories", "learner_memory_suppressions", "learner_memory_state"}  # + 0035 (Orena Memory)
 
 
 def test_every_d4_column_is_a_real_orm_column_and_the_users_ones_are_reset_not_deleted():
