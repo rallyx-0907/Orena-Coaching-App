@@ -1,6 +1,7 @@
 # Orena Memory M0: before/after benchmark
 
-Status: offline part run 2026-10-17 (local execution); **live part not run** - no provider key in this environment.
+Status: offline part run 2026-10-17 (local execution); live part run 2026-10-17 by the UI-lane coordinator session at
+the owner's request (local execution on :8021, issue #256), reviewed below. Decision: `legacy` stays the default.
 Proposal: `ORENA_MEMORY.md` §5.4, §7.2, §9 (M0). Script: `scripts/agent_prompt_cache_benchmark.py`.
 
 ## What M0 changed
@@ -88,26 +89,66 @@ instruction 2,809, context (both parts) 230, conversation 479, other system mess
 **No cost or latency claim follows from this.** Whether and how much a provider caches - its minimum prefix, its
 block size, its hit rate - is only measurable live.
 
-## Live run (not done here)
+## Live run (2026-10-17, Gemini 3.5 Flash-Lite, owner-approved)
 
-Needs the owner's approval, a cost cap and a key for one provider (no key is present in this environment). The same
-conversations, one model for every layout, measured per round: cached and uncached input, output, rounds, tool calls
-(tool-selection parity between layouts), first-event and full-response latency, cost at the prices given:
+Command as below, `--repeat 2 --turns 6`, spent $0.115 of the $0.30 cap. Full JSON and the review: issue #256.
+
+| layout (EN+ZH, 2 repeats) | rounds | input | cached | hit | USD | USD / round |
+|---|---|---|---|---|---|---|
+| legacy | 39 | 177,178 | 69,049 | 0.390 | 0.0406 | 0.00104 |
+| stable | 39 | 180,327 | 76,942 | 0.427 | 0.0382 | 0.00098 |
+| stable+tools | 35 | 166,131 | 65,113 | 0.392 | 0.0368 | 0.00105 |
+
+- **Gemini's implicit cache serves a fixed ~1,973 tokens a round**, in every run and every layout (on every round,
+  or every round but a cold first one), about 42% of the ~4.7k input tokens a round - against an offline upper bound
+  of 83-87%. Through the OpenAI-compatible endpoint the ordering after that block changes nothing that is cached.
+- The hit-ratio difference is a cold-start artefact: `legacy` always ran first in each repeat. Cost per round is the
+  same within noise (about $0.0010; about $0.0017 per learner turn at ~1.6 rounds).
+- `stable+tools` had a lower first-event time but always ran last (order and load are confounded); for Gemini the
+  last round sends no tools anyway (`tool_choice` goes to OpenAI, DeepSeek and Groq only).
+- Tool selection: the same tool families in every layout; n=2 and seven `get_word_detail` environment errors make
+  smaller differences inconclusive.
+- Answer quality was not measured (the result held no answer text): fixed by A2 below.
+
+**Decision:** keep `AGENT_PROMPT_LAYOUT=legacy` and `AGENT_STABLE_TOOLS=off`. Re-test `stable` on a chat model whose
+cache follows the whole prefix (OpenAI, DeepSeek) in the M5 challenger benchmark. More savings on Gemini need explicit
+context caching (native `cachedContent`, a new adapter: a provider gate) or a smaller fixed prefix (the tool schemas
+are its largest part).
+
+### How it is run
+
+Needs the owner's approval, a cost cap and a key for one provider. The same conversations, one model for every
+layout, measured per round: cached and uncached input, output, rounds, tool calls, first-event and full-response
+latency, cost at the prices given:
 
     python scripts/agent_prompt_cache_benchmark.py --live --provider gemini --model gemini-3.5-flash-lite \
         --approved --cap-usd 0.30 --price-in 0.30 --price-cached 0.03 --price-out 2.50 --repeat 2 --turns 6 \
         --out <a path outside the repository>
 
-Worst case at those prices: 3 layouts x 2 languages x 2 repeats x ~8 rounds x (~5k input + 1k output tokens) is about
-$0.19 before any caching; the cap stops it earlier if the estimate is exceeded.
+### Answer quality with and without the learner pack (A2)
+
+Every turn's learner message and Orena's answer are kept in the result; `--answers-md` writes them side by side for a
+person to read. `--pack both` runs each conversation without and with the M1 learner pack, built from a fixed
+fixture learner per language (`PACK_FIXTURES` in the script: a job-interview learner with recurring tense/aspect
+errors, forgotten words and a flagged word; no database). `--exclude-tools` leaves out tools the environment cannot
+serve. Suggested run (about $0.06 at those prices: 1 layout x 2 pack settings x 2 languages x 2 repeats):
+
+    python scripts/agent_prompt_cache_benchmark.py --live --provider gemini --model gemini-3.5-flash-lite \
+        --approved --cap-usd 0.15 --price-in 0.30 --price-cached 0.03 --price-out 2.50 --repeat 2 --turns 6 \
+        --layouts legacy --pack both --exclude-tools get_word_detail \
+        --out <outside the repository>/pack.json --answers-md <outside the repository>/pack_answers.md
+
+What to read for: answers that use the pack where it helps (the goal, the recurring errors, the forgotten words),
+nothing the pack does not say, no learner data repeated back unprompted, and no change in correctness. The provider
+the run uses must be one the owner has cleared for `learning_profile` data (G8).
 
 ## Gate state
 
 | M0 requirement (§9) | State |
 | --- | --- |
 | Cache-stable layout, fixed tool order, model pin, telemetry | built, tested (hermetic) |
-| Before/after benchmark on the same EN/ZH conversations | offline done (above); live not run |
-| Tool-selection parity | not measurable offline (rounds are scripted); live run needed |
+| Before/after benchmark on the same EN/ZH conversations | offline and live done (above) |
+| Tool-selection parity | live: same tool families; small differences inconclusive at n=2 |
 | No cost claim beyond what was measured | none made |
 
 ## Review

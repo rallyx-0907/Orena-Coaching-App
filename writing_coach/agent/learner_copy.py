@@ -126,6 +126,14 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
              "zh-CN": "{user}想让{self}记住这件事吗？请带声调符号再输入一次。"},
         ),
         # Tapped to keep a note, and the model kept none even when asked again.
+        # The learner asked to change or forget a coach note the current model may not read (G8, owner 2026-10-18):
+        # nothing was changed, said plainly.
+        "notes.unavailable": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "I can't read or change your notes with the model in use right now, so nothing was changed.",
+             "vi": "Với mô hình đang dùng, {self} chưa thể đọc hay sửa ghi chú của {user}, nên chưa có gì thay đổi.",
+             "zh-CN": "{self}现在使用的模型无法读取或修改{user}的笔记，所以没有做任何更改。"},
+        ),
         "notes.not_kept": _entry(
             CopyLayer.SUPPORT,
             {"en": "I haven't kept it yet. Could you tap it again?",
