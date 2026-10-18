@@ -6379,3 +6379,14 @@ This supersedes the earlier entry in the Orena Home gaps ("the coach-notes sheet
 ## Word Quick Sheet: which meaning line comes first (2026-10-18)
 
 The pinned design's `Word Quick Sheet` (`Orena.dc.html`, `qs.meaning` / `qs.vi`, and `qsWC.meaning` / `qsWC.vi` on a saved word) draws the English meaning first (16px) and the Vietnamese meaning second (13px, muted). The app draws the support-language meaning first and the English original second, as the quieter line. Under D-068 (the design's words are sample content) this is defensible, but it is a deviation in order and weight. Left as built; for the human to decide (#199).
+
+## Gate 2 qualifiers: estimated level, estimated score, report link (D-231 proposed, 2026-10-18)
+
+The design draws none of these. Owner decision (via the delegate, 2026-10-18): reuse existing patterns, no new visual. Built: the "est." qualifier after a listening level that is only estimated (the vocabulary card's `level_source` is a provenance name such as "Oxford 5000", not an estimated/reviewed flag, so the qualifier follows the compare screen's "est." word-timing label instead); a muted "Automatic estimate, for reference only." line under the Speak result and the Compare word detail; and a "Report a problem" text link on the AI outputs, opening the existing Feedback screen prefilled.
+
+Gaps for the human or the backend lane:
+1. Reading articles: the learner list and detail send only the effective `level`, so an estimated reading level cannot be marked. Needs `reviewed_level` (or a `level_source`) in the learner payload.
+2. `POST /api/feedback` has no context field. The reference is carried in `text` (`[surface | id | word] `). A structured field is a schema change and a human gate.
+3. Speak summary and the Compare attempt metrics (Accuracy, Fluency) carry no score line; only the result block and the word detail do.
+4. No inline "AI may be wrong" hint exists in the app or the design; only the Terms line. Left to the human.
+5. Orena chat has no report link (Intelligence lane).

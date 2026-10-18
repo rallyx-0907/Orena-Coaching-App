@@ -30,6 +30,7 @@ import { lineKey, listTakes, viewOfTake, bestTake, attemptIdOf } from '../../pro
 import { openMicState, micGate } from '../mic/sheet.js';
 import { showAssessmentRefusal } from '../plan/quota-notice.js';
 import { t } from './copy.js';
+import { reportLink, bindReport } from '../../product/report-problem.js';
 import { tokenStrip, tipFor, detailFor, metricsFor, recorderState, recCaptionKey, micStateFor, attemptOrdinal, ringTone, verdictKey, bandInk, clockLabel, restingWave, liveWave, whenLabel, WAVE_BARS } from './model.js';
 
 /* The frame's play triangle and pause bars are filled shapes (`fill="currentColor"`), not outlines. */
@@ -295,6 +296,8 @@ export default async function mountScriptedPronunciation(element, ctx) {
           ? html`<div class="s-speak-metrics">${metrics.map((m) => html`<div class="s-speak-metric"><div class="s-speak-metric__row"><span>${t(`metric${m.key[0].toUpperCase()}${m.key.slice(1)}`)}</span><b>${m.value ?? '—'}</b></div>${m.value == null ? '' : html`<div class="s-speak-metric__track"><i style="width:${Math.max(0, Math.min(100, m.value))}%;background:${m.ink}"></i></div>`}</div>`)}</div>`
           : ''
       }
+      <div class="s-speak-asr" data-score-note>${t('scoreNote')}</div>
+      ${reportLink({ area: 'speaking', surface: 'speaking-feedback', id: source.lessonId || ctx.params.id, text: source.line?.text })}
       ${recognizedText() ? html`<div class="s-speak-asr">${t('asrLabel')} <i lang="${langAttr(language)}">“${recognizedText()}”</i> ${t('asrNote')}</div>` : ''}
       <div class="s-speak-actions">
         <button type="button" class="s-speak-primary" data-go-compare>${t('compareWithModel')}</button>
@@ -368,6 +371,7 @@ export default async function mountScriptedPronunciation(element, ctx) {
 
   function bind() {
     q('[data-back]').addEventListener('click', () => ctx.back());
+    bindReport(element, (to) => ctx.go(to));
     element.querySelectorAll('[data-play-model]').forEach((btn) => btn.addEventListener('click', playModel));
     q('[data-play-mine]')?.addEventListener('click', playMine);
     q('[data-mic]').addEventListener('click', () => (phase() === TAKE.RECORDING ? recorder.stop() : begin()));

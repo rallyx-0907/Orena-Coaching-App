@@ -700,6 +700,7 @@ export default async function mountCompareWithModel(element, ctx) {
       <div class="s-compare-detail__c">
         <div class="s-compare-detail__label s-compare-detail__label--strong">${t('details')}</div>
         <div class="s-compare-rows">${rows.map((row) => html`<div class="s-compare-row"><span class="s-compare-muted">${row.label}</span><span class="s-compare-row__value" style="color:${row.ink}">${row.kind ? glyph(row.kind) : ''}${row.value}</span></div>`)}</div>
+        <p class="s-compare-note" data-score-note>${t('scoreNote')}</p>
         <div class="s-compare-detail__buttons">
           <button type="button" class="s-compare-ghost" data-fk="hear-word-2" data-hear-word>${raw(icon('volume-2', { size: 18 }))}${t('hearWord')}</button>
           <button type="button" class="s-compare-ghost" data-fk="hear-yours" data-hear-yours ${take.url ? '' : raw('disabled')} title="${take.url ? '' : t('noTakeAudio')}">${raw(icon('mic', { size: 18 }))}${t('hearYours')}</button>
