@@ -70,6 +70,26 @@ The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`,
 | --- | --- | --- | --- |
 | 19 | Plan & usage and Pricing with billing **on** | proven | PR-MON-9 §2 (desktop, phone, EN/VI/ZH, light and dark) |
 | 20 | Plan & usage and Pricing with billing **off** (offers empty, `billing_ready: false`) | tested; browser **open** | `scripts/test_orena_screen_plan.mjs`. Browser check on the pilot build (`:8000`) by the UI lane. |
+| 21 | Prices and limits shown = the approved catalogue (PRE-401) | checked on `main`; **`:8000` needs the next deploy** | see below |
+
+**PRE-401, read 2026-10-19 (read only, no sign-in).** The approved catalogue is
+`writing_coach/product/catalog.py`:
+- prices: D-MON-032, USD Plus 9.99/79.99 and Pro 19.99/159.99;
+- assist limits: D-MON-025;
+- the other meters: catalogue v2.
+
+`:8000` stores no `product.plan_catalog` row in `platform_settings`, so it shows the code's defaults.
+
+| | `main` (this lane's sandbox) | `:8000` (image `orena:main-9bf88666`, built 2026-10-11) |
+| --- | --- | --- |
+| Prices | USD as above | the same numbers |
+| Currency shown | USD in every interface language (`PLAN_CURRENCY`, `screens/plan/model.js`): the amount Polar charges | **dong to a Vietnamese interface** (199,000 ₫ for Plus), dollars otherwise |
+| Messages, reviews, pronunciation, import, languages | Free / Plus / Pro: 20/200/1000, 2/10/50, 5/30/120 min, 15/120/600 min, 1/2/2 | the same |
+| Word, reading and writing assist (per day) | 30/300/1500, 10/100/500, 5/30/100 | **absent** (the build predates D-MON-025) |
+
+Billing is off on `:8000`, so nobody is charged there. Even so, gate 7b must run on a build from `main`. On the
+current `:8000` build, a Vietnamese learner would see a dong price and be charged dollars by Polar. The next `:8000`
+deploy fixes both. Re-read the table after that deploy.
 
 ## 5. Configuration for the pilot host (names only)
 
@@ -122,7 +142,8 @@ funding enforcement.
 The owner approves every write to Polar **production** in one list. Nothing on it has been done.
 
 **Precondition:** R1 is resolved by the 2026-10-19 renewal run (§2-§3). If Polar leaves `modified_at` empty at
-renewal, a code fix lands first, with independent review.
+renewal, a code fix lands first, with independent review. `:8000` runs a build from `main` (item 21: the
+`2026-10-11` build shows dong to Vietnamese learners).
 
 **Polar production (owner).**
 
