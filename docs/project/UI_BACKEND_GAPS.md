@@ -5761,6 +5761,8 @@ environment" (so operations can pin production, as `staging_8000_deploy.ps1` alr
 | `rate.writing_ai_per_10min` / `rate.essay_ai_per_10min` | 30 / 30 | 1-5 000 | - | same |
 | `rate.dictionary_ai_per_10min` / `rate.reading_ai_per_10min` | 120 / 300 | 1-5 000 | - | same |
 | `rate.media_learning_per_hour` | 30 | 1-1 000 | - | same |
+| `rate.signin_start_per_10min` / `rate.signin_callback_per_10min` / `rate.signin_exchange_per_10min` | 120 / 200 / 200 | 1-5 000 | - | `http_security.signin_group` + `client_address` (per client address, app middleware; a shared NAT shares the limit) |
+| analytics `interface_lang` | - | - | - | the account's current setting, not its value at event time (no event-time record without a schema change) |
 | `media.asr_max_seconds` | 5 400 | 60-43 200 s | `MEDIA_ASR_MAX_SECONDS` | `max_asr_seconds()` (pipeline, `media_quota`) |
 | `media.model_clips_enabled` | on | on/off | `MEDIA_MODEL_CLIPS` | `_prepare_model_clips` |
 | `media.model_clip_max_lines` | 500 | 10-5 000 | `MEDIA_MODEL_CLIP_MAX_LINES` | `_prepare_model_clips` |
