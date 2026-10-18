@@ -10,6 +10,7 @@
    and the badge is not drawn (Design Contract rule 40). */
 import { request } from '../infrastructure/api.js';
 import { setMemoryOwner } from '../agent/memory-switch.js';
+import { setConsentState } from '../product/consent.js';
 import { learnerMemory, setPlaceSink } from '../product/memory.js';
 import { learningLanguage } from '../product/languages.js';
 import { chooseInterface, setSupportFromProfile } from '../copy/index.js';
@@ -85,6 +86,7 @@ export async function loadContext(storage = window.localStorage) {
   state.language = learningLanguage(bootstrap?.language?.active);
   state.activeLanguage = String(bootstrap?.language?.active || '').trim();
   state.languageOptions = Array.isArray(bootstrap?.language?.options) ? bootstrap.language.options : [];
+  setConsentState(bootstrap?.consent);
   state.profile = profile;
   state.account = account;
   state.activity = activity;

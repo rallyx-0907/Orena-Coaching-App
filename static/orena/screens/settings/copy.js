@@ -16,7 +16,7 @@ const KEYS = [
   'audioWordLabel', 'audioWordSub', 'sessionLengthLabel', 'sessionLengthSub',
   'dueReviewLabel', 'dueReviewSub', 'writingReviewLabel', 'writingReviewSub',
   'mediaReadyLabel', 'mediaReadySub', 'systemLabel', 'systemSub',
-  'micLabel', 'micSub', 'micDeniedToast', 'memoryLabel', 'memorySub',
+  'micLabel', 'micSub', 'micDeniedToast', 'memoryLabel', 'memorySub', 'voiceLabel', 'voiceSub',
   'learnerAudioLabel', 'learnerAudioSub', 'historyLabel', 'historySub',
   'privacyPolicyLabel', 'termsOfServiceLabel', 'deleteAccountLabel',
   'licencesLabel', 'licencesSub', 'licencesData', 'licencesContent', 'licencesAudio', 'licencesNone', 'licencesLoadError',
@@ -51,6 +51,7 @@ export const t = defineCopy('settings', {
     systemLabel: 'System and account', systemSub: 'Plan, privacy, updates',
 
     memoryLabel: 'Memory', memorySub: 'Let Orena use your content to personalise',
+    voiceLabel: 'Voice recording', voiceSub: 'Allow your voice to be sent to an AI service for feedback',
     micLabel: 'Microphone access', micSub: 'Needed for Speaking and Shadowing',
     micDeniedToast: "Blocked — allow it in your browser's site settings",
     learnerAudioLabel: 'Learner audio',
@@ -90,6 +91,7 @@ export const t = defineCopy('settings', {
     systemLabel: 'Hệ thống và tài khoản', systemSub: 'Gói, quyền riêng tư, cập nhật',
 
     memoryLabel: 'Trí nhớ', memorySub: 'Cho phép Orena dùng nội dung của bạn để cá nhân hoá',
+    voiceLabel: 'Ghi âm giọng nói', voiceSub: 'Cho phép gửi giọng nói của bạn tới dịch vụ AI để nhận xét',
     micLabel: 'Quyền dùng micro', micSub: 'Cần cho phần Nói và Nói theo',
     micDeniedToast: 'Đang bị chặn — hãy cho phép trong cài đặt trang của trình duyệt',
     learnerAudioLabel: 'Bản ghi âm của bạn',
@@ -129,6 +131,7 @@ export const t = defineCopy('settings', {
     systemLabel: '系统与账户', systemSub: '套餐、隐私、更新',
 
     memoryLabel: '记忆', memorySub: '允许 Orena 使用你的内容进行个性化',
+    voiceLabel: '语音录制', voiceSub: '允许将你的声音发送到 AI 服务以获取点评',
     micLabel: '麦克风权限', micSub: '口语和跟读练习需要',
     micDeniedToast: '已被阻止——请在浏览器的网站设置中允许',
     learnerAudioLabel: '你的录音',

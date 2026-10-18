@@ -41,6 +41,7 @@ import { TABS, tabFromQuery, rowsForTab, usesPicker } from './model.js';
 import { listVoices, chosenVoice, chooseVoice } from '../../agent/live-voice.js';
 import { toContractLang } from '../../agent/contract.js';
 import { readMemoryEnabled, writeMemoryEnabled } from '../../agent/memory-switch.js';
+import { readVoiceConsent, writeVoiceConsent } from '../../product/consent.js';
 
 const TAB_LABEL_KEY = { languages: 'tabLanguages', appearance: 'tabAppearance', learning: 'tabLearning', review: 'tabReview', notifications: 'tabNotifications', privacy: 'tabPrivacy' };
 /* Every row's sub reads t(`${id}Sub`); a row listed here reads another key (none today). */
@@ -172,17 +173,19 @@ export default async function settingsScreen(element, ctx) {
     }
   }
 
-  const [languagesData, mic, voices, memoryOn] = await Promise.all([
+  const [languagesData, mic, voices, memoryOn, voiceOn] = await Promise.all([
     api.languages().catch(() => null),
     readMicState(),
     listVoices(toContractLang(copyLanguages().ui)),
     readMemoryEnabled(ctx.context.language).catch(() => null), // times out to null: a slow server only hides the row
+    readVoiceConsent().catch(() => null), // null (not kept, or unreadable): the row is not drawn
   ]);
   if (!ctx.isCurrent()) return undefined;
   state.languagesData = languagesData;
   state.mic = mic;
   state.voices = voices;
   state.memoryOn = memoryOn;
+  state.voiceOn = voiceOn;
 
   function buildInputs() {
     const context = ctx.context;
@@ -216,6 +219,7 @@ export default async function settingsScreen(element, ctx) {
         micOn: state.mic.on,
         micState: state.mic.state,
         memoryOn: state.memoryOn,
+        voiceOn: state.voiceOn,
         lang: copyLanguages().ui,
       },
     };
@@ -388,6 +392,26 @@ export default async function settingsScreen(element, ctx) {
     if (ctx.isCurrent()) paintTab();
   }
 
+  /* Voice recording (D-233): the learner's one answer, one POST. A failed save puts the switch back and says so. */
+  async function onVoiceToggle() {
+    const before = state.voiceOn;
+    if (typeof before !== 'boolean' || state.voiceBusy) return;
+    state.voiceBusy = true;
+    state.voiceOn = !before;
+    paintTab();
+    try {
+      const stored = await writeVoiceConsent(!before);
+      state.voiceOn = typeof stored === 'boolean' ? stored : before;
+      if (typeof stored !== 'boolean' && ctx.isCurrent()) toast(t('saveError'));
+    } catch (error) {
+      state.voiceOn = before;
+      if (error?.status !== 401 && ctx.isCurrent()) toast(t('saveError'));
+    } finally {
+      state.voiceBusy = false;
+    }
+    if (ctx.isCurrent()) paintTab();
+  }
+
   const REVIEW_FIELD = { targetMeaning: 'typing', sourceAware: 'cloze', audioWord: 'dictation' };
 
   function onToggle(id) {
@@ -397,6 +421,7 @@ export default async function settingsScreen(element, ctx) {
     if (REVIEW_FIELD[id]) return onReviewModeToggle(REVIEW_FIELD[id]);
     if (id === 'mic') return onMicToggle();
     if (id === 'memory') return onMemoryToggle();
+    if (id === 'voice') return onVoiceToggle();
   }
 
   function onAction(id) {

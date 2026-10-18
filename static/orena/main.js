@@ -167,6 +167,8 @@ async function boot() {
   frame.main.before(banner);
   offlineBanner(banner);
   await router.start();
+  // D-233: an account with no consent record is asked once, over the first screen (the mic sheet's shape).
+  void import('./screens/consent/sheet.js').then((module) => module.openConsentSheet({ isCurrent: () => true })).catch(() => {});
 }
 
 boot();

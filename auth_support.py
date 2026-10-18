@@ -27,6 +27,7 @@ from writing_coach.core.language_registry import DEFAULT_LANGUAGE, all_languages
 from writing_coach.core.deployment import DeploymentConfig, resolve_deployment_config
 from writing_coach.core import request_boundary
 from writing_coach import account_settings, service_auth
+from writing_coach import consent as consent_evidence
 from writing_coach.persistence.auth_repository import AuthRepository
 
 ROOT = Path(__file__).resolve().parent
@@ -435,6 +436,12 @@ def auth_google_callback(request: Request):
         raise HTTPException(403, "Google email is not verified.")
 
     user = upsert_auth_user(info)
+    if user.get("created_now"):
+        # D-229 / D-233: the Account step's clickwrap line was shown before this first sign-in, so record the version
+        # accepted. The interface language is not on the OAuth round trip; the browser's preference stands in for it.
+        consent_evidence.record_sign_up_consent(
+            _installed_auth_repository(), str(user.get("google_sub") or ""), request.headers.get("accept-language", "")
+        )
     maybe_claim_legacy_data(str(user.get("email") or ""), str(user.get("google_sub") or ""))
     native_redirect_uri = str(request.session.get("native_redirect_uri") or "")
     native_code_challenge = str(request.session.get("native_code_challenge") or "")
@@ -544,6 +551,14 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
             "options": options,
             "stored": bool(settings and settings["learning_language"]),
         },
+        # D-233: `consent_required` is true for an account with no consent record (the client shows its one-time
+        # sheet); `voice_consent` is the learner's voice answer, null when it cannot be known. Both stay false/null
+        # until the runtime has applied migration 0036, and in local development without sign-in.
+        "consent": (
+            consent_evidence.public_shape(_installed_auth_repository(), account_settings._user_key())
+            if AUTH_ENABLED
+            else {"stored": False, "consent_required": False, "consent_version": "", "voice_consent": None}
+        ),
     }
 
 class _AccountLanguageUnreadable(Exception):

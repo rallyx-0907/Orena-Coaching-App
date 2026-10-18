@@ -21,7 +21,7 @@ import anyio.to_thread
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel
 
-from writing_coach import policies
+from writing_coach import consent, policies
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.product import quota
@@ -474,6 +474,7 @@ async def transcribe_speech(
     language: str = Form(default=""),
     purpose: str = Form(default=""),
 ) -> dict[str, Any]:
+    await anyio.to_thread.run_sync(consent.require_voice_consent)  # D-233: 403 voice_consent_required when refused
     normalized_language = language.strip().casefold() or None
     if normalized_language is not None and normalized_language not in {"en", "zh"}:
         raise orena_http_error(
@@ -731,6 +732,7 @@ async def assess_pronunciation(
     reference_text: str = Form(default=""),
     mode: str = Form(default="scripted"),
 ) -> dict[str, Any]:
+    await anyio.to_thread.run_sync(consent.require_voice_consent)  # D-233: 403 voice_consent_required when refused
     normalized_language = language.strip().casefold()
     if normalized_language not in {"en", "zh"}:
         raise orena_http_error(

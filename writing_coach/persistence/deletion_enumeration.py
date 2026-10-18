@@ -15,6 +15,18 @@ USER_COLUMNS_TO_RESET = {
     "settings_updated_at": None,
 }
 
+# Migration 20261019_0036 (proposed; D-233): consent evidence and voice consent, also on the surviving `users` row and
+# also RESET on deletion. Kept apart from the dict above because no ORM column maps them and a runtime may not have
+# them yet: the workflow resets them through `writing_coach.consent.reset_consent`, which does nothing while they are
+# absent. `False` is the column's default; `None` is "no record".
+CONSENT_COLUMNS_TO_RESET = {
+    "consent_version": None,
+    "consent_accepted_at": None,
+    "consent_language": None,
+    "voice_consent": False,
+    "voice_consent_at": None,
+}
+
 # Owner tables keyed by the account (users.id): deleted for the deleted account.
 ACCOUNT_KEYED_TABLES = (
     "user_language_profiles",  # declared_level, review settings, goal, style, support language

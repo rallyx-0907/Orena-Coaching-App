@@ -664,6 +664,8 @@ def test_f8_the_exempt_routes_are_exactly_the_ones_that_write_no_learner_rows():
         # PR-MON-9: an existing subscriber's plan through Polar writes no learner row
         ("POST", "/api/billing/subscription/change/preview"), ("POST", "/api/billing/subscription/change"),
         ("POST", "/api/billing/subscription/cancel"), ("POST", "/api/billing/subscription/resume"),
+        # D-233: consent evidence and voice consent are account scalars, not learner rows
+        ("POST", "/api/account-settings/consent"), ("POST", "/api/account-settings/voice-consent"),
     }, sorted(non_admin)
     for route in [("POST", "/api/evaluate"), ("PUT", "/api/learner-profile"), ("PATCH", "/api/learner-profile"),
                   ("POST", "/api/agent/turn"), ("PUT", "/api/drafts/{key}"), ("POST", "/api/library/vocabulary"),

@@ -144,11 +144,14 @@ export function legalHref(path, lang) {
   return `${path}?lang=${lang === 'vi' ? 'vi' : lang === 'zh' ? 'zh' : 'en'}`;
 }
 
-export function privacyRows({ micOn, micState, lang, memoryOn } = {}) {
+export function privacyRows({ micOn, micState, lang, memoryOn, voiceOn } = {}) {
   return [
     { id: 'mic', kind: 'toggle', disabled: false, value: micOn === true, state: micState || 'unsupported' },
     // Orena Memory's one switch (D-226): drawn only when the server answered it (a boolean); absent when memory is unavailable.
     ...(typeof memoryOn === 'boolean' ? [{ id: 'memory', kind: 'toggle', disabled: false, value: memoryOn }] : []),
+    // Voice consent (D-233): whether the learner's voice may be recorded and sent to an AI service. Drawn only when the
+    // server keeps an answer (a boolean); absent while its database has not taken the consent columns.
+    ...(typeof voiceOn === 'boolean' ? [{ id: 'voice', kind: 'toggle', disabled: false, value: voiceOn }] : []),
     // No route deletes a learner's stored audio/media - UI_BACKEND_GAPS.md N-31.
     { id: 'learnerAudio', kind: 'action', disabled: true },
     { id: 'history', kind: 'action', disabled: false },

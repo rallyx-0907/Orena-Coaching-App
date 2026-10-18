@@ -42,6 +42,7 @@ import { useStyles } from '../../kit/styles.js';
 import { loadOffers } from '../../product/credit-topup.js';
 import { api } from '../../infrastructure/api.js';
 import { clearMemoryState } from '../../agent/memory-switch.js';
+import { clearConsentState } from '../../product/consent.js';
 import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { buildProfileModel, profileActions, weekdayAbbrevs, WEEKLY_GOAL_TARGET } from './model.js';
@@ -210,6 +211,7 @@ function actionRow(action, ctx) {
 async function signOut() {
   let destination = SIGN_OUT_NEXT;
   clearMemoryState();
+  clearConsentState();
   try {
     destination = signedOutDestination(await api.logout(SIGN_OUT_NEXT));
   } catch (error) {
