@@ -164,10 +164,11 @@ def _item_ids(payload: dict[str, Any]) -> list[str]:
 def get_annotations(content_id: str) -> dict[str, Any]:
     scope = work_api._scope()  # noqa: SLF001
     content_id = _key(content_id, 'content_id_invalid')
-    row = None if _text_import_deleted(scope, content_id) else _read(scope, 'annotation', content_id)
-    if row is None:
-        raise orena_http_error(404, 'annotation_not_found', 'Nothing kept for this text.', retryable=False)
-    return {'annotation': _annotation_shape(row)}
+    if _text_import_deleted(scope, content_id):
+        raise orena_http_error(404, 'annotation_not_found', 'That text was deleted.', retryable=False)
+    row = _read(scope, 'annotation', content_id)
+    # Nothing kept yet is a normal state, not an error: an explicit empty body.
+    return {'annotation': None if row is None else _annotation_shape(row)}
 
 
 @router.put('/annotations/{content_id:path}')

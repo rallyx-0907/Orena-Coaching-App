@@ -404,7 +404,8 @@ def _one_language(run: Run, language: str, nonce: str, *, worker_timeout: float)
     run.check("its questions are unchanged", {q["id"]: q["correct_index"] for q in after_edit["questions"]} == key)
     events = run.call("GET", f"/api/admin/reading/articles/{article_id}").get("events") or []
     run.check("the review trail says why", any(item.get("action") == "comprehension_set_stale" for item in events))
-    run.call("GET", f"/api/reading/practice/articles/{article_id}", expect=404)
+    gone = run.call("GET", f"/api/reading/practice/articles/{article_id}")
+    run.check("a stale set is no longer served (Free Reading, an empty body)", gone.get("set") is None)
     replay = run.call("POST", "/api/reading/practice/attempts",
                       json={"set_id": set_id, "operation_id": operation, "answers": answers})
     run.check("the recorded attempt still answers its retry", replay["replayed"] and replay["attempt"]["id"] == attempt["id"])

@@ -169,6 +169,36 @@ export function wordSavePayload(card, sentence, source) {
   };
 }
 
+/* The source kinds `/api/library/vocabulary` accepts. An empty stored kind cannot be sent back as it is (the
+   API would default it to "manual" and overwrite it), so such a word is not re-saved. */
+const SAVE_SOURCE_KINDS = ['manual', 'dictionary', 'feedback', 'strength', 'reading', 'listening', 'writing', 'speaking', 'feed', 'collection'];
+
+/* A word kept from the sheet before "Why here?" answered holds the basic meaning; when the contextual one
+   arrives the kept word takes it. Only the definition changes: the stored source kind and fragment are sent
+   back as they are. `guard` is the sheet's live state - `readOnly`, `kept()` (the learner's own last
+   save/unsave, never what an answer says), `busy()` / `setBusy()` (the same lock Save and unsave use, so an
+   unsave cannot land between the check and the write) - and `stored()` reads the kept item. Returns the
+   saved item, or null when nothing was written. */
+export async function resaveContextualMeaning({ api, card, guard, stored }) {
+  if (guard.readOnly || guard.busy() || !guard.kept() || !card?.meaningIsContextual || !card.meaning) return null;
+  const row = await stored();
+  if (!row || !guard.kept() || guard.busy() || !SAVE_SOURCE_KINDS.includes(text(row.source_kind))) return null;
+  guard.setBusy(true);
+  try {
+    const saved = await api.saveLibraryVocabulary({
+      word: text(card.word),
+      definition: text(card.meaning),
+      source_kind: text(row.source_kind),
+      source_fragment: text(row.source_fragment),
+    });
+    return saved?.item || null;
+  } catch {
+    return null;
+  } finally {
+    guard.setBusy(false);
+  }
+}
+
 /* Everything `/api/library/vocabulary/restore` needs to put a deleted word back exactly as it was,
    schedule included - not a fresh save wearing the same spelling. */
 export function wordRestorePayload(item) {
