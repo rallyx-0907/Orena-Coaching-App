@@ -37,10 +37,8 @@ export function isDailyAiLimit(error) {
 
 export function pausedMessage(resetsAt) {
   const at = new Date(resetsAt);
-  const time = Number.isNaN(at.getTime())
-    ? ''
-    : new Intl.DateTimeFormat(languages().ui, { hour: 'numeric', minute: '2-digit' }).format(at);
-  return t('aiPaused', { time });
+  if (!resetsAt || Number.isNaN(at.getTime())) return t('aiPausedNoTime'); // no time to promise
+  return t('aiPaused', { time: new Intl.DateTimeFormat(languages().ui, { hour: 'numeric', minute: '2-digit' }).format(at) });
 }
 
 export function seePlansLabel() {

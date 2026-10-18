@@ -465,8 +465,9 @@ assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409
     const text = errorText({ class: 'daily_ai_limit', message: '', fallback: 'none', paused }, 'x');
     assert.equal(text, pausedMessage(paused.resets_at), 'the error line is the interface-language sentence, not the server message');
     assert.ok(text.includes('Orena') && !text.includes('{time}'), 'the sentence carries the time');
+    for (const bad of [undefined, '', 'not a date']) assert.ok(!/after \.|{time}/.test(pausedMessage(bad)) && pausedMessage(bad).includes('paused for today'), `no time to show for ${bad}: the sentence has no time`);
     const planCopy = fs.readFileSync('static/orena/screens/plan/copy.js', 'utf8');
-    for (const line of ["Orena's AI is paused for today. Back after {time}.", 'Hôm nay Orena tạm dừng AI, sẽ có lại sau {time}.', 'Orena 今日 AI 已暂停，{time} 后恢复。']) assert.ok(planCopy.includes(line), line);
+    for (const line of ["Orena's AI is paused for today. Back after {time}.", 'Hôm nay Orena tạm dừng AI, sẽ có lại sau {time}.', 'Orena 今日 AI 已暂停，{time} 后恢复。', "Orena's AI is paused for today.", 'Hôm nay Orena tạm dừng AI.', 'Orena 今日 AI 已暂停。']) assert.ok(planCopy.includes(line), line);
   }
   run = await drive([answer(409, envelope('operation_finished'), { 'Content-Type': 'application/json' })]);
   assert.deepEqual([run.events, run.sent.length], [['error:transport:retry'], 1], '409 operation_*: a retry (a new send is a new key), not a language change');
