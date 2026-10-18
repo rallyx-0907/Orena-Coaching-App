@@ -34,7 +34,7 @@ for (const pack of [en, vi, zh]) {
 /* Live-trial fixes: reason codes are translated copy in every language; deterministic edits never read "No change." */
 const codes = ['rate_limited', 'spend_cap', 'correction_failed', 'correction_unavailable', 'provider_auth', 'provider_timeout',
   'provider_error', 'malformed_result', 'request_too_large', 'not_configured', 'corrector_unconfigured', 'unsupported_language',
-  'empty_cue', 'lexemes_changed', 'edit_ratio_exceeded'];
+  'empty_cue', 'lexemes_changed', 'edit_ratio_exceeded', 'cue_too_large'];
 for (const pack of [en, vi, zh]) {
   for (const code of codes) assert.equal(typeof pack[`ctCorrectionDetail_${code}`], 'string', `A12 detail copy ${code}`);
   for (const key of ['ctCorrectionState_unavailable', 'ctCorrectionState_failed', 'ctCorrectionState_partial', 'ctCorrectionNotApplied', 'ctCorrectionReason_noise_removed']) {

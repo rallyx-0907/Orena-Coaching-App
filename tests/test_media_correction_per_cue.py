@@ -161,11 +161,126 @@ def test_the_ceiling_is_read_again_for_the_retry_after_a_rate_limit(tmp_path):
     assert meta["transcript_correction_state"] == "applied" and len(lines) == 24
 
 
-def test_an_unknown_allowance_leaves_the_batch_as_it_was(tmp_path):
-    corrector = Echo()                                  # no `batch_output_ceiling`: nothing narrows the batch
+def test_a_corrector_that_reports_no_ceiling_at_all_leaves_the_batch_as_it_was(tmp_path):
+    """Only a fake can be silent about its limits: the real provider always has a per-request cap (next tests)."""
+    corrector = Echo()                                  # neither `correction_output_ceiling` nor `batch_output_ceiling`
     store, entry, pipeline, _ = _world(tmp_path, corrector, "zh")
     pipeline._correct_transcript(store, entry, "b", _hsk_cues(30), origin=pipeline_module.ORIGIN_ASR)
     assert [len(call) for call in corrector.calls] == [24, 6]
+
+
+# -- the per-request completion cap applies even while the output allowance is unknown (review of 4a957730) ------
+
+class RealProvider:
+    """The real Groq provider's sizing (cap and allowance); only the HTTP answer is faked."""
+
+    def __init__(self, max_completion_tokens=None, otpm=None):
+        from writing_coach import media_translation as mt
+        mt.reset_output_windows()
+        self.provider = mt.GroqTranslationProvider("k", model="sizing-model", max_completion_tokens=max_completion_tokens,
+                                                   output_tokens_per_minute=otpm)
+        self.model = "sizing-model"
+        self.calls = []
+
+    def correction_output_ceiling(self):
+        return self.provider.correction_output_ceiling()
+
+    def batch_output_ceiling(self):
+        return self.provider.batch_output_ceiling()
+
+    def correct(self, *, cues, **kwargs):
+        self.calls.append(tuple(cue.text for cue in cues))
+        assert pipeline_module.estimate_correction_output_tokens(cues) <= self.provider.correction_output_ceiling(), \
+            "this request would be cut off"
+        return {"texts": [cue.text for cue in cues], "reasons": ["no_change" for _ in cues], "provider": "groq", "model": self.model}
+
+
+def _long_cues(count, characters):
+    return [Cue(i * 2000, i * 2000 + 1800, ("这是一段很长的话" * 200)[:characters]) for i in range(count)]
+
+
+def test_the_effective_ceiling_is_the_smaller_of_the_request_cap_and_the_allowance_share():
+    from writing_coach import media_translation as mt
+    mt.reset_output_windows()
+    assert mt.GroqTranslationProvider("k", model="m-a", max_completion_tokens=500).correction_output_ceiling() == 500
+    assert mt.GroqTranslationProvider("k", model="m-b").correction_output_ceiling() == mt.DEFAULT_GROQ_MAX_COMPLETION_TOKENS
+    learned = mt.GroqTranslationProvider("k", model="m-c", output_tokens_per_minute=1000)      # the live case
+    assert learned.batch_output_ceiling() == 500 and learned.correction_output_ceiling() == 500
+    big_share = mt.GroqTranslationProvider("k", model="m-d", output_tokens_per_minute=100_000)  # share 50 000 > cap 2048
+    assert big_share.correction_output_ceiling() == mt.DEFAULT_GROQ_MAX_COMPLETION_TOKENS
+    both = mt.GroqTranslationProvider("k", model="m-e", max_completion_tokens=300, output_tokens_per_minute=1000)
+    assert both.correction_output_ceiling() == 300                      # the request cap is the smaller
+    mt.reset_output_windows()
+
+
+def test_unknown_allowance_and_a_small_request_cap_split_before_the_first_request(tmp_path):
+    provider = RealProvider(max_completion_tokens=500)
+    assert provider.batch_output_ceiling() is None                       # the allowance is not known yet
+    store, entry, pipeline, _ = _world(tmp_path, provider, "zh")
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _hsk_cues(24), origin=pipeline_module.ORIGIN_ASR)
+    assert meta["transcript_correction_state"] == "applied" and len(lines) == 24
+    assert len(provider.calls) > 1 and sum(len(call) for call in provider.calls) == 24
+
+
+def test_unknown_allowance_and_the_default_request_cap_split_a_batch_estimated_above_2048(tmp_path):
+    provider = RealProvider()                                            # default cap 2048, allowance unknown
+    cues = _long_cues(20, 150)
+    assert pipeline_module.estimate_correction_output_tokens(cues) > 2048
+    store, entry, pipeline, _ = _world(tmp_path, provider, "zh")
+    lines, meta = pipeline._correct_transcript(store, entry, "b", cues, origin=pipeline_module.ORIGIN_ASR)
+    assert meta["transcript_correction_state"] == "applied" and [line.text for line in lines] == [cue.text for cue in cues]
+    assert len(provider.calls) > 1 and sum(len(call) for call in provider.calls) == 20
+
+
+def test_a_learned_allowance_of_1000_gives_the_live_case_ceiling_of_500(tmp_path):
+    provider = RealProvider(otpm=1000)
+    store, entry, pipeline, _ = _world(tmp_path, provider, "zh")
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _hsk_cues(51), origin=pipeline_module.ORIGIN_ASR)
+    assert provider.correction_output_ceiling() == 500
+    assert meta["transcript_correction_state"] == "applied" and len(lines) == 51
+
+
+def test_one_cue_larger_than_the_ceiling_is_kept_raw_and_recorded_not_sent(tmp_path):
+    provider = RealProvider(max_completion_tokens=256)
+    cues = _hsk_cues(4)
+    cues[2] = Cue(cues[2].start_ms, cues[2].end_ms, "这是一段很长的话" * 40)                # alone far above 256 tokens
+    assert not pipeline_module.correction_cue_fits(cues[2], 256)
+    store, entry, pipeline, _ = _world(tmp_path, provider, "zh")
+    lines, meta = pipeline._correct_transcript(store, entry, "b", cues, origin=pipeline_module.ORIGIN_ASR)
+    assert [line.text for line in lines] == [cue.text for cue in cues]                    # nothing lost, nothing invented
+    assert [(r["index"], r["code"]) for r in meta["transcript_correction_rejected"]] == [(2, "cue_too_large")]
+    assert meta["transcript_correction_state"] == "partial" and meta["transcript_correction_detail"] == "cue_too_large"
+    assert all(cues[2].text not in call for call in provider.calls)                        # the oversized cue was never sent
+    assert sum(len(call) for call in provider.calls) == 3                                   # the other three were corrected
+
+
+def test_a_cue_that_fits_is_never_skipped_and_no_ceiling_means_it_fits():
+    assert pipeline_module.correction_cue_fits(Cue(0, 1, "你好"), 500)
+    assert pipeline_module.correction_cue_fits(Cue(0, 1, "x" * 5000), None)
+
+
+@pytest.mark.parametrize("value,expected", [(500, 500), (0, None), (-1, None), (True, None), ("500", None), (None, None)])
+def test_correction_ceiling_reads_only_a_positive_integer(value, expected):
+    class Fake:
+        def correction_output_ceiling(self):
+            return value
+    assert pipeline_module.correction_ceiling(Fake()) == expected
+
+
+def test_correction_ceiling_falls_back_to_the_allowance_and_survives_a_broken_provider():
+    class OnlyAllowance:
+        def batch_output_ceiling(self):
+            return 400
+
+    class Broken:
+        def correction_output_ceiling(self):
+            raise RuntimeError("boom")
+
+        def batch_output_ceiling(self):
+            return 300
+    assert pipeline_module.correction_ceiling(OnlyAllowance()) == 400
+    assert pipeline_module.correction_ceiling(Broken()) == 300
+    assert pipeline_module.correction_ceiling(object()) is None
 
 
 @pytest.mark.parametrize("ceiling,expected_min", [(None, 24), (0, 24), (10_000, 24), (500, 1), (1, 1)])

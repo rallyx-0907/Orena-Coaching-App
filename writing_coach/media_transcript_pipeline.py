@@ -98,7 +98,10 @@ def estimate_correction_output_tokens(cues: Iterable[Cue]) -> int:
 
 
 def fit_correction_batch(batch: list[tuple[int, Cue]], ceiling: int | None) -> list[tuple[int, Cue]]:
-    """The longest leading part of `batch` whose answer fits `ceiling` output tokens (at least one cue; all when no ceiling)."""
+    """The longest leading part of `batch` whose answer fits `ceiling` output tokens (all when no ceiling is known).
+
+    A first cue that alone does not fit is still returned as a batch of one: `correction_cue_fits` is how the caller finds
+    out and keeps such a cue raw instead of sending a request known to be cut off."""
     if not ceiling or len(batch) <= 1:
         return batch
     used = 0
@@ -107,6 +110,28 @@ def fit_correction_batch(batch: list[tuple[int, Cue]], ceiling: int | None) -> l
         if used > ceiling:
             return batch[:max(1, count)]
     return batch
+
+
+def correction_cue_fits(cue: Cue, ceiling: int | None) -> bool:
+    """Whether the answer for this one cue is estimated to fit `ceiling` output tokens (always when none is known)."""
+    return not ceiling or estimate_correction_output_tokens([cue]) <= ceiling
+
+
+def correction_ceiling(corrector: Any) -> int | None:
+    """What one correction request can really carry, from the provider: its per-request cap combined with its learned
+    output allowance (`correction_output_ceiling`), else the allowance alone (`batch_output_ceiling`), else None. An
+    unreadable answer means no ceiling is known, never a failure."""
+    for name in ("correction_output_ceiling", "batch_output_ceiling"):
+        read = getattr(corrector, name, None)
+        if not callable(read):
+            continue
+        try:
+            value = read()
+        except Exception:  # noqa: BLE001 - an unknown allowance only means the batch is not narrowed
+            continue
+        if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+            return value
+    return None
 # One retry per batch, only for a rate limit whose named wait fits one cap and the shared allowance (the translation
 # run's own total, TRANSLATION_MAX_TOTAL_WAIT). 90 s covers the 62 s the output-token window asks (D-218).
 CORRECTION_ATTEMPTS = 2
@@ -1119,24 +1144,30 @@ class MediaPipeline:
         succeeded = 0
         failure = ""
         queue = deque(batches)
-        ceiling_of = getattr(self._corrector, "batch_output_ceiling", None)
         while queue:
             batch = queue.popleft()
             batch_cues = tuple(cue for _, cue in batch)
             result: Any = None
+            skipped = False
             for attempt in range(CORRECTION_ATTEMPTS):
-                # The provider learns its output-token allowance from its first refusal, so the batch is fitted to it at every
-                # attempt, the retry after a rate limit included: an answer that does not fit is cut off mid-JSON and is
-                # unusable (the live trial's `malformed_result`). The cues that do not fit go back to the front of the queue.
-                try:
-                    ceiling = ceiling_of() if callable(ceiling_of) else None
-                except Exception:  # noqa: BLE001 - an unknown allowance only means the batch is not narrowed
-                    ceiling = None
-                fitted = fit_correction_batch(batch, ceiling if isinstance(ceiling, int) else None)
+                # What one request can really carry is the provider's per-request completion cap (always) combined with the
+                # output allowance it learns from its first refusal (later), so the batch is fitted to it at every attempt,
+                # the retry after a rate limit included: an answer that does not fit is cut off mid-JSON and is unusable (the
+                # live trial's `malformed_result`). The cues that do not fit go back to the front of the queue.
+                ceiling = correction_ceiling(self._corrector)
+                fitted = fit_correction_batch(batch, ceiling)
                 if len(fitted) < len(batch):
                     queue.appendleft(batch[len(fitted):])
                     batch = fitted
                     batch_cues = tuple(cue for _, cue in batch)
+                if len(batch) == 1 and not correction_cue_fits(batch[0][1], ceiling):
+                    # One cue whose answer alone cannot fit a request: it is not sent (the answer would be cut off). It keeps
+                    # its raw text and is recorded, like any other cue the correction could not take.
+                    index, cue = batch[0]
+                    rejected.append({"index": index, "start_ms": cue.start_ms, "code": "cue_too_large",
+                                     "before": cue.text[:1000], "proposed": ""})
+                    skipped = True
+                    break
                 context_bytes = len(entry.title.encode("utf-8")) + len(description.encode("utf-8"))
                 tokens = max(512, min(8192, sum(len(cue.text.encode("utf-8")) for cue in batch_cues) + context_bytes + 1000))
                 try:
@@ -1180,6 +1211,8 @@ class MediaPipeline:
                     self._sleep(retry_after)
                     continue
                 break
+            if skipped:
+                continue
             if result is None:
                 break
             problem = self._take_batch(language, batch, result, accepted, reasons, rejected, providers, models, model)

@@ -299,6 +299,39 @@ restart; it mounts the repository, so a restart is enough), and the new hold/ret
 changes behaviour, so it needs an independent re-review; the implementer cannot approve it. A12 visual check is open. PR #261
 stays Draft.
 
+## Review of `4a957730` (batch sizing): REQUEST CHANGES, P1 and P2 fixed
+
+Independent review (read-only, no code run) of `4a957730`: **REQUEST CHANGES, one P1 and one P2**. CI #826 on that SHA was
+`success` (reported by the reviewer); CI does not make the P1 go away. The first batch-sizing fix is otherwise confirmed:
+the queue/remainder logic loses no cue, the estimator is above the measured 869 tokens and has a regression test, and nothing
+adds a schema, env flag, provider, hardcoded id or language hack.
+
+- **P1 - the ceiling ignored the per-request completion cap (fixed, not yet re-reviewed).** The pipeline asked only
+  `batch_output_ceiling()`, which is `None` until the provider has learned an output allowance from a refusal. The real
+  provider always has `max_completion_tokens` (default 2048) per request, so while the allowance was unknown a long batch
+  (up to 6000 source characters, estimated near 4270 tokens) was still sent whole and cut off (`finish_reason: length`) on the very
+  first request. The old test "an unknown allowance leaves the batch as it was" encoded that gap, because its fake had no request cap.
+  Fix: `GroqTranslationProvider.correction_output_ceiling()` returns exactly what `correct` reserves (`_reservation_cap`, the smaller
+  of the configured request cap and, once known, the per-request share of the allowance), without changing the translation
+  contract; the pipeline reads it through `correction_ceiling()` (it falls back to `batch_output_ceiling`, ignores anything that is
+  not a positive integer, and treats a broken provider as "no ceiling") at every attempt.
+- **P2 - a single cue larger than the ceiling was still sent (fixed).** `correction_cue_fits()` finds it; the cue is not sent, keeps
+  its raw text and is recorded as rejected with the new code `cue_too_large` (the state is `partial`). The code has words in EN, VI
+  and ZH in A12, and the Node gate checks them.
+- Tests (12 new, one replaced): the effective ceiling is the smaller of the request cap and the allowance share (500 cap, default
+  2048, learned 1000 -> 500, 100000 -> 2048, 300 vs 1000 -> 300); with the allowance unknown a 500 cap splits before the first request;
+  with the allowance unknown and the default cap a batch estimated above 2048 splits; learned 1000 gives the live case ceiling 500 and 51 cues all
+  return `applied`; one oversized cue is never sent and the other three are corrected; a cue that fits is never skipped; the ceiling
+  reads only a positive integer and survives a broken provider. The replaced test now says only a fake can be silent about its limits.
+  The fake used by the new tests wraps the **real** provider's sizing and asserts every request's estimate stays under its ceiling.
+
+Local execution (not CI), disposable container (read-only repository, tmpfs databases, provider keys empty, 1 GB / 1 CPU, host RAM
+1.35 GB, above the owner's 1 GB floor): media set plus admin route tests and `tests/test_groq_translation_bounds.py`
+**1284 passed, 0 failed, 21 skipped**. Ruff on touched Python, Node admin media review, Node admin areas and browser ESM graph (300 modules): PASS.
+
+Still open: independent re-review of this fix; the live benchmark on `:8021` (cases 3, 4, 5, one real hold/retry observation; `:8021`
+still runs `5ca4ac43` and needs a restart) and the A12 visual check. PR #261 stays Draft.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;

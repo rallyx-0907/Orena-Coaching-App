@@ -743,6 +743,14 @@ class GroqTranslationProvider:
         ceiling = self.batch_output_ceiling()
         return self._max_completion_tokens if ceiling is None else min(self._max_completion_tokens, ceiling)
 
+    def correction_output_ceiling(self) -> int:
+        """The most output tokens one transcript-correction request can really be given: the configured per-request
+        completion cap, and when the model's output-token allowance is known, its per-request share of the minute. A
+        batch whose answer is estimated above this is cut off mid-JSON (`finish_reason: length`) and unusable, so a caller
+        sizes its batches to it - never only to `batch_output_ceiling`, which is None while no allowance is known although
+        the per-request cap always applies. It is exactly what `correct` reserves (`_reservation_cap`)."""
+        return self._reservation_cap()
+
     def _salvage_key(self, source_language: str, target_language: str, segment: TranslatableSegment) -> tuple[str, str, str, str]:
         return (source_language, target_language, segment.segment_id, segment.original_text)
 
