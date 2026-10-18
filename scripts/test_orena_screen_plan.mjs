@@ -14,7 +14,7 @@ const model = await import('../static/orena/screens/plan/model.js');
 const { billingMarkup, usageNote, resetLabel } = (await import('../static/orena/screens/plan/screen.js')).__internal;
 const { t } = await import('../static/orena/screens/plan/copy.js');
 const { pricingMarkup } = (await import('../static/orena/screens/plan/pricing.js')).__internal;
-const { sheetMarkup } = await import('../static/orena/screens/plan/sheet.js');
+const { __internal: sheetInternal } = await import('../static/orena/screens/plan/sheet.js');
 const copy = await import('../static/orena/copy/index.js');
 const { ROUTES, byId, match } = await import('../static/orena/shell/routes.js');
 
@@ -115,16 +115,18 @@ const COMMERCE = {
   const onPro = model.pricingPlans({ plans: [FREE, PLUS, PRO], commerce: { ...COMMERCE, plan: { id: 'pro' } } });
   assert.equal(model.changeKind(onPro[1], onPro[2]), 'switch', 'a lower rank is a switch, not an upgrade');
   assert.equal(model.changeKind(onPro[0], onPro[2]), 'switch');
-  // Prices: dong to a Vietnamese interface, dollars otherwise; a yearly plan shows its monthly share.
-  assert.equal(model.currencyFor('vi'), 'VND');
+  // D-MON-034: plans are sold by Polar in dollars only, so every interface shows dollars (formatted its own way);
+  // a yearly plan shows its monthly share.
+  assert.equal(model.currencyFor('vi'), 'USD');
   assert.equal(model.currencyFor('zh'), 'USD');
   assert.equal(model.priceView(plans[1], 'monthly', 'en').price, '$9.99');
   assert.equal(model.priceView(plans[1], 'monthly', 'en').billedKey, 'billedMonthly');
   const yearly = model.priceView(plans[1], 'yearly', 'en');
   assert.equal(yearly.price, '$6.67');
   assert.equal(yearly.billedAmount, '$79.99');
-  assert.match(model.priceView(plans[1], 'monthly', 'vi').price, /199\.000/);
-  assert.match(model.priceView(plans[1], 'yearly', 'vi').price, /133\.000/, 'the dong share rounds to a thousand');
+  assert.match(model.priceView(plans[1], 'monthly', 'vi').price, /9,99/, 'dollars in the Vietnamese format');
+  assert.match(model.priceView(plans[1], 'monthly', 'vi').price, /US\$|\$/);
+  assert.doesNotMatch(model.priceView(plans[1], 'monthly', 'vi').price, /₫|199/, 'never the dong catalogue price for a plan');
   assert.equal(model.priceView(plans[0], 'yearly', 'en').free, true);
   assert.equal(model.priceView({ ...plans[1], prices: {} }, 'monthly', 'en').price, '—', 'a missing price is a dash, never invented');
   assert.equal(model.yearlySaving(plans, 'en'), 33);
@@ -157,7 +159,8 @@ for (const ui of ['en', 'vi', 'zh']) {
   assert.doesNotMatch(pricing, /data-choose="free"/);
   assert.equal((pricing.match(/data-cycle=/g) || []).length, 2, `${ui}: Monthly and Yearly`);
   assert.match(pricing, /−33%/, `${ui}: the yearly saving is computed from the prices`);
-  assert.match(pricing, ui === 'vi' ? /199\.000/ : /\$9\.99/, `${ui}: the monthly price in the interface's currency`);
+  assert.match(pricing, /9[.,]99/, `${ui}: the monthly price in dollars, in the interface's format (D-MON-034)`);
+  assert.doesNotMatch(pricing, /199\.000|₫/, `${ui}: never a dong plan price`);
   assert.doesNotMatch(pricing, /Most popular|Phổ biến nhất/, `${ui}: no invented popularity tag`);
   assert.match(pricing, /style="--cols:3"/);
   assert.ok(pricing.includes(t('line_orena_message', { n: '20' })) && pricing.includes(t.plural('line_languages_target', 1, { n: '1' })), `${ui}: plan lines worded as the design's`);
@@ -165,14 +168,18 @@ for (const ui of ['en', 'vi', 'zh']) {
   assert.doesNotMatch(pricing, /\{[a-z]+\}|undefined|NaN/, `${ui}: nothing unfilled`);
   const yearlyPricing = String(pricingMarkup({ plans: [FREE, PLUS, PRO], commerce: COMMERCE, cycle: 'yearly' }));
   assert.match(yearlyPricing, /data-cycle="yearly" aria-pressed="true"|aria-pressed="true" data-cycle="yearly"/);
-  assert.match(yearlyPricing, ui === 'vi' ? /1\.590\.000/ : /\$79\.99/, `${ui}: yearly states the yearly total`);
+  assert.match(yearlyPricing, /79[.,]99/, `${ui}: yearly states the yearly total, in dollars (D-MON-034)`);
 
-  const sheet = String(sheetMarkup({ target: plans[1], current: plans[0] }));
-  assert.match(sheet, ui === 'vi' ? /199\.000/ : /\$9\.99/, `${ui}: the sheet states the plan's price`);
-  assert.match(String(sheetMarkup({ target: plans[2], current: plans[0], cycle: 'yearly' })), ui === 'vi' ? /3\.190\.000/ : /\$159\.99/);
-  assert.match(sheet, /o-btn--primary" disabled/, `${ui}: the sheet's confirm is inert`);
-  assert.match(sheet, /data-sheet-close/);
-  assert.doesNotMatch(sheet, /4242|processing/i);
+  // PR-MON-9: without an open offer nothing is sold - no primary button, the honest note; with one, Continue.
+  const closed = String(sheetInternal.formMarkup(sheetInternal.sheetModel({ target: plans[1], current: plans[0], subscription: { polar: false }, offers: [] }), {}));
+  assert.match(closed, /9[.,]99/, `${ui}: the sheet states the plan's base price in dollars`);
+  assert.doesNotMatch(closed, /data-sheet-do/, `${ui}: no checkout without the server's offer`);
+  assert.match(closed, /data-sheet-close/);
+  const open = String(sheetInternal.formMarkup(sheetInternal.sheetModel({ target: plans[2], current: plans[0], cycle: 'yearly', subscription: { polar: false },
+    offers: [{ key: 'pro:year:polar', amount_minor: 15999, currency: 'USD' }] }), {}));
+  assert.match(open, /159[.,]99/);
+  assert.match(open, /data-sheet-do="first"/, `${ui}: continue to payment`);
+  assert.doesNotMatch(open, /4242|card number|cvc/i, `${ui}: never a card field in Orena`);
 }
 copy.setLanguages({ ui: 'en', support: 'en' });
 assert.equal(usageNote({ unknown: true, tone: 'ok', left: 0 }).text, 'Not available');
@@ -277,4 +284,84 @@ assert.equal(resetLabel({ window: 'day', resetsAt: null }), 'Resets every day');
   assert.ok(ROUTES.every((r) => r.id !== 'pricing' || r.path === 'plan/pricing'));
 }
 
-console.log('Orena plan screens: real usage and plans only, honest unavailable states, inert payment controls, EN/VI/ZH markup, routes: PASS');
+console.log('Orena plan screens: real usage and plans only, honest unavailable states, payment through Polar (no card data, fail-closed changes), EN/VI/ZH markup, routes: PASS');
+
+/* --- PR-MON-9: buying and managing a plan through Polar ---------------------------------------------- */
+{
+  // §3.5 mirrored for wording: the feature tier wins over the billing period.
+  const c = (rank, period) => ({ rank, period });
+  assert.equal(model.classifyChange(c(1, 'month'), c(2, 'month')), 'upgrade');
+  assert.equal(model.classifyChange(c(2, 'month'), c(1, 'year')), 'downgrade', 'Pro monthly -> Plus yearly is a downgrade');
+  assert.equal(model.classifyChange(c(1, 'month'), c(1, 'year')), 'period_up');
+  assert.equal(model.classifyChange(c(2, 'year'), c(2, 'month')), 'period_down');
+  assert.equal(model.classifyChange(c(1, 'month'), c(1, 'month')), 'none');
+  assert.equal(model.SCHEDULED_CHANGES, false, 'scheduled changes stay off in v1 (§3.6.1)');
+  assert.equal(model.offerKey('plus', 'yearly'), 'plus:year:polar');
+  assert.equal(model.offerFor([{ key: 'plus:month:polar', amount_minor: 999 }], 'plus', 'monthly').amount_minor, 999);
+  assert.equal(model.offerFor([], 'plus', 'monthly'), null);
+  const sub = model.subscriptionView({ provider: 'polar', status: 'active', period: 'month', cancel_at_period_end: true,
+    renews_at: '2026-11-18T07:19:02Z', payment_method: { brand: 'visa', last4: '4242', exp_month: 8, exp_year: 2028 },
+    billing_email: 'learner@example.test' });
+  assert.equal(sub.live && sub.cancelling, true);
+  assert.equal(sub.card.last4, '4242');
+  assert.equal(model.subscriptionView(null).polar, false);
+  assert.equal(model.subscriptionView({ provider: 'payos', status: 'active' }).polar, false);
+  assert.equal(model.cardBrand('visa'), 'Visa');
+  assert.equal(model.invoiceAmount({ amount_minor: 999, currency: 'USD' }, 'en'), '$9.99');
+}
+
+{
+  const { sheetModel } = await import('../static/orena/screens/plan/sheet.js');
+  for (const ui of ['en', 'vi', 'zh']) {
+    copy.setLanguages({ ui, support: 'en' });
+    const list = model.pricingPlans({ plans: [FREE, PLUS, PRO], commerce: COMMERCE });
+    const [free, plus, pro] = list;
+    const offers = [{ key: 'plus:month:polar', amount_minor: 999, currency: 'USD' }, { key: 'pro:month:polar', amount_minor: 1999, currency: 'USD' }];
+    // A first purchase: the base price, "Continue to payment", no "Due today" (Polar owns the total).
+    const first = sheetModel({ target: plus, current: free, cycle: 'monthly', subscription: { polar: false }, offers });
+    assert.equal(first.kind, 'first', ui);
+    assert.equal(first.primary, t('continuePayment'), `${ui}: continue to payment`);
+    assert.ok(first.rows.every(([label]) => label !== t('dueToday')), `${ui}: no Due today on a first purchase`);
+    assert.match(String(first.rows[1][1]), /9[.,]99/, `${ui}: the server's price, in dollars`);
+    const noOffer = sheetModel({ target: plus, current: free, cycle: 'yearly', subscription: { polar: false }, offers });
+    assert.equal(noOffer.primary, '', `${ui}: nothing sold without the server's offer`);
+    // An existing subscriber's upgrade: no amount computed by Orena (case B).
+    const live = { polar: true, live: true, period: 'month', card: { brand: 'visa', last4: '4242' }, renewsAt: new Date('2026-11-18') };
+    const up = sheetModel({ target: pro, current: plus, cycle: 'monthly', subscription: live, offers });
+    assert.equal(up.kind, 'immediate', ui);
+    assert.ok(up.rows.some(([label, value]) => label === t('chargedNow') && value === t('chargedNowValue')), `${ui}: Polar computes the proration`);
+    assert.ok(up.rows.some(([, value]) => String(value).includes('4242')), `${ui}: the card on file`);
+    // A downgrade is not sold in v1: the sheet offers cancelling instead (fail-closed).
+    const down = sheetModel({ target: plus, current: pro, cycle: 'yearly', subscription: { ...live, period: 'month' }, offers });
+    assert.equal(down.kind, 'unavailable', `${ui}: Pro monthly -> Plus yearly is not sold`);
+    assert.ok(down.primary.length > 0 && down.rows.length === 0, ui);
+    // Paid -> Free is the cancel flow (§3.5), not "unavailable".
+    assert.equal(sheetModel({ target: free, current: plus, cycle: 'monthly', subscription: live, free, offers }).kind, 'cancel', `${ui}: to Free cancels`);
+    // The cancel kind: what is lost (from the catalogue) and what is kept.
+    const cancel = sheetModel({ kind: 'cancel', target: plus, current: plus, subscription: live, free, offers });
+    assert.equal(cancel.kind, 'cancel', ui);
+    assert.doesNotMatch(JSON.stringify(cancel), /\{[a-z]+\}|undefined|NaN/, `${ui}: nothing unfilled`);
+  }
+}
+
+{
+  // Plan & usage with a cancelling card subscription: the banner with Resume, the pill, the card, the invoices.
+  for (const ui of ['en', 'vi', 'zh']) {
+    copy.setLanguages({ ui, support: 'en' });
+    const subscription = { provider: 'polar', status: 'active', plan: 'plus', period: 'month', cancel_at_period_end: true,
+      renews_at: '2026-11-18T07:19:02Z', payment_method: { brand: 'visa', last4: '4242', exp_month: 8, exp_year: 2028 },
+      billing_email: 'learner@example.test' };
+    const invoices = { items: [{ id: 'ord_1', created_at: '2026-10-18T07:00:00Z', plan: 'plus', period: 'month', amount_minor: 999, currency: 'USD', status: 'paid' }] };
+    const catalogue = model.pricingPlans({ plans: [FREE, PLUS, PRO], commerce: { ...COMMERCE, plan: { id: 'plus' } } });
+    const page = String(billingMarkup({ ...COMMERCE, plan: { id: 'plus' } }, { subscription, catalogue, invoices }));
+    assert.match(page, /data-resume/, `${ui}: Resume while cancelling`);
+    assert.doesNotMatch(page, /data-open-cancel/, `${ui}: no second cancel while cancelling`);
+    assert.match(page, /4242/, `${ui}: the card on file`);
+    assert.match(page, /data-update-card/, `${ui}: Update opens the portal`);
+    assert.match(page, /data-invoice="ord_1"/, `${ui}: the invoice row downloads`);
+    assert.match(page, /learner@example\.test/, `${ui}: the billing email`);
+    assert.doesNotMatch(page, /\{[a-z]+\}|undefined|NaN|simulated/, `${ui}: nothing unfilled, no prototype copy`);
+    const active = String(billingMarkup({ ...COMMERCE, plan: { id: 'plus' } }, { subscription: { ...subscription, cancel_at_period_end: false }, catalogue }));
+    assert.match(active, /data-open-cancel/, `${ui}: Cancel plan on a live plan`);
+  }
+}

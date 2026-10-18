@@ -77,7 +77,6 @@ from writing_coach.agent.summary import summarize
 from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
-    asks_to_remember,
     asks_to_remember_unaccented,
     confirmed_note,
     note_intent,
@@ -108,8 +107,8 @@ from writing_coach.agent.contract import OPENING_MAX_CHARS, WORD_ACTIONS
 from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
     KEEP_NOTE_INTENT,
+    FORGET_NOTE,
     KIND_BY_SOURCE,
-    NOTE_TOOLS,
     SELECTION_PROMPTS,
     asks_about_status,
     asks_to_go,
@@ -579,8 +578,6 @@ class _Turn:
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
             self.note_confirmed = confirmed_note(turn.message)
             self.unaccented_keep = to_internal(self.locale.support) == "vi" and asks_to_remember_unaccented(turn.message)
-            if not self.notes_available:  # G8: no note is kept or confirmed with this provider; said plainly instead
-                self.note_confirmed, self.unaccented_keep = None, False
             # It may be written again (a note to change or keep, records to read first) or replaced by the server's
             # question (a keep request without diacritics): nothing streams early.
             self.gate.hold_all = (bool(self.notes_asked) or self.needs_evidence or self.note_confirmed is not None
@@ -660,9 +657,9 @@ class _Turn:
     def _gate_data_classes(self, turn: TurnInput, tier1, session):
         """G8 for the whole request (ORENA_MEMORY.md §8 b, c), while the gate is on, before anything is pinned or sent:
         a conversation that has sent a class of data is not continued on a provider cleared for less; coach notes
-        go only to a provider cleared for `full_memory`, and below it they cannot be read, kept, changed or forgotten
-        (owner, 2026-10-18); the chat context's learning evidence (`earlier_in_session`) only to one cleared for
-        `learning_profile`. The tier-1 context and the session the model is shown."""
+        go only to a provider cleared for `full_memory`, and below it they cannot be read, changed or forgotten, while
+        a new note the learner asks for is still kept (owner, 2026-10-18); the chat context's learning evidence
+        (`earlier_in_session`) only to one cleared for `learning_profile`. The tier-1 context and the session the model is shown."""
 
         classes = self.rt.data_classes
         if not gating_on(self.rt.pack, classes):
@@ -675,11 +672,8 @@ class _Turn:
             raise ProviderNotCleared("the provider is not cleared for the data this conversation carries")
         if level < NOTES_CLASS:
             self.notes_available = False
-            # A learner asking to keep, change or forget a note is told it cannot be done here; no note changes.
-            message = turn.message or ""
-            self.notes_blocked = not self.opening and bool(
-                notes_the_message_changes(message, tier1.coach_notes) or asks_to_remember(message)
-                or confirmed_note(message) is not None or asks_to_remember_unaccented(message))
+            # A learner asking to change or forget a note is told it cannot be done here; no existing note changes.
+            self.notes_blocked = not self.opening and bool(notes_the_message_changes(turn.message, tier1.coach_notes))
             if tier1.coach_notes:
                 self.timeline.facts["coach_notes"] = {"withheld": "provider_not_cleared", "provider_class": level.label,
                                                       "count": len(tier1.coach_notes)}  # fmt: skip
@@ -829,9 +823,10 @@ class _Turn:
         return reads + self._note_tools_allowed(replies)
 
     def _note_tools_allowed(self, specs):
-        """Below `full_memory` (G8) the note tools are not offered at all; the outputs refuse them as well."""
+        """Below `full_memory` (G8) forget is not offered and the outputs refuse it, and a replace, as well; keeping a
+        new note stays (owner, 2026-10-18)."""
 
-        return specs if self.notes_available else tuple(s for s in specs if s.name not in NOTE_TOOLS)
+        return specs if self.notes_available else tuple(s for s in specs if s.name != FORGET_NOTE)
 
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         # An opening turn reads nothing itself: the server gave it the snapshot (S13 has no tool_call).
@@ -1168,8 +1163,10 @@ class _Turn:
                 unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.notes_blocked:
-                # The notes were not sent to this provider (G8): nothing was changed, and the learner is told so.
-                unchanged = learner_copy.text("notes.unavailable", interface=self.locale.interface, support=support,
+                # The notes were not sent to this provider (G8): none was changed, and the learner is told so - and
+                # that the new note the same message asked for was kept, when it was.
+                key = "notes.kept_others_unavailable" if outputs.note_changed else "notes.unavailable"
+                unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.needs_evidence and not self.records:
                 # Asked to read and still read nothing: no conclusion about the learner is made up (3.1).

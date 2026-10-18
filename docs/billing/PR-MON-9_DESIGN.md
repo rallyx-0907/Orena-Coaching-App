@@ -336,6 +336,20 @@ one rule:
 | `sent` (any age, no answer recorded) | **ambiguous**: the PATCH may or may not have reached Polar | the reconciler, or a repeat request | treated as `provider_unknown`: **reconciled by GET only (step 4), never resent** |
 | `provider_unknown` | ambiguous | the same | step 4 |
 
+**Per-subscription fence (implementation review P1-1 of `4a3b0438`).** At most one unresolved Polar write per
+subscription, whatever the operation ids:
+- a new operation first claims `billing.polar.op_fence.<subscription>` by CAS;
+- while the fence names an operation that is not terminal (`pending`, `sent`, `provider_unknown`), another
+  operation is refused with `409 operation_in_progress` and nothing is sent;
+- a fence whose operation was never written (a crash between claim and journal) frees after `LEASE`;
+- an exit always remains: Polar's customer portal (Update) is not fenced, and a fenced operation resolves (or reaches
+  an operator) through the reconcile below.
+
+**`not_applied` only when Polar did not move (implementation review P1-2).** The reconcile reads Polar's
+`modified_at`. If the operation's effect is not visible but the subscription changed after the send, or the revision
+cannot be read, the operation stays `provider_unknown`, is marked `moved`, and is escalated to an operator at once.
+It is never presented as one that did not happen.
+
 **Concurrency:** two workers that both see an expired lease race on CAS. Exactly one claims it; the other's CAS fails
 and it sends nothing. A claimed operation's `sent` CAS still requires the claimer's own `owner` token. **At most one
 PATCH per operation, ever.**

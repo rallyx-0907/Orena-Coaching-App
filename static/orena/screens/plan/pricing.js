@@ -17,7 +17,7 @@ import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy, planName, planDescription } from '../../copy/shell.js';
 import { t } from './copy.js';
-import { pricingPlans, compareRows, changeKind, featureCopyKey, formatNumber, priceView, yearlySaving, languageReasonFacts, CYCLES } from './model.js';
+import { pricingPlans, compareRows, changeKind, featureCopyKey, formatNumber, priceView, yearlySaving, languageReasonFacts, CYCLES, subscriptionView, cycleOf } from './model.js';
 import { heldReason, releaseReason, REASON_LANGUAGE } from './reason.js';
 import { languageReasonText } from './reason-text.js';
 import { openBillingSheet } from './sheet.js';
@@ -33,21 +33,25 @@ function featureLine(feature) {
   return t(`line_${suffix}`, { n: number(feature.limit) });
 }
 
-function ctaMarkup(plan, current) {
+function ctaMarkup(plan, current, cycle, currentCycle) {
   const kind = changeKind(plan, current);
+  // The design: on the current plan, the other billing period is "Switch to yearly / monthly".
+  if (kind === 'current' && currentCycle && currentCycle !== cycle) {
+    return html`<button type="button" class="o-btn o-btn--secondary s-pricing-card__cta" data-choose="${plan.id}">${t(`ctaSwitchCycle_${cycle}`)}</button>`;
+  }
   if (kind === 'current') return html`<button type="button" class="o-btn o-btn--secondary s-pricing-card__cta" disabled>${t('ctaCurrent')}</button>`;
   const label = t(kind === 'upgrade' ? 'ctaUpgrade' : 'ctaSwitch', { plan: planName(plan) });
   return html`<button type="button" class="${cls('o-btn s-pricing-card__cta', kind === 'upgrade' ? 'o-btn--primary' : 'o-btn--secondary')}" data-choose="${plan.id}">${label}</button>`;
 }
 
-function planCard(plan, current, cycle) {
+function planCard(plan, current, cycle, currentCycle = null) {
   const price = priceView(plan, cycle, languages().ui);
   return html`<section class="s-plan-card s-pricing-card">
     <div class="s-pricing-card__head"><span class="s-pricing-card__name">${planName(plan)}</span>${plan.isCurrent ? html`<span class="s-plan-pill s-plan-pill--accent">${t('tagCurrent')}</span>` : ''}</div>
     <div class="s-pricing-card__tagline">${planDescription(plan)}</div>
     <div class="s-pricing-card__pricerow"><span class="s-pricing-card__price">${price.free ? t('priceFree') : price.price}</span>${price.free || price.price === '—' ? '' : html`<span class="s-pricing-card__per">${t('perMonth')}</span>`}</div>
     <div class="s-pricing-card__billed">${price.billedKey ? t(price.billedKey, { amount: price.billedAmount }) : ''}</div>
-    ${ctaMarkup(plan, current)}
+    ${ctaMarkup(plan, current, cycle, currentCycle)}
     <div class="s-pricing-card__rule"></div>
     <div class="s-pricing-card__feats">${plan.features.map((feature) => html`<div class="s-pricing-card__feat"><span class="s-pricing-card__tick">${raw(icon('check', { size: 17, stroke: 2.4 }))}</span><span>${featureLine(feature)}</span></div>`)}</div>
   </section>`;
@@ -63,7 +67,7 @@ function cyclesMarkup(cycle, saving) {
   return html`<div class="s-pricing__cycles" role="group" aria-label="${t('billingCycle')}">${CYCLES.map((key) => html`<button type="button" class="s-pricing__cycle" aria-pressed="${key === cycle ? 'true' : 'false'}" data-cycle="${key}">${t(key === 'yearly' ? 'cycleYearly' : 'cycleMonthly')}${key === 'yearly' && saving > 0 ? html`<span class="s-pricing__save">−${saving}%</span>` : ''}</button>`)}</div>`;
 }
 
-export function pricingMarkup({ plans, commerce, cycle = 'monthly', reason = null }) {
+export function pricingMarkup({ plans, commerce, cycle = 'monthly', reason = null, currentCycle = null }) {
   const list = pricingPlans({ plans, commerce });
   const current = list.find((plan) => plan.isCurrent) || null;
   const rows = compareRows(list);
@@ -72,7 +76,7 @@ export function pricingMarkup({ plans, commerce, cycle = 'monthly', reason = nul
     <div class="s-plan__scroll" data-scroll-region>
       ${reason ? bannerMarkup({ kind: 'info', title: reason.title, text: reason.text, dismissLabel: shellCopy('dismiss') }) : ''}
       <div class="s-pricing__hero"><h2 class="s-pricing__headline">${t('pricingHero')}</h2><p class="s-pricing__sub">${t('pricingSub')}</p>${cyclesMarkup(cycle, yearlySaving(list, languages().ui))}</div>
-      <div class="s-pricing__plans">${list.map((plan) => planCard(plan, current, cycle))}</div>
+      <div class="s-pricing__plans">${list.map((plan) => planCard(plan, current, cycle, currentCycle))}</div>
       ${rows.length ? html`<section class="s-plan-card s-pricing-compare" style="--cols:${list.length}">
         <h2 class="s-plan-card__title">${t('comparePlans')}</h2>
         <div class="s-pricing-compare__row s-pricing-compare__row--head"><span></span>${list.map((plan) => html`<span class="${cls('s-pricing-compare__plan', plan.isCurrent && 's-pricing-compare__plan--current')}">${planName(plan)}</span>`)}</div>
@@ -83,9 +87,11 @@ export function pricingMarkup({ plans, commerce, cycle = 'monthly', reason = nul
 }
 
 export default async function pricing(element, ctx) {
-  const [plansAnswer, commerce] = await Promise.all([
+  const [plansAnswer, commerce, subscription, sale] = await Promise.all([
     api.productPlans().catch(() => null),
     api.productCommerce().catch(() => null),
+    api.billingSubscription().catch(() => null),
+    api.billingOffers().catch(() => null),
   ]);
   if (!ctx.isCurrent()) return undefined;
   const plans = plansAnswer && Array.isArray(plansAnswer.plans) ? plansAnswer.plans : null;
@@ -93,7 +99,9 @@ export default async function pricing(element, ctx) {
 
   const list = pricingPlans({ plans, commerce });
   const current = list.find((plan) => plan.isCurrent) || null;
-  let cycle = 'monthly';
+  const sub = subscriptionView(subscription);
+  const currentCycle = sub.live && sub.period ? cycleOf(sub.period) : null;
+  let cycle = currentCycle || 'monthly';
   /* Why the learner was sent here (D-171): a refused language explains itself on top, until it is dismissed. Without the
      address's `reason` there is nothing to explain, and what was held is let go. */
   let reason = null;
@@ -105,7 +113,7 @@ export default async function pricing(element, ctx) {
   }
   const paint = () => {
     const scroll = element.querySelector('[data-scroll-region]')?.scrollTop || 0;
-    mount(element, pricingMarkup({ plans, commerce, cycle, reason }));
+    mount(element, pricingMarkup({ plans, commerce, cycle, reason, currentCycle }));
     const region = element.querySelector('[data-scroll-region]');
     if (region) region.scrollTop = scroll;
   };
@@ -127,7 +135,13 @@ export default async function pricing(element, ctx) {
     }
     const choose = event.target.closest('[data-choose]');
     const target = choose && list.find((plan) => plan.id === choose.dataset.choose);
-    if (target) openBillingSheet({ target, current, cycle });
+    if (target) {
+      openBillingSheet({
+        target, current, cycle, subscription: sub, offers: sale?.offers || [], free: list.find((plan) => plan.isFree) || null,
+        // The design: Done on Plans goes to Plan & usage.
+        onFinish: (changed) => { if (changed && ctx.isCurrent()) ctx.go(ctx.href('billing')); },
+      });
+    }
     return undefined;
   });
   return undefined;

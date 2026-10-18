@@ -161,6 +161,15 @@ class PolarGateway:
             )  # fmt: skip
         return PaymentFact(**base, kind="ignored", external_reference=None, provider_state=kind or None)
 
+    def api_request(self, method: str, path: str, body: Mapping[str, Any] | None = None) -> dict:
+        """One authenticated Polar API request (PR-MON-9); the token never leaves the gateway's requests."""
+
+        request: dict[str, Any] = {"method": method, "url": API_BASE[self.environment] + path,
+                                   "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip
+        if body is not None:
+            request["json"] = dict(body)
+        return request
+
     def product_request(self, product_id: str) -> dict:
         """PR-MON-10 §4.6 (R-MON-011): a read-only `GET /v1/products/{id}` (scope `products:read`)."""
 
@@ -205,5 +214,7 @@ class PolarGateway:
         }  # fmt: skip
         if intent.customer_email:
             body["customer_email"] = intent.customer_email
+        if intent.embed_origin:
+            body["embed_origin"] = intent.embed_origin
         return {"method": "POST", "url": API_BASE[self.environment] + "/v1/checkouts/", "json": body,
                 "headers": {"Authorization": f"Bearer {self._token}"}}  # fmt: skip

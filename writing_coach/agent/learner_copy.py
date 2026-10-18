@@ -125,15 +125,24 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
              "vi": "{user_cap} muốn {self} ghi nhớ điều này? {user_cap} gõ lại có dấu giúp {self} nhé.",
              "zh-CN": "{user}想让{self}记住这件事吗？请带声调符号再输入一次。"},
         ),
-        # Tapped to keep a note, and the model kept none even when asked again.
         # The learner asked to change or forget a coach note the current model may not read (G8, owner 2026-10-18):
-        # nothing was changed, said plainly.
+        # none of the existing notes was changed, said plainly.
         "notes.unavailable": _entry(
             CopyLayer.SUPPORT,
-            {"en": "I can't read or change your notes with the model in use right now, so nothing was changed.",
-             "vi": "Với mô hình đang dùng, {self} chưa thể đọc hay sửa ghi chú của {user}, nên chưa có gì thay đổi.",
-             "zh-CN": "{self}现在使用的模型无法读取或修改{user}的笔记，所以没有做任何更改。"},
+            {"en": "I can't read or change your earlier notes with the model in use right now, so none of them was changed.",
+             "vi": "Với mô hình đang dùng, {self} chưa thể đọc hay sửa ghi chú cũ của {user}, nên chưa có ghi chú nào thay đổi.",
+             "zh-CN": "{self}现在使用的模型无法读取或修改{user}之前的笔记，所以这些笔记都没有更改。"},
         ),
+        # The same message also asked for a new note, and it was kept (a new note is kept below full_memory).
+        "notes.kept_others_unavailable": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "I've kept your new note. I can't read or change your earlier notes with the model in use right now, "
+                   "so none of them was changed.",
+             "vi": "{self_cap} đã ghi nhớ ghi chú mới. Với mô hình đang dùng, {self} chưa thể đọc hay sửa ghi chú cũ của "
+                   "{user}, nên chưa có ghi chú nào thay đổi.",
+             "zh-CN": "{self}已经记下了新的笔记。{self}现在使用的模型无法读取或修改{user}之前的笔记，所以这些笔记都没有更改。"},
+        ),
+        # Tapped to keep a note, and the model kept none even when asked again.
         "notes.not_kept": _entry(
             CopyLayer.SUPPORT,
             {"en": "I haven't kept it yet. Could you tap it again?",

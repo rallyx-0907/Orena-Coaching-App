@@ -555,3 +555,232 @@
   font-weight: 600;
   font-size: 14px;
 }
+
+/* ---- PR-MON-9: the card subscription (Orena.dc.html, Plan & usage line 1079, Billing Sheet line 1865) ---- */
+
+/* The amber "cancels" banner with Resume. */
+.s-plan-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: var(--amber-soft);
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.s-plan-banner__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 99px;
+  background: var(--amber);
+  flex: none;
+}
+.s-plan-banner__text {
+  flex: 1;
+  min-width: 200px;
+  font-size: 14.5px;
+  line-height: 1.45;
+}
+.s-plan-banner__btn {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  flex: none;
+}
+.s-plan-actions .s-plan__cancel {
+  height: 44px;
+  padding: 0 18px;
+  font-size: 14px;
+}
+
+/* The card on file and the billing email. */
+.s-plan-pay__rule {
+  height: 1px;
+  background: var(--border);
+}
+.s-plan-pay__email {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.s-plan-pay__mail {
+  font-size: 15px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+/* Invoices: one row per paid order, the card padded 12px 0 with the rows full-bleed (the design). */
+.s-plan-invoices--list {
+  padding: 12px 0;
+  gap: 0;
+}
+.s-plan-invoices--list > .s-plan-card__title {
+  padding: 12px 24px 8px;
+}
+.s-plan-invoice {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.s-plan-invoice__id {
+  flex: 1 1 140px;
+  min-width: 0;
+}
+.s-plan-invoice__date {
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.s-plan-invoice__desc {
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-plan-invoice__amt {
+  font-size: 14.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.s-plan-invoice__status {
+  padding: 4px 9px;
+  font-size: 11.5px;
+}
+.s-plan-invoice__dl {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+/* The sheet's cancel kind, its error, and its processing and done steps. */
+.s-plan-sheet__lead {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.s-plan-sheet__losses {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-plan-sheet__loss {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+  font-size: 14px;
+}
+.s-plan-sheet__loss > span:last-child {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.s-plan-sheet__why {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.s-plan-sheet__reasons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+/* D-147: no violet edge on the chosen chip - the thin light strip; colour carries the choice. */
+.s-plan-sheet__reason {
+  padding: 9px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.s-plan-sheet__reason[aria-pressed='true'] {
+  border-color: transparent;
+  box-shadow: var(--edge-light);
+  background: var(--accent-soft);
+  color: var(--accent-on-photo, var(--accent));
+}
+.s-plan-sheet__error {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: var(--red-soft);
+  color: var(--red);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.o-btn.s-plan-sheet__danger {
+  color: var(--red);
+}
+.s-plan-sheet__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 36px 0;
+  text-align: center;
+}
+.s-plan-sheet__spin {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 3px solid var(--surface3);
+  border-top-color: var(--accent);
+  animation: spin 0.8s linear infinite;
+}
+.s-plan-sheet__statetitle {
+  font-size: 15px;
+  font-weight: 600;
+}
+.s-plan-sheet__check {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--green);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.s-plan-sheet__donetitle {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+.s-plan-sheet__donetext {
+  font-size: 14.5px;
+  color: var(--muted);
+  line-height: 1.5;
+  max-width: 340px;
+}
+
+/* The Billing Sheet's footer, as its frame draws it (line 1890): two equal buttons, 48px, radius 14, 15px/600, gap 10,
+   padding 16px 24px 22px. Scoped to this sheet: the kit's shared sheet footer stays as the other frames measure it. */
+.s-plan-billsheet .o-sheet__foot {
+  gap: 10px;
+  padding: 16px 24px 22px;
+}
+.s-plan-billsheet .o-sheet__foot > .o-btn {
+  flex: 1 1 0;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+}

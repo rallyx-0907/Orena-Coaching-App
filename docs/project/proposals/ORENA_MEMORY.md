@@ -608,8 +608,10 @@ for `full_memory` (§8). The UI is UI-lane work and needs a contract change (§8
 
 - **Where it stands.** A1 (PR #263) built the record (`AGENT_PROVIDER_DATA_CLASSES`,
   `writing_coach/agent/data_class.py`) and the gate for the M1 learner pack. M2-prep 2b adds coach notes (b: only to
-  `full_memory`; below it the notes are not sent and no note can be kept, changed or forgotten - the note tools are
-  not offered and are refused - and a learner who asks is told so; owner, 2026-10-18), the chat context (its learning
+  `full_memory`; below it the notes are not sent and no existing note can be changed or forgotten - `forget_note` is
+  not offered and a forget or a replace is refused - and a learner who asks is told so; owner, 2026-10-18. A new note
+  the learner asks for is still kept below `full_memory`: the owner's later decision of 2026-10-18 reversed the
+  first block of new notes, PR #272), the chat context (its learning
   evidence, `earlier_in_session`, only to `learning_profile`) and the conversation's history (c: never continued on
   a provider cleared for less than the conversation already sent; checked before a route is pinned; the turn answers
   the unavailable path, voice does not open): `GOVERNED_PAYLOADS = ("learner_pack", "coach_notes",
@@ -657,6 +659,15 @@ per its README, behind the files already waiting there), with in the same PR: th
 `writing_coach/persistence/`, and the tables in `deletion_enumeration.py` and its test. Then: independent review of the
 migration file, PostgreSQL up/down/up rehearsal, human authorisation, apply before code (startup refuses a schema below
 head). `downgrade()` drops learner data and is for rehearsal only.
+
+**As built at M2 promotion (2026-10-18, PR M2.1): no ORM models.** The memory tables are keyed by
+`account_incarnations`, which has no ORM model, like every incarnation-keyed table of 0005 (`works`,
+`language_provenance`, ...): an ORM model with that foreign key would break CI's `Base.metadata.create_all`. So they
+follow the 0005 pattern instead of "the ORM models with SQLite parity" above: the migration, a raw-SQL repository
+(`writing_coach/persistence/memory_repository.py`), and a contract test run against the fake and PostgreSQL
+(`tests/test_agent_memory_contract.py`, skipped in CI without `ORENA_TEST_POSTGRES_URL`). Do not add ORM models for
+them. M3's revision follows the same pattern. Independent review of the departure: Delegated Architecture Reviewer,
+`docs/reviews/architecture/ORENA_MEMORY_0035_REVIEW_2026-10-18.md`.
 
 ## 10. Owner decisions
 

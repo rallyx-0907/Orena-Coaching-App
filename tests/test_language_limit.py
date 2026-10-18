@@ -661,6 +661,9 @@ def test_f8_the_exempt_routes_are_exactly_the_ones_that_write_no_learner_rows():
         ("POST", "/api/billing/webhooks/{gateway}"), ("POST", "/api/feedback"), ("POST", "/api/platform/language"),
         # PR-MON-10 §4.4: opening Polar's customer portal writes no learner row
         ("POST", "/api/billing/portal"),
+        # PR-MON-9: an existing subscriber's plan through Polar writes no learner row
+        ("POST", "/api/billing/subscription/change/preview"), ("POST", "/api/billing/subscription/change"),
+        ("POST", "/api/billing/subscription/cancel"), ("POST", "/api/billing/subscription/resume"),
     }, sorted(non_admin)
     for route in [("POST", "/api/evaluate"), ("PUT", "/api/learner-profile"), ("PATCH", "/api/learner-profile"),
                   ("POST", "/api/agent/turn"), ("PUT", "/api/drafts/{key}"), ("POST", "/api/library/vocabulary"),

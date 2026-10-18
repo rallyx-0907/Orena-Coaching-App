@@ -181,10 +181,13 @@ export function changeKind(target, current) {
   return 'switch';
 }
 
-/* The design shows dong to a Vietnamese interface and dollars otherwise (Orena.dc.html `money`). */
+/* D-MON-034 (owner, 2026-10-17): plans are sold by Polar in US dollars only, so a plan's price is shown in dollars in
+   every interface language - the amount the learner is charged, formatted in the interface's own way. Dong stay with
+   Credits (SePay). This replaces D-153's dong-for-Vietnamese plan display. */
 export const CYCLES = Object.freeze(['monthly', 'yearly']);
-export function currencyFor(locale) {
-  return String(locale || '').toLowerCase().startsWith('vi') ? 'VND' : 'USD';
+export const PLAN_CURRENCY = 'USD';
+export function currencyFor() {
+  return PLAN_CURRENCY;
 }
 
 export function formatMoney(amount, currency, locale = 'en') {
@@ -202,7 +205,7 @@ export function priceView(plan, cycle, locale = 'en') {
   const amount = Number(plan.prices?.[cycle]?.[currency]);
   if (!Number.isFinite(amount)) return { free: false, price: '—', billedKey: '', billedAmount: '' };
   if (cycle === 'yearly') {
-    const share = currency === 'VND' ? Math.round(amount / 12 / 1000) * 1000 : amount / 12;
+    const share = amount / 12;
     return { free: false, price: formatMoney(share, currency, locale), billedKey: 'billedYearly', billedAmount: formatMoney(amount, currency, locale) };
   }
   return { free: false, price: formatMoney(amount, currency, locale), billedKey: 'billedMonthly', billedAmount: '' };
@@ -228,4 +231,86 @@ export function billingReady(commerce) {
 /* A count in the interface language's digits and grouping. */
 export function formatNumber(value, locale = 'en') {
   return new Intl.NumberFormat(locale).format(Number(value) || 0);
+}
+
+/* ---- PR-MON-9: buying and managing a plan through Polar --------------------------------------------------- */
+
+const PERIOD_OF = Object.freeze({ monthly: 'month', yearly: 'year' });
+const CYCLE_OF = Object.freeze({ month: 'monthly', year: 'yearly' });
+export const periodOf = (cycle) => PERIOD_OF[cycle] || 'month';
+export const cycleOf = (period) => CYCLE_OF[period] || 'monthly';
+
+/* The server's price key for a plan and cycle (`plan:period:polar`, PR-MON-8 §14: only Polar sells plans). */
+export function offerKey(planId, cycle) {
+  return `${planId}:${periodOf(cycle)}:polar`;
+}
+
+/* The offer the server sells for that key, with its own amount and currency - the only price a checkout confirms. */
+export function offerFor(offers, planId, cycle) {
+  const key = offerKey(planId, cycle);
+  return (Array.isArray(offers) ? offers : []).find((offer) => offer && offer.key === key) || null;
+}
+
+/* PR-MON-9 §3.5, mirrored for wording only (the server classifies for itself and its answer wins): the feature tier
+   wins over the billing period. `rank` is the catalogue's tier order. */
+export function classifyChange(current, target) {
+  const from = Number(current?.rank) || 0;
+  const to = Number(target?.rank) || 0;
+  if (to > from) return 'upgrade';
+  if (to < from) return 'downgrade';
+  const fromPeriod = current?.period === 'year' ? 1 : 0;
+  const toPeriod = target?.period === 'year' ? 1 : 0;
+  if (toPeriod > fromPeriod) return 'period_up';
+  if (toPeriod < fromPeriod) return 'period_down';
+  return 'none';
+}
+
+/* Scheduled changes are off in v1 (PR-MON-9 §3.6.1, proved 2026-10-18): a downgrade or a period-down is not sold. */
+export const SCHEDULED_CHANGES = false;
+export const changeIsImmediate = (kind) => kind === 'upgrade' || kind === 'period_up';
+
+/* What GET /api/billing/subscription says about the learner's card subscription, for the plan card and the banner. */
+export function subscriptionView(subscription) {
+  if (!subscription || subscription.provider !== 'polar') return { polar: false };
+  const live = ['active', 'trialing', 'past_due'].includes(subscription.status);
+  return {
+    polar: true,
+    live,
+    period: subscription.period || null,
+    cancelling: live && Boolean(subscription.cancel_at_period_end),
+    renewsAt: subscription.renews_at ? new Date(subscription.renews_at) : null,
+    card: subscription.payment_method && subscription.payment_method.last4 ? subscription.payment_method : null,
+    email: subscription.billing_email || '',
+  };
+}
+
+/* A card's brand as written on it; Polar sends the processor's lowercase key. */
+const BRANDS = Object.freeze({ visa: 'Visa', mastercard: 'Mastercard', amex: 'American Express', discover: 'Discover',
+  jcb: 'JCB', unionpay: 'UnionPay', diners: 'Diners Club' });
+export const cardBrand = (brand) => BRANDS[String(brand || '').toLowerCase()] || String(brand || '');
+
+export function formatDate(value, locale = 'en', { year = true } = {}) {
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', ...(year ? { year: 'numeric' } : {}) }).format(date);
+}
+
+/* An invoice's amount: Polar's minor units in its own currency. */
+export function invoiceAmount(item, locale = 'en') {
+  const minor = Number(item?.amount_minor);
+  const currency = String(item?.currency || PLAN_CURRENCY).toUpperCase();
+  if (!Number.isFinite(minor)) return '—';
+  return formatMoney(currency === 'VND' ? minor : minor / 100, currency, locale);
+}
+
+/* What the cancel sheet lists as lost (the design's "Orena messages 200 → 20 a day"): each metered feature whose
+   limit drops from the current plan to Free, from the catalogue. Kept (saved words, notes, progress) is a fixed row. */
+export function cancelLosses(current, free) {
+  const limits = (plan) => Object.fromEntries((plan?.features || []).map((feature) => [feature.key, feature]));
+  const now = limits(current);
+  const after = limits(free);
+  return USAGE_ORDER.filter((key) => now[key] && after[key] && now[key].limit != null && after[key].limit != null
+    && Number(after[key].limit) < Number(now[key].limit))
+    .map((key) => ({ key, from: now[key].limit, to: after[key].limit,
+      unit: String(current?.byKey?.[key]?.display_unit || '') }));
 }
