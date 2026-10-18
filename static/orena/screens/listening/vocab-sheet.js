@@ -19,11 +19,12 @@ import { shellCopy as s } from '../../copy/shell.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { lookupContext } from './model.js';
+import { wordDetailRequest } from '../quick-sheet/model.js';
 
-async function resolveTerm(term, { lang, support, context }) {
+async function resolveTerm(term, { lang, support, context, source }) {
   let detail = null;
   try {
-    detail = await api.wordDetail({ depth: 'sheet', contextual: false, text: term, context: lookupContext(term, context), source_language: lang, target_language: support });
+    detail = await api.wordDetail(wordDetailRequest({ contextual: false, target: term, context: lookupContext(term, context), lang, support, source }));
   } catch {
     detail = null;
   }
@@ -113,7 +114,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
       sheetEl = element;
       paint();
       (async () => {
-        const resolved = await Promise.all(rows.map((row) => resolveTerm(row.word, { lang, support, context })));
+        const resolved = await Promise.all(rows.map((row) => resolveTerm(row.word, { lang, support, context, source })));
         if (!alive) return;
         rows = resolved;
         paint();
