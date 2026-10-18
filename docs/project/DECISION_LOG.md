@@ -7400,7 +7400,7 @@ Decision.
 
 ## D-227 - Word tap: zero-cost choice among a word's stored senses (amends D-195 clause 1) (2026-10-18)
 
-**Status: PROPOSED.** Needs the owner's "D-227: ACCEPTED". Implemented by PR #293 (refs #194); independent review APPROVE. No schema, no migration, no UI change, no contract change.
+**Status: ACCEPTED** (2026-10-18, accepted by Hermes for the owner. The owner delegated D-entry acceptance to Hermes in the UI-lane session the same day: "mấy cái này có thể để hermes làm thay tôi không nhất thiết là cần tôi 'D-227: ACCEPTED'"). Implemented by PR #293 (refs #194); independent review APPROVE. No schema, no migration, no UI change, no contract change.
 
 Owner decision of 2026-10-18 (via the delegate, delegation confirmed by the owner): a word tap keeps a neutral basic meaning; the contextual sense is picked only for an ambiguous polysemous word, at zero cost first.
 
