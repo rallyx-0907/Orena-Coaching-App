@@ -13,7 +13,14 @@ semantics the proposal fixes can be tested now and the PostgreSQL repository can
   its former expiry; a later materialisation of that (slot, value) writes nothing; bulk delete keeps the keys (§4.1);
 - **tombstones** - deleting a session's summary leaves a tombstone for every language part of it, and a checkpoint
   never writes over a tombstone, a finalised row, or a higher `turns_covered` (§4.2);
-- **expiry** - reads filter `expires_at`; nothing is swept here (a bounded sweep belongs to the repository).
+- **expiry** - reads filter `expires_at`; nothing is swept here (a bounded sweep belongs to the repository);
+- **snapshot** - a pack reads state, items and summaries in one operation, so its contents are exactly those of the
+  version it carries: a delete committed on another worker either is in it or bumps the version past it (§5.2);
+- **finalisation** - an open summary idle 30 minutes (so, too, one 24 hours after its last checkpoint) becomes
+  final as a stored transition (a later checkpoint is a no-op); nothing is finalised while memory is OFF.
+
+Pinning (continuity to explicit) is not in this port yet: rev 4.1 §3.4 makes the explicit item the learner's own words
+with the slot and code kept, which needs the M3 representation; it comes with it.
 """
 
 from __future__ import annotations
@@ -35,8 +42,7 @@ CONTINUITY_TTL = timedelta(days=14)  # G10
 INFERRED_SUPPRESSION = timedelta(days=30)
 SUMMARY_TTL = timedelta(days=60)
 TOMBSTONE_TTL = timedelta(days=2)
-IDLE_FINAL = timedelta(minutes=30)  # an open summary idle this long reads as final (the session cache TTL)
-OPEN_FINAL = timedelta(hours=24)
+IDLE_FINAL = timedelta(minutes=30)  # an open summary idle this long becomes final (the session cache TTL)
 RENDER_AGE = timedelta(days=14)
 LIMITS = {EXPLICIT: 30, INFERRED: 10, CONTINUITY: 20}
 MIN_TURNS = 2  # a session with fewer learner turns writes no summary
@@ -99,6 +105,15 @@ class SessionSummary:
 
 
 @dataclass(frozen=True)
+class MemorySnapshot:
+    """One consistent read: everything in it belongs to `state.version`."""
+
+    state: MemoryState
+    items: tuple[MemoryItem, ...]
+    summaries: tuple[SessionSummary, ...]
+
+
+@dataclass(frozen=True)
 class _Suppression:
     language_code: str
     cls: str
@@ -122,7 +137,7 @@ class MemoryRepository(Protocol):
 
     def delete_item(self, scope: MemoryScope, item_id: str, now: datetime) -> bool: ...
 
-    def pin(self, scope: MemoryScope, item_id: str, now: datetime) -> MemoryItem | None: ...
+    def snapshot(self, scope: MemoryScope, language: str, now: datetime, sessions: int) -> MemorySnapshot: ...
 
     def delete_all(self, scope: MemoryScope, what: str, now: datetime) -> int: ...
 
@@ -209,7 +224,7 @@ class InMemoryMemoryStore:
                                                      item.value_key, until))  # fmt: skip
         if item.cls == CONTINUITY and item.slot:
             for key, row in learner.summaries.items():
-                if row.summary is not None:
+                if row.summary is not None and item.language_code in (row.language_code, ANY_LANGUAGE):
                     learner.summaries[key] = replace(row, summary=without_deleted_item(row.summary, item.slot,
                                                                                        item.text))  # fmt: skip
 
@@ -219,28 +234,49 @@ class InMemoryMemoryStore:
         with self._lock:
             return self._learner(scope).state
 
-    def items(self, scope: MemoryScope, language: str, now: datetime) -> list[MemoryItem]:
-        with self._lock:
-            learner = self._learner(scope)
-            found = [i for i in learner.items.values()
-                     if i.language_code in (language, ANY_LANGUAGE) and _live(i.expires_at, now)]  # fmt: skip
+    def _items(self, learner: _Learner, language: str, now: datetime) -> list[MemoryItem]:
+        found = [i for i in learner.items.values()
+                 if i.language_code in (language, ANY_LANGUAGE) and _live(i.expires_at, now)]  # fmt: skip
         return sorted(found, key=lambda i: (i.cls, i.kind, i.created_at, i.id))
 
+    @staticmethod
+    def _settle(learner: _Learner, now: datetime) -> None:
+        """Open summaries idle 30 minutes since their last checkpoint become final - stored, so a later
+        checkpoint is a no-op. Not while memory is OFF: stored memory stays untouched (§6). The version is not
+        bumped: what a pack renders does not change (an idle summary already read as final)."""
+
+        if not learner.state.enabled:
+            return
+        for key, row in learner.summaries.items():
+            if row.state == "open" and now - row.last_checkpoint_at >= IDLE_FINAL:
+                ended = row.last_checkpoint_at + IDLE_FINAL
+                learner.summaries[key] = replace(row, state="final", finalised_at=ended, expires_at=ended + SUMMARY_TTL)
+
+    def _summaries(self, learner: _Learner, language: str, now: datetime, limit: int) -> list[SessionSummary]:
+        shown = [row for row in learner.summaries.values()
+                 if row.language_code == language and row.state == "final" and row.summary
+                 and _live(row.expires_at, now) and row.finalised_at and now - row.finalised_at <= RENDER_AGE]
+        return sorted(shown, key=lambda row: row.finalised_at, reverse=True)[:limit]  # fmt: skip
+
+    def items(self, scope: MemoryScope, language: str, now: datetime) -> list[MemoryItem]:
+        with self._lock:
+            return self._items(self._learner(scope), language, now)
+
     def summaries(self, scope: MemoryScope, language: str, now: datetime, limit: int) -> list[SessionSummary]:
-        """Finalised summaries of the language, newest first; an open one idle 30 minutes, or 24 hours after its
-        last checkpoint, reads as final. Never a tombstone, never one older than the render age."""
+        """Finalised summaries of the language, newest first (idle ones finalised first). Never a tombstone, never
+        one older than the render age."""
 
         with self._lock:
-            rows = list(self._learner(scope).summaries.values())
-        shown = []
-        for row in rows:
-            if row.language_code != language or row.state == "deleted" or not _live(row.expires_at, now):
-                continue
-            ended = row.finalised_at or (row.last_checkpoint_at if now - row.last_checkpoint_at >= IDLE_FINAL else None)
-            if ended is None or now - ended > RENDER_AGE or not row.summary:
-                continue
-            shown.append((ended, row))
-        return [row for _, row in sorted(shown, key=lambda pair: pair[0], reverse=True)[:limit]]
+            learner = self._learner(scope)
+            self._settle(learner, now)
+            return self._summaries(learner, language, now, limit)
+
+    def snapshot(self, scope: MemoryScope, language: str, now: datetime, sessions: int) -> MemorySnapshot:
+        with self._lock:
+            learner = self._learner(scope)
+            self._settle(learner, now)
+            return MemorySnapshot(state=learner.state, items=tuple(self._items(learner, language, now)),
+                                  summaries=tuple(self._summaries(learner, language, now, sessions)))  # fmt: skip
 
     # --- writes --------------------------------------------------------------------------------------------------
 
@@ -333,6 +369,7 @@ class InMemoryMemoryStore:
             learner = self._learner(scope)
             if not learner.state.enabled:
                 return False
+            self._settle(learner, now)  # an idle part is final before this checkpoint is weighed
             whole = learner.summaries.get((agent_session_id, ANY_LANGUAGE))
             if whole is not None and _live(whole.expires_at, now):
                 return False  # the learner deleted this session: no language part of it is written again
@@ -371,6 +408,8 @@ class InMemoryMemoryStore:
     def finalise(self, scope: MemoryScope, agent_session_id: str, now: datetime) -> int:
         with self._lock:
             learner = self._learner(scope)
+            if not learner.state.enabled:
+                return 0  # memory OFF: stored memory stays untouched
             done = 0
             for key, row in learner.summaries.items():
                 if key[0] == agent_session_id and row.state == "open":
@@ -431,17 +470,18 @@ def memory_section(store: MemoryRepository, scope: MemoryScope | None, language:
 
     if scope is None:
         return None
-    state = store.state(scope)
+    read = store.snapshot(scope, language, now, sessions)  # one consistent read at one version
+    state = read.state
     if not state.enabled:
         return None
     by_class: dict[str, list[MemoryItem]] = {EXPLICIT: [], INFERRED: [], CONTINUITY: []}
-    for item in store.items(scope, language, now):
+    for item in read.items:
         by_class[item.cls].append(item)
     by_class[EXPLICIT].sort(key=lambda i: (i.created_at, i.id))
     ordered = [*reversed(by_class[EXPLICIT]), *by_class[INFERRED], *by_class[CONTINUITY]]  # as rendered
     proof = [{"line": f"{item.cls}.{item.id}", "source": "learner_memories", "id": item.id, "via": item.source}
              for item in ordered]
-    rows = store.summaries(scope, language, now, sessions)
+    rows = read.summaries
     proof += [{"line": f"session.{row.agent_session_id}", "source": "orena_session_summaries",
                "id": row.agent_session_id} for row in rows]  # fmt: skip
     return MemorySection(

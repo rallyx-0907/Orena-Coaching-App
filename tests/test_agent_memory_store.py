@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from writing_coach.agent.memory_keys import MemoryKeys
-from writing_coach.agent.memory_pack import PACK_OPEN, PackBuilder, build_pack
+from writing_coach.agent.memory_pack import MEMORY_PACK_VERSION, PACK_OPEN, PackBuilder, build_pack, pack_numbers
 from writing_coach.agent.memory_store import (
     ANY_LANGUAGE,
     CONTINUITY,
@@ -84,7 +84,7 @@ def test_every_change_bumps_the_version():
     changed()
     s.delete_item(A, item.id, T0)
     changed()
-    s.pin(A, s.items(A, "zh", T0)[0].id, T0)
+    s.finalise(A, "s1", T0)
     changed()
     s.set_enabled(A, False)
     changed()
@@ -250,16 +250,6 @@ def test_an_open_summary_reads_as_final_after_30_idle_minutes_and_ages_out():
     assert s.summaries(A, "zh", T0 + timedelta(days=15), 5) == []  # older than the render age
 
 
-def test_pin_makes_a_continuity_item_explicit_and_replaces_the_slot():
-    s = store()
-    s.add_explicit(A, language="zh", kind="context", text="it", slot="occupation", source="learner_asked", now=T0)
-    checkpoint(s, context=[("occupation", "engineering")])
-    continuity = next(i for i in s.items(A, "zh", T0) if i.cls == CONTINUITY)
-    pinned = s.pin(A, continuity.id, T0)
-    assert pinned.cls == EXPLICIT and pinned.expires_at is None and pinned.source == "learner_pinned"
-    assert [(i.cls, i.text) for i in s.items(A, "zh", T0) if i.slot == "occupation"] == [(EXPLICIT, "engineering")]
-
-
 def test_rotation_keeps_dedupe_and_suppression_of_rows_written_before():
     old = "v1:" + "k" * 40
     s = store(old)
@@ -287,6 +277,82 @@ def test_concurrent_checkpoints_of_one_session_write_once():
     assert results.count(True) == 1
 
 
+def test_a_section_is_one_consistent_read_and_a_completed_delete_never_reaches_the_next_one():
+    s = filled()
+    later = T0 + timedelta(hours=1)
+    explicit = next(i for i in s.items(A, "zh", later) if i.cls == EXPLICIT)
+    calls = []
+
+    class Spy:  # the section must read through one snapshot, never state/items/summaries one by one
+        def __getattr__(self, name):
+            calls.append(name)
+            return getattr(s, name)
+
+    before = memory_section(Spy(), A, "zh", later)
+    assert calls == ["snapshot"]
+    assert any(e["id"] == explicit.id for e in before.provenance) and before.version == s.state(A).version
+
+    # A delete on another worker lands while this worker is inside its read: the read is atomic, so it holds the
+    # item only together with the version before the delete, and the next read has neither.
+    original = s._settle
+    started, release = threading.Event(), threading.Event()
+
+    def slow_settle(learner, now):
+        started.set()
+        release.wait(2)
+        original(learner, now)
+
+    s._settle = slow_settle
+    result = {}
+    reader = threading.Thread(target=lambda: result.setdefault("section", memory_section(s, A, "zh", later)))
+    reader.start()
+    started.wait(2)
+    deleter = threading.Thread(target=lambda: s.delete_item(A, explicit.id, later))
+    deleter.start()
+    release.set()
+    reader.join()
+    deleter.join()
+    s._settle = original
+    during = result["section"]
+    holds = any(e["id"] == explicit.id for e in during.provenance)
+    assert holds and during.version == before.version  # the delete waited for the read
+    after = memory_section(s, A, "zh", later)
+    assert not any(e["id"] == explicit.id for e in after.provenance) and after.version > during.version
+
+
+def test_nothing_is_finalised_while_memory_is_off():
+    s = store()
+    checkpoint(s)
+    s.set_enabled(A, False)
+    version = s.state(A).version
+    assert s.finalise(A, "s1", T0) == 0 and s.state(A).version == version  # voice/end while OFF writes nothing
+    s.summaries(A, "zh", T0 + timedelta(hours=2), 5)
+    assert s._learner(A).summaries[("s1", "zh")].state == "open"  # untouched while OFF
+
+
+def test_an_idle_summary_is_stored_final_and_a_later_checkpoint_is_a_no_op():
+    s = store()
+    checkpoint(s, turns=4)
+    later = T0 + timedelta(minutes=31)
+    assert len(s.summaries(A, "zh", later, 5)) == 1
+    assert s._learner(A).summaries[("s1", "zh")].state == "final"
+    assert not checkpoint(s, turns=8, now=later)
+    fresh = store()  # the same holds when the checkpoint is the first thing to see the idle row
+    checkpoint(fresh, turns=4)
+    assert not checkpoint(fresh, turns=8, now=later)
+
+
+def test_deleting_an_item_scrubs_only_its_own_language_summaries():
+    s = store()
+    checkpoint(s, language="zh", context=[("learning_purpose", "job_interview")])
+    checkpoint(s, session="s2", language="en", context=[("learning_purpose", "job_interview")])
+    zh_item = next(i for i in s.items(A, "zh", T0) if i.slot == "learning_purpose")
+    s.delete_item(A, zh_item.id, T0)
+    later = T0 + timedelta(hours=1)
+    assert s.summaries(A, "zh", later, 5)[0].summary["open_task"] is None
+    assert s.summaries(A, "en", later, 5)[0].summary["open_task"] == SUMMARY["open_task"]  # en untouched
+
+
 # --- the pack -------------------------------------------------------------------------------------------------------
 
 
@@ -307,6 +373,9 @@ def test_the_pack_carries_memory_with_provenance_and_the_version():
     assert pack.data["continuity"]["items"] == [{"slot": "occupation", "code": "engineering"}]
     assert pack.data["continuity"]["sessions"][0]["open_task"] == SUMMARY["open_task"]
     assert pack.memory_version == s.state(A).version
+    assert pack.data["version"] == MEMORY_PACK_VERSION and pack.text.startswith(
+        f'<orena_learner_pack version="{MEMORY_PACK_VERSION}">')
+    assert pack_numbers(pack.text) == pack_numbers(build_pack(sources(), target="zh", support="vi", now=NOW).text)
     lines = {entry["line"].split(".")[0] for entry in pack.provenance}
     assert {"explicit", "continuity", "session"} <= lines
     assert all(entry["id"] not in pack.text for entry in pack.provenance if entry.get("source") == "learner_memories")
@@ -316,6 +385,7 @@ def test_without_memory_the_pack_is_exactly_m1():
     plain = build_pack(sources(), target="zh", support="vi", now=NOW)
     assert build_pack(sources(), target="zh", support="vi", now=NOW, memory=None).text == plain.text
     assert plain.memory_version is None and "explicit" not in plain.data
+    assert plain.data["version"] == "orena-pack/1" and plain.text.startswith(PACK_OPEN)
 
 
 def test_memory_text_is_data_and_cleaned():
