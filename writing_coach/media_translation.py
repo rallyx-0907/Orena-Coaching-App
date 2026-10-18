@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 import hashlib
 import json
@@ -492,7 +492,7 @@ class LocalHttpTranslationProvider:
         return translated
 
 
-TRANSLATION_PROVIDER_IDS = ("groq", "local")
+TRANSLATION_PROVIDER_IDS = ("groq", "local", "ai")
 
 
 def resolve_translation_provider_id(configured: str, *, groq_key: str) -> str:
@@ -502,6 +502,10 @@ def resolve_translation_provider_id(configured: str, *, groq_key: str) -> str:
     optional variable through as an empty string, and `os.getenv(name, default)`
     only falls back when the name is absent entirely. Getting that wrong stops
     the application from importing at all.
+
+    `ai` (D-224) sends every batch through the platform router's `media_translation` capability and never asks Groq
+    directly; it needs no Groq key. `groq` is Groq first, with the router as the fallback when that capability is
+    configured in Admin. `groq_key` is the credential the process can use (the Admin-stored one, else the environment).
     """
     chosen = str(configured or "").strip().casefold()
     if not chosen:
@@ -513,8 +517,178 @@ def resolve_translation_provider_id(configured: str, *, groq_key: str) -> str:
             + "."
         )
     if chosen == "groq" and not str(groq_key or "").strip():
-        raise ValueError("MEDIA_TRANSLATION_PROVIDER='groq' requires GROQ_API_KEY.")
+        raise ValueError("MEDIA_TRANSLATION_PROVIDER='groq' requires a Groq key (GROQ_API_KEY or one saved in Admin).")
     return chosen
+
+
+def language_label(code: str) -> str:
+    """Human-readable language name from the canonical registry, never a local map (one registry for the product)."""
+
+    definition = support_language(code)
+    return definition.translation_label if definition else str(code or "")
+
+
+TRANSLATION_SYSTEM_PROMPT = (
+    "You translate transcript lines for a language-learning product. "
+    "Return JSON only, shaped "
+    '{"translations": [{"segment_id": "...", "translated_meaning": "..."}]}. '
+    "Translate meaning, not word by word. Never add commentary."
+)
+
+# The structured shape of a translation answer, for a provider that takes a schema (the platform router).
+TRANSLATION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "translations": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {"segment_id": {"type": "string"}, "translated_meaning": {"type": "string"}},
+                "required": ["segment_id", "translated_meaning"],
+            },
+        }
+    },
+    "required": ["translations"],
+}
+
+CORRECTION_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "lines": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "index": {"type": "integer"},
+                    "text": {"type": "string"},
+                    "reason": {"type": "string"},
+                },
+                "required": ["index", "text", "reason"],
+            },
+        }
+    },
+    "required": ["lines"],
+}
+
+
+def translation_user_prompt(source_language: str, target_language: str, segments: TranslationBatch) -> str:
+    lines = "\n".join(f"{segment.segment_id}\t{segment.original_text}" for segment in segments)
+    return (
+        f"Translate each {language_label(source_language)} line into natural "
+        f"{language_label(target_language)} for a language learner.\n"
+        "Each input line is an id, a tab, then the text. Translate the text only.\n"
+        "Return every id exactly once, unchanged.\n\n"
+        f"{lines}"
+    )
+
+
+def parse_translation_rows(data: object, wanted: set[str]) -> dict[str, str] | None:
+    """The translations of one answer, or None when the answer is not exactly one non-empty text per wanted id.
+
+    One definition of a valid answer for every engine: an unknown id, a repeated id, a blank or non-text meaning, or a
+    missing id makes the whole batch invalid, whoever produced it."""
+    items = data.get("translations") if isinstance(data, dict) else None
+    if not isinstance(items, list):
+        return None
+    translated: dict[str, str] = {}
+    for item in items:
+        if not isinstance(item, dict):
+            return None
+        segment_id = item.get("segment_id")
+        meaning = item.get("translated_meaning")
+        if (
+            not isinstance(segment_id, str)
+            or segment_id not in wanted
+            or segment_id in translated
+            or not isinstance(meaning, str)
+            or not meaning.strip()
+        ):
+            return None
+        translated[segment_id] = meaning.strip()
+    return translated if set(translated) == wanted else None
+
+
+def correction_messages(
+    language: str, texts: tuple[str, ...], title: str = "", description: str = ""
+) -> list[dict[str, str]]:
+    """The prompt of one transcript-correction request: the same words for every engine that answers it."""
+    language_name = language_label(language)
+    if language.casefold().split("-", 1)[0] == "en":
+        instructions = (
+            "Repair English transcript presentation only: punctuation, capitalization, and spacing. "
+            "Every spoken word and number must remain unchanged; do not add or remove any word."
+        )
+    else:
+        instructions = (
+            "Conservatively correct clear homophone or idiom recognition errors in this Simplified Chinese transcript. "
+            "Do not rewrite style, infer unheard speech, or change line order. Keep uncertain text unchanged."
+        )
+    numbered = "\n".join(f"{index}\t{text}" for index, text in enumerate(texts))
+    context = "\n".join(part for part in (
+        f"Source title: {title[:180]}" if title else "",
+        f"Source description: {description[:240]}" if description else "",
+    ) if part)
+    user = (
+        f"Language: {language_name}.\n{context}\n"
+        "Correct each line independently. Return JSON only as "
+        "{\"lines\":[{\"index\":0,\"text\":\"...\",\"reason\":\"...\"}]}. "
+        "The reason of each line must be exactly one code from this list, never a sentence: "
+        f"{', '.join(CORRECTION_REASON_CODES)}. Use no_change for unchanged text. "
+        "Return each index exactly once and preserve the input count and order.\n\n"
+        f"{numbered}"
+    )
+    return [{"role": "system", "content": instructions}, {"role": "user", "content": user}]
+
+
+def correction_output_bound(texts: tuple[str, ...]) -> int:
+    return sum(len(text.encode("utf-8")) for text in texts) + 80 * len(texts)
+
+
+def parse_correction_rows(data: object, texts: tuple[str, ...], *, provider: str, model: str) -> dict[str, object]:
+    """Validate one correction answer and shape it as the pipeline takes it (`texts`, `reasons`, `provider`, `model`).
+
+    The same checks for every engine (count, indexes, size, a reason per line); a failure is `malformed_result`. The
+    per-cue edit rules (`reject_cue_edit`) are applied later by the pipeline, to Groq's answer and to any other alike."""
+    wanted = set(range(len(texts)))
+    rows = data.get("lines") if isinstance(data, dict) else None
+    if not isinstance(rows, list) or len(rows) != len(texts):
+        raise TranslationProviderError("Corrector returned malformed transcript corrections.", reason="malformed_result")
+    result: dict[int, tuple[str, str]] = {}
+    for row in rows:
+        if not isinstance(row, dict) or type(row.get("index")) is not int or row["index"] not in wanted:
+            raise TranslationProviderError("Corrector returned malformed transcript corrections.", reason="malformed_result")
+        index = row["index"]
+        text = row.get("text")
+        reason = row.get("reason")
+        if (index in result or not isinstance(text, str) or not text.strip()
+                or len(text) > max(200, 2 * len(texts[index]) + 24)
+                or not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 240):
+            raise TranslationProviderError("Corrector returned malformed transcript corrections.", reason="malformed_result")
+        # The reason is a code from a closed list the operator's screen words in its own language; whatever else the
+        # model writes (a sentence in any language) is stored as the neutral `other`, never shown as free text.
+        code = reason.strip().casefold().replace("-", "_").replace(" ", "_")
+        result[index] = (text.strip(), code if code in CORRECTION_REASON_CODES else "other")
+    if set(result) != wanted:
+        raise TranslationProviderError("Corrector returned malformed transcript corrections.", reason="malformed_result")
+    return {"texts": [result[index][0] for index in range(len(texts))],
+            "reasons": [result[index][1] for index in range(len(texts))], "provider": provider, "model": model}
+
+
+def report_usage(model: str, usage: Mapping[str, Any], *, provider: str = "groq") -> None:
+    """Tell the listener (`usage_sink`) which tokens a provider answer billed, and which provider billed them. A listener
+    that takes only (model, usage) is Groq's alone; a fallback provider is reported with its own name (D-224)."""
+    listener = _USAGE_SINK.get()
+    if listener is None:
+        if usage and provider != "groq":
+            # Production always wires a sink; without one a router answer's spend is not booked in the media ledger.
+            _logger.warning("media usage of %s was reported with no sink wired; it is not booked", provider)
+        return
+    if not usage:
+        return
+    if provider == "groq":
+        listener(model, dict(usage))
+    else:
+        listener(model, dict(usage), provider)   # type: ignore[call-arg]
 
 
 class GroqTranslationProvider:
@@ -536,8 +710,14 @@ class GroqTranslationProvider:
       sending it would break the moment the model is changed.
 
     A failure raises `TranslationProviderError` and stops there. Choosing another
-    provider is an operator decision, never something this class does on its own
-    (`ARCHITECTURE_INVARIANTS.md`: no provider-to-provider fallback).
+    provider is never something this class does on its own: the one place that
+    sends a refused batch elsewhere is `FallbackTranslationProvider` (D-224,
+    PROPOSED), which wraps this class and asks the platform router.
+
+    The credential is read at every request through `credentials` when one is
+    given (the Admin-stored key first, then the environment: D-224), so a key
+    saved in Admin takes effect without a restart. Without it, the key given to
+    the constructor is used, as before.
     """
 
     engine_id = "groq"
@@ -551,8 +731,10 @@ class GroqTranslationProvider:
         timeout_seconds: float = 90.0,
         max_completion_tokens: int | None = None,
         output_tokens_per_minute: int | None = None,
+        credentials: Callable[[], tuple[str, str]] | None = None,
     ) -> None:
         self._api_key = str(api_key or "").strip()
+        self._credentials = credentials
         self._model = str(model or "").strip()
         self._url = str(base_url or "").rstrip("/") + "/chat/completions"
         self._timeout = timeout_seconds
@@ -570,12 +752,26 @@ class GroqTranslationProvider:
         # budget before it runs out rather than after.
         self.last_quota: dict[str, str] = {}
 
+    def _auth(self) -> tuple[str, str]:
+        """The (key, chat-completions URL) of this request. With a live credential source it is the ONLY source after
+        construction (the Admin-stored key, else the environment's, decided by the resolver): a key deleted or rotated in
+        Admin is never replaced by the one the provider was built with. Without a source, the constructor's key."""
+        if self._credentials is None:
+            return self._api_key, self._url
+        try:
+            key, base = self._credentials()
+        except Exception:  # noqa: BLE001 - an unreadable source is no key now; the next request asks again
+            return "", self._url
+        key = str(key or "").strip()
+        base = str(base or "").rstrip("/")
+        return key, (base + "/chat/completions") if base else self._url
+
     @property
     def configured(self) -> bool:
-        return bool(self._api_key and self._model)
+        return bool(self._auth()[0] and self._model)
 
     def _language_name(self, code: str) -> str:
-        """Human-readable name from the canonical registry, never a local map.
+        """Human-readable name from the canonical registry (`language_label`), never a local map.
 
         A private mapping here recreated the three-language assumption L2.5
         removed everywhere else: any language outside vi/en/zh reached the
@@ -583,20 +779,20 @@ class GroqTranslationProvider:
         There is one language registry for the product, not one per provider.
         """
 
-        definition = support_language(code)
-        return definition.translation_label if definition else str(code or "")
+        return language_label(code)
 
     def _prompt(self, source_language: str, target_language: str, segments: TranslationBatch) -> str:
-        lines = "\n".join(
-            f"{segment.segment_id}\t{segment.original_text}" for segment in segments
-        )
-        return (
-            f"Translate each {self._language_name(source_language)} line into natural "
-            f"{self._language_name(target_language)} for a language learner.\n"
-            "Each input line is an id, a tab, then the text. Translate the text only.\n"
-            "Return every id exactly once, unchanged.\n\n"
-            f"{lines}"
-        )
+        return translation_user_prompt(source_language, target_language, segments)
+
+    def salvaged_for(
+        self, source_language: str, target_language: str, segments: TranslationBatch
+    ) -> dict[str, str]:
+        """What an earlier, stopped ask already translated for these lines (paid for once, never asked for again)."""
+        return {segment.segment_id: text for segment in segments
+                if (text := self._salvage_get(source_language, target_language, segment)) is not None}
+
+    def drop_salvage(self, source_language: str, target_language: str, segments: TranslationBatch) -> None:
+        self._salvage_drop(source_language, target_language, segments)
 
     def translate_batch(
         self,
@@ -643,56 +839,28 @@ class GroqTranslationProvider:
         texts = tuple(str(getattr(cue, "text", "")) for cue in cues)
         if not texts or len(texts) > 24 or sum(len(text) for text in texts) > 6_000:
             raise TranslationProviderError("Transcript correction batch exceeds its bound.", reason="request_too_large")
-        language_name = self._language_name(language)
-        if language.casefold().split("-", 1)[0] == "en":
-            instructions = (
-                "Repair English transcript presentation only: punctuation, capitalization, and spacing. "
-                "Every spoken word and number must remain unchanged; do not add or remove any word."
-            )
-        else:
-            instructions = (
-                "Conservatively correct clear homophone or idiom recognition errors in this Simplified Chinese transcript. "
-                "Do not rewrite style, infer unheard speech, or change line order. Keep uncertain text unchanged."
-            )
-        numbered = "\n".join(f"{index}\t{text}" for index, text in enumerate(texts))
-        context = "\n".join(part for part in (
-            f"Source title: {title[:180]}" if title else "",
-            f"Source description: {description[:240]}" if description else "",
-        ) if part)
-        user = (
-            f"Language: {language_name}.\n{context}\n"
-            "Correct each line independently. Return JSON only as "
-            "{\"lines\":[{\"index\":0,\"text\":\"...\",\"reason\":\"...\"}]}. "
-            "The reason of each line must be exactly one code from this list, never a sentence: "
-            f"{', '.join(CORRECTION_REASON_CODES)}. Use no_change for unchanged text. "
-            "Return each index exactly once and preserve the input count and order.\n\n"
-            f"{numbered}"
-        )
-        wanted = set(range(len(texts)))
-        output_bound = sum(len(text.encode("utf-8")) for text in texts) + 80 * len(texts)
+        output_bound = correction_output_bound(texts)
         max_tokens = min(self._reservation_cap(), max(256, output_bound))
         body = {
             "model": self._model,
-            "messages": [
-                {"role": "system", "content": instructions},
-                {"role": "user", "content": user},
-            ],
+            "messages": correction_messages(language, texts, title, description),
             "stream": False,
             "temperature": 0.0,
             "response_format": {"type": "json_object"},
             "max_completion_tokens": max_tokens,
         }
+        key, url = self._auth()
         reserved = self._reserve_output(max_tokens)
         started = time.perf_counter()
         answered = False
         try:
             response = requests.post(
-                self._url, json=body,
-                headers={"Authorization": f"Bearer {self._api_key}"}, timeout=self._timeout,
+                url, json=body,
+                headers={"Authorization": f"Bearer {key}"}, timeout=self._timeout,
             )
             self.last_quota = {
-                key.lower(): value for key, value in response.headers.items()
-                if key.lower().startswith("x-ratelimit-")
+                name.lower(): value for name, value in response.headers.items()
+                if name.lower().startswith("x-ratelimit-")
             }
             if response.status_code in {401, 403, 429}:
                 asked = _retry_after_seconds(response.headers)
@@ -731,29 +899,7 @@ class GroqTranslationProvider:
                 self._record(started, "failure", None, exc)
             reason = "provider_timeout" if isinstance(exc, requests.Timeout) else "provider_error"
             raise TranslationProviderError("Groq transcript correction is unavailable.", reason=reason) from exc
-        rows = data.get("lines") if isinstance(data, dict) else None
-        if not isinstance(rows, list) or len(rows) != len(texts):
-            raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
-        result: dict[int, tuple[str, str]] = {}
-        for row in rows:
-            if not isinstance(row, dict) or type(row.get("index")) is not int or row["index"] not in wanted:
-                raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
-            index = row["index"]
-            text = row.get("text")
-            reason = row.get("reason")
-            if (index in result or not isinstance(text, str) or not text.strip()
-                    or len(text) > max(200, 2 * len(texts[index]) + 24)
-                    or not isinstance(reason, str) or not reason.strip() or len(reason.strip()) > 240):
-                raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
-            # The reason is a code from a closed list the operator's screen words in its own language; whatever else the
-            # model writes (a sentence in any language) is stored as the neutral `other`, never shown as free text.
-            code = reason.strip().casefold().replace("-", "_").replace(" ", "_")
-            result[index] = (text.strip(), code if code in CORRECTION_REASON_CODES else "other")
-        if set(result) != wanted:
-            raise TranslationProviderError("Groq returned malformed transcript corrections.", reason="malformed_result")
-        return {"texts": [result[index][0] for index in range(len(texts))],
-                "reasons": [result[index][1] for index in range(len(texts))], "provider": self.engine_id,
-                "model": self._model}
+        return parse_correction_rows(data, texts, provider=self.engine_id, model=self._model)
 
     def batch_output_ceiling(self) -> int | None:
         """The most completion room one request should reserve so two fit a minute, or None while no output-token limit is
@@ -846,9 +992,8 @@ class GroqTranslationProvider:
         from writing_coach.ai.audio_telemetry import record_token_operation
 
         reported = usage if isinstance(usage, dict) else {}
-        listener = _USAGE_SINK.get()
-        if listener is not None and outcome == "success" and reported:
-            listener(self._model, dict(reported))
+        if outcome == "success":
+            report_usage(self._model, reported, provider=self.engine_id)
         # Every call of this recorder follows `requests.post` (an answer, a refusal, or the post's own failure):
         # the request reached the transport, so it is a billable attempt (PR-MON-6 §8).
         record_token_operation(
@@ -918,15 +1063,7 @@ class GroqTranslationProvider:
         body = {
             "model": self._model,
             "messages": [
-                {
-                    "role": "system",
-                    "content": (
-                        "You translate transcript lines for a language-learning product. "
-                        "Return JSON only, shaped "
-                        '{"translations": [{"segment_id": "...", "translated_meaning": "..."}]}. '
-                        "Translate meaning, not word by word. Never add commentary."
-                    ),
-                },
+                {"role": "system", "content": TRANSLATION_SYSTEM_PROMPT},
                 {"role": "user", "content": self._prompt(source_language, target_language, wire_segments)},
             ],
             "stream": False,
@@ -942,17 +1079,18 @@ class GroqTranslationProvider:
         reserved = self._reserve_output(body["max_completion_tokens"])
         started = time.perf_counter()
         answered = False
+        key, url = self._auth()
         try:
             response = requests.post(
-                self._url,
+                url,
                 json=body,
-                headers={"Authorization": f"Bearer {self._api_key}"},
+                headers={"Authorization": f"Bearer {key}"},
                 timeout=self._timeout,
             )
             self.last_quota = {
-                key.lower(): value
-                for key, value in response.headers.items()
-                if key.lower().startswith("x-ratelimit-")
+                name.lower(): value
+                for name, value in response.headers.items()
+                if name.lower().startswith("x-ratelimit-")
             }
             if response.status_code == 429 or response.status_code in {401, 403}:
                 if response.status_code == 429:
@@ -1008,29 +1146,120 @@ class GroqTranslationProvider:
             reason = "provider_timeout" if isinstance(exc, requests.Timeout) else "provider_error"
             raise TranslationProviderError("Groq translation is unavailable.", reason=reason) from exc
 
-        items = data.get("translations") if isinstance(data, dict) else None
-        if not isinstance(items, list):
-            raise _RequestTooLarge()
-
-        wanted = set(canonical_ids)
-        translated: dict[str, str] = {}
-        for item in items:
-            if not isinstance(item, dict):
-                raise _RequestTooLarge()
-            segment_id = item.get("segment_id")
-            meaning = item.get("translated_meaning")
-            if (
-                not isinstance(segment_id, str)
-                or segment_id not in wanted
-                or segment_id in translated
-                or not isinstance(meaning, str)
-                or not meaning.strip()
-            ):
-                raise _RequestTooLarge()
-            translated[segment_id] = meaning.strip()
-        if set(translated) != wanted:
+        translated = parse_translation_rows(data, set(canonical_ids))
+        if translated is None:
             raise _RequestTooLarge()
         return {canonical_ids[key]: value for key, value in translated.items()}
+
+
+# -- Router fallback (D-224, PROPOSED) -------------------------------------------------------------------------------------
+
+# What a Groq refusal must say for a batch to be sent to the platform router instead. A rate limit joins them only when the
+# wait it names is longer than the caller will wait (see `capacity_refusal`).
+FALLBACK_REASONS = frozenset({"not_configured", "provider_error", "request_too_large"})
+
+
+@dataclass(frozen=True)
+class FallbackScope:
+    """What a caller that books spend grants a fallback: the longest rate-limit wait it would sit out instead, and the
+    check run BEFORE every router call (`admit(provider, model, reserved output tokens)`), which raises a
+    `TranslationProviderError` (`spend_cap`, ...) to refuse it. Outside a scope there is no spend ledger, so no fallback."""
+
+    max_wait: float
+    admit: Callable[[str, str, int], None]
+    # What the fallback met that the caller records on the item (`fallback_blocked`: the reason a router call was refused).
+    notes: dict[str, str] = field(default_factory=dict)
+
+
+_FALLBACK: ContextVar[FallbackScope | None] = ContextVar("media_translation_fallback", default=None)
+
+
+@contextmanager
+def fallback_scope(max_wait: float, admit: Callable[[str, str, int], None]) -> Iterator[FallbackScope]:
+    scope = FallbackScope(max(0.0, float(max_wait)), admit)
+    token = _FALLBACK.set(scope)
+    try:
+        yield scope
+    finally:
+        _FALLBACK.reset(token)
+
+
+def current_fallback_scope() -> FallbackScope | None:
+    return _FALLBACK.get()
+
+
+def capacity_refusal(reason: str, retry_after: float, *, max_wait: float, remaining: float | None = None) -> bool:
+    """Whether a refusal says this provider cannot take the work now, so another engine should: it is not set up, it
+    failed (`provider_error`, a 5xx), a request cannot shrink further, or it asked to be left alone for longer than the
+    caller waits (`max_wait`) or than the pacing allowance has left. A short rate limit is not one: it is waited out."""
+    if reason in FALLBACK_REASONS:
+        return True
+    if reason != "rate_limited":
+        return False
+    limit = max_wait if remaining is None else min(max_wait, remaining)
+    return float(retry_after or 0.0) > limit
+
+
+class FallbackTranslationProvider:
+    """Groq first; a batch Groq cannot take goes to the platform router's `media_translation` capability (D-224, PROPOSED).
+
+    The decision is per batch, taken on Groq's own refusal (`capacity_refusal`) and only inside a `fallback_scope`, whose
+    `admit` check runs before the router is asked. The router's answer is validated exactly as Groq's is. When the
+    router is not configured, is refused, or fails, Groq's own refusal is raised unchanged - the wait it named still
+    schedules the continuation - so with no router capability this class behaves as Groq alone."""
+
+    def __init__(self, primary: Any, fallback: Any) -> None:
+        self.primary = primary
+        self._fallback = fallback
+
+    # The identity a cache key and the Admin runtime view read is Groq's, so adding a fallback invalidates nothing.
+    @property
+    def engine_id(self) -> str:
+        return self.primary.engine_id
+
+    @property
+    def model_version(self) -> str:
+        return self.primary.model_version
+
+    @property
+    def configured(self) -> bool:
+        return bool(getattr(self.primary, "configured", True))
+
+    def batch_output_ceiling(self) -> int | None:
+        return self.primary.batch_output_ceiling()
+
+    def translate_batch(self, source_language: str, target_language: str, segments: TranslationBatch) -> dict[str, str]:
+        try:
+            return self.primary.translate_batch(source_language, target_language, segments)
+        except TranslationProviderError as refusal:
+            scope = current_fallback_scope()
+            pacing = _PACING.get()
+            if scope is None or not capacity_refusal(
+                refusal.reason, refusal.retry_after, max_wait=scope.max_wait,
+                remaining=None if pacing is None else pacing.remaining,
+            ):
+                raise
+            target = self._fallback.target()
+            if target is None:
+                raise
+            kept = self.primary.salvaged_for(source_language, target_language, segments)
+            pending = tuple(segment for segment in segments if segment.segment_id not in kept)
+            try:
+                answer = self._fallback.translate_batch(source_language, target_language, pending) if pending else {}
+            except TranslationProviderError as failed:
+                if failed.reason == "spend_cap":
+                    scope.notes["fallback_blocked"] = "spend_cap"
+                    if refusal.retry_after > 0:
+                        raise refusal from None      # Groq's refusal named a wait: the continuation still schedules (D-214)
+                    raise                            # Groq's was terminal too: the cap is the answer
+                _logger.warning("media translation fallback failed (%s) after Groq refused (%s)", failed.reason, refusal.reason)
+                raise refusal from None
+            if set(answer) != {segment.segment_id for segment in pending}:
+                _logger.warning("media translation fallback answered a different set of lines after Groq refused (%s)", refusal.reason)
+                raise refusal from None
+            self.primary.drop_salvage(source_language, target_language, segments)
+            merged = {**kept, **answer}
+            return {segment.segment_id: merged[segment.segment_id] for segment in segments}
 
 
 class MediaTranslationService:

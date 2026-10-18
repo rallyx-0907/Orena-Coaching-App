@@ -67,6 +67,11 @@ class AICapabilityDefinition:
     reviewed_primary_models: frozenset[tuple[str, str]] = frozenset()
 
 
+# D-224 (PROPOSED): the media pipeline's spend check runs at the price of the one (provider, model) it knows, before the
+# call. A router backup rung could answer at a dearer price, and the router exposes no per-rung gate or usage of a billed
+# failed rung, so these capabilities take no backup until it does.
+NO_BACKUP_CAPABILITIES = frozenset({"media_translation", "media_transcript_correction"})
+
 INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
 _CAPABILITY_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -185,6 +190,28 @@ _DEFINITIONS = (
         # Owner decision 2026-10-14: a cheap paid standby, behind a daily cap. Groq's non-reasoning 70B (the 8B
         # instant model is enterprise-only, "contact sales", on Groq's public models page).
         paid_standby_models=frozenset({("groq", "llama-3.3-70b-versatile")}),
+    ),
+    # D-224 (PROPOSED): the platform router behind media translation and transcript correction. Groq stays the first
+    # engine of both; these capabilities are what a batch is sent to when Groq cannot take it (a long rate limit, a
+    # spent daily quota, a request that cannot shrink, a provider fault, or no Groq credential). Opt-in, like
+    # `word_translation`: no row is required, so nothing changes until the operator picks a provider, model and backup in
+    # Admin. A learner's private import is learner content (D-104), so the default `learner_text` class stays: no free tier and no
+    # prompt-logging provider (OpenRouter) is accepted until the owner decides otherwise (D-224 open question).
+    _definition(
+        "media_translation",
+        operation=AIOperation.STRUCTURED_TEXT_GENERATION,
+        provider_backed=True,
+        configurable=True,
+        implemented=True,
+        opt_in=True,
+    ),
+    _definition(
+        "media_transcript_correction",
+        operation=AIOperation.STRUCTURED_TEXT_GENERATION,
+        provider_backed=True,
+        configurable=True,
+        implemented=True,
+        opt_in=True,
     ),
     _definition(
         "grammar_lesson_generator",

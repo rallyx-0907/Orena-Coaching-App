@@ -15,6 +15,7 @@ from writing_coach.ai.base import (
 from writing_coach.ai.capabilities import (
     AICapabilityDefinition,
     AIFallbackPolicy,
+    NO_BACKUP_CAPABILITIES,
     require_capability,
 )
 from writing_coach.ai.pricing import is_free_model, resolve_token_pricing
@@ -297,6 +298,10 @@ def validate_capability_config(
             f"AI capability {definition.key!r} is not provider-configurable."
         )
 
+    if definition.key in NO_BACKUP_CAPABILITIES and config.backup_provider is not None:
+        raise AICapabilityConfigInvalid(
+            f"{definition.key!r} takes no backup provider: the media spend cap is checked at the primary's price only (D-224)."
+        )
     provider = get_provider_definition(config.provider)
     if provider is None:
         raise AICapabilityUnsupported(f"Unknown AI provider: {config.provider!r}.")
