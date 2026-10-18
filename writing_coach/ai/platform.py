@@ -439,6 +439,10 @@ def _funded_gate(capability_key: str, budget: Callable[[ProviderTarget], str | N
     from writing_coach.billing import funding_context
 
     def admit(target: ProviderTarget) -> str | None:
+        # The system-wide daily ceiling first (ai/spend_gate.py): every paid rung, a routed primary and the rung of an
+        # uncapped capability too; local and free rungs run on.
+        if provider_tier(target.provider, target.model) == "paid" and spend_gate.ceiling_reached():
+            return spend_gate.CEILING_REASON
         refused = budget(target) if budget is not None else None
         if refused is not None:
             return refused
@@ -472,6 +476,8 @@ def _require_paid_funding(capability: str, provider: str | None, model: str | No
     from writing_coach.billing import funding_context
 
     if provider and provider_tier(provider, model or "") == "paid":
+        if spend_gate.ceiling_reached():  # the system-wide daily ceiling (ai/spend_gate.py), before anything is sent
+            raise spend_gate.SpendCeilingReached()
         funding_context.require_paid(capability=capability, provider=provider, timeout_seconds=timeout or 0.0)
 
 

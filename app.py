@@ -896,8 +896,9 @@ from writing_coach.media_transcript_pipeline import MediaPipeline
 from writing_coach.languages.english.ipa import ipa_for as english_ipa_for
 from writing_coach.media_providers.youtube_audio import download_audio
 
+_media_spend_ledger = SpendLedger(_media_library_root / "processing-spend.json")  # its ASR counts toward the ceiling
 _media_pipeline = MediaPipeline(
-    ledger=SpendLedger(_media_library_root / "processing-spend.json"),
+    ledger=_media_spend_ledger,
     asr=_speech_asr_provider,
     ingestion=_media_ingestion_service,
     admin_ingestion=_admin_media_ingestion_service,
@@ -1102,7 +1103,10 @@ from writing_coach.ai import spend_gate as _spend_gate
 
 
 def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
-    return _persistence_runtime.platform_repository.ai_spend_since(since)
+    """The whole AI ledger, plus media speech recognition, kept in its own ledger (media AI is in the AI ledger)."""
+    usd, unpriced = _persistence_runtime.platform_repository.ai_spend_since(since)
+    media = globals().get("_media_spend_ledger")
+    return float(usd) + (media.asr_spent_since(since) if media is not None else 0.0), unpriced
 
 
 # The system-wide daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD; AI_DAILY_SPEND_WARN_RATIO, default 0.8): unset, no
