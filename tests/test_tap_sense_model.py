@@ -462,3 +462,31 @@ def test_the_lookup_route_forwards_content_id() -> None:
     assert ReadingLookupIn(text="bank", context="bank", source_language="en", target_language="vi",
                            content_id="article:a1").content_id == "article:a1"
     assert ReadingLookupIn(text="bank", context="bank", source_language="en", target_language="vi").content_id is None
+
+
+def _sheet(monkeypatch, service, content_id):
+    from writing_coach import word_detail
+
+    monkeypatch.setattr(word_detail, "_lookup", service.lookup)
+    monkeypatch.setattr(word_detail, "_cache", DerivedCache())
+    monkeypatch.setattr(word_detail, "_saved_terms", None)
+    extra = {} if content_id is None else {"content_id": content_id}
+    return word_detail.word_detail(word_detail.WordDetailIn(
+        text="bank", context=SENTENCE, source_language="en", target_language="vi", depth="sheet", contextual=False,
+        **extra,
+    ))
+
+
+def test_the_word_detail_tap_forwards_content_id_to_the_sense_choice(monkeypatch, published) -> None:
+    _tagger(monkeypatch, pos="noun")
+    calls: list = []
+    _sheet(monkeypatch, _service(_bank(), calls, 1), "article:a1")
+    assert [call[5] for call in calls] == [True]  # verified shared content reaches the seam as shared
+
+
+@pytest.mark.parametrize("content_id", [None, "text:imp-1", "article:nope", "media:m-9"])
+def test_the_word_detail_tap_stays_private_without_a_verified_id(monkeypatch, published, content_id) -> None:
+    _tagger(monkeypatch, pos="noun")
+    calls: list = []
+    _sheet(monkeypatch, _service(_bank(), calls, 1), content_id)
+    assert calls == []  # private: no seam, no AI
