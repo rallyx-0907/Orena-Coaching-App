@@ -635,6 +635,7 @@ class _Turn:
             notes={note.id: note.weight for note in tier1.coach_notes},
             notes_available=self.notes_available,
             server_notes=self._server_notes(),
+            memory_off=self.memory is not None and self.memory.off,
             stored=STORED_DEVICE if self.stream.version >= MEMORY_STORED_VERSION else None,
             note_texts={note.id: note.text for note in tier1.coach_notes},
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
@@ -680,7 +681,7 @@ class _Turn:
         (`earlier_in_session`) only to one cleared for `learning_profile`. The tier-1 context and the session the model is shown."""
 
         classes = self.rt.data_classes
-        if not gating_on(self.rt.pack, classes, memory_on=self.memory is not None and self.memory.on):
+        if not gating_on(self.rt.pack, classes, memory_on=self.rt.memory is not None):
             return tier1, session
         provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
         level = classes.of(provider, model)
@@ -705,7 +706,8 @@ class _Turn:
         """The highest class this request carries - the pack (with Orena Memory: full_memory), coach notes, and the chat
         context's learning evidence - raises the conversation's class (§8 c), whichever of them was actually sent."""
 
-        if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes, memory_on=memory):
+        if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes,
+                                          memory_on=memory or self.rt.memory is not None):  # fmt: skip
             return
         level = max(pack_class(with_memory=memory) if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE,
                     CONTEXT_EVIDENCE_CLASS if context else DataClass.NONE)  # fmt: skip

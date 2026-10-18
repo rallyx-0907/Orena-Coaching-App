@@ -494,7 +494,7 @@ class VoiceService:
         memory = self._memory_turn(learner, request)
         tier1, session_state, notes_available = self._gate_data_classes(
             turn, build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state,
-            memory_on=memory is not None and memory.on)  # fmt: skip
+            memory_on=getattr(self.runtime, "memory", None) is not None)  # fmt: skip
         tier1 = self._with_memory(tier1, memory, request)
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
         pack, pack_memory = self._learner_pack(session_state, learner, request, memory)
@@ -509,6 +509,7 @@ class VoiceService:
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
             notes_available=notes_available, server_notes=self._server_notes(memory, learner, request),
+            memory_off=memory is not None and memory.off,
             stored=STORED_DEVICE if request.version >= MEMORY_STORED_VERSION else None,
             note_texts={note.id: note.text for note in tier1.coach_notes}, address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
             pending=session_state.live_pending(), settled=frozenset(done for done, _ in session_state.settled),
@@ -737,7 +738,7 @@ class VoiceService:
     def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes,
                                 context: bool, memory: bool = False) -> None:  # fmt: skip
         if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None),
-                         memory_on=memory):  # fmt: skip
+                         memory_on=memory or getattr(self.runtime, "memory", None) is not None):  # fmt: skip
             return
         level = max(pack_class(with_memory=memory) if pack else 0, NOTES_CLASS if notes else 0,
                     CONTEXT_EVIDENCE_CLASS if context else 0)  # fmt: skip

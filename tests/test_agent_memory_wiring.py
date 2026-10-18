@@ -274,3 +274,80 @@ def test_memory_exists_only_with_keys_and_an_active_backbone_and_bad_keys_refuse
     assert MemoryRuntime.from_env(keys, Backbone(), store).store is not None and len(made) == 1
     with pytest.raises(ValueError):
         MemoryRuntime.from_env({"AGENT_MEMORY_HMAC_KEYS": "v1:short"}, Backbone(), store)
+
+
+# --- review of M2.2 -------------------------------------------------------------------------------------------------
+
+OLLAMA = __import__("writing_coach.agent.provider", fromlist=["ModelRoute"]).ModelRoute("ollama", "m")
+
+
+def test_with_the_pack_off_server_notes_raise_the_conversation_and_a_lower_provider_is_refused():
+    """P1-1: the gate follows Orena Memory, not only the pack."""
+    rt, provider, store = wired([reply("a1"), reply("a2")], classes="gemini=full_memory,ollama=none")
+    rt.pack.enabled = False
+    keep(store, rt.memory, text="Giải thích thật ngắn gọn")
+    first = run(rt, v9_request())
+    assert seen(provider, "Giải thích thật ngắn gọn", 0)
+    session_id = next(e.session_id for e in first if e.name == "session")
+    rt.router.selection, rt.router.is_usable = OLLAMA, (lambda route: route != GEMINI)
+    refused = run(rt, v9_request("hỏi tiếp", session_id=session_id))
+    assert any(e.name == "error" for e in refused) and len(provider.requests) == 1
+
+
+def test_a_failed_probe_fails_closed_for_device_notes():
+    rt, provider, store = wired([reply("a1")])
+    store.probe = lambda scope, now: (_ for _ in ()).throw(RuntimeError("db down"))
+    run(rt, turn_request(coach_notes=[NOTE]))
+    assert not sent_notes(provider.requests[0])
+
+
+@pytest.mark.parametrize("version", [8, 9])
+def test_with_memory_off_remember_writes_nothing_anywhere(version):
+    """P1-2: OFF - nothing new is written, on the server or the device (§6)."""
+    rt, provider, store = wired([call_tools(KEEP), reply("Được.")])
+    store.set_enabled(scope(rt.memory), False)
+    message = "Từ giờ ghi nhớ giúp mình là giải thích bằng tiếng Việt"
+    events = run(rt, v9_request(message) if version == 9 else turn_request(message, coach_notes=[NOTE]))
+    assert updates(events) == [] and store.items(scope(rt.memory), "zh", NOW) == []
+    refusal = next(m.content for m in provider.requests[1].messages if m.role == "tool")
+    assert refusal.startswith("refused: memory.off")
+
+
+def test_a_store_error_never_breaks_the_turn():
+    """P2-1: reading the notes and keeping one both fail; the learner still gets an answer."""
+    rt, provider, store = wired([call_tools(KEEP), reply("Chưa được.")])
+    store.items = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("db down"))
+    store.add_explicit = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("db down"))
+    events = run(rt, v9_request("Từ giờ ghi nhớ giúp mình là giải thích bằng tiếng Việt"))
+    assert not any(e.name == "error" for e in events) and updates(events) == []
+    refusal = next(m.content for m in provider.requests[1].messages if m.role == "tool")
+    assert refusal.startswith("refused: memory.unavailable")
+
+
+def test_a_correction_that_cannot_be_kept_still_reports_the_removed_note():
+    """P2-2: the old note's delete is reported even when the new one fails."""
+    from writing_coach.agent.memory_store import MemoryUnavailable
+
+    mem, store = memory()
+    old = keep(store, mem, text="Giải thích thật ngắn gọn")
+    rt, _, _ = wired([call_tools(("c1", "remember_note", {"kind": "goal", "text": "Giải thích dài hơn",
+                                                         "replaces": old.id})), reply("Được.")], mem=mem)  # fmt: skip
+    store.add_explicit = lambda *a, **k: (_ for _ in ()).throw(MemoryUnavailable())
+    events = run(rt, v9_request("Sửa ghi chú giải thích thật ngắn gọn thành giải thích dài hơn"))
+    removes = [u for u in updates(events) if u.op == "remove"]
+    assert store.items(scope(mem), "zh", NOW) == []  # the old note was deleted before the new one failed
+    assert [r.note for r in removes] == [{"id": old.id, "text": "Giải thích thật ngắn gọn"}]
+
+
+def test_server_notes_reaching_the_model_keep_the_request_caps():
+    """P2-6: at most MAX_COACH_NOTES and MAX_COACH_NOTES_BYTES, newest first."""
+    from writing_coach.agent.contract import MAX_COACH_NOTES, MAX_COACH_NOTES_BYTES
+    from writing_coach.agent.schemas import coach_notes_bytes
+
+    mem, store = memory()
+    for n in range(30):
+        store.add_explicit(scope(mem), language="zh", kind="goal", text=f"mục tiêu số {n:02d}", slot=None,
+                           source="learner_asked", now=T0.replace(minute=n))  # fmt: skip
+    notes = mem.notes(mem.turn(VI.user_key, version=9, cleared=True), "zh")
+    assert 0 < len(notes) <= MAX_COACH_NOTES and coach_notes_bytes(list(notes)) <= MAX_COACH_NOTES_BYTES
+    assert notes[0].text == "mục tiêu số 29" and [n.text for n in notes] == sorted((n.text for n in notes), reverse=True)

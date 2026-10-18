@@ -18,8 +18,8 @@ from typing import Any, Literal
 
 from fastapi import Body, Depends, HTTPException, Query, Response
 
-from writing_coach.agent.api import _read_allowed, _require_runtime, current_memory, router
-from writing_coach.agent.locale import to_contract, to_internal
+from writing_coach.agent.api import _read_allowed, current_memory, router
+from writing_coach.agent.locale import target_languages, to_contract, to_internal
 from writing_coach.agent.memory_store import (
     CONTINUITY,
     EXPLICIT,
@@ -60,13 +60,25 @@ def _item(item: MemoryItem) -> dict[str, Any]:
     }
 
 
+def _language(code: str) -> str:
+    """A learning language, as its contract code (`zh-CN`) or the internal one (`zh`); anything else is 422."""
+
+    targets = target_languages()  # contract codes
+    contract = code if code in targets else to_contract(code)
+    if contract not in targets:
+        raise HTTPException(status_code=422, detail="unsupported_language")
+    return to_internal(contract)
+
+
 @router.get("/memory")
 def list_memory(language: str | None = Query(default=None, max_length=20),
                 runtime=Depends(_read_allowed)) -> dict[str, Any]:  # fmt: skip
     memory, scope = _memory_scope(create=False)
-    internal = to_internal(language) if language else LearnerScope.from_request_context().language
-    now = memory.clock()
-    read = memory.store.snapshot(scope, internal, now, 0)  # one consistent read (§5.2)
+    internal = _language(language) if language else LearnerScope.from_request_context().language
+    try:
+        read = memory.store.snapshot(scope, internal, memory.clock(), 0)  # one consistent read (§5.2)
+    except Exception:  # noqa: BLE001 - the store cannot be read: unavailable, never a 500
+        raise HTTPException(status_code=503, detail=UNAVAILABLE) from None
     by_class: dict[str, list[dict[str, Any]]] = {EXPLICIT: [], INFERRED: [], CONTINUITY: []}
     for item in read.items:
         by_class.setdefault(item.cls, []).append(_item(item))
@@ -80,7 +92,7 @@ def list_memory(language: str | None = Query(default=None, max_length=20),
 
 
 @router.delete("/memory/items/{item_id}", status_code=204)
-def delete_memory_item(item_id: str, runtime=Depends(_require_runtime)) -> Response:
+def delete_memory_item(item_id: str, runtime=Depends(_read_allowed)) -> Response:
     memory, scope = _memory_scope(create=False)
     try:
         deleted = memory.store.delete_item(scope, item_id, memory.clock())
@@ -93,7 +105,7 @@ def delete_memory_item(item_id: str, runtime=Depends(_require_runtime)) -> Respo
 
 @router.delete("/memory")
 def delete_memory(scope: Literal["items", "sessions", "all"] = Query(...),
-                  runtime=Depends(_require_runtime)) -> dict[str, Any]:  # fmt: skip
+                  runtime=Depends(_read_allowed)) -> dict[str, Any]:  # fmt: skip
     memory, memory_scope = _memory_scope(create=False)
     try:
         removed = memory.store.delete_all(memory_scope, scope, memory.clock())
@@ -103,7 +115,7 @@ def delete_memory(scope: Literal["items", "sessions", "all"] = Query(...),
 
 
 @router.put("/memory/settings")
-def memory_settings(enabled: bool = Body(..., embed=True), runtime=Depends(_require_runtime)) -> dict[str, Any]:
+def memory_settings(enabled: bool = Body(..., embed=True), runtime=Depends(_read_allowed)) -> dict[str, Any]:
     memory, scope = _memory_scope(create=True)
     try:
         state = memory.store.set_enabled(scope, enabled)

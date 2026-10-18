@@ -24,7 +24,12 @@ from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
 from typing import Any
 
-from writing_coach.agent.contract import COACH_NOTE_KINDS, MEMORY_STORED_VERSION
+from writing_coach.agent.contract import (
+    COACH_NOTE_KINDS,
+    MAX_COACH_NOTES,
+    MAX_COACH_NOTES_BYTES,
+    MEMORY_STORED_VERSION,
+)
 from writing_coach.agent.memory_keys import MemoryKeys
 from writing_coach.agent.memory_store import (
     EXPLICIT,
@@ -33,10 +38,11 @@ from writing_coach.agent.memory_store import (
     MemoryScope,
     MemorySection,
     MemoryState,
+    MemoryUnavailable,
     memory_scope,
     memory_section,
 )
-from writing_coach.agent.schemas import CoachNote
+from writing_coach.agent.schemas import CoachNote, coach_notes_bytes
 from writing_coach.product import quota
 
 _log = logging.getLogger(__name__)
@@ -65,6 +71,7 @@ class MemoryTurn:
     state: MemoryState | None  # None: no scope for this learner (no incarnation)
     server: bool = False  # the server applies notes in this turn (v9, ON, full_memory)
     cleared: bool = False  # the model is cleared for full_memory: the pack may carry memory
+    failed: bool = False  # the learner's memory state could not be read: treated as OFF (fail closed)
 
     @property
     def on(self) -> bool:
@@ -74,7 +81,7 @@ class MemoryTurn:
     def off(self) -> bool:
         """The learner switched memory OFF: nothing from memory, and no device note, reaches a model (§6)."""
 
-        return self.state is not None and not self.state.enabled
+        return self.failed or (self.state is not None and not self.state.enabled)
 
     @property
     def marker(self) -> str:
@@ -87,25 +94,30 @@ class MemoryTurn:
 
 @dataclass
 class ServerNotes:
-    """`remember_note` / `forget_note` on the account (v9): one store call each, in the learner's scope."""
+    """`remember_note` / `forget_note` on the account (v9): one store call each, in the learner's scope - resolved
+    only when a note is actually written (a learner's own write may create the incarnation, as other writes do)."""
 
     store: MemoryRepository
-    scope: MemoryScope
+    resolve: Callable[[], MemoryScope | None]
     language: str  # the turn's target language (internal code): a note is the learner's for that language
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
+    _scope: MemoryScope | None = field(default=None, init=False)
 
-    def keep(self, *, kind: str, text: str, replaces: str | None) -> MemoryItem:
-        """A new note, or the learner's correction of one (the old one deleted first, so a full list can be
-        corrected). Raises `MemoryOff`, `MemoryLimit`, `MemoryUnavailable`."""
+    def _in_scope(self) -> MemoryScope:
+        if self._scope is None:
+            self._scope = self.resolve()
+        if self._scope is None:
+            raise MemoryUnavailable("no active incarnation")
+        return self._scope
 
-        now = self.clock()
-        if replaces is not None:
-            self.store.delete_item(self.scope, replaces, now)
-        return self.store.add_explicit(self.scope, language=self.language, kind=kind, text=text, slot=None,
-                                       source="learner_asked", now=now)  # fmt: skip
+    def keep(self, *, kind: str, text: str) -> MemoryItem:
+        """A new note. Raises `MemoryOff`, `MemoryLimit`, `MemoryUnavailable` (and a store error)."""
+
+        return self.store.add_explicit(self._in_scope(), language=self.language, kind=kind, text=text, slot=None,
+                                       source="learner_asked", now=self.clock())  # fmt: skip
 
     def forget(self, item_id: str) -> bool:
-        return self.store.delete_item(self.scope, item_id, self.clock())
+        return self.store.delete_item(self._in_scope(), item_id, self.clock())
 
 
 @dataclass
@@ -133,21 +145,33 @@ class MemoryRuntime:
             state = self.store.probe(scope, self.clock())
         except Exception:  # noqa: BLE001 - memory that cannot be read is not used; the turn goes on without it
             _log.warning("orena memory probe failed", exc_info=True)
-            return MemoryTurn(None, None)
+            return MemoryTurn(None, None, failed=True)  # the switch is unknown: as OFF, so no device note goes either
         server = state.enabled and cleared and version >= MEMORY_STORED_VERSION
         return MemoryTurn(scope, state, server=server, cleared=cleared)
 
-    def server_notes(self, user_key: str, language: str) -> ServerNotes | None:
-        scope = self.scope(user_key, create=True)
-        return None if scope is None else ServerNotes(self.store, scope, language, self.clock)
+    def server_notes(self, user_key: str, language: str) -> ServerNotes:
+        return ServerNotes(self.store, lambda: self.scope(user_key, create=True), language, self.clock)
 
     def notes(self, turn: MemoryTurn, language: str) -> tuple[CoachNote, ...]:
-        """The account's explicit notes for the language, as the model's coach notes (server mode)."""
+        """The account's explicit notes for the language, as the model's coach notes (server mode): newest first,
+        within the caps a request's `coach_notes` has (§3). A store that cannot be read gives none."""
 
         if not turn.on:
             return ()
-        items = self.store.items(turn.scope, language, self.clock())
-        return tuple(as_coach_note(item) for item in items if item.cls == EXPLICIT and item.kind in COACH_NOTE_KINDS)
+        try:
+            items = self.store.items(turn.scope, language, self.clock())
+        except Exception:  # noqa: BLE001 - the turn goes on without the notes, never fails on them
+            _log.warning("orena memory notes not read", exc_info=True)
+            return ()
+        chosen: list[CoachNote] = []
+        for item in sorted(items, key=lambda i: (i.created_at, i.id), reverse=True):
+            if item.cls != EXPLICIT or item.kind not in COACH_NOTE_KINDS:
+                continue
+            note = as_coach_note(item)
+            if len(chosen) >= MAX_COACH_NOTES or coach_notes_bytes([*chosen, note]) > MAX_COACH_NOTES_BYTES:
+                break
+            chosen.append(note)
+        return tuple(chosen)
 
     def pack_reader(self) -> Callable[[str, datetime], MemorySection | None]:
         """For `PackBuilder.memory`: the current learner's memory section (read inside their request context)."""

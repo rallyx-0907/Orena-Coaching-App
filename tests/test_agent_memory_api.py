@@ -150,3 +150,10 @@ def test_a_cross_site_write_is_refused_like_every_api_write():
     for method in ("PUT", "DELETE"):
         assert origin_refusal(method, "/api/agent/memory/settings", {"origin": "https://evil.example",
                                                                      "host": "orena.app"}) == "origin_mismatch"
+
+
+def test_the_listing_language_is_validated(api):
+    client, store, _ = api
+    keep(store)
+    assert client.get("/api/agent/memory", params={"language": "zh"}).status_code == 200  # an internal code too
+    assert client.get("/api/agent/memory", params={"language": "xx"}).status_code == 422
