@@ -134,16 +134,20 @@ def script_of(language: str, headword: str) -> str:
     return "hanzi" if language == "zh" or _HAN.search(headword or "") else "latin"
 
 
-# Markdown emphasis an AI answer sometimes carries into a plain-text field: a paired or a dangling "**" / "__"
+# Markdown emphasis an AI answer sometimes carries into a plain-text field: a paired or a dangling "**"
 # (the marker is dropped, the words stay) and a "*word*" pair. The sheets render plain text, so the marks would show.
-_EMPHASIS_RUN = re.compile(r"\*\*|__")
 _EMPHASIS_SINGLE = re.compile(r"(?<![A-Za-z0-9*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![A-Za-z0-9*])")
 
 
 def _text(value: object) -> str:
+    return str(value or "").strip()
+
+
+def _ai(value: object) -> str:
+    """An AI-produced field as plain text: the model's markdown emphasis is dropped, never a source or learner string."""
     text = str(value or "")
-    if "*" in text or "__" in text:
-        text = _EMPHASIS_SINGLE.sub(lambda match: match.group(1), _EMPHASIS_RUN.sub("", text))
+    if "*" in text:
+        text = _EMPHASIS_SINGLE.sub(lambda match: match.group(1), text.replace("**", ""))
     return text.strip()
 
 
@@ -152,7 +156,7 @@ def _fold(value: object) -> str:
 
 
 def _join(items: object) -> str:
-    return "\n".join(_text(item) for item in items or () if _text(item))
+    return "\n".join(_ai(item) for item in items or () if _ai(item))
 
 
 def project_word_detail(
@@ -187,7 +191,7 @@ def project_word_detail(
         original_text = ""
     # The short gloss is the meaning in this sentence; the summary is the longer
     # explanation and only stands in when the gloss is absent.
-    contextual = _text(said.get("context_meaning")) or _text(said.get("summary"))
+    contextual = _ai(said.get("context_meaning")) or _ai(said.get("summary"))
     if contextual:
         meaning, source = contextual, "context"
     elif dictionary_meaning:
@@ -203,7 +207,7 @@ def project_word_detail(
     # the gloss's own `common_meaning`, else a dictionary meaning the lookup gave in the support language
     # (a collection sense or a translation; its English definitions only for an English support language).
     # Not repeated when it is the meaning already shown.
-    general = _text(said.get("common_meaning"))
+    general = _ai(said.get("common_meaning"))
     if not general:
         if meanings:
             general = dictionary_meaning
@@ -220,7 +224,7 @@ def project_word_detail(
                 break
 
     related = [
-        {"term": _text(item.get("fragment")), "note": _text(item.get("meaning"))}
+        {"term": _text(item.get("fragment")), "note": _ai(item.get("meaning"))}
         for item in said.get("vocabulary") or ()
         if _text(item.get("fragment")).casefold() != _text(selection).casefold()
     ]
@@ -247,16 +251,16 @@ def project_word_detail(
         "audioUrl": _text(found.get("audio_url")),
         "saved": bool(saved),
         "deeper": {
-            "coreIdea": _text(said.get("core_idea")),
-            "mentalModel": _text(said.get("mental_model")),
-            "whyHere": _text(said.get("judgement_reason")) or _text(said.get("usage_note")) or _text(said.get("why_here")),
+            "coreIdea": _ai(said.get("core_idea")),
+            "mentalModel": _ai(said.get("mental_model")),
+            "whyHere": _ai(said.get("judgement_reason")) or _ai(said.get("usage_note")) or _ai(said.get("why_here")),
             "contrast": [
-                {"term": _text(item.get("term")), "note": _text(item.get("note"))}
+                {"term": _text(item.get("term")), "note": _ai(item.get("note"))}
                 for item in said.get("contrast") or ()
                 if _text(item.get("term"))
             ],
-            "examples": [_text(item.get("text")) for item in said.get("examples") or () if _text(item.get("text"))],
-            "commonMistake": _text(said.get("common_mistake")),
+            "examples": [_ai(item.get("text")) for item in said.get("examples") or () if _ai(item.get("text"))],
+            "commonMistake": _ai(said.get("common_mistake")),
             "grammarNote": _join(said.get("grammar_notes")),
             "relatedExpressions": related,
             # Where the learner met it, and their own sentences, come from
@@ -279,17 +283,17 @@ def project_sentence_sheet(
     """SentenceSheet.json from a sentence's explanation."""
     return {
         "sentence": _text(sentence),
-        "translation": _text(explanation.get("natural_translation")),
-        "shortExplanation": _text(explanation.get("summary")),
+        "translation": _ai(explanation.get("natural_translation")),
+        "shortExplanation": _ai(explanation.get("summary")),
         "structure": [
-            {"chunk": _text(item.get("chunk")), "role": _text(item.get("role"))}
+            {"chunk": _text(item.get("chunk")), "role": _ai(item.get("role"))}
             for item in explanation.get("structure") or ()
             if _text(item.get("chunk"))
         ],
         "vocabulary": [
             {
                 "term": _text(item.get("fragment")),
-                "meaning": _text(item.get("meaning")),
+                "meaning": _ai(item.get("meaning")),
                 "saved": _text(item.get("fragment")).casefold() in saved_terms,
             }
             for item in explanation.get("vocabulary") or ()
@@ -461,12 +465,12 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         detail = project_word_detail(
             selection=text, context=context, language=lexical, lookup=lookup, explanation=None, saved=text.casefold() in _saved((text,))
         )
-        answer = _text((tutor or {}).get("answer"))
+        answer = _ai((tutor or {}).get("answer"))
         return {
             **detail,
             "depth": payload.depth,
             "answer": answer,
-            "followUps": [_text(item) for item in (tutor or {}).get("follow_ups") or () if _text(item)],
+            "followUps": [_ai(item) for item in (tutor or {}).get("follow_ups") or () if _ai(item)],
             "available": bool(answer),
             "claim": "word_detail_answer" if answer else "word_detail_unavailable",
         }
@@ -501,7 +505,7 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
         "depth": payload.depth,
         "answer": "",
         # The questions the baseline offers first, phrased for this word.
-        "followUps": [_text(item) for item in (explanation or {}).get("follow_ups") or () if _text(item)],
+        "followUps": [_ai(item) for item in (explanation or {}).get("follow_ups") or () if _ai(item)],
         "available": available,
         "claim": "word_detail" if available else "word_detail_unavailable",
         # "ready" | "empty" (answered nothing: no contextual meaning) | "provider_error" (try again) | "skipped".
@@ -516,11 +520,11 @@ def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
     source = media_interaction._primary_language(payload.source_language)
     if payload.question.strip():
         tutor = _tutor(sentence, payload.context.strip() or sentence, source, payload.target_language, payload.question, payload.history)
-        answer = _text((tutor or {}).get("answer"))
+        answer = _ai((tutor or {}).get("answer"))
         return {
             "sentence": sentence,
             "answer": answer,
-            "followUps": [_text(item) for item in (tutor or {}).get("follow_ups") or () if _text(item)],
+            "followUps": [_ai(item) for item in (tutor or {}).get("follow_ups") or () if _ai(item)],
             "available": bool(answer),
             "claim": "sentence_answer" if answer else "sentence_sheet_unavailable",
         }

@@ -193,7 +193,7 @@ assert.match(fs.readFileSync('static/orena/shell/router.js', 'utf8'), /root\.dat
 const { isGone } = await import('../static/orena/shell/router.js');
 assert.equal(isGone(Object.assign(new Error('x'), { status: 404, retryable: false })), true);
 assert.equal(isGone(Object.assign(new Error('x'), { status: 410 })), true);
-assert.equal(isGone(Object.assign(new Error('x'), { status: 422, retryable: false })), true);
+for (const status of [401, 402, 403, 409, 422, 429]) assert.equal(isGone(Object.assign(new Error('x'), { status, retryable: false })), false, String(status));
 assert.equal(isGone(Object.assign(new Error('x'), { status: 503, retryable: true })), false);
 assert.equal(isGone(Object.assign(new Error('x'), { status: 500, retryable: false })), false);
 assert.equal(isGone(new TypeError('Failed to fetch')), false);

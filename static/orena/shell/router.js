@@ -27,11 +27,11 @@ import { canStepBack, entryIndex, readIndex, withIndex } from './history-index.j
 import { addressOf, createScrollMemory, restoreScrollWhenReady } from './scroll-memory.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
-/* The API answered, cleanly, that this content is not there (404/410) or that asking again is worth nothing
-   (the canonical envelope's `retryable: false`, below a server fault): that is not a server that failed to respond. */
+/* The API answered, cleanly, that this content is not there (404/410): that is not a server that failed to
+   respond. Every other status (401, 403, 422, 429, 5xx...) keeps its own handling and its Retry. */
 export function isGone(error) {
   const status = Number(error?.status);
-  return status === 404 || status === 410 || (error?.retryable === false && status >= 400 && status < 500);
+  return status === 404 || status === 410;
 }
 
 const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
