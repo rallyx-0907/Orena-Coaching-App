@@ -31,8 +31,11 @@ WARN_ENV = "AI_DAILY_SPEND_WARN_RATIO"
 DEFAULT_WARN_RATIO = 0.8
 
 # The system-wide daily ceiling (owner, 2026-10-18: $5 a day on :8000, a warning at 80%, AI locked until the next UTC
-# midnight once reached): today's spend across the WHOLE shared AI ledger, every capability. Installed by app.py from
-# the environment; unset, there is no ceiling and nothing here changes.
+# midnight once reached): today's spend across the WHOLE shared AI ledger, every capability, as the ledger prices it
+# (a free-plan call at its list price, an unpriced call at 0.01 USD). Installed by app.py from the environment; unset,
+# there is no ceiling. What it stops: Orena chat and voice (agent/budget.py), and every paid standby/backup entry that
+# passes `paid_refused`. What it does NOT stop yet: a routed paid primary, a paid entry of a capability with no cap
+# policy, media/ASR (media_spend.py), and speech, which is not in the ledger.
 _ceiling: DailySpendGuard | None = None
 
 
@@ -77,6 +80,12 @@ def ceiling_usd() -> float | None:
     return _ceiling.cap_usd if _ceiling is not None else None
 
 
+def ceiling_wait() -> float | None:
+    """Seconds until the system ceiling resets when it is reached (or unreadable); None when spending may go on."""
+
+    return _ceiling() if _ceiling is not None else None
+
+
 def ceiling_reached() -> bool:
     """True when today's whole-system AI spend has reached the ceiling (or cannot be read): no paid call now."""
 
@@ -110,8 +119,8 @@ def _reader(capability: str, provider: str | None = None, model: str | None = No
 
 def paid_refused(capability: str, cap_policy: str, *, provider: str | None = None, model: str | None = None) -> bool:
     """`provider`/`model` given: the cap measures that one (provider, model)'s spend for this capability (a routed
-    capability's reviewed backup, PR-MON-7); otherwise the capability's whole paid spend (word translation). The
-    system ceiling refuses every paid entry once reached, whatever the capability's own cap."""
+    capability's reviewed backup, PR-MON-7); otherwise the capability's whole paid spend (word translation). Once the
+    system ceiling is reached, every entry that asks here is refused, whatever the capability's own cap."""
     if ceiling_reached():
         return True
     try:

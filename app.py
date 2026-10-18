@@ -1098,7 +1098,7 @@ _spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_sy
 def _agent_spend_guard():
     """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
 
-    from writing_coach.agent.budget import cap_from_env, effective_cap
+    from writing_coach.agent.budget import cap_from_env
 
     cap_from_env(os.environ)  # an unreadable AGENT_DAILY_SPEND_CAP_USD still refuses to start
     reader = getattr(_persistence_runtime.platform_repository, "ai_spend_since", None)
@@ -1106,9 +1106,11 @@ def _agent_spend_guard():
     # turn; with no cap the guard allows every turn, exactly as when none was built.
     # The strict read: if this worker has never read the settings store, or the stored cap no longer validates, the
     # guard refuses turns (fails closed) instead of treating "unknown" as "no cap".
-    # The system-wide ceiling (ai/spend_gate.py, owner 2026-10-18) bounds it too: the agent stops at the lower of the two.
-    return LiveSpendGuard(lambda: effective_cap(_policies.value_strict("agent.daily_spend_cap_usd"), _spend_gate.ceiling_usd()),
-                          reader if callable(reader) else None, warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
+    # The system-wide ceiling (ai/spend_gate.py, owner 2026-10-18) is checked first: a turn stops once the whole system's
+    # daily spend is reached, whatever the agent's own cap; that check also raises the system's 80% warning.
+    return LiveSpendGuard(lambda: _policies.value_strict("agent.daily_spend_cap_usd"),
+                          reader if callable(reader) else None, ceiling=_spend_gate.ceiling_wait,
+                          warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
 
 
 def _delete_agent_turns_before(before: datetime, limit: int) -> int:

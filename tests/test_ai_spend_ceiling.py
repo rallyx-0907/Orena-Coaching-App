@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from writing_coach.agent.budget import DailySpendGuard, effective_cap
+from writing_coach.agent.budget import DailySpendGuard, LiveSpendGuard
 from writing_coach.ai import spend_gate
 
 NOW = datetime(2026, 10, 18, 21, 0, tzinfo=UTC)
@@ -86,10 +86,46 @@ def test_an_unreadable_ledger_fails_closed_and_unpriced_calls_count():
     assert spend_gate.ceiling_reached() is True
 
 
-def test_the_agent_cap_is_the_lower_of_its_own_and_the_ceiling():
-    assert effective_cap(None, None) is None
-    assert effective_cap(2.0, None) == 2.0 and effective_cap(None, 5.0) == 5.0
-    assert effective_cap(7.0, 5.0) == 5.0 and effective_cap(1.0, 5.0) == 1.0
+def test_the_agent_stops_at_the_system_ceiling_even_below_its_own_cap():
+    ceiling(5.0, Ledger(usd=5.0))
+    agent = LiveSpendGuard(lambda: 50.0, Ledger(usd=5.0), ceiling=spend_gate.ceiling_wait)
+    assert agent() is not None  # its own $50 is far off; the system's $5 is reached
+    assert LiveSpendGuard(lambda: None, None, ceiling=spend_gate.ceiling_wait)() is not None
+
+
+def test_the_lock_lifts_at_utc_midnight_and_the_warning_comes_again_the_next_day(caplog):
+    clock = [NOW]
+    ticks = iter(range(0, 10**7, 10))
+    ledger = Ledger(usd=4.5)
+    guard = DailySpendGuard(cap_usd=5.0, read=ledger, now=lambda: clock[0], monotonic=ticks.__next__, warn_ratio=0.8,
+                            label="system")
+    with caplog.at_level(logging.WARNING):
+        assert guard() is None
+        ledger.usd = 5.0
+        assert guard() is not None and guard() is not None  # locked; "reached" is logged once, not every check
+        clock[0] = NOW.replace(day=19, hour=0, minute=1)
+        ledger.usd = 4.2  # today's ledger
+        assert guard() is None
+    lines = [r.getMessage() for r in caplog.records]
+    assert len([m for m in lines if "near cap" in m]) == 2 and len([m for m in lines if "cap reached" in m]) == 1
+
+
+def test_the_admin_status_never_shows_a_stale_or_missing_cap():
+    ledger = Ledger(usd=0.5)
+    cap = [1.0]
+    agent = LiveSpendGuard(lambda: cap[0], ledger)
+    assert agent.status()["cap_usd"] == 1.0 and agent.status()["reached"] is False
+    cap[0] = None  # switched off: no old cap shown
+    assert agent.status() == {"cap_usd": None}
+    unreadable = LiveSpendGuard(lambda: (_ for _ in ()).throw(ValueError("bad")), ledger)
+    assert unreadable() is not None and unreadable.status()["reached"] is True
+    no_ledger = LiveSpendGuard(lambda: 1.0, None)
+    assert no_ledger.status() == {"cap_usd": 1.0, "reached": True, "error": "no_ledger"}
+    ceiling(5.0, Ledger(usd=1.0))
+    assert spend_gate.ceiling_status()["spent_usd"] == 1.0
+    spend_gate.configure_ceiling(5.0, read=Ledger(fail=True))
+    status = spend_gate.ceiling_status()
+    assert status["reached"] is True and status["spent_usd"] is None and status["readable"] is False
 
 
 def test_the_guard_warns_once_per_day_with_its_label(caplog):
