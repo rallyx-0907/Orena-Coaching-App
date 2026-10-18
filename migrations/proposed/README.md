@@ -19,6 +19,13 @@ after the review and authorization its own docstring names.
 
 **Open proposal (Billing, PR-MON-6 migration gate, 2026-10-15):** `20261015_0034_funding_admissions.py` on `20261015_0033` - funding admissions, promotional grants, cost attribution (`docs/billing/PR-MON-6_MIGRATION_GATE_REVIEW_REQUEST.md`). Awaiting its independent review; promotion and application are human gates.
 
+**Open proposal (Orena Intelligence, M2 draft, 2026-10-18):** `20261018_0035_orena_memory.py` on `20261015_0033` -
+`learner_memories`, `learner_memory_suppressions`, `learner_memory_state` (`docs/project/proposals/ORENA_MEMORY.md`
+rev 4.1 §4.1, §4.4, §9; D-222). A draft: no ORM model, repository or deletion-enumeration entry yet (they come with the
+promotion PR). Rehearsed up/down/up with constraint probes by `scripts/rehearse_orena_memory_schema.py` on a throwaway
+PostgreSQL 16 (28 PASS). Re-parented on the head of the day at promotion; its independent review, promotion and
+application are human gates.
+
 **Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
 awaiting the human's authorization). If it is promoted after 0025, re-parent it on `20261004_0025`.
 
