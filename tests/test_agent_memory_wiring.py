@@ -152,7 +152,8 @@ def test_v9_remember_is_stored_on_the_server_and_marked_stored_server():
     assert update.stored == "server" and update.to_wire()["stored"] == "server"
     [item] = store.items(scope(rt.memory), "zh", NOW)
     assert item.text == "Giải thích bằng tiếng Việt" and update.note["id"] == item.id
-    assert not sent_notes(provider.requests[0])  # the device's notes are not the source for a v9 client
+    # The device's notes are not where it is kept; one the learner has not placed still reaches the model (ruling (b)).
+    assert sent_notes(provider.requests[0])
 
 
 def test_v9_server_notes_reach_the_model_with_their_ids_and_forget_deletes_them():
@@ -351,3 +352,66 @@ def test_server_notes_reaching_the_model_keep_the_request_caps():
     notes = mem.notes(mem.turn(VI.user_key, version=9, cleared=True), "zh")
     assert 0 < len(notes) <= MAX_COACH_NOTES and coach_notes_bytes(list(notes)) <= MAX_COACH_NOTES_BYTES
     assert notes[0].text == "mục tiêu số 29" and [n.text for n in notes] == sorted((n.text for n in notes), reverse=True)
+
+
+# --- M2.3: device notes the learner has not placed (contract v9 §3/§10, UI-lane ruling (b)) ----------------------
+
+
+def test_v9_server_mode_still_sends_unplaced_device_notes_after_the_account_notes():
+    rt, provider, store = wired([reply("a1")])
+    keep(store, rt.memory, text="Mình học để phỏng vấn")
+    run(rt, v9_request())
+    text = "\n".join(m.content for m in provider.requests[0].messages)
+    assert "Mình học để phỏng vấn" in text and NOTE["text"] in text
+    assert text.index("Mình học để phỏng vấn") < text.index(NOTE["text"])  # the account's notes come first
+
+
+def test_a_device_note_the_account_already_holds_is_sent_once():
+    rt, provider, store = wired([reply("a1")])
+    keep(store, rt.memory, text="giải thích thật ngắn gọn.")  # same_note: case and closing punctuation aside
+    run(rt, v9_request())
+    text = "\n".join(m.content for m in provider.requests[0].messages)
+    assert text.casefold().count("giải thích thật ngắn gọn") == 1
+
+
+def test_device_notes_only_fill_the_room_the_account_notes_leave():
+    mem, store = memory()
+    for n in range(30):
+        store.add_explicit(scope(mem), language="zh", kind="goal", text=f"g{n:02d}", slot=None,
+                           source="learner_asked", now=T0.replace(minute=n))  # fmt: skip  # 20 fill the count cap
+    rt, provider, _ = wired([reply("a1")], mem=mem)
+    run(rt, v9_request())
+    assert not sent_notes(provider.requests[0])
+
+
+def test_in_server_mode_forgetting_a_device_note_is_applied_by_the_device():
+    rt, _, store = wired([call_tools(("c1", "forget_note", {"id": NOTE["id"]})), reply("Đã xoá.")])
+    item = keep(store, rt.memory, text="Mình học để phỏng vấn")
+    events = run(rt, v9_request("Quên ghi chú đó đi"))
+    [update] = updates(events)
+    assert update.op == "remove" and update.stored == "device" and update.note == {"id": NOTE["id"]}
+    assert [i.id for i in store.items(scope(rt.memory), "zh", NOW)] == [item.id]  # the account is untouched
+
+
+def test_in_server_mode_correcting_a_device_note_stays_on_the_device():
+    call = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích dài hơn", "replaces": NOTE["id"]})
+    rt, _, store = wired([call_tools(call), reply("Được.")])
+    events = run(rt, v9_request("Sửa ghi chú giải thích thật ngắn gọn thành giải thích dài hơn"))
+    [update] = updates(events)
+    assert update.op == "upsert" and update.stored == "device" and update.note["id"] == NOTE["id"]
+    assert update.note["text"] == "Giải thích dài hơn" and store.items(scope(rt.memory), "zh", NOW) == []
+
+
+def test_voice_server_mode_sends_the_account_notes_then_unplaced_device_notes():
+    from tests.test_agent_voice_session import LEARNER
+
+    service, post, body, mem, store = voice(version=9)
+    keep(store, mem, text="Mình học để phỏng vấn")
+    sid = service.open(body, LEARNER)["voice_session_id"]
+    text = setup_text(post)
+    assert text.index("Mình học để phỏng vấn") < text.index(NOTE["text"])
+    # A voice forget is refused for every client today (voice reads no "asked" note); the account is never touched.
+    forget = {"id": "c1", "name": "forget_note", "args": {"id": NOTE["id"]}}
+    answer = service.relay(sid, [forget], LEARNER, heard="Quên ghi chú đó đi")
+    assert answer["events"] == []
+    assert [i.text for i in store.items(scope(mem), "zh", NOW)] == ["Mình học để phỏng vấn"]

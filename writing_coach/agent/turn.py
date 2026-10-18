@@ -146,7 +146,13 @@ from writing_coach.agent.data_class import (
     gating_on,
     pack_class,
 )
-from writing_coach.agent.memory_runtime import STORED_DEVICE, MemoryTurn, carries_memory, without_explicit
+from writing_coach.agent.memory_runtime import (
+    STORED_DEVICE,
+    MemoryTurn,
+    carries_memory,
+    with_device_notes,
+    without_explicit,
+)
 from writing_coach.agent.memory_pack import PACK_VERSION, pack_numbers
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
@@ -363,6 +369,7 @@ class _Turn:
         self.notes_available = True  # coach notes may be read and changed in this turn (G8: full_memory)
         self.memory: MemoryTurn | None = None  # Orena Memory for this turn (agent/memory_runtime.py); None: none
         self.pack_memory = False  # the pack sent carries Orena Memory (full_memory data, §8)
+        self.device_notes: frozenset[str] = frozenset()  # server mode: the coach notes that stay the device's
         self.snapshot: dict | None = None
         self.pack_facts: set[int] = set()  # the numbers the learner pack states, when the turn was given one
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
@@ -636,6 +643,7 @@ class _Turn:
             notes_available=self.notes_available,
             server_notes=self._server_notes(),
             memory_off=self.memory is not None and self.memory.off,
+            device_notes=self.device_notes,
             stored=STORED_DEVICE if self.stream.version >= MEMORY_STORED_VERSION else None,
             note_texts={note.id: note.text for note in tier1.coach_notes},
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
@@ -737,7 +745,9 @@ class _Turn:
             self.timeline.facts["coach_notes"] = {"withheld": "memory_off", "count": len(tier1.coach_notes)}
             return replace(tier1, coach_notes=())
         if memory.server:
-            return replace(tier1, coach_notes=self.rt.memory.notes(memory, to_internal(self.locale.target)))
+            account = self.rt.memory.notes(memory, to_internal(self.locale.target))
+            notes, self.device_notes = with_device_notes(account, tier1.coach_notes)
+            return replace(tier1, coach_notes=notes)
         return tier1
 
     def _server_notes(self):

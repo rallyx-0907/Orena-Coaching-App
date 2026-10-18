@@ -13,7 +13,8 @@ Orena Memory and every turn is exactly as before M2.
   whether the server applies notes in it - a client that declared v9, memory ON, and a model cleared for
   `full_memory` (§6, §8). With memory OFF nothing from memory reaches a model, device coach notes neither.
 - **Server notes** (`ServerNotes`): `remember_note` / `forget_note` applied to `learner_memories` (explicit class) for
-  such a turn; the model sees the account's notes, with their ids, where it saw the device's.
+  such a turn; the model sees the account's notes, with their ids, where it saw the device's - and, after them, the
+  device notes the learner has not placed yet (`with_device_notes`), which stay the device's.
 """
 
 from __future__ import annotations
@@ -42,6 +43,7 @@ from writing_coach.agent.memory_store import (
     memory_scope,
     memory_section,
 )
+from writing_coach.agent.notes import same_note
 from writing_coach.agent.schemas import CoachNote, coach_notes_bytes
 from writing_coach.product import quota
 
@@ -196,6 +198,27 @@ class MemoryRuntime:
         if keys is None or backbone is None or not getattr(backbone, "is_active", False):
             return None
         return cls(store=store(keys), incarnations=backbone.incarnations)
+
+
+def with_device_notes(account: tuple[CoachNote, ...],
+                      device: tuple[CoachNote, ...]) -> tuple[tuple[CoachNote, ...], frozenset[str]]:  # fmt: skip
+    """Server mode (contract v9 §3/§10, UI-lane ruling (b) on #278): the account's notes first, then the device notes
+    the learner has not placed yet - highest weight first, as the client orders them - in the room the account's
+    leave under the request caps. A device note the account already holds (`notes.same_note`) is sent once, as the
+    account's. Returns the notes and the ids that are the device's (read-only on the server: a change to one is
+    applied by the device, `stored: "device"`)."""
+
+    chosen = list(account)
+    held = {note.id for note in account}
+    taken: set[str] = set()
+    for note in sorted(device, key=lambda n: (-n.weight, n.id)):
+        if note.id in held or any(same_note(note.text, kept.text) for kept in account):
+            continue
+        if len(chosen) >= MAX_COACH_NOTES or coach_notes_bytes([*chosen, note]) > MAX_COACH_NOTES_BYTES:
+            break
+        chosen.append(note)
+        taken.add(note.id)
+    return tuple(chosen), frozenset(taken)
 
 
 def carries_memory(pack: Any) -> bool:

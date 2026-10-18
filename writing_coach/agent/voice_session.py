@@ -72,7 +72,13 @@ from writing_coach.agent.data_class import (
 )
 from writing_coach.agent.errors import VoiceUnavailable
 from writing_coach.agent.memory_pack import VOICE_BUDGET
-from writing_coach.agent.memory_runtime import STORED_DEVICE, MemoryTurn, carries_memory, without_explicit
+from writing_coach.agent.memory_runtime import (
+    STORED_DEVICE,
+    MemoryTurn,
+    carries_memory,
+    with_device_notes,
+    without_explicit,
+)
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
 from writing_coach.agent.provider import ProviderToolSpec
 from writing_coach.agent.redaction import redact_for_provider
@@ -495,7 +501,7 @@ class VoiceService:
         tier1, session_state, notes_available = self._gate_data_classes(
             turn, build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state,
             memory_on=getattr(self.runtime, "memory", None) is not None)  # fmt: skip
-        tier1 = self._with_memory(tier1, memory, request)
+        tier1, device_notes = self._with_memory(tier1, memory, request)
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
         pack, pack_memory = self._learner_pack(session_state, learner, request, memory)
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
@@ -509,7 +515,7 @@ class VoiceService:
             client=request.client, interface=locale.interface, support=locale.support, target=locale.target,
             version=request.version, notes={note.id: note.weight for note in tier1.coach_notes},
             notes_available=notes_available, server_notes=self._server_notes(memory, learner, request),
-            memory_off=memory is not None and memory.off,
+            memory_off=memory is not None and memory.off, device_notes=device_notes,
             stored=STORED_DEVICE if request.version >= MEMORY_STORED_VERSION else None,
             note_texts={note.id: note.text for note in tier1.coach_notes}, address_terms=tier1.address.pair, address_chosen=tier1.address.chosen,
             pending=session_state.live_pending(), settled=frozenset(done for done, _ in session_state.settled),
@@ -701,16 +707,18 @@ class VoiceService:
         return runtime_memory.turn(learner.user_key, version=request.version, cleared=cleared)
 
     def _with_memory(self, tier1, memory: MemoryTurn | None, request: TurnRequest):
-        """Memory OFF: no device note reaches the vendor (§6). Server notes: the account's notes are the coach notes."""
+        """Memory OFF: no device note reaches the vendor (§6). Server notes: the account's notes, then the device notes
+        not placed yet (agent/memory_runtime.py `with_device_notes`). Returns tier1 and the ids that are the device's."""
 
         if memory is None:
-            return tier1
+            return tier1, frozenset()
         if memory.off:
-            return replace(tier1, coach_notes=())
+            return replace(tier1, coach_notes=()), frozenset()
         if memory.server:
-            target = to_internal(request.context.locale.target)
-            return replace(tier1, coach_notes=self.runtime.memory.notes(memory, target))
-        return tier1
+            account = self.runtime.memory.notes(memory, to_internal(request.context.locale.target))
+            notes, device = with_device_notes(account, tier1.coach_notes)
+            return replace(tier1, coach_notes=notes), device
+        return tier1, frozenset()
 
     def _server_notes(self, memory: MemoryTurn | None, learner: LearnerScope, request: TurnRequest):
         if memory is None or not memory.server:
