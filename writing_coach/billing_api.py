@@ -141,7 +141,8 @@ class PreviewIn(BaseModel):
 class CancelIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     operation_id: str = Field(min_length=36, max_length=36)
-    reason: Literal["too_expensive", "not_using", "missing_feature", "taking_a_break"]
+    # Optional, as the design's "Why are you cancelling? (optional)"; none sends no reason to Polar.
+    reason: Literal["too_expensive", "not_using", "missing_feature", "taking_a_break"] | None = None
 
 
 class OperationIn(BaseModel):

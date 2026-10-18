@@ -301,6 +301,12 @@ def test_cancel_sends_the_mapped_reason_and_no_comment(reason, polar_reason):
     assert polar.patches == [{"cancel_at_period_end": True, "customer_cancellation_reason": polar_reason}]
 
 
+def test_cancel_without_a_reason_sends_none():
+    worker, polar = subs()
+    assert worker.cancel("inc-1", None, OP)["state"] == "done"
+    assert polar.patches == [{"cancel_at_period_end": True}]
+
+
 def test_cancel_is_allowed_while_a_change_is_pending_and_resume_only_when_cancelling():
     worker, polar = subs(Polar(pending_update={"product_id": "prod-plus-month"}))
     assert worker.cancel("inc-1", "taking_a_break", OP)["state"] == "done"

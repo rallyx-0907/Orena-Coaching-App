@@ -74,6 +74,17 @@ export const api={
      watcher stops, so a payment is never shown as confirmed. */
   billingOrder:(orderCode)=>request(`/api/billing/orders/${encodeURIComponent(orderCode)}`),
   billingCheckout:(body)=>request('/api/billing/checkout',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
+  /* PR-MON-9: an existing Polar subscriber's plan, in the app. Every write carries the client's own operation id; the
+     answer is the operation's state (202 while Polar's outcome is still being confirmed). Access changes only with
+     the subscription webhook - these never grant. */
+  billingSubscription:()=>request('/api/billing/subscription'),
+  billingChange:(body)=>request('/api/billing/subscription/change',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
+  billingCancel:(body)=>request('/api/billing/subscription/cancel',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
+  billingResume:(body)=>request('/api/billing/subscription/resume',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
+  billingOperation:(operationId)=>request(`/api/billing/subscription/operations/${encodeURIComponent(operationId)}`),
+  billingInvoices:(page=1)=>request(`/api/billing/invoices?page=${encodeURIComponent(page)}`),
+  billingInvoice:(orderId)=>request(`/api/billing/invoices/${encodeURIComponent(orderId)}`),
+  billingPortal:()=>request('/api/billing/portal',{method:'POST'}),
   /* Learner feedback (D-156): one review per send; the learner's own are read newest first. */
   feedbackSend:(body)=>request('/api/feedback',{method:'POST',headers:JSON_HEADERS,body:JSON.stringify(body)}),
   feedbackMine:()=>request('/api/feedback/mine'),

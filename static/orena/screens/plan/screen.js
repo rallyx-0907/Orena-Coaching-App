@@ -19,8 +19,13 @@ import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy, planName, planDescription } from '../../copy/shell.js';
+import { toast } from '../../kit/toast.js';
 import { t } from './copy.js';
-import { planView, usageRows, featureCopyKey, formatNumber } from './model.js';
+import {
+  planView, usageRows, featureCopyKey, formatNumber, pricingPlans, subscriptionView, priceView, cycleOf, cardBrand,
+  formatDate, invoiceAmount,
+} from './model.js';
+import { openBillingSheet } from './sheet.js';
 import pricing from './pricing.js';
 import { t as creditCopy } from '../../copy/credit-topup.js';
 import { loadOffers } from '../../product/credit-topup.js';
@@ -73,12 +78,55 @@ function creditsCard() {
   </section>`;
 }
 
-export function billingMarkup(commerce, { credits = false } = {}) {
+/* PR-MON-9: the card subscription the server reports (GET /api/billing/subscription) - the plan card's price line,
+   renewal and status, the cancelling banner, the card on file, the billing email and the invoices. */
+function planLines(view, sub, catalogue) {
+  const plan = (catalogue || []).find((item) => item.id === view.plan?.id) || null;
+  if (!sub.polar || !sub.live || !plan) return { priceLine: '', note: '' };
+  const cycle = cycleOf(sub.period);
+  const price = priceView(plan, cycle, languages().ui);
+  const amount = cycle === 'yearly' ? price.billedAmount : price.price;
+  const priceLine = amount && amount !== '—' ? t(cycle === 'yearly' ? 'priceLineYearly' : 'priceLineMonthly', { amount }) : '';
+  const date = sub.renewsAt ? formatDate(sub.renewsAt, languages().ui) : '';
+  let note = '';
+  if (date && !sub.cancelling) {
+    note = sub.card ? t('renewsNoteCard', { date, card: t('cardLabel', { brand: cardBrand(sub.card.brand), last4: sub.card.last4 }) })
+      : t('renewsNote', { date });
+  }
+  return { priceLine, note };
+}
+
+function cardSub(card) {
+  const month = String(card.exp_month || '').padStart(2, '0');
+  const year = String(card.exp_year || '').slice(-2);
+  return month && year ? t('cardExpires', { date: `${month}/${year}` }) : '';
+}
+
+function invoiceRow(item) {
+  const plan = item.plan ? planName({ id: item.plan }) : '';
+  const cycle = item.period ? t(item.period === 'year' ? 'cycleYearly' : 'cycleMonthly') : '';
+  const status = ['paid', 'refunded', 'pending'].includes(item.status) ? t(`invoice_${item.status}`) : '';
+  return html`<div class="s-plan-invoice" data-invoice-row="${item.id}">
+    <div class="s-plan-invoice__id"><div class="s-plan-invoice__date">${formatDate(item.created_at, languages().ui)}</div>
+      <div class="s-plan-invoice__desc" data-invoice-note>${plan ? t('invoiceLine', { plan, cycle }) : ''}</div></div>
+    <span class="s-plan-invoice__amt">${invoiceAmount(item, languages().ui)}</span>
+    ${status ? html`<span class="${cls('s-plan-pill', item.status === 'paid' ? 's-plan-pill--green' : 's-plan-pill--amber', 's-plan-invoice__status')}">${status}</span>` : ''}
+    <button type="button" class="s-plan-invoice__dl" data-invoice="${item.id}" title="${t('downloadInvoice')}" aria-label="${t('downloadInvoice')}">${raw(icon('download', { size: 17 }))}</button>
+  </div>`;
+}
+
+export function billingMarkup(commerce, { credits = false, subscription = null, catalogue = null, invoices = null } = {}) {
   const view = planView(commerce);
+  const sub = subscriptionView(subscription);
   const rows = usageRows(commerce);
-  const tone = STATUS_TONE[view.statusKey] || 'neutral';
+  const tone = sub.cancelling ? 'amber' : STATUS_TONE[view.statusKey] || 'neutral';
   const name = view.plan ? planName(view.plan) : '';
   const description = view.plan ? planDescription(view.plan) : '';
+  const lines = planLines(view, sub, catalogue);
+  const pill = sub.cancelling && sub.renewsAt
+    ? t('pillCancels', { date: formatDate(sub.renewsAt, languages().ui, { year: false }) }) : t(view.statusKey);
+  const banner = sub.cancelling ? t('bannerCancelling', { plan: name, date: sub.renewsAt ? formatDate(sub.renewsAt, languages().ui) : '' }) : '';
+  const items = Array.isArray(invoices?.items) ? invoices.items : [];
   return html`<div class="s-plan">
     ${pageHeader({
       back: { label: shellCopy('back'), dataset: { back: '1' } },
@@ -86,6 +134,7 @@ export function billingMarkup(commerce, { credits = false } = {}) {
       actions: [html`<button type="button" class="o-btn o-btn--secondary s-plan__all" data-open-plans>${t('seePlans')}</button>`],
     })}
     <div class="s-plan__scroll" data-scroll-region>
+      ${banner ? html`<div class="s-plan-banner" role="status"><span class="s-plan-banner__dot" aria-hidden="true"></span><span class="s-plan-banner__text">${banner}</span><button type="button" class="s-plan-banner__btn" data-resume>${t('resumePlan', { plan: name })}</button></div>` : ''}
       <div class="s-plan__grid">
         <div class="s-plan__col">
           <section class="s-plan-card s-plan-current">
@@ -94,12 +143,12 @@ export function billingMarkup(commerce, { credits = false } = {}) {
               <div class="s-plan-current__id">
                 <div class="s-plan-current__eyebrow">${t('currentPlan')}</div>
                 <div class="s-plan-current__name">${name}</div>
-                ${view.isFree ? html`<div class="s-plan-current__sub">${t('noCharge')}</div>` : ''}
+                ${view.isFree ? html`<div class="s-plan-current__sub">${t('noCharge')}</div>` : lines.priceLine ? html`<div class="s-plan-current__sub">${lines.priceLine}</div>` : ''}
               </div>
-              <span class="s-plan-pill s-plan-pill--${tone}">${t(view.statusKey)}</span>
+              <span class="s-plan-pill s-plan-pill--${tone}">${pill}</span>
             </div>
-            ${description ? html`<p class="s-plan-note">${description}</p>` : ''}
-            <div class="s-plan-actions"><button type="button" class="o-btn o-btn--primary s-plan__change" data-open-plans>${view.isFree ? t('upgrade') : t('changePlan')}</button></div>
+            ${lines.note || description ? html`<p class="s-plan-note">${lines.note || description}</p>` : ''}
+            <div class="s-plan-actions"><button type="button" class="o-btn o-btn--primary s-plan__change" data-open-plans>${view.isFree ? t('upgrade') : t('changePlan')}</button>${sub.live && !sub.cancelling ? html`<button type="button" class="o-btn o-btn--secondary s-plan__cancel" data-open-cancel>${t('cancelPlan')}</button>` : ''}</div>
           </section>
           <section class="s-plan-card s-plan-usage">
             <h2 class="s-plan-card__title">${t('usage')}</h2>
@@ -112,13 +161,16 @@ export function billingMarkup(commerce, { credits = false } = {}) {
             <h2 class="s-plan-card__title">${t('paymentMethod')}</h2>
             <div class="s-plan-pay__row">
               <span class="s-plan-pay__tile">${raw(icon('credit-card', { size: 22 }))}</span>
-              <div class="s-plan-pay__text"><div class="s-plan-pay__label">${t('noPaymentMethod')}</div><div class="s-plan-pay__sub">${t('paymentMethodSub')}</div></div>
-              <button type="button" class="o-btn o-btn--secondary s-plan-pay__update" disabled>${t('update')}</button>
+              ${sub.polar ? html`<div class="s-plan-pay__text"><div class="s-plan-pay__label">${sub.card ? t('cardLabel', { brand: cardBrand(sub.card.brand), last4: sub.card.last4 }) : t('cardOnFile')}</div><div class="s-plan-pay__sub">${sub.card ? cardSub(sub.card) : ''}</div></div>
+              <button type="button" class="o-btn o-btn--secondary s-plan-pay__update" data-update-card>${t('update')}</button>`
+              : html`<div class="s-plan-pay__text"><div class="s-plan-pay__label">${t('noPaymentMethod')}</div><div class="s-plan-pay__sub">${subscription ? t('addedOnSubscribe') : t('paymentMethodSub')}</div></div>
+              <button type="button" class="o-btn o-btn--secondary s-plan-pay__update" disabled>${t('update')}</button>`}
             </div>
+            ${sub.email ? html`<div class="s-plan-pay__rule"></div><div class="s-plan-pay__email"><div class="s-plan-pay__sub">${t('billingEmail')}</div><div class="s-plan-pay__mail">${sub.email}</div></div>` : ''}
           </section>
-          <section class="s-plan-card s-plan-invoices">
+          <section class="${cls('s-plan-card s-plan-invoices', items.length && 's-plan-invoices--list')}">
             <h2 class="s-plan-card__title">${t('invoices')}</h2>
-            <p class="s-plan-empty">${t('noInvoices')}</p>
+            ${items.length ? items.map(invoiceRow) : html`<p class="s-plan-empty">${t('noInvoices')}</p>`}
           </section>
         </div>
       </div>
@@ -126,22 +178,95 @@ export function billingMarkup(commerce, { credits = false } = {}) {
   </div>`;
 }
 
+const wait = (ms) => new Promise((resolve) => { setTimeout(resolve, ms); });
+
+/* PR-MON-9 §3.4: an invoice is GET first; while Polar prepares it the row says so and asks again, bounded. */
+async function downloadInvoice(element, orderId) {
+  const note = element.querySelector(`[data-invoice-row="${CSS.escape(orderId)}"] [data-invoice-note]`);
+  const before = note ? note.textContent : '';
+  const end = Date.now() + 30000;
+  try {
+    while (Date.now() < end) {
+      const answer = await api.billingInvoice(orderId);
+      if (answer?.state === 'ready' && answer.url) {
+        if (note) note.textContent = before;
+        window.open(answer.url, '_blank', 'noopener');
+        return;
+      }
+      if (note) note.textContent = t('preparingInvoice');
+      await wait(2000);
+    }
+    toast(t('invoiceLater'), { iconName: 'clock' });
+  } catch {
+    toast(t('genericError'), { iconName: 'circle-alert' });
+  }
+  if (note) note.textContent = before;
+}
+
 export default async function plan(element, ctx) {
   await useStyles('screens/plan/plan.css');
   // One folder serves both frames: Plans is its own route and its own module.
   if (ctx.route?.id === 'pricing') return pricing(element, ctx);
-  const [commerce, offers] = await Promise.all([api.productCommerce().catch(() => null), loadOffers(api)]);
+  const [commerce, offers, plansAnswer, subscription, sale] = await Promise.all([
+    api.productCommerce().catch(() => null), loadOffers(api), api.productPlans().catch(() => null),
+    api.billingSubscription().catch(() => null), api.billingOffers().catch(() => null),
+  ]);
   if (!ctx.isCurrent()) return undefined;
   if (!commerce) throw new Error('plan_unavailable');
   if (offers.available) {
     await useStyles('screens/credits/credits.css');
     ensureSpark();
   }
+  const catalogue = pricingPlans({ plans: plansAnswer?.plans, commerce });
+  const invoices = subscription?.provider === 'polar' ? await api.billingInvoices().catch(() => null) : null;
+  if (!ctx.isCurrent()) return undefined;
 
-  mount(element, billingMarkup(commerce, { credits: offers.available }));
+  mount(element, billingMarkup(commerce, { credits: offers.available, subscription, catalogue, invoices }));
+  const reload = () => { if (ctx.isCurrent()) plan(element, ctx); };
   element.querySelectorAll('[data-open-credits]').forEach((button) => button.addEventListener('click', () => ctx.go(ctx.href('credits'))));
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
   element.querySelectorAll('[data-open-plans]').forEach((button) => button.addEventListener('click', () => ctx.go(ctx.href('pricing'))));
+  const current = catalogue.find((item) => item.isCurrent) || null;
+  element.querySelector('[data-open-cancel]')?.addEventListener('click', () => openBillingSheet({
+    kind: 'cancel', target: current, current, subscription: subscriptionView(subscription),
+    free: catalogue.find((item) => item.isFree) || null, offers: sale?.offers || [],
+    onFinish: (changed) => { if (changed) reload(); },
+  }));
+  element.querySelector('[data-resume]')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget;
+    button.disabled = true;
+    const operation = globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : null;
+    try {
+      let answer = await api.billingResume({ operation_id: operation });
+      for (let tries = 0; ['pending', 'sent', 'provider_unknown'].includes(answer?.state) && tries < 30; tries += 1) {
+        await wait(2000);
+        answer = await api.billingOperation(operation);
+      }
+      if (answer?.state !== 'done') throw new Error('resume_not_done');
+      for (let tries = 0; tries < 30; tries += 1) {
+        const view = await api.billingSubscription().catch(() => null);
+        if (view && view.cancel_at_period_end === false) break;
+        await wait(2000);
+      }
+      toast(t('resumedToast', { plan: current ? planName(current) : '' }));
+      reload();
+    } catch {
+      button.disabled = false;
+      toast(t('genericError'), { iconName: 'circle-alert' });
+    }
+  });
+  element.querySelector('[data-update-card]')?.addEventListener('click', async () => {
+    // Polar's customer portal: the only place a card is changed (Orena never takes card data). A new tab.
+    const tab = window.open('about:blank', '_blank');
+    try {
+      const answer = await api.billingPortal();
+      if (tab) { tab.opener = null; tab.location.href = answer.url; } else window.open(answer.url, '_blank', 'noopener');
+    } catch {
+      tab?.close();
+      toast(t('portalError'), { iconName: 'circle-alert' });
+    }
+  });
+  element.querySelectorAll('[data-invoice]').forEach((button) => button.addEventListener('click', () => downloadInvoice(element, button.dataset.invoice)));
   return undefined;
 }
 

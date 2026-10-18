@@ -265,16 +265,18 @@ class PolarSubscriptions:
 
     # ---- §4.3 cancel and resume ------------------------------------------------------------------------------
 
-    def cancel(self, incarnation_id: str, reason: str, operation_id: str) -> dict[str, Any]:
-        if reason not in REASONS:
+    def cancel(self, incarnation_id: str, reason: str | None, operation_id: str) -> dict[str, Any]:
+        if reason is not None and reason not in REASONS:
             raise SubscriptionRefused("reason_invalid", 422)
         mine = self._mine(incarnation_id)
 
         def build() -> tuple[dict[str, Any], dict[str, Any]]:
             if mine.get("state") not in ("active", "trialing", "past_due") or mine.get("cancel_at_period_end"):
                 raise SubscriptionRefused("not_cancellable")
-            return ({"cancel_at_period_end": True, "customer_cancellation_reason": REASONS[reason]},
-                    {"cancel_at_period_end": True})
+            body: dict[str, Any] = {"cancel_at_period_end": True}
+            if reason is not None:
+                body["customer_cancellation_reason"] = REASONS[reason]
+            return body, {"cancel_at_period_end": True}
 
         return self._run(incarnation_id, operation_id, "cancel", str(mine["external_subscription_id"]),
                          {"reason": reason}, build)
