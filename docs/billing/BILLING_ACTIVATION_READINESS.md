@@ -91,6 +91,9 @@ Billing is off on `:8000`, so nobody is charged there. Even so, gate 7b must run
 current `:8000` build, a Vietnamese learner would see a dong price and be charged dollars by Polar. The next `:8000`
 deploy fixes both. Re-read the table after that deploy.
 
+The owner decided on 2026-10-19 that voice chat with Orena is for Plus and Pro only, not Free. The Intelligence lane
+is adding the voice entitlement to the catalogue, and its row joins this table once it is merged.
+
 ## 5. Configuration for the pilot host (names only)
 
 The pilot host keeps billing **off**: every variable below is empty, or not set.
@@ -149,7 +152,7 @@ renewal, a code fix lands first, with independent review. `:8000` runs a build f
 
 | # | Write | Value |
 | --- | --- | --- |
-| P1 | Create 4 products, one fixed USD price each, no trial | Plus 9.99/month, Plus 79.99/year, Pro 19.99/month, Pro 159.99/year (the catalogue; final prices are the owner's call) |
+| P1 | Create 4 products, one fixed USD price each, no trial, no Polar benefits | Plus 9.99/month, Plus 79.99/year, Pro 19.99/month, Pro 159.99/year (the catalogue; final prices are the owner's call). Each description says **voice chat with Orena is included** (runbook §1.1); Orena grants it from its own catalogue |
 | P2 | Customer portal | customer updates on; plan change between the four; proration `invoice` |
 | P3 | Organization access token | exactly the 8 scopes in the runbook §1.3. The owner creates it and pastes it into `runtime.env`; it never goes through chat |
 | P4 | Webhook endpoint | `https://orena.chillpickle.org/api/billing/webhooks/polar`, Raw. Events: `subscription.*`, `order.paid`, `refund.created`, `refund.updated` |
