@@ -342,6 +342,37 @@ def test_an_idle_summary_is_stored_final_and_a_later_checkpoint_is_a_no_op():
     assert not checkpoint(fresh, turns=8, now=later)
 
 
+def test_idle_finalisation_bumps_the_version_the_next_turn_probes():
+    s = store()
+    checkpoint(s, turns=4)
+    built = memory_section(s, A, "zh", T0 + timedelta(minutes=10))  # vN: the summary is still open
+    assert built.sessions == () and s.probe(A, T0 + timedelta(minutes=20)).version == built.version
+    later = T0 + timedelta(minutes=31)  # no other write; only time passes
+    probed = s.probe(A, later)
+    assert probed.version > built.version  # the open conversation sees a mismatch
+    rebuilt = memory_section(s, A, "zh", later)
+    assert rebuilt.version == probed.version and rebuilt.sessions[0]["open_task"] == SUMMARY["open_task"]
+    assert s.probe(A, later + timedelta(minutes=5)).version == probed.version  # settled once
+
+
+def test_memory_off_probe_settles_nothing():
+    s = store()
+    checkpoint(s, turns=4)
+    s.set_enabled(A, False)
+    version = s.state(A).version
+    assert s.probe(A, T0 + timedelta(hours=2)).version == version
+    assert s._learner(A).summaries[("s1", "zh")].state == "open"
+
+
+def test_the_fake_exposes_only_the_port():
+    from writing_coach.agent.memory_store import MemoryRepository
+
+    port = {name for name in dir(MemoryRepository) if not name.startswith("_")}
+    fake = {name for name in dir(InMemoryMemoryStore) if not name.startswith("_")}
+    assert fake - port == {"versions_in_use"}  # pin is deferred to M3 (§3.4): not in the port, not in the fake
+    assert "pin" not in fake
+
+
 def test_deleting_an_item_scrubs_only_its_own_language_summaries():
     s = store()
     checkpoint(s, language="zh", context=[("learning_purpose", "job_interview")])

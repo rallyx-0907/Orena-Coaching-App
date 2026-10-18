@@ -17,7 +17,8 @@ semantics the proposal fixes can be tested now and the PostgreSQL repository can
 - **snapshot** - a pack reads state, items and summaries in one operation, so its contents are exactly those of the
   version it carries: a delete committed on another worker either is in it or bumps the version past it (§5.2);
 - **finalisation** - an open summary idle 30 minutes (so, too, one 24 hours after its last checkpoint) becomes
-  final as a stored transition (a later checkpoint is a no-op); nothing is finalised while memory is OFF.
+  final as a stored transition that bumps the version (a later checkpoint is a no-op); the per-turn `probe` settles
+  what came due, so an open conversation sees it; nothing is finalised while memory is OFF.
 
 Pinning (continuity to explicit) is not in this port yet: rev 4.1 §3.4 makes the explicit item the learner's own words
 with the slot and code kept, which needs the M3 representation; it comes with it.
@@ -137,6 +138,8 @@ class MemoryRepository(Protocol):
 
     def delete_item(self, scope: MemoryScope, item_id: str, now: datetime) -> bool: ...
 
+    def probe(self, scope: MemoryScope, now: datetime) -> MemoryState: ...
+
     def snapshot(self, scope: MemoryScope, language: str, now: datetime, sessions: int) -> MemorySnapshot: ...
 
     def delete_all(self, scope: MemoryScope, what: str, now: datetime) -> int: ...
@@ -239,24 +242,36 @@ class InMemoryMemoryStore:
                  if i.language_code in (language, ANY_LANGUAGE) and _live(i.expires_at, now)]  # fmt: skip
         return sorted(found, key=lambda i: (i.cls, i.kind, i.created_at, i.id))
 
-    @staticmethod
-    def _settle(learner: _Learner, now: datetime) -> None:
-        """Open summaries idle 30 minutes since their last checkpoint become final - stored, so a later
-        checkpoint is a no-op. Not while memory is OFF: stored memory stays untouched (§6). The version is not
-        bumped: what a pack renders does not change (an idle summary already read as final)."""
+    def _settle(self, learner: _Learner, now: datetime) -> None:
+        """Open summaries idle 30 minutes since their last checkpoint become final - stored, so a later checkpoint is
+        a no-op - and the version is bumped when any does, like every other memory write (§4.4). Not while memory is
+        OFF: stored memory stays untouched (§6)."""
 
         if not learner.state.enabled:
             return
+        settled = False
         for key, row in learner.summaries.items():
             if row.state == "open" and now - row.last_checkpoint_at >= IDLE_FINAL:
                 ended = row.last_checkpoint_at + IDLE_FINAL
                 learner.summaries[key] = replace(row, state="final", finalised_at=ended, expires_at=ended + SUMMARY_TTL)
+                settled = True
+        if settled:
+            self._bump(learner)
 
     def _summaries(self, learner: _Learner, language: str, now: datetime, limit: int) -> list[SessionSummary]:
         shown = [row for row in learner.summaries.values()
                  if row.language_code == language and row.state == "final" and row.summary
                  and _live(row.expires_at, now) and row.finalised_at and now - row.finalised_at <= RENDER_AGE]
         return sorted(shown, key=lambda row: row.finalised_at, reverse=True)[:limit]  # fmt: skip
+
+    def probe(self, scope: MemoryScope, now: datetime) -> MemoryState:
+        """The cheap per-turn read (§5.2): settles summaries that came due, then the state. A turn compares this
+        version with its pack's and rebuilds through `snapshot` only on a mismatch."""
+
+        with self._lock:
+            learner = self._learner(scope)
+            self._settle(learner, now)
+            return learner.state
 
     def items(self, scope: MemoryScope, language: str, now: datetime) -> list[MemoryItem]:
         with self._lock:
@@ -314,23 +329,6 @@ class InMemoryMemoryStore:
             self._remove(learner, item, now)
             self._bump(learner)
             return True
-
-    def pin(self, scope: MemoryScope, item_id: str, now: datetime) -> MemoryItem | None:
-        with self._lock:
-            learner = self._learner(scope)
-            if not learner.state.enabled:
-                raise MemoryOff
-            item = learner.items.get(item_id)
-            if item is None or item.cls != CONTINUITY:
-                return None
-            held = self._holder(learner, item.language_code, EXPLICIT, item.slot, item.text, now)
-            if held is not None:
-                del learner.items[held.id]
-            del learner.items[item.id]
-            pinned = replace(item, cls=EXPLICIT, source="learner_pinned", expires_at=None)
-            learner.items[pinned.id] = pinned
-            self._bump(learner)
-            return pinned
 
     def delete_all(self, scope: MemoryScope, what: str, now: datetime) -> int:
         """`items`, `sessions` or `all`. Suppression keys are kept; summaries become tombstones."""
