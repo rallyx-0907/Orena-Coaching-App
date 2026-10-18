@@ -51,6 +51,10 @@ MIN_TURNS = 2  # a session with fewer learner turns writes no summary
 SINGLE_VALUED_SLOTS = SINGLE_VALUED | {"explanation_length", "support_language", "correction_timing"}
 
 
+class MemoryUnavailable(Exception):
+    """The scope's incarnation is not active (deleted while a request was in flight): nothing is written."""
+
+
 class MemoryOff(Exception):
     """Memory is switched off for this learner: nothing new is written."""
 
@@ -91,6 +95,7 @@ class MemoryItem:
     created_at: datetime
     expires_at: datetime | None = None
     provenance: tuple[str, ...] = ()  # distinct session ids, as a set
+    code: str | None = None  # the slot's closed code: on continuity (and, from M3, on a promoted item); else None
 
 
 @dataclass(frozen=True)
@@ -150,6 +155,11 @@ class MemoryRepository(Protocol):
     def finalise(self, scope: MemoryScope, agent_session_id: str, now: datetime) -> int: ...
 
     def delete_summary(self, scope: MemoryScope, agent_session_id: str, now: datetime) -> int: ...
+
+    def suppressed(self, scope: MemoryScope, language: str, cls: str, slot: str | None, value: str,
+                   now: datetime) -> bool: ...  # fmt: skip
+
+    def versions_in_use(self) -> set[int]: ...
 
 
 @dataclass
@@ -214,7 +224,8 @@ class InMemoryMemoryStore:
         version, value_key = self._keys.stamp(slot or "", text)
         return MemoryItem(id=str(uuid.uuid4()), language_code=language, cls=cls, kind=kind, slot=slot, text=text,
                           source=source, key_version=version, value_key=value_key, created_at=now,
-                          expires_at=expires_at, provenance=provenance)  # fmt: skip
+                          expires_at=expires_at, provenance=provenance,
+                          code=text if cls == CONTINUITY else None)  # fmt: skip
 
     def _remove(self, learner: _Learner, item: MemoryItem, now: datetime) -> None:
         """Delete an item; continuity and inferred leave a suppression key, and a continuity item's code leaves
@@ -276,6 +287,13 @@ class InMemoryMemoryStore:
     def items(self, scope: MemoryScope, language: str, now: datetime) -> list[MemoryItem]:
         with self._lock:
             return self._items(self._learner(scope), language, now)
+
+    def suppressed(self, scope: MemoryScope, language: str, cls: str, slot: str | None, value: str,
+                   now: datetime) -> bool:  # fmt: skip
+        """Whether a live suppression key holds this (slot, value) for the language and class."""
+
+        with self._lock:
+            return self._suppressed(self._learner(scope), language, cls, slot, value, now)
 
     def summaries(self, scope: MemoryScope, language: str, now: datetime, limit: int) -> list[SessionSummary]:
         """Finalised summaries of the language, newest first (idle ones finalised first). Never a tombstone, never
