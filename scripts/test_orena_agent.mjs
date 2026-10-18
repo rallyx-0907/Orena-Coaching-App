@@ -243,6 +243,25 @@ assert.deepEqual(reply.actions.map((a) => a.type), ['play_model', 'say_again']);
 assert.ok(reply.done && !session.state().thinking && !session.state().tool);
 session.apply({ event: 'not_an_event', data: {} });
 
+// 6a. The remembered-note line (light consent): only a server upsert, only the first one in a conversation.
+{
+  const note = { id: 'n1', kind: 'goal', text: 'x', weight: 0.5, expires_at: null };
+  const remembered = createSession({ log: () => {} });
+  remembered.learner('one');
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note, stored: 'device' } });
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note } });
+  remembered.apply({ event: 'memory_update', data: { op: 'remove', note, stored: 'server' } });
+  remembered.apply({ event: 'done', data: {} });
+  assert.ok(!remembered.state().messages.some((m) => m.remembered), 'a device note or a removal is never told');
+  remembered.learner('two');
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note, stored: 'server' } });
+  remembered.apply({ event: 'done', data: {} });
+  remembered.learner('three');
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note: { ...note, id: 'n2' }, stored: 'server' } });
+  remembered.apply({ event: 'done', data: {} });
+  assert.deepEqual(remembered.state().messages.filter((m) => m.role === 'orena').map((m) => Boolean(m.remembered)), [false, true, false], 'told once, on the first server note');
+}
+
 // 6b. The learner's own stop and retry (§2.1 429 "the learner may cancel the wait"; §4.1 `retry`):
 //     a cancel ends the thinking and hands the question back unsent for a reason that is not a
 //     changed language; a retry removes the reply that errored and keeps the learner's message.
@@ -361,7 +380,7 @@ assert.ok(supportedIntents(new Set(['grammar-concept', 'grammar'])).includes('gr
 // 10. §2.1 HTTP statuses and §4.1 error classes: the tables the UI reads equal the contract text,
 //     and the live transport answers each status as they say (driven with a fake fetch; it stays off).
 const statusRows = [...section('### 2.1 HTTP status', '## 3.').matchAll(/^\| `(\d{3})` \|/gm)].map((m) => Number(m[1]));
-assert.deepEqual(statusRows, [200, 401, 404, 409, 422, 429, 429, 409, 403, 503], '§2.1 statuses (v7 adds the plan-limit rows after their plain-string ones)');
+assert.deepEqual(statusRows, [200, 401, 404, 409, 422, 429, 429, 429, 409, 403, 503], '§2.1 statuses (v7 adds the plan-limit rows after their plain-string ones; v10 adds daily_ai_limit)');
 assert.deepEqual(
   Object.fromEntries([...new Set(statusRows)].map((s) => [s, contract.readStatus(s, '3').kind])),
   { 200: 'stream', 401: 'signed_out', 404: 'absent', 409: 'language_mismatch', 422: 'error', 429: 'wait', 403: 'error', 503: 'error' },
@@ -453,6 +472,22 @@ assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409
   run = await drive([answer(429, envelope('quota_exhausted', limit), { 'Retry-After': '3600', 'Content-Type': 'application/json' })]);
   assert.deepEqual([run.events, run.sent.length, run.slept], [['error:quota_exhausted:none'], 1, []], '429 quota_exhausted: told, not waited out or resent');
   assert.deepEqual(run.items[0].data.quota, limit, 'the server figures travel with the refusal');
+  // D-232 (contract v10): daily_ai_limit is told once and never waited out or resent, whatever Retry-After says.
+  const paused = { scope: 'system', resets_at: '2026-10-19T00:00:00Z' };
+  run = await drive([answer(429, envelope('daily_ai_limit', paused), { 'Retry-After': '3600', 'Content-Type': 'application/json' }), answer(200, SSE_OK)]);
+  assert.deepEqual([run.events, run.sent.length, run.slept], [['error:daily_ai_limit:none'], 1, []], '429 daily_ai_limit: told, not waited out or resent');
+  assert.deepEqual(run.items[0].data.paused, paused, 'scope and resets_at travel with the refusal');
+  assert.ok(!('quota' in run.items[0].data), 'no way to the plans: not the learner plan');
+  {
+    const { pausedMessage } = await import('../static/orena/screens/plan/quota-notice.js');
+    const { errorText } = await import('../static/orena/screens/orena/model.js');
+    const text = errorText({ class: 'daily_ai_limit', message: '', fallback: 'none', paused }, 'x');
+    assert.equal(text, pausedMessage(paused.resets_at), 'the error line is the interface-language sentence, not the server message');
+    assert.ok(text.includes('Orena') && !text.includes('{time}'), 'the sentence carries the time');
+    for (const bad of [undefined, '', 'not a date']) assert.ok(!/after \.|{time}/.test(pausedMessage(bad)) && pausedMessage(bad).includes('paused for today'), `no time to show for ${bad}: the sentence has no time`);
+    const planCopy = fs.readFileSync('static/orena/screens/plan/copy.js', 'utf8');
+    for (const line of ["Orena's AI is paused for today. Back after {time}.", 'Hôm nay Orena tạm dừng AI, sẽ có lại sau {time}.', 'Orena 今日 AI 已暂停，{time} 后恢复。', "Orena's AI is paused for today.", 'Hôm nay Orena tạm dừng AI.', 'Orena 今日 AI 已暂停。']) assert.ok(planCopy.includes(line), line);
+  }
   run = await drive([answer(409, envelope('operation_finished'), { 'Content-Type': 'application/json' })]);
   assert.deepEqual([run.events, run.sent.length], [['error:transport:retry'], 1], '409 operation_*: a retry (a new send is a new key), not a language change');
   run = await drive([answer(409, envelope('account_not_ready'), { 'Content-Type': 'application/json' })]);

@@ -2,6 +2,7 @@
    thread a voice turn is written into. The socket itself is exercised in the browser check (a mocked vendor
    socket), not here. */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 globalThis.btoa ??= (text) => Buffer.from(text, 'binary').toString('base64');
 globalThis.atob ??= (text) => Buffer.from(text, 'base64').toString('binary');
@@ -86,6 +87,24 @@ const { createSession } = await import('../static/orena/agent/session.js');
     assert.equal(isQuotaExhausted(new VoiceSessionError(503, 'quota_unavailable')), false, 'an unreadable limit falls back as before');
     assert.ok(quotaMessage(error).includes('20'), 'the sentence carries the server\'s figures');
   }
+}
+
+// D-232 (contract v10): a 429 daily_ai_limit on the voice session is a refusal told once; on renewal the held token plays out.
+{
+  const paused = async () => ({
+    ok: false, status: 429, headers: { get: () => '3600' },
+    json: async () => ({ detail: { category: 'daily_ai_limit', message: 'm', retryable: false, context: { scope: 'system', resets_at: '2026-10-19T00:00:00Z' } } }),
+  });
+  await assert.rejects(
+    openVoiceSession({ x: 1 }, { fetchImpl: paused, idempotencyKey: 'k-2' }),
+    (error) => error instanceof VoiceSessionError && error.status === 429 && error.category === 'daily_ai_limit' && error.context.scope === 'system',
+  );
+  const { isDailyAiLimit, isQuotaExhausted } = await import('../static/orena/screens/plan/quota-notice.js');
+  const error = new VoiceSessionError(429, 'daily_ai_limit', 3600, { scope: 'system', resets_at: '2026-10-19T00:00:00Z' });
+  assert.equal(isDailyAiLimit(error), true);
+  assert.equal(isQuotaExhausted(error), false, 'not the learner plan: no way to the plans');
+  const screen = readFileSync('static/orena/screens/orena/voice.js', 'utf8');
+  assert.ok(/onLimit: \(error\) => \{[^}]*isDailyAiLimit\(error\)\) showAiPaused/.test(screen), 'a refused renewal is told once (the held token plays out, as for quota_exhausted)');
 }
 
 // D-169: the session ends by itself at `max_seconds` (the seconds the learner's remaining messages buy).

@@ -207,7 +207,7 @@ def test_the_error_classes_are_the_contracts():
 
 def test_the_http_statuses_are_the_contracts():
     rows = [(row[0].strip("`"), row[1]) for row in _table_rows("### 2.1") if row[0].startswith("`")]
-    assert [status for status, _ in rows] == ["200", "401", "404", "409", "422", "429", "429", "409", "403", "503"]
+    assert [status for status, _ in rows] == ["200", "401", "404", "409", "422", "429", "429", "429", "409", "403", "503"]
     statuses = {}
     for status, body in rows:  # the first row of a status is the plain-string one; v7 adds object-bodied rows after
         statuses.setdefault(status, body)

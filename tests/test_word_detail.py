@@ -220,7 +220,7 @@ def test_structure_keeps_only_literal_ordered_chunks_with_a_known_role() -> None
 
 
 def _configure(monkeypatch, lookup: dict[str, Any] | Exception, saved: set[str] | None = None) -> None:
-    def do_lookup(*_args: Any) -> FakeLookup:
+    def do_lookup(*_args: Any, **_kwargs: Any) -> FakeLookup:
         if isinstance(lookup, Exception):
             raise lookup
         return FakeLookup(lookup)

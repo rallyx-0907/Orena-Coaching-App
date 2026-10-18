@@ -152,6 +152,12 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
         yield { event: 'error', data: { class: 'quota_exhausted', message: '', fallback: 'none', quota: refusal.context } };
         return;
       }
+      if (refusal?.category === 'daily_ai_limit') {
+        // Orena's AI is paused for everyone until `resets_at` (v10, §2.1): never waited out or resent, whatever
+        // `Retry-After` says. The learner's message stays; the room says it in one line (screens/orena/model.js).
+        yield { event: 'error', data: { class: 'daily_ai_limit', message: '', fallback: 'none', paused: { scope: refusal.context?.scope, resets_at: refusal.context?.resets_at } } };
+        return;
+      }
       if (response.status === 409 && refusal) {
         // operation_* (this message is being processed, or was: a new send is a new key) or account_not_ready: the
         // envelope's 409s are never a change of learning language, which is the plain string.

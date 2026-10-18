@@ -18,7 +18,7 @@
     {
       "h": "1. Scope",
       "blocks": [
-        { "p": "This policy applies to the Orena web app, any Orena app that connects to it (for example an Android app), the website where this page is published and all related services (together, “Orena”). Orena is operated by {{fact:operator.name}}, {{fact:operator.country}}. By using Orena, you agree to the data practices described below. Read it together with our [Terms of Service](/terms?lang=en)." }
+        { "p": "This policy applies to the Orena web app, any Orena app that connects to it (for example an Android app), the website where this page is published and all related services (together, “Orena”). Orena is operated by {{fact:operator.name}}, {{fact:operator.country}}. By using Orena, you agree to the data practices described below. Orena is the controller of the personal data described here. Read it together with our [Terms of Service](/terms?lang=en)." }
       ]
     },
     {
@@ -30,7 +30,7 @@
             ["Learning data", "Target language, placement results, reading progress, saved vocabulary, review schedule, exercise scores, streak and daily goal. This includes your listening, speaking and grammar progress and your review history."],
             ["Content you create", "Writing you submit for feedback and its AI evaluations, answers, drafts, notes and highlights, saved conversations and your place in a text, text discussions with Orena Intelligence, and the books, documents and media you import. For signed-in learners this is stored on our servers and tied to your account."],
             ["Voice audio", "The audio you record when you practise speaking or check pronunciation is sent for processing and is not stored on our servers. See section 5."],
-            ["Plan and usage", "Your plan and your usage counts. Payments are not live yet, so Orena holds no card numbers, payment details or transaction history. If an administrator assigns you a paid plan by hand during the beta, only the plan and its limits are recorded."],
+            ["Plan and usage", "Your plan and your usage counts. Payments are not live yet, so Orena holds no card numbers, payment details or transaction history. If an administrator assigns you a paid plan by hand, only the plan and its limits are recorded."],
             ["Technical records", "Like any web service, our servers and our hosting and network providers see your IP address, what you request and when, and may keep operational logs. We also keep records tied to your account: when you use Orena Intelligence (time and kind of request, not your message text), and any feedback you send (your rating, areas and message of up to 600 characters). Counts of AI use and its cost are kept without your content. Orena has no advertising, analytics or crash-reporting service."]
           ]
         }
@@ -58,13 +58,14 @@
       "toc": "4. Orena Intelligence and AI",
       "blocks": [
         { "p": "When you use Orena Intelligence or another AI feature (for example writing feedback, translation, dictionary entries, text discussions or pronunciation scoring), the relevant text or audio is sent to AI and speech service providers that process it on our behalf to return the result. We send what the feature needs, along with your level and target language. In Orena Intelligence requests we remove your name, email address, profile picture and account identifiers." },
-        { "p": "These providers may be located outside Vietnam (see section 6), and we do not control their systems, so do not submit to an AI feature anything you do not want processed this way. AI-generated answers can be inaccurate; see the Terms of Service for more." }
+        { "p": "These providers may be located outside Vietnam (see section 6), and we do not control their systems, so do not submit to an AI feature anything you do not want processed this way. AI-generated answers can be inaccurate; see the Terms of Service for more. The AI providers that currently process learner requests are Google (Gemini) and Groq, and Microsoft Azure Speech scores pronunciation. Providers may change; when they do, we update this policy." },
+        { "p": "Orena memory is on by default. It keeps short notes, written from your own words, so that Orena can personalise what it says to you. You can turn it off at any time in Settings, Privacy. Notes Orena keeps for you are kept for up to 180 days (about 6 months) from the last time you asked Orena to remember them; after that Orena stops using them and deletes them." }
       ]
     },
     {
       "h": "5. Voice and microphone",
       "blocks": [
-        { "p": "Orena uses the microphone only when you tap record. The recording is sent for transcription or pronunciation scoring and Orena's servers do not keep the audio; only your scores and feedback are kept." },
+        { "p": "Orena uses the microphone only when you tap record or start voice, and your browser asks for your permission. The recording is sent to the speech provider for transcription, pronunciation scoring and replies, and Orena's servers do not keep the audio; only your scores and feedback are kept. You can stop using voice features at any time." },
         { "p": "Recordings you make for playback stay in your browser tab and are gone when you close it. Where Orena lets you keep recent recordings, up to five per line stay on your own device and are never uploaded to Orena; turning that option off or clearing your browser's site data deletes them." }
       ]
     },
@@ -88,7 +89,7 @@
       "h": "7. Retention and deletion",
       "blocks": [
         { "p": "We keep your account and learning data while your account exists. Orena has no delete-account button yet: to have your account deleted, email [orena.support@chillpickle.org](mailto:orena.support@chillpickle.org) from the email address of your Google account, as described on [Delete account](/account-deletion?lang=en). We process these requests by hand within 30 days." },
-        { "p": "Some records have a fixed lifetime: Orena Intelligence activity records (without your message text) are deleted after {{fact:retention.agent_turn_days}} days, feedback you send is deleted after {{fact:retention.feedback_months}} months, and records of AI use and cost (without your content) after 13 months. Data deleted from the live system can remain in backups for up to {{fact:retention.backup_days}} days, until they are overwritten. Recordings you chose to keep stay on your device until you delete them." }
+        { "p": "Some records have a fixed lifetime: Orena Intelligence activity records (without your message text) are deleted after {{fact:retention.agent_turn_days}} days, feedback you send is deleted after {{fact:retention.feedback_months}} months, and records of AI use and cost (without your content) after 13 months. Your learning history is kept while your account is active. Data deleted from the live system can remain in backups for up to {{fact:retention.backup_days}} days, until they are overwritten. Recordings you chose to keep stay on your device until you delete them." }
       ]
     },
     {
@@ -123,7 +124,7 @@
     {
       "h": "11. Children",
       "blocks": [
-        { "p": "Orena is for people aged {{fact:min_age}} and over. Orena does not collect your date of birth and, during the beta, has no technical age check; signing in needs a Google account, which has its own age requirements. If we learn that an account belongs to someone under {{fact:min_age}}, we will delete the account and its data." }
+        { "p": "Orena is for people aged {{fact:min_age}} and over. Orena does not collect your date of birth and has no technical age check; signing in needs a Google account, which has its own age requirements. If we learn that an account belongs to someone under {{fact:min_age}}, we will delete the account and its data." }
       ]
     },
     {
