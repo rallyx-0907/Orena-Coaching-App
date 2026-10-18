@@ -11,7 +11,7 @@ Five columns on `users`, all additive, none rewriting data:
 - `voice_consent_at` (timestamptz, NULL): when the voice answer last changed.
 
 `users` SURVIVES account deletion (`account_incarnations.user_id -> users ON DELETE RESTRICT`), so the D-055 deletion
-workflow RESETS these five (`persistence/deletion_enumeration.USER_COLUMNS_TO_RESET`); nothing else removes them.
+workflow RESETS these five (`persistence/deletion_enumeration.CONSENT_COLUMNS_TO_RESET`); nothing else removes them.
 Account-wide, not per language; no history (a changed answer replaces the last). No ORM column maps them: the code
 reads and writes them with raw statements guarded by a column-presence check (`persistence/consent_store.py`), so
 this code runs, and records "no consent record", on a runtime that has not applied the revision yet. Merging the code

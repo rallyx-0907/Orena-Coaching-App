@@ -24,6 +24,8 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       APP_ENV: ${APP_ENV:-development}
+      # The deploy-stamped effective date of the Terms and Privacy Policy (D-233); production refuses to start without it.
+      LEGAL_EFFECTIVE_DATE: ${LEGAL_EFFECTIVE_DATE:-}
       # Where the port below is published on the host. The application reads it to decide whether a request that
       # Docker's port proxy relays may count as the developer's own (writing_coach/core/request_boundary.py): that
       # is true only while this is a loopback address. Never LAN-bound by default (issue #137).

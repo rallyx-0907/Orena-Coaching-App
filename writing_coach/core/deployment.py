@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
-import os
 import ipaddress
+import os
+import re
 from dataclasses import dataclass
 from typing import Mapping
 from urllib.parse import urlsplit
@@ -185,6 +186,10 @@ def resolve_deployment_config(env: Mapping[str, str] | None = None) -> Deploymen
         if len(str(values.get("SESSION_SECRET", "")).strip()) < 32:
             # A short secret lets anyone forge a session cookie, an administrator's included.
             raise RuntimeError(f"SESSION_SECRET must be at least 32 characters when APP_ENV={app_env}.")
+        if app_env == "production" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(values.get("LEGAL_EFFECTIVE_DATE", "")).strip()):
+            # D-233: a consent record names the Terms/Privacy version accepted. Production never records "unstamped";
+            # the deploy states the date it passed to build_public_pages.mjs --effective-date.
+            raise RuntimeError("LEGAL_EFFECTIVE_DATE (YYYY-MM-DD) is required when APP_ENV=production.")
     elif auth_enabled and not str(values.get("SESSION_SECRET", "")).strip():
         raise RuntimeError("SESSION_SECRET is required when Google authentication is enabled.")
 

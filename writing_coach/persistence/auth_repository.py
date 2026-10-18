@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any, Protocol
@@ -45,8 +45,8 @@ def _token_of(value: datetime | None) -> str:
     if value is None:
         return ""
     if value.tzinfo is None:
-        value = value.replace(tzinfo=UTC)
-    return value.astimezone(UTC).isoformat(timespec="microseconds")
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc).isoformat(timespec="microseconds")
 
 
 def _parse_token(token: str) -> tuple[bool, datetime | None]:
@@ -63,7 +63,7 @@ def _parse_token(token: str) -> tuple[bool, datetime | None]:
         return False, None
     if parsed.tzinfo is None:
         return False, None
-    return True, parsed.astimezone(UTC)
+    return True, parsed.astimezone(timezone.utc)
 
 
 def _settings_payload(row: dict[str, Any]) -> dict[str, Any]:
@@ -209,7 +209,7 @@ class SQLiteAuthRepository:
         valid, _ = _parse_token(expected_token)
         if not valid:
             raise SettingsVersionConflict(current["settings_version"])
-        new_token = _token_of(datetime.now(UTC))
+        new_token = _token_of(datetime.now(timezone.utc))
         assignments = ", ".join(f"{name} = ?" for name in columns)
         with self.connect() as conn:
             cursor = conn.execute(
@@ -271,7 +271,7 @@ class PostgresAuthRepository:
         picture = str(info.get("picture") or "").strip()
         if not sub or not email:
             raise ValueError("Google account did not provide a valid subject/email.")
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         try:
             return self._upsert_pg(sub, email, name, picture, admin_emails, now)
         except IntegrityError:

@@ -21,6 +21,7 @@ import re
 from typing import Any
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.persistence.consent_store import ConsentUnreadable
 
 log = logging.getLogger(__name__)
 
@@ -46,13 +47,19 @@ def _store(repository: Any):
     return getattr(repository, "consent", None) if repository is not None else None
 
 
-def consent_state(repository: Any, user_key: str) -> dict[str, Any]:
+def consent_state(repository: Any, user_key: str, *, strict: bool = False) -> dict[str, Any]:
     """`{available, accepted, version, accepted_at, language, voice, voice_at}` for the account.
 
     `available` is False when there is no store, no columns, no account row or the read failed; every other field is
-    then its empty value (`voice` is None: unknown, not refused)."""
+    then its empty value (`voice` is None: unknown, not refused). With `strict`, a read that failed while the columns are
+    known present raises `ConsentUnreadable` instead (the voice gate fails closed on it)."""
     store = _store(repository)
-    row = store.get(user_key) if store is not None else None
+    try:
+        row = store.get(user_key) if store is not None else None
+    except ConsentUnreadable:
+        if strict:
+            raise
+        row = None
     if row is None:
         return {
             "available": False, "accepted": False, "version": "", "accepted_at": "", "language": "",
@@ -114,7 +121,7 @@ def set_voice_consent(repository: Any, user_key: str, granted: bool) -> bool:
 
 
 def reset_consent(repository: Any, user_key: str) -> bool:
-    """The account-deletion workflow's reset of the five columns (`deletion_enumeration.USER_COLUMNS_TO_RESET`)."""
+    """The account-deletion workflow's reset of the five columns (`deletion_enumeration.CONSENT_COLUMNS_TO_RESET`)."""
     store = _store(repository)
     if store is None or not user_key:
         return False
@@ -124,11 +131,11 @@ def reset_consent(repository: Any, user_key: str) -> bool:
 def voice_consent_blocks(repository: Any, user_key: str, *, auth_enabled: bool) -> bool:
     """Whether a voice request must be refused: sign-in is on, the account has a record to read, and it says no.
 
-    Absent columns, no account row, no sign-in (local development) and an unreadable record all let the request through:
-    the gate enforces a stored refusal, never a missing store."""
+    Absent columns, no account row and no sign-in (local development) let the request through: the gate enforces a stored
+    refusal, never a missing store. A record that exists but cannot be read raises `ConsentUnreadable` (fail closed)."""
     if not auth_enabled:
         return False
-    state = consent_state(repository, user_key)
+    state = consent_state(repository, user_key, strict=True)
     return state["available"] and state["voice"] is False
 
 
@@ -140,9 +147,15 @@ def require_voice_consent() -> None:
     decides whether to read it."""
     from writing_coach import account_settings
 
-    if voice_consent_blocks(
-        account_settings._repository, account_settings._user_key(), auth_enabled=account_settings._auth_enabled()
-    ):
+    try:
+        blocked = voice_consent_blocks(
+            account_settings._repository, account_settings._user_key(), auth_enabled=account_settings._auth_enabled()
+        )
+    except ConsentUnreadable as exc:
+        raise orena_http_error(
+            503, "consent_unavailable", "Your voice permission could not be read. Try again in a moment.", retryable=True
+        ) from exc
+    if blocked:
         raise orena_http_error(
             403,
             "voice_consent_required",

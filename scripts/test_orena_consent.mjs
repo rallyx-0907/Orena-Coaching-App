@@ -98,11 +98,37 @@ answer.calls = [];
   assert.match(settings.packs.zh.voiceLabel, /[一-鿿]/);
 }
 
+/* --- a 403 voice_consent_required asks at once, and the refusal still reaches the room ---------------- */
+{
+  const { request, setVoiceConsentRequiredHandler } = await import('../static/orena/infrastructure/api.js');
+  const { markVoiceRefused } = await import('../static/orena/product/consent.js');
+  const reply = (status, body) => async () => ({
+    ok: status < 400, status, headers: { get: (name) => (name.toLowerCase() === 'content-type' ? 'application/json' : null) }, json: async () => body,
+  });
+  const realFetch = globalThis.fetch;
+  let asked = 0;
+  setVoiceConsentRequiredHandler(() => { asked += 1; markVoiceRefused(); });
+  try {
+    globalThis.fetch = reply(403, { detail: { category: 'voice_consent_required', message: 'x', retryable: false, context: {} } });
+    await assert.rejects(() => request('/api/speech/transcribe', { method: 'POST' }), (error) => error.status === 403 && error.category === 'voice_consent_required');
+    assert.equal(asked, 1, 'the consent question is asked');
+    assert.equal(voiceConsent(), false, 'and the next recording asks too');
+    globalThis.fetch = reply(403, { detail: { category: 'forbidden', message: 'x' } });
+    await assert.rejects(() => request('/api/x'));
+    assert.equal(asked, 1, 'another 403 asks nothing');
+  } finally {
+    globalThis.fetch = realFetch;
+    setVoiceConsentRequiredHandler(null);
+    clearConsentState();
+  }
+}
+
 /* --- the wiring, in source: one gate for every recording room; the sheet at boot; the bootstrap read --- */
 {
   assert.match(source('../static/orena/screens/mic/sheet.js'), /if \(!\(await ensureVoiceConsent\(ctx\)\)\) return;\n\s*if \(granted\)/, 'micGate asks before anything else');
   assert.match(source('../static/orena/shell/context.js'), /setConsentState\(bootstrap\?\.consent\)/);
   assert.match(source('../static/orena/main.js'), /openConsentSheet/);
+  assert.match(source('../static/orena/main.js'), /setVoiceConsentRequiredHandler\(\(\) => void module\.onVoiceConsentRefused/);
   const sheet = source('../static/orena/screens/consent/sheet.js');
   assert.match(sheet, /className: 's-mic'/, 'the Mic state sheet\'s own shape, no new visual');
   assert.match(sheet, /onClose: \(\) => settle\(false\)/, 'the scrim or Escape never allows recording');

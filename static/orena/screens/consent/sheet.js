@@ -12,7 +12,7 @@ import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { languages as copyLanguages } from '../../copy/index.js';
-import { acceptConsent, consentRequired, voiceConsent, writeVoiceConsent } from '../../product/consent.js';
+import { acceptConsent, consentRequired, markVoiceRefused, voiceConsent, writeVoiceConsent } from '../../product/consent.js';
 import { legalHref } from '../settings/model.js';
 import { t } from './copy.js';
 
@@ -72,6 +72,16 @@ export async function openConsentSheet(ctx = {}) {
       }
     },
   });
+}
+
+/* A request the server refused with 403 `voice_consent_required` (infrastructure/api.js): the answer is "no" from now on,
+   so the same question is asked at once. One sheet at a time. */
+let asking = false;
+export function onVoiceConsentRefused(ctx = {}) {
+  markVoiceRefused();
+  if (asking) return Promise.resolve(false);
+  asking = true;
+  return ensureVoiceConsent(ctx).finally(() => { asking = false; });
 }
 
 /* true: go on (allowed, or nothing to ask). false: do not record. */

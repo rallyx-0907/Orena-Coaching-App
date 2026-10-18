@@ -309,43 +309,62 @@ def _session_cookie(**values: str) -> str:
     return TimestampSigner(auth_support.SESSION_SECRET or "local-single-user-mode").sign(encoded).decode("utf-8")
 
 
-def test_the_first_google_sign_in_of_a_new_account_records_consent_and_a_returning_one_does_not(repo, monkeypatch):
+def _sign_in_world(repo, monkeypatch, sub):
     import app as app_module
 
     monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", "2026-10-20")
     monkeypatch.setattr(auth_support, "AUTH_ENABLED", True)
     monkeypatch.setattr(auth_support, "_auth_repository", repo)
     monkeypatch.setattr(auth_support, "maybe_claim_legacy_data", lambda *_a, **_k: False)
-    info = {"sub": "g-new", "email": "new@example.test", "name": "New", "email_verified": True, "nonce": "n"}
-    fake_flow = SimpleNamespace(fetch_token=lambda code: None, credentials=SimpleNamespace(id_token="tok"))
+    info = {"sub": sub, "email": f"{sub}@example.test", "name": "New", "email_verified": True, "nonce": "n"}
+    fake_flow = SimpleNamespace(
+        fetch_token=lambda code: None, credentials=SimpleNamespace(id_token="tok"), code_verifier="v",
+        authorization_url=lambda **_k: ("https://accounts.example.test/auth", None),
+    )
     monkeypatch.setattr(auth_support, "google_flow", lambda code_verifier=None: fake_flow)
     monkeypatch.setattr(auth_support.google_id_token, "verify_oauth2_token", lambda *_a, **_k: info)
+    monkeypatch.setattr(auth_support, "_move_to_sign_in_host", lambda _request: None)
 
-    async def sign_in(accept_language):
+    async def sign_in(start_query="", accept_language=""):
+        """The start (`/auth/google`) and the callback, with the cookie the start set carried to the callback."""
         transport = httpx.ASGITransport(app=app_module.app)
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            started = await client.get(f"/auth/google{start_query}")
+            assert started.status_code == 302
+            session = json.loads(base64.b64decode(started.cookies["writing_coach_session"].split(".")[0] + "=="))
             client.cookies.set(
                 "writing_coach_session",
-                _session_cookie(oauth_state="s", oauth_nonce="n", oauth_code_verifier="v"),
+                _session_cookie(**{**session, "oauth_state": "s", "oauth_nonce": "n"}),
             )
-            return await client.get(
-                "/auth/google/callback?state=s&code=c", headers={"accept-language": accept_language}
-            )
+            return await client.get("/auth/google/callback?state=s&code=c", headers={"accept-language": accept_language})
 
-    first = asyncio.run(sign_in("vi,en;q=0.5"))
+    return sign_in
+
+
+def test_the_account_step_sign_in_of_a_new_account_records_consent_with_the_language_it_carried(repo, monkeypatch):
+    sign_in = _sign_in_world(repo, monkeypatch, "g-new")
+    first = asyncio.run(sign_in("?next=%2F&account_step=1&lang=vi", accept_language="zh"))
     assert first.status_code == 302
     state = consent.consent_state(repo, "g-new")
-    assert state["accepted"] and state["version"] == "2026-10-20" and state["language"] == "vi"
-    asyncio.run(sign_in("zh"))
+    assert state["accepted"] and state["version"] == "2026-10-20"
+    assert state["language"] == "vi", "the interface language the Account step carried, not the browser's"
+    asyncio.run(sign_in("?account_step=1&lang=zh"))
     assert consent.consent_state(repo, "g-new")["language"] == "vi", "a returning sign-in records nothing"
 
-    # An account that existed before the migration has no record: the bootstrap asks for one.
-    repo.upsert_user({"sub": "g-old", "email": "old@example.test", "name": "Old"}, set())
-    conn = sqlite3.connect(repo.path)
-    conn.execute("UPDATE users SET consent_accepted_at = NULL WHERE google_sub = 'g-old'")
-    conn.commit()
-    conn.close()
-    assert consent.consent_required(repo, "g-old") is True
+
+def test_the_browser_language_is_only_the_fallback_when_the_flag_carries_none(repo, monkeypatch):
+    sign_in = _sign_in_world(repo, monkeypatch, "g-fb")
+    asyncio.run(sign_in("?account_step=1", accept_language="vi-VN,vi;q=0.9"))
+    assert consent.consent_state(repo, "g-fb")["language"] == "vi"
+
+
+@pytest.mark.parametrize("query", ["", "?next=%2F", "?account_step=0&lang=vi", "?account_step=1&lang=vi&native_redirect_uri=orena%3A%2F%2Fauth%2Fcallback&native_code_challenge=" + "a" * 43])
+def test_a_sign_in_not_started_at_the_account_step_records_nothing_and_the_sheet_is_due(repo, monkeypatch, query):
+    sign_in = _sign_in_world(repo, monkeypatch, "g-direct")
+    asyncio.run(sign_in(query))
+    assert repo.get_user("g-direct") is not None, "the account was created"
+    assert consent.consent_state(repo, "g-direct")["accepted"] is False
+    assert consent.consent_required(repo, "g-direct") is True, "the one-time sheet asks instead"
 
 
 def test_the_bootstrap_carries_the_consent_flag_for_an_account_with_no_record(repo, monkeypatch):
@@ -366,3 +385,38 @@ def test_the_bootstrap_carries_the_consent_flag_for_an_account_with_no_record(re
     assert body["consent"] == {"stored": True, "consent_required": True, "consent_version": "", "voice_consent": False}
     consent.accept_consent(repo, "g-boot", "en")
     assert asyncio.run(fetch())["consent"]["consent_required"] is False
+
+
+# --- the gate fails closed on an unreadable record; logs stay quiet ----------------------------------------------------
+
+
+def test_the_voice_gate_fails_closed_when_the_columns_are_present_but_the_read_fails(repo, monkeypatch):
+    _user(repo)
+    consent.set_voice_consent(repo, "g-1", True)
+    client = _speech_client(repo, "g-1", monkeypatch, auth=True)
+    assert _post_audio(client, "/api/speech/transcribe", language="en").status_code != 403
+
+    def broken(*_a, **_k):
+        raise sqlite3.OperationalError("disk I/O error")
+
+    monkeypatch.setattr(repo.consent, "_connect", broken)
+    assert repo.consent.available() is True, "the columns are known present"
+    with pytest.raises(consent_store.ConsentUnreadable):
+        consent.voice_consent_blocks(repo, "g-1", auth_enabled=True)
+    refused = _post_audio(client, "/api/speech/transcribe", language="en")
+    assert refused.status_code == 503 and "consent_unavailable" in refused.text, "an unreadable answer is not a yes"
+    # everything else degrades to "no record": the bootstrap and the settings read never fail on it
+    assert consent.public_shape(repo, "g-1")["stored"] is False
+    assert consent.consent_required(repo, "g-1") is False
+
+
+def test_a_persistent_fault_logs_its_traceback_once_then_one_line(repo, monkeypatch, caplog):
+    _user(repo)
+    assert repo.consent.available() is True
+    monkeypatch.setattr(repo.consent, "_connect", lambda: (_ for _ in ()).throw(sqlite3.OperationalError("boom")))
+    with caplog.at_level("WARNING", logger=consent_store.log.name):
+        for _ in range(3):
+            assert consent.consent_state(repo, "g-1")["available"] is False
+    with_traceback = [r for r in caplog.records if r.exc_info]
+    assert len(with_traceback) == 1, "the traceback is logged once"
+    assert len(caplog.records) == 3

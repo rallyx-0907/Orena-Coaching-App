@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
-  SIGN_IN_PATH, SIGN_OUT_NEXT, signInHref, signOutUrl, isUnauthorized, bootOutcome, unauthorizedRoute, signedOutDestination,
+  SIGN_IN_PATH, SIGN_OUT_NEXT, signInHref, accountStepSignInHref, signOutUrl, isUnauthorized, bootOutcome, unauthorizedRoute, signedOutDestination,
 } from '../static/orena/shell/session.js';
 import { entryRoute, match } from '../static/orena/shell/routes.js';
 
@@ -24,6 +24,12 @@ const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.ur
   assert.equal(decodeURIComponent(signInHref('signup').split('=')[1]), '/#/welcome?step=languages', 'a new learner returns into setup at Languages');
   assert.equal(decodeURIComponent(signInHref('login').split('=')[1]), '/#/', 'a returning learner returns to the entry rule');
   assert.equal(signInHref(), signInHref('signup'), 'an unknown mode is the first-visit one');
+  const flagged = new URL(accountStepSignInHref('signup', 'vi'), 'http://x');
+  assert.equal(flagged.searchParams.get('account_step'), '1', 'the Account step flags its sign-in (D-233)');
+  assert.equal(flagged.searchParams.get('lang'), 'vi');
+  assert.equal(flagged.searchParams.get('next'), '/#/welcome?step=languages', 'the return target is unchanged');
+  assert.equal(new URL(accountStepSignInHref('login', 'fr'), 'http://x').searchParams.get('lang'), 'en', 'an unknown language is en');
+  assert.ok(!signInHref('signup').includes('account_step'), 'the plain start carries no flag');
   assert.equal(signOutUrl(), '/auth/logout?next=%2F');
   assert.equal(SIGN_OUT_NEXT, '/');
 }
@@ -105,7 +111,7 @@ const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.ur
   const screen = source('../static/orena/screens/onboarding/screen.js');
   assert.match(screen, /data-action="welcome-login"/, 'Welcome draws "I already have an account" (O-01)');
   assert.match(screen, /signedOut\s*\? html`<div class="s-onboarding__cta s-onboarding__cta--welcome s-onboarding__cta--pair">/, 'only when signed out');
-  assert.match(screen, /window\.location\.assign\(signInHref\(state\.mode\)\)/, 'Google is the one way in');
+  assert.match(screen, /window\.location\.assign\(accountStepSignInHref\(state\.mode, copyLanguages\(\)\.ui\)\)/, 'Google is the one way in, started from the Account step');
   assert.ok(!/type="(email|password)"/.test(screen), 'no email or password field is built (UI_BACKEND_GAPS: Email sign-in)');
 
   const profile = source('../static/orena/screens/profile/screen.js');

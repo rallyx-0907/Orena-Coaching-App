@@ -32,6 +32,20 @@ CONSENT_COLUMNS = ("consent_version", "consent_accepted_at", "consent_language",
 ABSENT_RECHECK_SECONDS = 30.0
 
 
+class ConsentUnreadable(Exception):
+    """The columns are known present and a read failed: the answer is unknown, which is not "no record"."""
+
+
+def _warn_once(owner: Any, what: str, *, error: bool) -> None:
+    """The first failure of a kind logs its traceback; later ones log one line (a persistent fault is not a flood)."""
+    seen = owner.__dict__.setdefault("_warned", set())
+    if what in seen:
+        log.warning("%s (repeated)", what)
+        return
+    seen.add(what)
+    log.warning(what, exc_info=error)
+
+
 class _Presence:
     """Whether every consent column exists: a positive answer is kept, a negative one is re-asked after a while."""
 
@@ -40,6 +54,7 @@ class _Presence:
         self._clock = clock
         self._present = False
         self._checked_at: float | None = None
+        self._warned = set()
 
     def __call__(self) -> bool:
         if self._present:
@@ -51,7 +66,7 @@ class _Presence:
         try:
             self._present = bool(self._probe())
         except Exception:  # noqa: BLE001 - an unanswerable probe is "absent", never an error
-            log.warning("consent column probe failed; treating consent as unavailable", exc_info=True)
+            _warn_once(self, "consent column probe failed; treating consent as unavailable", error=True)
             self._present = False
         return self._present
 
@@ -100,9 +115,9 @@ class PostgresConsentStore:
                     ),
                     {"k": user_key},
                 ).fetchone()
-        except Exception:  # noqa: BLE001
-            log.warning("consent read failed; answering no record", exc_info=True)
-            return None
+        except Exception as exc:  # noqa: BLE001
+            _warn_once(self, "consent read failed", error=True)
+            raise ConsentUnreadable from exc
         return _shape(*row) if row else None
 
     def _execute(self, sql: str, params: dict[str, Any]) -> bool:
@@ -112,7 +127,7 @@ class PostgresConsentStore:
             with self.engine.begin() as conn:
                 return conn.execute(text(sql), params).rowcount == 1
         except Exception:  # noqa: BLE001
-            log.warning("consent write failed; nothing recorded", exc_info=True)
+            _warn_once(self, "consent write failed; nothing recorded", error=True)
             return False
 
     def accept(self, user_key: str, version: str, language: str, *, only_if_unset: bool) -> bool:
@@ -168,9 +183,9 @@ class SQLiteConsentStore:
                 ).fetchone()
             finally:
                 conn.close()
-        except Exception:  # noqa: BLE001
-            log.warning("consent read failed; answering no record", exc_info=True)
-            return None
+        except Exception as exc:  # noqa: BLE001
+            _warn_once(self, "consent read failed", error=True)
+            raise ConsentUnreadable from exc
         return _shape(*tuple(row)) if row else None
 
     def _execute(self, sql: str, params: tuple) -> bool:
@@ -185,7 +200,7 @@ class SQLiteConsentStore:
             finally:
                 conn.close()
         except Exception:  # noqa: BLE001
-            log.warning("consent write failed; nothing recorded", exc_info=True)
+            _warn_once(self, "consent write failed; nothing recorded", error=True)
             return False
 
     @staticmethod

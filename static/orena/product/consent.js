@@ -21,6 +21,11 @@ export function setConsentState(body) {
   return state;
 }
 
+/* The server refused a recording for want of the learner's permission: the next recording asks. */
+export function markVoiceRefused() {
+  state = { ...state, voice: false };
+}
+
 export const consentRequired = () => state.required;
 export const voiceConsent = () => state.voice;
 
