@@ -47,14 +47,26 @@ def cap_from_env(environ: Mapping[str, str]) -> float | None:
     return value
 
 
+def effective_cap(own: float | None, ceiling: float | None) -> float | None:
+    """The lower of a cap and the system-wide ceiling (ai/spend_gate.py); None when neither is set."""
+
+    caps = [cap for cap in (own, ceiling) if cap is not None]
+    return min(caps) if caps else None
+
+
 @dataclass
 class DailySpendGuard:
     cap_usd: float
     read: SpendReader
     now: Callable[[], datetime] = lambda: datetime.now(UTC)
     monotonic: Callable[[], float] = time.monotonic
+    # A warning once per UTC day when today's spend reaches this share of the cap (owner, 2026-10-18: 80%); None: none.
+    warn_ratio: float | None = None
+    label: str = "agent"  # in the log lines: "agent" or "system"
     _cached: tuple[float, float | None] | None = field(default=None, init=False)
     _lock: threading.Lock = field(default_factory=threading.Lock, init=False)
+    _warned_day: datetime | None = field(default=None, init=False)
+    _last: tuple[float, datetime] | None = field(default=None, init=False)  # (spent, resets_at) of the last read
 
     def __call__(self) -> float | None:
         """Seconds until the cap resets when today's spend is at or over it; None when a turn may run."""
@@ -69,13 +81,30 @@ class DailySpendGuard:
                 usd, unpriced = self.read(midnight)
                 spent = float(usd) + unpriced * UNPRICED_ALLOWANCE_USD
                 verdict = until_reset if spent >= self.cap_usd else None
+                self._last = (spent, midnight + timedelta(days=1))
                 if verdict is not None:
-                    _log.warning("agent daily spend cap reached: %.4f of %.2f USD", spent, self.cap_usd)
+                    _log.warning("%s daily spend cap reached: %.4f of %.2f USD", self.label, spent, self.cap_usd)
+                elif (self.warn_ratio is not None and spent >= self.warn_ratio * self.cap_usd
+                      and self._warned_day != midnight):  # fmt: skip
+                    self._warned_day = midnight
+                    _log.warning("%s daily spend near cap: %.4f of %.2f USD (%.0f%%)", self.label, spent, self.cap_usd,
+                                 100 * spent / self.cap_usd if self.cap_usd else 100.0)  # fmt: skip
             except Exception:  # the ledger cannot be read: fail closed
-                _log.warning("agent daily spend ledger unreadable; turns refused", exc_info=True)
+                _log.warning("%s daily spend ledger unreadable; refused", self.label, exc_info=True)
                 verdict = until_reset
             self._cached = (self.monotonic(), verdict)
             return verdict
+
+    def status(self) -> dict[str, Any]:
+        """Today's spend against the cap, for an administrator: read through the same 5-second cache."""
+
+        verdict = self()
+        spent, resets = self._last if self._last is not None else (None, None)
+        warned = self._warned_day is not None and resets is not None and self._warned_day == resets - timedelta(days=1)
+        return {"cap_usd": self.cap_usd, "spent_usd": None if spent is None else round(spent, 4),
+                "ratio": None if spent is None or not self.cap_usd else round(spent / self.cap_usd, 4),
+                "warned": warned or verdict is not None, "reached": verdict is not None,
+                "resets_at": resets.isoformat() if resets else None}  # fmt: skip
 
 
 class LiveSpendGuard:
@@ -105,3 +134,12 @@ class LiveSpendGuard:
                 self._current = (cap, DailySpendGuard(cap_usd=cap, read=self._read, **self._guard))
             guard = self._current[1]
         return guard()
+
+    def status(self) -> dict[str, Any]:
+        """The agent cap now and today's spend against it, for an administrator; {"cap_usd": None} with no cap."""
+
+        if self() is None and self._current is None:
+            return {"cap_usd": None}
+        with self._lock:
+            guard = self._current[1] if self._current is not None else None
+        return guard.status() if guard is not None else {"cap_usd": None}
