@@ -11,6 +11,28 @@ _ONLY_MARKS = re.compile(r"^[\W_]+$", re.UNICODE)
 _BRACKETED = re.compile(r"^\s*[\[\(（【]\s*(.*?)\s*[\]\)）】]\s*$")
 _TAG = re.compile(r"<[^>]+>")
 _SPACE = re.compile(r"\s+")
+# Bounded sound-tag rule (English captions). Only what caption convention reserves for non-speech is removed:
+# * a square-bracket group whose words are all in the closed sound vocabulary ([music], [crying], [door creaks]) or that
+#   is a speaker label (one or two capitalised words of the closed label vocabulary: [MAN], [Narrator], [Male Voice]);
+#   any other bracket ([sic], [the president], [1]) is left alone;
+# * a parenthesised group only when its words are all in the closed sound vocabulary, whether it is the whole cue or
+#   inside it ((music) yes, (yes), (Paris) no), because parentheses can hold real speech.
+_EN_SQUARE_TAG = re.compile(r"\[\s*[^\W\d_]+(?:[ '’-]+[^\W\d_]+){0,3}\s*\]")
+_EN_PAREN_TAG = re.compile(r"\(\s*[^\W\d_]+(?:[ '’-]+[^\W\d_]+){0,3}\s*\)")
+_EN_SPEAKER_LABEL = frozenset({
+    "narrator", "man", "woman", "boy", "girl", "child", "speaker", "host", "interviewer", "reporter", "announcer",
+    "voice", "male", "female", "crowd", "audience", "all", "both",
+})
+_EN_SOUND_WORDS = frozenset({
+    "music", "applause", "laughter", "laughs", "laughing", "cheering", "cheers", "crying", "cries", "gasps", "gasping",
+    "sighs", "snorts", "coughs", "coughing", "sniffles", "screams", "screaming", "whispers", "silence", "inaudible",
+    "singing", "humming", "clapping", "chuckles", "groans", "sobbing", "beeping", "ringing", "noise",
+    "door", "creaks", "creaking", "knocks", "knocking", "slams", "footsteps", "thunder", "rain", "wind", "bell", "bells",
+    "phone", "buzzing", "explosion", "gunshot", "gunshots", "sirens", "siren", "barking", "barks", "birds", "chirping",
+    "engine", "car", "starts", "applauds", "applauding", "murmurs", "murmuring", "yells", "shouts", "shouting",
+    "sneezes", "yawns", "sighing", "grunts", "static", "echo", "echoing", "continues", "playing", "plays", "fading",
+})
+_SPEAKER_MARK = re.compile(r">{2,}")
 _ZERO_WIDTH = re.compile(r"[\u200b-\u200f\u2060\ufeff]")
 _MUSIC = re.compile(r"[♪♫♬♩]+")
 _CUE_WORDS = {"music","applause","laughter","laughs","cheering","cheers","音乐","音樂","掌声","掌聲","笑声","笑聲","欢呼","歡呼"}
@@ -36,6 +58,46 @@ def clean_caption_text(value: object) -> str:
     if _ONLY_MARKS.fullmatch(text):
         return ""
     return text
+
+
+def _words(group: str) -> list[str]:
+    return re.findall(r"[^\W\d_]+", group.casefold())
+
+
+def _is_sound_group(group: str) -> bool:
+    words = _words(group)
+    return bool(words) and all(word in _EN_SOUND_WORDS for word in words)
+
+
+def _is_speaker_label(group: str) -> bool:
+    """`[MAN]`, `[Narrator]`, `[Male Voice]`: one or two words from the closed speaker-label vocabulary, written with
+    initial capitals as a label is. `[the president]`, `[sic]` and `[man]` (lower case) are speech or an editor's note."""
+    words = re.findall(r"[^\W\d_]+", group)
+    if not words or len(words) > 2 or not all(word.casefold() in _EN_SPEAKER_LABEL for word in words):
+        return False
+    return all(word[0].isupper() for word in words)
+
+
+def _square_is_noise(match: re.Match[str]) -> str:
+    group = match.group(0)
+    return " " if _is_sound_group(group) or _is_speaker_label(group) else group
+
+
+def _paren_is_sound(match: re.Match[str]) -> str:
+    return " " if _is_sound_group(match.group(0)) else match.group(0)
+
+
+def repair_english_caption_text(value: object) -> str:
+    """Remove English auto-caption noise without guessing sentence edges.
+
+    Strips speaker marks (`>>`), bracketed sound tags by the bounded rule above and spacing. Casing and every lexical
+    token of real speech are preserved; punctuation and case restoration belong to the context-aware corrector. Only
+    English text is passed here: Chinese bracketed text is never stripped by this function.
+    """
+    text = _SPEAKER_MARK.sub(" ", str(value or ""))
+    text = _EN_SQUARE_TAG.sub(_square_is_noise, text)
+    text = _EN_PAREN_TAG.sub(_paren_is_sound, text)
+    return _SPACE.sub(" ", text).strip()
 
 def _primary(value: str) -> str:
     return (value or "").strip().casefold().replace("_", "-").split("-", 1)[0]

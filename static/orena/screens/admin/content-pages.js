@@ -126,7 +126,9 @@ export function bookPage({ detail, view, t, ui, href }) {
    an item can fail after its transcript was kept (a language mismatch keeps what was heard). */
 function failureReason(record, t) {
   const outcome = record.outcome || {};
-  if (outcome.state !== 'failed' || !outcome.reason) return '';
+  /* A held item with cleared rights whose automatic correction did not finish says so: it was not published by itself. */
+  const heldForCorrection = outcome.state === 'held' && outcome.reason === 'transcript_correction_incomplete';
+  if ((outcome.state !== 'failed' && !heldForCorrection) || !outcome.reason) return '';
   const text = t.has(`impErr_${outcome.reason}`) ? t(`impErr_${outcome.reason}`) : outcome.message || '';
   /* The failing check and its counts (ids and numbers, no copy), when the pipeline recorded them (D-218). */
   return outcome.detail ? `${text} (${outcome.detail})` : text;
@@ -169,6 +171,25 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
   const facts = record.facts || {};
   const source = detail.source || {};
   const transcript = detail.transcript || { segments: [], segment_count: 0 };
+  const corrections = Array.isArray(record.processing?.transcript_corrections) ? record.processing.transcript_corrections : [];
+  const correctionState = record.processing?.transcript_correction_state || '';
+  const rejectedCorrections = Array.isArray(record.processing?.transcript_correction_rejected) ? record.processing.transcript_correction_rejected : [];
+  const correctionCode = (code) => (code && t.has(`ctCorrectionDetail_${code}`) ? t(`ctCorrectionDetail_${code}`) : code || '');
+  /* The reason is a stable code worded in the operator's language, never the model's own sentence: a stored code the copy does
+     not know yet reads as the generic "other", and a row written before codes existed shows no reason rather than foreign text. */
+  const correctionReasonText = (row) => {
+    const code = row.reason_code === 'noise_removed' ? 'noise_removed' : row.reason;
+    if (!code) return '';
+    return t.has(`ctCorrectionReason_${code}`) ? t(`ctCorrectionReason_${code}`) : t('ctCorrectionReason_other');
+  };
+  const correctionHint = ['unavailable', 'failed', 'partial'].includes(correctionState)
+    ? html`<div class="a-hint">${t('ctCorrectionState_' + correctionState)}${record.processing?.transcript_correction_detail ? ` (${correctionCode(record.processing.transcript_correction_detail)})` : ''}</div>` : '';
+  /* Applied edits first-class: a deterministic edit and a model edit both show a reason code worded in the reader's language
+     (correctionReasonText); the model's own sentence is never shown. */
+  const correctionRows = [
+    ...corrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionAfter')}: ${row.after}`, correctionReasonText(row), row.provider || row.model ? `${row.provider}/${row.model}` : '', latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
+    ...rejectedCorrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionNotApplied')}: ${row.proposed}`, correctionCode(row.code), latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
+  ].sort((a, b) => (a.start || 0) - (b.start || 0));
   const missing = facts.transcript !== 'available';
   const failedReason = failureReason(record, t);
   const link = learnerLink(record, detail);
@@ -179,7 +200,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
     markup: html`<section class="a-page" data-screen-label="A12 Media detail">
       ${pageHead({ back: { href: href('adminMedia'), label: t('ctMedia') }, title: record.title, sub: record.subtitle || '', pills: [statusPill(t, record), missing ? { label: t('ctTranscriptMissing'), tone: 'warn' } : { label: t('ctTranscriptReady'), tone: 'ok' }], actions: lifecycleButtons(t, record, 'media').filter((action) => action.data.intent !== 'reprocess').map((action) => ({ ...action, disabled: view.busy })) })}
       ${view.error ? html`<div class="a-error" role="alert">${view.error}</div>` : ''}
-      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : !missing && failedReason ? banner({ tone: 'warn', title: t('impFailed'), text: failedReason }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${failedReason || t('ctMissingText')}</div></div></div>` : ''}
+      ${['queued', 'running'].includes(record.processing?.state) ? banner({ tone: 'info', title: t('impMediaProcessing'), text: t.has(`impMediaStage_${record.processing.stage}`) ? t(`impMediaStage_${record.processing.stage}`) : t('ctStatusProcessing') }) : !missing && failedReason ? banner({ tone: 'warn', title: t(record.outcome?.state === 'held' ? 'ctStatusReview' : 'impFailed'), text: failedReason }) : missing ? html`<div class="a-banner" data-tone="warn"><div class="a-banner__text"><div class="a-banner__title">${t('ctMissingTitle')}</div><div class="a-banner__body">${failedReason || t('ctMissingText')}</div></div></div>` : ''}
       ${['queued', 'running'].includes(record.processing?.state) ? processingProgressMarkup(record.processing.stage, Object.fromEntries(['fetch', 'transcribe', 'segment', 'translate', 'ready'].map((stage) => [stage, t(`impMediaStage_${stage}`)]))) : ''}
       <div class="a-blocks">
         ${block({ title: t('ctDetails'), body: kv([
@@ -208,7 +229,7 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
             { id: 'keep', label: t('ctRedoKeep'), sub: '', on: false, disabled: true, tip: t('ctRedoUnsupported') },
           ] },
         ], actions: reprocess ? [{ label: t('ctAct_reprocess'), a: 'lifecycle', data: { intent: 'reprocess' } }] : [] })}
-        ${block({ span: true, title: t('ctTranscript'), body: transcript.segments?.length ? html`<div class="a-rows-scroll" tabindex="0">${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}</div>` : html`<div class="a-hint">${t('ctNoTranscript')}</div>` })}
+        ${block({ span: true, title: t('ctTranscript'), body: html`${transcript.segments?.length ? html`<div class="a-rows-scroll" tabindex="0">${rowList(transcript.segments.map((segment) => ({ title: segment.text, meta: latency(segment.start_ms, ui) })))}</div>` : html`<div class="a-hint">${t('ctNoTranscript')}</div>`}${correctionHint}${correctionRows.length ? html`<div class="a-rows-scroll" tabindex="0" aria-label="${t('ctTranscriptCorrections')}">${rowList(correctionRows)}</div>` : ''}` })}
       </div>
     </section>`,
   };

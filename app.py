@@ -852,6 +852,7 @@ _media_pipeline = MediaPipeline(
     admin_ingestion=_admin_media_ingestion_service,
     youtube_audio=download_audio,
     meanings=prepare_media_meanings,
+    corrector=_media_translation_provider,
     # D-204: import never makes a network call per word; local CMUdict IPA, empty on a miss.
     english_reading=english_ipa_for,
     workers=1,
