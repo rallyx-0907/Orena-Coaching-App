@@ -179,5 +179,6 @@ CONTRACT = register(
         default_timeout_seconds=2.5,
         max_total_latency_seconds=4.0,
         max_output_tokens=24,
+        retry_invalid=0,  # an invalid index moves on to the next model, never a second ask of the same one
     )
 )

@@ -144,6 +144,7 @@ def route(
     """
 
     contract = get_contract(capability_key)
+    platform.enforce_pool_rule(contract.key, pool)  # before anything is asked or counted
     inp = _parse(contract, raw_input)
     capability = contract.key
     _stats.count(capability, "requests")

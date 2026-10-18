@@ -7,39 +7,37 @@ The answer is the index of one of the stored `senses`, or ``None`` (the tap then
 configured for this content, the daily cap of the paid models is reached, every model fails or answers badly. Nothing
 here raises to the caller and nothing here can block a sheet.
 
-Which models, in which order (owner decision 2026-10-18):
+Which content, which models (owner decision 2026-10-18, narrowed by the coordinator the same day, D-228):
 
-1. Configured models on a free tier, in the operator's order (provider order, then each provider's model list): a
-   provider whose `cost.free_tier.<provider>` flag is on (D-219), or a zero-rate catalogue model (`is_free_model`).
-   Only for the sentence of SHARED published content. A free tier may log prompts, so the sentence of a learner's own
-   content (a personal import, their own writing) is learner text (D-104, D-195, D-224) and never goes there.
-2. Then the cheapest priced paid models among the configured ones, cheapest first by the catalogue's list price. For a
-   learner's own content only models whose provider does not log prompts and, where a provider needs a per-model privacy
-   review, that have it.
-
-The router walks that list in order: a rung that errors, is unavailable, is rate limited or answers badly hands over to
-the next. Every paid rung is admitted by the capability's daily spend cap (`word_sense_choice.daily_spend_cap_usd`,
-`ai/spend_gate`, counted in the shared AI ledger like every other call) and the funding gate; the free rungs are not
-capped. The answer is cached in the router by (word, sentence hash, support language, content scope, senses).
+* Only the sentence of SHARED published content (the server verified the article) is ever sent. A learner's own
+  sentence (a personal import, their writing, anything unverified or without a `content_id`) is learner text and goes to
+  no AI, free or paid, until the owner says otherwise: the neutral sense stays.
+* Models, in order: configured models on a free tier, in the operator's order (provider order, then each provider's
+  model list): a provider whose `cost.free_tier.<provider>` flag is on (D-219), or a zero-rate catalogue model. Then the
+  2 cheapest priced paid models by the catalogue's list price. A rung that errors, is unavailable, is rate limited or
+  answers badly hands over to the next.
+* Every flagged or paid rung is admitted by the daily cap (`word_sense_choice.daily_spend_cap_usd`, `ai/spend_gate`,
+  list price, shared AI ledger) and the funding gate (under FUNDING_ENFORCEMENT=enforce an unfunded learner skips them).
+  Cached by (word, sentence hash, support language, scope, senses).
 """
 
 from __future__ import annotations
 
-import hashlib
 import logging
 
 from writing_coach import cost_tier
 from writing_coach.ai import platform
 from writing_coach.ai.base import AICapabilityConfigInvalid, AICapabilityError, AIProviderError
 from writing_coach.ai.capabilities import AIOperation
-from writing_coach.ai.pricing import is_free_model, list_rate, resolve_token_pricing
+from writing_coach.ai.pricing import is_free_model, list_rate
 from writing_coach.ai.providers import check_model_allowed, get_provider_definition
 from writing_coach.ai.router import router as router_module
 from writing_coach.ai.router import tap as tap_router
 from writing_coach.ai.router.contract import RouterInputInvalid
+from writing_coach.ai.router.contracts.word_sense_choice import MAX_SENSE_CHARS
 from writing_coach.ai.routing import ProviderTarget
+from writing_coach.billing.funding_context import FundingRequired
 from writing_coach.core.request_context import current_user_key
-from writing_coach.reading_cache_scope import learner_scope
 
 _log = logging.getLogger("orena.lookup")
 
@@ -94,52 +92,55 @@ def is_free_tier_model(provider: str, model: str) -> bool:
     return is_free_model(provider, model) or cost_tier.is_free_tier(provider)
 
 
-def _may_receive_private_sentence(provider: str, model: str) -> bool:
-    """The learner-text rule (D-104, D-195): no free tier, no provider that may log prompts, a reviewed model where a
-    provider requires a per-model review. Unpriced models are refused too: their cost cannot be capped."""
-
-    definition = get_provider_definition(provider)
-    if definition is None or definition.may_log_prompts or is_free_tier_model(provider, model):
-        return False
-    if definition.learner_text_models is not None and model not in definition.learner_text_models:
-        return False
-    return resolve_token_pricing(provider, model) is not None
-
-
 def build_pool(*, shared: bool) -> list[ProviderTarget]:
-    """The ordered rungs for one request: free-tier models first (shared content only), then the cheapest paid ones."""
+    """The ordered rungs for one request: free-tier models first, then the 2 cheapest priced paid ones.
 
+    Only shared (server-verified published) content has a pool. A learner's own sentence is learner text (D-104, D-195,
+    D-224) and is sent to no AI at all until the owner decides otherwise (D-228): its pool is empty."""
+
+    if not shared:
+        return []
     free: list[ProviderTarget] = []
     paid: list[tuple[float, int, ProviderTarget]] = []
     for index, (provider, model) in enumerate(_configured_models()):
         if is_free_tier_model(provider, model):
-            if shared and len(free) < MAX_FREE_RUNGS:
+            if len(free) < MAX_FREE_RUNGS:
                 free.append(ProviderTarget(provider, model))
             continue
         cost = estimated_call_usd(provider, model)
         if cost is None:
             continue  # no real price in the catalogue: a cap cannot count it
-        if not shared and not _may_receive_private_sentence(provider, model):
-            continue
         paid.append((cost, index, ProviderTarget(provider, model)))
     paid.sort(key=lambda row: (row[0], row[1]))
     return free + [target for _cost, _index, target in paid[:MAX_PAID_RUNGS]]
 
 
+def enabled() -> bool:
+    """Whether the capability is saved and enabled (the configuration the router reads, briefly held)."""
+
+    try:
+        router_module.load_config(CAPABILITY)
+    except AICapabilityError:
+        return False
+    except Exception:  # noqa: BLE001 - an unreadable configuration is "off"
+        return False
+    return True
+
+
 def _scope(shared: bool) -> str:
-    if shared:
-        return "shared"
-    namespace = learner_scope().namespace
-    if namespace:
-        return f"private:{namespace}"
-    # No account incarnation can be read: the router's cache is in-process only, so a per-account key is still private.
-    return "private:" + hashlib.sha256(str(current_user_key()).encode("utf-8")).hexdigest()[:16]
+    return "shared" if shared else "private"
 
 
 def choose_sense(word: str, sentence: str, senses: list[str], source: str, target: str, *, shared: bool) -> int | None:
+    """The index of the sense the sentence means, or None (keep the neutral sense). Never raises."""
+
+    if not shared:
+        return None  # a learner's own sentence reaches no AI (D-228)
+    # Each sense is sent as at most the contract's limit; the index still maps to the full stored sense.
+    sent = [text[:MAX_SENSE_CHARS].strip() for text in senses]
     raw = {
         "word": word, "sentence": sentence, "source_language": source, "target_language": target,
-        "senses": list(senses), "cache_scope": _scope(shared),
+        "senses": sent, "cache_scope": _scope(shared),
     }
     try:
         held = router_module.peek(CAPABILITY, raw)  # also the "enabled?" check: a disabled capability serves nothing
@@ -151,8 +152,8 @@ def choose_sense(word: str, sentence: str, senses: list[str], source: str, targe
         if not pool:
             return None
         return router_module.route(CAPABILITY, raw, pool=pool).output["choice"]
-    except (RouterInputInvalid, AICapabilityError, AIProviderError):
-        return None
+    except (RouterInputInvalid, AICapabilityError, AIProviderError, FundingRequired):
+        return None  # a quiet miss: not enabled, over a cap, unfunded, or every model failed
     except Exception as exc:  # noqa: BLE001 - a failing model step never blocks the sheet; the type only, never the text
         _log.warning("sense choice failed (%s)", type(exc).__name__)
         return None

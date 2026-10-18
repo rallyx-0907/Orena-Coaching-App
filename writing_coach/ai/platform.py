@@ -721,6 +721,18 @@ def stream_agent_turn(
     return recorded()
 
 
+def enforce_pool_rule(capability_key: str | None, pool: Sequence[ProviderTarget] | None) -> None:
+    """D-228: a caller-built pool is honoured only for `POOL_CAPABILITIES`, and those never fall back to the stored chain."""
+
+    from writing_coach.ai.capabilities import POOL_CAPABILITIES
+
+    if capability_key in POOL_CAPABILITIES:
+        if not pool:
+            raise AICapabilityUnsupported(f"AI capability {capability_key!r} runs only on a caller-built pool.")
+    elif pool is not None:
+        raise AICapabilityUnsupported(f"AI capability {capability_key!r} does not take a caller-built pool.")
+
+
 def generate_structured(
     *,
     messages: list[dict[str, str]],
@@ -789,6 +801,7 @@ def generate_structured(
         return result
 
     try:
+        enforce_pool_rule(capability_key, pool)
         # `routable=False`: a caller that shares a capability key but is not part of the routed slice (the reading
         # summary reuses `text_discussion`; its shared cache blocks it until 7A-follow-up) stays on the legacy path.
         routed = routable and capability_key is not None and capability_key in routed_capabilities()
@@ -843,7 +856,7 @@ def generate_structured(
         # one rate-limited provider stopped the capability. The chain asks each
         # rung once - never twice, so a learner turn cannot be answered twice -
         # and a malformed request still fails on the first rung, unchanged.
-        chain = list(pool) if pool else build_chain(
+        chain = list(pool) if pool is not None else build_chain(
             provider=config.provider,
             model=config.model,
             backup_provider=config.backup_provider,

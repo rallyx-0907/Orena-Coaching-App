@@ -554,8 +554,10 @@ class ReadingLookupService:
         word_translation: WordTranslationSeam | None = None,
         word_translation_prefetch: WordTranslationPrefetchSeam | None = None,
         sense_choice: SenseChoiceSeam | None = None,
+        sense_choice_enabled: Callable[[], bool] | None = None,
     ) -> None:
         self._sense_choice = sense_choice
+        self._sense_choice_enabled = sense_choice_enabled
         self._word_translation = word_translation
         self._word_translation_prefetch = word_translation_prefetch
         self._english_dictionary_cached = english_dictionary_cached
@@ -614,6 +616,8 @@ class ReadingLookupService:
             texts = [str(item.definition).strip() for item in group]
         if not group:
             return meanings, definitions
+        if self._sense_choice_enabled is not None and not self._sense_choice_enabled():
+            return meanings, definitions  # off: no article read, no worker hop
         sentence = sentence_around(context, selection)
         if not sentence:
             return meanings, definitions
@@ -621,6 +625,8 @@ class ReadingLookupService:
             shared = scope_for(content_id, [context]).shared
         except Exception:  # noqa: BLE001 - unverifiable content is the learner's own
             shared = False
+        if not shared:
+            return meanings, definitions  # a learner's own sentence reaches no AI (D-228)
         remaining = max(
             SENSE_MIN_WAIT_SECONDS,
             (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) - (time.monotonic() - started),

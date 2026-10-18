@@ -72,6 +72,10 @@ class AICapabilityDefinition:
 # failed rung, so these capabilities take no backup until it does.
 NO_BACKUP_CAPABILITIES = frozenset({"media_translation", "media_transcript_correction"})
 
+# D-228: the only capabilities whose pool is built per request by the caller (never the stored primary/backup). A pool
+# passed for any other capability is refused; for these, a missing or empty pool is refused too (fail closed).
+POOL_CAPABILITIES = frozenset({"word_sense_choice"})
+
 INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
 _CAPABILITY_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 

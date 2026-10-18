@@ -168,23 +168,49 @@ def definition_ties(definitions: Sequence[Any], tagged_pos: str) -> list[Any]:
     return group[:MAX_TIED] if len(group) >= 2 else []
 
 
-def sentence_around(context: str, selection: str) -> str:
-    """The sentence of `context` that holds `selection`, at most `MAX_SENTENCE_CHARS`, or ``""`` when it is not there.
+def sentence_around(context: str, selection: str, at: int | None = None) -> str:
+    """The sentence of `context` that holds the tapped `selection`, at most `MAX_SENTENCE_CHARS`; ``""`` when unknown.
 
-    Cut at sentence ends and line breaks; a long sentence is cut to a window around the word. Pure and local."""
+    `at` is the offset of the tapped occurrence when the caller knows it. Without it, the word is matched on word
+    boundaries (a Latin word never inside a longer word) and, when it stands in more than one different sentence, the
+    tapped one cannot be told: the answer is ``""`` and the tap keeps its neutral sense. Pure and local."""
 
-    text = " ".join(str(context or "").split()) if "\n" not in str(context or "") else str(context)
+    raw = str(context or "")
+    text = raw if "\n" in raw else " ".join(raw.split())
     word = str(selection or "").strip()
-    at = text.casefold().find(word.casefold()) if word else -1
-    if at < 0:
+    if not word:
         return ""
-    start = max((text.rfind(mark, 0, at) for mark in _SENTENCE_END), default=-1) + 1
-    ends = [i for i in (text.find(mark, at + len(word)) for mark in _SENTENCE_END) if i >= 0]
-    end = min(ends) + 1 if ends else len(text)
+    lowered, needle = text.casefold(), word.casefold()
+    spaced = not _is_han(needle)  # Chinese has no spaces: no word boundary to respect
+    starts: list[int] = []
+    pos = lowered.find(needle)
+    while pos >= 0:
+        before = lowered[pos - 1] if pos > 0 else " "
+        after = lowered[pos + len(needle)] if pos + len(needle) < len(lowered) else " "
+        inside_word = (before.isalnum() and needle[0].isalnum()) or (after.isalnum() and needle[-1].isalnum())
+        if not (spaced and inside_word):
+            starts.append(pos)
+        pos = lowered.find(needle, pos + 1)
+    if at is not None:
+        starts = [pos for pos in starts if pos == at]
+    sentences = {_sentence_span(text, pos, len(word)) for pos in starts}
+    if len(sentences) != 1:
+        return ""
+    start, end = next(iter(sentences))
     sentence = " ".join(text[start:end].split())
     if len(sentence) <= MAX_SENTENCE_CHARS:
         return sentence
-    inside = sentence.casefold().find(word.casefold())
+    inside = sentence.casefold().find(needle)
     half = (MAX_SENTENCE_CHARS - len(word)) // 2
     lo = max(0, inside - half)
     return sentence[lo : lo + MAX_SENTENCE_CHARS].strip()
+
+
+def _is_han(text: str) -> bool:
+    return any("\u3400" <= ch <= "\u9fff" or "\uf900" <= ch <= "\ufaff" for ch in text)
+
+
+def _sentence_span(text: str, at: int, length: int) -> tuple[int, int]:
+    start = max((text.rfind(mark, 0, at) for mark in _SENTENCE_END), default=-1) + 1
+    ends = [i for i in (text.find(mark, at + length) for mark in _SENTENCE_END) if i >= 0]
+    return start, (min(ends) + 1 if ends else len(text))

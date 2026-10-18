@@ -197,7 +197,7 @@ from writing_coach.ai.router.tap import (
     word_translation_seam,
 )
 from writing_coach.ai.router.router import count_event as router_count_event
-from writing_coach.tap_sense_model import sense_choice_seam
+from writing_coach.tap_sense_model import enabled as sense_choice_enabled, sense_choice_seam
 from writing_coach.reading_prefetch import Prefetcher, install_log_handler
 from writing_coach.product.service import configure_product_repository
 from writing_coach.product.catalog import configure_plan_store
@@ -760,6 +760,7 @@ _reading_lookup_service = ReadingLookupService(
     word_translation_prefetch=word_translation_prefetch,
     # D-228: the model step of the sense choice, only when the zero-cost rules tie; off until the capability is enabled.
     sense_choice=sense_choice_seam,
+    sense_choice_enabled=sense_choice_enabled,
 )
 configure_reading_lookup(_reading_lookup_service)
 install_log_handler()  # D-200: the prefetch's counts-only INFO lines reach the server log
