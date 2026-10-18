@@ -110,6 +110,33 @@ Any blocker names what is missing: fix it and recheck. Never work around a block
    the period ends.
 4. Refund from Polar's dashboard if wanted. The refund is recorded, and access follows Polar's subscription events.
 
+## Moving the production host (for example, from a staging host to the VPS)
+
+Products, prices, the token's scopes, the portal settings and every subscription stay on Polar as they are. Only
+the host-specific parts change:
+
+1. **Prepare the new host.**
+   - Same image, same environment.
+   - A restored database: the subscriptions, receipts and `platform_settings` rows travel with it.
+   - Migrations at the same head.
+   - The prices file in its data volume.
+   - `BILLING_NEW_SALES=off` until step 4.
+2. **Change the public origin.** Point the new host's `PUBLIC_BASE_URL` at its HTTPS origin, and add the Google
+   OAuth redirect `https://<new origin>/auth/google/callback`.
+3. **Polar (production writes, owner).**
+   - Webhook endpoint URL → `https://<new origin>/api/billing/webhooks/polar`. Editing the existing endpoint keeps
+     its secret. A new endpoint needs its new `POLAR_WEBHOOK_SECRET`.
+   - Embedding allowlist: add the new origin; remove the old one after the switch.
+4. **Switch.**
+   - Stop the old host's web service before the database is copied for the last time. Polar retries webhooks
+     that fail meanwhile.
+   - Start the new host and check readiness (§4).
+   - Then `BILLING_NEW_SALES` empty, if sales were open.
+5. **Check.**
+   - Polar's dashboard shows the endpoint enabled and recent deliveries succeeding. Polar disables an endpoint
+     after repeated failures: re-enable it if needed.
+   - `GET /api/admin/billing/reconciliation` has no new item.
+
 ## Rollback
 
 **Pause new sales (the safe rollback).** Set `BILLING_NEW_SALES=off` and restart.
