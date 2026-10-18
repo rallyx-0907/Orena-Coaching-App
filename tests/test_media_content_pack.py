@@ -271,3 +271,130 @@ async def _raw_forbidden(app) -> int:
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
         return (await client.post("/api/admin/content-packs/export", json={"kinds": ["media"]},
                                   headers={"origin": "http://testserver"})).status_code
+
+
+# ---- review of #311: asset binding, privacy, status, concurrency -------------------------------------------
+
+
+def _import_data(pack, **change):
+    data = json.loads(json.dumps(pack.items[0].data))
+    data.update(change)
+    return data
+
+
+def _raw_item(data, assets=None, key="yt-good"):
+    return read_pack(build_pack([PackItem(kind="media_item", natural_key=key, data=data)], created_by="t",
+                                environment="x", app_version="", filters={}, assets=assets))
+
+
+def test_an_asset_over_a_key_that_is_not_the_items_own_is_refused_and_nothing_is_overwritten(source, tmp_path):
+    pack, _raw, _ = _export(source, ids=["yt-good"])
+    store, assets = _target(tmp_path)
+    assets.put("media/up-personal/original.mp4", b"a learner's upload")
+    data = _import_data(pack, assets=[{"key": "media/up-personal/original.mp4",
+                                       "sha256": hashlib.sha256(b"hostile").hexdigest(), "bytes": 7}])
+    report = media_pack.apply_media_items(
+        _raw_item(data, {"media/up-personal/original.mp4": b"hostile"}), store, assets, dry_run=False,
+        clip_keys=_clip_keys)
+    assert report[0]["outcome"] == "refused" and report[0]["reason"] == "asset_key_not_this_items"
+    assert assets.get("media/up-personal/original.mp4") == b"a learner's upload" and store.get("yt-good") is None
+
+
+def test_an_asset_whose_existing_bytes_belong_to_another_entry_is_refused(source, tmp_path):
+    pack, _raw, _ = _export(source, ids=["yt-good"])
+    store, assets = _target(tmp_path)
+    store.upsert(_entry("other-entry"))  # same provider id, so it owns media/abcdefghijk/ as well
+    assets.put("media/abcdefghijk/frame.jpg", b"theirs")
+    data = _import_data(pack, assets=[{"key": "media/abcdefghijk/frame.jpg",
+                                       "sha256": hashlib.sha256(b"mine").hexdigest(), "bytes": 4}])
+    report = media_pack.apply_media_items(_raw_item(data, {"media/abcdefghijk/frame.jpg": b"mine"}), store, assets,
+                                          dry_run=False, clip_keys=_clip_keys)
+    assert report[0]["reason"] == "asset_belongs_to_another_entry"
+    assert assets.get("media/abcdefghijk/frame.jpg") == b"theirs"
+
+
+def test_a_dot_dot_asset_name_is_refused_when_the_pack_is_read(source):
+    import io
+    import zipfile
+
+    _pack, raw, _ = _export(source, ids=["yt-good"])
+    out = io.BytesIO()
+    with zipfile.ZipFile(io.BytesIO(raw)) as zin, zipfile.ZipFile(out, "w") as zout:
+        for info in zin.infolist():
+            zout.writestr(info.filename, zin.read(info.filename))
+        zout.writestr("assets/../evil.bin", b"x")
+    with pytest.raises(PackError) as refused:
+        read_pack(out.getvalue())
+    assert refused.value.code == "pack_unsafe_path"
+
+
+def test_private_source_keys_are_dropped_and_a_learner_key_in_a_lesson_keeps_the_entry_out(source):
+    store, assets = source
+    good = store.get("yt-good")
+    store.upsert(replace(good, source={**good.source, "owner": "abc123", "quota_settle": "1|x"}))
+    store.upsert(_entry("yt-leaky", lesson={**_lesson(), "owner": "abc123"}))
+    assets.put("media/yt-leaky/thumb.jpg", THUMB_BYTES)
+    pack, _raw, excluded = _export(source)
+    packed = next(item for item in pack.items if item.natural_key == "yt-good")
+    assert "owner" not in packed.data["entry"]["source"] and "quota_settle" not in packed.data["entry"]["source"]
+    assert {"media_id": "yt-leaky", "reason": "learner_field_in_lesson"} in excluded
+    assert all(item.natural_key != "yt-leaky" for item in pack.items)
+
+
+def test_a_local_upload_playback_is_refused_on_import(source, tmp_path):
+    pack, _raw, _ = _export(source, ids=["yt-good"])
+    entry = dict(pack.items[0].data["entry"])
+    entry["playback"] = {"provider": "orena", "kind": "video", "url": "/api/media/files/media/yt-good/original.mp4"}
+    store, assets = _target(tmp_path)
+    report = media_pack.apply_media_items(_raw_item(_import_data(pack, entry=entry)), store, assets, dry_run=False,
+                                          clip_keys=_clip_keys)
+    assert report[0]["outcome"] == "refused" and report[0]["reason"] == "local_playback_not_packable"
+
+
+def test_overwrite_never_puts_a_locally_archived_item_back_on_the_shelf(source, tmp_path):
+    pack, _raw, _ = _export(source, ids=["yt-good"])
+    store, assets = _target(tmp_path)
+    media_pack.apply_media_items(pack, store, assets, dry_run=False, clip_keys=_clip_keys)
+    store.upsert(replace(store.get("yt-good"), title="Edited here", status="archived"))
+    report = media_pack.apply_media_items(pack, store, assets, overwrite=True, dry_run=False, clip_keys=_clip_keys)
+    assert report[0]["outcome"] == "overwritten" and report[0]["kept_status"] == "archived"
+    assert store.get("yt-good").title == "Title of yt-good" and store.get("yt-good").status == "archived"
+
+
+def test_an_unchanged_entry_whose_assets_differ_is_reported_not_skipped(source, tmp_path):
+    pack, _raw, _ = _export(source, ids=["yt-good"])
+    store, assets = _target(tmp_path)
+    media_pack.apply_media_items(pack, store, assets, dry_run=False, clip_keys=_clip_keys)
+    assets.put("media/yt-good/thumb.jpg", b"a different picture")
+    report = media_pack.apply_media_items(pack, store, assets, dry_run=False, clip_keys=_clip_keys)
+    assert report[0]["outcome"] == "conflict" and report[0]["reason"] == "assets_differ"
+    media_pack.apply_media_items(pack, store, assets, overwrite=True, dry_run=False, clip_keys=_clip_keys)
+    assert assets.get("media/yt-good/thumb.jpg") == THUMB_BYTES
+
+
+def test_two_processes_writing_one_index_lose_no_entry(tmp_path):
+    import subprocess
+    import sys
+    import textwrap
+    from pathlib import Path
+
+    script = textwrap.dedent("""
+        import sys
+        from writing_coach.media_library_store import FileMediaLibraryStore, MediaLibraryEntry
+        root, tag = sys.argv[1], sys.argv[2]
+        store = FileMediaLibraryStore(root)
+        for i in range(25):
+            n = f"{tag}-{i}"
+            store.upsert(MediaLibraryEntry(
+                media_id=n, media_type="video", provider="youtube", provider_media_id="abcdefghijk",
+                canonical_url="", playback={"provider": "youtube", "kind": "video", "url": "https://x.example/v"},
+                title=n, thumbnail={"kind": "none", "ref": ""}, duration_ms=1, language="en", level="", creator="",
+                source={"provider": "youtube", "type": "t", "provenance_url": "", "license": "",
+                        "review_status": "", "imported_by": "x"},
+                library="shared", created_at="2026-10-01T00:00:00+00:00", lesson=None))
+    """)
+    repo = Path(__file__).resolve().parents[1]
+    procs = [subprocess.Popen([sys.executable, "-c", script, str(tmp_path / "shared"), tag], cwd=repo)
+             for tag in ("a", "b")]
+    assert [p.wait(timeout=120) for p in procs] == [0, 0]
+    assert len(FileMediaLibraryStore(tmp_path / "shared").list(status=None)) == 50

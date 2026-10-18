@@ -460,7 +460,7 @@ What the code and scripts now do. None of it was run against :8000; the human de
 
 ## Moving published content :8021 to :8000 (D-234, PROPOSED)
 
-One official tool moves approved content between environments: `$0`, no provider call, no processing job, no schema
+One official tool moves approved content between environments at no provider cost: no provider call, no processing job, no schema
 change. The pack is an `.orenapack` zip (`format` `orena-content-pack`, `version` 2 once it carries media; a pack of
 Reading or vocabulary only stays `version` 1). `manifest.json` lists every file with sha256 and size and records the
 source label, `app_version`, `source_commit` and the published entries left out (`media_excluded`, each with a reason).
@@ -485,7 +485,7 @@ otherwise it arrives unpublished and the row says `held`. A second import change
    `python scripts/media_content_pack.py import --pack /tmp/media.orenapack`
    Review every row. Nothing is written without `--apply`.
 3. Apply: `python scripts/media_content_pack.py import --pack /tmp/media.orenapack --apply` (add `--overwrite` only for
-   a conflict you decided to replace). One line per import is appended to `media-pack-imports.jsonl` beside the index.
+   a conflict you decided to replace; an overwrite never puts a locally archived or unpublished item back on the shelf). Run `--apply` with :8000's transcript worker idle (the index is also guarded by a cross-process file lock, `index.json.lock`, but an idle worker is the belt-and-braces step). Writes are per item, not atomic across the pack: a failure leaves earlier items written and is reported on its row; re-running is safe. The whole pack is held in memory (budget twice the file size in RAM); split a large export with `--language` or `--id`. One line per import is appended to `media-pack-imports.jsonl` beside the index.
 4. Admin alternative for a pack under 50 MB: Content packs, kind `media` (`POST /api/admin/content-packs/export` with
    `{"kinds": ["media"]}`, then `/plan`, then `/import`, optional `?overwrite=true`); the import is audited.
 

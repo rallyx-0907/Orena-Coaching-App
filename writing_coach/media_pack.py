@@ -19,6 +19,7 @@ exactly as a real run would and writes nothing.
 from __future__ import annotations
 
 import hashlib
+import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import fields, replace
 from typing import Any
@@ -33,6 +34,12 @@ _ENTRY_FIELDS = tuple(f.name for f in fields(MediaLibraryEntry) if f.name not in
 # What an exported entry's `source.imported_by` says: an administrator's address never travels.
 PACK_ACTOR = "content-pack"
 _ALLOWED_PREFIXES = ("media/", "speaking/model-clip/")
+
+# Keys that name a learner, an account or this environment's internal bookkeeping never travel: they are dropped from
+# `source` and, found anywhere in the lesson, keep the entry out of the pack.
+_PRIVATE_KEY = re.compile(r"owner|user|e-?mail|token|session|secret|password|quota|settle|spend", re.IGNORECASE)
+
+_LESSON_PRIVATE_KEYS = frozenset({"owner", "owner_token", "user", "user_id", "user_key", "email", "account", "account_id"})
 
 ClipKeys = Callable[[MediaLibraryEntry], Sequence[str]]
 
@@ -77,7 +84,8 @@ def _read_asset(assets: Any, key: str) -> bytes | None:
 def _entry_data(entry: MediaLibraryEntry, assets: Any, clip_keys: ClipKeys) -> tuple[dict[str, Any], dict[str, bytes]]:
     """The comparable form of an entry (same function for export and for judging a local entry) and its asset bytes."""
     values = {name: _plain(getattr(entry, name)) for name in _ENTRY_FIELDS}
-    values["source"] = {**values["source"], "imported_by": PACK_ACTOR}
+    values["source"] = {**{k: v for k, v in values["source"].items() if not _PRIVATE_KEY.search(str(k))},
+                        "imported_by": PACK_ACTOR}
     described, blobs = [], {}
     for key in _asset_keys(entry, clip_keys):
         blob = _read_asset(assets, key)
@@ -103,11 +111,25 @@ def _local_comparable(data: Mapping[str, Any]) -> dict[str, Any]:
     return {"entry": data["entry"], "assets": data["assets"]}
 
 
+def _private_key_in(value: Any) -> bool:
+    if isinstance(value, Mapping):
+        return any(str(k).casefold() in _LESSON_PRIVATE_KEYS or _private_key_in(v) for k, v in value.items())
+    if isinstance(value, (list, tuple)):
+        return any(_private_key_in(v) for v in value)
+    return False
+
+
+def _local_playback(entry: MediaLibraryEntry) -> bool:
+    playback = entry.playback or {}
+    return str(playback.get("url") or "").startswith("/api/media/files/") or playback.get("provider") in {"upload", "orena"}
+
+
 def export_refusal(entry: MediaLibraryEntry, assets: Any, clip_keys: ClipKeys) -> str:
     """Why a published shared entry cannot be packed ("" when it can)."""
-    playback = entry.playback or {}
-    if str(playback.get("url") or "").startswith("/api/media/files/") or playback.get("provider") == "upload":
+    if _local_playback(entry):
         return "local_playback_not_packable"
+    if _private_key_in(entry.lesson):
+        return "learner_field_in_lesson"
     thumbnail = entry.thumbnail or {}
     if thumbnail.get("kind") == "asset" and _read_asset(assets, str(thumbnail.get("ref") or "")) is None:
         return "thumbnail_asset_missing"
@@ -161,7 +183,26 @@ def _entry_from(item: PackItem, *, status: str, processing: Mapping[str, Any], a
     return validate_entry(entry)
 
 
-def _asset_problem(item: PackItem, pack_assets: Mapping[str, bytes]) -> str:
+def _own_key(key: str, entry: MediaLibraryEntry, clip_keys: ClipKeys) -> bool:
+    """A key is the item's own when it is its thumbnail, one of its computed model clips, or under its own directory."""
+    thumbnail = entry.thumbnail or {}
+    if thumbnail.get("kind") == "asset" and key == thumbnail.get("ref"):
+        return True
+    if key in set(clip_keys(entry)):
+        return True
+    return any(key.startswith(f"media/{name}/") for name in {entry.media_id, entry.provider_media_id})
+
+
+def _owned_by_another(key: str, media_id: str, store: Any) -> bool:
+    for library in ("shared", "personal"):
+        for other in store.list(library=library, status=None):
+            if other.media_id != media_id and _own_key(key, other, lambda _e: []):
+                return True
+    return False
+
+
+def _asset_problem(item: PackItem, pack_assets: Mapping[str, bytes], entry: MediaLibraryEntry, assets: Any,
+                   store: Any, clip_keys: ClipKeys) -> str:
     described = item.data["assets"]
     wanted_thumb = ((item.data["entry"].get("thumbnail") or {}).get("ref") or "")
     for asset in described:
@@ -172,11 +213,16 @@ def _asset_problem(item: PackItem, pack_assets: Mapping[str, bytes]) -> str:
             _validate_key(key)
         except InvalidAssetKey:
             return "asset_key_unsafe"
+        if not _own_key(key, entry, clip_keys):
+            return "asset_key_not_this_items"
         blob = pack_assets.get(f"assets/{key}")
         if blob is None:
             return "asset_missing_from_pack"
         if hashlib.sha256(blob).hexdigest() != asset.get("sha256") or len(blob) != asset.get("bytes"):
             return "asset_checksum_mismatch"
+        held = _read_asset(assets, key)
+        if held is not None and held != blob and _owned_by_another(key, entry.media_id, store):
+            return "asset_belongs_to_another_entry"
     thumbnail = item.data["entry"].get("thumbnail") or {}
     if thumbnail.get("kind") == "asset" and wanted_thumb not in {a["key"] for a in described}:
         return "thumbnail_asset_missing"
@@ -187,13 +233,18 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
             actor: str, pack_id: str) -> tuple[dict[str, Any], MediaLibraryEntry | None]:
     """One item's report row and, when it is to be written, the entry to write. Writes nothing."""
     row: dict[str, Any] = {"kind": KIND, "natural_key": item.natural_key}
-    if _asset_problem(item, pack.assets):
-        return {**row, "outcome": REFUSED, "reason": _asset_problem(item, pack.assets)}, None
     ready = {"state": "ready", "stage": "ready", "reason": "", "origin": "content-pack", "pack_id": pack_id}
     try:
         candidate = _entry_from(item, status="unpublished", processing=ready, actor=actor)
     except (ValueError, TypeError, KeyError) as exc:
         return {**row, "outcome": REFUSED, "reason": "entry_invalid", "detail": str(exc)[:160]}, None
+    if _local_playback(candidate):
+        return {**row, "outcome": REFUSED, "reason": "local_playback_not_packable"}, None
+    if _private_key_in(candidate.lesson):
+        return {**row, "outcome": REFUSED, "reason": "learner_field_in_lesson"}, None
+    problem = _asset_problem(item, pack.assets, candidate, assets, store, clip_keys)
+    if problem:
+        return {**row, "outcome": REFUSED, "reason": problem}, None
     # Published only if the rights are complete and the stored transcript passes the same checks Publish uses.
     hold = ""
     if not rights_complete(candidate.source):
@@ -218,6 +269,10 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
     differs = "assets_differ" if local["entry"] == item.data["entry"] else "fields_differ"
     if not overwrite:
         return {**row, "outcome": CONFLICT, "reason": differs}, None
+    if existing.status != "published" and final.status != existing.status:
+        # An overwrite replaces content, never a local decision to take an item off the shelf.
+        final = replace(final, status=existing.status)
+        row["kept_status"] = existing.status
     return {**row, "outcome": OVERWRITTEN, "reason": differs, "status": final.status}, final
 
 
