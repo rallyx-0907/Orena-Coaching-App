@@ -27,15 +27,18 @@ read - and charged whole when the token exists. `/voice/end` only stops further 
 
 from __future__ import annotations
 
+import json
 import math
 import threading
 from collections.abc import AsyncIterator, Iterator, Mapping
+from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
+from writing_coach.agent.contract import DAILY_AI_LIMIT_VERSION
 from writing_coach.agent.events import Event, sse_frame
 from writing_coach.agent.locale import interface_languages, to_internal
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
@@ -111,11 +114,45 @@ def _admit(limiter: SlidingWindowLimiter) -> None:
         )
 
 
-def _turn_allowed(runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRuntime:
-    # The daily spend cap first (agent/budget.py): a request it refuses is not counted in the learner's window.
-    wait = runtime.spend_guard() if runtime.spend_guard is not None else None
-    if wait is not None:
-        raise HTTPException(status_code=429, detail="rate_limited", headers={"Retry-After": str(max(1, math.ceil(wait)))})
+async def _declared_version(request: Request) -> int:
+    """The contract version the request body declares, read before the body is validated; 0 when there is none."""
+
+    try:
+        declared = json.loads(await request.body() or b"{}").get("contract_version")
+        return int(declared) if isinstance(declared, int | str) else 0
+    except Exception:  # noqa: BLE001 - a body that does not parse is answered by validation, after this check
+        return 0
+
+
+async def _spend_refused(request: Request, runtime: AgentRuntime) -> None:
+    """The daily spend limits (agent/budget.py; the system ceiling, ai/spend_gate.py) before anything runs: a request
+    they refuse is not counted in the learner's window. v10: `daily_ai_limit`, told once (§2.1); below: `rate_limited`."""
+
+    guard = runtime.spend_guard
+    if guard is None:
+        return
+    check = getattr(guard, "check", None)
+    if callable(check):
+        refused = check()
+    else:
+        wait = guard()
+        refused = (wait, "agent") if wait is not None else None
+    if refused is None:
+        return
+    wait, scope = refused
+    retry = max(1, math.ceil(wait))
+    headers = {"Retry-After": str(retry)}
+    if await _declared_version(request) >= DAILY_AI_LIMIT_VERSION:
+        resets = (datetime.now(UTC) + timedelta(seconds=retry)).replace(microsecond=0)
+        raise HTTPException(status_code=429, headers=headers, detail={
+            "category": "daily_ai_limit", "retryable": False,
+            "message": "Orena's AI is paused until the daily AI budget resets.",
+            "context": {"scope": scope, "resets_at": resets.isoformat()}})  # fmt: skip
+    raise HTTPException(status_code=429, detail="rate_limited", headers=headers)
+
+
+async def _turn_allowed(request: Request, runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRuntime:
+    await _spend_refused(request, runtime)
     _admit(runtime.turn_limiter)
     return runtime
 
@@ -229,12 +266,11 @@ def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> Voice
     return _voice(runtime)
 
 
-def _voice_extend_allowed(runtime: AgentRuntime = Depends(_require_runtime)) -> VoiceService:
+async def _voice_extend_allowed(request: Request,
+                                runtime: AgentRuntime = Depends(_require_runtime)) -> VoiceService:  # fmt: skip
     # A renewal mints a paid token, so the daily spend cap applies to it as to an opening; but it carries on a
     # conversation the learner already opened, so it is not counted as one more turn of their window.
-    wait = runtime.spend_guard() if runtime.spend_guard is not None else None
-    if wait is not None:
-        raise HTTPException(status_code=429, detail="rate_limited", headers={"Retry-After": str(max(1, math.ceil(wait)))})
+    await _spend_refused(request, runtime)
     _admit(runtime.read_limiter)
     return _voice(runtime)
 

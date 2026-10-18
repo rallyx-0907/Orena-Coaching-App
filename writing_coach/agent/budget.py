@@ -121,10 +121,20 @@ class LiveSpendGuard:
         self._lock = threading.Lock()
 
     def __call__(self) -> float | None:
+        refused = self.check()
+        return refused[0] if refused is not None else None
+
+    def check(self) -> tuple[float, str] | None:
+        """(seconds until it resets, which limit refused: "system" or "agent"), or None when a turn may run."""
+
         if self._ceiling is not None:
             wait = self._ceiling()
             if wait is not None:
-                return wait
+                return wait, "system"
+        wait = self._own()
+        return (wait, "agent") if wait is not None else None
+
+    def _own(self) -> float | None:
         try:
             cap = self._cap()
         except Exception:  # noqa: BLE001 - an unreadable cap setting is not "no cap" for a guard that exists

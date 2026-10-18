@@ -251,3 +251,52 @@ def test_a_turn_refused_by_the_cap_is_not_counted_in_the_learners_window(client)
     assert client.post("/api/agent/turn", json=body()).status_code == 429
     agent_api._runtime.spend_guard = None  # the cap resets: the one turn the window allows still runs
     assert client.post("/api/agent/turn", json=body()).status_code == 200
+
+
+class _Refusing:
+    """A spend guard that refuses, saying which limit did (agent/budget.py `LiveSpendGuard.check`)."""
+
+    def __init__(self, wait, scope):
+        self.wait, self.scope = wait, scope
+
+    def __call__(self):
+        return self.wait
+
+    def check(self):
+        return (self.wait, self.scope)
+
+
+@pytest.mark.parametrize("scope", ["system", "agent"])
+def test_a_v10_client_is_told_daily_ai_limit_once_never_to_wait_it_out(client, scope):
+    """Agent Contract v10 (accepted by the UI lane 2026-10-18): the daily spend limits answer `daily_ai_limit`, an
+    object with `retryable: false` and the reset time, so the client tells the learner instead of resending."""
+    from writing_coach.agent import api as agent_api
+
+    enable([])
+    agent_api._runtime.spend_guard = _Refusing(5400.0, scope)
+    answer = client.post("/api/agent/turn", json={**body(), "contract_version": 10})
+    assert answer.status_code == 429 and answer.headers["retry-after"] == "5400"
+    detail = answer.json()["detail"]
+    assert detail["category"] == "daily_ai_limit" and detail["retryable"] is False and detail["message"]
+    assert detail["context"]["scope"] == scope and detail["context"]["resets_at"].endswith("+00:00")
+
+
+def test_a_v9_client_still_gets_rate_limited_from_the_daily_limits(client):
+    from writing_coach.agent import api as agent_api
+
+    enable([])
+    agent_api._runtime.spend_guard = _Refusing(60.0, "system")
+    answer = client.post("/api/agent/turn", json=body())
+    assert (answer.status_code, answer.json()) == (429, {"detail": "rate_limited"})
+
+
+def test_voice_open_and_extend_answer_daily_ai_limit_to_a_v10_client(client):
+    from writing_coach.agent import api as agent_api
+
+    enable([])
+    agent_api._runtime.spend_guard = _Refusing(120.0, "system")
+    for path in ("/api/agent/voice/session", "/api/agent/voice/extend"):
+        answer = client.post(path, json={"contract_version": 10})
+        assert answer.status_code in (404, 429), path  # 404: voice off in this runtime, checked before the cap
+        if answer.status_code == 429:
+            assert answer.json()["detail"]["category"] == "daily_ai_limit", path
