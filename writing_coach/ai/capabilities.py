@@ -72,6 +72,10 @@ class AICapabilityDefinition:
 # failed rung, so these capabilities take no backup until it does.
 NO_BACKUP_CAPABILITIES = frozenset({"media_translation", "media_transcript_correction"})
 
+# D-228: the only capabilities whose pool is built per request by the caller (never the stored primary/backup). A pool
+# passed for any other capability is refused; for these, a missing or empty pool is refused too (fail closed).
+POOL_CAPABILITIES = frozenset({"word_sense_choice"})
+
 INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
 _CAPABILITY_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 
@@ -190,6 +194,23 @@ _DEFINITIONS = (
         # Owner decision 2026-10-14: a cheap paid standby, behind a daily cap. Groq's non-reasoning 70B (the 8B
         # instant model is enterprise-only, "contact sales", on Groq's public models page).
         paid_standby_models=frozenset({("groq", "llama-3.3-70b-versatile")}),
+    ),
+    # D-228 (PROPOSED): which of a word's stored senses a sentence means, only when the zero-cost tap layers tie. Input is
+    # the word, its sentence and the stored senses; the answer is an index, never text. The sentence of shared published
+    # content may go to a free-tier model; the sentence of a learner's own content may not (the request builder chooses
+    # the pool per request, see `writing_coach/tap_sense_model.py`), so the class here is the shared one. Opt-in: ships
+    # disabled, switched on by the operator. The pool is not the stored primary/backup but the configured models,
+    # free-tier first then the cheapest paid ones, behind the daily cap below.
+    _definition(
+        "word_sense_choice",
+        operation=AIOperation.STRUCTURED_TEXT_GENERATION,
+        provider_backed=True,
+        configurable=True,
+        implemented=True,
+        fallback_policies=_DETERMINISTIC_FALLBACK,
+        input_class="published_content",
+        opt_in=True,
+        paid_standby_cap_policy="word_sense_choice.daily_spend_cap_usd",
     ),
     # D-224 (PROPOSED): the platform router behind media translation and transcript correction. Groq stays the first
     # engine of both; these capabilities are what a batch is sent to when Groq cannot take it (a long rate limit, a

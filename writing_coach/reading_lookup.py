@@ -14,6 +14,7 @@ is the only way a sentence reaches AI, and it is a separate, explicit request.
 from __future__ import annotations
 
 import contextvars
+import hashlib
 import logging
 import re
 import threading
@@ -29,13 +30,21 @@ from writing_coach.languages.english.ipa import ipa_for as _local_english_ipa
 from writing_coach.linguistic_annotation import annotate
 from writing_coach.media_ingestion import primary_language
 from writing_coach.persistence.vocabulary_repository import VocabularyContentUnavailable
-from writing_coach.reading_cache_scope import learner_scope
+from writing_coach.reading_cache_scope import learner_scope, scope_for
 from writing_coach.reading_translation import (
     ReadingTranslationService,
     ReadingTranslationStatus,
     TextSegment,
 )
-from writing_coach.tap_sense import definitions_by_pos, pick_catalogue_entry, pick_chinese_entry
+from writing_coach.tap_sense import (
+    catalogue_tie_texts,
+    catalogue_ties,
+    definition_ties,
+    definitions_by_pos,
+    pick_catalogue_entry,
+    pick_chinese_entry,
+    sentence_around,
+)
 from writing_coach.vocabulary_library import normalize_vocabulary_word
 
 _log = logging.getLogger("orena.lookup")
@@ -121,6 +130,12 @@ WordTranslationSeam = Callable[[str, str, list[str], str, str], "str | None"]
 # (selection, source language, support language) -> a short meaning, or None; raises when the provider side failed.
 # The translate-ahead variant (D-199): the word only, no learner, no sentence.
 WordTranslationPrefetchSeam = Callable[[str, str, str], "str | None"]
+# (word, its sentence, the tied stored senses, source language, support language, whether the sentence is shared
+# published content) -> the index of the sense the sentence means, or None. D-228: asked only on a tie.
+SenseChoiceSeam = Callable[[str, str, list[str], str, str, bool], "int | None"]
+# The sense choice waits at least this long (it is the last step; an overrun is a miss and the call still fills the
+# router's cache for the next tap).
+SENSE_MIN_WAIT_SECONDS = 1.5
 
 
 class VocabularyLookup(Protocol):
@@ -407,6 +422,10 @@ def _safe_machine_translation(
     return result.translations[0][1]
 
 
+def sentence_key(sentence: str) -> str:
+    return hashlib.sha256(" ".join(sentence.casefold().split()).encode("utf-8")).hexdigest()[:24]
+
+
 def reset_seam_gate() -> None:
     """Forget in-flight calls and cool-downs and start a fresh gate (tests; a running call finishes harmlessly)."""
 
@@ -444,6 +463,13 @@ def _ask_word_translation(seam, selection, context, definitions, source, target,
     """The `word_translation` seam behind its gate; every refusal, overrun and failure is a miss (None)."""
 
     key = (source, target, " ".join(selection.casefold().split()))
+    return _ask_gated(key, seam, (selection, context, definitions, source, target), wait, "word_translation", source)
+
+
+def _ask_gated(key, call, args, wait: float, layer: str, language: str):
+    """One AI seam call behind the shared gate: bounded admission, joined when already running for the same key, a
+    cool-down after a failure, never a queue. Every refusal, overrun and failure is a miss (None)."""
+
     with _seam_lock:
         if _seam_failed.get(key, 0.0) > _seam_clock():
             return None  # it raised a moment ago: not asked again yet
@@ -453,7 +479,7 @@ def _ask_word_translation(seam, selection, context, definitions, source, target,
                 return None  # the gate is full: a miss now, never a queue behind it
             ctx = contextvars.copy_context()  # the request's account rides along (cost, brake)
             try:
-                future = _seam_pool.submit(ctx.run, seam, selection, context, definitions, source, target)
+                future = _seam_pool.submit(ctx.run, call, *args)
             except Exception:  # noqa: BLE001 - e.g. a pool shut down
                 _seam_slots.release()
                 return None
@@ -470,10 +496,10 @@ def _ask_word_translation(seam, selection, context, definitions, source, target,
         return answer
     except FutureTimeout:
         future.cancel()  # queued work never runs late; a running call finishes and fills the router's cache
-        _log_layer("word_translation", "timed out", language=source)
+        _log_layer(layer, "timed out", language=language)
     except Exception as exc:  # noqa: BLE001 - a failing fallback is a miss, never a blank sheet
         _seam_settle(key, future)
-        _log_layer("word_translation", "failed", language=source, error=exc)
+        _log_layer(layer, "failed", language=language, error=exc)
     return None
 
 
@@ -527,7 +553,11 @@ class ReadingLookupService:
         budget_seconds: float | None = None,
         word_translation: WordTranslationSeam | None = None,
         word_translation_prefetch: WordTranslationPrefetchSeam | None = None,
+        sense_choice: SenseChoiceSeam | None = None,
+        sense_choice_enabled: Callable[[], bool] | None = None,
     ) -> None:
+        self._sense_choice = sense_choice
+        self._sense_choice_enabled = sense_choice_enabled
         self._word_translation = word_translation
         self._word_translation_prefetch = word_translation_prefetch
         self._english_dictionary_cached = english_dictionary_cached
@@ -568,8 +598,54 @@ class ReadingLookupService:
             return "deterministic"
         return _prefetch_word_translation(self._word_translation_prefetch, selection, source, target)
 
+    def _choose_among_ties(
+        self, selection, context, source, target, part_of_speech, found, meanings, definitions, content_id, started,
+    ):
+        """D-228: the zero-cost rules tied between stored senses; ask the sense-choice seam once and apply its index.
+
+        The model can only name one of the stored senses, so what is shown is always stored text. No tie, no sentence,
+        a miss, a refusal or any failure leaves the neutral sense exactly as the zero-cost layers left it."""
+
+        group: list[Any] = []
+        texts: list[str] = []
+        if meanings and meanings[0].source == "collection":
+            group = catalogue_ties(found, part_of_speech, target)
+            texts = catalogue_tie_texts(group, target) if group else []
+        elif not meanings and target == "en":
+            group = definition_ties(definitions, part_of_speech)
+            texts = [str(item.definition).strip() for item in group]
+        if not group:
+            return meanings, definitions
+        if self._sense_choice_enabled is not None and not self._sense_choice_enabled():
+            return meanings, definitions  # off: no article read, no worker hop
+        sentence = sentence_around(context, selection)
+        if not sentence:
+            return meanings, definitions
+        try:
+            shared = scope_for(content_id, [context]).shared
+        except Exception:  # noqa: BLE001 - unverifiable content is the learner's own
+            shared = False
+        if not shared:
+            return meanings, definitions  # a learner's own sentence reaches no AI (D-228)
+        remaining = max(
+            SENSE_MIN_WAIT_SECONDS,
+            (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) - (time.monotonic() - started),
+        )
+        key = ("sense", source, target, " ".join(selection.casefold().split()), sentence_key(sentence), shared)
+        index = _ask_gated(
+            key, self._sense_choice, (selection, sentence, texts, source, target, shared), remaining, "sense_choice",
+            source,
+        )
+        if type(index) is not int or not 0 < index < len(group):
+            return meanings, definitions  # no answer, or the neutral sense itself: nothing changes
+        if meanings and meanings[0].source == "collection":
+            return [LookupMeaning(texts[index], "collection"), *meanings[1:]], definitions
+        chosen = group[index]
+        return meanings, [chosen] + [item for item in definitions if item is not chosen]
+
     def lookup(
-        self, text: str, context: str, source_language: str, target_language: str
+        self, text: str, context: str, source_language: str, target_language: str,
+        content_id: str | None = None,
     ) -> LookupResult:
         started = time.monotonic()
         selection = text.strip()
@@ -599,6 +675,7 @@ class ReadingLookupService:
         definitions: list[LookupDefinition] = []
 
         entry = None
+        found: list[dict[str, Any]] = []
         if self._vocabulary_repository is not None:
             for normalized in _catalog_candidates(selection, local["lemma"]):
                 # Zero-cost sense choice (refs #194): among the word's authored senses, the one with a meaning in the
@@ -694,6 +771,11 @@ class ReadingLookupService:
             )
             if seamed and str(seamed).strip():
                 meanings.append(LookupMeaning(str(seamed).strip(), "word_translation"))
+
+        if self._sense_choice is not None and source == surrounding:
+            meanings, definitions = self._choose_among_ties(
+                selection, context, source, target, part_of_speech, found, meanings, definitions, content_id, started,
+            )
 
         return LookupResult(
             selected_text=selection,
