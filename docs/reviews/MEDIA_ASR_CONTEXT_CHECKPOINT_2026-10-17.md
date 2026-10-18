@@ -371,6 +371,33 @@ above the owner's 1 GB floor, `--timeout=60`): media set plus admin route tests 
 **Still open:** independent review of this fix; re-run of cases 3, 4 and 5 on `:8021` (needs a restart after the review), one real hold/retry observation; the A12 visual check
 (this machine has no browser); the bookkeeping P2 of the `fc728b6f` review; the five first-review P2 findings (no recorded text). PR #261 stays Draft; neither gate has passed.
 
+## Review of `4be80e66`: REQUEST CHANGES (one P1, two P2), fixed
+
+Independent review of `4be80e66`: **REQUEST CHANGES: one P1 and two P2**; no logic finding in the two-form Groq refusal handling
+(window-full waits and syncs; request-too-large learns only the limit, reports `request_too_large` with no wait, retries once
+at once and only when the ceiling narrows the batch). CI #832 on that SHA was `success`, checked by the implementer with `gh`.
+
+- **P1 - a real third-party account identifier was committed in a public test fixture (fixed, not yet re-reviewed).** The recorded
+  Groq sentences were copied verbatim, including the provider's organisation id, into `tests/test_media_groq_refusal_forms.py`.
+  The same module already redacts that id from logs (`_ORG_ID`) because it identifies an account. It is not a credential, but it
+  has no place in the repository and the parser does not need it. The id is replaced by the synthetic `org_test_account`; the
+  sentence structure is unchanged, so both refusal forms are still tested as recorded. A search of the whole current tree (code and
+  documents) found it in that one file only; this checkpoint never stated it. A new test keeps it out: the synthetic id is
+  still redacted in the log text, and the file must not contain an `org_` id of the machine-generated shape. The id remains in the
+  already pushed history (commit `4be80e66`); the reviewer judged a history rewrite unnecessary unless the repository is treated as
+  sensitive, which is the owner's call and has not been made.
+- **P2 - `_learn_from_refusal` docstring was stale (fixed).** It now states both semantics and that any other 429 teaches nothing.
+- **P2 - bookkeeping (fixed).** PR #261's description still showed 1251 passed, CI #818 and `:8021` on `7a0957fe`; it is rewritten
+  without a hard-coded count or run number, and says what the live benchmark did and did not cover. The status documents were already
+  brought up to date by `4be80e66`.
+
+Local execution (not CI), disposable container (read-only repository, tmpfs databases, provider keys empty, 1 GB / 1 CPU, host RAM 1.52 GB,
+above the owner's 1 GB floor, `--timeout=60`): media set plus admin route tests and `tests/test_groq_translation_bounds.py`
+**1292 passed, 0 failed, 21 skipped**. Ruff on touched Python, Node admin media review, Node admin areas and browser ESM graph (300 modules): PASS.
+
+**Still open:** independent re-review of this small diff; restart of `:8021` on the final head and the remaining live cases (3, 4, 5, one real
+hold/retry observation); the A12 visual check (this machine has no browser); the five first-review P2 findings (no recorded text). PR #261 stays Draft.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;

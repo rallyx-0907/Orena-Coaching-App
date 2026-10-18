@@ -1,16 +1,20 @@
 """Groq answers an output-allowance refusal in two forms; both teach the limit, only one is a wait (live, 2026-10-17/18).
 
-The two sentences below are the verbatim `error.message` of the 429 answers recorded on :8021 (`qwen/qwen3.8-27b`). The first
+The two sentences below keep the exact structure of the `error.message` of the 429 answers recorded on :8021
+(`qwen/qwen3.8-27b`); only the organisation id is a synthetic stand-in, because it identifies a third party's account and
+the parser does not need it (`media_translation._ORG_ID` redacts it from logs for the same reason). The first
 carries a `Used` count (the minute is full: wait). The second has none: one request alone expects more output than the whole
 minute allows (the request is too big: ask for less, do not wait). The provider used to understand only the first, so after the
 second it never learned its limit, kept asking for 24 cues and every attempt was refused. No network: `requests.post` is replaced."""
 from __future__ import annotations
 
+from pathlib import Path
+
 from tests.test_media_translation_groq import FakeResponse
 from writing_coach import media_translation as mt
 
 MODEL = "qwen/qwen3.8-27b"
-ORG = "org_01kxtrj17rfqnrhwv4hky8zr8r"
+ORG = "org_test_account"
 WINDOW_FULL = (f"Rate limit reached for model `{MODEL}` in organization `{ORG}` service tier `on_demand` on output tokens per "
                "minute (OTPM): Limit 1000, Used 829, Requested 444. Please try again in 16.38s. Need more tokens? Upgrade "
                "to Dev Tier today at https://console.groq.com/settings/billing")
@@ -23,6 +27,19 @@ REQUEST_TOO_LARGE = (f"Request too large for model `{MODEL}` in organization `{O
 def refusal(message: str, headers: dict | None = None) -> FakeResponse:
     return FakeResponse({"error": {"message": message, "type": "tokens", "code": "rate_limit_exceeded"}}, status=429,
                         headers=headers or {"x-ratelimit-limit-tokens": "8000", "x-ratelimit-reset-tokens": "7.38s"})
+
+
+def test_the_recorded_sentences_carry_no_real_organisation_id_and_the_log_still_redacts_one():
+    """A real organisation id is account identification of a third party: it must not be committed in a fixture. The
+    synthetic id keeps the `org_` form, so the log redaction is exercised on it too."""
+    assert ORG == "org_test_account"
+    assert "org_test_account" in WINDOW_FULL and "org_test_account" in REQUEST_TOO_LARGE
+    logged = mt._error_detail(refusal(REQUEST_TOO_LARGE))
+    assert "org_test_account" not in logged and "org_<redacted>" in logged
+    source = Path(__file__).read_text(encoding="utf-8")
+    import re
+    # `org_` followed by a long machine-generated token is the shape of a real id; the only `org_` ids here are synthetic.
+    assert not re.search(r"org_[0-9a-z]{16,}", source)
 
 
 def test_both_recorded_sentences_are_read_and_do_not_confuse_each_other():

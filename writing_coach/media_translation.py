@@ -879,9 +879,16 @@ class GroqTranslationProvider:
                                        reason="rate_limited", retry_after=OTPM_WINDOW_SECONDS + OTPM_MARGIN_SECONDS)
 
     def _learn_from_refusal(self, response: object, reserved: list[float] | None, asked: float) -> float:
-        """A 429 that names the output-tokens-per-minute allowance teaches this process its limit and its use, and is
-        answered with a wait that clears the whole window (never the shorter `retry-after`, which the trial showed leaves
-        the window full again)."""
+        """A 429 that names the output-tokens-per-minute allowance teaches this process its limit. Groq words it two ways:
+
+        * the minute is full (`Limit N, Used M, Requested R`): the limit and the use are learned, the window is held, and
+          the answer is a wait that clears the whole window (never the shorter `retry-after`, which the trial showed
+          leaves the window full again);
+        * one request is larger than the whole allowance (`Limit N, Requested R`, no `Used`): only the limit is learned.
+          Nothing was admitted, so there is no use to sync and no window to hold, and `asked` comes back unchanged: the
+          caller asks for less (`batch_output_ceiling` now answers) instead of waiting.
+
+        Any other 429 teaches nothing and also returns `asked`."""
         if reserved is not None:
             self._otpm.release(reserved)   # it was not admitted: it spent nothing of the minute
         refusal = _otpm_refusal(response)
