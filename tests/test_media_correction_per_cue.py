@@ -109,6 +109,80 @@ def test_chinese_cues_keep_their_latin_words_and_numbers(before, after, code):
     assert reject_cue_edit("zh", before, after) == code
 
 
+# -- batches fit the provider's output-token allowance (live trial, 2026-10-17) -------------------------------
+
+def _hsk_cues(count):
+    # short Chinese cues like the live HSK1 item: 51 cues of about 9 characters
+    return [Cue(i * 2000, i * 2000 + 1800, f"我今年{i:02d}岁我家有三口人。") for i in range(count)]
+
+
+def test_a_batch_is_cut_to_the_provider_output_allowance_not_sent_whole(tmp_path):
+    """The live item (51 short ZH cues, Groq OTPM limit 1000) answered `finish_reason: length` and was refused as malformed,
+    because a 24-cue batch needs about 870 output tokens and the reservation cap had become 500."""
+    sizes = []
+
+    class Narrow(Echo):
+        def batch_output_ceiling(self):
+            return 500
+
+        def correct(self, *, cues, **kwargs):
+            sizes.append(len(cues))
+            assert pipeline_module.estimate_correction_output_tokens(cues) <= 500
+            return super().correct(cues=cues, **kwargs)
+
+    store, entry, pipeline, _ = _world(tmp_path, Narrow(), "zh")
+    cues = _hsk_cues(51)
+    lines, meta = pipeline._correct_transcript(store, entry, "b", cues, origin=pipeline_module.ORIGIN_ASR)
+    assert meta["transcript_correction_state"] == "applied" and meta["transcript_correction_detail"] == ""
+    assert sum(sizes) == 51 and max(sizes) < 24 and len(sizes) > 3
+    assert [line.text for line in lines] == [cue.text for cue in cues]            # every cue came back, in order
+
+
+def test_the_ceiling_is_read_again_for_the_retry_after_a_rate_limit(tmp_path):
+    """The provider learns its allowance from its first refusal: a batch sized for no limit is narrowed when it is retried."""
+    state = {"ceiling": None, "calls": []}
+
+    class Learns(Echo):
+        def batch_output_ceiling(self):
+            return state["ceiling"]
+
+        def correct(self, *, cues, **kwargs):
+            state["calls"].append(len(cues))
+            if len(state["calls"]) == 1:
+                state["ceiling"] = 500                                              # the refusal taught it the limit
+                raise TranslationProviderError("limited", reason="rate_limited", retry_after=16.0)
+            assert pipeline_module.estimate_correction_output_tokens(cues) <= 500
+            return super().correct(cues=cues, **kwargs)
+
+    store, entry, pipeline, slept = _world(tmp_path, Learns(), "zh")
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _hsk_cues(24), origin=pipeline_module.ORIGIN_ASR)
+    assert slept == [16.0]
+    assert state["calls"][0] == 24 and state["calls"][1] < 24 and sum(state["calls"][1:]) == 24
+    assert meta["transcript_correction_state"] == "applied" and len(lines) == 24
+
+
+def test_an_unknown_allowance_leaves_the_batch_as_it_was(tmp_path):
+    corrector = Echo()                                  # no `batch_output_ceiling`: nothing narrows the batch
+    store, entry, pipeline, _ = _world(tmp_path, corrector, "zh")
+    pipeline._correct_transcript(store, entry, "b", _hsk_cues(30), origin=pipeline_module.ORIGIN_ASR)
+    assert [len(call) for call in corrector.calls] == [24, 6]
+
+
+@pytest.mark.parametrize("ceiling,expected_min", [(None, 24), (0, 24), (10_000, 24), (500, 1), (1, 1)])
+def test_fit_correction_batch_always_keeps_at_least_one_cue(ceiling, expected_min):
+    batch = [(i, cue) for i, cue in enumerate(_hsk_cues(24))]
+    fitted = pipeline_module.fit_correction_batch(batch, ceiling)
+    assert len(fitted) >= expected_min and fitted == batch[:len(fitted)]
+    if ceiling in (None, 0, 10_000):
+        assert fitted == batch
+
+
+def test_the_estimate_covers_what_the_live_provider_measured():
+    """24 Chinese cues, 630 text bytes: the provider reported 869 completion tokens. The estimate must not be lower."""
+    cues = [Cue(0, 1, "x" * 26) for _ in range(24)]                                # 26 bytes each = 624 bytes
+    assert pipeline_module.estimate_correction_output_tokens(cues) >= 869
+
+
 # -- per-wait cap inside the provider (review of 54c8f608) ----------------------------------------------
 
 def test_one_provider_wait_never_exceeds_the_per_wait_cap_even_when_the_window_is_blocked_longer(tmp_path, monkeypatch):

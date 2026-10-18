@@ -42,7 +42,8 @@ import threading
 import time
 import unicodedata
 import uuid
-from collections.abc import Callable, Mapping
+from collections import deque
+from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
@@ -81,6 +82,31 @@ CORRECTION_ADMISSION_NEW_ADMIN = "new_admin_import"
 # Transcript correction (admin ASR/caption repair): bounded batches, per-cue acceptance, bounded rate-limit handling.
 CORRECTION_BATCH_CUES = 24
 CORRECTION_BATCH_CHARACTERS = 6_000
+# The model's answer is JSON per cue (`{"index":N,"text":"...","reason":"..."}`): a fixed overhead plus the text itself. Measured
+# on the live trial (2026-10-17, 24 Chinese cues, 630 text bytes -> 869 completion tokens) and rounded up, so a batch that fits
+# the provider's output-token allowance by this estimate is not cut off mid-answer (`finish_reason: length` is unusable JSON).
+CORRECTION_OUTPUT_TOKENS_PER_CUE = 28
+CORRECTION_OUTPUT_TOKENS_PER_BYTE = 0.6
+
+
+def estimate_correction_output_tokens(cues: Iterable[Cue]) -> int:
+    """About how many tokens the provider writes to answer these cues."""
+    total = 0
+    for cue in cues:
+        total += CORRECTION_OUTPUT_TOKENS_PER_CUE + math.ceil(len(cue.text.encode("utf-8")) * CORRECTION_OUTPUT_TOKENS_PER_BYTE)
+    return total
+
+
+def fit_correction_batch(batch: list[tuple[int, Cue]], ceiling: int | None) -> list[tuple[int, Cue]]:
+    """The longest leading part of `batch` whose answer fits `ceiling` output tokens (at least one cue; all when no ceiling)."""
+    if not ceiling or len(batch) <= 1:
+        return batch
+    used = 0
+    for count, (_, cue) in enumerate(batch):
+        used += estimate_correction_output_tokens([cue])
+        if used > ceiling:
+            return batch[:max(1, count)]
+    return batch
 # One retry per batch, only for a rate limit whose named wait fits one cap and the shared allowance (the translation
 # run's own total, TRANSLATION_MAX_TOTAL_WAIT). 90 s covers the 62 s the output-token window asks (D-218).
 CORRECTION_ATTEMPTS = 2
@@ -1092,10 +1118,25 @@ class MediaPipeline:
         pace = media_translation.PacingBudget(CORRECTION_MAX_TOTAL_WAIT)
         succeeded = 0
         failure = ""
-        for batch in batches:
+        queue = deque(batches)
+        ceiling_of = getattr(self._corrector, "batch_output_ceiling", None)
+        while queue:
+            batch = queue.popleft()
             batch_cues = tuple(cue for _, cue in batch)
             result: Any = None
             for attempt in range(CORRECTION_ATTEMPTS):
+                # The provider learns its output-token allowance from its first refusal, so the batch is fitted to it at every
+                # attempt, the retry after a rate limit included: an answer that does not fit is cut off mid-JSON and is
+                # unusable (the live trial's `malformed_result`). The cues that do not fit go back to the front of the queue.
+                try:
+                    ceiling = ceiling_of() if callable(ceiling_of) else None
+                except Exception:  # noqa: BLE001 - an unknown allowance only means the batch is not narrowed
+                    ceiling = None
+                fitted = fit_correction_batch(batch, ceiling if isinstance(ceiling, int) else None)
+                if len(fitted) < len(batch):
+                    queue.appendleft(batch[len(fitted):])
+                    batch = fitted
+                    batch_cues = tuple(cue for _, cue in batch)
                 context_bytes = len(entry.title.encode("utf-8")) + len(description.encode("utf-8"))
                 tokens = max(512, min(8192, sum(len(cue.text.encode("utf-8")) for cue in batch_cues) + context_bytes + 1000))
                 try:

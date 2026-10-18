@@ -251,6 +251,54 @@ commit `317ffe9ebc5b1b658f57364693cbaab4bb391372` against `54c8f608`. Verdict **
   benchmark (cost ceiling $0.10, no new item created), which needs the owner's go-ahead. `:8021` still runs `7a0957fe`; it
   needs a restart to exercise the later fixes.
 
+## Live provider benchmark on :8021 (owner-approved 2026-10-17): partial, one P1 found and fixed
+
+Scope the owner approved: restart :8021 on the head (done, `5ca4ac43`, after CI #820 `success`), no `:8000`, no env or
+credential change, no new item, no publication, rights unchanged, total provider spend cap USD 0.10, stop at the first
+anomaly. Method (owner's option B): the pipeline's own `_correct_transcript` was run on the **transcript already stored** for
+existing trial items, with a temporary eligibility marker that was removed afterwards; no Supadata, Whisper or translation call.
+Provider: the one already configured on :8021 (Groq, `qwen/qwen3.8-27b`, OTPM limit 1000). Backup of the index before the run:
+`/lanedata/backups/index.json.pre-asr-benchmark-20261017` (sandbox volume). Stored lesson text, status and rights are unchanged
+(checked after the run); only the correction fields of `processing` were written, which is what A12 reads. Spend booked on
+the benchmark batch: **USD 0.0169** of the 0.10 cap.
+
+| Case | Item | Result | Reader's judgement |
+| --- | --- | --- | --- |
+| 1 ZH ASR idiom | `youtube-2HRoo7akLsU` 守株待兔, 14 cues | `applied`, 3.97 s, USD 0.0028; 12 cues accepted, 0 rejected | **better**: 守株带兔 -> 守株待兔 (the idiom), plus punctuation |
+| 2 ZH ASR, previously failed | `youtube-cZbVZFJ7UrI` 灰姑娘, 26 cues | `partial` (`edit_ratio_exceeded`), 66.7 s, USD 0.0057; 14 accepted, 6 rejected | **better, not complete**: 回姑娘 -> 灰姑娘, 神仙焦木 -> 神仙教母 style fixes accepted; 6 cues with several recognition errors at once exceeded the quarter-of-Han allowance and stayed raw, as designed |
+| 3 ZH with Latin/numbers | `youtube-rbLlUXT72C4` HSK1, 51 cues | **failed twice, then `partial`** (`malformed_result`), see below | **no change** for the failed cues; the entity guard was **not exercised** by a completed batch |
+| 4, 5 EN caption | `youtube-4HGNqFdaD34`, `youtube-n6wpNhyreDE` | **not run** (stopped at case 3) | not judged |
+
+What was **not** done: case 4 and 5; a case that observes the new hold and retry behaviour on a real `partial` item (the run
+called the correction directly, so the item carries no `transcript_correction_unresolved` marker); the A12 check, because this
+machine has no browser (Chrome, Edge or Playwright is not installed).
+
+**P1 found by case 3 (fixed in the working tree, not yet reviewed).** The captured raw answers show the cause. Batch 1 (24
+cues) came back valid (`finish_reason: stop`, 869 completion tokens, every number kept as written). The next batch was refused with
+HTTP 429 (OTPM: limit 1000, used 829, requested 2048); the provider learned its limit from that refusal, so its reservation
+cap fell to 500, and the retry after the 16 s wait asked for `max_completion_tokens: 500` for the **same 24-cue batch**. The
+answer was cut off (`finish_reason: length`, 13 of 24 rows, the last rows merged and wrong) and was correctly refused as
+`malformed_result`. The correction batches were a fixed 24 cues, not sized to the output-token allowance that translation
+already respects, so on a model with a low output allowance most long items would end `partial` or `failed`. No unsafe text was
+accepted: the refusal worked as designed.
+
+Fix: `estimate_correction_output_tokens` (28 tokens per cue plus 0.6 per UTF-8 byte, rounded up from the measured 869 tokens
+for 630 bytes) and `fit_correction_batch` cut each batch to the provider's `batch_output_ceiling()`, read again at every
+attempt including the retry after a rate limit; cues that do not fit return to the front of the queue, none is dropped, and an
+unknown allowance leaves the batch as it was. Tests: 51 short ZH cues under a 500-token allowance all return in order and end
+`applied`; the allowance learned after the first refusal narrows the retry; an unknown allowance keeps `[24, 6]`; a batch always
+keeps at least one cue; the estimate is not below the measured 869.
+
+Local execution (not CI), disposable container (read-only repository, tmpfs databases, provider keys empty, 1 GB / 1 CPU, host
+RAM 1.72 GB, above the owner's 1 GB floor): media set plus `tests/test_admin_console_routes.py` and
+`tests/test_admin_authorization_matrix.py` **1260 passed, 0 failed, 21 skipped**. Ruff on touched Python, Node admin media
+review, Node admin areas, browser ESM graph (300 modules): PASS.
+
+**Gates still open.** Live benchmark: cases 3, 4 and 5 must be re-run on code that carries this fix (`:8021` needs another
+restart; it mounts the repository, so a restart is enough), and the new hold/retry behaviour needs one real observation. This fix
+changes behaviour, so it needs an independent re-review; the implementer cannot approve it. A12 visual check is open. PR #261
+stays Draft.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;

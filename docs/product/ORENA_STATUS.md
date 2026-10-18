@@ -10,8 +10,9 @@ Video Sources / ASR context and transcript review (2026-10-17, UI lane): IMPLEME
 Whisper receives bounded source context; the configured media text model can repair new shared Admin
 ZH ASR and EN captions, with per-cue before/after/provenance visible in A12. Personal and pre-existing
 records are excluded; a correction that fails never blocks translation, but a cleared item is then held, not
-auto-published, also across retry. Local media+admin1251 pass/21 skip, Ruff/Node pass. Independent review of
-`317ffe9e`: APPROVE (no P0/P1, CI green on that SHA; 5 first-review P2 have no recorded text). Live quality, matched-audio benchmark and browser fidelity remain
+auto-published, also across retry. Local media+admin1260 pass/21 skip, Ruff/Node pass. `317ffe9e` was APPROVED
+(CI green), then the live benchmark on :8021 found that correction batches ignored the provider output allowance (fixed, not re-reviewed; cases 3-5 and A12 to
+run; 5 first-review P2 have no recorded text). Live quality, matched-audio benchmark and browser fidelity remain
 unverified; no runtime deployment or publication. Trial artifacts report EN19/ZH18 usable; sitting6
 stopped at HTTPS egress preflight with zero new imports. See `docs/reviews/MEDIA_ASR_CONTEXT_CHECKPOINT_2026-10-17.md`.
 
