@@ -416,3 +416,44 @@ writes a volume. Only the human runs or schedules it (D-127); the lane only wrot
   `docker run --rm -v <volume>:/data -v <backupdir>:/in postgres:17-alpine tar xzf /in/<file> -C /data`. A restore
   loses everything written since the backup. Never remove either named volume.
 - The folder holds learner data: keep it access-controlled and outside the repository.
+
+## 13. Ops hardening for :8000 (PR L, deploy audit 2026-10-18)
+
+What the code and scripts now do. None of it was run against :8000; the human deploys and schedules (D-127).
+
+- **Request log without query strings (B4).** The Dockerfile starts uvicorn with `--no-access-log`; the app writes one
+  line per request itself (`<UTC time> access GET /path 200 12ms`, logger `orena.access`, stdout, on by default) with
+  the path only, so `/auth/google/callback?state=..&code=..` never reaches `docker logs`. A scrub filter on
+  `uvicorn.access` does the same for a runtime started without the flag. `scripts/staging_8000_deploy.ps1` now starts web
+  and worker with `--log-opt max-size=10m --log-opt max-file=5` (50 MB per container; takes effect at the next deploy).
+- **Outbound URLs (B4).** The reading worker and poller set `httpx`, `httpcore` and `urllib3` to WARNING after
+  `basicConfig(INFO)`; the poller logs feed and entry URLs as scheme+host+path and scrubs URLs inside exception text;
+  the Groq refusal log lines carry the error type/code and `x-request-id`, no provider sentence.
+- **Handed to the Intelligence lane (B4-P2, not edited here):** `writing_coach/agent/platform_provider.py` lines ~111
+  and ~133 log `%s` of the raw `AIProviderError` (log type and status only); `writing_coach/agent/turn.py` ~539
+  `_log.exception("agent turn failed")` and other `exc_info` warnings (exception text can embed the learner message or
+  tool arguments: log type and trace id, or scrub).
+- **`/api/readiness` (B3).** Unauthenticated. It runs `SELECT 1` on the runtime database (3 s limit) and checks that an
+  existing media library root is writable. Healthy: 200 `{ready:true, environment, auth_enabled}`. Not healthy: 503 with
+  `{ready:false, reason:"database_unavailable"|"storage_unavailable", ...}`; no host, path or error text. The deploy script
+  already polls it, so a deploy now fails on a dead database.
+- **Health check (B3).** `scripts\health_check_8000.ps1` (PowerShell 5.1, read-only, no external account): local
+  readiness (`127.0.0.1:8000`), public readiness (`https://orena.chillpickle.org/api/readiness`), State and RestartCount of
+  `ai-writing-coach-writing-coach-1` and `ai-writing-coach-reading-worker-1` (a restart count that grew since the last run
+  fails), newest `orena-8000-*.dump` younger than 26 h, last `backup.log` line `exit 0`. It appends to
+  `%USERPROFILE%\.orena\health\health.log` and keeps `health.state.json`. Exit 0 healthy, 1 failing, 2 failing and an
+  alert was raised (the 2nd consecutive failing run, then hourly): a toast through BurntToast when installed, else
+  `msg.exe`. `scripts\register_health_check_8000.ps1` prints the `Register-ScheduledTask` command (every 5 minutes, task
+  `OrenaHealthCheck8000`); `-Apply` registers it. The task runs only while the user is logged on.
+- **Content-Security-Policy-Report-Only (B8).** Added to every `text/html` response (`writing_coach/core/http_security.py`);
+  not enforced, no report endpoint yet: read the browser console on the learner UI, the Landing and the legal pages, fix
+  or allow what it reports, then switch to `Content-Security-Policy` in a follow-up. The list and why:
+  `default-src 'self'`; `script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net` plus the SHA-256 of each inline
+  `<script>` in `templates/orena` (the legal pages' table of contents; computed from the templates), where
+  `'unsafe-eval'` is the Landing's design-component runtime (`support.js` uses `new Function`) and jsDelivr is the Polar
+  checkout embed; `style-src 'self' 'unsafe-inline'` (the design draws inline style attributes); `img-src 'self' data:
+  blob: https:` and `media-src 'self' blob: https:` (covers and learner-imported media); `font-src 'self' data:` (fonts are
+  served locally); `connect-src 'self'`; `frame-src https://www.youtube.com https://www.youtube-nocookie.com
+  https://*.polar.sh`; `object-src 'none'`; `base-uri 'self'`; `form-action 'self'`; `frame-ancestors 'none'`. Google
+  sign-in is a top-level redirect and needs no directive. Open before enforcing: drop `'unsafe-eval'` (Landing) and
+  `'unsafe-inline'` styles (design) only with a design change; confirm the Polar frame hosts against a live checkout.

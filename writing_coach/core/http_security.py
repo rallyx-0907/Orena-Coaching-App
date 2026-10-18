@@ -15,9 +15,14 @@ Two small rules the whole app keeps, so no route has to remember them:
 
 from __future__ import annotations
 
+import base64
+import hashlib
 import ipaddress
 import logging
+import re
 from collections.abc import Mapping
+from functools import lru_cache
+from pathlib import Path
 from urllib.parse import urlsplit
 
 STATE_CHANGING = frozenset({"POST", "PUT", "PATCH", "DELETE"})
@@ -55,6 +60,48 @@ def origin_refusal(method: str, path: str, headers: Mapping[str, str]) -> str | 
     return None
 
 
+CSP_REPORT_ONLY = "Content-Security-Policy-Report-Only"
+_PAGES = Path(__file__).resolve().parents[2] / "templates" / "orena"
+_INLINE_SCRIPT = re.compile(r"<script(?![^>]*src=)(?![^>]*type=\"text/x-dc\")[^>]*>(.*?)</script>", re.DOTALL | re.IGNORECASE)
+
+
+@lru_cache(maxsize=1)
+def inline_script_hashes() -> tuple[str, ...]:
+    """CSP hashes of the executable inline <script> blocks the shipped pages carry (the legal pages' table of
+    contents). Computed from the templates, so an edit to one cannot leave a stale hash behind."""
+
+    found: set[str] = set()
+    for page in sorted(_PAGES.rglob("*.html")):
+        for match in _INLINE_SCRIPT.finditer(page.read_text(encoding="utf-8")):
+            digest = hashlib.sha256(match.group(1).encode("utf-8")).digest()
+            found.add("'sha256-" + base64.b64encode(digest).decode("ascii") + "'")
+    return tuple(sorted(found))
+
+
+def content_security_policy_report_only() -> str:
+    """The Report-Only policy for HTML pages (deploy audit B8, 2026-10-18); documented in RELEASE_8000_READINESS.md.
+
+    'unsafe-eval' is there for the public Landing, whose design-component runtime (support.js) builds functions;
+    'unsafe-inline' styles for the design's inline style attributes; https: images and media for covers and
+    learner-imported content; the Polar checkout loads from cdn.jsdelivr.net. Enforcement is a follow-up."""
+
+    scripts = " ".join(("'self'", "'unsafe-eval'", "https://cdn.jsdelivr.net", *inline_script_hashes()))
+    return "; ".join((
+        "default-src 'self'",
+        f"script-src {scripts}",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: blob: https:",
+        "media-src 'self' blob: https:",
+        "font-src 'self' data:",
+        "connect-src 'self'",
+        "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://*.polar.sh",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "frame-ancestors 'none'",
+    ))
+
+
 def hardening_headers(existing: Mapping[str, str], *, https: bool) -> dict[str, str]:
     """The headers to add: every hardening header the response does not already carry."""
 
@@ -62,6 +109,9 @@ def hardening_headers(existing: Mapping[str, str], *, https: bool) -> dict[str, 
     added = {name: value for name, value in HARDENING_HEADERS.items() if name.casefold() not in present}
     if https and "strict-transport-security" not in present:
         added["Strict-Transport-Security"] = HSTS
+    content_type = next((v for k, v in existing.items() if k.casefold() == "content-type"), "")
+    if content_type.casefold().startswith("text/html") and CSP_REPORT_ONLY.casefold() not in present:
+        added[CSP_REPORT_ONLY] = content_security_policy_report_only()
     return added
 
 
