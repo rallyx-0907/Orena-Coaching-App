@@ -37,9 +37,11 @@ _ALLOWED_PREFIXES = ("media/", "speaking/model-clip/")
 
 # Keys that name a learner, an account or this environment's internal bookkeeping never travel: they are dropped from
 # `source` and, found anywhere in the lesson, keep the entry out of the pack.
-_PRIVATE_KEY = re.compile(r"owner|user|e-?mail|token|session|secret|password|quota|settle|spend", re.IGNORECASE)
+_PRIVATE_KEY = re.compile(r"owner|user|e-?mail|token|session|secret|password|quota|settle|spend|_by$|reviewer|^ip$|_ip$|^name$", re.IGNORECASE)
 
-_LESSON_PRIVATE_KEYS = frozenset({"owner", "owner_token", "user", "user_id", "user_key", "email", "account", "account_id"})
+_LESSON_PRIVATE_KEYS = frozenset({"owner", "owner_token", "user", "user_id", "user_key", "email", "account", "account_id",
+                                    "uploaded_by", "reviewed_by", "approved_by", "added_by", "reviewer", "ip"})
+_EMAIL = re.compile(r"[^@\s/:]+@[^@\s/:]+\.[^@\s/:]+")  # an address, not a URL that carries an "@"
 
 ClipKeys = Callable[[MediaLibraryEntry], Sequence[str]]
 
@@ -84,8 +86,7 @@ def _read_asset(assets: Any, key: str) -> bytes | None:
 def _entry_data(entry: MediaLibraryEntry, assets: Any, clip_keys: ClipKeys) -> tuple[dict[str, Any], dict[str, bytes]]:
     """The comparable form of an entry (same function for export and for judging a local entry) and its asset bytes."""
     values = {name: _plain(getattr(entry, name)) for name in _ENTRY_FIELDS}
-    values["source"] = {**{k: v for k, v in values["source"].items() if not _PRIVATE_KEY.search(str(k))},
-                        "imported_by": PACK_ACTOR}
+    values["source"] = {**_public_source(values["source"]), "imported_by": PACK_ACTOR}
     described, blobs = [], {}
     for key in _asset_keys(entry, clip_keys):
         blob = _read_asset(assets, key)
@@ -111,7 +112,15 @@ def _local_comparable(data: Mapping[str, Any]) -> dict[str, Any]:
     return {"entry": data["entry"], "assets": data["assets"]}
 
 
+def _public_source(source: Mapping[str, Any]) -> dict[str, Any]:
+    """`source` without keys that name a person or internal bookkeeping, and without any value that is an address."""
+    return {k: v for k, v in source.items()
+            if not _PRIVATE_KEY.search(str(k)) and not (isinstance(v, str) and _EMAIL.fullmatch(v.strip()))}
+
+
 def _private_key_in(value: Any) -> bool:
+    if isinstance(value, str):
+        return bool(_EMAIL.fullmatch(value.strip()))
     if isinstance(value, Mapping):
         return any(str(k).casefold() in _LESSON_PRIVATE_KEYS or _private_key_in(v) for k, v in value.items())
     if isinstance(value, (list, tuple)):
@@ -176,7 +185,7 @@ def _entry_from(item: PackItem, *, status: str, processing: Mapping[str, Any], a
     missing = set(_ENTRY_FIELDS) - set(raw)
     if unknown or missing:
         raise ValueError("entry fields do not match")
-    raw["source"] = {**raw["source"], "imported_by": actor}
+    raw["source"] = {**_public_source(raw["source"]), "imported_by": actor}
     entry = MediaLibraryEntry(**raw, status=status, processing=dict(processing))
     if entry.library != "shared":
         raise ValueError("library must be shared")

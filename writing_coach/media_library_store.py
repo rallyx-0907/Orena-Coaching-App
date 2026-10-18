@@ -9,6 +9,7 @@ rather than pretending a JSON file has cross-process locks.
 """
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -59,8 +60,11 @@ class _IndexWriter:
         try:
             self._path.parent.mkdir(parents=True, exist_ok=True)
             handle = open(self._path, "a+b")  # noqa: SIM115 - held until __exit__
-        except OSError:
-            return self
+        except OSError as exc:
+            if isinstance(exc, PermissionError) or exc.errno in (errno.EROFS, errno.EACCES):
+                return self  # a read-only or unwritable directory: the write that follows fails on its own
+            self._thread.release()
+            raise
         try:
             if os.name == "nt":
                 import msvcrt

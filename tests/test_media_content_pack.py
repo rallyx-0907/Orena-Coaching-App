@@ -398,3 +398,42 @@ def test_two_processes_writing_one_index_lose_no_entry(tmp_path):
              for tag in ("a", "b")]
     assert [p.wait(timeout=120) for p in procs] == [0, 0]
     assert len(FileMediaLibraryStore(tmp_path / "shared").list(status=None)) == 50
+
+
+def test_an_address_in_a_value_and_a_by_key_never_travel(source):
+    store, assets = source
+    good = store.get("yt-good")
+    store.upsert(replace(good, source={**good.source, "uploaded_by": "someone", "note": "admin@example.com",
+                                       "ip": "10.0.0.1", "name": "A Person"}))
+    store.upsert(_entry("yt-address", lesson={**_lesson(), "contact": "admin@example.com"}))
+    assets.put("media/yt-address/thumb.jpg", THUMB_BYTES)
+    pack, _raw, excluded = _export(source)
+    packed = next(item for item in pack.items if item.natural_key == "yt-good")
+    assert not {"uploaded_by", "note", "ip", "name"} & set(packed.data["entry"]["source"])
+    assert "admin@example.com" not in json.dumps([item.data for item in pack.items])
+    assert {"media_id": "yt-address", "reason": "learner_field_in_lesson"} in excluded
+
+
+def test_the_index_lock_falls_back_only_on_a_read_only_or_permission_error(tmp_path, monkeypatch):
+    import errno
+    from pathlib import Path
+
+    from writing_coach.media_library_store import _IndexWriter
+
+    writer = _IndexWriter(tmp_path / "index.json")
+    real = Path.mkdir
+
+    def failing(code):
+        def raiser(self, *args, **kwargs):
+            raise OSError(code, "boom")
+        return raiser
+
+    monkeypatch.setattr(Path, "mkdir", failing(errno.EROFS))
+    with writer:
+        pass
+    monkeypatch.setattr(Path, "mkdir", failing(errno.EIO))
+    with pytest.raises(OSError), writer:
+        pass
+    monkeypatch.setattr(Path, "mkdir", real)
+    with writer:  # the thread lock was released by the failed attempt
+        pass
