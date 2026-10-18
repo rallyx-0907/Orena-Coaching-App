@@ -6394,3 +6394,11 @@ Gaps for the human or the backend lane:
 ## Load error: an unknown content id (2026-10-18)
 
 The pinned "Load error" frame (`Orena.dc.html`, ~141) draws a title, one line, Back and Retry, and no "unavailable" variant. When the API answers 404 or 410 for the content (for example `listening_lesson_not_found`, `retryable: false`), Retry cannot help and "the server did not respond" is untrue. The owner allowed small UI changes that reuse existing patterns (2026-10-18, via the owner's delegate): the same card shows the existing "No longer available" line (the Library's `contentUnavailable` wording, shell key `errorGone`) with Back only. Every other status keeps the frame's server/offline line and Retry.
+
+## Remembered-note line in the Orena chat (D-229 proposed, 2026-10-18)
+
+The pinned design draws no line telling the learner that Orena stored a note. By owner decision (D-229, via the owner's delegate) the first server note stored in a conversation (`memory_update`, `stored: "server"`, `op: "upsert"`) shows one line under that reply: "Orena remembered this - Manage in Settings", the second part opening Settings, Privacy. It is placed with existing parts only: the `s-orena-evidence` chip (`screens/orena/orena.css`) holding the label, and the error line's text-link button (`__retry`, wired through the existing `data-plans` handler) as the link. A device note, a removal and every later note in the same conversation show nothing. The line lives on the reply, so it returns with the saved thread and is not repeated. Open for the owner: whether it should repeat per conversation (it does, since a new conversation has no earlier line) or once per account.
+
+## Consent evidence is not stored (D-229 proposed, 2026-10-18)
+
+The light-consent model records no server-side evidence of acceptance: the Account step shows the Terms and Privacy line, and nothing is saved when the learner continues. Storing which policy version and effective date a learner accepted, and when, needs a table and a decision on what counts as acceptance; it waits for the owner's schema decision (AGENTS.md section 7). A just-in-time voice consent step does not exist and the policy does not promise one. The privacy page has no version field, only a deploy-stamped effective date (`facts.json`), which is what the evidence would reference.
