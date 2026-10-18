@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 from time import perf_counter
 from enum import Enum
 from pathlib import Path
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from typing import Any, Callable
 
 from fastapi import APIRouter, FastAPI, HTTPException, Request, Response
@@ -738,6 +738,7 @@ def generate_structured(
     health: Any = None,
     paid_standby: bool = True,
     routable: bool = True,
+    pool: Sequence[ProviderTarget] | None = None,
 ) -> AIResult:
     """One structured request through the learner runtime.
 
@@ -749,6 +750,9 @@ def generate_structured(
     `AI_RUNTIME_MODE` is (a routed capability has no legacy selection); `health` is a private `ProviderHealth` for a
     background caller (D-200), so its failures never cool a provider down for the learner's own requests.
     `paid_standby=False` (the translate-ahead prefetch) never asks a paid pool entry: background work does not spend.
+    `pool` (D-228) replaces the stored primary/backup chain with a caller-built ordered chain, for the one capability
+    whose pool is chosen per request (`word_sense_choice`); the capability must still be saved and enabled, and every
+    rung still goes through the budget, funding and health gates.
     """
 
     started = perf_counter()
@@ -839,7 +843,7 @@ def generate_structured(
         # one rate-limited provider stopped the capability. The chain asks each
         # rung once - never twice, so a learner turn cannot be answered twice -
         # and a malformed request still fails on the first rung, unchanged.
-        chain = build_chain(
+        chain = list(pool) if pool else build_chain(
             provider=config.provider,
             model=config.model,
             backup_provider=config.backup_provider,

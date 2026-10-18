@@ -180,6 +180,9 @@ def test_every_other_provider_capability_carries_learner_text() -> None:
         if definition.key in {"media_translation", "media_transcript_correction"}:
             # D-224: opt-in, but a learner's private import is learner content, so the strict class stays.
             assert definition.input_class == "learner_text" and definition.opt_in is True, definition.key
+        elif definition.key == "word_sense_choice":
+            # D-228: the sentence of shared published content; a learner's own sentence is kept off free tiers per request.
+            assert definition.input_class == "published_content" and definition.opt_in is True
         elif definition.key != "word_translation":
             assert definition.input_class == "learner_text", definition.key
             assert definition.opt_in is False

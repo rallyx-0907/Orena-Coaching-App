@@ -113,3 +113,78 @@ def pick_chinese_entry(entries: Sequence[Any], tagger_reading: str) -> Any | Non
         if _plain(getattr(entry, "pinyin", "")) == plain:
             return entry
     return entries[0]
+
+
+# --- ties: what the zero-cost rules above cannot decide (D-228) -----------------------------------------------------
+
+MAX_TIED = 6
+_SENTENCE_END = "。！？!?.\n；;"
+MAX_SENTENCE_CHARS = 300
+
+
+def catalogue_ties(entries: Sequence[Mapping[str, Any]], tagged_pos: str, target: str) -> list[Mapping[str, Any]]:
+    """The published senses `pick_catalogue_entry` could not tell apart, in catalogue order; ``[]`` when it decided.
+
+    A tie is two or more senses, each with a meaning in the support language (a sense with none could not be shown),
+    that are equally good by the same rank: the same class match, and a distinct meaning. The first of them is the
+    neutral sense `pick_catalogue_entry` returns."""
+
+    wanted = canonical_pos(tagged_pos)
+    ranked = [
+        (0 if wanted and canonical_pos(entry.get("part_of_speech")) == wanted else 1, entry)
+        for entry in entries
+        if _target_text(entry, target)
+    ]
+    if len(ranked) < 2:
+        return []
+    best = min(rank for rank, _ in ranked)
+    group, seen = [], set()
+    for rank, entry in ranked:
+        text = _target_text(entry, target).casefold()
+        if rank == best and text not in seen:
+            seen.add(text)
+            group.append(entry)
+    if len(group) < 2 or pick_catalogue_entry(entries, tagged_pos, target) is not group[0]:
+        return []  # the sense shown is not one of the tied ones (a class match without a meaning in this language)
+    return group[:MAX_TIED]
+
+
+def catalogue_tie_texts(group: Sequence[Mapping[str, Any]], target: str) -> list[str]:
+    return [_target_text(entry, target) for entry in group]
+
+
+def definition_ties(definitions: Sequence[Any], tagged_pos: str) -> list[Any]:
+    """The dictionary definitions of the word's class (all of them when none has that class or the class is unknown)
+    when there are two or more with different text; ``[]`` when the class leaves a single definition."""
+
+    wanted = canonical_pos(tagged_pos)
+    matching = [d for d in definitions if wanted and canonical_pos(getattr(d, "part_of_speech", "")) == wanted]
+    group, seen = [], set()
+    for item in matching or list(definitions):
+        text = str(getattr(item, "definition", "") or "").strip().casefold()
+        if text and text not in seen:
+            seen.add(text)
+            group.append(item)
+    return group[:MAX_TIED] if len(group) >= 2 else []
+
+
+def sentence_around(context: str, selection: str) -> str:
+    """The sentence of `context` that holds `selection`, at most `MAX_SENTENCE_CHARS`, or ``""`` when it is not there.
+
+    Cut at sentence ends and line breaks; a long sentence is cut to a window around the word. Pure and local."""
+
+    text = " ".join(str(context or "").split()) if "\n" not in str(context or "") else str(context)
+    word = str(selection or "").strip()
+    at = text.casefold().find(word.casefold()) if word else -1
+    if at < 0:
+        return ""
+    start = max((text.rfind(mark, 0, at) for mark in _SENTENCE_END), default=-1) + 1
+    ends = [i for i in (text.find(mark, at + len(word)) for mark in _SENTENCE_END) if i >= 0]
+    end = min(ends) + 1 if ends else len(text)
+    sentence = " ".join(text[start:end].split())
+    if len(sentence) <= MAX_SENTENCE_CHARS:
+        return sentence
+    inside = sentence.casefold().find(word.casefold())
+    half = (MAX_SENTENCE_CHARS - len(word)) // 2
+    lo = max(0, inside - half)
+    return sentence[lo : lo + MAX_SENTENCE_CHARS].strip()
