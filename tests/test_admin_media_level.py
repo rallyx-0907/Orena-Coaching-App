@@ -4,6 +4,8 @@ from dataclasses import replace
 from sqlalchemy.orm import Session
 
 from tests.test_admin_console_routes import call, setup  # noqa: F401,F811 -`setup` is a fixture
+from tests.test_admin_authorization_matrix import ADMIN, LEARNER, _request, secured  # noqa: F401
+from tests.test_media_held_preview import _held, held  # noqa: F401
 from writing_coach.listening_api import stored_media_metadata
 from writing_coach.persistence.models import AuditLog
 

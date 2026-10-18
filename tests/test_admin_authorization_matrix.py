@@ -46,7 +46,7 @@ MATRIX = {
         "/api/admin/console/content/media/not-present/rights", {"json": {"rights": "unknown"}}, {404}),
     ("POST", "/api/admin/console/content/media/{media_id}/level"): (
         "/api/admin/console/content/media/not-present/level", {"json": {"level": ""}}, {404}),
-    ("GET", "/api/admin/ai/catalog"):("/api/admin/ai/catalog", {}, {200}),
+    ("GET", "/api/admin/ai/catalog"): ("/api/admin/ai/catalog", {}, {200}),
     ("GET", "/api/admin/ai/config"): ("/api/admin/ai/config", {}, {200}),
     ("PUT", "/api/admin/ai/config"): ("/api/admin/ai/config", {"json": {"provider": "no-such", "model": "m"}}, {400}),
     ("PUT", "/api/admin/ai/config/{capability_key}"): ("/api/admin/ai/config/learner_dictionary", {"json": ROUTE}, {400}),
