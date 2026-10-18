@@ -37,6 +37,7 @@ from typing import Any, Protocol
 
 from writing_coach.agent import learner_copy, surfaces
 from writing_coach.agent.context import TurnInput, build_tier1
+from writing_coach.agent.context_gate import carried_state, without_carried_state
 from writing_coach.agent.contract import SURFACES, WORD_ACTIONS, actions_for_version, intents_for_version
 from writing_coach.agent.events import Event, ToolCallEvent, ToolResultEvent, EvidenceEvent, Display
 from writing_coach.agent.focus import focus_after, lookup_word
@@ -477,12 +478,12 @@ class VoiceService:
         turn = TurnInput.from_request(request)
         session_state, _ = self.runtime.sessions.open(request.session_id, learner.user_key)
         tier1, session_state, notes_available = self._gate_data_classes(
-            build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state)
+            turn, build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state)
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
         pack = self._learner_pack(session_state, learner, request)
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
         self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes,
-                                     context=bool(session_state.recent_tool_results))  # fmt: skip
+                                     context=carried_state(turn, tier1, session_state))  # fmt: skip
         specs = self._tool_specs(request, learner, notes=notes_available)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
@@ -661,7 +662,7 @@ class VoiceService:
             return None
         return pack.text if pack is not None else None
 
-    def _gate_data_classes(self, tier1, session_state):
+    def _gate_data_classes(self, turn: TurnInput, tier1, session_state):
         """G8 for the voice setup (ORENA_MEMORY.md §8 b, c), while the gate is on: a conversation that has sent a class
         of data is not continued by a voice vendor cleared for less (the session does not open: text goes on), and
         coach notes reach the vendor only when it is cleared for `full_memory`."""
@@ -676,7 +677,7 @@ class VoiceService:
         if not notes_available:  # no note is read, kept, changed or forgotten by voice (owner, 2026-10-18)
             tier1 = replace(tier1, coach_notes=())
         if level < CONTEXT_EVIDENCE_CLASS:
-            session_state = replace(session_state, recent_tool_results=())
+            tier1, session_state = without_carried_state(turn, tier1, session_state)
         return tier1, session_state, notes_available
 
     def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes,

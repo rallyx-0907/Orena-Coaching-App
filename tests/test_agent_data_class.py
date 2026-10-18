@@ -283,6 +283,43 @@ def test_context_evidence_sent_without_a_pack_raises_the_conversation_class():
     assert len(provider.requests) == 2 and any(e.name == "error" for e in events)
 
 
+CTX = {"surface": "speaking.word_detail", "locale": {"interface": "vi", "support": "vi", "target": "zh-CN", "content": "zh-CN"}}
+
+
+def _carried(record, first_context, first_message="Từ này nghĩa là gì?"):
+    """Turn 1 carries a selection (and maybe a pasted text); turn 2's own request names neither."""
+    rt, provider, _ = pack_runtime([reply("a1"), reply("a2"), reply("a3")], classes=ProviderDataClasses.parse(record))
+    rt.pack.build = lambda **_kwargs: None  # no pack bytes: only the context's carried state is in question
+    first = run(rt, turn_request(first_message, context=first_context))
+    session_id = next(e.session_id for e in first if e.name == "session")
+    run(rt, turn_request("cho ví dụ khác", context=CTX, session_id=session_id))
+    return rt, provider, session_id
+
+
+def _second(provider):
+    return "\n".join(m.content for m in provider.requests[1].messages)
+
+
+def test_a_none_provider_gets_no_state_carried_from_earlier_turns():
+    """Re-review of #268: a reused selection and the focus (a selected word, a pasted text's head) are session state,
+    not the request's own content."""
+    _, provider, _ = _carried("gemini=none", {**CTX, "selected_item": {"type": "word", "text": "熊猫"}})
+    assert "熊猫" in "\n".join(m.content for m in provider.requests[0].messages)  # turn 1's own selection
+    assert "熊猫" not in _second(provider) and '"conversation_focus"' not in _second(provider)
+    pasted = "Đây là một đoạn văn dài mình dán vào. " * 60
+    _, provider, _ = _carried("gemini=none", CTX, first_message=pasted)
+    assert '"pasted_text"' not in _second(provider)
+
+
+def test_carried_state_sent_to_learning_profile_raises_the_conversation_class():
+    rt, provider, session_id = _carried("gemini=learning_profile,groq=none",
+                                        {**CTX, "selected_item": {"type": "word", "text": "熊猫"}})
+    assert "熊猫" in _second(provider)  # cleared: the follow-up still knows what "that" is
+    rt.router.selection, rt.router.is_usable = GROQ, (lambda route: route != GEMINI)
+    events = run(rt, turn_request("hỏi nữa", context=CTX, session_id=session_id))
+    assert len(provider.requests) == 2 and any(e.name == "error" for e in events)
+
+
 def test_the_m2_edges_are_explicit():
     """Review of #268 P2: before M2 nothing passes the memory flag, and a memory-bearing pack needs full_memory."""
     classes = ProviderDataClasses.parse("")

@@ -15,8 +15,9 @@ exists (§8 a; from M2 also the memory switch), so switching the policy on never
 - **Coach notes** reach a provider only when it is cleared for `full_memory`. Below it the notes are not sent, and no
   note can be kept, changed or forgotten (the note tools are not offered and are refused): a learner who asks is told
   so plainly (owner, 2026-10-18).
-- **The chat context**: its learning evidence (`earlier_in_session`) only to `learning_profile`; the rest is the
-  request's own content.
+- **The chat context**: its state carried from earlier in the session (`earlier_in_session`, `conversation_focus`, a
+  reused selection; agent/context_gate.py) only to `learning_profile`, and sending it raises the conversation's
+  class; the rest is the request's own content.
 - **The conversation's history** (§8 c): a conversation that has sent a class of data is never continued on a
   provider cleared for less - its turns, rolling summary and answers may carry that data. The check runs before a
   route is pinned, so a refused route is never kept; the turn answers the unavailable path (`ProviderNotCleared`);
@@ -101,9 +102,9 @@ class ProviderDataClasses:
 
 PACK_CLASS = DataClass.LEARNING_PROFILE  # what the M1 learner pack carries (profile and evidence)
 NOTES_CLASS = DataClass.FULL_MEMORY  # device coach notes (§8 b)
-# The chat context's learning evidence: `earlier_in_session`, the summaries of what tools read for the learner. The
-# rest of the context is the request's own content and the conversation's mechanics (languages, the screen, what is
-# in view or selected, this turn's address, Orena's own open offer and what it sent to the app).
+# The chat context's state carried from earlier in the session (agent/context_gate.py): `earlier_in_session` (what
+# tools read for the learner), `conversation_focus` (earlier topics and referents, a pasted text) and an earlier
+# selection reused. The rest of the context is the request's own content and the conversation's mechanics.
 CONTEXT_EVIDENCE_CLASS = DataClass.LEARNING_PROFILE
 
 # The staged boundary (A1, M2-prep 2b). A payload moves from the second tuple to the first only with the code that

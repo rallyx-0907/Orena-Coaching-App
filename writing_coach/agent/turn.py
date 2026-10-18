@@ -60,6 +60,7 @@ from pydantic import ValidationError
 from writing_coach.agent import learner_copy
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import TurnInput, build_tier1
+from writing_coach.agent.context_gate import carried_state, without_carried_state
 from writing_coach.agent.decision import (
     DecisionProvider,
     DecisionQuestion,
@@ -591,7 +592,7 @@ class _Turn:
         self.heard = tapped or turn.message
         pack = None if self.no_model else self._learner_pack(session)
         self._record_data_class_sent(session, pack=pack, notes=tier1.coach_notes,
-                                     context=bool(session.recent_tool_results))  # fmt: skip
+                                     context=carried_state(turn, tier1, session))  # fmt: skip
         # The pack replaces the opening snapshot in the prompt (ORENA_MEMORY.md §3.1): one source of learner evidence,
         # not two with different rules. The snapshot stays here, for the greeting built without a model and its check.
         self.pack_facts = pack_numbers(pack)
@@ -683,9 +684,9 @@ class _Turn:
                 self.timeline.facts["coach_notes"] = {"withheld": "provider_not_cleared", "provider_class": level.label,
                                                       "count": len(tier1.coach_notes)}  # fmt: skip
                 tier1 = replace(tier1, coach_notes=())
-        if level < CONTEXT_EVIDENCE_CLASS and session.recent_tool_results:
-            self.timeline.facts["chat_context"] = {"withheld": "earlier_in_session", "provider_class": level.label}
-            session = replace(session, recent_tool_results=())
+        if level < CONTEXT_EVIDENCE_CLASS and carried_state(turn, tier1, session):
+            self.timeline.facts["chat_context"] = {"withheld": "carried_state", "provider_class": level.label}
+            tier1, session = without_carried_state(turn, tier1, session)
         return tier1, session
 
     def _record_data_class_sent(self, session, *, pack: str | None, notes, context: bool) -> None:
