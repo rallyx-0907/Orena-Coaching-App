@@ -108,7 +108,9 @@ export function agentMemory(storage, owner) {
    nulls, `weight` as a Python float (`1.0`, never `1`), `last_reinforced` as pydantic's datetime text
    (`2026-10-18T07:30:15.123000Z`, or the offset form `+00:00`, 6 chars for the zone). Measure the same shape,
    with the datetime at its longest rendering. NOTES_MARGIN is a small slack for whatever the two
-   serialisers still disagree on; it is on the whole list, not per note. The 20 / 2048 limits are unchanged. */
+   serialisers still disagree on. One known difference, exponent floats (JS `1e-7`, Python `1e-07`), is
+   unreachable only because `DROP_BELOW = 0.15` keeps every sent weight far from exponent range; lowering
+   DROP_BELOW would reopen it. The margin is it is on the whole list, not per note. The 20 / 2048 limits are unchanged. */
 const NOTES_MARGIN = 16;
 const DATETIME_LONGEST = '2026-10-18T07:30:15.123456+00:00';
 

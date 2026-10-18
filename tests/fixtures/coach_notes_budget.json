@@ -504,6 +504,132 @@
    ],
    "client_bytes": 1865,
    "server_bytes": 1764
+  },
+  {
+   "name": "offset_datetime",
+   "notes": [
+    {
+     "id": "offset_datetime-0",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8941666666666667,
+     "last_reinforced": "2026-10-18T07:30:15.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-1",
+     "kind": "preference",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8841664358796296,
+     "last_reinforced": "2026-10-18T07:30:14.126+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-3",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8641659722222222,
+     "last_reinforced": "2026-10-18T07:30:12.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-4",
+     "kind": "preference",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8541657435185185,
+     "last_reinforced": "2026-10-18T07:30:11.135+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-6",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8341652777777778,
+     "last_reinforced": "2026-10-18T07:30:09.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-7",
+     "kind": "preference",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8241666666666667,
+     "last_reinforced": "2026-10-18T07:30:15.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-9",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8041662037037037,
+     "last_reinforced": "2026-10-18T07:30:13.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    }
+   ],
+   "client_bytes": 1847,
+   "server_bytes": 1846
+  },
+  {
+   "name": "five_digit_fraction",
+   "notes": [
+    {
+     "id": "five_digit_fraction-0",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.9,
+     "last_reinforced": "2026-10-18T07:30:15.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-1",
+     "kind": "preference",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8899997685185186,
+     "last_reinforced": "2026-10-18T07:30:14.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-3",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8699993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-4",
+     "kind": "preference",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.859999074074074,
+     "last_reinforced": "2026-10-18T07:30:11.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-6",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8399986111111112,
+     "last_reinforced": "2026-10-18T07:30:09.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-7",
+     "kind": "preference",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8300000000000001,
+     "last_reinforced": "2026-10-18T07:30:15.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-9",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8099995370370371,
+     "last_reinforced": "2026-10-18T07:30:13.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    }
+   ],
+   "client_bytes": 2027,
+   "server_bytes": 1956
   }
  ]
 }

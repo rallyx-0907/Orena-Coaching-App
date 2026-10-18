@@ -1,4 +1,4 @@
-"""The client's coach_notes byte budget agrees with the server's (PR #279 / D-225).
+"""The client's coach_notes byte budget agrees with the server's (PR #280, follow-up to #279; context D-225).
 
 `tests/fixtures/coach_notes_budget.json` is written by the Node agent gate (`scripts/test_orena_agent.mjs`): the
 notes `memory.requestNotes()` builds for near-limit lists (English, Vietnamese, Chinese, long text, whole-number
@@ -29,5 +29,6 @@ def test_a_client_built_list_passes_the_server_measure(case):
     measured = coach_notes_bytes(notes)
     assert len(notes) <= MAX_COACH_NOTES
     assert measured <= MAX_COACH_NOTES_BYTES
+    assert measured == case["server_bytes"], "the fixture's server_bytes is the real server measure"
     assert case["client_bytes"] >= measured, "the client measure must never be below the server's"
     assert case["client_bytes"] <= MAX_COACH_NOTES_BYTES + 1

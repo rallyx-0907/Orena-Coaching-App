@@ -731,14 +731,14 @@ assert.equal(chooseStream({ message: 'Gọi mình là em nhé.', context: {} }),
 assert.equal(chooseStream({ message: 'Call me Minh.', context: {} }), 'S14', 'chooseStream: en address request');
 assert.equal(chooseStream({ message: '请叫我小明。', context: {} }), 'S14', 'chooseStream: zh address request');
 
-// Coach-notes byte budget (PR #279 / D-225): the client measures in the server's shape. The server refuses the
+// Coach-notes byte budget (PR #280, follow-up to #279; context D-225): the client measures in the server's shape. The server refuses the
 // whole turn (422) when `coach_notes_bytes` passes 2048, so the client's measure must never be below it.
 {
   const { agentMemory: makeMemory, serverNoteBytes } = await import('../static/orena/agent/memory.js');
   const base = Date.parse('2026-10-18T07:30:15.123Z');
   // schemas.py `coach_notes_bytes`, ported: validated fields in model order, explicit nulls, pydantic's datetime
   // text (microseconds only when non-zero, `Z` for UTC), Python float text, compact UTF-8 JSON.
-  const pyDate = (text) => (text == null ? null : text.replace(/\.(\d{3})Z$/, (m, ms) => (ms === '000' ? 'Z' : `.${ms}000Z`)));
+  const pyDate = (text) => (text == null ? null : text.replace(/\.(\d+)(Z|[+-]\d\d:\d\d)$/, (m, frac, zone) => (/^0+$/.test(frac) ? zone : `.${frac.padEnd(6, '0').slice(0, 6)}${zone}`)));
   const pyFloat = (n) => (Number.isInteger(n) ? `${n}.0` : String(n));
   const serverBytes = (notes) => {
     const items = notes.map((n) => `{"id":${JSON.stringify(n.id)},"kind":${JSON.stringify(n.kind)},"text":${JSON.stringify(n.text)},"weight":${pyFloat(n.weight)},"last_reinforced":${JSON.stringify(pyDate(n.last_reinforced))},"expires_at":${JSON.stringify(pyDate(n.expires_at ?? null))},"address":null}`);
@@ -747,7 +747,7 @@ assert.equal(chooseStream({ message: '请叫我小明。', context: {} }), 'S14'
   const clientBytes = (notes) => 2 + notes.reduce((sum, n) => sum + serverNoteBytes(n) + 1, 0);
   const kinds = ['goal', 'preference', 'struggle'];
   const cases = [];
-  for (const [name, unit, length, weightOf, expires] of [
+  for (const [name, unit, length, weightOf, expires, restyle = (t) => t] of [
     ['en', 'Wants to practise short travel dialogues every morning. ', 60, (i) => 0.9 - i / 100, false],
     ['vi', 'Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. ', 55, (i) => 0.9 - i / 100, true],
     ['zh', '想每天早上练习关于旅行的简短对话，并且复习生词。', 40, (i) => 0.9 - i / 100, false],
@@ -755,12 +755,14 @@ assert.equal(chooseStream({ message: '请叫我小明。', context: {} }), 'S14'
     ['vi_whole_weights', 'Ổn', 8, () => 1, false],
     ['long', 'x', 400, (i) => 0.8 - i / 100, false],
     ['tiny', 'a', 1, (i) => 0.5 + i / 1000, true],
+    ['offset_datetime', 'Muốn luyện nghe mỗi tối. ', 50, (i) => 0.9 - i / 100, true, (t) => t.replace('Z', '+07:00')],
+    ['five_digit_fraction', '每天练习口语。', 30, (i) => 0.9 - i / 100, true, (t) => t.replace(/\.\d{3}Z$/, '.12345Z')],
   ]) {
     const memory = makeMemory({ getItem: () => null, setItem: () => {} }, `budget-${name}`);
     for (let i = 0; i < 30; i += 1) {
       const text = unit.repeat(Math.ceil(length / unit.length)).slice(0, length);
-      const reinforced = new Date(base - (i % 7) * (i % 3 === 0 ? 1000 : 997)).toISOString();
-      memory.applyUpdate({ op: 'upsert', note: { id: `${name}-${i}`, kind: kinds[i % 3], text, weight: weightOf(i), last_reinforced: reinforced, expires_at: expires ? new Date(base + 86400000 * 30).toISOString() : null } }, base);
+      const reinforced = restyle(new Date(base - (i % 7) * (i % 3 === 0 ? 1000 : 997)).toISOString());
+      memory.applyUpdate({ op: 'upsert', note: { id: `${name}-${i}`, kind: kinds[i % 3], text, weight: weightOf(i), last_reinforced: reinforced, expires_at: expires ? restyle(new Date(base + 86400000 * 30).toISOString()) : null } }, base);
     }
     const notes = memory.requestNotes(base);
     const server = serverBytes(notes);
@@ -768,7 +770,7 @@ assert.equal(chooseStream({ message: '请叫我小明。', context: {} }), 'S14'
     assert.ok(notes.length >= 1 && notes.length <= 20, `${name}: at most 20 notes`);
     assert.ok(server <= 2048, `${name}: the server measure (${server}) is within 2048`);
     assert.ok(client >= server, `${name}: the client measure (${client}) is not below the server's (${server})`);
-    assert.ok(client + 16 <= 2048 + 1, `${name}: the client's own budget held`);
+    assert.ok(client + 16 <= 2048, `${name}: the client's own budget held`);
     cases.push({ name, notes, client_bytes: client, server_bytes: server });
   }
   // The old measure (JSON.stringify(note) + 1) undercounted: the defect this guards.
