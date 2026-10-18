@@ -277,9 +277,18 @@ class BillingService:
         self._pack_gate: Any = None
         # PR-MON-10 §4.8: the Polar customer clean-up of deleted incarnations; None = not attached.
         self._polar_cleanup: Any = None
+        self._polar_subscriptions: Any = None  # PR-MON-9; None = not attached
 
     def attach_credits(self, credits: Any) -> None:
         self._credits = credits
+
+    def attach_polar_subscriptions(self, subscriptions: Any) -> None:
+        """PR-MON-9: an existing subscriber's changes, cancel, resume and invoices (`polar_subscription.py`)."""
+        self._polar_subscriptions = subscriptions
+
+    @property
+    def polar_subscriptions(self) -> Any:
+        return self._polar_subscriptions
 
     def attach_polar_cleanup(self, cleanup: Any) -> None:
         self._polar_cleanup = cleanup
@@ -311,6 +320,10 @@ class BillingService:
     @property
     def orders(self) -> Any:
         return self._orders
+
+    @property
+    def commerce(self) -> Any:
+        return self._commerce
 
     @property
     def reconciliation(self) -> Any:
@@ -599,7 +612,8 @@ class BillingService:
 
     def start_checkout(self, *, incarnation_id: str, price_key: str, operation_id: str, return_url: str,
                        cancel_url: str, confirmed_amount_minor: int | None, confirmed_currency: str | None,
-                       customer_email: str = "", confirmed_credit_units: int | None = None) -> dict[str, Any]:
+                       customer_email: str = "", confirmed_credit_units: int | None = None,
+                       embed_origin: str = "") -> dict[str, Any]:
         """`confirmed_*` is the price the learner saw and confirmed. It is never charged - the server's price is -
         but a checkout whose confirmed price is not the server's does not start (`price_changed`)."""
 
@@ -638,7 +652,8 @@ class BillingService:
             # this order, and never a link to pay an order that is already paid or refunded.
             raise CheckoutRefused("checkout_already_started" if order["state"] == "pending" else "order_closed")
         intent = CheckoutIntent(operation_id=operation_id, incarnation_id=incarnation_id, price=price,
-                                return_url=return_url, cancel_url=cancel_url, customer_email=customer_email)  # fmt: skip
+                                return_url=return_url, cancel_url=cancel_url, customer_email=customer_email,
+                                embed_origin=embed_origin if price.gateway == "polar" else "")  # fmt: skip
         if gateway.kind == "domestic":
             return self._open_domestic_link(gateway, intent, order, price.gateway)
         else:
@@ -895,6 +910,8 @@ class BillingService:
                                               update=update, external_object_reference=fact.external_reference,
                                               payload_digest=fact.payload_digest)  # fmt: skip
         result = self._outcome(outcome, f"{fact.gateway} subscription {fact.external_reference}")
+        if self._polar_subscriptions is not None:
+            self._polar_subscriptions.forget(incarnation)  # PR-MON-9 §4.1: the enrichment is stale now
         if result.status in _UNDECIDED:
             self._item("event_undecided", fact.gateway, fact.event_id, external_event_id=fact.event_id,
                        provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,

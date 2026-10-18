@@ -366,3 +366,7 @@ D-MON-033 | 2026-10-17 | Billing UI on Polar (owner, PR-MON-9). The design draws
   "Update":** opens Polar's customer portal; the in-app card sheet is not built. **Invoices:** listed and downloaded
   in the app through Polar's API. | Keep the designed in-app flow wherever Polar allows it, without card data in
   Orena. | `PR-MON-9_DESIGN.md`.
+D-MON-034 | 2026-10-17 | Plan prices are shown in US dollars in every language (owner, PR-MON-9). Polar sells plans in
+  USD only, so Pricing and the Billing Sheet show the dollar amount the learner is charged, formatted in the interface
+  language's own way; dong stay with Credits (SePay). This replaces D-153's dong-for-Vietnamese plan display. | No gap
+  between the price shown and the price charged. | `PR-MON-9_DESIGN.md`, `static/orena/screens/plan/model.js`.

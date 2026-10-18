@@ -40,12 +40,19 @@ usage.
    - customers may update their subscription: `allow_customer_updates` on;
    - plan changes are allowed between the four products: `update_plan` on;
    - proration is **invoice** (`proration_behavior=invoice`): the difference is charged at once.
-3. **Organization access token** with the scopes:
-   - `checkouts:write`;
-   - `products:read`;
-   - `customer_sessions:write`;
-   - `customers:write`, for the deleted-account clean-up (§4.8);
-   - `subscriptions:read`, for diagnostics.
+3. **Organization access token** with exactly these scopes (each proved on the sandbox token, 2026-10-18; PR-MON-9
+   review P1-4):
+   - `checkouts:write`: the embedded and hosted checkout;
+   - `products:read`: the Polar-side price check (R-MON-011);
+   - `customer_sessions:write`: the customer portal (Update card, manage);
+   - `customers:write`: the deleted-account clean-up (PR-MON-10 §4.8);
+   - `customers:read`: the customer by external id and its payment methods (the card summary, PR-MON-9 §4.4);
+   - `subscriptions:read`: the subscription view and the operation reconcile;
+   - `subscriptions:write`: in-app plan change, cancel and resume (PR-MON-9 §4.2-§4.3);
+   - `orders:read`: invoices (list, generate, download; PR-MON-9 §4.3).
+
+   Missing any of the last four, the in-app management routes answer 502 or 503 at gate 7b: check them before the
+   first real subscription.
 4. **Webhook**:
    - URL `https://<production domain>/api/billing/webhooks/polar`;
    - format **Raw**;
@@ -101,7 +108,8 @@ Any blocker names what is missing: fix it and recheck. Never work around a block
 ## Rollback
 
 **Pause new sales (the safe rollback).** Set `BILLING_NEW_SALES=off` and restart.
-- Readiness then reports `new_sales_paused`: no offer, and every new checkout answers `503 billing_not_ready`.
+- Readiness then reports `new_sales_paused`: no offer, and every new checkout **and every in-app plan change** (an
+  upgrade charges like a sale) answers `503 billing_not_ready`.
 - Everything a live subscription needs keeps running:
   - Polar webhooks are verified, recorded and applied (renewals, cancellations, `past_due`, revocations,
     `order.paid` receipts);
