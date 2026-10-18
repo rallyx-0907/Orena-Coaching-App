@@ -6390,3 +6390,7 @@ Gaps for the human or the backend lane:
 3. Speak summary and the Compare attempt metrics (Accuracy, Fluency) carry no score line; only the result block and the word detail do.
 4. No inline "AI may be wrong" hint exists in the app or the design; only the Terms line. Left to the human.
 5. Orena chat has no report link (Intelligence lane).
+
+## Load error: an unknown content id (2026-10-18)
+
+The pinned "Load error" frame (`Orena.dc.html`, ~141) draws a title, one line, Back and Retry, and no "unavailable" variant. When the API answers 404 or 410 for the content (for example `listening_lesson_not_found`, `retryable: false`), Retry cannot help and "the server did not respond" is untrue. The owner allowed small UI changes that reuse existing patterns (2026-10-18, via the owner's delegate): the same card shows the existing "No longer available" line (the Library's `contentUnavailable` wording, shell key `errorGone`) with Back only. Every other status keeps the frame's server/offline line and Retry.
