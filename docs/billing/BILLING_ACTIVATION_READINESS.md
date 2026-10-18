@@ -76,7 +76,7 @@ The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`,
 `writing_coach/product/catalog.py`:
 - prices: D-MON-032, USD Plus 9.99/79.99 and Pro 19.99/159.99;
 - assist limits: D-MON-025;
-- the other meters: catalogue v2 (D-160, D-161).
+- the other meters: catalogue v2 (D-161).
 
 `:8000` stores no `product.plan_catalog` row in `platform_settings`, so it shows the code's defaults.
 
