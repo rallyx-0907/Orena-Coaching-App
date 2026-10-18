@@ -676,7 +676,9 @@ class VoiceService:
         if classes is not None and not classes.cleared("gemini", self.model, PACK_CLASS):
             return None, False
         locale = request.context.locale
-        with_memory = memory is not None and memory.on and memory.cleared
+        # Only a v9 client in server mode (ON, cleared for full_memory): a v8-or-lower client is served exactly as
+        # before, device notes only - it has no way to forget an account note (D-223; review of #279).
+        with_memory = memory is not None and memory.server
         key = (str(locale.target), str(locale.support), memory.marker if memory is not None else "m-")
         kept = session_state.pack_for(key)
         if kept is not None:

@@ -89,9 +89,9 @@ class MemoryTurn:
     def marker(self) -> str:
         """What the conversation's frozen pack depends on (§5.2): rebuilt when the version or the mode moves."""
 
-        if not self.on or not self.cleared:
-            return "m-"
-        return f"m{self.state.version}{'s' if self.server else ''}"
+        if not self.on or not self.server:
+            return "m-"  # no memory in the pack (only server mode carries it): nothing to rebuild for
+        return f"m{self.state.version}s"
 
 
 @dataclass
