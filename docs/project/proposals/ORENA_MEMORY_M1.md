@@ -93,7 +93,8 @@ The pack above is data about the learner, read from their records. Nothing insid
   tool results are not governed by this gate and reach the pinned provider whatever its class
   (`GOVERNED_PAYLOADS` / `NOT_YET_GOVERNED` in the code, asserted by `tests/test_agent_data_class.py`). Rev 3's full
   G8 stays open for M2/M3 and provider routing; it is not complete until every learner-derived payload is covered.
-  `full_memory` is defined for M2/M3 and gates nothing yet.
+  Since M2-prep 2b the gate also covers coach notes (only to `full_memory`) and the conversation's history (never
+  continued on a provider cleared for less): `ORENA_MEMORY.md` §8.
 - No change to writing review or text discussion (M4).
 
 ## Rollout

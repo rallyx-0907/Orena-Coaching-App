@@ -67,7 +67,7 @@ from writing_coach.agent.decision import (
     DecisionState,
     RuleDecisionProvider,
 )
-from writing_coach.agent.errors import AgentError, ProviderUnavailable
+from writing_coach.agent.errors import AgentError, ProviderNotCleared, ProviderUnavailable
 from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, default_address, mirrored_address
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
@@ -136,7 +136,7 @@ from writing_coach.agent.provider import (
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.data_class import PACK_CLASS
+from writing_coach.agent.data_class import NOTES_CLASS, PACK_CLASS, DataClass, gating_on
 from writing_coach.agent.memory_pack import PACK_VERSION, pack_numbers
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
@@ -346,6 +346,7 @@ class _Turn:
         self.note_confirmed: str | None = None  # the learner tapped to keep these words (agent/notes.py)
         self.unaccented_keep = False  # a keep request typed without diacritics: asked back, not kept
         self.coach_notes: tuple[CoachNote, ...] = ()
+        self.notes_blocked = False  # the learner asked to change a note this provider may not see (G8)
         self.snapshot: dict | None = None
         self.pack_facts: set[int] = set()  # the numbers the learner pack states, when the turn was given one
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
@@ -503,7 +504,7 @@ class _Turn:
             raise
         except AgentError as exc:
             self._notes_unresolved()
-            if isinstance(exc, ProviderUnavailable) and self.route is not None:
+            if isinstance(exc, ProviderUnavailable) and not isinstance(exc, ProviderNotCleared) and self.route is not None:
                 self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
                                         lambda state: state.with_route_outcome(self.route, failed=True))  # fmt: skip
             if not self.should_stop():
@@ -543,6 +544,9 @@ class _Turn:
 
     def _model_turn(self, turn: TurnInput, tier1, decisions: Decisions, session) -> Iterator[Event]:
         tier1, mirrored = self._mirror(turn, tier1)
+        if not self.no_model:
+            self.route = self._pin_route(session)  # only a turn that asks a model pins one; before the pack (G8)
+            tier1 = self._gate_data_classes(turn, tier1, session)
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
         snapshot = self._opening_snapshot() if self.opening else None
         self.snapshot, self.coach_notes = snapshot, tier1.coach_notes
@@ -570,15 +574,14 @@ class _Turn:
             # It may be written again (a note to change or keep, records to read first) or replaced by the server's
             # question (a keep request without diacritics): nothing streams early.
             self.gate.hold_all = (bool(self.notes_asked) or self.needs_evidence or self.note_confirmed is not None
-                                  or self.unaccented_keep)  # fmt: skip
+                                  or self.unaccented_keep or self.notes_blocked)  # fmt: skip
         # A starter the learner tapped is in the interface language; the model is given it in the support language,
         # so it answers in that one (LEX-006). Anything the learner typed reaches it as typed.
         tapped = None if self.opening else learner_copy.prompt_in_support(
             turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
         self.heard = tapped or turn.message
-        if not self.no_model:
-            self.route = self._pin_route(session)  # only a turn that asks a model pins one; before the pack (G8)
         pack = None if self.no_model else self._learner_pack(session)
+        self._record_data_class_sent(session, pack=pack, notes=tier1.coach_notes)
         # The pack replaces the opening snapshot in the prompt (ORENA_MEMORY.md §3.1): one source of learner evidence,
         # not two with different rules. The snapshot stays here, for the greeting built without a model and its check.
         self.pack_facts = pack_numbers(pack)
@@ -641,6 +644,36 @@ class _Turn:
             # and it is not metered. An action with no words is answered by its offer (agent/honesty.py).
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
+
+    def _gate_data_classes(self, turn: TurnInput, tier1, session):
+        """G8 for the whole request (ORENA_MEMORY.md §8 b, c), while the gate is on: a conversation that has sent a
+        class of data is not continued on a provider cleared for less; coach notes go only to a provider cleared for
+        `full_memory`. The tier-1 context the model sees, without the notes it may not have."""
+
+        classes = self.rt.data_classes
+        if not gating_on(self.rt.pack, classes):
+            return tier1
+        provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
+        level = classes.of(provider, model)
+        if level < session.data_class_sent:
+            self.timeline.facts["data_class"] = {"refused": "conversation_class", "provider_class": level.label,
+                                                 "conversation_class": DataClass(session.data_class_sent).label}
+            raise ProviderNotCleared("the provider is not cleared for the data this conversation carries")
+        if tier1.coach_notes and level < NOTES_CLASS:
+            # A learner asking to change or forget a note is told it cannot be done here (owner, 2026-10-18).
+            self.notes_blocked = not self.opening and bool(notes_the_message_changes(turn.message, tier1.coach_notes))
+            self.timeline.facts["coach_notes"] = {"withheld": "provider_not_cleared", "provider_class": level.label,
+                                                  "count": len(tier1.coach_notes)}  # fmt: skip
+            return replace(tier1, coach_notes=())
+        return tier1
+
+    def _record_data_class_sent(self, session, *, pack: str | None, notes) -> None:
+        if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes):
+            return
+        level = max(PACK_CLASS if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE)
+        if level > session.data_class_sent:
+            self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                    lambda state: state.with_data_class_sent(level))  # fmt: skip
 
     def _learner_pack(self, session) -> str | None:
         """The conversation's learner pack (ORENA_MEMORY.md §5.2): built on its first model turn - and again for another
@@ -1097,6 +1130,10 @@ class _Turn:
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
                 key = "notes.not_kept" if self.note_confirmed is not None and not self.notes_asked else "notes.unchanged"
                 unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
+                                              address=self.address)[1]  # fmt: skip
+            elif self.notes_blocked:
+                # The notes were not sent to this provider (G8): nothing was changed, and the learner is told so.
+                unchanged = learner_copy.text("notes.unavailable", interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.needs_evidence and not self.records:
                 # Asked to read and still read nothing: no conclusion about the learner is made up (3.1).

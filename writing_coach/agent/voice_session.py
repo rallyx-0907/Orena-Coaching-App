@@ -55,7 +55,8 @@ from writing_coach.agent.outputs import (
     reply_tool_specs,
 )
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.data_class import PACK_CLASS
+from writing_coach.agent.data_class import NOTES_CLASS, PACK_CLASS, gating_on
+from writing_coach.agent.errors import VoiceUnavailable
 from writing_coach.agent.memory_pack import VOICE_BUDGET
 from writing_coach.agent.prompts import INSTRUCTION, context_document, selection_line, style_for
 from writing_coach.agent.provider import ProviderToolSpec
@@ -475,10 +476,12 @@ class VoiceService:
         request = TurnRequest.model_validate({**dict(body), "trigger": "open"})
         turn = TurnInput.from_request(request)
         session_state, _ = self.runtime.sessions.open(request.session_id, learner.user_key)
-        tier1 = build_tier1(turn, session_state.for_target(request.context.locale.target))
+        tier1 = self._gate_data_classes(build_tier1(turn, session_state.for_target(request.context.locale.target)),
+                                        session_state)  # fmt: skip
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
-        instruction = self._instruction(turn, tier1, here, session_state,
-                                        pack=self._learner_pack(session_state, learner, request))  # fmt: skip
+        pack = self._learner_pack(session_state, learner, request)
+        instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
+        self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes)
         specs = self._tool_specs(request, learner)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
@@ -656,6 +659,29 @@ class VoiceService:
             _log.warning("learner pack not built for voice", exc_info=True)
             return None
         return pack.text if pack is not None else None
+
+    def _gate_data_classes(self, tier1, session_state):
+        """G8 for the voice setup (ORENA_MEMORY.md §8 b, c), while the gate is on: a conversation that has sent a class
+        of data is not continued by a voice vendor cleared for less (the session does not open: text goes on), and
+        coach notes reach the vendor only when it is cleared for `full_memory`."""
+
+        classes = getattr(self.runtime, "data_classes", None)
+        if not gating_on(getattr(self.runtime, "pack", None), classes):
+            return tier1
+        level = classes.of("gemini", self.model)  # the voice vendor is Gemini Live
+        if level < session_state.data_class_sent:
+            raise VoiceUnavailable("the voice vendor is not cleared for the data this conversation carries")
+        if tier1.coach_notes and level < NOTES_CLASS:
+            return replace(tier1, coach_notes=())
+        return tier1
+
+    def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes) -> None:
+        if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None)):
+            return
+        level = max(PACK_CLASS if pack else 0, NOTES_CLASS if notes else 0)
+        if level > session_state.data_class_sent:
+            self.runtime.sessions.update(session_state.agent_session_id, learner.user_key,
+                                         lambda state: state.with_data_class_sent(level))  # fmt: skip
 
     def _instruction(self, turn: TurnInput, tier1, here, session_state, *, pack: str | None = None) -> str:
         context = json.dumps(context_document(turn, tier1, here, session_state), ensure_ascii=False)
