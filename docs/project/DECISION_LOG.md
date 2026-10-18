@@ -7412,7 +7412,7 @@ Owner decision of 2026-10-18 (via the delegate, delegation confirmed by the owne
 
 ## D-231 - Gate 2 qualifiers: an estimated level, an estimated score and a "Report a problem" link reuse existing patterns (PRE-204, PRE-206) (2026-10-18)
 
-**Status: PROPOSED** (owner decision of 2026-10-18, relayed by the owner's delegate, delegation confirmed; D-228 and D-230 were left free for other lanes). Implemented by the "Gate 2 qualifiers" PR. No schema, no migration, no new endpoint, no visual that the app does not already draw.
+**Status: ACCEPTED** (2026-10-18, accepted by Hermes for the owner. D-entry acceptance was delegated by the owner in the UI-lane session the same day. Independent review APPROVE on PR #299; CI green. D-228 and D-230 were left free for other lanes.) Implemented by the "Gate 2 qualifiers" PR. No schema, no migration, no new endpoint, no visual that the app does not already draw.
 
 Rule: a small UI change that the design does not draw reuses an existing design pattern or component, and is recorded here and in `UI_BACKEND_GAPS.md`.
 
