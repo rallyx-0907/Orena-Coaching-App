@@ -1,4 +1,4 @@
-"""Move published shared-library media between environments (D-233). No provider is called, no job is started.
+"""Move published shared-library media between environments (D-234). No provider is called, no job is started.
 
 Run it where the application's Python dependencies are (the application image or its virtualenv), against the media
 library roots of the environment (`MEDIA_LIBRARY_ROOT`, `MEDIA_LIBRARY_ASSET_ROOT`, or `--root` / `--asset-root`):

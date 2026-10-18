@@ -27,7 +27,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 PACK_FORMAT = "orena-content-pack"
-# Version 1: Reading and vocabulary. Version 2 adds `media_item` and binary `assets/` files (D-233). A pack is stamped with
+# Version 1: Reading and vocabulary. Version 2 adds `media_item` and binary `assets/` files (D-234). A pack is stamped with
 # the lowest version that can read it, so a Reading-only pack stays readable by an environment that has not updated.
 PACK_VERSION = 2
 KINDS = ("reading_source", "reading_article", "vocabulary_collection", "media_item")

@@ -1,4 +1,4 @@
-"""Published shared-library media in a content pack (D-233): export and import, one implementation.
+"""Published shared-library media in a content pack (D-234): export and import, one implementation.
 
 The Admin route (`content_pack_api`) and the operator CLI (`scripts/media_content_pack.py`) both call this module.
 It never calls a provider, never queues a processing job and never touches a database: it reads and writes the

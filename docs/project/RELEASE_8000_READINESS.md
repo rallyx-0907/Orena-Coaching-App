@@ -25,7 +25,7 @@ ACL to the operator. Flags: `APP_ENV=staging`, `ORENA_ACCOUNT_BACKBONE=on`, `ORE
 `PRONUNCIATION_PROVIDER` empty (Azure when configured). Provider credentials: Gemini and Azure Speech in the env file; a
 :8000-own `AI_PROVIDER_SECRETS_KEY`. AI routing rows (`ai.active_selection`, eight `ai.capability.*`) mirror :8021
 (gemini-3.5-flash-lite). Content: the S1 reading pack (4 sources, 30 EN + 22 ZH texts) promoted by content pack, sources
-approved in Admin, 52 jobs consumed by the worker, all published. Media has a content-pack path since D-233 (see "Moving published content :8021 to :8000" below).
+approved in Admin, 52 jobs consumed by the worker, all published. Media has a content-pack path since D-234 (see "Moving published content :8021 to :8000" below).
 
 ## Decided 2026-10-08 (D-143) - read this first
 
@@ -458,7 +458,7 @@ What the code and scripts now do. None of it was run against :8000; the human de
   sign-in is a top-level redirect and needs no directive. Open before enforcing: drop `'unsafe-eval'` (Landing) and
   `'unsafe-inline'` styles (design) only with a design change; confirm the Polar frame hosts against a live checkout.
 
-## Moving published content :8021 to :8000 (D-233, PROPOSED)
+## Moving published content :8021 to :8000 (D-234, PROPOSED)
 
 One official tool moves approved content between environments: `$0`, no provider call, no processing job, no schema
 change. The pack is an `.orenapack` zip (`format` `orena-content-pack`, `version` 2 once it carries media; a pack of

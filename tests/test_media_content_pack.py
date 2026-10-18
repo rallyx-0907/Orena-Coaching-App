@@ -1,4 +1,4 @@
-"""Published shared media moved between two environments (D-233): the rehearsal.
+"""Published shared media moved between two environments (D-234): the rehearsal.
 
 A temp source store with mixed entries is exported; only the published shared ones travel. They are imported into
 an empty temp store: transcripts and translations arrive byte for byte, asset checksums match, a second import

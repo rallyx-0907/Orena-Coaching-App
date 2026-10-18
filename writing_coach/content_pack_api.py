@@ -56,7 +56,7 @@ def configure_content_packs(**kwargs: Any) -> None:
 class ExportBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kinds: list[str] = Field(default_factory=lambda: ["reading", "vocabulary"], max_length=4)  # also "media" (D-233)
+    kinds: list[str] = Field(default_factory=lambda: ["reading", "vocabulary"], max_length=4)  # also "media" (D-234)
     languages: list[str] = Field(default_factory=list, max_length=4)
     source_slug_prefix: str = Field(default="", max_length=120)
     collection_prefix: str = Field(default="", max_length=160)
