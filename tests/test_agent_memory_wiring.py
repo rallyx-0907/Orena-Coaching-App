@@ -82,17 +82,19 @@ def v9_request(message="Tại sao tôi sai từ này?", **extra):
 # --- the pack -------------------------------------------------------------------------------------------------------
 
 
-def test_a_full_memory_provider_gets_the_learners_memory_in_the_pack():
-    rt, provider, store = wired([reply("a1")])
+def test_a_full_memory_provider_gets_the_learners_memory_for_a_v9_client_only():
+    rt, provider, store = wired([reply("a1"), reply("a2")])
     keep(store, rt.memory)
-    run(rt)
-    assert seen(provider, "Mình học để phỏng vấn")
+    run(rt, v9_request())
+    assert seen(provider, "Mình học để phỏng vấn", 0)
+    run(rt)  # a v8-or-lower client: exactly as before, device notes only (review of #279: D-223 keeps v8 unchanged)
+    assert not seen(provider, "Mình học để phỏng vấn", 1)
 
 
 def test_below_full_memory_the_pack_carries_no_memory():
     rt, provider, store = wired([reply("a1")], classes=PROFILE)
     keep(store, rt.memory)
-    run(rt)
+    run(rt, v9_request())
     assert not seen(provider, "Mình học để phỏng vấn")
     assert any(m.content.startswith("<orena_learner_pack") for m in provider.requests[0].messages)  # M1 pack stays
 
@@ -102,7 +104,7 @@ def test_without_an_active_incarnation_nothing_is_read():
     keep(store, mem)
     mem.incarnations.active = None  # the account was deleted, or the backbone has no incarnation for it
     rt, provider, _ = wired([reply("a1")], mem=mem)
-    run(rt)
+    run(rt, v9_request())
     assert not seen(provider, "Mình học để phỏng vấn")
 
 
@@ -119,18 +121,18 @@ def test_a_delete_reaches_the_next_turn_of_an_open_conversation():
     device deleted something): the next model call carries no deleted item."""
     rt, provider, store = wired([reply("a1"), reply("a2")])
     item = keep(store, rt.memory)
-    first = run(rt)
+    first = run(rt, v9_request())
     assert seen(provider, "Mình học để phỏng vấn", 0)
     store.delete_item(scope(rt.memory), item.id, T0)  # another worker
     session_id = next(e.session_id for e in first if e.name == "session")
-    run(rt, turn_request("hỏi tiếp", session_id=session_id))
+    run(rt, v9_request("hỏi tiếp", session_id=session_id))
     assert not seen(provider, "Mình học để phỏng vấn", 1)
 
 
 def test_a_memory_bearing_pack_raises_the_conversation_to_full_memory():
     rt, provider, store = wired([reply("a1")])
     keep(store, rt.memory)
-    first = run(rt)
+    first = run(rt, v9_request())
     session_id = next(e.session_id for e in first if e.name == "session")
     state, _ = rt.sessions.open(session_id, VI.user_key)
     assert state.data_class_sent >= 2
@@ -234,11 +236,15 @@ def setup_text(post):
 def test_voice_gets_the_memory_when_cleared_and_none_with_memory_off():
     from tests.test_agent_voice_session import LEARNER
 
-    service, post, body, mem, store = voice()
+    service, post, body, mem, store = voice(version=9)
     keep(store, mem)
     service.open(body, LEARNER)
     assert "Mình học để phỏng vấn" in setup_text(post)
-    service, post, body, mem, store = voice()
+    service, post, body, mem, store = voice(version=5)  # v8 or lower: no account notes
+    keep(store, mem)
+    service.open(body, LEARNER)
+    assert "Mình học để phỏng vấn" not in setup_text(post)
+    service, post, body, mem, store = voice(version=9)
     keep(store, mem)
     store.set_enabled(scope(mem), False)
     service.open(body, LEARNER)

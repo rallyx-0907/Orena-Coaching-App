@@ -762,7 +762,9 @@ class _Turn:
                                                        "provider_class": classes.of(provider, model).label}
                 return None
         memory = self.memory
-        with_memory = memory is not None and memory.on and memory.cleared
+        # Only a v9 client in server mode (ON, cleared for full_memory): a v8-or-lower client is served exactly as
+        # before, device notes only - it has no way to forget an account note (D-223; review of #279).
+        with_memory = memory is not None and memory.server
         # Frozen per conversation and language pair, and per memory version (§5.2): a change on another worker or
         # device moves the version, so the next model call rebuilds the pack without what was deleted.
         key = (str(self.locale.target), str(self.locale.support), memory.marker if memory is not None else "m-")
