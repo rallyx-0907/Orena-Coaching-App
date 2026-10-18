@@ -448,6 +448,11 @@ class ReplyOutputs:
     # G8: the provider may read and change coach notes (cleared for full_memory); below it a new note is still kept,
     # the existing ones neither sent nor touched (owner, 2026-10-18).
     notes_available: bool = True
+    # v9 (contract §5.4): the account applies the notes (agent/memory_runtime.py ServerNotes) and every note event says
+    # `stored: "server"`; None - the device stores them, and `stored` says so to a v9 client ("device") or is absent.
+    server_notes: Any = None
+    stored: str | None = None
+    note_texts: Mapping[str, str] = field(default_factory=dict)  # coach note id -> its text (a server remove carries it)
     # A turn the server read as correcting these notes (agent/notes.py): a correction replaces, it never forgets.
     correcting: tuple[str, ...] = ()
     # The notes this message names as changed, and how (agent/notes.py): what a replace or a forget may touch (3.2).
@@ -759,6 +764,8 @@ class ReplyOutputs:
             return "refused: the learner's message does not correct that note"
         if self._note_updates() >= MAX_NOTE_UPDATES:
             return f"refused: at most {MAX_NOTE_UPDATES} notes a turn"
+        if self.server_notes is not None:
+            return self._keep_on_server(str(kind), text.strip(), None if replaces is None else str(replaces))
         weight = min(1.0, self.notes[str(replaces)] + REINFORCE) if replaces is not None else NEW_NOTE_WEIGHT
         note = {
             "id": str(replaces) if replaces is not None else f"n-{secrets.token_hex(5)}",
@@ -768,8 +775,31 @@ class ReplyOutputs:
             "last_reinforced": datetime.now(UTC).isoformat(),
             "expires_at": None,
         }
-        self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note))
+        self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note, stored=self.stored))
         return f"accepted: kept as {note['id']}; you may say it is noted"
+
+    def _keep_on_server(self, kind: str, text: str, replaces: str | None) -> str:
+        """The note on the account (v9): the event reports what the server applied; a correction also removes the
+        note it replaced, with its text, so a same-text device copy goes too (contract §5.4)."""
+
+        from writing_coach.agent.memory_store import MemoryLimit, MemoryOff, MemoryUnavailable
+
+        try:
+            item = self.server_notes.keep(kind=kind, text=text, replaces=replaces)
+        except MemoryOff:
+            return "refused: memory.off - the learner switched Orena Memory off, so nothing is kept; say so plainly"
+        except MemoryLimit:
+            return ("refused: memory.limit - the learner already keeps the most notes allowed; nothing is kept until "
+                    "they delete one in the memory view - say so plainly")  # fmt: skip
+        except MemoryUnavailable:
+            return "refused: memory.unavailable - nothing can be kept right now; say so plainly"
+        if replaces is not None and replaces != item.id:
+            self.memory_updates.append(MemoryUpdateEvent(
+                op="remove", note={"id": replaces, "text": self.note_texts.get(replaces, "")}, stored="server"))
+        note = {"id": item.id, "kind": item.kind, "text": item.text, "weight": 1.0,
+                "last_reinforced": item.created_at.isoformat(), "expires_at": None}  # fmt: skip
+        self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note, stored="server"))
+        return f"accepted: kept as {item.id}; you may say it is noted"
 
     def _forget(self, args: Mapping[str, Any]) -> str:
         if self.opening:
@@ -784,7 +814,19 @@ class ReplyOutputs:
                     "remember_note with replaces set to its id and the new wish")  # fmt: skip
         if note_id not in self.asked or self.notes_intent != FORGET:
             return "refused: the learner did not ask to forget that note"
-        self.memory_updates.append(MemoryUpdateEvent(op="remove", note={"id": note_id}))
+        if self.server_notes is not None:
+            from writing_coach.agent.memory_store import MemoryUnavailable
+
+            try:
+                forgotten = self.server_notes.forget(note_id)
+            except MemoryUnavailable:
+                return "refused: memory.unavailable - nothing can be changed right now; say so plainly"
+            if not forgotten:
+                return "refused: no such coach note"
+            self.memory_updates.append(MemoryUpdateEvent(
+                op="remove", note={"id": note_id, "text": self.note_texts.get(note_id, "")}, stored="server"))
+            return f"accepted: {note_id} is forgotten; you may say so"
+        self.memory_updates.append(MemoryUpdateEvent(op="remove", note={"id": note_id}, stored=self.stored))
         return f"accepted: {note_id} is forgotten; you may say so"
 
     def _offer_address(self, args: Mapping[str, Any]) -> str:

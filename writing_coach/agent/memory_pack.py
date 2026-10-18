@@ -553,12 +553,19 @@ class PackBuilder:
     # until the M2 store exists; a reader that raises sends no memory and costs the turn nothing.
     memory: Callable[[str, datetime], Any] | None = None
 
-    def build(self, *, target: str, support: str, budget_tokens: int = CHAT_BUDGET) -> LearnerPack | None:
+    def build(self, *, target: str, support: str, budget_tokens: int = CHAT_BUDGET, memory: bool = True,
+              shape: Callable[[Any], Any] | None = None) -> LearnerPack | None:  # fmt: skip
+        """`memory=False`: no Orena Memory in this pack (the model is not cleared for `full_memory`, §8). `shape`
+        adjusts the section first (server notes reach the model as coach notes, not twice)."""
+
         if not self.enabled:
             return None
         now = self.clock()
+        section = self._memory(target, now) if memory else None
+        if shape is not None:
+            section = shape(section)
         return build_pack(self.sources, target=target, support=support, now=now, budget_tokens=budget_tokens,
-                          memory=self._memory(target, now))  # fmt: skip
+                          memory=section)  # fmt: skip
 
     def _memory(self, target: str, now: datetime) -> Any:
         if self.memory is None:

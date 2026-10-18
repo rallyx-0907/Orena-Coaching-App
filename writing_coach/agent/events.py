@@ -38,6 +38,7 @@ from writing_coach.agent.contract import (
     MAX_ACTION_LABEL_CHARS,
     MAX_DISPLAY_REASON_CHARS,
     MEMORY_OPS,
+    MEMORY_STORED_VERSION,
     PROMPT_NAMESPACE,
     SURFACES,
     TERMINAL_EVENTS,
@@ -268,17 +269,30 @@ class MemoryUpdateEvent(Event):
     name: ClassVar[str] = "memory_update"
     op: str
     note: dict[str, Any]
+    # v9 (§5.4): "server" - the account already applied it, the device must not store it; "device" - the device stores
+    # it, as before v9. None: not sent (a v8 client, or a v8 server). Never sent below v9 (TurnStream.emit).
+    stored: str | None = None
 
     @model_validator(mode="after")
     def _shape(self) -> MemoryUpdateEvent:
         if self.op not in MEMORY_OPS:
             raise ValueError(f"unknown memory op {self.op!r}")
+        if self.stored not in (None, "server", "device"):
+            raise ValueError(f"unknown stored {self.stored!r}")
         if self.op == "remove":
-            if set(self.note) != {"id"}:
-                raise ValueError("remove carries only the note id")
+            # A server remove also carries the note's text, so the device clears a copy with the same id and text.
+            allowed = ({"id"}, {"id", "text"}) if self.stored == "server" else ({"id"},)
+            if set(self.note) not in allowed:
+                raise ValueError("remove carries the note id (and, applied by the server, its text)")
         else:
             CoachNote.model_validate(self.note)
         return self
+
+    def to_wire(self) -> dict[str, Any]:
+        wire = super().to_wire()
+        if wire.get("stored") is None:
+            wire.pop("stored", None)
+        return wire
 
 
 class VoiceStateEvent(Event):
@@ -434,6 +448,8 @@ class TurnStream:
             raise ContractViolation("only a segment cites evidence")
         if self.version < 2 and getattr(event, "display", None) is not None:
             event = event.model_copy(update={"display": None})  # a version-2 field
+        if self.version < MEMORY_STORED_VERSION and getattr(event, "stored", None) is not None:
+            event = event.model_copy(update={"stored": None})  # a version-9 field
         check = getattr(self, f"_check_{event.name}", None)
         if check is not None:
             check(event, cites)

@@ -103,7 +103,7 @@ from writing_coach.agent.events import (
     make_action,
 )
 from writing_coach.agent.limits import DEFAULT_LIMITS, AgentLimits
-from writing_coach.agent.contract import OPENING_MAX_CHARS, WORD_ACTIONS
+from writing_coach.agent.contract import MEMORY_STORED_VERSION, OPENING_MAX_CHARS, WORD_ACTIONS
 from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
     KEEP_NOTE_INTENT,
@@ -138,7 +138,15 @@ from writing_coach.agent.provider import (
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.data_class import CONTEXT_EVIDENCE_CLASS, NOTES_CLASS, PACK_CLASS, DataClass, gating_on
+from writing_coach.agent.data_class import (
+    CONTEXT_EVIDENCE_CLASS,
+    NOTES_CLASS,
+    PACK_CLASS,
+    DataClass,
+    gating_on,
+    pack_class,
+)
+from writing_coach.agent.memory_runtime import STORED_DEVICE, MemoryTurn, carries_memory, without_explicit
 from writing_coach.agent.memory_pack import PACK_VERSION, pack_numbers
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
@@ -260,6 +268,9 @@ class AgentRuntime:
     # Which learner data each provider may receive (agent/data_class.py, G8): the pack goes only to a pinned provider
     # cleared for it. None: no policy (tests and tools that build a runtime by hand), the pack is not gated.
     data_classes: Any = None
+    # Orena Memory (agent/memory_runtime.py, M2): None - this server has none (no keys or no account backbone), and
+    # every turn is exactly as before M2.
+    memory: Any = None
     turn_limiter: SlidingWindowLimiter = field(init=False)
     read_limiter: SlidingWindowLimiter = field(init=False)
     # The opening greeting is free of learner quota, so the model may write at most `model_openings_per_window` of
@@ -350,6 +361,8 @@ class _Turn:
         self.coach_notes: tuple[CoachNote, ...] = ()
         self.notes_blocked = False  # the learner asked to keep or change a note this provider may not see (G8)
         self.notes_available = True  # coach notes may be read and changed in this turn (G8: full_memory)
+        self.memory: MemoryTurn | None = None  # Orena Memory for this turn (agent/memory_runtime.py); None: none
+        self.pack_memory = False  # the pack sent carries Orena Memory (full_memory data, §8)
         self.snapshot: dict | None = None
         self.pack_facts: set[int] = set()  # the numbers the learner pack states, when the turn was given one
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
@@ -551,7 +564,9 @@ class _Turn:
             # Only a turn that asks a model pins one, and only once G8 allows it: a route refused for the data this
             # conversation carries is never pinned, so the next turn can still choose an eligible one.
             self.route, commit = self._choose_route(session)
+            self.memory = self._memory_turn()
             tier1, session = self._gate_data_classes(turn, tier1, session)
+            tier1 = self._with_memory(tier1)
             if commit is not None:
                 commit()
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
@@ -589,7 +604,7 @@ class _Turn:
         self.heard = tapped or turn.message
         pack = None if self.no_model else self._learner_pack(session)
         self._record_data_class_sent(session, pack=pack, notes=tier1.coach_notes,
-                                     context=carried_state(turn, tier1, session))  # fmt: skip
+                                     context=carried_state(turn, tier1, session), memory=self.pack_memory)  # fmt: skip
         # The pack replaces the opening snapshot in the prompt (ORENA_MEMORY.md §3.1): one source of learner evidence,
         # not two with different rules. The snapshot stays here, for the greeting built without a model and its check.
         self.pack_facts = pack_numbers(pack)
@@ -619,6 +634,9 @@ class _Turn:
             address_chosen=tier1.address.chosen,
             notes={note.id: note.weight for note in tier1.coach_notes},
             notes_available=self.notes_available,
+            server_notes=self._server_notes(),
+            stored=STORED_DEVICE if self.stream.version >= MEMORY_STORED_VERSION else None,
+            note_texts={note.id: note.text for note in tier1.coach_notes},
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
             asked=tuple(n.id for n in self.notes_asked),
             notes_intent=self.notes_intent,
@@ -662,7 +680,7 @@ class _Turn:
         (`earlier_in_session`) only to one cleared for `learning_profile`. The tier-1 context and the session the model is shown."""
 
         classes = self.rt.data_classes
-        if not gating_on(self.rt.pack, classes):
+        if not gating_on(self.rt.pack, classes, memory_on=self.memory is not None and self.memory.on):
             return tier1, session
         provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
         level = classes.of(provider, model)
@@ -683,17 +701,48 @@ class _Turn:
             tier1, session = without_carried_state(turn, tier1, session)
         return tier1, session
 
-    def _record_data_class_sent(self, session, *, pack: str | None, notes, context: bool) -> None:
-        """The highest class this request carries - the pack, coach notes, and the chat context's learning evidence -
-        raises the conversation's class (§8 c), whichever of them was actually sent."""
+    def _record_data_class_sent(self, session, *, pack: str | None, notes, context: bool, memory: bool = False) -> None:
+        """The highest class this request carries - the pack (with Orena Memory: full_memory), coach notes, and the chat
+        context's learning evidence - raises the conversation's class (§8 c), whichever of them was actually sent."""
 
-        if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes):
+        if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes, memory_on=memory):
             return
-        level = max(PACK_CLASS if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE,
+        level = max(pack_class(with_memory=memory) if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE,
                     CONTEXT_EVIDENCE_CLASS if context else DataClass.NONE)  # fmt: skip
         if level > session.data_class_sent:
             self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
                                     lambda state: state.with_data_class_sent(level))  # fmt: skip
+
+    def _memory_turn(self) -> MemoryTurn | None:
+        """Orena Memory for this turn (§5.2, §6, §8): the learner's switch and version, and whether the server applies
+        notes - a v9 client, memory ON, and the pinned model cleared for `full_memory`. None: no memory here."""
+
+        if self.rt.memory is None:
+            return None
+        classes = self.rt.data_classes
+        provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
+        cleared = classes is not None and classes.cleared(provider, model, DataClass.FULL_MEMORY)
+        return self.rt.memory.turn(self.learner.user_key, version=self.stream.version, cleared=cleared)
+
+    def _with_memory(self, tier1):
+        """Memory OFF: no device coach note reaches the model either (§6, F10 b). Server notes: the account's notes
+        are the model's coach notes, with their ids, and the device's are not used (contract v9 §5.4)."""
+
+        memory = self.memory
+        if memory is None:
+            return tier1
+        if memory.off and tier1.coach_notes:
+            self.timeline.facts["coach_notes"] = {"withheld": "memory_off", "count": len(tier1.coach_notes)}
+            return replace(tier1, coach_notes=())
+        if memory.server:
+            return replace(tier1, coach_notes=self.rt.memory.notes(memory, to_internal(self.locale.target)))
+        return tier1
+
+    def _server_notes(self):
+        memory = self.memory
+        if memory is None or not memory.server:
+            return None
+        return self.rt.memory.server_notes(self.learner.user_key, to_internal(self.locale.target))
 
     def _learner_pack(self, session) -> str | None:
         """The conversation's learner pack (ORENA_MEMORY.md §5.2): built on its first model turn - and again for another
@@ -710,14 +759,21 @@ class _Turn:
                 self.timeline.facts["learner_pack"] = {"version": PACK_VERSION, "withheld": "provider_not_cleared",
                                                        "provider_class": classes.of(provider, model).label}
                 return None
-        key = (str(self.locale.target), str(self.locale.support))
+        memory = self.memory
+        with_memory = memory is not None and memory.on and memory.cleared
+        # Frozen per conversation and language pair, and per memory version (§5.2): a change on another worker or
+        # device moves the version, so the next model call rebuilds the pack without what was deleted.
+        key = (str(self.locale.target), str(self.locale.support), memory.marker if memory is not None else "m-")
         kept = session.pack_for(key)
         if kept is not None:
             self.timeline.facts["learner_pack"] = {"version": PACK_VERSION, "built": False}
+            self.pack_memory = with_memory and session.learner_pack_memory
             return kept
         try:
             with learner_context(self.learner):
-                pack = builder.build(target=to_internal(self.locale.target), support=to_internal(self.locale.support))
+                pack = builder.build(target=to_internal(self.locale.target), support=to_internal(self.locale.support),
+                                     memory=with_memory,
+                                     shape=without_explicit if memory is not None and memory.server else None)
         except Exception:  # noqa: BLE001 - a pack is never worth the learner's answer
             _log.warning("learner pack not built", exc_info=True, extra={"trace_id": self.trace_id})
             return None
@@ -725,8 +781,9 @@ class _Turn:
             return None
         self.timeline.facts["learner_pack"] = {"version": PACK_VERSION, "built": True, "tokens": pack.tokens,
                                                "evidence_lines": len(pack.provenance), "trimmed": list(pack.trimmed)}
+        self.pack_memory = carried = carries_memory(pack)
         self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
-                                lambda state: state.with_learner_pack(pack.text, key))  # fmt: skip
+                                lambda state: state.with_learner_pack(pack.text, key, memory=carried))  # fmt: skip
         return pack.text
 
     def _choose_route(self, session):
@@ -1369,3 +1426,4 @@ class _Turn:
             except Exception:
                 # Metering never costs a learner their answer (text_discussion.py pattern).
                 _log.warning("agent metering failed", exc_info=True)
+
