@@ -59,7 +59,7 @@
       "blocks": [
         { "p": "When you use Orena Intelligence or another AI feature (for example writing feedback, translation, dictionary entries, text discussions or pronunciation scoring), the relevant text or audio is sent to AI and speech service providers that process it on our behalf to return the result. We send what the feature needs, along with your level and target language. In Orena Intelligence requests we remove your name, email address, profile picture and account identifiers." },
         { "p": "These providers may be located outside Vietnam (see section 6), and we do not control their systems, so do not submit to an AI feature anything you do not want processed this way. AI-generated answers can be inaccurate; see the Terms of Service for more. The AI providers that currently process learner requests are Google (Gemini), Groq and OpenRouter, and Microsoft Azure Speech scores pronunciation. We keep this list up to date on this page." },
-        { "p": "Orena memory is on by default. It keeps short notes, written from your own words, so that Orena can personalise what it says to you. You can turn it off at any time in Settings, Privacy. Notes Orena remembers about you expire automatically after 180 days without use (about 6 months)." }
+        { "p": "Orena memory is on by default. It keeps short notes, written from your own words, so that Orena can personalise what it says to you. You can turn it off at any time in Settings, Privacy. Notes Orena keeps for you are kept for up to 180 days (about 6 months) from the last time you asked Orena to remember them; after that Orena stops using them and deletes them." }
       ]
     },
     {
