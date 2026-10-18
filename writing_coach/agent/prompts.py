@@ -29,6 +29,7 @@ from dataclasses import dataclass
 from writing_coach.agent.capability_registry import CapabilityEntry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.locale import to_internal
+from writing_coach.agent.notes import notes_the_message_changes
 from writing_coach.agent import surfaces
 from writing_coach.agent.address import Address, capitalised
 from writing_coach.agent.tokens import RESERVE_TOKENS, estimate_tokens, fit_chars, messages_tokens
@@ -400,6 +401,19 @@ def selection_line(tier1: Tier1Context) -> str | None:
     return line
 
 
+def notes_line(tier1: Tier1Context) -> str | None:
+    """The coach notes in one line, next to the learner's words: the live run on :8021 (2026-10-18) answered "no goal
+    on record" with the goal inside context.coach_notes. Kind and words only; the ids stay in the context."""
+
+    notes = [note for note in tier1.coach_notes if not note.id.startswith("address-")]
+    if not notes:
+        return None
+    # json.dumps: the learner's words reach the system channel only as escaped strings, never as prose.
+    kept = "; ".join(f"{note.kind}: {json.dumps(note.text, ensure_ascii=False)}" for note in notes)
+    return (f"What the learner asked you to keep (context.coach_notes), in their words - {kept}. When they ask what "
+            "they told you, answer from these.")
+
+
 CARRIED_HEAD = "[Earlier in this conversation - what was said before the messages below, not a new request]"
 CARRIED_ACK = "Understood."
 
@@ -543,6 +557,12 @@ def _tail_messages(turn: TurnInput, tier1: Tier1Context, session: AgentSessionSt
             messages.append(ProviderMessage(role="system", content=PENDING_NOTE))
         if session.recent_runs():
             messages.append(ProviderMessage(role="system", content=SENT_NOTE))
+    # Not on a turn that changes or cancels a note: there the model finds the note by its id in the context, and the
+    # restated line (no ids) made it ask "which note?" in the live run of 2026-10-18.
+    notes = (notes_line(tier1) if turn.message is not None and not opening and not screen_help
+             and not notes_the_message_changes(turn.message, tier1.coach_notes) else None)  # fmt: skip
+    if notes:
+        messages.append(ProviderMessage(role="system", content=notes))
     if turn.message is not None:
         messages.append(ProviderMessage(role="user", content=turn.message))
     return messages

@@ -376,8 +376,11 @@ def test_a_device_note_the_account_already_holds_is_sent_once():
     rt, provider, store = wired([reply("a1")])
     keep(store, rt.memory, text="giải thích thật ngắn gọn.")  # same_note: case and closing punctuation aside
     run(rt, v9_request())
-    text = "\n".join(m.content for m in provider.requests[0].messages)
+    # In the coach notes once; the line that restates them next to the learner's words (notes_line) also says it once.
+    messages = provider.requests[0].messages
+    text = "\n".join(m.content for m in messages if not m.content.startswith("What the learner asked you to keep"))
     assert text.casefold().count("giải thích thật ngắn gọn") == 1
+    assert messages[-2].content.casefold().count("giải thích thật ngắn gọn") == 1
 
 
 def test_device_notes_only_fill_the_room_the_account_notes_leave():
@@ -484,3 +487,35 @@ def test_a_question_about_a_kept_note_is_answered_from_it():
     assert seen(provider, "Mình học để phỏng vấn")
     assert "the device keeps them" not in system
     assert "asks what they told you" in system and "answer from that note" in system
+
+
+def test_the_kept_notes_are_restated_next_to_the_learners_words():
+    """:8021 smoke step 5, re-run after #283: the goal was in context.coach_notes (a hermetic repro of that turn shows
+    it), yet flash-lite answered "no goal on record". Like the selection, the notes are restated in one system line
+    right before the learner's message, escaped, kind and words only."""
+    rt, provider, store = wired([reply("a1")])
+    keep(store, rt.memory, text='Mình học để "phỏng vấn"')
+    run(rt, v9_request("Mình học tiếng Trung để làm gì nhỉ?"))
+    *_, line, learner = provider.requests[0].messages
+    assert learner.role == "user" and line.role == "system"
+    assert 'goal: "Mình học để \\"phỏng vấn\\""' in line.content and "answer from" in line.content
+
+
+def test_no_notes_line_without_notes():
+    rt, provider, _ = wired([reply("a1")])
+    body = v9_request().model_dump(mode="json", by_alias=True, exclude_none=True)
+    body.pop("coach_notes", None)
+    from writing_coach.agent.schemas import TurnRequest
+
+    run(rt, TurnRequest.model_validate(body))
+    assert not any("asked you to keep" in m.content for m in provider.requests[0].messages[1:])
+
+
+def test_a_turn_that_changes_a_note_gets_no_restated_line():
+    """Live run of #284 (2026-10-18): with the restated line, "Quên ghi chú về ví dụ đó đi" was answered "which note?"
+    twice, while main forgot it. A turn that changes or cancels a note is left as before: the notes with their ids in
+    the context, and the forget/replace rules."""
+    rt, provider, store = wired([reply("a1"), reply("a2")])
+    keep(store, rt.memory, text="Thích ví dụ thật ngắn")
+    run(rt, v9_request("Quên ghi chú về ví dụ đó đi."))
+    assert not any(m.content.startswith("What the learner asked you to keep") for m in provider.requests[0].messages)

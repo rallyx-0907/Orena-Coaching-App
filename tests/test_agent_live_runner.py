@@ -234,3 +234,17 @@ def test_a_kept_address_travels_as_context_address(slept, monkeypatch):
     second = client.sent[1]
     assert second["context"]["address"] == {"self": "chị", "user": "em", "lang": "vi"}
     assert second["coach_notes"] == []
+
+
+def test_the_recall_flow_passes_only_when_the_answer_uses_the_kept_note():
+    """:8021 smoke step 5 as a live flow: a goal kept, then a new conversation asks about it."""
+
+    def rows(text, kept=True):
+        return [{"flow": "notes-recall", "step": "remember", "memory_update": [note("n-1")] if kept else [],
+                 "error": None},
+                {"flow": "notes-recall", "step": "ask", "memory_update": [], "error": None, "text": text}]
+
+    assert run.recall_verdict(rows("Bạn học tiếng Trung để chuẩn bị phỏng vấn xin việc."))["pass"]
+    assert not run.recall_verdict(rows("Mình chưa ghi nhận mục tiêu nào của bạn."))["pass"]
+    assert not run.recall_verdict(rows("…phỏng vấn…", kept=False))["pass"]
+    assert run.recall_verdict([]) == {}
