@@ -329,7 +329,7 @@ def test_voice_open_and_extend_answer_the_daily_limit_and_mint_nothing(client, v
             assert detail == "rate_limited", path
     assert voice.calls == []
     agent_api._runtime.spend_guard = None  # the refused session did not use up the learner's one turn
-    assert client.post("/api/agent/voice/session", json={"contract_version": version}).status_code != 429
+    assert client.post("/api/agent/voice/session", json={"contract_version": version}).status_code == 200
 
 
 def test_an_absent_voice_answers_404_before_any_daily_limit(client):

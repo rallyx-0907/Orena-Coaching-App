@@ -13,3 +13,12 @@
 | P2-4 | `contract_version: 10.0` was read as 0. | **Fixed.** An integral float is accepted and a boolean is not. The gate keys on the declared version until `CONTRACT_VERSION` becomes 10 with the UI lane's contract text. |
 | P2-5 | No test exercised the real `LiveSpendGuard.check()`. | **Fixed.** `test_check_says_which_limit_refused_and_whether_it_is_a_fault`, plus a v10 refusal of a schema-invalid body (429, not 422). |
 | Note | Invalid JSON is answered 422 before the dependencies run. | **Pre-existing**, recorded here and unchanged. |
+
+## Round 2: reviewed commit `18dc1747`, outcome **APPROVE**
+
+There is no P0 or P1. The reviewer confirmed the voice-session order (404, then the spend limits, then the window) and that `refusal()` caches the same way `__call__` did.
+
+Optional P2s:
+- A voice that is present but switched off still runs the limits before its 404. This was already so before this PR (D-172) and is unchanged.
+- The test stub's `extend` signature does not match the real call. It is harmless.
+- The last assertion now checks `== 200`.
