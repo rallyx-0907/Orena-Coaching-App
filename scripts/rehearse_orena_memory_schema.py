@@ -10,8 +10,9 @@ It applies the proposal from a temporary Alembic version location holding only t
 Steps (each a PASS/FAIL row; non-zero exit on any FAIL):
  1. chain: `versions/` alone has the single head 20261015_0033; with the proposal the head is 20261018_0035.
  2. empty -> 0033 (real chain), then 0033 -> 0035; the three tables and their indexes exist.
- 3. constraints: class, kind, text length, value_key length, key_version, provenance size, expiry required for
-    continuity and inferred, evidence only on inferred, slot required off explicit; the composite owner FK refuses an
+ 3. constraints: class, kind, text length, value_key as lowercase hex, key_version, provenance size, expiry required for
+    continuity and inferred, evidence required on and only on inferred, slot required off explicit, a closed code on
+    continuity and kept with the learner's words on a promoted item; the composite owner FK refuses an
     incarnation of another user; uniqueness of a single-valued slot, of a multi-valued slot's value, of an explicit
     note's text, of a suppression key; one state row per incarnation, version never negative.
  4. downgrade refuses while memory rows exist; once they are gone it restores 0033's schema exactly; upgrade again
@@ -77,16 +78,19 @@ def schema(engine) -> dict:
 
 
 def memory_row(**over) -> dict:
-    row = {"id": str(uuid.uuid4()), "lang": "zh", "cls": "explicit", "kind": "goal", "slot": None, "text": "Đi làm",
-           "key": "a" * 64, "kv": 1, "src": "learner_asked", "prov": "{}", "exp": None, "ev": None}
+    row = {"id": str(uuid.uuid4()), "lang": "zh", "cls": "explicit", "kind": "goal", "slot": None, "code": None,
+           "text": "Đi làm", "key": "a" * 64, "kv": 1, "src": "learner_asked", "prov": "{}", "exp": None,
+           "ev": None, "win": None, "conf": None}
     row.update(over)
     return row
 
 
-INSERT = ("INSERT INTO learner_memories (id, incarnation_id, user_id, language_code, class, kind, slot, text,"
-          " value_key, key_version, source, provenance, expires_at, evidence_count, created_at, updated_at)"
-          " VALUES (:id, :inc, :user, :lang, :cls, :kind, :slot, :text, :key, :kv, :src, CAST(:prov AS jsonb),"
-          " CAST(:exp AS timestamptz), :ev, now(), now())")
+INSERT = ("INSERT INTO learner_memories (id, incarnation_id, user_id, language_code, class, kind, slot, code, text,"
+          " value_key, key_version, source, provenance, expires_at, evidence_count, evidence_window_days, confidence,"
+          " created_at, updated_at)"
+          " VALUES (:id, :inc, :user, :lang, :cls, :kind, :slot, :code, :text, :key, :kv, :src, CAST(:prov AS jsonb),"
+          " CAST(:exp AS timestamptz), :ev, :win, :conf, now(), now())")
+EXP = "2026-11-01T00:00:00Z"
 
 
 def main() -> int:
@@ -136,26 +140,42 @@ def main() -> int:
         check("3 text length", refuses("22001", text="x" * 201) or refuses("23514", text="x" * 201))
         check("3 empty text", refuses("23514", text=""))
         check("3 value_key length", refuses("23514", key="short"))
+        check("3 value_key is lowercase hex", refuses("23514", key="A" * 64) and refuses("23514", key="g" * 64))
+        check("3 continuity needs a code", refuses("23514", cls="continuity", kind="context", slot="interest",
+                                                   exp=EXP))
+        check("3 a code needs a slot", refuses("23514", code="engineering"))
+        check("3 a code is a closed-code word", refuses("23514", slot="occupation", code="Kỹ sư!"))
+        check("3 inferred needs its evidence", refuses("23514", cls="inferred", kind="preference",
+                                                       slot="explanation_length", exp=EXP)
+              and refuses("23514", cls="inferred", kind="preference", slot="explanation_length", exp=EXP,
+                          ev=0, win=30, conf=0.8))
+        check("3 a valid inferred item", ok(cls="inferred", kind="preference", slot="explanation_length", exp=EXP,
+                                            text="prefers concise explanations", key="7" * 64, ev=12, win=30,
+                                            conf=0.8))
+        check("3 a promoted item keeps the learner's words with slot and code",
+              ok(kind="context", slot="occupation", code="engineering", text="Mình là kỹ sư automation",
+                 key="8" * 64, src="learner_pinned"))
         check("3 key_version", refuses("23514", kv=0))
         check("3 provenance size", refuses("23514", prov='{"s": "' + "x" * 3000 + '"}'))
-        check("3 continuity needs expiry", refuses("23514", cls="continuity", slot="interest", kind="context"))
-        check("3 continuity needs a slot", refuses("23514", cls="continuity", exp="2026-11-01T00:00:00Z"))
+        check("3 continuity needs expiry", refuses("23514", cls="continuity", slot="interest", kind="context",
+                                                   code="sport"))
+        check("3 continuity needs a slot", refuses("23514", cls="continuity", exp=EXP))
         check("3 evidence only on inferred", refuses("23514", ev=3))
         check("3 owner: another user's incarnation", refused(engine, INSERT, {**b, **memory_row()}) == "23503")
 
         with engine.begin() as conn:
             conn.execute(text(INSERT), {**a, **memory_row(cls="continuity", kind="context", slot="occupation",
-                                                          key="b" * 64, exp="2026-11-01T00:00:00Z")})
+                                                          code="it", key="b" * 64, exp=EXP)})
             conn.execute(text(INSERT), {**a, **memory_row(cls="continuity", kind="context", slot="interest",
-                                                          key="c" * 64, exp="2026-11-01T00:00:00Z")})
+                                                          code="sport", key="c" * 64, exp=EXP)})
             conn.execute(text(INSERT), {**a, **memory_row(key="d" * 64)})
         check("3 single-valued slot once", refuses("23505", cls="continuity", kind="context", slot="occupation",
-                                                   key="e" * 64, exp="2026-11-01T00:00:00Z"))
-        check("3 multi-valued slot: another value", ok(cls="continuity", kind="context", slot="interest", key="f" * 64,
-                                                     exp="2026-11-01T00:00:00Z"))
+                                                   code="design", key="e" * 64, exp=EXP))
+        check("3 multi-valued slot: another value", ok(cls="continuity", kind="context", slot="interest", code="music",
+                                                     key="f" * 64, exp=EXP))
         check("3 multi-valued slot: the same value once", refuses("23505", cls="continuity", kind="context",
-                                                                  slot="interest", key="c" * 64,
-                                                                  exp="2026-11-01T00:00:00Z"))
+                                                                  slot="interest", code="sport", key="c" * 64,
+                                                                  exp=EXP))
         check("3 explicit text once", refuses("23505", key="d" * 64))
         check("3 another language is another item", ok(lang="en", key="d" * 64))
 

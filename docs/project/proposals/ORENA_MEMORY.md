@@ -262,8 +262,9 @@ evidence only; there is no fallback to user-only scope.
 | `class` | `explicit`, `inferred`, `continuity` (CHECK) |
 | `kind` | `preference`, `goal`, `plan`, `interest`, `context`, `address` (CHECK) |
 | `slot` | normalised subject key from a closed list per class (for example `explanation_length`, `occupation`, `interest`) |
-| `text` | NOT NULL, at most 200 characters (CHECK): explicit, the learner's words; inferred, the rule template; continuity, the slot's code (rendered by the UI) |
-| `value_key`, `key_version` | HMAC-SHA256 of normalised slot and value (continuity, inferred: slot and code) under the memory key `key_version` (below), for dedupe and suppression |
+| `text` | NOT NULL, at most 200 characters (CHECK): explicit, the learner's words; inferred, the rule template; continuity, the code's template key (rendered by the UI) |
+| `code` | the slot's closed code (CHECK: a closed-code word, only with a slot): required on continuity; **kept when a continuity item is pinned or promoted to explicit**, whose `text` is then the learner's latest verbatim words (§3.4, F8; review of PR #269); null on an explicit note with no slot |
+| `value_key`, `key_version` | HMAC-SHA256, lowercase hex (CHECK), of the normalised slot and value under the memory key `key_version` (below), the value being `code` when there is one, else `text`; a rotation re-keys a live row from the same column. For dedupe and suppression |
 | `source` | `learner_asked`, `learner_confirmed`, `learner_pinned`, `rule:<id>/<version>`, `summary` |
 | `evidence_count`, `evidence_window_days`, `confidence` | inferred only (CHECK); null otherwise |
 | `provenance` | JSON, at most 2 KB (CHECK): distinct session ids (a set), signal types, record refs; never learner text |

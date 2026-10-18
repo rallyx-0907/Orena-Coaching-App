@@ -3,12 +3,17 @@
 back alone.
 
 - `learner_memories`: one row per explicit, inferred or continuity item of a learner, in one learning language
-  (`'*'` for every language). Explicit text is the learner's words; continuity holds a slot's closed code; inferred
-  a rule's template. `value_key` is HMAC-SHA256 of the normalised slot and value under the memory key `key_version`
-  (agent/memory_keys.py), for dedupe and suppression. Uniqueness: a single-valued slot once per (incarnation,
+  (`'*'` for every language). `text` is what the item says: the learner's words (explicit), the rule's template
+  (inferred), the code's template key (continuity). `code` is the slot's closed code (agent/memory_slots.py): required
+  on continuity, kept when a continuity item is pinned or promoted to explicit - the explicit item then holds the
+  learner's latest verbatim words in `text` and the slot and code in `slot`, `code` (rev 4.1 §3.4, F8; review of PR
+  #269) - and null on an explicit note with no slot. `value_key` is HMAC-SHA256, as lowercase hex, of the normalised
+  slot and value under the memory key `key_version` (agent/memory_keys.py), the value being `code` when there is one,
+  else `text`; a key rotation re-keys a live row from the same column. Uniqueness: a single-valued slot once per (incarnation,
   language, class); a multi-valued slot once per value; an explicit item with no slot once per value (a retried
   `remember_note` does not duplicate). CHECKs bound the text (200 characters) and provenance (2 KB), require
-  `expires_at` for inferred and continuity, and keep the rule's evidence columns to inferred items.
+  `expires_at` for inferred and continuity, require the rule's evidence (count, window, confidence) on inferred items
+  and keep it to them, and require `code` on continuity.
 - `learner_memory_suppressions`: what a deleted continuity or inferred item leaves - the HMAC of its slot and value,
   no text, until its former expiry. A separate table, so a suppression never collides with a live item's key. Kept by
   a bulk delete; listed in the deletion enumeration; never exported.
@@ -52,6 +57,8 @@ KINDS = ("preference", "goal", "plan", "interest", "context", "address")
 # ORENA_MEMORY.md §4.1: one value per learner, language and class.
 SINGLE_VALUED_SLOTS = ("explanation_length", "support_language", "correction_timing", "occupation", "learning_purpose")
 MAX_TEXT = 200
+HEX64 = "^[0-9a-f]{64}$"  # agent/memory_keys.py: lowercase SHA-256 hex
+CODE = "^[a-z_]{1,40}$"  # a closed code of agent/memory_slots.py
 MAX_PROVENANCE_BYTES = 2048
 
 _INCARNATION_OWNER = "uq_account_incarnation_id_user"
@@ -87,6 +94,7 @@ def upgrade() -> None:
         sa.Column("kind", sa.String(16), nullable=False),
         sa.Column("slot", sa.String(40), nullable=True),
         sa.Column("text", sa.String(MAX_TEXT), nullable=False),
+        sa.Column("code", sa.String(40), nullable=True),
         sa.Column("value_key", sa.String(64), nullable=False),
         sa.Column("key_version", sa.SmallInteger(), nullable=False),
         sa.Column("source", sa.String(40), nullable=False),
@@ -103,13 +111,18 @@ def upgrade() -> None:
         sa.CheckConstraint(_in('"class"', CLASSES), name="ck_learner_memories_class"),
         sa.CheckConstraint(_in("kind", KINDS), name="ck_learner_memories_kind"),
         sa.CheckConstraint(f"char_length(text) BETWEEN 1 AND {MAX_TEXT}", name="ck_learner_memories_text"),
-        sa.CheckConstraint("char_length(value_key) = 64", name="ck_learner_memories_value_key"),
+        sa.CheckConstraint(f"value_key ~ '{HEX64}'", name="ck_learner_memories_value_key"),
+        sa.CheckConstraint(f"code IS NULL OR (code ~ '{CODE}' AND slot IS NOT NULL)", name="ck_learner_memories_code"),
+        sa.CheckConstraint("\"class\" <> 'continuity' OR code IS NOT NULL", name="ck_learner_memories_continuity_code"),
         sa.CheckConstraint("key_version >= 1", name="ck_learner_memories_key_version"),
         sa.CheckConstraint(f"octet_length(provenance::text) <= {MAX_PROVENANCE_BYTES}",
                            name="ck_learner_memories_provenance"),
         sa.CheckConstraint("\"class\" = 'explicit' OR expires_at IS NOT NULL", name="ck_learner_memories_expiry"),
         sa.CheckConstraint(
-            "\"class\" = 'inferred' OR (evidence_count IS NULL AND evidence_window_days IS NULL AND confidence IS NULL)",
+            "CASE WHEN \"class\" = 'inferred'"
+            " THEN evidence_count IS NOT NULL AND evidence_count >= 1 AND evidence_window_days IS NOT NULL"
+            " AND evidence_window_days >= 1 AND confidence IS NOT NULL"
+            " ELSE evidence_count IS NULL AND evidence_window_days IS NULL AND confidence IS NULL END",
             name="ck_learner_memories_evidence"),
         sa.CheckConstraint("\"class\" = 'explicit' OR slot IS NOT NULL", name="ck_learner_memories_slot"),
         sa.CheckConstraint("confidence IS NULL OR (confidence >= 0 AND confidence <= 1)",
@@ -142,7 +155,7 @@ def upgrade() -> None:
         sa.Column("expires_at", sa.DateTime(timezone=True), nullable=False),
         _owner("fk_learner_memory_suppressions_owner"),
         sa.CheckConstraint("\"class\" IN ('inferred', 'continuity')", name="ck_learner_memory_suppressions_class"),
-        sa.CheckConstraint("char_length(value_key) = 64", name="ck_learner_memory_suppressions_value_key"),
+        sa.CheckConstraint(f"value_key ~ '{HEX64}'", name="ck_learner_memory_suppressions_value_key"),
         sa.CheckConstraint("key_version >= 1", name="ck_learner_memory_suppressions_key_version"),
         sa.UniqueConstraint("incarnation_id", "language_code", "class", "slot", "value_key", "key_version",
                             name="uq_learner_memory_suppressions_key"),

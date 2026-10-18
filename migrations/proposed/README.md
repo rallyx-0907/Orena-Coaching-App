@@ -23,7 +23,7 @@ after the review and authorization its own docstring names.
 `learner_memories`, `learner_memory_suppressions`, `learner_memory_state` (`docs/project/proposals/ORENA_MEMORY.md`
 rev 4.1 §4.1, §4.4, §9; D-222). A draft: no ORM model, repository or deletion-enumeration entry yet (they come with the
 promotion PR). Rehearsed up/down/up with constraint probes by `scripts/rehearse_orena_memory_schema.py` on a throwaway
-PostgreSQL 16 (28 PASS). Re-parented on the head of the day at promotion; its independent review, promotion and
+PostgreSQL 16 (35 PASS). Re-parented on the head of the day at promotion; its independent review, promotion and
 application are human gates.
 
 **Open proposal:** `20261001_0024_media_entries.py` (MEDIA_METADATA_POSTGRES.md rev 2; APPROVE WITH CONDITIONS,
