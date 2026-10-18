@@ -83,13 +83,13 @@ async function loadDetail(kind, id, ctx) {
 }
 
 /* Whether an article has an approved question set to practise with (R2's "Practice this text").
-   404 means Free Reading (no set) - not an error the learner needs to see; any other failure
+   `set: null` means Free Reading (no set) - not an error the learner needs to see; any failure
    also hides the button rather than risk a control that cannot actually open anything. */
 async function loadHasPractice(kind, id) {
   if (kind !== 'article') return false;
   try {
-    await api.readingPracticeSet(id);
-    return true;
+    const payload = await api.readingPracticeSet(id);
+    return Boolean(payload?.set);
   } catch {
     return false;
   }

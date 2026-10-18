@@ -119,7 +119,10 @@ def article_set(article_id: str, response: Response) -> dict[str, Any]:
     _no_store(response)
     served = _guarded(lambda: _repo().served_set(article_id, support_language=_support()))
     if served is None:
-        raise orena_http_error(404, "reading_set_not_available", "This article has no practice for you yet.")
+        # A published article with no approved set is Free Reading: a normal state, answered as an empty
+        # body. Only an id that is no published article is "not found".
+        if not _guarded(lambda: _repo().article_is_published(article_id)):
+            raise orena_http_error(404, "reading_set_not_available", "This article is not available.")
     return {"set": served, "submit_enabled": submit_enabled(), "support_language": _support()}
 
 

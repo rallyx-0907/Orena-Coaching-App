@@ -42,6 +42,7 @@ import {
   mapWordCard,
   wordSavePayload,
   wordRestorePayload,
+  resaveContextualMeaning,
   mapSentenceSheet,
   highlightExample,
   vocabSavePayload,
@@ -147,6 +148,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let audioBusy = false;
   let audioAttribution = '';
   let audioMissing = false; // asked, and no recording exists for this word (LEX-010)
+  let keptNow = false; // whether the word is kept, as the learner's own save/unsave last left it
   let contextualPending = false; // true only while the learner's own "Why here?" is being answered (never on open)
   let contextualFailed = false; // the provider failed (contextStatus provider_error): offer Retry
 
@@ -341,6 +343,21 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     sheetEl.querySelector('[data-why-retry]')?.addEventListener('click', () => askContextual());
   }
 
+  /* A word saved from this sheet before "Why here?" answered holds the basic meaning. When the contextual
+     meaning arrives, the saved card takes it: the same save the Save button makes, which updates the
+     definition of the word already kept (its review schedule is untouched). */
+  async function keepContextualMeaning() {
+    // `keptNow` is changed only by the learner's own save/unsave (and by what the sheet read when it opened):
+    // an answer that arrives after an unsave must never bring the word back. The write holds `busy`, so an
+    // unsave is refused while it is in flight, exactly as during a save.
+    const saved = await resaveContextualMeaning({
+      api, card,
+      guard: { readOnly, kept: () => keptNow, busy: () => busy, setBusy: (value) => { busy = value; } },
+      stored: async () => item || fetchSavedItem(card.word),
+    });
+    if (saved) item = saved;
+  }
+
   async function toggleSave() {
     if (busy || readOnly) return;
     busy = true;
@@ -348,6 +365,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       if (card.saved) {
         const payload = wordRestorePayload(item);
         await api.deleteLibraryVocabulary(card.word);
+        keptNow = false;
         item = null;
         detail = detail ? { ...detail, saved: false } : detail;
         card = mapWordCard(card.word, { detail, item });
@@ -355,12 +373,14 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         toast(t('removedToast'), payload ? { undo: async () => {
           const restored = await api.restoreLibraryVocabulary(payload).catch(() => null);
           item = restored?.item || item;
+          if (restored) keptNow = true;
           detail = detail ? { ...detail, saved: true } : detail;
           card = mapWordCard(card.word, { detail, item });
           paint();
         }, undoLabel: s('undo') } : {});
       } else {
         const saved = await api.saveLibraryVocabulary(wordSavePayload(card, sentence, source));
+        keptNow = true;
         // Where the word was met goes to the account beside the word itself (D4 I12d).
         void keepProvenance({ term: card.word, source, sentence });
         item = saved?.item || item;
@@ -422,6 +442,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           if (!alive) return;
           loading = false;
           card = mapWordCard(target, { detail, item });
+          keptNow = Boolean(card.saved);
           paint();
           askContextual = () => {
             contextualPending = true;
@@ -430,8 +451,10 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             withinTime(api.wordDetail({depth: 'sheet', contextual: true, text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
-              const next = mapWordCard(target, {detail: enriched, item});
-              if (next.hasContent) { detail = enriched; card = next; }
+              // Whether it is kept is the learner's own last save/unsave, not what the answer says.
+              const answer = enriched ? { ...enriched, saved: keptNow } : enriched;
+              const next = mapWordCard(target, {detail: answer, item});
+              if (next.hasContent) { detail = answer; card = next; void keepContextualMeaning(); }
             }).catch(() => { contextualFailed = true; }).finally(() => {
               contextualPending = false;
               if (alive) paint();
@@ -440,6 +463,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           if (detail?.saved) {
             item = await fetchSavedItem(target);
             if (!alive) return;
+            keptNow = true;
             card = mapWordCard(target, { detail, item });
             paint();
           }

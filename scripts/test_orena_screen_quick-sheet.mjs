@@ -21,6 +21,7 @@ import {
   highlightExample,
   mapWordCard,
   wordSavePayload,
+  resaveContextualMeaning,
   wordRestorePayload,
   mapSentenceSheet,
   vocabSavePayload,
@@ -292,6 +293,41 @@ assert.equal(noteTypeColorKey('anything-else'), 'var(--muted)');
   assert.equal(mapWordCard('resilient', { detail: { ...detail, originalDefinition: null } }).originalDefinition, null);
   const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
   assert.match(sheetSrc, /card\.originalDefinition\s*\?\s*html`<div class="s-qs__general" lang=/, 'the original is the quieter second line, tagged with its own language');
+}
+
+/* --- A word saved before "Why here?" answers takes the contextual meaning onto its saved card --- */
+{
+  const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
+  const wordSheet = sheetSrc.slice(sheetSrc.indexOf('export async function openWordSheet'), sheetSrc.indexOf('Sentence Quick Sheet --'));
+  assert.match(wordSheet, /if \(next\.hasContent\) \{ detail = answer; card = next; void keepContextualMeaning\(\); \}/, 'an arrived contextual meaning is kept on the saved card');
+  // Unsave while "Why here?" is pending: the arriving answer says saved, but the learner's unsave wins, so no POST.
+  const toggler = wordSheet.slice(wordSheet.indexOf('async function toggleSave'), wordSheet.indexOf('async function openStroke'));
+  assert.match(toggler, /deleteLibraryVocabulary\(card\.word\);\s*keptNow = false;/, 'an unsave clears the learner flag');
+  assert.match(wordSheet, /\{ \.\.\.enriched, saved: keptNow \}/, 'an answer never overrides the learner flag with its own saved:true');
+  assert.match(wordSheet, /resaveContextualMeaning\(\{/, 'the sheet re-saves through the guarded model function');
+  const calls = [];
+  const api = { saveLibraryVocabulary: async (body) => { calls.push(body); return { item: { word: body.word, definition: body.definition } }; } };
+  const card = { word: 'bubble', meaning: 'bong bóng', meaningIsContextual: true };
+  const row = { word: 'bubble', source_kind: 'reading', source_fragment: 'A bubble rose.' };
+  const make = (over = {}) => {
+    const state = { kept: true, busy: false };
+    return { state, args: { api, card, stored: async () => row, guard: { readOnly: false, kept: () => state.kept, busy: () => state.busy, setBusy: (v) => { state.busy = v; }, ...over } } };
+  };
+  // The learner unsaves before the enrichment resolves: no POST.
+  { const { state, args } = make(); state.kept = false; assert.equal(await resaveContextualMeaning(args), null); assert.equal(calls.length, 0, 'an unsaved word is never re-saved'); }
+  // Unsaved while the stored row is being read: still no POST.
+  { const { state, args } = make(); args.stored = async () => { state.kept = false; return row; }; assert.equal(await resaveContextualMeaning(args), null); assert.equal(calls.length, 0); }
+  // A save or unsave in flight, or a read-only sheet: no POST.
+  { const { state, args } = make(); state.busy = true; await resaveContextualMeaning(args); assert.equal(calls.length, 0); }
+  { const { args } = make({ readOnly: true }); await resaveContextualMeaning(args); assert.equal(calls.length, 0); }
+  // An empty stored kind cannot be sent back (the API would default it to "manual"): not re-saved.
+  { const { args } = make(); args.stored = async () => ({ ...row, source_kind: '' }); await resaveContextualMeaning(args); assert.equal(calls.length, 0); }
+  // Still kept: only the definition changes, the stored source goes back as it was, and busy is held during the write.
+  { const { state, args } = make(); let heldDuring = false;
+    const original = api.saveLibraryVocabulary; api.saveLibraryVocabulary = async (body) => { heldDuring = state.busy; return original(body); };
+    const saved = await resaveContextualMeaning(args); api.saveLibraryVocabulary = original;
+    assert.deepEqual(calls, [{ word: 'bubble', definition: 'bong bóng', source_kind: 'reading', source_fragment: 'A bubble rose.' }]);
+    assert.equal(saved.definition, 'bong bóng'); assert.equal(heldDuring, true, 'busy is held while the write is in flight'); assert.equal(state.busy, false, 'and released after'); }
 }
 
 /* --- A tap is deterministic: the contextual (AI-backed) meaning is the learner's own "Why here?" ask only --- */
