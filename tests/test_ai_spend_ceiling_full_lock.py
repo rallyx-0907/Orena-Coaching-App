@@ -73,9 +73,10 @@ def test_media_steps_are_refused_at_the_ceiling(tmp_path):
     ledger.check_requests(100, KIND_SUPADATA)  # captions are not AI: their own quota decides
 
 
-@pytest.mark.parametrize("module", ["speech_asr", "speech_pronunciation", "word_audio_azure"])
-def test_speech_recognition_pronunciation_and_word_audio_check_the_ceiling_before_their_funding_backstop(module):
-    """Review of #308, P1-2: these paid calls had only the funding backstop. The ceiling check sits right before it."""
+@pytest.mark.parametrize("module", ["speech_asr", "speech_pronunciation"])
+def test_speech_recognition_and_pronunciation_check_the_ceiling_before_their_funding_backstop(module):
+    """Review of #308, P1-2: these paid calls had only the funding backstop. The ceiling check sits right before it.
+    (Word audio gives way to the next voice instead: tests/test_word_audio_azure.py.)"""
     import importlib
     import inspect
 
