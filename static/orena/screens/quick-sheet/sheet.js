@@ -42,6 +42,7 @@ import {
   mapWordCard,
   wordSavePayload,
   wordRestorePayload,
+  resaveContextualMeaning,
   mapSentenceSheet,
   highlightExample,
   vocabSavePayload,
@@ -347,23 +348,14 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
      definition of the word already kept (its review schedule is untouched). */
   async function keepContextualMeaning() {
     // `keptNow` is changed only by the learner's own save/unsave (and by what the sheet read when it opened):
-    // an answer that arrives after an unsave must never bring the word back, nor race a save in flight.
-    if (readOnly || busy || !keptNow || !card.meaningIsContextual || !card.meaning) return;
-    const stored = item || await fetchSavedItem(card.word);
-    if (!stored || !keptNow || busy) return;
-    try {
-      // Only the definition changes: the word's own source stays as it was first saved (the server keeps
-      // an empty field as it is, and a source kind is always sent, so the stored one is sent back).
-      const saved = await api.saveLibraryVocabulary({
-        word: card.word,
-        definition: card.meaning,
-        source_kind: stored.source_kind || 'dictionary',
-        source_fragment: stored.source_fragment || '',
-      });
-      item = saved?.item || item;
-    } catch {
-      /* The card keeps the meaning it had; the sheet shows no failure the learner did not cause. */
-    }
+    // an answer that arrives after an unsave must never bring the word back. The write holds `busy`, so an
+    // unsave is refused while it is in flight, exactly as during a save.
+    const saved = await resaveContextualMeaning({
+      api, card,
+      guard: { readOnly, kept: () => keptNow, busy: () => busy, setBusy: (value) => { busy = value; } },
+      stored: async () => item || fetchSavedItem(card.word),
+    });
+    if (saved) item = saved;
   }
 
   async function toggleSave() {
