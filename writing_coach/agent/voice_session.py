@@ -481,7 +481,8 @@ class VoiceService:
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
         pack = self._learner_pack(session_state, learner, request)
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
-        self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes)
+        self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes,
+                                     context=bool(session_state.recent_tool_results))  # fmt: skip
         specs = self._tool_specs(request, learner, notes=notes_available)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
@@ -678,10 +679,11 @@ class VoiceService:
             session_state = replace(session_state, recent_tool_results=())
         return tier1, session_state, notes_available
 
-    def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes) -> None:
+    def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes,
+                                context: bool) -> None:  # fmt: skip
         if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None)):
             return
-        level = max(PACK_CLASS if pack else 0, NOTES_CLASS if notes else 0)
+        level = max(PACK_CLASS if pack else 0, NOTES_CLASS if notes else 0, CONTEXT_EVIDENCE_CLASS if context else 0)
         if level > session_state.data_class_sent:
             self.runtime.sessions.update(session_state.agent_session_id, learner.user_key,
                                          lambda state: state.with_data_class_sent(level))  # fmt: skip

@@ -259,6 +259,30 @@ def test_the_chat_context_learning_evidence_goes_only_to_learning_profile():
         assert carried is sent, record
 
 
+def test_context_evidence_sent_without_a_pack_raises_the_conversation_class():
+    """Re-review of #268: a failed pack build still sends `earlier_in_session` to a learning_profile provider; the
+    conversation is then learning_profile, and a repin to `none` is refused before anything reaches it."""
+    from writing_coach.agent.session import ToolResultRecord
+
+    classes = ProviderDataClasses.parse("gemini=learning_profile,groq=none")
+    rt, provider, _ = pack_runtime([reply("a1"), reply("a2"), reply("a3")], classes=classes)
+
+    def broken(**_kwargs):
+        raise RuntimeError("pack build failed")
+
+    rt.pack.build = broken  # enabled, but no pack bytes: the graceful fallback
+    first = run(rt)
+    session_id = next(e.session_id for e in first if e.name == "session")
+    rt.sessions.update(session_id, "learner-1", lambda st: st.with_tool_result(
+        ToolResultRecord(tool="vocabulary_summary", summary="12 từ đến hạn ôn"), limit=5))
+    run(rt, turn_request("hỏi tiếp", session_id=session_id))
+    assert any("12 từ đến hạn ôn" in m.content for m in provider.requests[1].messages)
+    assert not any(has_pack(r) for r in provider.requests)
+    rt.router.selection, rt.router.is_usable = GROQ, (lambda route: route != GEMINI)
+    events = run(rt, turn_request("hỏi nữa", session_id=session_id))
+    assert len(provider.requests) == 2 and any(e.name == "error" for e in events)
+
+
 def test_the_m2_edges_are_explicit():
     """Review of #268 P2: before M2 nothing passes the memory flag, and a memory-bearing pack needs full_memory."""
     classes = ProviderDataClasses.parse("")

@@ -590,7 +590,8 @@ class _Turn:
             turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
         self.heard = tapped or turn.message
         pack = None if self.no_model else self._learner_pack(session)
-        self._record_data_class_sent(session, pack=pack, notes=tier1.coach_notes)
+        self._record_data_class_sent(session, pack=pack, notes=tier1.coach_notes,
+                                     context=bool(session.recent_tool_results))  # fmt: skip
         # The pack replaces the opening snapshot in the prompt (ORENA_MEMORY.md §3.1): one source of learner evidence,
         # not two with different rules. The snapshot stays here, for the greeting built without a model and its check.
         self.pack_facts = pack_numbers(pack)
@@ -687,10 +688,14 @@ class _Turn:
             session = replace(session, recent_tool_results=())
         return tier1, session
 
-    def _record_data_class_sent(self, session, *, pack: str | None, notes) -> None:
+    def _record_data_class_sent(self, session, *, pack: str | None, notes, context: bool) -> None:
+        """The highest class this request carries - the pack, coach notes, and the chat context's learning evidence -
+        raises the conversation's class (§8 c), whichever of them was actually sent."""
+
         if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes):
             return
-        level = max(PACK_CLASS if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE)
+        level = max(PACK_CLASS if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE,
+                    CONTEXT_EVIDENCE_CLASS if context else DataClass.NONE)  # fmt: skip
         if level > session.data_class_sent:
             self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
                                     lambda state: state.with_data_class_sent(level))  # fmt: skip
