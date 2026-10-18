@@ -15,3 +15,9 @@
 | P2-6 | "Cap reached" was logged at every 5-second refresh. | **Fixed.** It is logged once per UTC day. |
 | P2-7 | Missing tests: the UTC rollover, the cached verdict, `LiveSpendGuard.status()`, and the agent capped by the ceiling. | **Fixed.** `test_the_lock_lifts_at_utc_midnight_and_the_warning_comes_again_the_next_day`, together with the tests above. |
 | CI | `/api/admin/ai-spend` was not in the admin authorization matrix. | **Fixed.** It is now classified, the matrix checks that a learner is refused and an admin gets 200, and the route count is 113. |
+
+## Round 2: reviewed commit `998c6272` (with merge `922bd0d9`), outcome **APPROVE**
+
+The same reviewer re-reviewed the fixes above. There is no P0 or P1. The reviewer also confirmed that the merge brings in no new admin route, so the matrix count of 113 still holds.
+
+One new P2, not blocking: the `agent` block of `/api/admin/ai-spend` shows only the agent's own cap. When the system ceiling is what refuses turns, the `system` block in the same response shows the lock. This is a display question for the Admin notice when it is drawn.
