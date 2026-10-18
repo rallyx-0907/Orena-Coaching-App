@@ -42,6 +42,7 @@ from writing_coach.agent.memory_keys import MemoryKeys
 from writing_coach.agent.memory_store import (
     CONTINUITY,
     EXPLICIT,
+    EXPLICIT_TTL,
     INFERRED,
     INFERRED_SUPPRESSION,
     LIMITS,
@@ -223,7 +224,12 @@ class PostgresMemoryRepository:
             held = next((i for i in live if (slot in SINGLE_VALUED_SLOTS and i.slot == slot)
                          or self._same_value(i, slot, text)), None)  # fmt: skip
             if held is not None and self._same_value(held, slot, text):
-                return held  # a retried remember_note (same words) does not duplicate
+                # A retried remember_note (same words) does not duplicate; asked again, it is kept from now.
+                row = conn.execute(sql(
+                    f"UPDATE learner_memories SET expires_at = :until, updated_at = :now WHERE id = :id AND {_SCOPE}"
+                    f" RETURNING {_COLUMNS}"),
+                    _params(scope, id=_uuid(held.id), until=now + EXPLICIT_TTL, now=now)).mappings().one()  # fmt: skip
+                return _item(row)
             if held is None and len(live) >= LIMITS[EXPLICIT]:
                 raise MemoryLimit
             if held is not None:  # a single-valued slot: the learner's latest choice wins
@@ -232,11 +238,11 @@ class PostgresMemoryRepository:
             version, value_key = self._keys.stamp(slot or "", text)
             row = conn.execute(sql(
                 "INSERT INTO learner_memories (id, incarnation_id, user_id, language_code, class, kind, slot, text,"
-                " value_key, key_version, source, created_at, updated_at)"
-                " VALUES (:id, :i, :u, :lang, 'explicit', :kind, :slot, :text, :vk, :kv, :source, :now, :now)"
+                " value_key, key_version, source, expires_at, created_at, updated_at)"
+                " VALUES (:id, :i, :u, :lang, 'explicit', :kind, :slot, :text, :vk, :kv, :source, :until, :now, :now)"
                 f" RETURNING {_COLUMNS}"),
                 _params(scope, id=uuid.uuid4(), lang=language, kind=kind, slot=slot, text=text, vk=value_key,
-                        kv=version, source=source, now=now)).mappings().one()  # fmt: skip
+                        kv=version, source=source, until=now + EXPLICIT_TTL, now=now)).mappings().one()  # fmt: skip
             self._bump(conn, scope, now)
             return _item(row)
 

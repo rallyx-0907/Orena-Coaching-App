@@ -239,6 +239,14 @@ keeps them out:
   terms matches. That list is a best-effort filter, not a guarantee, and is stated as such to the owner; the learner
   sees and deletes every explicit item.
 
+**Retention of explicit memory (owner, PRE-005, 2026-10-18).** The pilot keeps learner data for up to 6 months.
+A kept note therefore expires `EXPLICIT_TTL` (180 days, which is within 6 calendar months) after the learner last
+asked for it. Asking again for the same words renews it. An expired note is invisible to every read, and the
+operator sweep (`sweep_expired`) deletes it. Also from the owner, the same day: the learner UI has one Settings
+switch and no list of notes, and deletion on request goes through the PRE-005 email channel. The
+`/api/agent/memory` routes stay in the backend for that channel. So "the learner sees and deletes every explicit
+item" above holds through the API and that channel, not through a screen.
+
 Stored text is personal data of the same class as an essay: never in logs or telemetry (counts only), and
 `redaction.py` drops emails, phone numbers and URLs before anything is stored.
 

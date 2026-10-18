@@ -43,6 +43,9 @@ from writing_coach.agent.memory_summary import without_deleted_item
 
 EXPLICIT, INFERRED, CONTINUITY = "explicit", "inferred", "continuity"
 ANY_LANGUAGE = "*"
+# A kept note lives 180 days from when the learner last asked for it: the pilot keeps learner data up to 6 months
+# (owner, PRE-005, 2026-10-18). 180 days is within 6 calendar months from any start date.
+EXPLICIT_TTL = timedelta(days=180)
 CONTINUITY_TTL = timedelta(days=14)  # G10
 INFERRED_SUPPRESSION = timedelta(days=30)
 SUMMARY_TTL = timedelta(days=60)
@@ -331,13 +334,15 @@ class InMemoryMemoryStore:
                 raise MemoryOff
             held = self._holder(learner, language, EXPLICIT, slot, text, now)
             if held is not None and self._same_value(held, slot, text):
-                return held  # a retried remember_note (same words) does not duplicate
+                # A retried remember_note (same words) does not duplicate; asked again, it is kept from now.
+                renewed = learner.items[held.id] = replace(held, expires_at=now + EXPLICIT_TTL)
+                return renewed
             if held is None and len(self._count(learner, language, EXPLICIT, now)) >= LIMITS[EXPLICIT]:
                 raise MemoryLimit
             if held is not None:
                 del learner.items[held.id]  # a single-valued slot: the learner's latest choice wins
             item = self._new(language=language, cls=EXPLICIT, kind=kind, slot=slot, text=text, source=source,
-                             now=now, expires_at=None)  # fmt: skip
+                             now=now, expires_at=now + EXPLICIT_TTL)  # fmt: skip
             learner.items[item.id] = item
             self._bump(learner)
             return item
