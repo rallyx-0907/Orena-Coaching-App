@@ -1111,6 +1111,8 @@ def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
 # ceiling. An unreadable value refuses to start rather than guess.
 _spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_system_ai_spend_since,
                               warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
+# Every response a ceiling refusal touched says so: `X-Orena-AI-Paused: <resets_at>` (the client's one signal).
+_spend_gate.install_paused_header(app)
 
 
 def _agent_spend_guard():
