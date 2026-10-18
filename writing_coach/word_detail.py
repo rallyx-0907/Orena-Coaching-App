@@ -143,7 +143,7 @@ _EMPHASIS_SINGLE = re.compile(r"(?<![A-Za-z0-9*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![
 def _text(value: object) -> str:
     text = str(value or "")
     if "*" in text or "__" in text:
-        text = _EMPHASIS_SINGLE.sub(r"", _EMPHASIS_RUN.sub("", text))
+        text = _EMPHASIS_SINGLE.sub(lambda match: match.group(1), _EMPHASIS_RUN.sub("", text))
     return text.strip()
 
 
