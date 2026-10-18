@@ -345,6 +345,16 @@ class SourcePublicNameBody(BaseModel):
     public_name: str = Field(default="", max_length=120)
 
 
+class SourceRightsBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    automation_allowed: bool
+    can_republish: bool
+    can_adapt: bool
+    attribution_required: bool
+    license_note: str = Field(default="", max_length=2000)
+
+
 class SourceStateBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -557,6 +567,32 @@ def update_source(
         _audit(admin, "admin.reading_source_polling", entity_type="reading_source", entity_id=source_id,
                payload={"polling_enabled": payload.polling_enabled})
         source = updated
+    return source
+
+
+@router.post("/sources/{source_id}/rights")
+def set_source_rights(
+    request: Request, response: Response, source_id: str, payload: SourceRightsBody
+) -> dict[str, Any]:
+    """Correct the rights of an existing source (#196). New texts inherit them; ingested texts keep their snapshot."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    before = _guarded(lambda: _content().get_source(source_id))
+    if before is None:
+        raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
+    new_rights = {
+        "automation_allowed": payload.automation_allowed,
+        "can_republish": payload.can_republish,
+        "can_adapt": payload.can_adapt,
+        "attribution_required": payload.attribution_required,
+        "license_note": payload.license_note,
+    }
+    source = _guarded(lambda: _content().set_source_rights(source_id, new_rights, actor=_actor(admin)))
+    if source is None:
+        raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
+    _audit(admin, "admin.reading_source_rights", entity_type="reading_source", entity_id=source_id,
+           payload={"from": before["rights"], "to": source["rights"]})
     return source
 
 

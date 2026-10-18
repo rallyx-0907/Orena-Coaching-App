@@ -213,6 +213,7 @@ OTHER_READERS = {
                                  "which publishes public_name else host"),
     (REPO, "set_source_public_name"): (1, "returns the admin registry row to the admin route"),
     (REPO, "set_source_state"): (1, "returns the admin registry row to the admin route"),
+    (REPO, "set_source_rights"): (1, "returns the admin registry row to the admin route"),
     (REPO, "set_polling"): (2, "admin registry row read and returned to the admin route"),
     (REPO, "find_duplicate_content"): (2, "admin review page: names the other source holding the same text "
                                           "(called from reading_admin_api only)"),
