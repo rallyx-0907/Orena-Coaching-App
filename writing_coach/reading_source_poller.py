@@ -26,6 +26,7 @@ from email.utils import parsedate_to_datetime
 from typing import Any
 from urllib.parse import urljoin
 
+from writing_coach.core.access_log import quiet_http_client_loggers, scrub_text, scrub_url
 from writing_coach.media_safe_fetch import UnsafeMediaFetch, fetch_bounded
 from writing_coach.reading_processing import normalize_url
 from writing_coach.reading_source_import import ReadingSourceError, SubmittedInput, request_digest
@@ -169,7 +170,7 @@ class ReadingSourcePoller:
         except Exception as exc:  # noqa: BLE001 - a bad feed never crashes the worker
             failures = int(self._state(source).get("failures", 0)) + 1
             retry = moment + BACKOFF[min(failures, len(BACKOFF)) - 1]
-            message = f"feed: {exc}"[:500]
+            message = scrub_text(f"feed: {exc}")[:500]
             self.content.record_poll(source["id"], error=message, now=moment,
                                      state={"failures": failures, "next_retry_at": retry.isoformat()})
             _logger.warning("reading poller: %s failed: %s", source["slug"], message)
@@ -193,10 +194,10 @@ class ReadingSourcePoller:
                 counts["skipped" if job.get("duplicate") else "queued"] += 1
             except ReadingSourceError as exc:
                 counts["refused"] += 1
-                _logger.info("reading poller: %s refused %s: %s", source["slug"], sub.url, exc.code)
+                _logger.info("reading poller: %s refused %s: %s", source["slug"], scrub_url(sub.url), exc.code)
             except Exception:  # noqa: BLE001 - one bad entry never fails the source
                 counts["refused"] += 1
-                _logger.exception("reading poller: entry failed: %s", sub.url)
+                _logger.exception("reading poller: entry failed: %s", scrub_url(sub.url))
         self.content.record_poll(source["id"], error="", now=moment, state={"failures": 0})
         _logger.info("reading poller: %s", counts)
         return counts
@@ -236,6 +237,7 @@ def build_poller() -> ReadingSourcePoller:  # pragma: no cover - process wiring
 
 def main() -> int:  # pragma: no cover - one-shot: poll every eligible source now
     logging.basicConfig(level=logging.INFO)
+    quiet_http_client_loggers()
     for result in build_poller().poll_due(force=True):
         _logger.info(json.dumps(result))
     return 0
