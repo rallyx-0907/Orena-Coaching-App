@@ -521,3 +521,13 @@ def test_a_turn_that_changes_a_note_gets_no_restated_line():
     keep(store, rt.memory, text="Thích ví dụ thật ngắn")
     run(rt, v9_request("Quên ghi chú về ví dụ đó đi."))
     assert not any(m.content.startswith("What the learner asked you to keep") for m in provider.requests[0].messages)
+
+
+def test_the_restated_notes_ask_for_the_answer_in_the_models_own_words():
+    """:8021 smoke step 5 passed (2026-10-18), but the answer pasted the note after "để": "để học tiếng Anh để phỏng
+    vấn". The line asks for the note's meaning in a natural sentence, not its words pasted in."""
+    rt, provider, store = wired([reply("a1")])
+    keep(store, rt.memory, text="học tiếng Trung để phỏng vấn xin việc")
+    run(rt, v9_request("Mình học tiếng Trung để làm gì nhỉ?"))
+    line = provider.requests[0].messages[-2].content
+    assert "in your own words" in line and "never paste" in line

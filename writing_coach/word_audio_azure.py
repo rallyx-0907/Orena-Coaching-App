@@ -182,6 +182,11 @@ class AzureVoice:
             _log.warning("word TTS: spend cap reached (%.4f of %.2f USD)", spent, self._cap)
             self._state.failed = True
             return None
+        from writing_coach.ai import spend_gate
+
+        if spend_gate.ceiling_reached():  # the system's daily AI ceiling: a failed voice, so the next voice answers
+            self._state.failed = True
+            return None
         # PR-MON-7D2: a fresh synthesis is `audio.tts` (characters), admitted only here - after the cache and the free
         # voices missed - so cached, stored and catalogue audio is never charged. Pending: the no-op until its limits.
         from writing_coach.billing.funding_context import require_paid

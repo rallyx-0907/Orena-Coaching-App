@@ -83,6 +83,17 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
+def _system_ceiling() -> None:
+    """A paid media step (ASR, media AI) is refused once the system's daily AI spend ceiling is reached
+    (ai/spend_gate.py, owner 2026-10-18), with the day limit's own code so the operator sees a known reason."""
+    from writing_coach.ai import spend_gate
+
+    if spend_gate.ceiling_reached():
+        status = spend_gate.ceiling_status()
+        raise SpendCapReached("spend_cap_day", limit=float(status.get("ceiling_usd") or 0.0),
+                              spent=float(status.get("spent_usd") or 0.0), scope="system")
+
+
 class SpendLedger:
     def __init__(self, path: Path, *, env: Mapping[str, str] | None = None) -> None:
         self._path = Path(path)
@@ -151,6 +162,7 @@ class SpendLedger:
         """Raise `SpendCapReached` when this step would pass a limit; otherwise return."""
         if kind not in KINDS:
             raise ValueError("unknown spend kind")
+        _system_ceiling()
         limits = self.limits()
         with self._lock:
             events = self._read()
