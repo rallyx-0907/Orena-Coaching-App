@@ -124,9 +124,15 @@ review and explicit human authorization.
 - Speech capabilities are reserved and unimplemented until Speaking work
   explicitly implements them.
 - Capability configuration and diagnostics never persist or expose credentials.
-- No provider-to-provider fallback or silent paid-provider failover.
+- No provider-to-provider fallback or silent paid-provider failover. One
+  explicit exception (D-224): a media translation or transcript-correction
+  batch Groq refuses for capacity may go once to the provider the operator
+  configured in Admin for `media_translation` / `media_transcript_correction`;
+  the router's own `backup_provider` rung stays refused for both, ASR is
+  excluded, and each later batch asks Groq first.
 - Shared-media translation may select Groq or local Marian once from explicit
-  configuration; a provider failure must stop rather than silently fail over.
+  configuration; a provider failure must stop rather than silently fail over,
+  except for the D-224 capacity exception above.
 - Static configuration validation remains separate from live provider/model
   testing.
 - Learner `generate_structured()` remains on legacy `active_selection()` until
