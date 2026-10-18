@@ -428,13 +428,13 @@ What the code and scripts now do. None of it was run against :8000; the human de
   and worker with `--log-opt max-size=10m --log-opt max-file=5` (50 MB per container; takes effect at the next deploy).
 - **Outbound URLs (B4).** The reading worker and poller set `httpx`, `httpcore` and `urllib3` to WARNING after
   `basicConfig(INFO)`; the poller logs feed and entry URLs as scheme+host+path and scrubs URLs inside exception text;
-  the Groq refusal log lines carry the error type/code and `x-request-id`, no provider sentence.
+  the Groq refusal log lines keep the provider sentence (D-211, pinned by tests), now URL-scrubbed, organisation id redacted and capped at 240 characters.
 - **Handed to the Intelligence lane (B4-P2, not edited here):** `writing_coach/agent/platform_provider.py` lines ~111
   and ~133 log `%s` of the raw `AIProviderError` (log type and status only); `writing_coach/agent/turn.py` ~539
   `_log.exception("agent turn failed")` and other `exc_info` warnings (exception text can embed the learner message or
   tool arguments: log type and trace id, or scrub).
-- **`/api/readiness` (B3).** Unauthenticated. It runs `SELECT 1` on the runtime database (3 s limit) and checks that an
-  existing media library root is writable. Healthy: 200 `{ready:true, environment, auth_enabled}`. Not healthy: 503 with
+- **`/api/readiness` (B3).** Unauthenticated. It runs `SELECT 1` on the runtime database on a dedicated one-connection probe engine (2 s connect timeout, `SET LOCAL statement_timeout = 2000`; 3 s overall; answer cached ~2 s so repeated probes cannot starve the threadpool) and checks that an
+  existing media library root is writable. Healthy: 200 `{ready:true, environment, auth_enabled}`. `database_unavailable` means the database did not answer in time (down, hung or refusing connections). Not healthy: 503 with
   `{ready:false, reason:"database_unavailable"|"storage_unavailable", ...}`; no host, path or error text. The deploy script
   already polls it, so a deploy now fails on a dead database.
 - **Health check (B3).** `scripts\health_check_8000.ps1` (PowerShell 5.1, read-only, no external account): local
@@ -448,12 +448,12 @@ What the code and scripts now do. None of it was run against :8000; the human de
 - **Content-Security-Policy-Report-Only (B8).** Added to every `text/html` response (`writing_coach/core/http_security.py`);
   not enforced, no report endpoint yet: read the browser console on the learner UI, the Landing and the legal pages, fix
   or allow what it reports, then switch to `Content-Security-Policy` in a follow-up. The list and why:
-  `default-src 'self'`; `script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net` plus the SHA-256 of each inline
+  `default-src 'self'`; `script-src 'self' 'unsafe-eval' https://cdn.jsdelivr.net https://www.youtube.com` (the YouTube player API) plus the SHA-256 of each inline
   `<script>` in `templates/orena` (the legal pages' table of contents; computed from the templates), where
   `'unsafe-eval'` is the Landing's design-component runtime (`support.js` uses `new Function`) and jsDelivr is the Polar
   checkout embed; `style-src 'self' 'unsafe-inline'` (the design draws inline style attributes); `img-src 'self' data:
   blob: https:` and `media-src 'self' blob: https:` (covers and learner-imported media); `font-src 'self' data:` (fonts are
-  served locally); `connect-src 'self'`; `frame-src https://www.youtube.com https://www.youtube-nocookie.com
+  served locally); `connect-src 'self' wss://generativelanguage.googleapis.com` (the live-voice socket, `ai/live_voice.py`); `worker-src 'self' blob:` (the noise-suppressor worklet); `frame-src https://www.youtube.com https://www.youtube-nocookie.com
   https://*.polar.sh`; `object-src 'none'`; `base-uri 'self'`; `form-action 'self'`; `frame-ancestors 'none'`. Google
   sign-in is a top-level redirect and needs no directive. Open before enforcing: drop `'unsafe-eval'` (Landing) and
   `'unsafe-inline'` styles (design) only with a design change; confirm the Polar frame hosts against a live checkout.

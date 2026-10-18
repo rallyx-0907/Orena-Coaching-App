@@ -85,7 +85,7 @@ def content_security_policy_report_only() -> str:
     'unsafe-inline' styles for the design's inline style attributes; https: images and media for covers and
     learner-imported content; the Polar checkout loads from cdn.jsdelivr.net. Enforcement is a follow-up."""
 
-    scripts = " ".join(("'self'", "'unsafe-eval'", "https://cdn.jsdelivr.net", *inline_script_hashes()))
+    scripts = " ".join(("'self'", "'unsafe-eval'", "https://cdn.jsdelivr.net", "https://www.youtube.com", *inline_script_hashes()))
     return "; ".join((
         "default-src 'self'",
         f"script-src {scripts}",
@@ -93,7 +93,8 @@ def content_security_policy_report_only() -> str:
         "img-src 'self' data: blob: https:",
         "media-src 'self' blob: https:",
         "font-src 'self' data:",
-        "connect-src 'self'",
+        "connect-src 'self' wss://generativelanguage.googleapis.com",
+        "worker-src 'self' blob:",
         "frame-src https://www.youtube.com https://www.youtube-nocookie.com https://*.polar.sh",
         "object-src 'none'",
         "base-uri 'self'",

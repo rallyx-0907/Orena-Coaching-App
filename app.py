@@ -2496,17 +2496,41 @@ def health() -> dict[str, Any]:
 
 
 READINESS_PROBE_SECONDS = 3.0
+READINESS_CACHE_SECONDS = 2.0
+_readiness_cache: dict[str, Any] = {"key": None, "at": 0.0, "reason": None}
+_readiness_probe_engine: dict[int, Any] = {}
+
+
+def _readiness_engine(engine: Any) -> Any:
+    """A tiny engine of its own for the probe (one NullPool connection, 2 s connect timeout), so a slow database
+    cannot make probes hold the application's pool. A runtime without a URL (a test double) is probed directly."""
+
+    url = getattr(engine, "url", None)
+    if url is None:
+        return engine
+    found = _readiness_probe_engine.get(id(engine))
+    if found is None:
+        from sqlalchemy import create_engine
+        from sqlalchemy.pool import NullPool
+
+        args = {"connect_timeout": 2} if str(url.get_backend_name()).startswith("postgres") else {}
+        found = _readiness_probe_engine[id(engine)] = create_engine(url, poolclass=NullPool, connect_args=args)
+    return found
 
 
 def _probe_readiness() -> str | None:
-    """A stable reason code when a dependency is down, else None. Never carries a host, path or error text."""
+    """A stable reason code when a dependency is down, else None. Never carries a host, path or error text.
+    `database_unavailable` means the database did not answer `SELECT 1` within the timeouts."""
 
     engine = _persistence_runtime.engine
     if engine is not None:
         try:
             from sqlalchemy import text
 
-            with engine.connect() as connection:  # type: ignore[attr-defined]
+            probe = _readiness_engine(engine)
+            with probe.connect() as connection:  # type: ignore[attr-defined]
+                if probe is not engine and probe.dialect.name == "postgresql":
+                    connection.execute(text("SET LOCAL statement_timeout = 2000"))
                 connection.execute(text("SELECT 1"))
         except Exception:  # noqa: BLE001 - the reason is a code; the detail stays out of the answer and the log
             return "database_unavailable"
@@ -2523,10 +2547,18 @@ async def readiness() -> Any:
     Unauthenticated, so the 503 answers with a stable reason code and nothing else (no host, path or error text)."""
     import asyncio
 
-    try:
-        reason = await asyncio.wait_for(asyncio.to_thread(_probe_readiness), READINESS_PROBE_SECONDS)
-    except TimeoutError:
-        reason = "database_unavailable"
+    import time as _time
+
+    key = id(_persistence_runtime.engine)
+    now = _time.monotonic()
+    if _readiness_cache["key"] == key and now - _readiness_cache["at"] < READINESS_CACHE_SECONDS:
+        reason = _readiness_cache["reason"]  # repeated unauthenticated probes share one answer for ~2 s
+    else:
+        try:
+            reason = await asyncio.wait_for(asyncio.to_thread(_probe_readiness), READINESS_PROBE_SECONDS)
+        except TimeoutError:
+            reason = "database_unavailable"
+        _readiness_cache.update(key=key, at=now, reason=reason)
     body = {"ready": reason is None, "environment": APP_ENV, "auth_enabled": AUTH_ENABLED}
     if reason is not None:
         logging.getLogger(__name__).warning("readiness failed: %s", reason)

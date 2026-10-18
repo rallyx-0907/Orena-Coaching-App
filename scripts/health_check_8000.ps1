@@ -105,10 +105,10 @@ if ($null -eq $newest) {
 $backupLog = Join-Path $BackupDir 'backup.log'
 $last = $null
 if (Test-Path -LiteralPath $backupLog) {
-    $last = Get-Content -LiteralPath $backupLog -Tail 200 | Where-Object { $_ -match ' exit \d+:' } | Select-Object -Last 1
+    $last = Get-Content -LiteralPath $backupLog -Tail 200 | Where-Object { $_ -match '^\S+ exit \d+: ' } | Select-Object -Last 1
 }
 if ($null -eq $last) { Check 'backup-log' $false 'no exit line in backup.log' }
-else { Check 'backup-log' ($last -match ' exit 0:') ("last=" + ($last -replace '^\S+\s', '')) }
+else { Check 'backup-log' ($last -match '^\S+ exit 0: ') ("last=" + ($last -replace '^\S+\s', '')) }
 
 # Alerting: after $AlertAfter consecutive failing runs, then hourly while it persists.
 $code = 0
