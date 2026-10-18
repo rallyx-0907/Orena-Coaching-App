@@ -42,7 +42,7 @@ Updated 2026-10-19.
 | 18 | Polar's `modified_at` is empty after a scheduled change | **found 2026-10-18** | risk R1 |
 
 **Risk R1 (open, being observed).** Orena orders a subscription's webhooks by Polar's `modified_at`, falling back to
-`created_at` (`billing/polar.py`). Equal or older events are `stale`.
+`created_at` (`writing_coach/billing/polar.py`). Equal or older events are `stale`.
 - The daily test showed that a scheduled change leaves `modified_at` empty, while a cancel sets it.
 - If a **renewal** also left `modified_at` empty, the renewal event would carry the same version as the creation
   event and be dropped as `stale`. `paid_through` would not move, and a paying learner would lose the plan after the

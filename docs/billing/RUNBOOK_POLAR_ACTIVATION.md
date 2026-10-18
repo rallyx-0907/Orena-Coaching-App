@@ -75,7 +75,7 @@ usage.
 | `BILLING_DOMESTIC_GATEWAY` | empty, unless Credits is also being enabled (gate 7a) |
 
 **Where the values go on `:8000`.** `:8000` is not started by compose: `scripts/staging_8000_deploy.ps1` runs
-`docker run --env-file %LOCALAPPDATA%\orena-product\staging-8000untime.env` with the volume `ai-writing-coach-data`
+`docker run --env-file %LOCALAPPDATA%\orena-product\staging-8000\runtime.env` with the volume `ai-writing-coach-data`
 at `/data`. So the values go in **`runtime.env`**, at step R6 of the `:8000` package, and the web container is
 recreated by that script. The prices file goes into the volume, at `/data/billing/prices.json` (for example,
 `docker cp prices.json <web container>:/data/billing/prices.json`, after creating the directory).
