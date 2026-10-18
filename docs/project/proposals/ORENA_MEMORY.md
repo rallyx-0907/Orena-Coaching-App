@@ -608,8 +608,10 @@ for `full_memory` (§8). The UI is UI-lane work and needs a contract change (§8
 
 - **Where it stands.** A1 (PR #263) built the record (`AGENT_PROVIDER_DATA_CLASSES`,
   `writing_coach/agent/data_class.py`) and the gate for the M1 learner pack. M2-prep 2b adds coach notes (b: only to
-  `full_memory`; below it the notes are not sent and no note can be kept, changed or forgotten - the note tools are
-  not offered and are refused - and a learner who asks is told so; owner, 2026-10-18), the chat context (its learning
+  `full_memory`; below it the notes are not sent and no existing note can be changed or forgotten - `forget_note` is
+  not offered and a forget or a replace is refused - and a learner who asks is told so; owner, 2026-10-18. A new note
+  the learner asks for is still kept below `full_memory`: the owner's later decision of 2026-10-18 reversed the
+  first block of new notes, PR #272), the chat context (its learning
   evidence, `earlier_in_session`, only to `learning_profile`) and the conversation's history (c: never continued on
   a provider cleared for less than the conversation already sent; checked before a route is pinned; the turn answers
   the unavailable path, voice does not open): `GOVERNED_PAYLOADS = ("learner_pack", "coach_notes",

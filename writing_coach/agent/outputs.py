@@ -445,8 +445,9 @@ class ReplyOutputs:
     address_asked: bool = False  # already offered in this session
     address_chosen: bool = False  # the learner already chose a pair (or said no): no offer
     notes: Mapping[str, float] = field(default_factory=dict)  # coach note id -> weight, as the device sent them
-    notes_available: bool = True  # G8: the provider may read and change coach notes (cleared for full_memory)
-    # Below it a new note is still kept: the existing ones are neither sent nor touched (owner, 2026-10-18).
+    # G8: the provider may read and change coach notes (cleared for full_memory); below it a new note is still kept,
+    # the existing ones neither sent nor touched (owner, 2026-10-18).
+    notes_available: bool = True
     # A turn the server read as correcting these notes (agent/notes.py): a correction replaces, it never forgets.
     correcting: tuple[str, ...] = ()
     # The notes this message names as changed, and how (agent/notes.py): what a replace or a forget may touch (3.2).
@@ -730,7 +731,8 @@ class ReplyOutputs:
             return "refused: not in an opening turn"
         kind, text, replaces = args.get("kind"), args.get("text"), args.get("replaces")
         if not self.notes_available and replaces is not None:
-            return NOTES_UNAVAILABLE
+            return ("refused: earlier notes cannot be changed in this conversation - to keep these words as a new "
+                    "note, call remember_note without replaces")  # fmt: skip
         if replaces is None and len(self.correcting) == 1:
             replaces = self.correcting[0]  # the learner corrected this very note: the new words replace it
         if kind not in COACH_NOTE_KINDS or not isinstance(text, str) or not text.strip():

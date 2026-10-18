@@ -658,8 +658,8 @@ class _Turn:
         """G8 for the whole request (ORENA_MEMORY.md §8 b, c), while the gate is on, before anything is pinned or sent:
         a conversation that has sent a class of data is not continued on a provider cleared for less; coach notes
         go only to a provider cleared for `full_memory`, and below it they cannot be read, changed or forgotten, while
-        a new note the learner asks for is still kept (owner, 2026-10-18); the chat context's learning evidence (`earlier_in_session`) only to one cleared for
-        `learning_profile`. The tier-1 context and the session the model is shown."""
+        a new note the learner asks for is still kept (owner, 2026-10-18); the chat context's learning evidence
+        (`earlier_in_session`) only to one cleared for `learning_profile`. The tier-1 context and the session the model is shown."""
 
         classes = self.rt.data_classes
         if not gating_on(self.rt.pack, classes):
@@ -1163,8 +1163,10 @@ class _Turn:
                 unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.notes_blocked:
-                # The notes were not sent to this provider (G8): nothing was changed, and the learner is told so.
-                unchanged = learner_copy.text("notes.unavailable", interface=self.locale.interface, support=support,
+                # The notes were not sent to this provider (G8): none was changed, and the learner is told so - and
+                # that the new note the same message asked for was kept, when it was.
+                key = "notes.kept_others_unavailable" if outputs.note_changed else "notes.unavailable"
+                unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.needs_evidence and not self.records:
                 # Asked to read and still read nothing: no conclusion about the learner is made up (3.1).

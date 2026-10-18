@@ -228,6 +228,42 @@ def test_below_full_memory_a_new_note_the_learner_asks_for_is_kept():
     assert "chưa thể đọc hay sửa ghi chú" not in "".join(e.text_delta for e in events if e.name == "segment_delta")
 
 
+def test_below_full_memory_forgetting_and_keeping_in_one_message_says_both():
+    """Review of #272: the new note is kept and said so; the earlier ones are untouched and said so."""
+    keep = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích bằng tiếng Việt"})
+    rt, _, _ = pack_runtime([call_tools(keep), reply("Mình đã ghi nhớ.")],
+                            classes=ProviderDataClasses.parse("gemini=learning_profile"))
+    events = run(rt, with_notes("Quên ghi chú về giải thích ngắn gọn đi, và ghi nhớ giúp mình là giải thích bằng "
+                                "tiếng Việt"))
+    [update] = [e for e in events if e.name == "memory_update"]
+    assert update.op == "upsert" and update.note["id"] != NOTE["id"]
+    text = next(e for e in events if e.name == "segment_end").text
+    assert "đã ghi nhớ ghi chú mới" in text and "chưa thể đọc hay sửa ghi chú cũ" in text
+
+
+def test_below_full_memory_a_replace_is_refused_with_the_way_to_keep_a_new_note():
+    replace_call = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích dài hơn", "replaces": "n1"})
+    rt, provider, _ = pack_runtime([call_tools(replace_call), reply("Được.")],
+                                   classes=ProviderDataClasses.parse("gemini=learning_profile"))
+    run(rt, with_notes("Từ giờ ghi nhớ giúp mình là giải thích dài hơn"))
+    refusal = next(m.content for m in provider.requests[1].messages if m.role == "tool")
+    assert refusal.startswith("refused: earlier notes cannot be changed") and "without replaces" in refusal
+
+
+def test_below_full_memory_the_tap_to_keep_and_the_ask_back_still_work():
+    """The confirm tap and the no-diacritics ask-back create a new note only: they work below full_memory."""
+    classes = ProviderDataClasses.parse("gemini=learning_profile")
+    tapped = ("c1", "remember_note", {"kind": "preference", "text": "Mình thích ví dụ thật ngắn."})
+    rt, _, _ = pack_runtime([call_tools(tapped), reply("Mình đã ghi nhớ.")], classes=classes)
+    events = run(rt, with_notes("Ghi nhớ: Mình thích ví dụ thật ngắn."))
+    [update] = [e for e in events if e.name == "memory_update"]
+    assert update.note["text"] == "Mình thích ví dụ thật ngắn."
+    rt, _, _ = pack_runtime([reply("Được thôi.")], classes=classes)
+    events = run(rt, with_notes("nho giup minh la minh thich vi du ngan"))
+    assert not any(e.name == "memory_update" for e in events)
+    assert any(e.name == "suggestion" and e.intent == "prompt.keep_note" for e in events)
+
+
 def test_below_full_memory_a_new_note_still_needs_the_learner_to_ask():
     keep = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích bằng tiếng Việt"})
     rt, _, _ = pack_runtime([call_tools(keep), reply("Được.")],
