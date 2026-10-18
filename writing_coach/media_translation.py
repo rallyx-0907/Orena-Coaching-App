@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from contextlib import contextmanager
 from contextvars import ContextVar
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 import hashlib
 import json
@@ -678,7 +678,12 @@ def report_usage(model: str, usage: Mapping[str, Any], *, provider: str = "groq"
     """Tell the listener (`usage_sink`) which tokens a provider answer billed, and which provider billed them. A listener
     that takes only (model, usage) is Groq's alone; a fallback provider is reported with its own name (D-224)."""
     listener = _USAGE_SINK.get()
-    if listener is None or not usage:
+    if listener is None:
+        if usage and provider != "groq":
+            # Production always wires a sink; without one a router answer's spend is not booked in the media ledger.
+            _logger.warning("media usage of %s was reported with no sink wired; it is not booked", provider)
+        return
+    if not usage:
         return
     if provider == "groq":
         listener(model, dict(usage))
@@ -748,18 +753,18 @@ class GroqTranslationProvider:
         self.last_quota: dict[str, str] = {}
 
     def _auth(self) -> tuple[str, str]:
-        """The (key, chat-completions URL) of this request: the live credential source when there is one (a resolver that
-        fails or answers no key falls back to what the constructor was given), else the constructor's own."""
-        if self._credentials is not None:
-            try:
-                key, base = self._credentials()
-            except Exception:  # noqa: BLE001 - an unreadable store is no key; the constructor's one still applies
-                key, base = "", ""
-            key = str(key or "").strip()
-            if key:
-                base = str(base or "").rstrip("/")
-                return key, (base + "/chat/completions") if base else self._url
-        return self._api_key, self._url
+        """The (key, chat-completions URL) of this request. With a live credential source it is the ONLY source after
+        construction (the Admin-stored key, else the environment's, decided by the resolver): a key deleted or rotated in
+        Admin is never replaced by the one the provider was built with. Without a source, the constructor's key."""
+        if self._credentials is None:
+            return self._api_key, self._url
+        try:
+            key, base = self._credentials()
+        except Exception:  # noqa: BLE001 - an unreadable source is no key now; the next request asks again
+            return "", self._url
+        key = str(key or "").strip()
+        base = str(base or "").rstrip("/")
+        return key, (base + "/chat/completions") if base else self._url
 
     @property
     def configured(self) -> bool:
@@ -1162,6 +1167,8 @@ class FallbackScope:
 
     max_wait: float
     admit: Callable[[str, str, int], None]
+    # What the fallback met that the caller records on the item (`fallback_blocked`: the reason a router call was refused).
+    notes: dict[str, str] = field(default_factory=dict)
 
 
 _FALLBACK: ContextVar[FallbackScope | None] = ContextVar("media_translation_fallback", default=None)
@@ -1241,7 +1248,10 @@ class FallbackTranslationProvider:
                 answer = self._fallback.translate_batch(source_language, target_language, pending) if pending else {}
             except TranslationProviderError as failed:
                 if failed.reason == "spend_cap":
-                    raise                            # the cap is terminal: it is the answer, not Groq's wait
+                    scope.notes["fallback_blocked"] = "spend_cap"
+                    if refusal.retry_after > 0:
+                        raise refusal from None      # Groq's refusal named a wait: the continuation still schedules (D-214)
+                    raise                            # Groq's was terminal too: the cap is the answer
                 _logger.warning("media translation fallback failed (%s) after Groq refused (%s)", failed.reason, refusal.reason)
                 raise refusal from None
             if set(answer) != {segment.segment_id for segment in pending}:

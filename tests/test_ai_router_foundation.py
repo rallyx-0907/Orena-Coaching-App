@@ -177,7 +177,10 @@ def test_every_other_provider_capability_carries_learner_text() -> None:
     from writing_coach.ai.capabilities import all_capabilities
 
     for definition in all_capabilities():
-        if definition.key not in {"word_translation", "media_translation", "media_transcript_correction"}:
+        if definition.key in {"media_translation", "media_transcript_correction"}:
+            # D-224: opt-in, but a learner's private import is learner content, so the strict class stays.
+            assert definition.input_class == "learner_text" and definition.opt_in is True, definition.key
+        elif definition.key != "word_translation":
             assert definition.input_class == "learner_text", definition.key
             assert definition.opt_in is False
 

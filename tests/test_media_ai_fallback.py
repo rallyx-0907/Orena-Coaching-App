@@ -31,8 +31,10 @@ TARGET = ("openai", "gpt-fallback")
 @pytest.fixture(autouse=True)
 def _clean_windows():
     mt.reset_output_windows()
+    router.reset_cache()
     yield
     mt.reset_output_windows()
+    router.reset_cache()
 
 
 # -- fakes ---------------------------------------------------------------------------------------------------------
@@ -548,7 +550,27 @@ def test_the_spend_check_runs_before_the_correction_fallback_and_a_cap_holds_the
     _, meta = run_correction(pipeline, store, entry)
     assert order[:2] == ["check0", "check0"], "Groq's check, then the router's, both before any router call"
     assert fallback.calls == []
-    assert meta["transcript_correction_state"] == "failed" and meta["transcript_correction_detail"] == "spend_cap"
+    # Groq's refusal named a wait, so it stays the reason; the cap is recorded beside it (D-224, review P2-1)
+    assert meta["transcript_correction_state"] == "failed" and meta["transcript_correction_detail"] == "rate_limited"
+    assert meta["transcript_correction_fallback_blocked"] == "spend_cap"
+    assert store.get(entry.media_id).processing["transcript_correction_fallback_blocked"] == "spend_cap"
+
+
+def test_a_cap_after_a_terminal_groq_refusal_is_the_reason(tmp_path):
+    primary, fallback = Refusing("provider_error"), RouterCorrector()
+    store, entry, pipeline, _ = correction_world(tmp_path, primary, fallback)
+    real = pipeline._ledger.check
+    seen = []
+
+    def check(kind, batch_id, usd):
+        seen.append(1)
+        if len(seen) >= 2:
+            raise SpendCapReached("spend_cap_batch_ai", limit=0.0, spent=0.0, scope="batch")
+        return real(kind, batch_id, usd)
+
+    pipeline._ledger.check = check
+    _, meta = run_correction(pipeline, store, entry)
+    assert meta["transcript_correction_detail"] == "spend_cap" and meta["transcript_correction_fallback_blocked"] == "spend_cap"
 
 
 def test_correction_usage_is_booked_once_per_call_with_the_routers_provider(tmp_path):
@@ -636,6 +658,7 @@ def test_the_admin_stored_groq_key_wins_over_the_environment(monkeypatch):
     monkeypatch.setattr("writing_coach.ai.platform.providers", lambda: build_providers({"groq": {"api_key": "stored-key"}}))
     assert router.groq_credentials()[0] == "stored-key"
     monkeypatch.setattr("writing_coach.ai.platform.providers", lambda: build_providers({}))
+    router.reset_cache()
     assert router.groq_credentials()[0] == "env-key"
 
 
@@ -667,7 +690,27 @@ def test_a_stored_key_makes_an_env_keyless_groq_configured(monkeypatch):
     provider = mt.GroqTranslationProvider("", model="m", credentials=lambda: ("stored", "https://api.groq.com/openai/v1"))
     assert provider.configured is True
     assert mt.GroqTranslationProvider("", model="m", credentials=lambda: ("", "")).configured is False
-    assert mt.GroqTranslationProvider("env", model="m", credentials=lambda: ("", "")).configured is True
+    # the resolver is the only source after construction: a stale constructor key is never used (review P2-3)
+    assert mt.GroqTranslationProvider("env", model="m", credentials=lambda: ("", "")).configured is False
+
+    def broken():
+        raise RuntimeError("store down")
+
+    assert mt.GroqTranslationProvider("env", model="m", credentials=broken).configured is False
+
+
+def test_a_deleted_admin_key_falls_back_to_the_environment_never_a_stale_one(monkeypatch):
+    from writing_coach.ai.providers import build_providers
+
+    monkeypatch.setenv("GROQ_API_KEY", "env-key")
+    holder = {"stored": {"api_key": "stored-key"}}
+    monkeypatch.setattr("writing_coach.ai.platform.providers", lambda: build_providers({"groq": holder["stored"]}))
+    provider = mt.GroqTranslationProvider("startup-key", model="m", credentials=router.groq_credentials)
+    assert provider._auth()[0] == "stored-key"
+    holder["stored"] = {"api_key": ""}                       # the key was deleted in Admin
+    router.reset_cache()
+    assert provider._auth()[0] == "env-key"
+    assert router.groq_credentials()[0] == "env-key"
 
 
 def test_groq_correction_uses_the_stored_key(monkeypatch):
@@ -731,13 +774,12 @@ def test_the_two_media_capabilities_are_declared_opt_in_and_configurable():
         assert key not in {item.key for item in activation_capabilities()}, "no row is required to activate the runtime"
 
 
-def test_an_operator_can_pick_a_paid_provider_model_and_backup_for_each_capability():
+def test_an_operator_can_pick_a_paid_provider_and_model_for_each_capability():
     from writing_coach.ai.config import CapabilityConfig, validate_capability_config
 
     for key in ("media_translation", "media_transcript_correction"):
-        config = CapabilityConfig(enabled=True, provider="openai", model="gpt-4.1-mini",
-                                  backup_provider="deepseek", backup_model="deepseek-v4-flash")
-        validate_capability_config(key, config)
+        validate_capability_config(key, CapabilityConfig(enabled=True, provider="openai", model="gpt-4.1-mini"))
+        validate_capability_config(key, CapabilityConfig(enabled=True, provider="deepseek", model="deepseek-v4-flash"))
         validate_capability_config(key, CapabilityConfig(enabled=True, provider="gemini", model="gemini-2.5-flash"))
 
 
@@ -761,9 +803,181 @@ def test_the_capability_target_needs_an_enabled_row_and_a_credentialed_provider(
     monkeypatch.setattr(platform, "providers", lambda: {"openai": SimpleNamespace(configured=True)})
     assert router.capability_target("media_translation") == ("openai", "gpt-4.1-mini")
     monkeypatch.setattr(platform, "providers", lambda: {"openai": SimpleNamespace(configured=False)})
+    router.reset_cache()
     assert router.capability_target("media_translation") is None
     monkeypatch.setattr(platform, "providers", lambda: {"openai": SimpleNamespace(configured=True)})
     holder["row"] = None
+    router.reset_cache()
     assert router.capability_target("media_translation") is None
     holder["row"] = SimpleNamespace(config=CapabilityConfig(enabled=False, provider="openai", model="gpt-4.1-mini"))
+    router.reset_cache()
     assert router.capability_target("media_translation") is None
+
+
+# -- review of #276 (dd5cee8e) -------------------------------------------------------------------------------------------
+
+def test_a_backup_provider_is_refused_for_both_media_capabilities():
+    """P1-1: the media spend cap is checked at the primary's price; a dearer backup rung would escape it."""
+    from writing_coach.ai.base import AICapabilityConfigInvalid
+    from writing_coach.ai.config import CapabilityConfig, validate_capability_config
+
+    for key in ("media_translation", "media_transcript_correction"):
+        pricier = CapabilityConfig(enabled=True, provider="deepseek", model="deepseek-v4-flash",
+                                   backup_provider="openai", backup_model="gpt-4.1")
+        with pytest.raises(AICapabilityConfigInvalid, match="no backup"):
+            validate_capability_config(key, pricier)
+        validate_capability_config(key, CapabilityConfig(enabled=True, provider="openai", model="gpt-4.1-mini"))
+
+
+def test_a_stored_row_with_a_backup_is_not_used(monkeypatch):
+    from writing_coach.ai import platform
+    from writing_coach.ai.config import CapabilityConfig
+
+    config = CapabilityConfig(enabled=True, provider="deepseek", model="deepseek-v4-flash",
+                              backup_provider="openai", backup_model="gpt-4.1")
+    repository = SimpleNamespace(get_capability_config=lambda key: SimpleNamespace(config=config))
+    monkeypatch.setattr(platform, "_platform_repository", repository)
+    monkeypatch.setattr(platform, "providers",
+                        lambda: {"deepseek": SimpleNamespace(configured=True), "openai": SimpleNamespace(configured=True)})
+    assert router.capability_target("media_translation") is None
+
+
+def test_router_only_mode_refuses_a_call_outside_a_media_spend_scope(monkeypatch):
+    """P1-2: the on-demand path has no ledger and the capability no daily cap, so a paid call is refused."""
+    fake = FakeRouter(monkeypatch)
+    with pytest.raises(TranslationProviderError) as stopped:
+        router.PlatformMediaTranslator().translate_batch("en", "vi", segments("One line."))
+    assert stopped.value.reason == "not_configured" and fake.calls == []
+
+
+def test_a_cap_on_the_router_keeps_groqs_wait_so_the_continuation_still_schedules(monkeypatch):
+    """P2-1."""
+    groq_answers(monkeypatch, refused(429, LONG_WAIT))
+    fake = FakeRouter(monkeypatch)
+
+    def refuse(provider, model, tokens):
+        raise TranslationProviderError("spend cap", reason="spend_cap")
+
+    with mt.fallback_scope(60.0, refuse) as scope:
+        with pytest.raises(TranslationProviderError) as stopped:
+            wrapper().translate_batch("en", "vi", segments("One line."))
+    assert (stopped.value.reason, stopped.value.retry_after) == ("rate_limited", 600)
+    assert scope.notes == {"fallback_blocked": "spend_cap"} and fake.calls == []
+
+
+def test_a_cap_after_a_terminal_groq_refusal_is_spend_cap_and_recorded(monkeypatch):
+    groq_answers(monkeypatch, refused(500))
+    FakeRouter(monkeypatch)
+
+    def refuse(provider, model, tokens):
+        raise TranslationProviderError("spend cap", reason="spend_cap")
+
+    with mt.fallback_scope(60.0, refuse) as scope:
+        with pytest.raises(TranslationProviderError) as stopped:
+            wrapper().translate_batch("en", "vi", segments("One line."))
+    assert stopped.value.reason == "spend_cap" and scope.notes["fallback_blocked"] == "spend_cap"
+
+
+def test_the_pipeline_records_why_the_router_was_refused(tmp_path, monkeypatch):
+    world = TranslationWorld(tmp_path, monkeypatch, refused(429, LONG_WAIT))
+    real = world.ledger.check
+    seen = []
+
+    def check(kind, batch_id, usd):
+        seen.append(1)
+        if len(seen) > 1:
+            raise SpendCapReached("spend_cap_batch_ai", limit=0.0, spent=0.0, scope="batch")
+        return real(kind, batch_id, usd)
+
+    world.ledger.check = check
+    stop = {}
+    world.pipeline._translate(world.store, world.entry, "batch-1", False, stop=stop)
+    processing = world.store.get(world.entry.media_id).processing
+    assert processing["translation_fallback_blocked"] == "spend_cap"
+    assert stop["reason"] == "rate_limited" and stop["retry_after"] == 600, "the D-214 continuation still has Groq's wait"
+
+
+def test_the_store_failing_at_start_with_no_environment_key_fails_loudly(monkeypatch):
+    """P2-2: no silent demotion to another engine for the life of the process."""
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
+
+    def broken():
+        raise RuntimeError(f"store down {SECRET}")
+
+    monkeypatch.setattr("writing_coach.ai.platform.providers", broken)
+    with pytest.raises(RuntimeError):
+        router.groq_credentials(strict=True)
+    monkeypatch.setenv("GROQ_API_KEY", "env-key")
+    assert router.groq_credentials(strict=True)[0] == "env-key"
+
+
+def test_an_unreadable_store_is_logged_without_a_secret(monkeypatch, caplog):
+    caplog.set_level(logging.WARNING)
+    monkeypatch.setenv("GROQ_API_KEY", SECRET)
+
+    def broken():
+        raise RuntimeError(f"store down {SECRET}")
+
+    monkeypatch.setattr("writing_coach.ai.platform.providers", broken)
+    assert router.groq_credentials()[0] == SECRET
+    assert "could not be read" in caplog.text and "RuntimeError" in caplog.text and SECRET not in caplog.text
+
+
+def test_provider_and_credential_lookups_are_cached_for_a_short_time(monkeypatch):
+    """P2-4."""
+    from writing_coach.ai.providers import build_providers
+
+    calls = []
+    clock = {"now": 1000.0}
+    monkeypatch.setattr(router, "_clock", lambda: clock["now"])
+    monkeypatch.setattr("writing_coach.ai.platform.providers",
+                        lambda: calls.append(1) or build_providers({"groq": {"api_key": "k"}}))
+    for _ in range(5):
+        router.groq_credentials()
+    assert len(calls) == 1
+    clock["now"] += router.CACHE_TTL_SECONDS + 1
+    router.groq_credentials()
+    assert len(calls) == 2
+
+
+def test_the_cache_identity_in_router_only_mode_follows_the_configured_model(monkeypatch):
+    """P2-5."""
+    from writing_coach import listening_api
+
+    translator = router.PlatformMediaTranslator()
+    monkeypatch.setattr(listening_api, "media_translation_service", lambda: SimpleNamespace(_provider=translator))
+    monkeypatch.setattr(router, "capability_target", lambda key: ("openai", "model-a"))
+    first = listening_api._translation_provider_model()
+    monkeypatch.setattr(router, "capability_target", lambda key: ("openai", "model-b"))
+    assert first == "PlatformMediaTranslator:model-a"
+    assert listening_api._translation_provider_model() == "PlatformMediaTranslator:model-b"
+    monkeypatch.setattr(listening_api, "media_translation_service", lambda: SimpleNamespace(_provider=wrapper()))
+    assert listening_api._translation_provider_model() == "GroqTranslationProvider:default"
+
+
+def test_router_usage_with_no_sink_is_logged_not_silent(caplog):
+    """P2-6."""
+    caplog.set_level(logging.WARNING)
+    mt.report_usage("gpt-x", {"prompt_tokens": 1, "completion_tokens": 1}, provider="openai")
+    assert "no sink wired" in caplog.text
+
+
+def test_the_cost_report_never_sums_the_media_ledger_with_the_ai_cost_records(monkeypatch):
+    """P2-7: two views of the same spend. `totals` is `ai_cost_records` only; the media ledger is its own block."""
+    from writing_coach.ai import platform
+
+    row = {"day": "2026-10-18", "capability": "media_translation", "provider": "openai", "model": "gpt-x", "calls": 1,
+           "failures": 0, "priced_calls": 1, "unpriced_calls": 0, "usd": 1.0, "prompt_tokens": 10, "completion_tokens": 5,
+           "audio_seconds": 0.0, "usd_real": 1.0, "usd_free": 0.0, "usd_unknown": 0.0}
+    repository = SimpleNamespace(ai_cost_rows=lambda since: [dict(row)])
+    monkeypatch.setattr(platform, "_require_admin", lambda request: {})
+    monkeypatch.setattr(platform, "_installed_platform_repository", lambda: repository)
+    monkeypatch.setattr(platform, "_flag_timeline", lambda repo: None)
+    platform.register_media_spend_reader(lambda days, tier_at=None: {"today_usd": 5.0, "usd": 5.0})
+    try:
+        report = platform.admin_ai_costs(None, days=7)
+    finally:
+        platform.register_media_spend_reader(None)
+    assert report["totals"]["usd"] == 1.0, "only ai_cost_records feeds the totals"
+    assert report["media"]["usd"] == 5.0, "the media ledger is reported apart, never added"
+    assert report["by_feature"][0]["usd"] == 1.0

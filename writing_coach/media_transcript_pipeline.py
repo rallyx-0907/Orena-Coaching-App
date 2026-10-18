@@ -1110,6 +1110,7 @@ class MediaPipeline:
         reasons: dict[int, str] = {}
         providers: list[str] = []
         models: list[str] = []
+        notes: dict[str, str] = {}
         correct = getattr(self._corrector, "correct", None)
         primary_ready = callable(correct) and getattr(self._corrector, "configured", True) is not False
         if not primary_ready and self._fallback_ready():
@@ -1119,14 +1120,14 @@ class MediaPipeline:
             state, detail = "unavailable", "corrector_unconfigured"
         else:
             state, detail = self._run_correction_batches(
-                entry, batch_id, language, baseline, correct, accepted, reasons, rejected, providers, models)
+                entry, batch_id, language, baseline, correct, accepted, reasons, rejected, providers, models, notes)
         return self._finish_correction(store, entry, lines, baseline, dropped, accepted, reasons, rejected,
-                                       providers, models, state, detail)
+                                       providers, models, state, detail, notes)
 
     def _run_correction_batches(
         self, entry: MediaLibraryEntry, batch_id: str, language: str, baseline: list[tuple[int, Cue]], correct: Any,
         accepted: dict[int, str], reasons: dict[int, str], rejected: list[dict[str, Any]],
-        providers: list[str], models: list[str],
+        providers: list[str], models: list[str], notes: dict[str, str] | None = None,
     ) -> tuple[str, str]:
         """Run the model over `baseline` (filling the accepted/reasons/rejected collectors); returns (state, detail)."""
         batches: list[list[tuple[int, Cue]]] = []
@@ -1233,7 +1234,8 @@ class MediaPipeline:
                 # router's `media_transcript_correction` capability takes THAT batch, after its own spend check.
                 if (result is None and self._fallback_corrector is not None
                         and (failure == "rate_limited" or failure in media_translation.FALLBACK_REASONS)):
-                    result, failure = self._correct_via_fallback(entry, batch_id, language, batch_cues, description, failure)
+                    result, failure = self._correct_via_fallback(
+                        entry, batch_id, language, batch_cues, description, failure, retry_after, notes)
                 break
             if skipped:
                 continue
@@ -1309,9 +1311,12 @@ class MediaPipeline:
 
     def _correct_via_fallback(
         self, entry: MediaLibraryEntry, batch_id: str, language: str, cues: tuple[Cue, ...], description: str, failure: str,
+        retry_after: float = 0.0, notes: dict[str, str] | None = None,
     ) -> tuple[Any, str]:
         """One correction batch through the router. Returns (result, failure): the result when the router answered,
-        else None with Groq's own reason kept (it says why the batch stopped), or `spend_cap` when the cap refused it."""
+        else None with Groq's own reason kept (it says why the batch stopped). When the cap refused the router call,
+        Groq's reason stays if it named a wait; `spend_cap` is the reason only when Groq's refusal was terminal too. The
+        refusal is recorded as `transcript_correction_fallback_blocked` either way."""
         target = self._fallback_corrector.target()
         if target is None:
             return None, failure
@@ -1321,7 +1326,9 @@ class MediaPipeline:
         try:
             self._ledger.check(KIND_AI, batch_id, self._ai_cost(model, {"prompt_tokens": tokens, "completion_tokens": tokens}, provider))
         except SpendCapReached:
-            return None, "spend_cap"
+            if notes is not None:
+                notes["fallback_blocked"] = "spend_cap"
+            return None, (failure if retry_after > 0 else "spend_cap")
         except Exception:  # noqa: BLE001
             _logger.warning("transcript correction fallback could not be prepared for %s", entry.media_id, exc_info=True)
             return None, "correction_unavailable"
@@ -1379,7 +1386,7 @@ class MediaPipeline:
     def _finish_correction(
         self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], baseline: list[tuple[int, Cue]], dropped: list[int],
         accepted: dict[int, str], reasons: dict[int, str], rejected: list[dict[str, Any]],
-        providers: list[str], models: list[str], state: str, detail: str,
+        providers: list[str], models: list[str], state: str, detail: str, notes: dict[str, str] | None = None,
     ) -> tuple[list[Cue], dict[str, Any]]:
         provider = ";".join(dict.fromkeys(providers))[:80]
         model = ";".join(dict.fromkeys(models))[:120]
@@ -1412,6 +1419,8 @@ class MediaPipeline:
             detail = max(counts, key=lambda code: (counts[code], code))
         fields = {"transcript_correction_state": state, "transcript_correction_detail": detail,
                   "transcript_corrections": rows, "transcript_correction_rejected": rejected}
+        if notes and notes.get("fallback_blocked"):
+            fields["transcript_correction_fallback_blocked"] = notes["fallback_blocked"]
         self._write_processing(store, store.get(entry.media_id) or entry, **fields)
         return corrected, fields
 
@@ -1583,6 +1592,7 @@ class MediaPipeline:
         # the rounds of this run, so a stuck window cannot hold the worker beyond it.
         pace = media_translation.PacingBudget(max_total_wait if pacing_seconds is None else pacing_seconds)
         served: dict[tuple[str, str], int] = {}   # which (provider, model) answered how many requests of this run
+        blocked: dict[str, str] = {}              # why a router call was refused in this run (`fallback_blocked`)
         for target in languages:
             done = 0
             for attempt in range(max_rounds):
@@ -1603,11 +1613,13 @@ class MediaPipeline:
                     guard()
                 usage: list[tuple[str, Any, str]] = []
                 retry_after = 0.0
+                scope_notes: dict[str, str] = {}
                 try:
                     # The scope lets a batch Groq cannot take go to the router (D-224, PROPOSED): a rate-limit wait longer
                     # than TRANSLATION_MAX_WAIT counts as one; each router call is spend-checked first.
                     with media_translation.translation_pacing(pace), media_translation.fallback_scope(
-                            TRANSLATION_MAX_WAIT, self._admit_ai(batch_id)):
+                            TRANSLATION_MAX_WAIT, self._admit_ai(batch_id)) as granted:
+                        scope_notes = granted.notes
                         if self._translation_sink is not None:
                             with self._translation_sink(self._usage_collector(usage)):
                                 result = self._meanings(entry, target)
@@ -1624,6 +1636,7 @@ class MediaPipeline:
                     # what the cap is checked against before the call, never what is booked after it.
                     for key, count in self._book_ai_usage(entry, batch_id, usage).items():
                         served[key] = served.get(key, 0) + count
+                blocked.update(scope_notes)
                 if result is not None:
                     if getattr(result, "status", "ready") in {"ready", "not_required"}:
                         done = total_lines
@@ -1662,7 +1675,7 @@ class MediaPipeline:
             if done < total_lines or not total_lines and stop_reason:
                 incomplete = True
             any_done = any_done or done > 0
-        self._record_translation_served(store, entry, served)
+        self._record_translation_served(store, entry, served, blocked.get("fallback_blocked", ""))
         self._record_translation_reason(store, entry, stop_reason if incomplete else "")
         if stop is not None:
             stop.update(reason=stop_reason if incomplete else "", retry_after=last_retry_after)
@@ -1892,10 +1905,13 @@ class MediaPipeline:
             fields["translation_continuation"] = {}
         self._write_processing(store, fresh, **fields)
 
-    def _record_translation_served(self, store: Any, entry: MediaLibraryEntry, served: Mapping[tuple[str, str], int]) -> None:
+    def _record_translation_served(
+        self, store: Any, entry: MediaLibraryEntry, served: Mapping[tuple[str, str], int], blocked: str = "",
+    ) -> None:
         """Which provider and model answered the translation requests, beside `translation_counts` (D-224): the Admin
-        item view and the cost page read it. Counts add up across a continuation; nothing but names and counts is kept."""
-        if not served:
+        item view and the cost page read it. Counts add up across a continuation; nothing but names and counts is kept.
+        `blocked` is why a router call was refused in this run (`spend_cap`), kept as `translation_fallback_blocked`."""
+        if not served and not blocked:
             return
         try:
             fresh = store.get(entry.media_id) or entry
@@ -1908,7 +1924,10 @@ class MediaPipeline:
                 key = (provider[:40], model[:120])
                 totals[key] = totals.get(key, 0) + count
             rows = [{"provider": provider, "model": model, "requests": count} for (provider, model), count in totals.items()]
-            self._write_processing(store, entry, translation_served=rows)
+            fields: dict[str, Any] = {"translation_served": rows}
+            if blocked:
+                fields["translation_fallback_blocked"] = blocked
+            self._write_processing(store, entry, **fields)
         except PipelineStop:
             raise
         except Exception:  # noqa: BLE001 - a convenience; the lesson stands without it

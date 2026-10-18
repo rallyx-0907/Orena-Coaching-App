@@ -67,6 +67,11 @@ class AICapabilityDefinition:
     reviewed_primary_models: frozenset[tuple[str, str]] = frozenset()
 
 
+# D-224 (PROPOSED): the media pipeline's spend check runs at the price of the one (provider, model) it knows, before the
+# call. A router backup rung could answer at a dearer price, and the router exposes no per-rung gate or usage of a billed
+# failed rung, so these capabilities take no backup until it does.
+NO_BACKUP_CAPABILITIES = frozenset({"media_translation", "media_transcript_correction"})
+
 INPUT_CLASSES = frozenset({"public_reference", "published_content", "learner_text"})
 _CAPABILITY_KEY = re.compile(r"^[a-z][a-z0-9_]*$")
 

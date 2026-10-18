@@ -563,7 +563,10 @@ def init_db() -> None:
 
 
 install_auth(app, init_db)
-_speech_asr_provider = GroqSpeechAsrProvider.from_env(key_source=lambda: media_groq_credentials()[0])   # D-224: the Admin-stored key first
+# D-224: the Admin-stored Groq key first. Read strictly at start: if the store cannot be read and the environment has no key,
+# the start fails loudly instead of silently choosing another engine for the life of the process.
+_media_groq_startup_key = media_groq_credentials(strict=True)[0]
+_speech_asr_provider = GroqSpeechAsrProvider.from_env(key_source=lambda: media_groq_credentials()[0])
 _media_fallback_mode = os.getenv("MEDIA_TRANSCRIPT_FALLBACK", "none").strip().casefold()
 if _media_fallback_mode not in {"none", "supadata"}:
     raise RuntimeError("MEDIA_TRANSCRIPT_FALLBACK must be 'none' or 'supadata'.")
@@ -631,7 +634,7 @@ configure_media_ingestion(_media_ingestion_service)
 # model, backup); with no such capability the pipeline is Groq alone, as before. `MEDIA_TRANSLATION_PROVIDER=ai` uses
 # the router only. Groq's key is the one saved in Admin, else GROQ_API_KEY, read at every request.
 _GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
-_GROQ_KEY_FOR_MEDIA = media_groq_credentials()[0] or _GROQ_API_KEY
+_GROQ_KEY_FOR_MEDIA = _media_groq_startup_key or _GROQ_API_KEY
 try:
     _media_translation_provider_id = resolve_translation_provider_id(
         os.getenv("MEDIA_TRANSLATION_PROVIDER", ""), groq_key=_GROQ_KEY_FOR_MEDIA

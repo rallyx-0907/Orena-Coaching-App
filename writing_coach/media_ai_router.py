@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
+import time
 from typing import Any
 
 from writing_coach import media_translation as mt
@@ -29,37 +31,88 @@ MAX_TRANSLATION_ANSWER_TOKENS = 8192
 MIN_ANSWER_TOKENS = 400
 
 
-def groq_credentials() -> tuple[str, str]:
-    """(api key, base URL) of Groq for the media pipeline: the key saved in Admin first, else `GROQ_API_KEY`, exactly the
-    order `ai/providers.py` uses (D-037, D-224). Read at every call, so a key saved in Admin applies without a restart.
-    An unreadable store falls back to the environment. The key is returned to the caller and never logged here."""
-    try:
+CACHE_TTL_SECONDS = 30.0
+_clock = time.monotonic
+_cache_lock = threading.Lock()
+_cache: dict[str, tuple[float, Any]] = {}
+
+
+def reset_cache() -> None:
+    """Forget the cached provider and capability lookups (tests; a change in Admin applies within CACHE_TTL_SECONDS)."""
+    with _cache_lock:
+        _cache.clear()
+
+
+def _cached(key: str, load: Any) -> Any:
+    """`load()` at most once per CACHE_TTL_SECONDS: building the providers decrypts every stored credential, and a batch
+    asks many times. A load that raises is not cached."""
+    now = _clock()
+    with _cache_lock:
+        hit = _cache.get(key)
+        if hit is not None and hit[0] > now:
+            return hit[1]
+    value = load()
+    with _cache_lock:
+        _cache[key] = (now + CACHE_TTL_SECONDS, value)
+    return value
+
+
+def _providers() -> dict[str, Any]:
+    def load() -> dict[str, Any]:
         from writing_coach.ai import platform
 
-        item = platform.providers().get("groq")
-        if item is not None:
-            return str(getattr(item, "api_key", "") or "").strip(), str(getattr(item, "base_url", "") or "")
-    except Exception:  # noqa: BLE001 - no store, no key there: the environment still answers
-        pass
-    return os.getenv("GROQ_API_KEY", "").strip(), os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+        return platform.providers()
+
+    return _cached("providers", load)
+
+
+def groq_credentials(*, strict: bool = False) -> tuple[str, str]:
+    """(api key, base URL) of Groq for the media pipeline: the key saved in Admin first, else `GROQ_API_KEY`, exactly the
+    order `ai/providers.py` uses (D-037, D-224); a stored credential with no key means the environment's. Looked up at
+    most every CACHE_TTL_SECONDS, so a key saved or deleted in Admin applies without a restart. An unreadable store is
+    logged (the error class only) and the environment answers; with `strict` and no environment key it raises instead,
+    so a start never silently chooses another engine because a read failed. The key is never logged here."""
+    env_key = os.getenv("GROQ_API_KEY", "").strip()
+    env_url = os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1")
+    try:
+        item = _providers().get("groq")
+    except Exception as exc:  # noqa: BLE001
+        if strict and not env_key:
+            raise
+        _logger.warning("The Admin-stored Groq credential could not be read (%s); the environment key applies.",
+                        type(exc).__name__)
+        return env_key, env_url
+    if item is None:
+        return env_key, env_url
+    return (str(getattr(item, "api_key", "") or "").strip() or env_key,
+            str(getattr(item, "base_url", "") or "") or env_url)
+
+
+def _load_target(capability_key: str) -> tuple[str, str] | None:
+    from writing_coach.ai import platform
+
+    row = platform._installed_platform_repository().get_capability_config(capability_key)
+    if row is None or not row.config.enabled:
+        return None
+    config = row.config
+    if config.backup_provider is not None:
+        # The spend check is made at the primary's price; a backup rung could answer dearer (D-224). Refused at save time
+        # too (`NO_BACKUP_CAPABILITIES`); a row stored before that is not used.
+        _logger.warning("Capability %s has a backup provider, which media capabilities do not take; it is not used.",
+                        capability_key)
+        return None
+    if not getattr(_providers().get(config.provider), "configured", False):
+        return None
+    return config.provider, config.model
 
 
 def capability_target(capability_key: str) -> tuple[str, str] | None:
     """The (provider, model) the operator configured for this capability, or None when there is nothing to ask: no row,
-    disabled, or none of its providers has a credential. Reads configuration only; no network."""
+    disabled, a backup configured, or its provider has no credential. Configuration only, no network; cached briefly."""
     try:
-        from writing_coach.ai import platform
-
-        row = platform._installed_platform_repository().get_capability_config(capability_key)
-        if row is None or not row.config.enabled:
-            return None
-        config = row.config
-        usable = platform.providers()
-        wanted = [config.provider] + ([config.backup_provider] if config.backup_provider else [])
-        if not any(getattr(usable.get(provider_id), "configured", False) for provider_id in wanted):
-            return None
-        return config.provider, config.model
-    except Exception:  # noqa: BLE001 - an unreadable configuration is no fallback, never a failure of the media pipeline
+        return _cached(f"target:{capability_key}", lambda: _load_target(capability_key))
+    except Exception as exc:  # noqa: BLE001 - an unreadable configuration is no fallback, never a failure of the pipeline
+        _logger.warning("Capability %s could not be read (%s); no router fallback.", capability_key, type(exc).__name__)
         return None
 
 
@@ -137,8 +190,11 @@ class PlatformMediaTranslator:
         wire, canonical_ids = mt._wire_segments(segments)
         max_tokens = max(MIN_ANSWER_TOKENS, min(MAX_TRANSLATION_ANSWER_TOKENS, mt.estimate_output_tokens(segments)))
         scope = mt.current_fallback_scope()
-        if scope is not None:
-            scope.admit(target[0], target[1], max_tokens)    # the spend check, before every router call
+        if scope is None:
+            # No media spend scope (an on-demand call, not the import pipeline): there is no ledger to check, and neither
+            # capability has a daily cap of its own, so an uncapped paid call is refused (D-224).
+            raise TranslationProviderError("media_translation needs a media spend scope.", reason="not_configured")
+        scope.admit(target[0], target[1], max_tokens)    # the spend check, before every router call
         result = _call(
             TRANSLATION_CAPABILITY,
             [
