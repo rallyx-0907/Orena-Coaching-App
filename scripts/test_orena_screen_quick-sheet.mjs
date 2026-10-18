@@ -294,6 +294,17 @@ assert.equal(noteTypeColorKey('anything-else'), 'var(--muted)');
   assert.match(sheetSrc, /card\.originalDefinition\s*\?\s*html`<div class="s-qs__general" lang=/, 'the original is the quieter second line, tagged with its own language');
 }
 
+/* --- A word saved before "Why here?" answers takes the contextual meaning onto its saved card --- */
+{
+  const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
+  const wordSheet = sheetSrc.slice(sheetSrc.indexOf('export async function openWordSheet'), sheetSrc.indexOf('Sentence Quick Sheet --'));
+  assert.match(wordSheet, /if \(next\.hasContent\) \{ detail = enriched; card = next; void keepContextualMeaning\(\); \}/, 'an arrived contextual meaning is kept on the saved card');
+  const keeper = wordSheet.slice(wordSheet.indexOf('async function keepContextualMeaning'), wordSheet.indexOf('async function toggleSave'));
+  assert.match(keeper, /!card\.saved \|\| !card\.meaningIsContextual/, 'only a saved card with a contextual meaning is re-saved');
+  assert.match(keeper, /api\.saveLibraryVocabulary\(wordSavePayload\(card, sentence, source\)\)/, 'through the save the sheet already uses');
+  assert.match(keeper, /readOnly/, 'a read-only sheet never writes');
+}
+
 /* --- A tap is deterministic: the contextual (AI-backed) meaning is the learner's own "Why here?" ask only --- */
 {
   const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');

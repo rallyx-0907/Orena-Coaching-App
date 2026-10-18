@@ -341,6 +341,19 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     sheetEl.querySelector('[data-why-retry]')?.addEventListener('click', () => askContextual());
   }
 
+  /* A word saved from this sheet before "Why here?" answered holds the basic meaning. When the contextual
+     meaning arrives, the saved card takes it: the same save the Save button makes, which updates the
+     definition of the word already kept (its review schedule is untouched). */
+  async function keepContextualMeaning() {
+    if (readOnly || !card.saved || !card.meaningIsContextual || !card.meaning) return;
+    try {
+      const saved = await api.saveLibraryVocabulary(wordSavePayload(card, sentence, source));
+      item = saved?.item || item;
+    } catch {
+      /* The card keeps the meaning it had; the sheet shows no failure the learner did not cause. */
+    }
+  }
+
   async function toggleSave() {
     if (busy || readOnly) return;
     busy = true;
@@ -431,7 +444,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
               const next = mapWordCard(target, {detail: enriched, item});
-              if (next.hasContent) { detail = enriched; card = next; }
+              if (next.hasContent) { detail = enriched; card = next; void keepContextualMeaning(); }
             }).catch(() => { contextualFailed = true; }).finally(() => {
               contextualPending = false;
               if (alive) paint();
