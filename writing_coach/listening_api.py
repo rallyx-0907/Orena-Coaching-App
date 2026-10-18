@@ -618,6 +618,11 @@ def _translation_provider_model() -> str:
 
     service = media_translation_service()
     provider = getattr(service, "_provider", None) if service is not None else None
+    # A provider with a router fallback (D-224) keeps Groq's identity, so adding the fallback re-prices no cached meaning.
+    provider = getattr(provider, "primary", provider)
+    if getattr(provider, "engine_id", "") == "ai":
+        # Router-only mode: the model the operator picked in Admin is the identity, so changing it misses the cache.
+        return f"{type(provider).__name__}:{getattr(provider, 'model_version', '') or 'default'}"
     return f"{type(provider).__name__}:{getattr(provider, 'model', '') or 'default'}"
 
 

@@ -85,8 +85,8 @@ export function agentMemory(storage, owner) {
       for (const note of live(value.notes, now)
         .filter((note) => note.kind !== 'address')
         .sort((a, b) => b.weight - a.weight)) {
-        const size = new TextEncoder().encode(JSON.stringify(note)).length + 1;
-        if (out.length >= LIMITS.coachNotes || bytes + size > LIMITS.coachNotesBytes) break;
+        const size = serverNoteBytes(note) + 1;
+        if (out.length >= LIMITS.coachNotes || bytes + size + NOTES_MARGIN > LIMITS.coachNotesBytes) break;
         out.push(note);
         bytes += size;
       }
@@ -100,6 +100,35 @@ export function agentMemory(storage, owner) {
       return note ? note.address : null;
     },
   };
+}
+
+/* The server refuses the WHOLE turn (422, no retry) when its measure of coach_notes passes 2048 bytes. That
+   measure (writing_coach/agent/schemas.py `coach_notes_bytes`) is the compact UTF-8 JSON of the VALIDATED
+   notes dumped by pydantic: every field present in model order, `expires_at` and `address` as explicit
+   nulls, `weight` as a Python float (`1.0`, never `1`), `last_reinforced` as pydantic's datetime text
+   (`2026-10-18T07:30:15.123000Z`, or the offset form `+00:00`, 6 chars for the zone). Measure the same shape,
+   with the datetime at its longest rendering. NOTES_MARGIN is a small slack for whatever the two
+   serialisers still disagree on. One known difference, exponent floats (JS `1e-7`, Python `1e-07`), is
+   unreachable only because `DROP_BELOW = 0.15` keeps every sent weight far from exponent range; lowering
+   DROP_BELOW would reopen it. The margin is it is on the whole list, not per note. The 20 / 2048 limits are unchanged. */
+const NOTES_MARGIN = 16;
+const DATETIME_LONGEST = '2026-10-18T07:30:15.123456+00:00';
+
+export function serverNoteBytes(note) {
+  const longest = (text) => (String(text).length > DATETIME_LONGEST.length ? String(text) : DATETIME_LONGEST);
+  const shaped = {
+    id: note.id,
+    kind: note.kind,
+    text: note.text,
+    weight: note.weight,
+    last_reinforced: longest(note.last_reinforced ?? ''),
+    expires_at: note.expires_at ? longest(note.expires_at) : null,
+    address: note.address ?? null,
+  };
+  let json = JSON.stringify(shaped);
+  // Python renders a whole-number float as `1.0`; JSON.stringify gives `1`.
+  if (Number.isInteger(Number(note.weight))) json = json.replace(/"weight":(-?\d+)(?=,)/, '"weight":$1.0');
+  return new TextEncoder().encode(json).length;
 }
 
 function validNote(note) {
