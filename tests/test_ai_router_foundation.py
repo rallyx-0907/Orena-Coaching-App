@@ -177,7 +177,7 @@ def test_every_other_provider_capability_carries_learner_text() -> None:
     from writing_coach.ai.capabilities import all_capabilities
 
     for definition in all_capabilities():
-        if definition.key != "word_translation":
+        if definition.key not in {"word_translation", "media_translation", "media_transcript_correction"}:
             assert definition.input_class == "learner_text", definition.key
             assert definition.opt_in is False
 

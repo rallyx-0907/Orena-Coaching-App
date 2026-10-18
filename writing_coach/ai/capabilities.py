@@ -186,6 +186,28 @@ _DEFINITIONS = (
         # instant model is enterprise-only, "contact sales", on Groq's public models page).
         paid_standby_models=frozenset({("groq", "llama-3.3-70b-versatile")}),
     ),
+    # D-224 (PROPOSED): the platform router behind media translation and transcript correction. Groq stays the first
+    # engine of both; these capabilities are what a batch is sent to when Groq cannot take it (a long rate limit, a
+    # spent daily quota, a request that cannot shrink, a provider fault, or no Groq credential). Opt-in, like
+    # `word_translation`: no row is required, so nothing changes until the operator picks a provider, model and backup in
+    # Admin. A learner's private import is learner content (D-104), so the default `learner_text` class stays: no free tier and no
+    # prompt-logging provider (OpenRouter) is accepted until the owner decides otherwise (D-224 open question).
+    _definition(
+        "media_translation",
+        operation=AIOperation.STRUCTURED_TEXT_GENERATION,
+        provider_backed=True,
+        configurable=True,
+        implemented=True,
+        opt_in=True,
+    ),
+    _definition(
+        "media_transcript_correction",
+        operation=AIOperation.STRUCTURED_TEXT_GENERATION,
+        provider_backed=True,
+        configurable=True,
+        implemented=True,
+        opt_in=True,
+    ),
     _definition(
         "grammar_lesson_generator",
         operation=AIOperation.STRUCTURED_TEXT_GENERATION,

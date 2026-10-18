@@ -539,6 +539,7 @@ class MediaPipeline:
         workers: int | None = None,
         translation_sink: Callable[[Callable[[str, Any], None]], Any] | None = None,
         corrector: Any = None,
+        fallback_corrector: Any = None,
     ) -> None:
         self._ledger = ledger
         self._asr = asr
@@ -548,6 +549,8 @@ class MediaPipeline:
         self._meanings = meanings
         self._english_reading = english_reading
         self._corrector = corrector
+        # D-224 (PROPOSED): what a correction batch Groq cannot take is sent to (the platform router), or None.
+        self._fallback_corrector = fallback_corrector
         # Where a translation call reports the tokens it was billed; the provider's own sink unless a caller brings one.
         self._translation_sink = translation_sink if translation_sink is not None else media_translation.usage_sink
         self._sleep: Callable[[float], None] = time.sleep
@@ -1108,7 +1111,11 @@ class MediaPipeline:
         providers: list[str] = []
         models: list[str] = []
         correct = getattr(self._corrector, "correct", None)
-        if not callable(correct) or getattr(self._corrector, "configured", True) is False:
+        primary_ready = callable(correct) and getattr(self._corrector, "configured", True) is not False
+        if not primary_ready and self._fallback_ready():
+            # Groq has no credential here: every batch goes straight to the router (the loop's first refusal).
+            correct, primary_ready = self._without_primary, True
+        if not primary_ready:
             state, detail = "unavailable", "corrector_unconfigured"
         else:
             state, detail = self._run_correction_batches(
@@ -1171,7 +1178,8 @@ class MediaPipeline:
                 context_bytes = len(entry.title.encode("utf-8")) + len(description.encode("utf-8"))
                 tokens = max(512, min(8192, sum(len(cue.text.encode("utf-8")) for cue in batch_cues) + context_bytes + 1000))
                 try:
-                    self._ledger.check(KIND_AI, batch_id, self._ai_cost(model, {"prompt_tokens": tokens, "completion_tokens": tokens}))
+                    self._ledger.check(KIND_AI, batch_id, self._ai_cost(
+                        model, {"prompt_tokens": tokens, "completion_tokens": tokens}, self._target_provider(self._corrector)))
                 except SpendCapReached:
                     failure = "spend_cap"
                     break
@@ -1179,7 +1187,7 @@ class MediaPipeline:
                     _logger.warning("transcript correction could not be prepared for %s", entry.media_id, exc_info=True)
                     failure = "correction_unavailable"
                     break
-                usage: list[tuple[str, Any]] = []
+                usage: list[tuple[str, Any, str]] = []
                 retry_after = 0.0
                 # One call may wait inside the provider (for the output-token window) at most CORRECTION_MAX_WAIT, and what it
                 # spends there comes off the shared total: the provider only knows the budget it is handed, so the per-wait cap
@@ -1189,7 +1197,7 @@ class MediaPipeline:
                 try:
                     with media_translation.translation_pacing(call_pace):
                         if self._translation_sink is not None:
-                            with self._translation_sink(lambda used, value, captured=usage: captured.append((used, value))):
+                            with self._translation_sink(self._usage_collector(usage)):
                                 result = correct(language=language, cues=batch_cues, title=entry.title, description=description)
                         else:
                             result = correct(language=language, cues=batch_cues, title=entry.title, description=description)
@@ -1220,6 +1228,12 @@ class MediaPipeline:
                         and (correction_ceiling(self._corrector) or 0) > 0
                         and len(fit_correction_batch(batch, correction_ceiling(self._corrector))) < len(batch)):
                     continue
+                # Groq cannot take this batch: a rate limit that will not be waited out (too long, or the attempts are
+                # spent), a request that cannot shrink, a provider fault, or no Groq credential (D-224, PROPOSED). The
+                # router's `media_transcript_correction` capability takes THAT batch, after its own spend check.
+                if (result is None and self._fallback_corrector is not None
+                        and (failure == "rate_limited" or failure in media_translation.FALLBACK_REASONS)):
+                    result, failure = self._correct_via_fallback(entry, batch_id, language, batch_cues, description, failure)
                 break
             if skipped:
                 continue
@@ -1235,14 +1249,95 @@ class MediaPipeline:
             return ("partial" if succeeded else "failed"), failure
         return ("partial" if rejected else "applied"), ""
 
-    def _book_correction_usage(self, entry: MediaLibraryEntry, batch_id: str, usage: list[tuple[str, Any]]) -> None:
-        """Book what the provider reported it billed (a refused or failed call reports nothing)."""
-        if not usage:
-            return
-        actual = sum(self._ai_cost(used, value) for used, value in usage)
-        units = len(usage)
+    @staticmethod
+    def _usage_collector(captured: list[tuple[str, Any, str]]) -> Callable[..., None]:
+        """What a provider's usage report is appended to: (model, usage, provider). A report without a provider is Groq's."""
+        def collect(model: str, value: Any, provider: str = "groq") -> None:
+            captured.append((model, value, provider))
+        return collect
+
+    def _book_ai_usage(
+        self, entry: MediaLibraryEntry, batch_id: str, usage: list[tuple[str, Any, str]]
+    ) -> dict[tuple[str, str], int]:
+        """Book what each provider reported it billed, one ledger row per provider (a refused or failed call reports
+        nothing), tagged with that provider so the free-tier and environment stamps are its own (D-219, D-221). Returns
+        how many answers each (provider, model) served."""
+        served: dict[tuple[str, str], int] = {}
+        grouped: dict[str, list[tuple[str, Any]]] = {}
+        for model, value, provider in usage:
+            grouped.setdefault(provider, []).append((model, value))
+            served[(provider, model)] = served.get((provider, model), 0) + 1
         usage.clear()
-        self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=units, provider="groq")
+        for provider, items in grouped.items():
+            actual = sum(self._ai_cost(model, value, provider) for model, value in items)
+            self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(items), provider=provider)
+        return served
+
+    def _book_correction_usage(self, entry: MediaLibraryEntry, batch_id: str, usage: list[tuple[str, Any, str]]) -> None:
+        self._book_ai_usage(entry, batch_id, usage)
+
+    @staticmethod
+    def _target_provider(engine: Any) -> str:
+        """The provider whose price a pre-call estimate uses: the router's configured one, else Groq."""
+        target = getattr(engine, "target", None)
+        try:
+            chosen = target() if callable(target) else None
+        except Exception:  # noqa: BLE001
+            chosen = None
+        return str(chosen[0]) if chosen else "groq"
+
+    def _fallback_ready(self) -> bool:
+        target = getattr(self._fallback_corrector, "target", None)
+        return callable(target) and target() is not None
+
+    @staticmethod
+    def _without_primary(**_kwargs: Any) -> Any:
+        raise media_translation.TranslationProviderError("Groq is not configured.", reason="not_configured")
+
+    def _admit_ai(self, batch_id: str) -> Callable[[str, str, int], None]:
+        """The spend check run before each router call: the call's estimated cost at the router's own provider and model
+        against the media caps, refusing it (`spend_cap`) before anything is sent (D-218's per-call rule)."""
+        def admit(provider: str, model: str, tokens: int) -> None:
+            try:
+                self._ledger.check(KIND_AI, batch_id, self._ai_cost(
+                    model, {"prompt_tokens": tokens, "completion_tokens": tokens}, provider))
+            except SpendCapReached:
+                raise media_translation.TranslationProviderError("spend cap", reason="spend_cap") from None
+            except Exception:  # noqa: BLE001 - an unreadable ledger admits nothing
+                raise media_translation.TranslationProviderError("spend check failed", reason="provider_error") from None
+        return admit
+
+    def _correct_via_fallback(
+        self, entry: MediaLibraryEntry, batch_id: str, language: str, cues: tuple[Cue, ...], description: str, failure: str,
+    ) -> tuple[Any, str]:
+        """One correction batch through the router. Returns (result, failure): the result when the router answered,
+        else None with Groq's own reason kept (it says why the batch stopped), or `spend_cap` when the cap refused it."""
+        target = self._fallback_corrector.target()
+        if target is None:
+            return None, failure
+        provider, model = target
+        context_bytes = len(entry.title.encode("utf-8")) + len(description.encode("utf-8"))
+        tokens = max(512, min(8192, sum(len(cue.text.encode("utf-8")) for cue in cues) + context_bytes + 1000))
+        try:
+            self._ledger.check(KIND_AI, batch_id, self._ai_cost(model, {"prompt_tokens": tokens, "completion_tokens": tokens}, provider))
+        except SpendCapReached:
+            return None, "spend_cap"
+        except Exception:  # noqa: BLE001
+            _logger.warning("transcript correction fallback could not be prepared for %s", entry.media_id, exc_info=True)
+            return None, "correction_unavailable"
+        usage: list[tuple[str, Any, str]] = []
+        result: Any = None
+        try:
+            if self._translation_sink is not None:
+                with self._translation_sink(self._usage_collector(usage)):
+                    result = self._fallback_corrector.correct(language=language, cues=cues, title=entry.title, description=description)
+            else:
+                result = self._fallback_corrector.correct(language=language, cues=cues, title=entry.title, description=description)
+        except Exception as exc:  # noqa: BLE001 - only the stable reason is kept, never the provider's message
+            _logger.warning("transcript correction fallback failed for %s: %s", entry.media_id, str(getattr(exc, "reason", "") or type(exc).__name__))
+            result = None
+        self._book_ai_usage(entry, batch_id, usage)
+        return (result, "") if result is not None else (None, failure)
 
     @staticmethod
     def _take_batch(
@@ -1487,6 +1582,7 @@ class MediaPipeline:
         # The one budget of seconds the provider may wait inside a call for its output-token window (D-218): shared by all
         # the rounds of this run, so a stuck window cannot hold the worker beyond it.
         pace = media_translation.PacingBudget(max_total_wait if pacing_seconds is None else pacing_seconds)
+        served: dict[tuple[str, str], int] = {}   # which (provider, model) answered how many requests of this run
         for target in languages:
             done = 0
             for attempt in range(max_rounds):
@@ -1505,12 +1601,15 @@ class MediaPipeline:
                     break
                 if guard is not None:
                     guard()
-                usage: list[tuple[str, Any]] = []
+                usage: list[tuple[str, Any, str]] = []
                 retry_after = 0.0
                 try:
-                    with media_translation.translation_pacing(pace):
+                    # The scope lets a batch Groq cannot take go to the router (D-224, PROPOSED): a rate-limit wait longer
+                    # than TRANSLATION_MAX_WAIT counts as one; each router call is spend-checked first.
+                    with media_translation.translation_pacing(pace), media_translation.fallback_scope(
+                            TRANSLATION_MAX_WAIT, self._admit_ai(batch_id)):
                         if self._translation_sink is not None:
-                            with self._translation_sink(lambda model, value, captured=usage: captured.append((model, value))):
+                            with self._translation_sink(self._usage_collector(usage)):
                                 result = self._meanings(entry, target)
                         else:
                             result = self._meanings(entry, target)
@@ -1523,8 +1622,8 @@ class MediaPipeline:
                     # Only what the provider reported it billed (#228): a refused call (401/403/429), a timeout and an
                     # answer without `usage` carry none, so a round that made no progress costs nothing. `estimate` stays
                     # what the cap is checked against before the call, never what is booked after it.
-                    actual = sum(self._ai_cost(model, value) for model, value in usage)
-                    self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=len(usage), provider="groq")
+                    for key, count in self._book_ai_usage(entry, batch_id, usage).items():
+                        served[key] = served.get(key, 0) + count
                 if result is not None:
                     if getattr(result, "status", "ready") in {"ready", "not_required"}:
                         done = total_lines
@@ -1563,6 +1662,7 @@ class MediaPipeline:
             if done < total_lines or not total_lines and stop_reason:
                 incomplete = True
             any_done = any_done or done > 0
+        self._record_translation_served(store, entry, served)
         self._record_translation_reason(store, entry, stop_reason if incomplete else "")
         if stop is not None:
             stop.update(reason=stop_reason if incomplete else "", retry_after=last_retry_after)
@@ -1792,6 +1892,28 @@ class MediaPipeline:
             fields["translation_continuation"] = {}
         self._write_processing(store, fresh, **fields)
 
+    def _record_translation_served(self, store: Any, entry: MediaLibraryEntry, served: Mapping[tuple[str, str], int]) -> None:
+        """Which provider and model answered the translation requests, beside `translation_counts` (D-224): the Admin
+        item view and the cost page read it. Counts add up across a continuation; nothing but names and counts is kept."""
+        if not served:
+            return
+        try:
+            fresh = store.get(entry.media_id) or entry
+            totals: dict[tuple[str, str], int] = {}
+            for row in (fresh.processing or {}).get("translation_served") or ():
+                if isinstance(row, Mapping):
+                    key = (str(row.get("provider") or "")[:40], str(row.get("model") or "")[:120])
+                    totals[key] = totals.get(key, 0) + int(row.get("requests") or 0)
+            for (provider, model), count in served.items():
+                key = (provider[:40], model[:120])
+                totals[key] = totals.get(key, 0) + count
+            rows = [{"provider": provider, "model": model, "requests": count} for (provider, model), count in totals.items()]
+            self._write_processing(store, entry, translation_served=rows)
+        except PipelineStop:
+            raise
+        except Exception:  # noqa: BLE001 - a convenience; the lesson stands without it
+            _logger.warning("translation provider record not written for %s", entry.media_id, exc_info=True)
+
     def _record_translation_reason(self, store: Any, entry: MediaLibraryEntry, reason: str) -> None:
         """Why the translation stopped short, beside `translation_counts`: a stable code, never log prose."""
         try:
@@ -1801,15 +1923,15 @@ class MediaPipeline:
         except Exception:  # noqa: BLE001 - the reason is a convenience; the lesson stands without it
             _logger.warning("translation reason not written for %s", entry.media_id, exc_info=True)
 
-    def _ai_cost(self, model: str, usage: Any) -> float:
+    def _ai_cost(self, model: str, usage: Any, provider: str = "groq") -> float:
         usage = usage if isinstance(usage, Mapping) else {}
         # A model with a published media rate is rated at it (D-218), before the catalogue, whose free-plan zero entries
-        # (qwen/qwen3.8-27b) would book 0 and leave every spend cap unreachable.
-        rate = policies.media_ai_model_rate(model)
+        # (qwen/qwen3.8-27b) would book 0 and leave every spend cap unreachable. The rate table is Groq's.
+        rate = policies.media_ai_model_rate(model) if provider == "groq" else None
         prompt, completion = usage.get("prompt_tokens"), usage.get("completion_tokens")
         if rate is not None and type(prompt) is int and type(completion) is int and prompt >= 0 and completion >= 0:
             return (prompt * rate[0] + completion * rate[1]) / 1_000_000
-        priced = estimate_token_cost("groq", model, usage)
+        priced = estimate_token_cost(provider, model, usage)
         # A zero from the catalogue is a free-plan fact about another capability, not a price for this ledger: it falls
         # through to the flat rate below.
         if priced.get("state") == "estimated" and isinstance(priced.get("amount"), (int, float)) and float(priced["amount"]) > 0:
