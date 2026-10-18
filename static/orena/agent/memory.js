@@ -52,8 +52,16 @@ export function agentMemory(storage, owner) {
     notes: (now = Date.now()) => live(value.notes, now),
     applyUpdate(update, now = Date.now()) {
       if (!update || typeof update !== 'object') return false;
+      /* §5.4 `stored` (v9): "server" means the account already applied it, so nothing is stored here; a
+         remove drops a device copy only when id AND text match (a server id could collide with an
+         unrelated device note's id). Absent or "device" is the v8 behaviour. */
+      if (update.stored === 'server' && update.op !== 'remove') return false;
       if (update.op === 'remove' && update.note?.id) {
-        value.notes = value.notes.filter((note) => note.id !== update.note.id);
+        const same = (note) => (update.stored === 'server'
+          ? note.id === update.note.id && note.kind !== 'address'
+            && typeof update.note.text === 'string' && note.text === update.note.text
+          : note.id === update.note.id);
+        value.notes = value.notes.filter((note) => !same(note));
         return save();
       }
       if (update.op === 'upsert' && validNote(update.note)) {
