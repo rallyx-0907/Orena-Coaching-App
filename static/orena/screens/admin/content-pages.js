@@ -184,7 +184,8 @@ export function mediaPage({ detail, view, t, ui, href, form = {} }) {
   };
   const correctionHint = ['unavailable', 'failed', 'partial'].includes(correctionState)
     ? html`<div class="a-hint">${t('ctCorrectionState_' + correctionState)}${record.processing?.transcript_correction_detail ? ` (${correctionCode(record.processing.transcript_correction_detail)})` : ''}</div>` : '';
-  /* Applied edits first-class: a deterministic edit says so in the reader's language, a model edit keeps the model's own reason. */
+  /* Applied edits first-class: a deterministic edit and a model edit both show a reason code worded in the reader's language
+     (correctionReasonText); the model's own sentence is never shown. */
   const correctionRows = [
     ...corrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionAfter')}: ${row.after}`, correctionReasonText(row), row.provider || row.model ? `${row.provider}/${row.model}` : '', latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),
     ...rejectedCorrections.map((row) => ({ start: row.start_ms, title: `${t('ctCorrectionBefore')}: ${row.before}`, meta: [`${t('ctCorrectionNotApplied')}: ${row.proposed}`, correctionCode(row.code), latency(row.start_ms, ui)].filter(Boolean).join(' · ') })),

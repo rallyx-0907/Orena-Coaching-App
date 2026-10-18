@@ -421,6 +421,12 @@ def _unicode_lexemes(text: str) -> list[str]:
     return tokens
 
 
+def _non_han_lexemes(text: str) -> list[str]:
+    """The words and numbers of a Chinese cue that are not Han characters (VOA, GPT-5, 2025): a Han character is a
+    separator here, so 这是VOA新闻 reads as ["voa"]. These are entities and figures, never recognition errors to repair."""
+    return _unicode_lexemes(_HAN_CHARACTER.sub(" ", text))
+
+
 def _han_edit_distance(before: str, after: str) -> int:
     a, b = _HAN_CHARACTER.findall(before), _HAN_CHARACTER.findall(after)
     previous = list(range(len(b) + 1))
@@ -437,13 +443,16 @@ def reject_cue_edit(language: str, before: str, after: str) -> str:
 
     The rule is per cue, so one bad proposal never costs the valid ones. Every cue: non-empty and within twice its length.
     English: the lexemes (words and numbers) must be unchanged. Chinese: the changed Han characters must stay within the
-    ZH_EDIT_* allowance for the cue's length."""
+    ZH_EDIT_* allowance for the cue's length, and every non-Han word or number (VOA, GPT-5, 2025) must be unchanged;
+    punctuation stays free."""
     if not after.strip():
         return "empty_cue"
     if len(after) > max(200, 2 * len(before) + 24):
         return "malformed_result"
     if language == "en":
         return "" if _unicode_lexemes(before) == _unicode_lexemes(after) else "lexemes_changed"
+    if _non_han_lexemes(before) != _non_han_lexemes(after):
+        return "lexemes_changed"
     han = len(_HAN_CHARACTER.findall(before))
     allowed = max(1, min(han - 1, max(ZH_EDIT_FLOOR, min(ZH_EDIT_CAP, math.ceil(han * ZH_EDIT_SHARE)))))
     return "" if _han_edit_distance(before, after) <= allowed else "edit_ratio_exceeded"
@@ -1100,8 +1109,13 @@ class MediaPipeline:
                     break
                 usage: list[tuple[str, Any]] = []
                 retry_after = 0.0
+                # One call may wait inside the provider (for the output-token window) at most CORRECTION_MAX_WAIT, and what it
+                # spends there comes off the shared total: the provider only knows the budget it is handed, so the per-wait cap
+                # is the budget of the call, not the whole allowance.
+                call_pace = media_translation.PacingBudget(min(CORRECTION_MAX_WAIT, pace.remaining))
+                offered = call_pace.remaining
                 try:
-                    with media_translation.translation_pacing(pace):
+                    with media_translation.translation_pacing(call_pace):
                         if self._translation_sink is not None:
                             with self._translation_sink(lambda used, value, captured=usage: captured.append((used, value))):
                                 result = correct(language=language, cues=batch_cues, title=entry.title, description=description)
@@ -1113,6 +1127,7 @@ class MediaPipeline:
                     failure = code if code in CORRECTION_PROVIDER_REASONS else "correction_failed"
                     retry_after = float(getattr(exc, "retry_after", 0.0) or 0.0)
                     result = None
+                pace.remaining = max(0.0, pace.remaining - (offered - call_pace.remaining))
                 self._book_correction_usage(entry, batch_id, usage)
                 if result is not None:
                     break

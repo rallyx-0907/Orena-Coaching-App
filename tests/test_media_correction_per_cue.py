@@ -94,6 +94,70 @@ def test_reject_cue_edit_rule(language, before, after, code):
     assert reject_cue_edit(language, before, after) == code
 
 
+@pytest.mark.parametrize("before,after,code", [
+    ("这是VOA新闻", "这是BOA新闻", "lexemes_changed"),                 # an entity swapped: not a recognition repair
+    ("价格是2025元", "价格是2026元", "lexemes_changed"),               # a figure changed
+    ("我们用GPT-5写作", "我们用GPT-6写作", "lexemes_changed"),
+    ("这是VOA新闻", "这是新闻", "lexemes_changed"),                    # a word dropped
+    ("这是新闻", "这是VOA新闻", "lexemes_changed"),                    # a word invented
+    ("我们渡舰过河", "我们渡江过河", ""),                              # a Han repair is still accepted
+    ("这是VOA新闻", "这是 VOA 新闻。", ""),                            # punctuation and spacing are free
+    ("这是VOA新闻", "这是voa新闻", ""),                                # case is not a different word
+    ("我们渡舰用VOA", "我们渡江用VOA", ""),                            # a Han repair beside an untouched entity
+])
+def test_chinese_cues_keep_their_latin_words_and_numbers(before, after, code):
+    assert reject_cue_edit("zh", before, after) == code
+
+
+# -- per-wait cap inside the provider (review of 54c8f608) ----------------------------------------------
+
+def test_one_provider_wait_never_exceeds_the_per_wait_cap_even_when_the_window_is_blocked_longer(tmp_path, monkeypatch):
+    """The provider's own pacing (`_reserve_output`) sleeps for the output-token window. It only knows the budget it is
+    handed, so a correction must hand it min(per-wait cap, what is left of the total), never the whole total."""
+    from writing_coach import media_translation as mt
+    from writing_coach.media_translation import GroqTranslationProvider
+
+    clock = [10_000.0]
+    sleeps: list[float] = []
+    monkeypatch.setattr(mt, "_monotonic", lambda: clock[0])
+    monkeypatch.setattr(mt, "_pause", lambda seconds: (sleeps.append(seconds), clock.__setitem__(0, clock[0] + seconds)))
+    mt.reset_output_windows()
+    posts: list[int] = []
+    monkeypatch.setattr(mt.requests, "post", lambda *_a, **_k: posts.append(1) or (_ for _ in ()).throw(AssertionError("sent")))
+    provider = GroqTranslationProvider("k", model="blocked-model", output_tokens_per_minute=1000)
+    mt.output_window("blocked-model").block_until(clock[0] + 120.0)     # an earlier refusal asked for 120 s
+
+    store, entry, pipeline, slept = _world(tmp_path, provider)
+    pipeline._sleep = slept.append
+    lines, meta = pipeline._correct_transcript(store, entry, "b", _english(3), origin=pipeline_module.ORIGIN_CAPTION)
+    mt.reset_output_windows()
+
+    assert sleeps == [] and slept == []                                  # a 120 s wait is not slept: it exceeds 90 s
+    assert posts == []                                                    # and the request was never sent
+    assert meta["transcript_correction_state"] == "failed" and meta["transcript_correction_detail"] == "rate_limited"
+    assert [line.text for line in lines] == [cue.text for cue in _english(3)]
+
+
+def test_waits_inside_the_provider_draw_on_the_shared_total(tmp_path):
+    """What a call sleeps inside the provider is spent from the same 150 s allowance the outer retry draws on."""
+    from writing_coach import media_translation as mt
+
+    seen: list[float] = []
+
+    class Spends(Echo):
+        def correct(self, *, cues, **kwargs):
+            budget = mt._PACING.get()
+            seen.append(budget.remaining)
+            budget.remaining -= 80.0                                       # the provider slept 80 s inside this call
+            return super().correct(cues=cues, **kwargs)
+
+    corrector = Spends()
+    store, entry, pipeline, _ = _world(tmp_path, corrector)
+    _, meta = pipeline._correct_transcript(store, entry, "b", _english(30), origin=pipeline_module.ORIGIN_CAPTION)
+    assert seen == [90.0, 70.0]                  # capped at 90 s for the first call; 150 - 80 = 70 s left for the second
+    assert meta["transcript_correction_state"] == "applied"
+
+
 def test_chinese_allowance_is_a_quarter_of_the_cue_capped_at_four():
     base = "甲乙丙丁戊己庚辛壬癸" * 4                                     # 40 Han characters
     assert reject_cue_edit("zh", base, "子丑寅卯" + base[4:]) == ""        # 4 changed: at the cap

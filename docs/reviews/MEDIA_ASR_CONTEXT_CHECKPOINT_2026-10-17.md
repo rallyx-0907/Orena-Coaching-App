@@ -196,6 +196,36 @@ host RAM 3.76 GB checked first): media pytest set plus `tests/test_admin_console
 review, Node admin areas, browser ESM graph (300 modules): PASS. Not done: independent re-review of this fix (the implementer
 may not approve it), the five earlier P2 findings, the live provider re-run (a paid run needs the owner's go-ahead), A12 visual check.
 
+## Review of `54c8f608`: REQUEST CHANGES, two P1 and one P2 fixed (2026-10-17)
+
+A third independent review (Delegated Architecture Reviewer, read-only, no code run) of `54c8f608` returned **REQUEST
+CHANGES: two P1 and one P2**. It confirmed the earlier hold-bypass P1 as closed (retry, recover, restore, translation-only
+retry, caption-only paths, learner imports, `unavailable`). It again could not audit the five P2 findings of the first review
+because their text is not in the repository: **they remain unaddressed**; their verbatim text should be recorded in the PR
+or an issue before this stage closes.
+
+- **P1 - the ZH guard only protected Han characters (fixed, not yet re-reviewed).** `reject_cue_edit("zh", ...)` measured the
+  edit over Han characters only, so the model could change an entity or a figure inside a Chinese cue (VOA -> BOA, 2025 ->
+  2026, GPT-5 -> GPT-6) with a Han distance of 0 - the trial had a real VOA -> BOA. Now every non-Han word or number of a
+  Chinese cue must be unchanged (`_non_han_lexemes`, a Han character acting as a separator, NFC, case-folded); punctuation
+  and spacing stay free, and a Han repair (渡舰 -> 渡江) is still accepted. A refused cue keeps its raw text with the code
+  `lexemes_changed`, which A12 already words in EN/VI/ZH.
+- **P1 - a single provider wait could exceed 90 s (fixed).** The per-wait cap was enforced only on the outer retry; the
+  provider's own pacing (`_reserve_output`) was handed the whole 150 s allowance, so a window blocked for 120 s could be
+  slept in one call. Each call now receives its own budget `min(90 s, what is left of 150 s)`, and what the provider actually
+  waited is deducted from the shared total, which the outer retry also draws on. A wait longer than the cap is refused unsent.
+- **P2 - stale A12 comment (fixed).** It said a model edit keeps the model's own reason; it now describes the reason codes.
+- Tests: 9 Chinese cases with Latin words and numbers (the four the reviewer named, plus dropped/invented words, case,
+  punctuation/spacing, a Han repair beside an untouched entity); a test through the real `_reserve_output` with a virtual
+  clock and a window blocked 120 s, asserting no sleep and no request; a test that the budget handed to successive calls is
+  `[90, 70]` after the provider spends 80 s.
+
+Local execution (not CI), disposable container (repository read-only, tmpfs databases, provider keys empty, 1 GB / 1 CPU;
+host RAM 2.49 GB, above the owner's 1 GB floor): media pytest set plus `tests/test_admin_console_routes.py` and
+`tests/test_admin_authorization_matrix.py` **1251 passed, 0 failed, 21 skipped**. Ruff on touched Python, Node admin media
+review, Node admin areas, browser ESM graph (300 modules): PASS. Not done: independent re-review of this fix (the implementer
+may not approve it), the five first-review P2 findings, the live provider re-run (a paid run needs the owner's go-ahead), A12 visual check.
+
 ## Exact changed files and memory transaction
 
 Code/tests: `app.py`; `writing_coach/speech_asr.py`; `writing_coach/media_transcript_pipeline.py`;
