@@ -90,9 +90,12 @@ The pilot host keeps billing **off**: every variable below is empty, or not set.
 **Must stay off:** `CREDITS_ENABLED`, `BILLING_CREDIT_PACKS_FILE`, every `SEPAY_*` and `PAYOS_*` variable, quota and
 funding enforcement.
 
-**Fixed 2026-10-18.** `compose.yaml` did not pass any `BILLING_*` or `POLAR_*` variable to the web container, so
-setting them in the host's `.env` changed nothing. They are now passed through, empty by default (test:
-`test_the_web_service_receives_the_plans_billing_configuration_off_by_default`).
+**Where they go.**
+- **`:8000`:** `runtime.env`, read by `scripts/staging_8000_deploy.ps1` (`docker run --env-file`), at step R6
+  of the `:8000` package. `:8000` is not started by compose.
+- **Compose hosts:** `compose.yaml` did not pass them. It does now, empty by default (#295, test
+  `test_the_web_service_receives_the_plans_billing_configuration_off_by_default`).
+- **`POLAR_ENVIRONMENT`:** empty means sandbox, so it must be set to `production` explicitly.
 
 ## 6. Human gates before billing can be turned on
 

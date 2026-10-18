@@ -68,14 +68,21 @@ usage.
 | Variable | Value |
 | --- | --- |
 | `BILLING_ENABLED` | `on` |
-| `BILLING_PRICES_FILE` | the prices file (step 3); under compose, a path inside the container on the data volume: `/data/billing/prices.json` (copy it in with `docker compose cp`) |
+| `BILLING_PRICES_FILE` | the prices file (step 3), as a path inside the container on the data volume: `/data/billing/prices.json` |
 | `POLAR_ACCESS_TOKEN` | the production token (step 1.3) |
 | `POLAR_WEBHOOK_SECRET` | the webhook secret (step 1.4) |
 | `POLAR_ENVIRONMENT` | `production` |
 | `BILLING_DOMESTIC_GATEWAY` | empty, unless Credits is also being enabled (gate 7a) |
 
-`compose.yaml` passes exactly these names (and `BILLING_NEW_SALES`) to the web service, empty by default. The ready
-list for this gate is `BILLING_ACTIVATION_READINESS.md`.
+**Where the values go on `:8000`.** `:8000` is not started by compose: `scripts/staging_8000_deploy.ps1` runs
+`docker run --env-file %LOCALAPPDATA%\orena-product\staging-8000untime.env` with the volume `ai-writing-coach-data`
+at `/data`. So the values go in **`runtime.env`**, at step R6 of the `:8000` package, and the web container is
+recreated by that script. The prices file goes into the volume, at `/data/billing/prices.json` (for example,
+`docker cp prices.json <web container>:/data/billing/prices.json`, after creating the directory).
+
+On a compose host, `compose.yaml` passes the same names (and `BILLING_NEW_SALES`) from `.env`, empty by default
+(#295). Empty means off: `BILLING_ENABLED` empty is off. An empty `POLAR_ENVIRONMENT` means **sandbox**, so it must
+be set to `production` explicitly. The ready list for this gate is `BILLING_ACTIVATION_READINESS.md`.
 
 ## 3. Prices file
 
