@@ -200,26 +200,40 @@ def test_asking_to_change_a_withheld_note_is_answered_plainly_and_changes_nothin
 @pytest.mark.parametrize("call", [
     ("c1", "forget_note", {"id": "n1"}),
     ("c1", "remember_note", {"kind": "preference", "text": "Giải thích dài hơn", "replaces": "n1"}),
-    ("c1", "remember_note", {"kind": "preference", "text": "Giải thích dài hơn"}),
 ])
-def test_below_full_memory_a_note_tool_call_never_changes_a_note(call):
-    """Review of #268 P1-1: enforced where notes change, not only in the words - the tools are not offered, and a
-    stray call is refused."""
+def test_below_full_memory_a_note_tool_call_never_changes_an_existing_note(call):
+    """Review of #268 P1-1: enforced where notes change, not only in the words - forget is not offered, and a stray
+    forget or replace is refused."""
     rt, provider, _ = pack_runtime([call_tools(call), reply("Được.")],
                                    classes=ProviderDataClasses.parse("gemini=learning_profile"))
-    events = run(rt, with_notes("Quên ghi chú về giải thích ngắn gọn đi, ghi nhớ giúp mình là giải thích dài hơn"))
+    events = run(rt, with_notes("Quên ghi chú về giải thích ngắn gọn đi"))
     assert not any(e.name == "memory_update" for e in events)
     offered = {spec.name for spec in provider.requests[0].tools}
-    assert not offered & {"remember_note", "forget_note"}
+    assert "forget_note" not in offered and "remember_note" in offered
     text = "".join(e.text_delta for e in events if e.name == "segment_delta")
     assert "chưa thể đọc hay sửa ghi chú" in text
 
 
-def test_asking_to_keep_a_note_below_full_memory_is_answered_plainly():
-    rt, _, _ = pack_runtime([reply("Mình đã ghi nhớ.")], classes=ProviderDataClasses.parse("gemini=learning_profile"))
+def test_below_full_memory_a_new_note_the_learner_asks_for_is_kept():
+    """Owner, 2026-10-18: below full_memory the existing notes are neither sent nor changed, but a new note the
+    learner asks for in so many words is still kept on the device."""
+    keep = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích bằng tiếng Việt"})
+    rt, provider, _ = pack_runtime([call_tools(keep), reply("Mình đã ghi nhớ.")],
+                                   classes=ProviderDataClasses.parse("gemini=learning_profile"))
     events = run(rt, with_notes("Từ giờ ghi nhớ giúp mình là giải thích bằng tiếng Việt"))
+    updates = [e for e in events if e.name == "memory_update"]
+    assert len(updates) == 1 and updates[0].op == "upsert" and updates[0].note["id"] != NOTE["id"]
+    assert updates[0].note["text"] == "Giải thích bằng tiếng Việt"
+    assert not sent_notes(provider.requests[0])  # the existing note is still withheld
+    assert "chưa thể đọc hay sửa ghi chú" not in "".join(e.text_delta for e in events if e.name == "segment_delta")
+
+
+def test_below_full_memory_a_new_note_still_needs_the_learner_to_ask():
+    keep = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích bằng tiếng Việt"})
+    rt, _, _ = pack_runtime([call_tools(keep), reply("Được.")],
+                            classes=ProviderDataClasses.parse("gemini=learning_profile"))
+    events = run(rt, with_notes("Tại sao tôi sai từ này?"))
     assert not any(e.name == "memory_update" for e in events)
-    assert "chưa thể đọc hay sửa ghi chú" in "".join(e.text_delta for e in events if e.name == "segment_delta")
 
 
 def test_at_full_memory_the_note_tools_work_as_before():
@@ -382,7 +396,7 @@ def test_voice_gets_coach_notes_only_when_cleared_and_does_not_continue_a_conver
         opened("gemini=learning_profile", sent_class=2)
 
 
-def test_voice_below_full_memory_offers_no_note_tool_and_refuses_one():
+def test_voice_below_full_memory_offers_no_forget_and_refuses_one_but_keeps_a_new_note():
     from tests.test_agent_voice_session import LEARNER, Post, _body, _service
 
     post = Post()
@@ -394,8 +408,12 @@ def test_voice_below_full_memory_offers_no_note_tool_and_refuses_one():
     sid = service.open(body, LEARNER)["voice_session_id"]
     setup = post.calls[0][2]["bidiGenerateContentSetup"]
     declared = {f["name"] for tool in setup.get("tools", []) for f in tool.get("functionDeclarations", [])}
-    assert not declared & {"remember_note", "forget_note"}
+    assert "forget_note" not in declared and "remember_note" in declared
     forget = {"id": "c1", "name": "forget_note", "args": {"id": "n1"}}
     answer = service.relay(sid, [forget], LEARNER, heard="Quên ghi chú về giải thích ngắn gọn đi")
     assert answer["events"] == [] and not answer["responses"][0]["response"]["result"].startswith("accepted")
+    keep = {"id": "c2", "name": "remember_note", "args": {"kind": "preference", "text": "Giải thích bằng tiếng Việt"}}
+    answer = service.relay(sid, [keep], LEARNER, heard="Từ giờ ghi nhớ giúp mình là giải thích bằng tiếng Việt")
+    assert answer["responses"][0]["response"]["result"].startswith("accepted")
+    assert [e["event"] for e in answer["events"]] == ["memory_update"]
 

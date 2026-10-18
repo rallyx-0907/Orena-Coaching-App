@@ -674,7 +674,7 @@ class VoiceService:
         if level < session_state.data_class_sent:
             raise VoiceUnavailable("the voice vendor is not cleared for the data this conversation carries")
         notes_available = level >= NOTES_CLASS
-        if not notes_available:  # no note is read, kept, changed or forgotten by voice (owner, 2026-10-18)
+        if not notes_available:  # no note is read, changed or forgotten by voice; a new one is kept (owner, 2026-10-18)
             tier1 = replace(tier1, coach_notes=())
         if level < CONTEXT_EVIDENCE_CLASS:
             tier1, session_state = without_carried_state(turn, tier1, session_state)
@@ -705,7 +705,7 @@ class VoiceService:
 
     def _tool_specs(self, request: TurnRequest, learner: LearnerScope, *, notes: bool = True) -> list[ProviderToolSpec]:
         reads = [ProviderToolSpec.from_tool(t) for t in self.runtime.tools.tools() if learner.contract_language in t.languages]
-        offered = VOICE_REPLY_TOOLS if notes else VOICE_REPLY_TOOLS - {REMEMBER_NOTE, FORGET_NOTE}
+        offered = VOICE_REPLY_TOOLS if notes else VOICE_REPLY_TOOLS - {FORGET_NOTE}
         replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version, pending=True)
                    if s.name in offered]  # fmt: skip
         actions = request.client.allowed_actions & actions_for_version(request.version)
