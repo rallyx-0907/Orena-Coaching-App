@@ -13,8 +13,9 @@ from __future__ import annotations
 import logging
 import math
 import threading
+from contextvars import ContextVar
 from collections.abc import Callable, Mapping
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from writing_coach import policies
@@ -95,16 +96,54 @@ def ceiling_usd() -> float | None:
     return _ceiling.cap_usd if _ceiling is not None else None
 
 
+PAUSED_HEADER = "X-Orena-AI-Paused"
+# The request being answered, when the system ceiling refused something in it: {"resets_at": iso}. A dict set per request
+# by the middleware below, so a sync route (run in the threadpool, on a copy of the context) still marks it.
+_request_mark: ContextVar[dict[str, str] | None] = ContextVar("orena_ai_paused", default=None)
+
+
+def _refusal() -> tuple[float, bool] | None:
+    """The ceiling's verdict, marking the request as AI-paused when the limit is really reached (a fault is not)."""
+
+    if _ceiling is None:
+        return None
+    refused = _ceiling.refusal()
+    if refused is not None and not refused[1]:
+        mark = _request_mark.get()
+        if mark is not None:
+            moment = datetime.now(UTC) + timedelta(seconds=max(1, math.ceil(refused[0])))
+            mark["resets_at"] = moment.replace(microsecond=0).isoformat()
+    return refused
+
+
+def install_paused_header(app: Any) -> None:
+    """Every response carries `X-Orena-AI-Paused: <resets_at>` when the system ceiling refused something while it was
+    answered, whatever its route, status or body: the one signal a client needs to say "AI is paused until ..."."""
+
+    @app.middleware("http")
+    async def _ai_paused(request: Any, call_next: Callable[[Any], Any]) -> Any:
+        token = _request_mark.set({})
+        try:
+            response = await call_next(request)
+            resets_at = (_request_mark.get() or {}).get("resets_at")
+            if resets_at:
+                response.headers[PAUSED_HEADER] = resets_at
+            return response
+        finally:
+            _request_mark.reset(token)
+
+
 def ceiling_wait() -> float | None:
     """Seconds until the system ceiling resets when it is reached (or unreadable); None when spending may go on."""
 
-    return _ceiling() if _ceiling is not None else None
+    refused = _refusal()
+    return refused[0] if refused is not None else None
 
 
 def ceiling_check() -> tuple[float, bool] | None:
     """(seconds until it resets, True when the ledger could not be read), or None when spending may go on."""
 
-    return _ceiling.refusal() if _ceiling is not None else None
+    return _refusal()
 
 
 def require_below_ceiling() -> None:
@@ -117,7 +156,7 @@ def require_below_ceiling() -> None:
 def ceiling_reached() -> bool:
     """True when today's whole-system AI spend has reached the ceiling (or cannot be read): no paid call now."""
 
-    return _ceiling is not None and _ceiling() is not None
+    return _refusal() is not None
 
 
 def ceiling_status() -> dict[str, Any]:
