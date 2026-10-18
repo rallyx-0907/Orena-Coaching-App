@@ -99,7 +99,9 @@ export default async function progressScreen(element, ctx) {
     return cache.activity;
   }
   function getRank() {
-    if (!cache.rank) cache.rank = api.libraryVocabularySummary();
+    if (!cache.rank) {
+      cache.rank = api.libraryVocabularySummary().catch((error) => { cache.rank = null; throw error; });
+    }
     return cache.rank;
   }
 

@@ -6402,3 +6402,7 @@ The pinned design draws no line telling the learner that Orena stored a note. By
 ## Consent evidence is not stored (D-229 proposed, 2026-10-18)
 
 The light-consent model records no server-side evidence of acceptance: the Account step shows the Terms and Privacy line, and nothing is saved when the learner continues. Storing which policy version and effective date a learner accepted, and when, needs a table and a decision on what counts as acceptance; it waits for the owner's schema decision (AGENTS.md section 7). A just-in-time voice consent step does not exist and the policy does not promise one. The privacy page has no version field, only a deploy-stamped effective date (`facts.json`), which is what the evidence would reference.
+
+## My Library: an empty Content tab draws nothing (2026-10-19)
+
+The pinned "My Library" frame (`Orena.dc.html`, ~535) draws one empty state, the Language tab's "Nothing saved yet" (`libLangEmpty`), which the app already renders. It draws none for the Content, Collections, Active or Due tabs, and it has no "saved" tab (`#/library?tab=saved` falls back to Content). With nothing to show, Content renders no rows. Nothing was added; whether the design should draw an empty Content tab is open for the owner.

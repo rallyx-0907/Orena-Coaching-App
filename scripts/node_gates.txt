@@ -140,3 +140,4 @@ scripts/test_orena_reader_tap_word.mjs
 scripts/test_orena_credit_topup.mjs
 scripts/test_orena_screen_credits.mjs
 scripts/test_orena_preview_readonly.mjs
+scripts/test_orena_offline_not_empty.mjs
