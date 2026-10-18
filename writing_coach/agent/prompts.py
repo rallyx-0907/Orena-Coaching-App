@@ -411,7 +411,8 @@ def notes_line(tier1: Tier1Context) -> str | None:
     # json.dumps: the learner's words reach the system channel only as escaped strings, never as prose.
     kept = "; ".join(f"{note.kind}: {json.dumps(note.text, ensure_ascii=False)}" for note in notes)
     return (f"What the learner asked you to keep (context.coach_notes), in their words - {kept}. When they ask what "
-            "they told you, answer from these.")
+            "they told you, answer from these in your own words, as one natural sentence: never paste a note's words "
+            "into your sentence.")
 
 
 CARRIED_HEAD = "[Earlier in this conversation - what was said before the messages below, not a new request]"
