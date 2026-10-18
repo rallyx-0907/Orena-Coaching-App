@@ -458,3 +458,16 @@ def test_keeping_the_words_of_an_unplaced_device_note_moves_it_to_the_account():
     assert kept and kept[0].stored == "server"
     assert [(g.note, g.stored) for g in gone] == [({"id": NOTE["id"]}, "device")]
     assert [i.text for i in store.items(scope(rt.memory), "zh", NOW)] == ["Giải thích thật ngắn gọn"]
+
+
+@pytest.mark.parametrize("failure", ["unavailable", "limit", "store_error"])
+def test_a_placement_that_is_not_kept_leaves_the_device_note_alone(failure):
+    """Review of #279: the device copy is removed only after the account write committed."""
+    from writing_coach.agent.memory_store import MemoryLimit, MemoryUnavailable
+
+    error = {"unavailable": MemoryUnavailable(), "limit": MemoryLimit(), "store_error": RuntimeError("db down")}[failure]
+    call = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích thật ngắn gọn"})
+    rt, _, store = wired([call_tools(call), reply("Chưa được.")])
+    store.add_explicit = lambda *a, **k: (_ for _ in ()).throw(error)
+    events = run(rt, v9_request("Từ giờ ghi nhớ giúp mình là giải thích thật ngắn gọn"))
+    assert updates(events) == []  # no server upsert and no device remove: the device keeps its note
