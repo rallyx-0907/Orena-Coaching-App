@@ -126,10 +126,12 @@ review and explicit human authorization.
 - Capability configuration and diagnostics never persist or expose credentials.
 - No provider-to-provider fallback or silent paid-provider failover. One
   explicit exception (D-224): a media translation or transcript-correction
-  batch Groq refuses for capacity may go once to the provider the operator
-  configured in Admin for `media_translation` / `media_transcript_correction`;
-  the router's own `backup_provider` rung stays refused for both, ASR is
-  excluded, and each later batch asks Groq first.
+  batch that Groq cannot take (long rate-limit or quota wait, 5xx, request too
+  large, or Groq not configured) may go once, for that batch only, to the
+  provider the operator configured in Admin for `media_translation` /
+  `media_transcript_correction`, under the media spend cap and only inside the
+  import pipeline's spend scope; the router's own `backup_provider` rung stays
+  refused for both, ASR is excluded, and each later batch asks Groq first.
 - Shared-media translation may select Groq or local Marian once from explicit
   configuration; a provider failure must stop rather than silently fail over,
   except for the D-224 capacity exception above.
