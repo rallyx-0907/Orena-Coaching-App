@@ -106,10 +106,10 @@ const text = rendered.join('\n');
 const forbidden = [
   /\bApple\b/, /orena\.app/i, /payment partner/i, /đối tác thanh toán/i, /at rest/i, /khi lưu trữ/i, /App Store/i,
   /train models/i, /huấn luyện mô hình/i, /Settings → Privacy/, /Cài đặt → Quyền riêng tư/, /Export all of your/i,
-  /Azure/i, /OpenAI/i, /DeepSeek/i, /Supadata/i, /Cloudflare/i, /Anthropic/i, /Google Fonts/i,
+ /OpenAI/i, /DeepSeek/i, /Supadata/i, /Cloudflare/i, /Anthropic/i, /Google Fonts/i,
 ];
 for (const re of forbidden) assert.ok(!re.test(text), `legal pages must not say ${re}`);
-for (const [lang, re] of [['en', /Google \(Gemini\), Groq and OpenRouter/], ['vi', /Google \(Gemini\), Groq và OpenRouter/]]) {
+for (const [lang, re] of [['en', /Google \(Gemini\), Groq and OpenRouter, and Microsoft Azure Speech/], ['vi', /Google \(Gemini\), Groq và OpenRouter, và Microsoft Azure Speech/]]) {
   assert.ok(re.test(html(`privacy.${lang}.html`).replace(/<[^>]+>/g, ' ')), `privacy.${lang}: names the AI providers`);
   assert.ok(!/thử nghiệm|pilot|trial/i.test(html(`privacy.${lang}.html`) + html(`terms.${lang}.html`)), `${lang}: no pilot wording`);
 }
