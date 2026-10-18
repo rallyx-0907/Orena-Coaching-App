@@ -347,6 +347,50 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   assert.equal(usesPicker(null), false);
 }
 
+/* --- Orena Memory's one switch (D-226): account-wide, hidden when unavailable, one PUT, EN/VI/ZH ------------ */
+{
+  const { readMemoryEnabled, writeMemoryEnabled, memoryOn, __reset } = await import('../static/orena/agent/memory-switch.js');
+  const ids = (input) => privacyRows(input).map((r) => r.id);
+  assert.ok(!ids({ lang: 'en' }).includes('memory'), 'no answer from the server: the row is not drawn');
+  assert.ok(!ids({ lang: 'en', memoryOn: null }).includes('memory'), 'unavailable (503): the row is hidden');
+  assert.deepEqual(ids({ lang: 'en', memoryOn: true }).slice(0, 2), ['mic', 'memory'], 'drawn in Privacy, beside the microphone toggle');
+  const on = privacyRows({ memoryOn: true }).find((r) => r.id === 'memory');
+  assert.deepEqual([on.kind, on.value, on.disabled], ['toggle', true, false]);
+  assert.equal(privacyRows({ memoryOn: false }).find((r) => r.id === 'memory').value, false);
+
+  const calls = [];
+  const answer = (body, status) => async (url, options = {}) => {
+    calls.push({ url, method: options.method || 'GET', body: options.body });
+    if (status) throw Object.assign(new Error('x'), { status });
+    return body;
+  };
+  __reset();
+  assert.equal(await readMemoryEnabled('zh', answer({ enabled: false, version: 3, items: {} })), false);
+  assert.equal(calls[0].url, '/api/agent/memory?language=zh-CN', 'read with the active learning language, in the contract code');
+  assert.equal(memoryOn(), false, 'the last known state is cached');
+  assert.equal(await readMemoryEnabled('en', answer({}, 503)), null, '503 memory_unavailable: null, no error');
+  assert.equal(memoryOn(), false, 'an unavailable read leaves the cache alone');
+  calls.length = 0;
+  assert.equal(await writeMemoryEnabled(true, answer({ enabled: true, version: 4 })), true);
+  assert.equal(calls.length, 1, 'one PUT for the whole account, never one per language');
+  assert.deepEqual([calls[0].url, calls[0].method, calls[0].body], ['/api/agent/memory/settings', 'PUT', '{"enabled":true}']);
+  assert.equal(memoryOn(), true);
+  for (const status of [503, 429]) {
+    await assert.rejects(() => writeMemoryEnabled(false, answer({}, status)), (error) => error.status === status, `PUT ${status} throws so the screen reverts`);
+    assert.equal(memoryOn(), true, `a failed PUT ${status} keeps the old state`);
+  }
+  await assert.rejects(() => readMemoryEnabled('en', answer({}, 401)), (error) => error.status === 401, '401 reaches the signed-out handling');
+
+  const copy = await import('../static/orena/copy/index.js');
+  const table = copy.registeredCopy().get('settings');
+  for (const key of ['memoryLabel', 'memorySub']) {
+    assert.equal(table.layers[key], 'interface');
+    for (const lang of ['en', 'vi', 'zh']) assert.ok(String(table.packs[lang][key] || '').trim(), `${lang}.${key} present`);
+  }
+  assert.match(table.packs.zh.memorySub, /[一-鿿]/);
+  assert.match(table.packs.vi.memorySub, /[ộảợ]/);
+}
+
 console.log('Settings: rows built from real data, every backend gap disabled and recorded, EN/VI/ZH covered: PASS');
 
 /* --- Orena's voice (R29): offered only when the server lists voices; the stored choice, else the default --- */
