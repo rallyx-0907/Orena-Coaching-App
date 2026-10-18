@@ -18,6 +18,7 @@ from typing import Any
 from fastapi import APIRouter, File, Request, Response, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
+from writing_coach import media_pack
 from writing_coach import reading_admin_api as reading
 from writing_coach.content_packs import (
     IDENTICAL,
@@ -38,6 +39,8 @@ class _Packs:
     vocabulary_ids: Callable[[tuple[str, ...], str], list[str]] | None = None
     vocabulary_export: Callable[[str], dict[str, Any] | None] | None = None
     vocabulary_import: Callable[..., dict[str, Any]] | None = None
+    media_store: Any = None
+    media_assets: Any = None
     environment: str = "local"
     app_version: str = ""
 
@@ -53,14 +56,25 @@ def configure_content_packs(**kwargs: Any) -> None:
 class ExportBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    kinds: list[str] = Field(default_factory=lambda: ["reading", "vocabulary"], max_length=4)
+    kinds: list[str] = Field(default_factory=lambda: ["reading", "vocabulary"], max_length=4)  # also "media" (D-233)
     languages: list[str] = Field(default_factory=list, max_length=4)
     source_slug_prefix: str = Field(default="", max_length=120)
     collection_prefix: str = Field(default="", max_length=160)
+    media_ids: list[str] = Field(default_factory=list, max_length=500)
+    exclude_media_id_prefixes: list[str] = Field(default_factory=list, max_length=20)
 
 
-def _items_for(body: ExportBody) -> list[PackItem]:
+def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[PackItem]:
     items: list[PackItem] = []
+    if "media" in body.kinds:
+        if _state.media_store is None or _state.media_assets is None:
+            raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
+        media_items, blobs, excluded = media_pack.build_media_items(
+            _state.media_store, _state.media_assets, ids=body.media_ids, languages=body.languages,
+            exclude_prefixes=body.exclude_media_id_prefixes)
+        items += media_items
+        if extra is not None:
+            extra["assets"], extra["excluded"] = blobs, excluded
     languages = tuple(code for code in body.languages if code in {"en", "zh"})
     if "reading" in body.kinds:
         items += reading.pack_reading_items(source_slug_prefix=body.source_slug_prefix.strip(), languages=languages)
@@ -76,12 +90,15 @@ def _items_for(body: ExportBody) -> list[PackItem]:
 def export_pack(request: Request, body: ExportBody) -> Response:
     admin = reading._admin(request)
     reading._same_origin(request)
-    items = reading._guarded(lambda: _items_for(body))
+    extra: dict[str, Any] = {}
+    items = reading._guarded(lambda: _items_for(body, extra))
     if not items:
         raise orena_http_error(404, "pack_nothing_to_export", "Nothing published matches these filters.")
     try:
         raw = build_pack(items, created_by=str(admin.get("email") or "admin"), environment=_state.environment,
-                         app_version=_state.app_version, filters=body.model_dump())  # fmt: skip
+                         app_version=_state.app_version, filters=body.model_dump(),
+                         assets=extra.get("assets"), extra_manifest={"media_excluded": extra.get("excluded", [])}
+                         if "media" in body.kinds else None)  # fmt: skip
     except PackError as exc:
         raise orena_http_error(422, exc.code, str(exc)) from exc
     counts: dict[str, int] = {}
@@ -128,11 +145,23 @@ def _existing(item: PackItem) -> tuple[str | None, str | None]:
     return (item.content_hash if wanted <= have else "local-differs"), None
 
 
-def _plan(pack: Any) -> dict[str, Any]:
+def _media_rows(pack: Any, *, overwrite: bool, dry_run: bool, actor: str) -> list[dict[str, Any]]:
+    if not any(item.kind == media_pack.KIND for item in pack.items):
+        return []
+    if _state.media_store is None or _state.media_assets is None:
+        raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
+    return media_pack.apply_media_items(pack, _state.media_store, _state.media_assets, overwrite=overwrite,
+                                        dry_run=dry_run, actor=actor)
+
+
+def _plan(pack: Any, overwrite: bool = False) -> dict[str, Any]:
     rows = []
     for item in pack.items:
+        if item.kind == media_pack.KIND:
+            continue
         existing, state = _existing(item)
         rows.append(plan_item(item, existing_hash=existing, source_state=state))
+    rows += _media_rows(pack, overwrite=overwrite, dry_run=True, actor=media_pack.PACK_ACTOR)
     summary: dict[str, int] = {}
     for row in rows:
         summary[row["outcome"]] = summary.get(row["outcome"], 0) + 1
@@ -143,22 +172,27 @@ def _plan(pack: Any) -> dict[str, Any]:
 
 
 @router.post("/plan")
-async def plan_pack(request: Request, file: UploadFile | None = File(default=None)) -> dict[str, Any]:
+async def plan_pack(request: Request, file: UploadFile | None = File(default=None),
+                    overwrite: bool = False) -> dict[str, Any]:
     reading._admin(request)
     reading._same_origin(request)
     pack = _verified(await _read_upload(file))
-    return reading._guarded(lambda: _plan(pack))
+    return reading._guarded(lambda: _plan(pack, overwrite))
 
 
 @router.post("/import")
-async def import_pack(request: Request, file: UploadFile | None = File(default=None)) -> dict[str, Any]:
+async def import_pack(request: Request, file: UploadFile | None = File(default=None),
+                      overwrite: bool = False) -> dict[str, Any]:
     admin = reading._admin(request)
     reading._same_origin(request)
     pack = _verified(await _read_upload(file))
     pack_id = str(pack.manifest.get("pack_id") or "")
     order = {"reading_source": 0, "reading_article": 1, "vocabulary_collection": 2}
     results = []
+    results.extend(_media_rows(pack, overwrite=overwrite, dry_run=False, actor=reading._actor(admin)))
     for item in sorted(pack.items, key=lambda entry: order[entry.kind]):
+        if item.kind == media_pack.KIND:
+            continue
         existing, _state_of_source = _existing(item)
         outcome = plan_item(item, existing_hash=existing)["outcome"]
         try:
@@ -177,7 +211,8 @@ async def import_pack(request: Request, file: UploadFile | None = File(default=N
         results.append({"kind": item.kind, "natural_key": item.natural_key, "outcome": outcome, **result})
     summary: dict[str, int] = {}
     for row in results:
-        summary[row["result"]] = summary.get(row["result"], 0) + 1
+        key = row.get("result") or f"media_{row['outcome']}"
+        summary[key] = summary.get(key, 0) + 1
     reading._audit(admin, "admin.content_pack_import", entity_type="content_pack", entity_id=pack_id,
-                   payload={"summary": summary})  # fmt: skip
+                   payload={"summary": summary, "overwrite": overwrite})  # fmt: skip
     return {"pack_id": pack_id, "summary": summary, "items": results}

@@ -27,8 +27,10 @@ from datetime import UTC, datetime
 from typing import Any
 
 PACK_FORMAT = "orena-content-pack"
-PACK_VERSION = 1
-KINDS = ("reading_source", "reading_article", "vocabulary_collection")
+# Version 1: Reading and vocabulary. Version 2 adds `media_item` and binary `assets/` files (D-233). A pack is stamped with
+# the lowest version that can read it, so a Reading-only pack stays readable by an environment that has not updated.
+PACK_VERSION = 2
+KINDS = ("reading_source", "reading_article", "vocabulary_collection", "media_item")
 
 MAX_PACK_BYTES = 50 * 1024 * 1024
 MAX_FILES = 5001
@@ -36,7 +38,7 @@ MAX_FILE_BYTES = 20 * 1024 * 1024
 MAX_TOTAL_BYTES = 200 * 1024 * 1024
 MAX_RATIO = 100
 _SAFE_NAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9._-]{0,159}")
-_SAFE_PATH = re.compile(r"(?:manifest\.json|items/(?:reading_source|reading_article|vocabulary_collection)/[A-Za-z0-9][A-Za-z0-9._-]{0,159}\.json)")
+_SAFE_PATH = re.compile(r"(?:manifest\.json|items/(?:reading_source|reading_article|vocabulary_collection|media_item)/[A-Za-z0-9][A-Za-z0-9._-]{0,159}\.json|assets/(?:[A-Za-z0-9_.-]{1,160}/){1,6}[A-Za-z0-9_.-]{1,160})")
 # A pack must never carry these: a builder that finds one refuses to build (no learner data, no secrets).
 _FORBIDDEN_KEYS = re.compile(r'"(?:user_id|user_key|owner_token|email|password|api_key|secret|token|session)"\s*:')
 
@@ -82,10 +84,13 @@ class PackItem:
 class Pack:
     manifest: dict[str, Any]
     items: list[PackItem] = field(default_factory=list)
+    # Binary files by pack path (`assets/<asset key>`), already verified against the manifest.
+    assets: dict[str, bytes] = field(default_factory=dict)
 
 
 def build_pack(items: Iterable[PackItem], *, created_by: str, environment: str, app_version: str,
-               filters: Mapping[str, Any]) -> bytes:
+               filters: Mapping[str, Any], assets: Mapping[str, bytes] | None = None,
+               extra_manifest: Mapping[str, Any] | None = None) -> bytes:
     """The zip for these items. Refuses to build when any item carries a learner or secret field."""
 
     files: dict[str, bytes] = {}
@@ -101,9 +106,16 @@ def build_pack(items: Iterable[PackItem], *, created_by: str, environment: str, 
             path = f"items/{item.kind}/{_file_name(item.natural_key)}-{hashlib.sha256(body).hexdigest()[:8]}.json"
         files[path] = body
         counts[item.kind] = counts.get(item.kind, 0) + 1
+    for key, blob in (assets or {}).items():
+        path = f"assets/{key}"
+        if not _SAFE_PATH.fullmatch(path) or path in files:
+            raise PackError("pack_unsafe_path", f"unsafe asset key {key[:80]!r}")
+        files[path] = bytes(blob)
     listed = [{"path": path, "sha256": hashlib.sha256(data).hexdigest(), "bytes": len(data)} for path, data in sorted(files.items())]
+    needs_v2 = bool(assets) or "media_item" in counts
     manifest = {
-        "format": PACK_FORMAT, "version": PACK_VERSION, "pack_id": str(uuid.uuid4()),
+        **dict(extra_manifest or {}),
+        "format": PACK_FORMAT, "version": 2 if needs_v2 else 1, "pack_id": str(uuid.uuid4()),
         "created_at": datetime.now(UTC).isoformat(),
         "source_environment": {"label": environment[:80], "app_version": app_version[:80]},
         "created_by": created_by[:160], "filters": dict(filters), "kinds": sorted(counts), "counts": counts,
@@ -118,7 +130,8 @@ def build_pack(items: Iterable[PackItem], *, created_by: str, environment: str, 
     return buffer.getvalue()
 
 
-def read_pack(raw: bytes) -> Pack:
+def read_pack(raw: bytes, *, max_pack_bytes: int = MAX_PACK_BYTES, max_total_bytes: int = MAX_TOTAL_BYTES,
+              max_file_bytes: int = MAX_FILE_BYTES) -> Pack:
     """Open a pack safely and verify every byte of it before anything is planned.
 
     Refused: an oversize upload, a name that is not one of the pack's own paths (absolute, `..`, backslash,
@@ -127,7 +140,7 @@ def read_pack(raw: bytes) -> Pack:
     like its kind. Nothing is extracted to disk.
     """
 
-    if len(raw) > MAX_PACK_BYTES:
+    if len(raw) > max_pack_bytes:
         raise PackError("pack_too_large", "the pack is larger than an import accepts")
     try:
         archive = zipfile.ZipFile(io.BytesIO(raw))
@@ -142,12 +155,13 @@ def read_pack(raw: bytes) -> Pack:
     total = 0
     contents: dict[str, bytes] = {}
     for info in infos:
-        if info.is_dir() or not _SAFE_PATH.fullmatch(info.filename) or (info.external_attr >> 16) & 0o170000 == 0o120000:
+        if (info.is_dir() or not _SAFE_PATH.fullmatch(info.filename) or (info.external_attr >> 16) & 0o170000 == 0o120000
+                or {".", ".."} & set(info.filename.split("/"))):
             raise PackError("pack_unsafe_path", f"unexpected entry {info.filename[:80]!r}")
-        if info.file_size > MAX_FILE_BYTES or (info.compress_size and info.file_size / max(info.compress_size, 1) > MAX_RATIO):
+        if info.file_size > max_file_bytes or (info.compress_size and info.file_size / max(info.compress_size, 1) > MAX_RATIO):
             raise PackError("pack_entry_too_large", f"{info.filename} is too large")
         total += info.file_size
-        if total > MAX_TOTAL_BYTES:
+        if total > max_total_bytes:
             raise PackError("pack_too_large", "the pack unpacks to more than an import accepts")
         data = archive.read(info.filename)
         if len(data) != info.file_size:
@@ -168,14 +182,15 @@ def read_pack(raw: bytes) -> Pack:
         entry = listed[path]
         if entry.get("bytes") != len(data) or entry.get("sha256") != hashlib.sha256(data).hexdigest():
             raise PackError("pack_hash_mismatch", f"{path} does not match its manifest")
+    assets = {path: data for path, data in contents.items() if path.startswith("assets/")}
     items = []
-    for path in sorted(contents):
+    for path in sorted(set(contents) - set(assets)):
         try:
             envelope = json.loads(contents[path])
         except ValueError as exc:
             raise PackError("pack_item_unreadable", f"{path} is not JSON") from exc
         items.append(_item_from(path, envelope))
-    return Pack(manifest=manifest, items=items)
+    return Pack(manifest=manifest, items=items, assets=assets)
 
 
 def _item_from(path: str, envelope: Any) -> PackItem:
@@ -206,6 +221,10 @@ def _validate(item: PackItem, path: str) -> None:
               and data.get("language") in {"en", "zh"} and _text(data.get("title"), 500))  # fmt: skip
         sets = data.get("comprehension_sets", [])
         ok = ok and isinstance(sets, list) and all(isinstance(s, dict) and isinstance(s.get("questions"), list) for s in sets)
+    elif item.kind == "media_item":
+        entry = data.get("entry")
+        ok = (isinstance(entry, dict) and _text(entry.get("media_id"), 256) and isinstance(data.get("assets"), list)
+              and entry.get("media_id") == item.natural_key)  # fmt: skip
     else:
         ok = (_text(data.get("id"), 160) and data.get("language_code") in {"en", "zh"}
               and isinstance(data.get("entries"), list) and len(data["entries"]) <= 20_000)  # fmt: skip
