@@ -64,6 +64,7 @@ from writing_coach.admin_metrics import (
     retention_windows,
 )
 from writing_coach.core.errors import orena_http_error
+from writing_coach.listening_catalog import EN_LEVELS, ZH_LEVELS
 from writing_coach.persistence.platform_repository import SettingConflict
 
 router = APIRouter(prefix="/api/admin/console", tags=["admin-console"])
@@ -1187,6 +1188,44 @@ def review_media_rights(media_id: str, payload: MediaRightsIn, request: Request,
         raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
     _audit(admin, "admin.content.rights", entity_type="media", entity_id=media_id,
            payload={"rights": rights, "license": note, "attested": payload.attested, "outcome": "ok"})
+    return {"record": media_record(updated)}
+
+
+class MediaLevelIn(BaseModel):
+    level: str = Field(default="", max_length=16)
+
+
+@router.post("/content/media/{media_id}/level")
+def set_media_level(media_id: str, payload: MediaLevelIn, request: Request, response: Response) -> dict[str, Any]:
+    """Set, or with an empty value clear, the reviewed CEFR / HSK level of a shared-library media item.
+
+    Only `level` changes; status, rights, transcript and processing are left as they are.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    wanted = payload.level.strip().upper()
+    store = _state.media_store
+    if store is None:
+        raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
+    seen: dict[str, str] = {}
+
+    def change(entry):
+        if entry.library != "shared":
+            raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+        if (entry.processing or {}).get("state") in {"queued", "running"}:
+            raise orena_http_error(409, "media_processing_active", "Wait for processing to finish before setting the level.")
+        if wanted and wanted not in (EN_LEVELS if entry.language == "en" else ZH_LEVELS):
+            raise orena_http_error(422, "media_level_invalid", "This level does not exist for the language of this media.")
+        seen["from"] = entry.level or ""
+        return replace(entry, level=wanted)
+
+    updated = store.update_if_present(media_id, change)
+    if updated is None:
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    _audit(admin, "admin.content.level", entity_type="media", entity_id=media_id,
+           payload={"from": seen.get("from", ""), "to": wanted,
+                    "outcome": "unchanged" if seen.get("from", "") == wanted else "ok"})
     return {"record": media_record(updated)}
 
 

@@ -6363,3 +6363,7 @@ The pinned `Orena-Admin.dc.html` composes multi-card pages with a shared row gri
 
 The pinned admin design draws no cost page (D-128). The "Where this spend was made" block reuses the kit row list with the muted pill used by the other cost rows. Backend gap: `ai_cost_records` has no free column, so the per-account table cannot carry the environment tag (a column is a human gate); the tag lives in the `ai.operation` payload and the media ledger event only.
 
+
+## Admin: a media item's reviewed level (2026-10-18)
+
+The backend can now set or clear the reviewed CEFR / HSK level of an existing shared-library media item (`POST /api/admin/console/content/media/{id}/level`, audited as `admin.content.level`; stored in the entry's `level` field, shown to learners as `reviewed_level`). Until now a level could only be written at import, so published pilot items imported without one had no way to get it. The pinned Admin design draws no media level control, so no UI was added. Owner/design decision needed: where a level control belongs on the Media admin, if at all.
