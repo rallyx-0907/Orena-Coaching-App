@@ -39,6 +39,7 @@ import { t } from './copy.js';
 import {
   contextFor,
   surfaceFor,
+  wordDetailRequest,
   posLabel,
   mapWordCard,
   wordSavePayload,
@@ -438,7 +439,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         (async () => {
           const ctxText = contextFor(target, context || sentence);
           try {
-            detail = await api.wordDetail({ depth: 'sheet', contextual: false, text: target, context: ctxText, source_language: lang, target_language: support });
+            detail = await api.wordDetail(wordDetailRequest({ contextual: false, target, context: ctxText, lang, support, source }));
           } catch {
             detail = null;
           }
@@ -451,7 +452,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             contextualPending = true;
             contextualFailed = false;
             paint();
-            withinTime(api.wordDetail({depth: 'sheet', contextual: true, text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}), CONTEXT_WAIT_MS).then(enriched => {
+            withinTime(api.wordDetail(wordDetailRequest({ contextual: true, target, context: ctxText, lang, support, source })), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
               // Whether it is kept is the learner's own last save/unsave, not what the answer says.

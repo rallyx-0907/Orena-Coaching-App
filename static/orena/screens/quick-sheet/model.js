@@ -51,6 +51,30 @@ const HAN = /[㐀-鿿]/;
 export { dueInfo } from '../../product/due-schedule.js';
 import { dueInfo } from '../../product/due-schedule.js';
 
+/* The content id a dictionary request carries, so the server can tell shared published content from the learner's
+   own text (D-228). Only the id of what the learner is reading or listening to is sent; a personal import (`text:`)
+   or anything without an id carries none, and the server then treats the sentence as private. The server, not this
+   function, decides what is shared. */
+export function lookupContentId(source) {
+  const id = text(source?.content_id);
+  if (!id || id.startsWith('text:')) return undefined;
+  return id;
+}
+
+/* The body of `POST /api/dictionary/word-detail` for the word sheet: one place for both of its asks. */
+export function wordDetailRequest({ contextual, target, context, lang, support, source }) {
+  const contentId = lookupContentId(source);
+  return {
+    depth: 'sheet',
+    contextual: Boolean(contextual),
+    text: target,
+    context,
+    source_language: lang,
+    target_language: support,
+    ...(contentId ? { content_id: contentId } : {}),
+  };
+}
+
 export function surfaceFor(source, fallback) {
   return SURFACE_BY_KIND[text(source?.kind)] || fallback;
 }
