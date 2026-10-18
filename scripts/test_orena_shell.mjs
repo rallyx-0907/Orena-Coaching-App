@@ -189,6 +189,15 @@ assert.match(chromeSrc, /addEventListener\('focusin'/, 'focus brings the chrome 
 for (const event of ['wheel', 'touchmove', 'click']) assert.ok(chromeSrc.includes(`main.addEventListener('${event}'`), `${event} at the top reveals the chrome`);
 assert.match(chromeSrc, /CustomEvent\('orena:chrome'/, 'a change is announced, so a fitted screen fits again');
 assert.match(fs.readFileSync('static/orena/shell/router.js', 'utf8'), /root\.dataset\.chromeStart = route\.chrome \|\| ''/, 'the router carries the route\'s start');
+// An unknown id answers a clean 404 / non-retryable: "no longer available" without Retry, never "the server didn't respond" (D12/D16).
+const { isGone } = await import('../static/orena/shell/router.js');
+assert.equal(isGone(Object.assign(new Error('x'), { status: 404, retryable: false })), true);
+assert.equal(isGone(Object.assign(new Error('x'), { status: 410 })), true);
+assert.equal(isGone(Object.assign(new Error('x'), { status: 422, retryable: false })), true);
+assert.equal(isGone(Object.assign(new Error('x'), { status: 503, retryable: true })), false);
+assert.equal(isGone(Object.assign(new Error('x'), { status: 500, retryable: false })), false);
+assert.equal(isGone(new TypeError('Failed to fetch')), false);
+assert.equal(isGone(null), false);
 const frameSrc = fs.readFileSync('static/orena/shell/frame.js', 'utf8');
 assert.match(frameSrc, /bindChromeScroll\(handles\.main\)/);
 assert.match(fs.readFileSync('static/orena/shell/router.js', 'utf8'), /main\.scrollTop = 0;\s*\n\s*frame\.resetChrome\?\.\(\)/, 'every route arrives with its chrome in place');

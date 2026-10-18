@@ -420,3 +420,19 @@ def test_the_common_meaning_is_not_repeated_when_it_is_the_meaning_shown() -> No
     )  # fmt: skip
     assert same["meaningSource"] == "dictionary" and same["generalMeaning"] == ""
 
+
+
+@pytest.mark.parametrize(
+    ("raw", "plain"),
+    [
+        ("The **ongoing** action, not the result.", "The ongoing action, not the result."),
+        ("杂志吗**？", "杂志吗？"),
+        ("**一本**杂志，*很*好", "一本杂志，很好"),
+        ("2 * 3 * 4 and a*b", "2 * 3 * 4 and a*b"),
+    ],
+)
+def test_ai_text_carries_no_markdown_emphasis(raw: str, plain: str) -> None:
+    sheet = word_detail.project_sentence_sheet(sentence="s", explanation={"summary": raw, "natural_translation": raw}, saved_terms=set())
+    assert sheet["shortExplanation"] == plain
+    assert sheet["translation"] == plain
+    assert word_detail._text(raw) == plain

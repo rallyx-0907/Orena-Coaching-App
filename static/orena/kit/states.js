@@ -23,7 +23,7 @@ export function loadingMarkup(label) {
   </div></div>`;
 }
 
-/* Frame "Load error": a card with the reason and Back / Retry. */
+/* Frame "Load error": a card with the reason and Back / Retry (no Retry when `retryLabel` is empty: nothing to retry). */
 export function errorMarkup({ title, text, backLabel, retryLabel }) {
   return html`<div class="o-error" role="alert"><div class="o-error__card">
     <div class="o-error__icon">${raw(icon('circle-alert', { size: 26 }))}</div>
@@ -31,7 +31,7 @@ export function errorMarkup({ title, text, backLabel, retryLabel }) {
     <div class="o-error__text">${text}</div>
     <div class="o-error__actions">
       <button type="button" class="o-btn o-btn--text" data-error-back>${backLabel}</button>
-      <button type="button" class="o-btn o-btn--secondary o-btn--sm" data-error-retry>${raw(icon('refresh-cw', { size: 16 }))}${retryLabel}</button>
+      ${retryLabel ? html`<button type="button" class="o-btn o-btn--secondary o-btn--sm" data-error-retry>${raw(icon('refresh-cw', { size: 16 }))}${retryLabel}</button>` : ''}
     </div>
   </div></div>`;
 }

@@ -27,6 +27,13 @@ import { canStepBack, entryIndex, readIndex, withIndex } from './history-index.j
 import { addressOf, createScrollMemory, restoreScrollWhenReady } from './scroll-memory.js';
 
 const CRUMB_PRIMARY = ['today', 'discover', 'orena', 'practice', 'library', 'profile'];
+/* The API answered, cleanly, that this content is not there (404/410) or that asking again is worth nothing
+   (the canonical envelope's `retryable: false`, below a server fault): that is not a server that failed to respond. */
+export function isGone(error) {
+  const status = Number(error?.status);
+  return status === 404 || status === 410 || (error?.retryable === false && status >= 400 && status < 500);
+}
+
 const STORY_ROUTES = ['reader', 'listening', 'dictation', 'checku', 'rtransfer', 'feed'];
 /* Speaking and Writing rooms belong to Practice Hub (rule 47): opened with no known origin (a direct
    load, a reload in a new tab), the rail lights Practice Hub, not Today or Discover. */
@@ -240,7 +247,7 @@ export function createRouter({ frame, getContext }) {
       // A room whose code failed to download stays failed for this page: the browser keeps a failed module for the
       // page's life, so only a fresh load can fetch it again (LEX-092). Its Retry reloads; anything else re-renders.
       const unloaded = moduleLoadFailed(error);
-      showError(route, main, unloaded ? () => location.reload() : () => render(), { connection: unloaded });
+      showError(route, main, unloaded ? () => location.reload() : () => render(), { connection: unloaded, gone: isGone(error) });
     } finally {
       clearTimeout(skeleton);
       if (mine === generation) main.querySelector('[data-state="loading"]')?.remove();
@@ -248,8 +255,8 @@ export function createRouter({ frame, getContext }) {
     if (mine === generation) main.focus({ preventScroll: true });
   }
 
-  function showError(route, main, retry, { connection = false } = {}) {
-    const offline = connection || navigator.onLine === false;
+  function showError(route, main, retry, { connection = false, gone = false } = {}) {
+    const offline = !gone && (connection || navigator.onLine === false);
     const holder = document.createElement('div');
     holder.dataset.state = 'error';
     mount(
@@ -257,13 +264,13 @@ export function createRouter({ frame, getContext }) {
       errorMarkup({
         // A browsing place is named for what it is (LEX-080); only a lesson-like route says "lesson" or "story".
         title: route.lesson ? t(STORY_ROUTES.includes(route.id) ? 'errorStory' : 'errorLesson') : t('errorPlace', { place: t(route.crumb) }),
-        text: t(offline ? 'errorOffline' : 'errorServer'),
+        text: t(gone ? 'errorGone' : offline ? 'errorOffline' : 'errorServer'),
         backLabel: t('back'),
-        retryLabel: t('retry'),
+        retryLabel: gone ? '' : t('retry'),
       }),
     );
     holder.querySelector('[data-error-back]').addEventListener('click', () => back());
-    holder.querySelector('[data-error-retry]').addEventListener('click', () => retry());
+    holder.querySelector('[data-error-retry]')?.addEventListener('click', () => retry());
     main.append(holder);
     // A page that failed for want of a connection loads itself again when the connection returns (LEX-080).
     if (offline) {

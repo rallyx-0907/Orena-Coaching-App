@@ -134,8 +134,17 @@ def script_of(language: str, headword: str) -> str:
     return "hanzi" if language == "zh" or _HAN.search(headword or "") else "latin"
 
 
+# Markdown emphasis an AI answer sometimes carries into a plain-text field: a paired or a dangling "**" / "__"
+# (the marker is dropped, the words stay) and a "*word*" pair. The sheets render plain text, so the marks would show.
+_EMPHASIS_RUN = re.compile(r"\*\*|__")
+_EMPHASIS_SINGLE = re.compile(r"(?<![A-Za-z0-9*])\*(?=\S)([^*\n]+?)(?<=\S)\*(?![A-Za-z0-9*])")
+
+
 def _text(value: object) -> str:
-    return str(value or "").strip()
+    text = str(value or "")
+    if "*" in text or "__" in text:
+        text = _EMPHASIS_SINGLE.sub(r"", _EMPHASIS_RUN.sub("", text))
+    return text.strip()
 
 
 def _fold(value: object) -> str:
