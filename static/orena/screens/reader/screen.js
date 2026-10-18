@@ -111,7 +111,7 @@ function relativeWhen(iso, uiLang) {
 export default async function mountReader(element, ctx) {
   await useStyles('screens/reader/reader.css');
   const parsed = parseContentId(ctx.params?.id);
-  if (!['article', 'book', 'text'].includes(parsed.kind)) throw new Error(`Reader: unknown content id "${ctx.params?.id}"`);
+  if (!['article', 'book', 'text'].includes(parsed.kind)) throw Object.assign(new Error(`Reader: unknown content id "${ctx.params?.id}"`), { status: 404 });
   const memory = ctx.context.memory;
   const owner = ctx.context.owner;
 

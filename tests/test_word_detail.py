@@ -420,3 +420,27 @@ def test_the_common_meaning_is_not_repeated_when_it_is_the_meaning_shown() -> No
     )  # fmt: skip
     assert same["meaningSource"] == "dictionary" and same["generalMeaning"] == ""
 
+
+
+@pytest.mark.parametrize(
+    ("raw", "plain"),
+    [
+        ("The **ongoing** action, not the result.", "The ongoing action, not the result."),
+        ("\u6742\u5fd7\u5417**\uff1f", "\u6742\u5fd7\u5417\uff1f"),
+        ("**\u4e00\u672c**\u6742\u5fd7\uff0c*\u5f88*\u597d", "\u4e00\u672c\u6742\u5fd7\uff0c\u5f88\u597d"),
+        ("2 * 3 * 4 and a*b", "2 * 3 * 4 and a*b"),
+    ],
+)
+def test_ai_text_carries_no_markdown_emphasis(raw: str, plain: str) -> None:
+    sheet = word_detail.project_sentence_sheet(sentence="s", explanation={"summary": raw, "natural_translation": raw}, saved_terms=set())
+    assert sheet["shortExplanation"] == plain
+    assert sheet["translation"] == plain
+
+
+@pytest.mark.parametrize("source", ["2**3", "__init__", "snake__case", "She said *sigh* and left.", "a **b** c"])
+def test_source_and_learner_text_is_left_unchanged(source: str) -> None:
+    sheet = word_detail.project_sentence_sheet(sentence=source, explanation={}, saved_terms=set())
+    assert sheet["sentence"] == source
+    assert word_detail._text(source) == source
+    detail = word_detail.project_word_detail(selection=source, context=source, language="en", lookup={}, explanation=None, saved=False)
+    assert detail["contextSentence"] == source
