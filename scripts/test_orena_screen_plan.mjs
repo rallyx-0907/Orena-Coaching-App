@@ -335,6 +335,8 @@ console.log('Orena plan screens: real usage and plans only, honest unavailable s
     const down = sheetModel({ target: plus, current: pro, cycle: 'yearly', subscription: { ...live, period: 'month' }, offers });
     assert.equal(down.kind, 'unavailable', `${ui}: Pro monthly -> Plus yearly is not sold`);
     assert.ok(down.primary.length > 0 && down.rows.length === 0, ui);
+    // Paid -> Free is the cancel flow (§3.5), not "unavailable".
+    assert.equal(sheetModel({ target: free, current: plus, cycle: 'monthly', subscription: live, free, offers }).kind, 'cancel', `${ui}: to Free cancels`);
     // The cancel kind: what is lost (from the catalogue) and what is kept.
     const cancel = sheetModel({ kind: 'cancel', target: plus, current: plus, subscription: live, free, offers });
     assert.equal(cancel.kind, 'cancel', ui);

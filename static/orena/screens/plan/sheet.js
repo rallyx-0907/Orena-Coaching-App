@@ -64,6 +64,8 @@ export function sheetModel({ target, current, cycle = 'monthly', subscription = 
   const name = planName(target);
   const currentName = current ? planName(current) : '';
   const renews = subscription.renewsAt ? formatDate(subscription.renewsAt, locale()) : '';
+  // §3.5: paid -> Free is the cancel flow, never a product change.
+  if (target?.isFree && subscription.polar && subscription.live) kind = 'cancel';
   if (kind === 'cancel') {
     const losses = cancelLosses(current, free).map((loss) => ({
       label: t(`feature_${loss.key.replace(/\./g, '_')}`),
@@ -245,6 +247,7 @@ export function openBillingSheet({ target, current, cycle = 'monthly', subscript
 
   return openSheet({
     label: model().title,
+    className: 's-plan-billsheet',
     onClose: () => { closeEmbed?.(); onFinish?.(state.step === 'done'); },
     render: (body, sheetHandle) => {
       sheet = body;

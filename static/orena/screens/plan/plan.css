@@ -770,3 +770,17 @@
   line-height: 1.5;
   max-width: 340px;
 }
+
+/* The Billing Sheet's footer, as its frame draws it (line 1890): two equal buttons, 48px, radius 14, 15px/600, gap 10,
+   padding 16px 24px 22px. Scoped to this sheet: the kit's shared sheet footer stays as the other frames measure it. */
+.s-plan-billsheet .o-sheet__foot {
+  gap: 10px;
+  padding: 16px 24px 22px;
+}
+.s-plan-billsheet .o-sheet__foot > .o-btn {
+  flex: 1 1 0;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+}
