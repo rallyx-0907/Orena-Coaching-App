@@ -7389,7 +7389,7 @@ Facts stated in the contract: the per-note limit in a request is 400 characters 
 
 ## D-226 - Orena Memory has one switch in Settings, default ON, and no list, view or delete UI (2026-10-18)
 
-Status: PROPOSED (owner decision of 2026-10-18 relayed by the owner's delegate; the owner confirmed the delegation; needs the owner's "D-226: ACCEPTED").
+Status: ACCEPTED (owner wrote "D-226: ACCEPTED" on 2026-10-18, after an independent review APPROVE on PR #290 and green CI; the decision itself was relayed by the owner's delegate, whose delegation the owner confirmed).
 
 Decision.
 1. Orena Memory has exactly one learner control: a single switch, "Memory - Let Orena use your content to personalise" (Vietnamese "Trí nhớ", Chinese "记忆"). It is account-wide (the server keeps one state per account, not per language), default ON, read with `GET /api/agent/memory?language=<active learning language>` and written with one `PUT /api/agent/memory/settings {"enabled": bool}`.
