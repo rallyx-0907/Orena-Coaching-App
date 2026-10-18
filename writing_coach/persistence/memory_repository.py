@@ -236,7 +236,9 @@ class PostgresMemoryRepository:
                     _params(scope, id=_uuid(held.id), until=now + EXPLICIT_TTL, now=now)).mappings().first()  # fmt: skip
                 if row is not None:
                     return _item(row)
-                held = None  # swept in between (it had just expired): kept anew below
+                # Swept in between (it had just expired): kept anew below, and no longer counted against the limit.
+                live = [i for i in live if i.id != held.id]
+                held = None
             if held is None and len(live) >= LIMITS[EXPLICIT]:
                 raise MemoryLimit
             if held is not None:  # a single-valued slot: the learner's latest choice wins

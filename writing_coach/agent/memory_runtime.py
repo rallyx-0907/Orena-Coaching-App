@@ -45,7 +45,7 @@ from writing_coach.agent.memory_store import (
     memory_section,
 )
 from writing_coach.agent.notes import same_note
-from writing_coach.agent.retention import sweep_enabled
+from writing_coach.agent.retention import _in_background, sweep_enabled
 from writing_coach.agent.schemas import CoachNote, coach_notes_bytes
 from writing_coach.product import quota
 
@@ -127,10 +127,6 @@ class ServerNotes:
 MEMORY_SWEEP_SWITCH = "AGENT_MEMORY_RETENTION_SWEEP"
 
 
-def _in_background(work: Callable[[], None]) -> None:
-    threading.Thread(target=work, name="orena-memory-retention", daemon=True).start()
-
-
 class ExpiredMemorySweep:
     """Expired memory rows are deleted at most once a day per process, off the request thread, in bounded batches
     (`sweep_expired`: expired rows only, `SKIP LOCKED`). The pilot keeps learner data up to 6 months (owner, PRE-005,
@@ -146,7 +142,7 @@ class ExpiredMemorySweep:
         self._sweep, self._clock, self._run = sweep, clock, run
         self._lock = threading.Lock()
         self._last: datetime | None = None
-        self._removed: int | None = None
+        self._removed: int | None = None  # read back only with an inline runner (tests); a thread's count is logged
 
     def maybe_sweep(self) -> int | None:
         """Start a sweep if one is due. With an inline runner it returns how many rows went (None: none ran)."""
