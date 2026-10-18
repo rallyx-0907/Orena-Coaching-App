@@ -27,7 +27,7 @@ import { micUnavailableReason } from '../mic/model.js';
 import { openVoiceSession, connectLiveVoice } from '../../agent/live-voice.js';
 import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
-import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
+import { isDailyAiLimit, isQuotaExhausted, pausedMessage, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
@@ -37,6 +37,11 @@ import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, reque
 import { runOffered } from './actions.js';
 
 const TTS_TAG = { en: 'en-US', vi: 'vi-VN', zh: 'zh-CN' };
+
+/* The system's daily AI pause (429 `daily_ai_limit`, §2.1, v10): one line, no way to the plans. */
+function showAiPaused(error) {
+  toast(pausedMessage(error?.context?.resets_at));
+}
 
 /* The server's plan-limit refusal (429 `quota_exhausted`, §2.1) in the place a failed request already shows one: the
    Respond room's toast, with the server's own figures and the way to the plans. */
@@ -192,6 +197,11 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       // Only the plain `target_language_mismatch` 409 is a change of learning language; the envelope's
       // `operation_*` 409s (§2.1) are never one.
       if (error?.status === 409 && error.category === 'target_language_mismatch') void refreshLearningLanguage();
+      if (isDailyAiLimit(error)) {
+        setPhase('idle');
+        showAiPaused(error); // paused for everyone: told once, no device cascade
+        return;
+      }
       if (isQuotaExhausted(error)) {
         // Not one Orena message is left today (§9, v8): the server's own figures, with the way to the plans - and
         // not the device cascade, whose turns would be refused the same way after a paid transcription.
@@ -222,7 +232,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       audio,
       // The next part of the conversation was refused for want of a message: told once, and the session ends when the
       // token it holds does.
-      onLimit: (error) => { if (isQuotaExhausted(error)) showPlanLimit(error); },
+      onLimit: (error) => { if (isQuotaExhausted(error)) showPlanLimit(error); else if (isDailyAiLimit(error)) showAiPaused(error); },
       onState: (next) => {
         if (!disposed && link) setPhase(next);
       },
@@ -353,7 +363,8 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       // Not the mic sheet's "assessment" state: nothing is being scored here and no recording is kept.
       live = false;
       setPhase('idle');
-      if (isQuotaExhausted(error)) showPlanLimit(error); // no Orena message is left today: told, not retried
+      if (isDailyAiLimit(error)) showAiPaused(error);
+      else if (isQuotaExhausted(error)) showPlanLimit(error); // no Orena message is left today: told, not retried
       else toast(t('voiceTranscribeFailed'), { iconName: 'circle-alert' });
       return;
     }
