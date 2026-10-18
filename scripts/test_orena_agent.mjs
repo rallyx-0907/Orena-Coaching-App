@@ -322,7 +322,11 @@ assert.equal(storedMemory.notes(now).length, 1, 'absent stored keeps the v8 beha
 storedMemory.applyUpdate({ op: 'upsert', note: { ...sn, id: 's2' }, stored: 'device' }, now);
 assert.equal(storedMemory.notes(now).length, 2, 'stored=device keeps the v8 behaviour');
 storedMemory.applyUpdate({ op: 'remove', note: { id: 's1' }, stored: 'server' }, now);
-assert.deepEqual(storedMemory.notes(now).map((n) => n.id), ['s2'], 'stored=server remove drops the device copy with that id');
+assert.equal(storedMemory.notes(now).length, 2, 'stored=server remove by id alone deletes nothing');
+storedMemory.applyUpdate({ op: 'remove', note: { id: 's1', text: 'other' }, stored: 'server' }, now);
+assert.equal(storedMemory.notes(now).length, 2, 'a colliding id with other text deletes nothing');
+storedMemory.applyUpdate({ op: 'remove', note: { id: 's1', text: 'x' }, stored: 'server' }, now);
+assert.deepEqual(storedMemory.notes(now).map((n) => n.id), ['s2'], 'stored=server remove drops the device copy with the same id and text');
 assert.ok(memory.notes(now + 60 * 86400000).length === 0, 'unreinforced notes fade out');
 for (let i = 0; i < 50; i += 1) memory.appendMessage({ role: 'learner', text: String(i) });
 assert.equal(memory.thread().length, 40, 'the thread keeps its last 40 messages');
