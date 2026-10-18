@@ -3,17 +3,20 @@
 A summary holds learning continuity only: exactly `practised`, `focus` and `open_task`, each entry a closed `event`
 code and an `item` that the event's own validator accepts. No validator accepts free personal text, so a summary
 cannot carry a personal fact, an excluded category or a deleted item's value; there is nothing for a suppression key
-to search. An item no validator accepts is dropped and its entry keeps the event code.
+to search. An item no validator accepts, or whose accepted value (a record's title) is over the bound, is dropped
+and its entry keeps the event code.
 
 `useful_context` is (slot, code) from the closed lists of `memory_slots`; each must be grounded in a learner message
 of that session or it is dropped. It is returned apart, for materialisation into continuity items, and never stored
 in the summary.
 
-Output that breaks the schema or its bounds is rejected whole (`None`), not cut: the previous checkpoint stands.
+Output that breaks the schema or its bounds, including the stored summary's 1,200 UTF-8 bytes, is rejected whole
+(`None`), not cut: the previous checkpoint stands.
 """
 
 from __future__ import annotations
 
+import json
 import re
 import unicodedata
 from collections.abc import Callable, Mapping
@@ -52,7 +55,8 @@ OUTPUT_KEYS = frozenset(SUMMARY_KEYS) | {"useful_context"}
 MAX_PRACTISED = 4
 MAX_CONTEXT = 6
 MAX_ITEM = 60  # characters
-MAX_WORDS = 5  # words in one vocabulary or pronunciation item
+MAX_WORDS = 5
+MAX_SUMMARY_BYTES = 1200  # the stored JSON, UTF-8 (§4.2 CHECK)  # words in one vocabulary or pronunciation item
 _WORD_SPLIT = re.compile(r"[,，、;；/]+|\s+")
 
 
@@ -73,6 +77,12 @@ class ValidatedSummary:
     summary: dict[str, Any]  # exactly SUMMARY_KEYS: what the summary row stores
     useful_context: tuple[tuple[str, str], ...]  # grounded (slot, code), for continuity items
     dropped: int  # items and context entries no validator accepted (a count for telemetry, never their text)
+
+
+def stored_size(summary: Mapping[str, Any]) -> int:
+    """The UTF-8 bytes of the summary as it is stored (canonical JSON)."""
+
+    return len(json.dumps(summary, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8"))
 
 
 def _nfc(value: str) -> str:
@@ -116,6 +126,8 @@ def _entry(raw: Any, ctx: SummaryContext, dropped: list[int]) -> dict[str, Any]:
     if not isinstance(item, str) or len(item) > MAX_ITEM:
         raise _Rejected
     accepted = _VALIDATORS[raw["event"]](_nfc(item), ctx)
+    if accepted is not None and len(accepted) > MAX_ITEM:
+        accepted = None  # a resolved value (a record's title) over the bound is not stored, and never cut
     if accepted is None:
         dropped[0] += 1
     return {"event": raw["event"], "item": accepted}
@@ -161,6 +173,8 @@ def validate_summary(raw: Any, ctx: SummaryContext) -> ValidatedSummary | None:
         context = _context(raw.get("useful_context"), ctx, dropped)
     except _Rejected:
         return None
+    if stored_size(summary) > MAX_SUMMARY_BYTES:
+        return None  # over the stored bound: rejected whole, never cut
     return ValidatedSummary(summary=summary, useful_context=context, dropped=dropped[0])
 
 

@@ -17,6 +17,7 @@ from writing_coach.agent.memory_summary import (
     SCENARIOS,
     SUMMARY_KEYS,
     SummaryContext,
+    stored_size,
     validate_summary,
     without_deleted_item,
 )
@@ -104,6 +105,17 @@ def test_what_is_not_a_closed_statement_yields_nothing(message):
     assert statements(message) == set()
 
 
+@pytest.mark.parametrize("message", [
+    "I'm not an engineer", "I am not a student", "I am no longer a teacher", "I'm not really a developer",
+    "My goal is not work", "I'm learning Chinese not for work", "I'm not learning Chinese for my job",
+    "Mục tiêu của tôi không phải đi làm", "Tôi không phải là kỹ sư", "Tôi là kỹ sư đâu",
+    "Mình học tiếng Trung không phải để phỏng vấn", "Mình chưa là sinh viên",
+    "我是不是工程师", "我的目标是不考试", "我学中文不是为了工作", "我没有喜欢足球", "我是非工程师",
+])
+def test_a_negation_never_becomes_the_opposite_fact(message):
+    assert statements(message) == set()  # review of PR #266, P1-1
+
+
 def test_a_single_valued_slot_yields_one_code():
     assert statements("I'm a software engineer") == {("occupation", "engineering")}
 
@@ -181,6 +193,34 @@ def test_a_valid_summary_stores_exactly_three_keys_and_returns_grounded_context(
 def test_an_item_no_validator_accepts_is_dropped_and_the_event_kept(event, item):
     out = validate_summary({"practised": [{"event": event, "item": item}]}, ctx())
     assert out.summary["practised"] == [{"event": event, "item": None}] and out.dropped == 1
+
+
+def test_a_resolved_title_over_the_bound_is_dropped_not_cut():
+    long_title = "Một câu chuyện rất dài " * 5  # > 60 characters, from the record
+    out = validate_summary({"practised": [{"event": "reading_text", "item": "r-2"},
+                                          {"event": "listening_text", "item": "l-2"},
+                                          {"event": "reading_text", "item": "r-1"}]},
+                           ctx(reading_titles={"r-1": "Một ngày ở Bắc Kinh", "r-2": long_title},
+                               listening_titles={"l-2": long_title}))
+    assert out.summary["practised"] == [{"event": "reading_text", "item": None},
+                                        {"event": "listening_text", "item": None},
+                                        {"event": "reading_text", "item": "Một ngày ở Bắc Kinh"}]  # unchanged
+    assert out.dropped == 2
+
+
+def test_a_summary_over_1200_utf8_bytes_is_rejected_whole():
+    words = ["词" * 18 + chr(0x4E00 + i) for i in range(18)]  # 3 bytes a character
+    known = frozenset(words)
+
+    def entry(start):
+        return {"event": "vocabulary_set", "item": "、".join(words[start:start + 3])}
+
+    raw = {"practised": [entry(0), entry(3), entry(6), entry(9)], "focus": entry(12), "open_task": entry(15)}
+    assert all(len(e["item"]) <= 60 for e in [*raw["practised"], raw["focus"], raw["open_task"]])
+    assert validate_summary(raw, ctx(known_words=known)) is None
+    smaller = {"practised": [entry(0)], "focus": entry(3)}
+    out = validate_summary(smaller, ctx(known_words=known))
+    assert out is not None and stored_size(out.summary) <= 1200
 
 
 def test_context_not_said_by_the_learner_or_off_the_lists_is_dropped():

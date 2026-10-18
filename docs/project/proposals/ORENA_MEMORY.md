@@ -180,8 +180,8 @@ Two stores:
    TTL 14 days (approved, G10). **A continuity item holds a code, never free text** (rev 4.1, re-review P1-4): each
    slot has a closed list of values, and the stored `text` is the code's template, rendered in the learner's
    language by the UI. First M3 slots and values: `occupation` (a field: `engineering`, `it`, `business`,
-   `education`, `hospitality`, `manufacturing`, `design`, `student`, `other`), `interest` and `example_domain` (the
-   §3.3 closed topic list), `learning_purpose` (`everyday`, `work`, `job_interview`, `exam`, `travel`, `study`).
+   `education`, `hospitality`, `manufacturing`, `design`, `student`; no `other`, which no statement can ground,
+   review of PR #266), `interest` and `example_domain` (the §3.3 closed topic list), `learning_purpose` (`everyday`, `work`, `job_interview`, `exam`, `travel`, `study`).
    `upcoming_event` is **removed** from the first M3: a free-text event can be health, religion or finance even when
    the learner said it. A slot or value outside these lists is dropped. `temporary_preferences` is **dropped** from the summariser's output (rev 4, F3): a
    standing preference comes from the learner (explicit memory, §3.2) or a rule (§3.3), never from a summary.

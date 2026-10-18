@@ -4,7 +4,8 @@ Continuity items hold a code, never free text: each slot has a closed list, and 
 (health, religion, finances, ...), so none can be stored. The matcher reads one learner-authored message - the text
 the learner typed or said, never pasted or selected text, a tool result or Orena's reply; the caller passes only
 that - and yields (slot, code) pairs. It is conservative by design: it needs the learner speaking of themselves
-("tôi là", "I'm", "我是") and the code's word within a few words after it, and it reads no negation as a statement.
+("tôi là", "I'm", "我是") and the code's word within a few words after it, and a negation anywhere in those
+words makes it no statement ("I'm not an engineer" must never store `engineering`).
 A miss costs only an earlier expiry; a false match would put a wrong fact in front of every model.
 
 The same matcher grounds a summariser's `useful_context` (§3.4): a (slot, code) is materialised only if it matches a
@@ -93,6 +94,13 @@ _CUES: Mapping[str, str] = MappingProxyType({
 # Words between the cue and the code that turn a statement about oneself into talk about learning a word
 # ("I'm learning engineering vocabulary"): such a statement says nothing about the learner.
 _LEARNING = re.compile(r"(?i)\b(?:learning|studying|practising|practicing|học|luyện)\b|学|练")
+# A negation anywhere between the cue and the end of the window makes it no statement: "I'm not an engineer", "My
+# goal is not work", "Mục tiêu của tôi không phải đi làm", "我是不...", "tôi là kỹ sư đâu". Uncertain, so nothing.
+_NEGATION = re.compile(
+    r"(?i)\b(?:not|no|never|no longer|isn't|aren't|wasn't|don't|doesn't|didn't|neither|nor)\b|n't\b"
+    r"|\b(?:không|chẳng|chả|chưa|đâu|chứ không|không phải|đâu phải)\b"
+    r"|不|没|非|别|无|未"
+)
 _WINDOW_WORDS = 4  # words after the cue the code's word must start in
 _WINDOW_CJK = 8  # characters, for text without spaces
 _CJK = re.compile(r"[㐀-鿿]")
@@ -142,6 +150,8 @@ def _window(text: str, start: int) -> str:
 
 
 def _codes_in(slot: str, window: str) -> list[str]:
+    if _NEGATION.search(window):
+        return []
     found = []
     for code in SLOTS[slot]:
         hit = _words_for(slot)[code].search(window)
