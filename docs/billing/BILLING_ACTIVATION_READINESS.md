@@ -70,6 +70,29 @@ The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`,
 | --- | --- | --- | --- |
 | 19 | Plan & usage and Pricing with billing **on** | proven | PR-MON-9 §2 (desktop, phone, EN/VI/ZH, light and dark) |
 | 20 | Plan & usage and Pricing with billing **off** (offers empty, `billing_ready: false`) | tested; browser **open** | `scripts/test_orena_screen_plan.mjs`. Browser check on the pilot build (`:8000`) by the UI lane. |
+| 21 | Prices and limits shown = the approved catalogue (PRE-401) | checked on `main`; **`:8000` needs the next deploy** | see below |
+
+**PRE-401, read 2026-10-19 (read only, no sign-in).** The approved catalogue is
+`writing_coach/product/catalog.py`:
+- prices: D-MON-032, USD Plus 9.99/79.99 and Pro 19.99/159.99;
+- assist limits: D-MON-025;
+- the other meters: catalogue v2 (D-161).
+
+`:8000` stores no `product.plan_catalog` row in `platform_settings`, so it shows the code's defaults.
+
+| | `main` (this lane's sandbox) | `:8000` (image `orena:main-9bf88666`, built 2026-10-11) |
+| --- | --- | --- |
+| Prices | USD as above | the same numbers |
+| Currency shown | USD in every interface language (`PLAN_CURRENCY`, `screens/plan/model.js`): the amount Polar charges | **dong to a Vietnamese interface** (199,000 ₫ for Plus), dollars otherwise |
+| Messages, reviews, pronunciation, import, languages | Free / Plus / Pro: 20/200/1000, 2/10/50, 5/30/120 min, 15/120/600 min, 1/2/2 | the same |
+| Word, reading and writing assist (per day) | 30/300/1500, 10/100/500, 5/30/100 | **absent** (the build predates D-MON-025) |
+
+Billing is off on `:8000`, so nobody is charged there. Even so, gate 7b must run on a build from `main`. On the
+current `:8000` build, a Vietnamese learner would see a dong price and be charged dollars by Polar. The next `:8000`
+deploy fixes both. Re-read the table after that deploy.
+
+The owner decided on 2026-10-19 that voice chat with Orena is for Plus and Pro only, not Free. The Intelligence lane
+is adding the voice entitlement to the catalogue, and its row joins this table once it is merged.
 
 ## 5. Configuration for the pilot host (names only)
 
@@ -122,13 +145,14 @@ funding enforcement.
 The owner approves every write to Polar **production** in one list. Nothing on it has been done.
 
 **Precondition:** R1 is resolved by the 2026-10-19 renewal run (§2-§3). If Polar leaves `modified_at` empty at
-renewal, a code fix lands first, with independent review.
+renewal, a code fix lands first, with independent review. `:8000` runs a build from `main` (item 21: the
+`2026-10-11` build shows dong to Vietnamese learners).
 
 **Polar production (owner).**
 
 | # | Write | Value |
 | --- | --- | --- |
-| P1 | Create 4 products, one fixed USD price each, no trial | Plus 9.99/month, Plus 79.99/year, Pro 19.99/month, Pro 159.99/year (the catalogue; final prices are the owner's call) |
+| P1 | Create 4 products, one fixed USD price each, no trial, no Polar benefits | Plus 9.99/month, Plus 79.99/year, Pro 19.99/month, Pro 159.99/year (the catalogue; final prices are the owner's call). Each description says **voice chat with Orena is included** (runbook §1.1); Orena grants it from its own catalogue |
 | P2 | Customer portal | customer updates on; plan change between the four; proration `invoice` |
 | P3 | Organization access token | exactly the 8 scopes in the runbook §1.3. The owner creates it and pastes it into `runtime.env`; it never goes through chat |
 | P4 | Webhook endpoint | `https://orena.chillpickle.org/api/billing/webhooks/polar`, Raw. Events: `subscription.*`, `order.paid`, `refund.created`, `refund.updated` |
