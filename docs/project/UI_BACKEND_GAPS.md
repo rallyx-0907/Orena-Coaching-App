@@ -6379,3 +6379,7 @@ This supersedes the earlier entry in the Orena Home gaps ("the coach-notes sheet
 ## Word Quick Sheet: which meaning line comes first (2026-10-18)
 
 The pinned design's `Word Quick Sheet` (`Orena.dc.html`, `qs.meaning` / `qs.vi`, and `qsWC.meaning` / `qsWC.vi` on a saved word) draws the English meaning first (16px) and the Vietnamese meaning second (13px, muted). The app draws the support-language meaning first and the English original second, as the quieter line. Under D-068 (the design's words are sample content) this is defensible, but it is a deviation in order and weight. Left as built; for the human to decide (#199).
+
+## Load error: an unknown content id (2026-10-18)
+
+The pinned "Load error" frame (`Orena.dc.html`, ~141) draws a title, one line, Back and Retry, and no "unavailable" variant. When the API answers 404 or 410 for the content (for example `listening_lesson_not_found`, `retryable: false`), Retry cannot help and "the server did not respond" is untrue. The owner allowed small UI changes that reuse existing patterns (2026-10-18, via the owner's delegate): the same card shows the existing "No longer available" line (the Library's `contentUnavailable` wording, shell key `errorGone`) with Back only. Every other status keeps the frame's server/offline line and Retry.
