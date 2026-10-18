@@ -5,8 +5,9 @@
 
 **Who.** The owner/operator runs every step. No agent runs it, and no agent uses a production Polar token.
 
-**Where.** The production host is chosen after the app is deployed to the VPS. This runbook never applies to `:8000`,
-`:8010` or `:8021` unless the owner names one of them as production.
+**Where.** The owner named `:8000` as the production host for this gate (2026-10-18), served at
+`https://orena.chillpickle.org`. A later move to the VPS follows "Moving the production host" below. This runbook
+never applies to `:8010` or `:8021`.
 
 **What it enables:** Plus and Pro, monthly and yearly, paid by card on Polar's hosted checkout. Renewal is
 automatic. Learners cancel, change plan or card, and read invoices in Polar's customer portal, opened from Plan &
@@ -59,17 +60,29 @@ usage.
    - events: every `subscription.*`, plus `order.paid`, `refund.created` and `refund.updated`.
 
    Copy its `whsec_…` secret.
+5. **Embedding allowlist**: add the production origin. Without it the embedded checkout (PR-MON-9) does not open
+   inside the app.
 
 ## 2. Environment (names here; the values stay on the host, never in Git or chat)
 
 | Variable | Value |
 | --- | --- |
 | `BILLING_ENABLED` | `on` |
-| `BILLING_PRICES_FILE` | the prices file (step 3) |
+| `BILLING_PRICES_FILE` | the prices file (step 3), as a path inside the container on the data volume: `/data/billing/prices.json` |
 | `POLAR_ACCESS_TOKEN` | the production token (step 1.3) |
 | `POLAR_WEBHOOK_SECRET` | the webhook secret (step 1.4) |
 | `POLAR_ENVIRONMENT` | `production` |
 | `BILLING_DOMESTIC_GATEWAY` | empty, unless Credits is also being enabled (gate 7a) |
+
+**Where the values go on `:8000`.** `:8000` is not started by compose: `scripts/staging_8000_deploy.ps1` runs
+`docker run --env-file %LOCALAPPDATA%\orena-product\staging-8000\runtime.env` with the volume `ai-writing-coach-data`
+at `/data`. So the values go in **`runtime.env`**, at step R6 of the `:8000` package, and the web container is
+recreated by that script. The prices file goes into the volume, at `/data/billing/prices.json` (for example,
+`docker cp prices.json <web container>:/data/billing/prices.json`, after creating the directory).
+
+On a compose host, `compose.yaml` passes the same names (and `BILLING_NEW_SALES`) from `.env`, empty by default
+(#295). Empty means off: `BILLING_ENABLED` empty is off. An empty `POLAR_ENVIRONMENT` means **sandbox**, so it must
+be set to `production` explicitly. The ready list for this gate is `BILLING_ACTIVATION_READINESS.md`.
 
 ## 3. Prices file
 
@@ -104,6 +117,33 @@ Any blocker names what is missing: fix it and recheck. Never work around a block
 3. From Plan & usage, open "manage" (`POST /api/billing/portal`) and cancel at period end. Access must stay until
    the period ends.
 4. Refund from Polar's dashboard if wanted. The refund is recorded, and access follows Polar's subscription events.
+
+## Moving the production host (for example, from a staging host to the VPS)
+
+Products, prices, the token's scopes, the portal settings and every subscription stay on Polar as they are. Only
+the host-specific parts change:
+
+1. **Prepare the new host.**
+   - Same image, same environment.
+   - A restored database: the subscriptions, receipts and `platform_settings` rows travel with it.
+   - Migrations at the same head.
+   - The prices file in its data volume.
+   - `BILLING_NEW_SALES=off` until step 4.
+2. **Change the public origin.** Point the new host's `PUBLIC_BASE_URL` at its HTTPS origin, and add the Google
+   OAuth redirect `https://<new origin>/auth/google/callback`.
+3. **Polar (production writes, owner).**
+   - Webhook endpoint URL → `https://<new origin>/api/billing/webhooks/polar`. Editing the existing endpoint keeps
+     its secret. A new endpoint needs its new `POLAR_WEBHOOK_SECRET`.
+   - Embedding allowlist: add the new origin; remove the old one after the switch.
+4. **Switch.**
+   - Stop the old host's web service before the database is copied for the last time. Polar retries webhooks
+     that fail meanwhile.
+   - Start the new host and check readiness (§4).
+   - Then `BILLING_NEW_SALES` empty, if sales were open.
+5. **Check.**
+   - Polar's dashboard shows the endpoint enabled and recent deliveries succeeding. Polar disables an endpoint
+     after repeated failures: re-enable it if needed.
+   - `GET /api/admin/billing/reconciliation` has no new item.
 
 ## Rollback
 
