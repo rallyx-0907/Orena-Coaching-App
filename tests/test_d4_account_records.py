@@ -370,8 +370,11 @@ def test_annotation_bounds_are_enforced_and_clearing_is_a_flag_not_a_deletion(pg
 def test_annotations_are_private_to_the_account_and_language(pg_engine, backbone):
     owner = _account(pg_engine)
     _annotate(_client(backbone, user=owner), "reading:30", 0, [H1])
-    assert _client(backbone, user=_account(pg_engine)).get("/api/annotations/reading:30").status_code == 404
-    assert _client(backbone, user=owner, language="zh").get("/api/annotations/reading:30").status_code == 404
+    # Nothing kept is an explicit empty body, never another account's or language's record.
+    other = _client(backbone, user=_account(pg_engine)).get("/api/annotations/reading:30")
+    assert other.status_code == 200 and other.json() == {"annotation": None}
+    zh = _client(backbone, user=owner, language="zh").get("/api/annotations/reading:30")
+    assert zh.status_code == 200 and zh.json() == {"annotation": None}
     assert _annotate(_client(backbone, user=_account(pg_engine)), "reading:30", 0, [H2]).status_code == 200, "another account's own record, not the owner's"
 
 

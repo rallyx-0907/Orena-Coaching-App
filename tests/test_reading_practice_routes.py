@@ -691,7 +691,12 @@ def test_a_stale_set_refuses_a_new_submit_with_its_reason(setup):
                   json={"body": BODIES["en"] + " He was tired."})
     assert edited.status_code == 200
     assert setup.evidence.get_set(set_id)["status"] == "stale"
-    assert call(setup.app, "GET", f"/api/reading/practice/articles/{article_id}", admin=False).status_code == 404
+    # No approved set any more is Free Reading: a 200 with an explicit empty body, not an error.
+    gone = call(setup.app, "GET", f"/api/reading/practice/articles/{article_id}", admin=False)
+    assert gone.status_code == 200 and gone.json()["set"] is None
+    unknown = call(setup.app, "GET", "/api/reading/practice/articles/00000000-0000-4000-8000-000000000000", admin=False)
+    assert unknown.status_code == 404
+    assert unknown.json()["detail"]["category"] == "reading_set_not_available"
     late = call(setup.app, "POST", "/api/reading/practice/attempts", admin=False,
                 json={"set_id": served["id"], "operation_id": "late",
                       "answers": {question["id"]: 0 for question in served["questions"]}})

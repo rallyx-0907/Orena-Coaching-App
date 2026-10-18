@@ -590,6 +590,16 @@ class ReadingEvidenceRepository:
 
     # -- the learner side ------------------------------------------------
 
+    def article_is_published(self, article_id: str) -> bool:
+        """Whether the id names a published article a learner can open - what tells "no practice set for
+        this article" (a normal state) from "no such article" (an unknown id)."""
+        article_uuid = _maybe_uuid(article_id)
+        if article_uuid is None:
+            return False
+        with self.engine.connect() as connection:
+            article = self._article(connection, article_uuid, "none")
+            return article is not None and article.status == PUBLISHED
+
     def served_set(self, article_id: str, *, support_language: str) -> dict[str, Any] | None:
         """The approved set a learner meets for a published article, in their
         support language, still anchored - without its answers. None means the

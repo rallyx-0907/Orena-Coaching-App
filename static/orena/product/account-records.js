@@ -76,10 +76,10 @@ export async function pullAnnotations(contentId) {
   if (!contentId || !(await recordsActive())) return null;
   try {
     const { annotation } = await apiRef.annotations(contentId);
-    versions.set(contentId, annotation.version);
-    return annotation;
-  } catch (error) {
-    if (error?.status === 404) versions.set(contentId, 0);
+    // `annotation: null` is the server's answer for "nothing kept yet" (a first write is version 0).
+    versions.set(contentId, annotation ? annotation.version : 0);
+    return annotation || null;
+  } catch {
     return null;
   }
 }

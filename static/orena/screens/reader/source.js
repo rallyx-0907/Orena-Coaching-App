@@ -98,7 +98,7 @@ export function realContentIdOf(doc) {
 }
 
 /* Whether a real approved comprehension question set exists for this article (Content Detail's own
-   `loadHasPractice` makes the same check): a 404 is "Free Reading, no set", not an error. Books and
+   `loadHasPractice` makes the same check): `set: null` is "Free Reading, no set", not an error. Books and
    imported texts have no comprehension-question contract today. */
 export async function loadHasQuiz(kind, id) {
   return (await loadQuizSize(kind, id)) > 0;
@@ -110,7 +110,9 @@ export async function loadQuizSize(kind, id) {
   if (kind !== 'article') return 0;
   try {
     const payload = await api.readingPracticeSet(id);
-    const questions = payload?.set?.questions;
+    // `set: null` is Free Reading (no approved set): no questions, not "one".
+    if (!payload?.set) return 0;
+    const questions = payload.set.questions;
     return Array.isArray(questions) && questions.length ? questions.length : 1;
   } catch {
     return 0;
