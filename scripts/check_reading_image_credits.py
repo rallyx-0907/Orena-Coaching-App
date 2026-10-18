@@ -44,7 +44,9 @@ def find_uncredited_images(engine: Engine) -> dict[str, Any]:
             .order_by(ReadingArticle.language, ReadingArticle.title, ReadingArticle.id)
         ).all()
         ids = [row.id for row in rows]
+        # Private repository methods (_decision_events, _credits_and_images): a refactor of them must update this.
         events = repo._decision_events(connection, ids)
+        # Private repository methods (_decision_events, _credits_and_images): a refactor of them must update this.
         credits, _ = repo._credits_and_images(connection, ids, revisions=None)
     approved, uncredited = 0, []
     for row in rows:

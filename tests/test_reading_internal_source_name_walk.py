@@ -11,6 +11,7 @@ Two kinds of proof:
 """
 from __future__ import annotations
 
+import ast
 import json
 import uuid
 import re
@@ -145,10 +146,54 @@ def test_control_the_administrator_reads_do_carry_the_internal_name(images):  # 
     assert MARKER_EN in article
 
 
+
+
+@pytest.mark.parametrize("language", ["en", "zh"])
+def test_the_summary_route_reading_a_published_article_carries_no_internal_name(images, monkeypatch, language):  # noqa: F811
+    """`reading_translation_api` loads `get_published_article` for a learner POST: what it reads and answers."""
+    from writing_coach import reading_translation_api
+    from writing_coach.reading_derived import DerivedCache
+    from writing_coach.reading_summary import ReadingSummaryService
+
+    seen = []
+
+    def generate(**kwargs):
+        seen.append(json.dumps(kwargs, ensure_ascii=False, default=str))
+        return {"bullets": ["One.", "Two.", "Three."]}
+
+    ids = _world(images, "Open Desk")
+    monkeypatch.setattr(reading_translation_api, "current_language_code", lambda: language)
+    reading_translation_api.configure_reading_summary(ReadingSummaryService(DerivedCache(), generate))
+    try:
+        response = _summary_via_router(language, ids[language])
+    finally:
+        reading_translation_api.configure_reading_summary(None)
+    assert response.status_code == 200, response.text
+    blob = (response.text + "".join(seen)).casefold()
+    assert seen, "the article was read and handed to the summariser"
+    for marker in MARKERS:
+        assert marker.casefold() not in blob, marker
+
+
+def _summary_via_router(language, article_id):
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from writing_coach import reading_translation_api
+
+    app = FastAPI()
+    app.include_router(reading_translation_api.router)
+    return TestClient(app).post("/api/reading/summary", json={
+        "source_language": language, "target_language": "vi", "article_id": article_id})
+
+
 # -- the static proof ---------------------------------------------------------------------------------
 
 ROOT = Path(__file__).resolve().parents[1]
 FIELD = re.compile(r"""source_name|ReadingSource\.name\b|source_head\.name|source\[["']name["']\]""")
+# A caller of the registry reads: `src.name` / `row["name"]` after these cannot be matched by name alone.
+REGISTRY_CALL = re.compile(r"\b(?:list_sources|get_source)\(")
+DEFINITION = re.compile(r"\bdef\s+(?:list_sources|get_source)\(")
 
 # Whole modules that belong to the administrator or to the ingest engine: they may read the internal name.
 ADMIN_OR_ENGINE = {
@@ -158,28 +203,30 @@ ADMIN_OR_ENGINE = {
     "writing_coach/reading_source_import.py": "ingest input type (`SubmittedInput.source_name`)",
     "writing_coach/persistence/models.py": "the column definition",
 }
-# Every other reader, pinned by file and by the exact (stripped) line, with the reason it is not learner-facing.
+REPO = "writing_coach/persistence/reading_content_repository.py"
+# Every other Python reader, keyed by (file, enclosing function) -> (occurrences, reason). The occurrence
+# count is exact: a second read inside an allowlisted function fails until a person looks at it.
 OTHER_READERS = {
-    ("writing_coach/persistence/reading_content_repository.py",
-     'entered_name=metadata.get("source_name"),'):
-        "resolve_publisher ignores it unless the source is a built-in path (a name typed for one text)",
-    ("writing_coach/persistence/reading_content_repository.py",
-     "select(ReadingSource).order_by(ReadingSource.state, ReadingSource.name)"): "admin list_sources ordering",
-    ("writing_coach/persistence/reading_content_repository.py",
-     'ReadingSource.name.label("source_name"),'): "admin readers: duplicate-content lookup and the admin article list",
-    ("writing_coach/persistence/reading_content_repository.py",
-     "ReadingSource.automation_allowed, ReadingSource.name,"): "admin get_article head",
-    ("writing_coach/persistence/reading_content_repository.py",
-     'article["source"]["source_name"] = source_head.name if source_head else ""'): "admin get_article payload",
-    ("writing_coach/persistence/reading_content_repository.py",
-     '"source_name": row.source_name,'): "admin duplicate-content lookup payload",
-    ("writing_coach/persistence/reading_content_repository.py",
-     '"source_name": getattr(row, "source_name", "") or "",'): "admin article row mapper (_article)",
-    ("writing_coach/persistence/reading_content_repository.py",
-     '"source_name": credit["publisher"],'): "published_credits: carries the resolved PUBLISHER under this key",
-    ("writing_coach/licences.py",
-     'publisher, author = _text(text.get("source_name")), _text(text.get("author"))'):
-        "reads published_credits' resolved publisher, never the registry name",
+    (REPO, "_learner_credit"): (1, "resolve_publisher ignores it unless the source is a built-in path "
+                                   "(a name typed for one text); the internal registry name is not read"),
+    (REPO, "list_sources"): (1, "ORDER BY only; the rows are the admin registry and the licences page, "
+                                 "which publishes public_name else host"),
+    (REPO, "set_source_public_name"): (1, "returns the admin registry row to the admin route"),
+    (REPO, "set_source_state"): (1, "returns the admin registry row to the admin route"),
+    (REPO, "set_polling"): (2, "admin registry row read and returned to the admin route"),
+    (REPO, "find_duplicate_content"): (2, "admin review page: names the other source holding the same text "
+                                          "(called from reading_admin_api only)"),
+    (REPO, "get_article"): (2, "admin article detail (the learner read is get_published_article, which never "
+                                "selects the name)"),
+    (REPO, "list_queue"): (1, "admin review queue row (`_queue_row`); its only caller is reading_admin_api. "
+                               "The learner list is list_published, which selects no source name"),
+    (REPO, "_queue_row"): (1, "mapper for the admin queue row"),
+    (REPO, "published_credits"): (1, "carries the RESOLVED publisher under this key, never the registry name"),
+    ("writing_coach/licences.py", "creator"): (1, "reads published_credits' resolved publisher"),
+    ("app.py", "orena_licences"): (1, "wires list_sources into licences_payload, which publishes "
+                                      "public_name else host (reading_source_credits)"),
+}
+JS_READERS = {
     ("static/orena/capabilities/admin-reading.js", "if (source.trim()) submitted.source_name = source.trim();"):
         "admin submit form",
 }
@@ -191,29 +238,53 @@ UNRELATED = {
 
 
 def _scan_files():
-    roots = [ROOT / "writing_coach", ROOT / "static" / "orena"]
-    for base in roots:
+    for base in (ROOT / "writing_coach", ROOT / "static" / "orena"):
         for path in sorted(base.rglob("*")):
             if path.suffix in {".py", ".js", ".mjs"} and "__pycache__" not in path.parts:
                 yield path
     yield ROOT / "app.py"
 
 
+def _enclosing(tree, number):
+    inside = [node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+              and node.lineno <= number <= node.end_lineno]
+    return min(inside, key=lambda node: node.end_lineno - node.lineno).name if inside else "<module>"
+
+
 def test_the_internal_source_name_has_no_reader_on_a_learner_path():
-    unknown = []
+    found, js_unknown = {}, []
     for path in _scan_files():
         rel = path.relative_to(ROOT).as_posix()
         if rel in ADMIN_OR_ENGINE or rel in UNRELATED or "/screens/admin" in rel or "/admin/" in rel:
             continue
-        for number, line in enumerate(path.read_text(encoding="utf-8", errors="replace").splitlines(), 1):
-            if FIELD.search(line) and (rel, line.strip()) not in OTHER_READERS:
-                unknown.append(f"{rel}:{number}: {line.strip()}")
-    assert not unknown, (
-        "A new reader of the internal source name outside the admin/engine modules. If it can reach a learner "
-        "payload, resolve the publisher with writing_coach.reading_provenance.resolve_publisher instead; if it "
-        "is administrator-only, add it to OTHER_READERS with the reason:\n" + "\n".join(unknown))
+        text = path.read_text(encoding="utf-8", errors="replace")
+        lines = text.splitlines()
+        if path.suffix == ".py":
+            tree = ast.parse(text)
+            for number, line in enumerate(lines, 1):
+                if FIELD.search(line) or (REGISTRY_CALL.search(line) and not DEFINITION.search(line)):
+                    found.setdefault((rel, _enclosing(tree, number)), []).append(f"{number}: {line.strip()}")
+        else:
+            for number, line in enumerate(lines, 1):
+                if FIELD.search(line) and (rel, line.strip()) not in JS_READERS:
+                    js_unknown.append(f"{rel}:{number}: {line.strip()}")
+    problems = list(js_unknown)
+    for key, hits in sorted(found.items()):
+        allowed = OTHER_READERS.get(key)
+        if allowed is None or len(hits) != allowed[0]:
+            expected = "not allowlisted" if allowed is None else f"expected {allowed[0]}, found {len(hits)}"
+            problems.append(f"{key[0]} :: {key[1]} ({expected}): " + " | ".join(hits))
+    assert not problems, (
+        "A reader of the internal source name (or of the registry rows that carry it) outside the admin/engine "
+        "modules. If it can reach a learner payload, resolve the publisher with "
+        "writing_coach.reading_provenance.resolve_publisher instead; if it is administrator-only, add its "
+        "(file, function) to OTHER_READERS with the count and the reason:\n" + "\n".join(problems))
 
 
-def test_the_allowlist_names_files_that_exist():
-    for rel in [*ADMIN_OR_ENGINE, *UNRELATED, *(path for path, _ in OTHER_READERS)]:
+def test_the_allowlist_names_files_and_functions_that_exist():
+    for rel in [*ADMIN_OR_ENGINE, *UNRELATED, *(path for path, _ in OTHER_READERS), *(path for path, _ in JS_READERS)]:
         assert (ROOT / rel).is_file(), rel
+    for rel, function in OTHER_READERS:
+        tree = ast.parse((ROOT / rel).read_text(encoding="utf-8"))
+        names = {n.name for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))}
+        assert function in names, f"{rel} has no function {function}"
