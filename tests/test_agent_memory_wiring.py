@@ -509,3 +509,13 @@ def test_no_notes_line_without_notes():
 
     run(rt, TurnRequest.model_validate(body))
     assert not any("asked you to keep" in m.content for m in provider.requests[0].messages[1:])
+
+
+def test_a_turn_that_changes_a_note_gets_no_restated_line():
+    """Live run of #284 (2026-10-18): with the restated line, "Quên ghi chú về ví dụ đó đi" was answered "which note?"
+    twice, while main forgot it. A turn that changes or cancels a note is left as before: the notes with their ids in
+    the context, and the forget/replace rules."""
+    rt, provider, store = wired([reply("a1"), reply("a2")])
+    keep(store, rt.memory, text="Thích ví dụ thật ngắn")
+    run(rt, v9_request("Quên ghi chú về ví dụ đó đi."))
+    assert not any(m.content.startswith("What the learner asked you to keep") for m in provider.requests[0].messages)
