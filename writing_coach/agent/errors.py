@@ -52,6 +52,12 @@ class ProviderUnavailable(AgentError):
     error_class = "provider_unavailable"
 
 
+class ProviderNotCleared(ProviderUnavailable):
+    """The conversation's provider is not cleared for the learner data the conversation already carries (G8,
+    ORENA_MEMORY.md §8 c): it is not sent there, and the learner is told what any unavailable provider tells them.
+    Not a provider failure: the route is not marked failed."""
+
+
 class VoiceUnavailable(AgentError):
     """A speech-to-speech session failed; the conversation continues in text."""
 

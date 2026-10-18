@@ -60,6 +60,7 @@ from pydantic import ValidationError
 from writing_coach.agent import learner_copy
 from writing_coach.agent.capability_registry import CapabilityRegistry
 from writing_coach.agent.context import TurnInput, build_tier1
+from writing_coach.agent.context_gate import carried_state, without_carried_state
 from writing_coach.agent.decision import (
     DecisionProvider,
     DecisionQuestion,
@@ -67,7 +68,7 @@ from writing_coach.agent.decision import (
     DecisionState,
     RuleDecisionProvider,
 )
-from writing_coach.agent.errors import AgentError, ProviderUnavailable
+from writing_coach.agent.errors import AgentError, ProviderNotCleared, ProviderUnavailable
 from writing_coach.agent.address import ADDRESS_VERSION, Address, address_note, default_address, mirrored_address
 from writing_coach.agent.greeting import built as built_greeting
 from writing_coach.agent.greeting import states_a_fact
@@ -76,6 +77,7 @@ from writing_coach.agent.summary import summarize
 from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
+    asks_to_remember,
     asks_to_remember_unaccented,
     confirmed_note,
     note_intent,
@@ -107,6 +109,7 @@ from writing_coach.agent.events import Display
 from writing_coach.agent.outputs import (
     KEEP_NOTE_INTENT,
     KIND_BY_SOURCE,
+    NOTE_TOOLS,
     SELECTION_PROMPTS,
     asks_about_status,
     asks_to_go,
@@ -136,7 +139,7 @@ from writing_coach.agent.provider import (
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
 from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.data_class import PACK_CLASS
+from writing_coach.agent.data_class import CONTEXT_EVIDENCE_CLASS, NOTES_CLASS, PACK_CLASS, DataClass, gating_on
 from writing_coach.agent.memory_pack import PACK_VERSION, pack_numbers
 from writing_coach.agent.schemas import CoachNote, TurnRequest
 from writing_coach.agent.session import SessionCache, ToolResultRecord
@@ -346,6 +349,8 @@ class _Turn:
         self.note_confirmed: str | None = None  # the learner tapped to keep these words (agent/notes.py)
         self.unaccented_keep = False  # a keep request typed without diacritics: asked back, not kept
         self.coach_notes: tuple[CoachNote, ...] = ()
+        self.notes_blocked = False  # the learner asked to keep or change a note this provider may not see (G8)
+        self.notes_available = True  # coach notes may be read and changed in this turn (G8: full_memory)
         self.snapshot: dict | None = None
         self.pack_facts: set[int] = set()  # the numbers the learner pack states, when the turn was given one
         # The learner's address for this turn (§5.6): used, never logged or stored (contract §10).
@@ -503,7 +508,7 @@ class _Turn:
             raise
         except AgentError as exc:
             self._notes_unresolved()
-            if isinstance(exc, ProviderUnavailable) and self.route is not None:
+            if isinstance(exc, ProviderUnavailable) and not isinstance(exc, ProviderNotCleared) and self.route is not None:
                 self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
                                         lambda state: state.with_route_outcome(self.route, failed=True))  # fmt: skip
             if not self.should_stop():
@@ -543,6 +548,13 @@ class _Turn:
 
     def _model_turn(self, turn: TurnInput, tier1, decisions: Decisions, session) -> Iterator[Event]:
         tier1, mirrored = self._mirror(turn, tier1)
+        if not self.no_model:
+            # Only a turn that asks a model pins one, and only once G8 allows it: a route refused for the data this
+            # conversation carries is never pinned, so the next turn can still choose an eligible one.
+            self.route, commit = self._choose_route(session)
+            tier1, session = self._gate_data_classes(turn, tier1, session)
+            if commit is not None:
+                commit()
         here = [self.rt.capabilities.get(i) for i in decisions.capability_ids]
         snapshot = self._opening_snapshot() if self.opening else None
         self.snapshot, self.coach_notes = snapshot, tier1.coach_notes
@@ -567,18 +579,20 @@ class _Turn:
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
             self.note_confirmed = confirmed_note(turn.message)
             self.unaccented_keep = to_internal(self.locale.support) == "vi" and asks_to_remember_unaccented(turn.message)
+            if not self.notes_available:  # G8: no note is kept or confirmed with this provider; said plainly instead
+                self.note_confirmed, self.unaccented_keep = None, False
             # It may be written again (a note to change or keep, records to read first) or replaced by the server's
             # question (a keep request without diacritics): nothing streams early.
             self.gate.hold_all = (bool(self.notes_asked) or self.needs_evidence or self.note_confirmed is not None
-                                  or self.unaccented_keep)  # fmt: skip
+                                  or self.unaccented_keep or self.notes_blocked)  # fmt: skip
         # A starter the learner tapped is in the interface language; the model is given it in the support language,
         # so it answers in that one (LEX-006). Anything the learner typed reaches it as typed.
         tapped = None if self.opening else learner_copy.prompt_in_support(
             turn.message, interface=self.locale.interface, support=self.locale.support)  # fmt: skip
         self.heard = tapped or turn.message
-        if not self.no_model:
-            self.route = self._pin_route(session)  # only a turn that asks a model pins one; before the pack (G8)
         pack = None if self.no_model else self._learner_pack(session)
+        self._record_data_class_sent(session, pack=pack, notes=tier1.coach_notes,
+                                     context=carried_state(turn, tier1, session))  # fmt: skip
         # The pack replaces the opening snapshot in the prompt (ORENA_MEMORY.md §3.1): one source of learner evidence,
         # not two with different rules. The snapshot stays here, for the greeting built without a model and its check.
         self.pack_facts = pack_numbers(pack)
@@ -607,6 +621,7 @@ class _Turn:
             address_asked=session.address_asked,
             address_chosen=tier1.address.chosen,
             notes={note.id: note.weight for note in tier1.coach_notes},
+            notes_available=self.notes_available,
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
             asked=tuple(n.id for n in self.notes_asked),
             notes_intent=self.notes_intent,
@@ -642,6 +657,50 @@ class _Turn:
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
 
+    def _gate_data_classes(self, turn: TurnInput, tier1, session):
+        """G8 for the whole request (ORENA_MEMORY.md §8 b, c), while the gate is on, before anything is pinned or sent:
+        a conversation that has sent a class of data is not continued on a provider cleared for less; coach notes
+        go only to a provider cleared for `full_memory`, and below it they cannot be read, kept, changed or forgotten
+        (owner, 2026-10-18); the chat context's learning evidence (`earlier_in_session`) only to one cleared for
+        `learning_profile`. The tier-1 context and the session the model is shown."""
+
+        classes = self.rt.data_classes
+        if not gating_on(self.rt.pack, classes):
+            return tier1, session
+        provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
+        level = classes.of(provider, model)
+        if level < session.data_class_sent:
+            self.timeline.facts["data_class"] = {"refused": "conversation_class", "provider_class": level.label,
+                                                 "conversation_class": DataClass(session.data_class_sent).label}
+            raise ProviderNotCleared("the provider is not cleared for the data this conversation carries")
+        if level < NOTES_CLASS:
+            self.notes_available = False
+            # A learner asking to keep, change or forget a note is told it cannot be done here; no note changes.
+            message = turn.message or ""
+            self.notes_blocked = not self.opening and bool(
+                notes_the_message_changes(message, tier1.coach_notes) or asks_to_remember(message)
+                or confirmed_note(message) is not None or asks_to_remember_unaccented(message))
+            if tier1.coach_notes:
+                self.timeline.facts["coach_notes"] = {"withheld": "provider_not_cleared", "provider_class": level.label,
+                                                      "count": len(tier1.coach_notes)}  # fmt: skip
+                tier1 = replace(tier1, coach_notes=())
+        if level < CONTEXT_EVIDENCE_CLASS and carried_state(turn, tier1, session):
+            self.timeline.facts["chat_context"] = {"withheld": "carried_state", "provider_class": level.label}
+            tier1, session = without_carried_state(turn, tier1, session)
+        return tier1, session
+
+    def _record_data_class_sent(self, session, *, pack: str | None, notes, context: bool) -> None:
+        """The highest class this request carries - the pack, coach notes, and the chat context's learning evidence -
+        raises the conversation's class (§8 c), whichever of them was actually sent."""
+
+        if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes):
+            return
+        level = max(PACK_CLASS if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE,
+                    CONTEXT_EVIDENCE_CLASS if context else DataClass.NONE)  # fmt: skip
+        if level > session.data_class_sent:
+            self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                    lambda state: state.with_data_class_sent(level))  # fmt: skip
+
     def _learner_pack(self, session) -> str | None:
         """The conversation's learner pack (ORENA_MEMORY.md §5.2): built on its first model turn - and again for another
         language pair - inside the learner's own context, then the same bytes every round. None when the pack is off
@@ -676,14 +735,15 @@ class _Turn:
                                 lambda state: state.with_learner_pack(pack.text, key))  # fmt: skip
         return pack.text
 
-    def _pin_route(self, session) -> ModelRoute | None:
+    def _choose_route(self, session):
         """The model this conversation runs on (ORENA_MEMORY.md §7.2): the one it was pinned to, or - on its first
         model turn, or when the pinned one can no longer stream here (removed or unconfigured in Admin) - the current
-        selection, pinned from now on. Never a switch on a failed round: that fails the turn, as before."""
+        selection, pinned from now on. Never a switch on a failed round: that fails the turn, as before. Returns the
+        route and, for a new pin, the call that stores it (None when nothing changes)."""
 
         router = self.rt.router
         if router is None:
-            return None
+            return None, None
         pinned = session.model_route
         try:
             current = router.current()
@@ -695,15 +755,18 @@ class _Turn:
         moved_after_failure = session.model_route_failed and current is not None and current != pinned
         if pinned is not None and router.usable(pinned) and not moved_after_failure:
             self._route_fact(pinned, "kept")
-            return pinned
+            return pinned, None
         if current is None:
             self.timeline.facts["model_route"] = {"provider": None, "model": None, "pinned": "none"}
-            return None
+            return None, None
         route = current
         self._route_fact(route, "repinned" if pinned else "new")
-        self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
-                                lambda state: state.with_model_route(route))  # fmt: skip
-        return route
+
+        def commit() -> None:
+            self.rt.sessions.update(session.agent_session_id, self.learner.user_key,
+                                    lambda state: state.with_model_route(route))  # fmt: skip
+
+        return route, commit
 
     def _route_fact(self, route: ModelRoute, how: str) -> None:
         from writing_coach.ai.control_plane import safe_model_display
@@ -763,7 +826,12 @@ class _Turn:
                       if self.learner.contract_language in tool.languages)  # fmt: skip
         replies = reply_tool_specs(self.request.client, self.locale.target, version=self.stream.version,
                                    opening=False, pending=True)  # fmt: skip
-        return reads + replies
+        return reads + self._note_tools_allowed(replies)
+
+    def _note_tools_allowed(self, specs):
+        """Below `full_memory` (G8) the note tools are not offered at all; the outputs refuse them as well."""
+
+        return specs if self.notes_available else tuple(s for s in specs if s.name not in NOTE_TOOLS)
 
     def _rounds(self, messages: list[ProviderMessage], outputs: ReplyOutputs) -> Iterator[Event]:
         # An opening turn reads nothing itself: the server gave it the snapshot (S13 has no tool_call).
@@ -778,6 +846,7 @@ class _Turn:
             self.request.client, self.locale.target, version=self.stream.version, opening=self.opening,
             pending=self.live is not None,
         )
+        reply_specs = self._note_tools_allowed(reply_specs)
         if self.screen_help:
             # Canonical stream S1 (contract §12): an answer, follow-up questions, nothing else.
             reply_specs = tuple(spec for spec in reply_specs if spec.name in SCREEN_HELP_REPLY_TOOLS)
@@ -1097,6 +1166,10 @@ class _Turn:
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
                 key = "notes.not_kept" if self.note_confirmed is not None and not self.notes_asked else "notes.unchanged"
                 unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
+                                              address=self.address)[1]  # fmt: skip
+            elif self.notes_blocked:
+                # The notes were not sent to this provider (G8): nothing was changed, and the learner is told so.
+                unchanged = learner_copy.text("notes.unavailable", interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.needs_evidence and not self.records:
                 # Asked to read and still read nothing: no conclusion about the learner is made up (3.1).

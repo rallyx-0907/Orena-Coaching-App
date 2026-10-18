@@ -106,6 +106,9 @@ class AgentSessionState:
     # (ORENA_MEMORY.md §5.2), with the (target, support) it was built for: another pair builds it again.
     learner_pack: str | None = field(default=None, repr=False)
     learner_pack_key: tuple[str, str] | None = None
+    # The highest data class (agent/data_class.py) this conversation has sent to a provider, while G8 gating is on:
+    # its history may carry that data, so it is never continued on a provider cleared for less (§8 c).
+    data_class_sent: int = 0
 
     def for_target(self, target: str | None) -> AgentSessionState:
         """The session as a turn in `target` may see it (dogfood gate 3.3).
@@ -143,6 +146,9 @@ class AgentSessionState:
 
     def with_learner_pack(self, text: str, key: tuple[str, str]) -> AgentSessionState:
         return replace(self, learner_pack=text, learner_pack_key=key)
+
+    def with_data_class_sent(self, level: int) -> AgentSessionState:
+        return replace(self, data_class_sent=max(self.data_class_sent, int(level)))
 
     def pack_for(self, key: tuple[str, str]) -> str | None:
         return self.learner_pack if self.learner_pack_key == key else None

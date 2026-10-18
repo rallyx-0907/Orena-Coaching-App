@@ -605,11 +605,16 @@ for `full_memory` (§8). The UI is UI-lane work and needs a contract change (§8
   | writing review, text discussion with the pack (M4) | `learning_profile` |
   | dictionary, translation | `none` |
 
-- **Where it stands (rev 4).** A1 (PR #263, merged) built **learner-pack clearance, a partial G8**: the record
-  (`AGENT_PROVIDER_DATA_CLASSES`, `writing_coach/agent/data_class.py`) and the gate for one payload, the M1 learner
-  pack (`GOVERNED_PAYLOADS = ("learner_pack",)`). `none` today means "not cleared for the pack". The opening snapshot,
-  chat context, coach notes, learner text and tool results are not governed yet (`NOT_YET_GOVERNED`). **G8 is not
-  complete until every learner-derived payload is covered.**
+- **Where it stands.** A1 (PR #263) built the record (`AGENT_PROVIDER_DATA_CLASSES`,
+  `writing_coach/agent/data_class.py`) and the gate for the M1 learner pack. M2-prep 2b adds coach notes (b: only to
+  `full_memory`; below it the notes are not sent and no note can be kept, changed or forgotten - the note tools are
+  not offered and are refused - and a learner who asks is told so; owner, 2026-10-18), the chat context (its learning
+  evidence, `earlier_in_session`, only to `learning_profile`) and the conversation's history (c: never continued on
+  a provider cleared for less than the conversation already sent; checked before a route is pinned; the turn answers
+  the unavailable path, voice does not open): `GOVERNED_PAYLOADS = ("learner_pack", "coach_notes",
+  "conversation_history", "chat_context")`. The opening snapshot, learner text and tool results are not governed yet
+  (`NOT_YET_GOVERNED`). **G8 is not complete until every
+  learner-derived payload is covered.**
 - **Rollout and edges** (rev 4, F10):
   - (a) Gating applies only when the pack or memory flag is on (as A1 does), so turning the policy on never makes a
     working provider "unavailable" for learners who had no pack. The owner records the classes in configuration
