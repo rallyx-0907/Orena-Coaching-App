@@ -11,7 +11,7 @@ Whisper receives bounded source context; the configured media text model can rep
 ZH ASR and EN captions, with per-cue before/after/provenance visible in A12. Personal and pre-existing
 records are excluded; a correction that fails never blocks translation, but a cleared item is then held, not
 auto-published, also across retry. Local media+admin1251 pass/21 skip, Ruff/Node pass. Independent review of
-`54c8f608`: REQUEST CHANGES (2 P1 + P2 fixed, not re-reviewed; 5 first-review P2 unaddressed). Live quality, matched-audio benchmark and browser fidelity remain
+`317ffe9e`: APPROVE (no P0/P1, CI green on that SHA; 5 first-review P2 have no recorded text). Live quality, matched-audio benchmark and browser fidelity remain
 unverified; no runtime deployment or publication. Trial artifacts report EN19/ZH18 usable; sitting6
 stopped at HTTPS egress preflight with zero new imports. See `docs/reviews/MEDIA_ASR_CONTEXT_CHECKPOINT_2026-10-17.md`.
 

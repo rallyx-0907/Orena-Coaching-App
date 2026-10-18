@@ -40,8 +40,12 @@ version `1.4.0` and frontend version `2.17.5` unchanged. `/api/agent/*`, mobile,
 
 ## Independent review
 
+**Superseded for the current head.** This section records the first review, of application commit `e814a4ec` only. Later
+reviews of `7a0957fe`, `d7aed04f`, `54c8f608` and the final APPROVE of `317ffe9e` are recorded in the sections below;
+read those for the current state.
+
 Implementer: `/root/asr_implementation`. Independent reviewer: `/root/restore_review` (separate subagent).
-Final verdict: **APPROVE — spec compliance and quality**, after correcting the two initial P1 findings
+Final verdict (for `e814a4ec`): **APPROVE — spec compliance and quality**, after correcting the two initial P1 findings
 (ZH caption scope, prior-publication eligibility), Unicode/empty-cue/rationale P2 findings and the subsequent
 helper-placement P1 caught by application import during regression testing. No scoped P0/P1/P2 remains.
 
@@ -225,6 +229,27 @@ host RAM 2.49 GB, above the owner's 1 GB floor): media pytest set plus `tests/te
 `tests/test_admin_authorization_matrix.py` **1251 passed, 0 failed, 21 skipped**. Ruff on touched Python, Node admin media
 review, Node admin areas, browser ESM graph (300 modules): PASS. Not done: independent re-review of this fix (the implementer
 may not approve it), the five first-review P2 findings, the live provider re-run (a paid run needs the owner's go-ahead), A12 visual check.
+
+## Review of `317ffe9e`: APPROVE (2026-10-17)
+
+Delegated Architecture Reviewer (independent of the implementer, per AGENTS.md "Architecture review authority"), reviewed
+commit `317ffe9ebc5b1b658f57364693cbaab4bb391372` against `54c8f608`. Verdict **APPROVE**: no P0 and no P1 remain.
+
+- ZH Latin/number guard, the 90 s per-wait cap with its shared 150 s total, and the stale A12 comment are **closed**. The
+  reviewer confirmed the tests reach the real `_reserve_output` (window blocked 120 s: no sleep, no request) and the `[90, 70]`
+  budget split, not only an outer mocked exception.
+- CI on this exact SHA, checked by the implementer with `gh` (not taken from a report): workflow run #818, `CI`, conclusion
+  `success`, head `317ffe9e`; jobs `python-gates`, `node-gates`, `pytest`, `docker-build` and the aggregate `test` all
+  `success`. Earlier heads `54c8f608` (#815) and `7a0957fe` (#800) are also `success`.
+- **P2, still open:** the verbatim text of the five findings from the first review of `7a0957fe` is in no repository file, PR
+  comment or review thread, so it cannot be audited and is **not** claimed closed. It must be recorded in Git (or an issue)
+  before this stage closes.
+- **P2, bookkeeping:** the PR #261 description still carried the validation and "independent reviewer APPROVE" of
+  `e814a4ec` while the head is `317ffe9e`. The PR is still a draft.
+- **Not evidence of anything else.** This is architecture review: not product approval, not `:8000` deployment approval and
+  not live-provider approval. **Still not done:** the A12 visual check with real applied/partial rows, and the live provider
+  benchmark (cost ceiling $0.10, no new item created), which needs the owner's go-ahead. `:8021` still runs `7a0957fe`; it
+  needs a restart to exercise the later fixes.
 
 ## Exact changed files and memory transaction
 
