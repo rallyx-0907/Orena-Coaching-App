@@ -381,6 +381,42 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   }
   await assert.rejects(() => readMemoryEnabled('en', answer({}, 401)), (error) => error.status === 401, '401 reaches the signed-out handling');
 
+  // A hung GET must not hold Settings: it resolves null (row hidden) after the timeout.
+  const hung = () => new Promise(() => {});
+  assert.equal(await readMemoryEnabled('en', hung, 20), null, 'no answer in time: null, the row is hidden');
+
+  // Per account, with real storage semantics: another account inherits nothing; sign-out clears.
+  const sw = await import('../static/orena/agent/memory-switch.js');
+  const data = new Map();
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: {
+    getItem: (k) => (data.has(k) ? data.get(k) : null), setItem: (k, v) => data.set(k, String(v)), removeItem: (k) => data.delete(k),
+  } });
+  sw.__reset();
+  sw.setMemoryOwner('a@x.test');
+  await sw.writeMemoryEnabled(false, async () => ({ enabled: false, version: 2 }));
+  assert.equal(sw.memoryOn(), false);
+  sw.setMemoryOwner('b@x.test');
+  assert.equal(sw.memoryOn(), true, 'a different account does not inherit the OFF state');
+  sw.setMemoryOwner('a@x.test');
+  assert.equal(sw.memoryOn(), false, 'the first account still has its own value');
+  sw.clearMemoryState();
+  assert.equal(sw.memoryOn(), true, 'sign-out clears the account state');
+  assert.ok(![...data.keys()].some((k) => k.endsWith(encodeURIComponent('a@x.test'))), 'nothing of the account stays in storage');
+  // A server flip on another device is picked up once per account and language at session start.
+  let reads = 0;
+  const flipped = async () => { reads += 1; return { enabled: false, version: 9 }; };
+  assert.equal(await sw.refreshMemoryEnabled('zh', flipped), false);
+  await sw.refreshMemoryEnabled('zh', flipped);
+  assert.equal(reads, 1, 'refreshed once, not on every turn');
+  // Storage that throws never breaks the switch.
+  Object.defineProperty(globalThis, 'localStorage', { configurable: true, get() { throw new Error('blocked'); } });
+  sw.__reset();
+  assert.equal(sw.memoryOn(), true);
+  await sw.writeMemoryEnabled(false, async () => ({ enabled: false }));
+  assert.equal(sw.memoryOn(), false);
+  delete globalThis.localStorage;
+  sw.__reset();
+
   const copy = await import('../static/orena/copy/index.js');
   const table = copy.registeredCopy().get('settings');
   for (const key of ['memoryLabel', 'memorySub']) {

@@ -176,7 +176,7 @@ export default async function settingsScreen(element, ctx) {
     api.languages().catch(() => null),
     readMicState(),
     listVoices(toContractLang(copyLanguages().ui)),
-    readMemoryEnabled(ctx.context.language),
+    readMemoryEnabled(ctx.context.language).catch(() => null), // times out to null: a slow server only hides the row
   ]);
   if (!ctx.isCurrent()) return undefined;
   state.languagesData = languagesData;
@@ -378,9 +378,10 @@ export default async function settingsScreen(element, ctx) {
     paintTab();
     try {
       state.memoryOn = await writeMemoryEnabled(!before);
-    } catch {
+    } catch (error) {
       state.memoryOn = before;
-      if (ctx.isCurrent()) toast(t('saveError'));
+      // A 401 already reached the global signed-out handling in request(); no second message.
+      if (error?.status !== 401 && ctx.isCurrent()) toast(t('saveError'));
     } finally {
       state.memoryBusy = false;
     }

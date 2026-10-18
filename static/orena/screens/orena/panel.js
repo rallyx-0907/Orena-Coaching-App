@@ -23,6 +23,7 @@ import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
 import { createSession, buildRequest } from '../../agent/session.js';
+import { refreshMemoryEnabled } from '../../agent/memory-switch.js';
 import { turn } from '../../agent/transport.js';
 import { supportedIntents } from '../../agent/intents.js';
 import { toContractLang, fromContractLang } from '../../agent/contract.js';
@@ -220,6 +221,8 @@ export async function openOrenaPanel(context = {}, carry = null) {
   }
 
   async function runTurn(trigger, message, { retry: again = false } = {}) {
+    // Orena Memory's switch, read once per account and language (D-226); a no-op after the first turn.
+    await refreshMemoryEnabled(requestLanguages().target);
     if (closed || session.state().thinking) return null;
     const support = toContractLang(languages().support);
     const address = memory.addressFor(support);
