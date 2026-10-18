@@ -256,3 +256,21 @@ def test_voice_v9_keeps_a_note_on_the_server():
     [event] = answer["events"]
     assert event["data"]["stored"] == "server"
     assert [i.text for i in store.items(scope(mem), "zh", NOW)] == ["Giải thích bằng tiếng Việt"]
+
+
+# --- the server's memory ------------------------------------------------------------------------------------------
+
+
+def test_memory_exists_only_with_keys_and_an_active_backbone_and_bad_keys_refuse_to_start():
+    class Backbone:
+        is_active, incarnations = True, Incarnations()
+
+    made = []
+    store = lambda keys: made.append(keys) or InMemoryMemoryStore(keys)  # noqa: E731
+    keys = {"AGENT_MEMORY_HMAC_KEYS": "v1:" + "k" * 40}
+    assert MemoryRuntime.from_env({}, Backbone(), store) is None and made == []
+    inactive = type("Off", (), {"is_active": False, "incarnations": None})()
+    assert MemoryRuntime.from_env(keys, inactive, store) is None and made == []
+    assert MemoryRuntime.from_env(keys, Backbone(), store).store is not None and len(made) == 1
+    with pytest.raises(ValueError):
+        MemoryRuntime.from_env({"AGENT_MEMORY_HMAC_KEYS": "v1:short"}, Backbone(), store)
