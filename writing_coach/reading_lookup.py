@@ -35,6 +35,7 @@ from writing_coach.reading_translation import (
     ReadingTranslationStatus,
     TextSegment,
 )
+from writing_coach.tap_sense import definitions_by_pos, pick_catalogue_entry, pick_chinese_entry
 from writing_coach.vocabulary_library import normalize_vocabulary_word
 
 _log = logging.getLogger("orena.lookup")
@@ -245,12 +246,33 @@ def _safe_find_entry(
         return None
 
 
-def _safe_chinese_senses(word: str) -> tuple[str, ...]:
+def _safe_find_entries(
+    repository: VocabularyLookup, language: str, normalized_term: str
+) -> list[dict[str, Any]]:
+    """Every published sense of the term when the repository can list them, else the one `find_entry` gives."""
+
+    finder = getattr(repository, "find_entries", None)
+    if not callable(finder):
+        one = _safe_find_entry(repository, language, normalized_term)
+        return [one] if one is not None else []
     try:
-        for entry in chinese_lexicon.lookup(word):
-            senses = chinese_lexicon.meaning_senses(entry)
-            if senses:
-                return senses
+        return [item for item in finder(language, normalized_term) if isinstance(item, dict)]
+    except VocabularyContentUnavailable:
+        return []
+    except Exception as exc:  # noqa: BLE001
+        _log_layer("catalogue", "failed", language=language, error=exc)
+        return []
+
+
+def _safe_chinese_senses(word: str, reading: str = "") -> tuple[str, ...]:
+    """CC-CEDICT's senses for `word`: the entry that has the reading the tagger gave it in its sentence, else the
+    first entry that has any sense."""
+
+    try:
+        entries = [entry for entry in chinese_lexicon.lookup(word) if chinese_lexicon.meaning_senses(entry)]
+        picked = pick_chinese_entry(entries, reading)
+        if picked is not None:
+            return chinese_lexicon.meaning_senses(picked)
     except chinese_lexicon.LexiconUnavailable:
         return ()
     return ()
@@ -579,7 +601,10 @@ class ReadingLookupService:
         entry = None
         if self._vocabulary_repository is not None:
             for normalized in _catalog_candidates(selection, local["lemma"]):
-                entry = _safe_find_entry(self._vocabulary_repository, source, normalized)
+                # Zero-cost sense choice (refs #194): among the word's authored senses, the one with a meaning in the
+                # support language and the class the word has in this sentence; never AI, never the network.
+                found = _safe_find_entries(self._vocabulary_repository, source, normalized)
+                entry = pick_catalogue_entry(found, part_of_speech, target)
                 if entry is not None:
                     break
         if entry is not None:
@@ -605,7 +630,7 @@ class ReadingLookupService:
             # own language, so for an English support language the first
             # senses are the meaning; any other language still goes to the
             # translation engine below, with these senses on the sheet.
-            entry_senses = _safe_chinese_senses(selection)
+            entry_senses = _safe_chinese_senses(selection, pronunciation)
             definitions.extend(
                 LookupDefinition("", sense) for sense in entry_senses[:_MAX_DICTIONARY_DEFINITIONS]
             )
@@ -639,6 +664,9 @@ class ReadingLookupService:
                 if not audio_url:
                     audio_url = str(payload.get("audio") or "").strip()
                 part_of_speech = _reconciled_part_of_speech(part_of_speech, definitions)
+                # The dictionary's sense for the class the word has here comes first, so a plain "plan" in "we plan
+                # to leave" is not shown as the architectural drawing (refs #194).
+                definitions = definitions_by_pos(definitions, part_of_speech)
             if not pronunciation:
                 # Catalogue, then the online dictionary, then local CMUdict (D-202): a free, offline reading
                 # that is there when the dictionary timed out or has no phonetic for the word.
