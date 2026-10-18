@@ -7345,7 +7345,7 @@ Consequences. The contract text is pinned equal to the code constant, so this PR
 
 ## D-225 - Agent Contract v9: unplaced device notes in server mode (resolves D-223 points 2/6) (2026-10-18)
 
-Status: PROPOSED (for owner acceptance). D-223 stays as accepted; this entry is appended, not an edit of it. The contract text in the same PR follows it and `contract_version` stays 9: no wire change.
+Status: ACCEPTED (owner wrote "D-225: ACCEPTED" on 2026-10-18, after an independent review APPROVE on PR #279 and green CI). D-223 stays as accepted; this entry is appended, not an edit of it. The contract text in the same PR follows it and `contract_version` stays 9: no wire change.
 
 Decision. D-223 is inconsistent with itself: point 2 says the server ignores `coach_notes` for a v9 client whose memory is ON and server-backed, point 6 (G4) says device notes the learner has not placed are sent as today until the learner chooses. This entry resolves the conflict in favour of point 6: point 2's "ignores" holds only for notes the learner has placed. `AGENT_CONTRACT.md` §3 (not §5.4) and D-223 point 2 carried the "ignores"; §3 is corrected.
 
