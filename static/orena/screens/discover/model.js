@@ -19,6 +19,7 @@ import { duration } from '../../product/duration.js';
 import { placePercent } from '../../product/place-progress.js';
 import { imageOf, publisherOf } from '../../product/provenance.js';
 import { isTraditional } from '../../product/script.js';
+import { levelIsEstimated, levelWithQualifier } from '../../kit/level-label.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { collectionTitle } from '../../copy/general-catalogue.js';
 
@@ -113,6 +114,8 @@ export function entryFromMedia(item, continuation) {
     language: item.language || '',
     author: item.source_label || '',
     level: item.level || item.estimated_level || '',
+    // PRE-204: a level the catalogue only estimated reads with the "est." qualifier.
+    levelEstimated: levelIsEstimated(item),
     topic: item.topic || '',
     clipMs: Number.isFinite(item.duration_ms) && item.duration_ms > 0 ? item.duration_ms : null,
     image: poster ? `url(${poster})` : '',
@@ -325,7 +328,7 @@ export function presentCard(entry, t) {
   let meta = entry.author || '';
   if (entry.kind === 'collection' && entry.itemCount != null) meta = t.plural('collectionWordCount', entry.itemCount);
   const tags = [];
-  if (entry.level) tags.push({ label: entry.level, tone: 'accent' });
+  if (entry.level) tags.push({ label: levelWithQualifier(entry.level, entry.levelEstimated), tone: 'accent' });
   // D-197: a Traditional Chinese article says so, in the same tag the level and topic use; Simplified is unlabelled.
   if (entry.traditional) tags.push({ label: t('scriptTraditional') });
   // N-35: only a topic the vocabulary above names is shown, in the interface language (P-06).

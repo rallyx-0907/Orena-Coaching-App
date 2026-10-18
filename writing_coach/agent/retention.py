@@ -29,16 +29,16 @@ _OFF = frozenset({"", "0", "false", "off", "no"})
 _log = logging.getLogger(__name__)
 
 
-def sweep_enabled(env: Mapping[str, str]) -> bool:
-    """True only when `AGENT_TURN_RETENTION_SWEEP` is switched on; unset is off. An unclear value refuses to start
-    rather than guess whether deleting was meant."""
+def sweep_enabled(env: Mapping[str, str], switch: str = SWEEP_SWITCH) -> bool:
+    """True only when the switch (`AGENT_TURN_RETENTION_SWEEP` unless named) is on; unset is off. An unclear value
+    refuses to start rather than guess whether deleting was meant."""
 
-    value = str(env.get(SWEEP_SWITCH, "")).strip().casefold()
+    value = str(env.get(switch, "")).strip().casefold()
     if value in _ON:
         return True
     if value in _OFF:
         return False
-    raise ValueError(f"{SWEEP_SWITCH} must be one of {sorted(_ON | _OFF - {''})}")
+    raise ValueError(f"{switch} must be one of {sorted(_ON | _OFF - {''})}")
 
 
 def _in_background(work: Callable[[], None]) -> None:

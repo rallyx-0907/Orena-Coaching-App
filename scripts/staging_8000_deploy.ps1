@@ -70,7 +70,8 @@ foreach ($name in $Web, $Worker) {
     }
 }
 $common = @('--restart', 'unless-stopped', '--network', $Network, '--env-file', $EnvFile, '-v', "${Volume}:/data",
-    '--add-host', 'host.docker.internal:host-gateway', '--label', "orena.release=$sha", '--label', 'orena.runtime=staging-8000')
+    '--add-host', 'host.docker.internal:host-gateway', '--label', "orena.release=$sha", '--label', 'orena.runtime=staging-8000',
+    '--log-opt', 'max-size=10m', '--log-opt', 'max-file=5')
 $webId = & docker.exe run -d --name $Web --network-alias writing-coach -p 127.0.0.1:8000:8000 @common $Image
 if ($LASTEXITCODE -ne 0) { Fail 'the web container did not start' }
 $workerId = & docker.exe run -d --name $Worker @common $Image python -m writing_coach.reading_worker

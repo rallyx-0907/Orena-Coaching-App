@@ -10,6 +10,7 @@
    frame (`orena-script.js`: `segs`, `prevLine`, `cycleSpeed`, `modes`, `modeHint`), restated as
    pure functions over the real transcript - not its prototype timers or canned data. */
 import { wordSpans, activeWordIndex } from '../../capabilities/word-timeline.js';
+import { levelIsEstimated } from '../../kit/level-label.js';
 import { primaryLanguage } from '../../kit/lang.js';
 import { wordSpanAt } from '../../product/word-span.js';
 import { playbackAvailable } from '../../capabilities/media-player.js';
@@ -95,6 +96,7 @@ export function mapLesson(payload, { levelLabel = (lv) => lv, fallbackLanguage =
     language: primaryLanguage(catalog.language || asset.source_language, fallbackLanguage),
     topic: catalog.topic || '',
     level: catalog.level || '',
+    levelEstimated: levelIsEstimated(catalog),
     levelText: catalog.level ? levelLabel(catalog.level) : '',
     sourceLevel: catalog.source_declared_level || '',
     // Number(null) is 0: an unmeasured length (a provider that reports none) stays null, never "0 min".
