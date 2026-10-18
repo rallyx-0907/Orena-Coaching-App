@@ -1,14 +1,13 @@
-"""Rehearsal of the PROPOSED migration 20261018_0035 (Orena Memory, M2) on a throwaway PostgreSQL.
+"""Rehearsal of the migration 20261018_0035 (Orena Memory, M2) on a throwaway PostgreSQL.
 
 `docs/project/proposals/ORENA_MEMORY.md` rev 4.1 §4.1, §4.4, §9. Run by hand against a database given by URL; not part
 of CI; it refuses anything that is not clearly throwaway and empty (the guard of `rehearse_learner_records_schema.py`).
-It applies the proposal from a temporary Alembic version location holding only this one file, on top of the real
-`migrations/versions/` chain, so the shared runtimes (which read `migrations/versions/` alone) never see it.
+It applies the real `migrations/versions/` chain up to 20261015_0033, then this revision on top of it.
 
     python scripts/rehearse_orena_memory_schema.py "$REHEARSAL_URL"
 
 Steps (each a PASS/FAIL row; non-zero exit on any FAIL):
- 1. chain: `versions/` alone has the single head 20261015_0033; with the proposal the head is 20261018_0035.
+ 1. chain: `versions/` has the single head 20261018_0035, parented on 20261015_0033.
  2. empty -> 0033 (real chain), then 0033 -> 0035; the three tables and their indexes exist.
  3. constraints: class, kind, text length, value_key as lowercase hex, key_version, provenance size, expiry required for
     continuity and inferred, evidence required on and only on inferred, slot required off explicit, a closed code on
@@ -21,9 +20,7 @@ Steps (each a PASS/FAIL row; non-zero exit on any FAIL):
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
-import tempfile
 import uuid
 from pathlib import Path
 
@@ -39,7 +36,6 @@ from rehearse_grammar_content_store import alembic_config  # noqa: E402
 from rehearse_learner_records_schema import refuse_unless_empty, refuse_unless_throwaway  # noqa: E402
 
 HEAD, REV = "20261015_0033", "20261018_0035"
-PROPOSAL = ROOT / "migrations" / "proposed" / "20261018_0035_orena_memory.py"
 TABLES = ("learner_memories", "learner_memory_suppressions", "learner_memory_state")
 results: list[tuple[str, bool, str]] = []
 
@@ -101,12 +97,11 @@ def main() -> int:
     engine = sa.create_engine(args.url)
     refuse_unless_empty(engine)
 
-    proposal_dir = Path(tempfile.mkdtemp(prefix="orena-memory-proposal-"))
-    shutil.copy(PROPOSAL, proposal_dir / PROPOSAL.name)
     try:
-        cfg_v, cfg_p = alembic_config(args.url, None), alembic_config(args.url, proposal_dir)
-        check("1 chain: versions/ head", ScriptDirectory.from_config(cfg_v).get_heads() == [HEAD])
-        check("1 chain: with the proposal", ScriptDirectory.from_config(cfg_p).get_heads() == [REV])
+        cfg_v = cfg_p = alembic_config(args.url, None)
+        script = ScriptDirectory.from_config(cfg_v)
+        check("1 chain: versions/ head", script.get_heads() == [REV])
+        check("1 chain: parent", script.get_revision(REV).down_revision == HEAD)
 
         command.upgrade(cfg_v, HEAD)
         before = schema(engine)
@@ -209,7 +204,7 @@ def main() -> int:
         command.upgrade(cfg_p, REV)
         check("4 upgrade again gives the same schema", schema(engine) == first)
     finally:
-        shutil.rmtree(proposal_dir, ignore_errors=True)
+        engine.dispose()
     failed = [name for name, passed, _ in results if not passed]
     print(f"\n{len(results) - len(failed)} PASS, {len(failed)} FAIL")
     return 1 if failed else 0

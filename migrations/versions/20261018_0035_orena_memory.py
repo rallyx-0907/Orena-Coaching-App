@@ -31,12 +31,12 @@ Not in this revision (§9): the ORM models with SQLite parity, the repository un
 the tables in `deletion_enumeration.py` and its test come in the same PR that promotes it. Expiry is filtered on read
 and swept in bounded batches by the repository; nothing runs at startup (D-002).
 
-Review and gate. A DRAFT PROPOSAL in `migrations/proposed/` (Alembic does not read it): not in `versions/`, not in
-the ORM, applied nowhere. It is parented on the head of `versions/` today (20261015_0033) so it can be rehearsed
-(`scripts/rehearse_orena_memory_schema.py`); at promotion it is re-parented on the head of that day, behind any
-proposal promoted first (README). Promotion and application are human gates after its independent review, a
-PostgreSQL up/down/up rehearsal and the owner's authorisation. `downgrade()` refuses while any memory row exists; it
-exists for rehearsal only.
+Promotion (2026-10-18). The owner authorised promoting this revision on issue #256, after its draft review and
+a PostgreSQL up/down/up rehearsal (`scripts/rehearse_orena_memory_schema.py`). It is parented on 20261015_0033,
+the head of that day. Merging it moves the head: every PostgreSQL runtime that takes this code must apply it
+(operator step, after a backup) before it starts, starting with :8021, which the UI lane applies. Billing's
+proposed 0034 re-parents on it when promoted. `downgrade()` refuses while any memory row exists; it exists for
+rehearsal only.
 
 Revision ID: 20261018_0035
 Revises: 20261015_0033
