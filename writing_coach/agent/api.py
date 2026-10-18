@@ -50,6 +50,7 @@ router = APIRouter(prefix="/api/agent", tags=["agent"])
 
 _TRUE = frozenset({"1", "true", "yes", "on"})
 _runtime: AgentRuntime | None = None
+_memory = None  # Orena Memory (agent/memory_runtime.py MemoryRuntime), or None: this server has none
 _NO_MORE = object()
 MESSAGE_METER = "orena.message"
 
@@ -65,6 +66,29 @@ def configure_agent(runtime: AgentRuntime | None) -> None:
 
     global _runtime
     _runtime = runtime
+    _install_memory()
+
+
+def configure_memory(memory) -> None:
+    """Install Orena Memory (agent/memory_runtime.py) or none. Read by the turn, the voice session and the
+    `/api/agent/memory` routes; the learner pack reads it through `PackBuilder.memory`."""
+
+    global _memory
+    _memory = memory
+    _install_memory()
+
+
+def _install_memory() -> None:
+    if _runtime is None:
+        return
+    _runtime.memory = _memory
+    pack = getattr(_runtime, "pack", None)
+    if pack is not None:
+        pack.memory = _memory.pack_reader() if _memory is not None else None
+
+
+def current_memory():
+    return _memory
 
 
 def _require_runtime() -> AgentRuntime:
@@ -318,3 +342,7 @@ def agent_capabilities(
         raise HTTPException(status_code=422, detail="unknown interface language")
     target = LearnerScope.from_request_context().contract_language
     return runtime.capabilities.public(interface=interface, target=target)
+
+
+# `/api/agent/memory` (contract v9 §10) is on this router too.
+from writing_coach.agent import memory_api  # noqa: E402, F401
