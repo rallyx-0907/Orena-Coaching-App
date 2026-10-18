@@ -114,3 +114,42 @@ funding enforcement.
    - the refund, renewal and grace policy;
    - tax.
 5. **Gate 7b itself.** Readiness `ready: true`, then the owner's first real subscription (runbook §4-§5).
+
+## 7. One approval for gate 7b (prepared; waits for the owner and for R1)
+
+The owner approves every write to Polar **production** in one list. Nothing on it has been done.
+
+**Precondition:** R1 is resolved by the 2026-10-19 renewal run (§2-§3). If Polar leaves `modified_at` empty at
+renewal, a code fix lands first, with independent review.
+
+**Polar production (owner).**
+
+| # | Write | Value |
+| --- | --- | --- |
+| P1 | Create 4 products, one fixed USD price each, no trial | Plus 9.99/month, Plus 79.99/year, Pro 19.99/month, Pro 159.99/year (the catalogue; final prices are the owner's call) |
+| P2 | Customer portal | customer updates on; plan change between the four; proration `invoice` |
+| P3 | Organization access token | exactly the 8 scopes in the runbook §1.3. The owner creates it and pastes it into `runtime.env`; it never goes through chat |
+| P4 | Webhook endpoint | `https://orena.chillpickle.org/api/billing/webhooks/polar`, Raw. Events: `subscription.*`, `order.paid`, `refund.created`, `refund.updated` |
+| P5 | Embedding allowlist | `https://orena.chillpickle.org` |
+
+**`:8000`.** Step R6 of the package: `runtime.env` and the prices file. A deploy is an owner gate.
+
+| Name | Value |
+| --- | --- |
+| `BILLING_ENABLED` | `on` |
+| `BILLING_NEW_SALES` | `off` first: everything runs, nothing is sold. Empty when the owner opens sales |
+| `BILLING_PRICES_FILE` | `/data/billing/prices.json`, with the four P1 product ids |
+| `POLAR_ENVIRONMENT` | `production` |
+| `POLAR_ACCESS_TOKEN` / `POLAR_WEBHOOK_SECRET` | from P3 and P4 |
+| `APP_ENV` | `production` |
+| `PUBLIC_BASE_URL` | `https://orena.chillpickle.org` |
+| `ORENA_ACCOUNT_BACKBONE` | `on` |
+
+**Verified with no money taken** (sales paused):
+- readiness shows `capabilities.plans` ready, except for the `new_sales_paused` blocker;
+- `provider_prices: match` against the P1 products;
+- an unsigned POST to the webhook answers 401.
+
+**Verified only by a real purchase** (the owner's first subscription, runbook §5):
+- the customer portal (it needs a subscription);
+- Plan & usage and Pricing with sales open (sales cannot be opened for one account only).
