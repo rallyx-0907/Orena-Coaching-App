@@ -122,7 +122,7 @@ assert.equal(normalizeMedia({ catalog: { language: 'zh' }, asset: {} }).language
 assert.equal(normalizeMedia({ asset: { source_language: 'en' } }).language, 'en');
 
 const upload = normalizeMedia({ asset: { title: 'Học viên tự tải lên', duration_ms: null }, playback: { kind: 'video' }, transcript: null });
-assert.deepEqual(upload, { title: 'Học viên tự tải lên', language: '', source: '', level: '', minutes: null, topic: '', desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
+assert.deepEqual(upload, { title: 'Học viên tự tải lên', language: '', source: '', level: '', levelEstimated: false, minutes: null, topic: '', desc: '', image: '', playbackKind: 'video', transcriptOrigin: 'none', segments: [] });
 
 const text = normalizeText({ title: 'Của tôi', text: 'ngắn' });
 assert.deepEqual(text, { title: 'Của tôi', source: '', level: '', minutes: null, desc: 'ngắn', image: '' });

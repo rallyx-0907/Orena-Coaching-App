@@ -33,6 +33,7 @@ import {
   progressPercent,
   scoreSummary,
   nextLabel,
+  elapsedFact,
 } from './model.js';
 
 function newOperationId() {
@@ -328,7 +329,7 @@ export default async function mountCheck(element, ctx) {
       : answered ? `${summary.correctCount}/${answered}` : '';
     /* The frame's three figures, from what was measured (D-130: no XP): the score, the words kept
        from this text, and the minutes this check took. */
-    const minutes = Math.max(1, Math.round((Date.now() - startedAt) / 60000));
+    const elapsed = elapsedFact(Date.now() - startedAt, t);
     const kept = await keptFromText();
     /* The celebration is for a result worth celebrating (LEX-087): below half right the result card is the one
        completion step - it shows the score and each question to review. Where it does open, its Continue is
@@ -341,7 +342,7 @@ export default async function mountCheck(element, ctx) {
       facts: [
         { label: t('correctLabel'), value: fraction },
         ...(kept == null ? [] : [{ label: t('newWordsLabel'), value: String(kept) }]),
-        { label: t('minutesLabel'), value: String(minutes) },
+        { label: elapsed.label, value: elapsed.value },
       ],
     });
   }

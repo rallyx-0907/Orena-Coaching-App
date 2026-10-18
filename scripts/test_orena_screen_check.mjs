@@ -18,6 +18,7 @@ const {
   progressPercent,
   scoreSummary,
   nextLabel,
+  elapsedFact,
 } = await import('../static/orena/screens/check/model.js');
 const { t } = await import('../static/orena/screens/check/copy.js');
 
@@ -125,6 +126,18 @@ assert.deepEqual(scoreSummary(questions, {}, t), { correctCount: 0, total: 3, ch
 // The fixture's evidence is plain words copied from the article (the backend verifies the span), so
 // the screen's own quotation marks are the only ones - and a question may have none at all.
 assert.ok(!/^["“]|["”]$/.test(gradeFixture.result.evidence_fragment), "the backend's evidence carries no quotation marks of its own");
+
+// The duration fact is truthful: seconds under a minute, whole minutes from a minute (D10), in every language.
+globalThis.document ??= { documentElement: { lang: 'en', dataset: {} } };
+const copyIndex = await import('../static/orena/copy/index.js');
+for (const [lang, sec, min] of [['en', 'sec', 'min'], ['vi', 'giây', 'phút'], ['zh', '秒', '分钟']]) {
+  copyIndex.setLanguages({ ui: lang, support: lang });
+  assert.deepEqual(elapsedFact(22000, t), { value: '22', label: sec });
+  assert.deepEqual(elapsedFact(59400, t), { value: '59', label: sec });
+  assert.deepEqual(elapsedFact(60000, t), { value: '1', label: min });
+  assert.deepEqual(elapsedFact(185000, t), { value: '3', label: min });
+}
+copyIndex.setLanguages({ ui: 'en', support: 'en' });
 
 // 7. Every word this screen adds is in all three languages with its placeholders.
 for (const key of ['progress', 'progressDone', 'seeResult', 'resultHeadline', 'missedLabel', 'correctLabel']) assert.ok(t.has(key), key);

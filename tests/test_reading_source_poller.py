@@ -124,3 +124,11 @@ def test_private_feed_url_refused_by_safe_fetch_boundary(world):
     p = world["poller"](fetch_bounded)
     result = p.poll_due(force=True)[0]
     assert "error" in result and world["jobs"]() == 0
+
+
+def test_failed_feed_log_line_never_carries_a_query_string_or_token(world, caplog):
+    net = Net(error=TimeoutError("GET https://news.example.org/feed.xml?token=SECRET123 timed out"))
+    with caplog.at_level("WARNING", logger="writing_coach.reading_source_poller"):
+        world["poller"](net).poll_due(force=True)
+    logged = " ".join(record.getMessage() for record in caplog.records)
+    assert "news.example.org/feed.xml" in logged and "SECRET123" not in logged and "token=" not in logged

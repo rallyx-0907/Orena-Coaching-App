@@ -41,6 +41,7 @@ import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
 import { topicLabel } from '../discover/model.js';
 import { t as discoverT } from '../discover/copy.js';
+import { levelWithQualifier } from '../../kit/level-label.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { mapLesson as dictationLesson, progressBySegment } from '../dictation/model.js';
@@ -228,7 +229,7 @@ export default async function listening(element, ctx) {
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${s('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-listening__titles">
         <div class="s-listening__title" lang="${langAttr(language)}">${lesson.title}</div>
-        <div class="s-listening__meta">${metaLine([kindLabel, payload.transcript_origin === 'generated_asr' ? t('generatedTranscript') : '', lesson.levelText || (lesson.sourceLevel ? t('sourceLevel', {level: lesson.sourceLevel}) : t('levelUnknown')), durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
+        <div class="s-listening__meta">${metaLine([kindLabel, payload.transcript_origin === 'generated_asr' ? t('generatedTranscript') : '', (lesson.levelText ? levelWithQualifier(lesson.levelText, lesson.levelEstimated) : '') || (lesson.sourceLevel ? t('sourceLevel', {level: lesson.sourceLevel}) : t('levelUnknown')), durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
       </div>
       <div class="s-listening__modes" data-modes role="group"></div>
     </div>
