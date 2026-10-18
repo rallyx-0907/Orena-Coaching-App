@@ -807,11 +807,12 @@ class ReplyOutputs:
             return "refused: memory.off - the learner switched Orena Memory off, so nothing is kept; say so plainly"
         except MemoryLimit:
             return ("refused: memory.limit - the learner already keeps the most notes allowed; nothing is kept until "
-                    "they delete one in the memory view - say so plainly")  # fmt: skip
+                    "they ask you to forget one - say so plainly")  # fmt: skip
         except Exception:  # noqa: BLE001 - MemoryUnavailable or a store error never fails the turn
             return UNAVAILABLE
+        expires = item.expires_at.isoformat() if item.expires_at else None  # the pilot retention (EXPLICIT_TTL)
         note = {"id": item.id, "kind": item.kind, "text": item.text, "weight": 1.0,
-                "last_reinforced": item.created_at.isoformat(), "expires_at": None}  # fmt: skip
+                "last_reinforced": item.created_at.isoformat(), "expires_at": expires}  # fmt: skip
         self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note, stored="server"))
         # The learner kept, in so many words, what an unplaced device note says: it is the account's now, and the
         # device drops its copy - a note is never both on the device and on the server (contract §5.4).

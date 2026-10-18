@@ -75,4 +75,41 @@ assert.match(String(feedbackMarkup()), /Choose a rating first/);
 assert.equal(byId('feedback').focus, true, "Feedback is in the design's focus list");
 assert.equal(match('#/feedback').route.id, 'feedback');
 
-console.log('Orena feedback screen: send, history, form, EN/VI/ZH markup, route: PASS');
+/* PRE-206: a report from an AI output opens the form with its area chosen and the reference at the start of the text. */
+{
+  const { reportHref, cleanRef, reportLink, REF_LIMIT } = await import('../static/orena/product/report-problem.js');
+  assert.deepEqual(model.reportDraft(new URLSearchParams('area=writing&ref=writing-evaluation%20%7C%20e1')), { areas: ['writing'], text: '[writing-evaluation | e1] ' });
+  assert.deepEqual(model.reportDraft(new URLSearchParams('area=nope')), { areas: [], text: '' }, 'an unknown area is dropped');
+  assert.deepEqual(model.reportDraft(undefined), { areas: [], text: '' });
+  assert.equal(model.reportDraft(new URLSearchParams({ ref: 'a]\nb[' })).text, '[a b] ', 'brackets and newlines never break the reference');
+  assert.equal(cleanRef(['word-sheet', 'c1', 'x'.repeat(400)]).length, REF_LIMIT, 'the reference is bounded');
+  assert.equal(cleanRef(['listening-question', '', null, 'q1']), 'listening-question | q1');
+  const address = reportHref({ area: 'vocabulary', surface: 'word-sheet', id: 'c1', text: 'forest' });
+  assert.match(address, /^#\/feedback\?area=vocabulary&ref=/);
+  const query = new URLSearchParams(address.split('?')[1]);
+  assert.deepEqual(model.reportDraft(query), { areas: ['vocabulary'], text: '[word-sheet | c1 | forest] ' }, 'the link and the screen agree');
+  for (const [ui, word] of [['en', 'Report a problem'], ['vi', 'Báo sai'], ['zh', '报告问题']]) {
+    copy.setLanguages({ ui, support: ui });
+    assert.match(String(reportLink({ area: 'writing', surface: 'w' })), new RegExp(`data-report-problem[^>]*>${word}<`), `${ui}: the link reads ${word}`);
+  }
+  copy.setLanguages({ ui: 'en', support: 'en' });
+}
+
+/* PRE-204: an estimated content level reads with the "est." qualifier; a reviewed one reads plain. */
+{
+  const { levelIsEstimated, levelWithQualifier } = await import('../static/orena/kit/level-label.js');
+  assert.equal(levelIsEstimated({ level: 'B2', level_source: 'deterministic-estimate' }), true);
+  assert.equal(levelIsEstimated({ level: 'B1', level_source: 'editorial-review' }), false);
+  assert.equal(levelIsEstimated({ estimated_level: 'B2' }), true);
+  assert.equal(levelIsEstimated({ level: 'B2', estimated_level: 'B2' }), false);
+  assert.equal(levelIsEstimated(null), false);
+  for (const [ui, word] of [['en', 'est.'], ['vi', 'ước tính'], ['zh', '估计']]) {
+    copy.setLanguages({ ui, support: ui });
+    assert.equal(levelWithQualifier('HSK4', true), `HSK4 · ${word}`);
+  }
+  assert.equal(levelWithQualifier('B2', false), 'B2');
+  assert.equal(levelWithQualifier('', true), '');
+  copy.setLanguages({ ui: 'en', support: 'en' });
+}
+
+console.log('Orena feedback screen: send, history, form, EN/VI/ZH markup, route, report-a-problem, estimated level: PASS');

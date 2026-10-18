@@ -23,6 +23,7 @@ from writing_coach.agent.memory_store import (
     ANY_LANGUAGE,
     CONTINUITY,
     EXPLICIT,
+    EXPLICIT_TTL,
     LIMITS,
     InMemoryMemoryStore,
     MemoryLimit,
@@ -211,6 +212,48 @@ def test_a_retried_note_does_not_duplicate_and_a_single_valued_slot_keeps_the_la
     add(s, a, "concise", kind="preference", slot="explanation_length")
     add(s, a, "detailed", kind="preference", slot="explanation_length")
     assert [i.text for i in s.items(a, "zh", T0) if i.slot == "explanation_length"] == ["detailed"]
+
+
+def test_a_kept_note_is_kept_for_the_pilot_retention_and_then_gone(mem):
+    """Pilot data is kept up to 6 months (owner, PRE-005, 2026-10-18): a kept note expires EXPLICIT_TTL after it was
+    last asked for, and is then invisible to every read, as any expired item is, until the sweep deletes it."""
+    s, a = mem.store, mem.a
+    item = add(s, a, "Phỏng vấn xin việc")
+    assert item.expires_at == T0 + EXPLICIT_TTL and EXPLICIT_TTL <= timedelta(days=181)
+    assert [i.id for i in s.items(a, "zh", T0 + EXPLICIT_TTL - timedelta(minutes=1))] == [item.id]
+    assert s.items(a, "zh", T0 + EXPLICIT_TTL) == []
+    section = memory_section(s, a, "zh", T0 + EXPLICIT_TTL)
+    assert section is None or section.explicit == ()
+
+
+def test_asking_to_keep_the_same_words_again_renews_the_retention(mem):
+    s, a = mem.store, mem.a
+    first = add(s, a, "Phỏng vấn xin việc")
+    later = T0 + timedelta(days=100)
+    again = add(s, a, "phỏng vấn xin việc", now=later)
+    assert again.id == first.id and again.expires_at == later + EXPLICIT_TTL
+    assert [i.id for i in s.items(a, "zh", T0 + EXPLICIT_TTL + timedelta(days=1))] == [first.id]
+
+
+def test_after_expiry_the_same_words_and_a_new_slot_value_can_be_kept(mem):
+    """Review of #292 P1-1: an expired row still holds the unique (value_key) and single-slot indexes until it is
+    deleted, so keeping again after expiry clears the learner's own expired notes first."""
+    s, a = mem.store, mem.a
+    old = add(s, a, "Phỏng vấn xin việc")
+    add(s, a, "concise", kind="preference", slot="explanation_length")
+    later = T0 + EXPLICIT_TTL + timedelta(days=1)
+    again = add(s, a, "Phỏng vấn xin việc", now=later)
+    slot = add(s, a, "concise", kind="preference", slot="explanation_length", now=later)
+    assert again.id != old.id and again.expires_at == later + EXPLICIT_TTL
+    assert sorted(i.id for i in s.items(a, "zh", later)) == sorted([again.id, slot.id])
+
+
+def test_expired_notes_do_not_count_against_the_limit(mem):
+    s, a = mem.store, mem.a
+    for n in range(LIMITS[EXPLICIT]):
+        add(s, a, f"ghi chú số {n}")
+    later = T0 + EXPLICIT_TTL
+    assert add(s, a, "ghi chú mới", now=later).text == "ghi chú mới"
 
 
 def test_explicit_past_the_limit_is_refused(mem):
