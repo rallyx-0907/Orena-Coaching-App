@@ -255,6 +255,9 @@ SCHEMA_VERSION = 11
 # Developer API docs are tooling: served in development only, never on a public runtime (staging, production).
 _DEVELOPER_DOCS = DEPLOYMENT.developer_docs
 # The schema browser is a developer tool: not served by a production deployment (security review 2026-10-04).
+from writing_coach.core.access_log import configure_access_log  # noqa: E402
+
+configure_access_log()
 app = FastAPI(title="Orena", version=APP_VERSION, docs_url="/docs" if _DEVELOPER_DOCS else None,
               redoc_url="/redoc" if _DEVELOPER_DOCS else None, openapi_url="/openapi.json" if _DEVELOPER_DOCS else None)
 
@@ -268,9 +271,13 @@ async def refuse_cross_site_changes_and_harden_responses(request: Request, call_
     """Every route: a browser changes something only from this site; every answer carries the hardening
     headers (writing_coach/core/http_security.py)."""
 
+    import time as _time
+
     from writing_coach.agent.ratelimit import SlidingWindowLimiter
+    from writing_coach.core.access_log import log_request
     from writing_coach.core.http_security import client_address, hardening_headers, origin_refusal, rate_group, signin_group
 
+    started = _time.perf_counter()
     refusal = origin_refusal(request.method, request.url.path, request.headers)
     # Real accounts only: the single-user local mode (tests, a lane runtime) has no one to protect from.
     group = rate_group(request.method, request.url.path) if refusal is None and AUTH_ENABLED else None
@@ -298,7 +305,12 @@ async def refuse_cross_site_changes_and_harden_responses(request: Request, call_
         response = JSONResponse(status_code=403, content={"detail": error_detail(
             "origin_refused", "This change must come from Orena's own page.", retryable=False)})
     else:
-        response = await call_next(request)
+        try:
+            response = await call_next(request)
+        except Exception:
+            log_request(request.method, request.url.path, 500, (_time.perf_counter() - started) * 1000)
+            raise
+    log_request(request.method, request.url.path, response.status_code, (_time.perf_counter() - started) * 1000)
     https = str(os.getenv("PUBLIC_BASE_URL", "")).strip().casefold().startswith("https://")
     for name, value in hardening_headers(response.headers, https=https).items():
         response.headers[name] = value
@@ -1082,6 +1094,19 @@ def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
 
 
 
+from writing_coach.ai import spend_gate as _spend_gate
+
+
+def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
+    return _persistence_runtime.platform_repository.ai_spend_since(since)
+
+
+# The system-wide daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD; AI_DAILY_SPEND_WARN_RATIO, default 0.8): unset, no
+# ceiling. An unreadable value refuses to start rather than guess.
+_spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_system_ai_spend_since,
+                              warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
+
+
 def _agent_spend_guard():
     """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
 
@@ -1093,8 +1118,11 @@ def _agent_spend_guard():
     # turn; with no cap the guard allows every turn, exactly as when none was built.
     # The strict read: if this worker has never read the settings store, or the stored cap no longer validates, the
     # guard refuses turns (fails closed) instead of treating "unknown" as "no cap".
+    # The system-wide ceiling (ai/spend_gate.py, owner 2026-10-18) is checked first: a turn stops once the whole system's
+    # daily spend is reached, whatever the agent's own cap; that check also raises the system's 80% warning.
     return LiveSpendGuard(lambda: _policies.value_strict("agent.daily_spend_cap_usd"),
-                          reader if callable(reader) else None)
+                          reader if callable(reader) else None, ceiling=_spend_gate.ceiling_wait,
+                          warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
 
 
 def _delete_agent_turns_before(before: datetime, limit: int) -> int:
@@ -2483,14 +2511,75 @@ def health() -> dict[str, Any]:
     }
 
 
+READINESS_PROBE_SECONDS = 3.0
+READINESS_CACHE_SECONDS = 2.0
+_readiness_cache: dict[str, Any] = {"key": None, "at": 0.0, "reason": None}
+_readiness_probe_engine: dict[int, Any] = {}
+
+
+def _readiness_engine(engine: Any) -> Any:
+    """A tiny engine of its own for the probe (one NullPool connection, 2 s connect timeout), so a slow database
+    cannot make probes hold the application's pool. A runtime without a URL (a test double) is probed directly."""
+
+    url = getattr(engine, "url", None)
+    if url is None:
+        return engine
+    found = _readiness_probe_engine.get(id(engine))
+    if found is None:
+        from sqlalchemy import create_engine
+        from sqlalchemy.pool import NullPool
+
+        args = {"connect_timeout": 2} if str(url.get_backend_name()).startswith("postgres") else {}
+        found = _readiness_probe_engine[id(engine)] = create_engine(url, poolclass=NullPool, connect_args=args)
+    return found
+
+
+def _probe_readiness() -> str | None:
+    """A stable reason code when a dependency is down, else None. Never carries a host, path or error text.
+    `database_unavailable` means the database did not answer `SELECT 1` within the timeouts."""
+
+    engine = _persistence_runtime.engine
+    if engine is not None:
+        try:
+            from sqlalchemy import text
+
+            probe = _readiness_engine(engine)
+            with probe.connect() as connection:  # type: ignore[attr-defined]
+                if probe is not engine and probe.dialect.name == "postgresql":
+                    connection.execute(text("SET LOCAL statement_timeout = 2000"))
+                connection.execute(text("SELECT 1"))
+        except Exception:  # noqa: BLE001 - the reason is a code; the detail stays out of the answer and the log
+            return "database_unavailable"
+    for root in (_media_library_root,):
+        # An absent root is created on first use; a root that exists and cannot be written to is a broken mount.
+        if root.exists() and not os.access(root, os.W_OK):
+            return "storage_unavailable"
+    return None
+
+
 @app.get("/api/readiness")
-def readiness() -> dict[str, Any]:
-    """Non-sensitive configuration readiness for local and public operations."""
-    return {
-        "ready": True,
-        "environment": APP_ENV,
-        "auth_enabled": AUTH_ENABLED,
-    }
+async def readiness() -> Any:
+    """Readiness for local and public operations: the database answers `SELECT 1` and the media store is writable.
+    Unauthenticated, so the 503 answers with a stable reason code and nothing else (no host, path or error text)."""
+    import asyncio
+
+    import time as _time
+
+    key = id(_persistence_runtime.engine)
+    now = _time.monotonic()
+    if _readiness_cache["key"] == key and now - _readiness_cache["at"] < READINESS_CACHE_SECONDS:
+        reason = _readiness_cache["reason"]  # repeated unauthenticated probes share one answer for ~2 s
+    else:
+        try:
+            reason = await asyncio.wait_for(asyncio.to_thread(_probe_readiness), READINESS_PROBE_SECONDS)
+        except TimeoutError:
+            reason = "database_unavailable"
+        _readiness_cache.update(key=key, at=now, reason=reason)
+    body = {"ready": reason is None, "environment": APP_ENV, "auth_enabled": AUTH_ENABLED}
+    if reason is not None:
+        logging.getLogger(__name__).warning("readiness failed: %s", reason)
+        return JSONResponse(status_code=503, content={**body, "reason": reason})
+    return body
 
 TASK_TYPE_GUIDANCE = {
     "opinion": "opinion",
@@ -4034,6 +4123,18 @@ def becoming_review_cue_get(essay_id: int | None = None) -> dict[str, Any]:
 @app.get("/api/admin/product-activity", name="admin_product_activity")
 def admin_product_activity(request: Request, window_days: int = 7) -> dict[str, Any]:
     return product_activity_response(request, _specialized_learning_repository, require_admin, window_days=window_days, operations_loader=lambda: admin_ai_operations(request, limit=500))
+
+@app.get("/api/admin/ai-spend", name="admin_ai_spend")
+def admin_ai_spend(request: Request) -> dict[str, Any]:
+    """Today's AI spend against the system ceiling and the agent cap (UTC day), for the Admin's near-limit notice."""
+    require_admin(request)
+    from writing_coach.agent.api import current_runtime
+
+    runtime = current_runtime()
+    guard = getattr(runtime, "spend_guard", None) if runtime is not None else None
+    return {"system": _spend_gate.ceiling_status(),
+            "agent": guard.status() if hasattr(guard, "status") else {"cap_usd": None}}
+
 
 @app.get("/api/admin/readiness-summary", name="admin_readiness_summary")
 def admin_readiness_summary(request: Request) -> dict[str, Any]:

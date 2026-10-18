@@ -31,6 +31,16 @@ export function canSend({ stars = 0, available = SEND_AVAILABLE } = {}) {
   return available === true && Number(stars) > 0;
 }
 
+/* A report from an AI output (PRE-206) arrives as `?area=<area>&ref=<reference>`: the area is chosen, and the
+   reference opens the message as "[ref] " so the team sees which output it was. Nothing else is prefilled - the
+   learner's own words follow the bracket. No new field is sent: the reference travels in `text`. */
+export function reportDraft(query) {
+  const read = (key) => (typeof query?.get === 'function' ? query.get(key) : null) || '';
+  const area = read('area');
+  const ref = read('ref').replace(/[\r\n\t[\]]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return { areas: AREAS.includes(area) ? [area] : [], text: ref ? clampText(`[${ref}] `) : '' };
+}
+
 /* The reviews already sent, as the card draws them: the server's rows, newest first, nothing invented. */
 export function history(items = []) {
   return (Array.isArray(items) ? items : []).map((item) => ({
