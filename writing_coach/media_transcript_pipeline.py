@@ -35,12 +35,15 @@ import hashlib
 import logging
 import math
 import os
+import re
 import subprocess
 import tempfile
 import threading
 import time
+import unicodedata
 import uuid
-from collections.abc import Callable, Mapping
+from collections import deque
+from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
@@ -67,9 +70,93 @@ from writing_coach.speech_asr import (
     SpeechAsrSegment,
     SpeechAsrTimedOut,
     SpeechAsrWord,
+    ASR_PROMPT_MAX_SECONDS,
+    asr_text_has_junk,
+    build_asr_prompt,
 )
 
 _logger = logging.getLogger(__name__)
+CORRECTION_ADMISSION_KEY = "transcript_correction_eligibility"
+CORRECTION_ADMISSION_NEW_ADMIN = "new_admin_import"
+
+# Transcript correction (admin ASR/caption repair): bounded batches, per-cue acceptance, bounded rate-limit handling.
+CORRECTION_BATCH_CUES = 24
+CORRECTION_BATCH_CHARACTERS = 6_000
+# The model's answer is JSON per cue (`{"index":N,"text":"...","reason":"..."}`): a fixed overhead plus the text itself. Measured
+# on the live trial (2026-10-17, 24 Chinese cues, 630 text bytes -> 869 completion tokens) and rounded up, so a batch that fits
+# the provider's output-token allowance by this estimate is not cut off mid-answer (`finish_reason: length` is unusable JSON).
+CORRECTION_OUTPUT_TOKENS_PER_CUE = 28
+CORRECTION_OUTPUT_TOKENS_PER_BYTE = 0.6
+
+
+def estimate_correction_output_tokens(cues: Iterable[Cue]) -> int:
+    """About how many tokens the provider writes to answer these cues."""
+    total = 0
+    for cue in cues:
+        total += CORRECTION_OUTPUT_TOKENS_PER_CUE + math.ceil(len(cue.text.encode("utf-8")) * CORRECTION_OUTPUT_TOKENS_PER_BYTE)
+    return total
+
+
+def fit_correction_batch(batch: list[tuple[int, Cue]], ceiling: int | None) -> list[tuple[int, Cue]]:
+    """The longest leading part of `batch` whose answer fits `ceiling` output tokens (all when no ceiling is known).
+
+    A first cue that alone does not fit is still returned as a batch of one: `correction_cue_fits` is how the caller finds
+    out and keeps such a cue raw instead of sending a request known to be cut off."""
+    if not ceiling or len(batch) <= 1:
+        return batch
+    used = 0
+    for count, (_, cue) in enumerate(batch):
+        used += estimate_correction_output_tokens([cue])
+        if used > ceiling:
+            return batch[:max(1, count)]
+    return batch
+
+
+def correction_cue_fits(cue: Cue, ceiling: int | None) -> bool:
+    """Whether the answer for this one cue is estimated to fit `ceiling` output tokens (always when none is known)."""
+    return not ceiling or estimate_correction_output_tokens([cue]) <= ceiling
+
+
+def correction_ceiling(corrector: Any) -> int | None:
+    """What one correction request can really carry, from the provider: its per-request cap combined with its learned
+    output allowance (`correction_output_ceiling`), else the allowance alone (`batch_output_ceiling`), else None. An
+    unreadable answer means no ceiling is known, never a failure."""
+    for name in ("correction_output_ceiling", "batch_output_ceiling"):
+        read = getattr(corrector, name, None)
+        if not callable(read):
+            continue
+        try:
+            value = read()
+        except Exception:  # noqa: BLE001 - an unknown allowance only means the batch is not narrowed
+            continue
+        if isinstance(value, int) and not isinstance(value, bool) and value > 0:
+            return value
+    return None
+# One retry per batch, only for a rate limit whose named wait fits one cap and the shared allowance (the translation
+# run's own total, TRANSLATION_MAX_TOTAL_WAIT). 90 s covers the 62 s the output-token window asks (D-218).
+CORRECTION_ATTEMPTS = 2
+CORRECTION_MAX_WAIT = 90.0
+CORRECTION_PROVIDER_REASONS = frozenset({"rate_limited", "provider_auth", "provider_timeout", "provider_error",
+                                         "malformed_result", "request_too_large", "not_configured"})
+# Chinese per-cue edit allowance (changed Han characters, Levenshtein over the Han characters only): a quarter of the cue's
+# Han characters, at least 2 and at most 4, always leaving one original character of a cue longer than one. It admits the
+# one- and two-character homophone fixes ASR needs (渡舰->渡江, 船一正->船身, 舰->剑) and refuses a rewrite of a cue.
+ZH_EDIT_FLOOR = 2
+ZH_EDIT_CAP = 4
+ZH_EDIT_SHARE = 0.25
+# A correction that was attempted and did not finish as `applied` never blocks the item: it is translated on the best
+# available text. It does stop AUTOMATIC publication, because a person cleared the rights of the corrected transcript, not
+# of the raw one (D-111: auto-publish only when every check passed). The item is held with this reason and a person
+# publishes it, or retries it, knowing the text may still carry recognition errors. `unavailable` (an unsupported language,
+# or no corrector configured on this deployment) is not an attempt that failed - nothing was tried - so it does not hold.
+CORRECTION_HOLD_STATES = frozenset({"partial", "failed"})
+REASON_CORRECTION_INCOMPLETE = "transcript_correction_incomplete"
+# The hold must survive a retry or a reprocess: a re-run resets the correction state and (as a retry consumes eligibility)
+# would otherwise meet a cleared item with no correction state at all and publish the raw text. This durable marker is set
+# whenever a shared item finished with its correction incomplete, and cleared only when a run ends with the correction
+# `applied` or when a person publishes the item by hand (their decision, after checking the transcript).
+CORRECTION_UNRESOLVED_KEY = "transcript_correction_unresolved"
+_HAN_CHARACTER = re.compile(r"[㐀-䶿一-鿿豈-﫿]")
 
 # The stages, in the order the operator's steps and the learner's sheet show them.
 STAGE_FETCH = "fetch"
@@ -107,6 +194,8 @@ TRANSLATION_MAX_ROUNDS = 5
 TRANSLATION_MAX_WAIT = 60.0
 TRANSLATION_MAX_TOTAL_WAIT = 150.0
 TRANSLATION_DEFAULT_BACKOFF = 5.0
+# The correction step draws on the same total allowance of waiting as one translation run.
+CORRECTION_MAX_TOTAL_WAIT = TRANSLATION_MAX_TOTAL_WAIT
 # A failure that asking again cannot fix.
 TRANSLATION_TERMINAL_REASONS = frozenset({"spend_cap", "provider_auth", "not_configured", "too_large", "request_too_large"})
 
@@ -138,6 +227,7 @@ CONTINUATION_PACING_SECONDS = 150.0
 # operator's language (`impErr_<code>`); a code not listed here has no stored message, never a made-up one.
 REASON_MESSAGES: dict[str, str] = {
     "rights_unknown": "The transcript is ready; rights are unknown, so it is held until a person confirms them.",
+    "transcript_correction_incomplete": "Rights are cleared, but the automatic transcript correction did not finish, so the item is held instead of publishing uncorrected text.",
     "audio_unavailable": "The audio of this source could not be downloaded.",
     "captions_blocked": "The provider refused to give the captions, and the audio could not be downloaded either.",
     "asr_unconfigured": "Speech recognition is not configured on this deployment.",
@@ -320,9 +410,11 @@ def _asr_cues(results: list[tuple[SpeechAsrResult, float]], language: str = "") 
     return cues, list(screen.words), detected, {"filtered": screen.filtered, "flagged": screen.flagged}
 
 
-def _screen_fields(screen: dict[str, int]) -> dict[str, int]:
+def _screen_fields(screen: dict[str, Any]) -> dict[str, int]:
     """What the ASR screen removed or doubted, recorded so a reviewer sees it (empty for a caption transcript)."""
-    return {"asr_filtered": int(screen["filtered"]), "asr_flagged": int(screen["flagged"])} if screen else {}
+    if not screen or "filtered" not in screen or "flagged" not in screen:
+        return {}
+    return {"asr_filtered": int(screen["filtered"]), "asr_flagged": int(screen["flagged"])}
 
 
 def _stable_segment_id(asset_id: str, start_ms: int, end_ms: int, text: str, occurrence: int) -> str:
@@ -361,6 +453,63 @@ def lines_from_payload(payload: Mapping[str, Any] | None) -> list[Cue]:
     return lines
 
 
+def _unicode_lexemes(text: str) -> list[str]:
+    """Normalize lexical tokens across scripts, retaining combining marks and numbers."""
+    tokens: list[str] = []
+    current: list[str] = []
+    for char in unicodedata.normalize("NFC", text):
+        category = unicodedata.category(char)
+        if category[0] in {"L", "N"} or (category[0] == "M" and current):
+            current.append(char)
+        elif char in {"'", "\u2019"} and current:
+            current.append("'")
+        else:
+            if current:
+                tokens.append("".join(current).casefold())
+                current = []
+    if current:
+        tokens.append("".join(current).casefold())
+    return tokens
+
+
+def _non_han_lexemes(text: str) -> list[str]:
+    """The words and numbers of a Chinese cue that are not Han characters (VOA, GPT-5, 2025): a Han character is a
+    separator here, so 这是VOA新闻 reads as ["voa"]. These are entities and figures, never recognition errors to repair."""
+    return _unicode_lexemes(_HAN_CHARACTER.sub(" ", text))
+
+
+def _han_edit_distance(before: str, after: str) -> int:
+    a, b = _HAN_CHARACTER.findall(before), _HAN_CHARACTER.findall(after)
+    previous = list(range(len(b) + 1))
+    for i, x in enumerate(a, 1):
+        row = [i]
+        for j, y in enumerate(b, 1):
+            row.append(min(previous[j] + 1, row[j - 1] + 1, previous[j - 1] + (x != y)))
+        previous = row
+    return previous[-1]
+
+
+def reject_cue_edit(language: str, before: str, after: str) -> str:
+    """Why one proposed cue text is refused, as a stable code, or "" when it may replace `before`.
+
+    The rule is per cue, so one bad proposal never costs the valid ones. Every cue: non-empty and within twice its length.
+    English: the lexemes (words and numbers) must be unchanged. Chinese: the changed Han characters must stay within the
+    ZH_EDIT_* allowance for the cue's length, and every non-Han word or number (VOA, GPT-5, 2025) must be unchanged;
+    punctuation stays free."""
+    if not after.strip():
+        return "empty_cue"
+    if len(after) > max(200, 2 * len(before) + 24):
+        return "malformed_result"
+    if language == "en":
+        return "" if _unicode_lexemes(before) == _unicode_lexemes(after) else "lexemes_changed"
+    if _non_han_lexemes(before) != _non_han_lexemes(after):
+        return "lexemes_changed"
+    han = len(_HAN_CHARACTER.findall(before))
+    allowed = max(1, min(han - 1, max(ZH_EDIT_FLOOR, min(ZH_EDIT_CAP, math.ceil(han * ZH_EDIT_SHARE)))))
+    return "" if _han_edit_distance(before, after) <= allowed else "edit_ratio_exceeded"
+
+
+
 def usable_transcript(entry: MediaLibraryEntry) -> tuple[bool, str]:
     """Whether a stored entry's transcript passes every deterministic check, and the first reason it does not.
 
@@ -389,6 +538,7 @@ class MediaPipeline:
         english_reading: Callable[[str], str] | None = None,
         workers: int | None = None,
         translation_sink: Callable[[Callable[[str, Any], None]], Any] | None = None,
+        corrector: Any = None,
     ) -> None:
         self._ledger = ledger
         self._asr = asr
@@ -397,6 +547,7 @@ class MediaPipeline:
         self._youtube_audio = youtube_audio
         self._meanings = meanings
         self._english_reading = english_reading
+        self._corrector = corrector
         # Where a translation call reports the tokens it was billed; the provider's own sink unless a caller brings one.
         self._translation_sink = translation_sink if translation_sink is not None else media_translation.usage_sink
         self._sleep: Callable[[float], None] = time.sleep
@@ -443,6 +594,14 @@ class MediaPipeline:
         with self._guard:
             if media_id in self._inflight:
                 return True
+        entry = store.get(media_id) or entry
+        if entry.library == "shared" and (entry.processing or {}).get(CORRECTION_UNRESOLVED_KEY):
+            # Held because its correction did not finish (never published): the correction runs again on this retry, so
+            # the item can finish `applied`. Whatever happens, it cannot auto-publish without that (see `_run`).
+            self._grant_correction_admission(store, media_id)
+        else:
+            self._clear_correction_admission(store, media_id)
+        entry = store.get(media_id) or entry
         self._remember_previous(store, entry)
         self.enqueue(store, assets, media_id, batch_id=batch_id or self.new_batch())
         return True
@@ -509,6 +668,35 @@ class MediaPipeline:
         except Exception:  # noqa: BLE001
             _logger.warning("previous state not cleared for %s", media_id, exc_info=True)
 
+    @staticmethod
+    def _grant_correction_admission(store: Any, media_id: str) -> None:
+        def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
+            current = dict(fresh.processing or {})
+            current[CORRECTION_ADMISSION_KEY] = CORRECTION_ADMISSION_NEW_ADMIN
+            return replace(fresh, processing=current)
+        try:
+            store.update_if_present(media_id, change)
+        except Exception:  # noqa: BLE001 - without it the retry runs uncorrected and the hold marker still stops publication
+            _logger.warning("transcript correction admission not granted for %s", media_id, exc_info=True)
+
+    @staticmethod
+    def _clear_correction_admission(store: Any, media_id: str) -> None:
+        def change(fresh: MediaLibraryEntry) -> MediaLibraryEntry:
+            current = dict(fresh.processing or {})
+            if CORRECTION_ADMISSION_KEY not in current:
+                return fresh
+            current.pop(CORRECTION_ADMISSION_KEY, None)
+            previous = current.get("previous")
+            if isinstance(previous, Mapping):
+                previous = dict(previous)
+                previous.pop(CORRECTION_ADMISSION_KEY, None)
+                current["previous"] = previous
+            return replace(fresh, processing=current)
+        try:
+            store.update_if_present(media_id, change)
+        except Exception:  # noqa: BLE001 - failure must not turn a retry into correction admission
+            _logger.warning("transcript correction admission not cleared for %s", media_id, exc_info=True)
+
     def recover(self, store: Any, assets: BookAssetStore) -> int:
         """Re-queue what a restart interrupted. An item that keeps being interrupted stops after MAX_ATTEMPTS.
 
@@ -528,16 +716,19 @@ class MediaPipeline:
                 # early): nothing is dispatched, settled or slept on, and a later recover() takes it up.
                 continue
             if processing.get("state") not in {STATE_QUEUED, STATE_RUNNING}:
+                self._clear_correction_admission(store, entry.media_id)
                 self._settle_quota(store, entry.media_id, media_quota.hold_of(entry), final=entry)
                 self._rearm_continuation(store, entry)
                 continue
             if int(processing.get("attempts") or 0) >= MAX_ATTEMPTS:
                 if self._restore_previous(store, entry.media_id, "pipeline_interrupted"):
+                    self._clear_correction_admission(store, entry.media_id)
                     self._settle_quota(store, entry.media_id, media_quota.hold_of(entry))
                     continue
                 self._write_processing(store, entry, state=STATE_FAILED, stage=processing.get("stage") or STAGE_FETCH,
                                        reason="pipeline_interrupted", detail="Processing was interrupted too many times.",
                                        status="review")
+                self._clear_correction_admission(store, entry.media_id)
                 self._settle_quota(store, entry.media_id, media_quota.hold_of(entry))
                 continue
             self.enqueue(store, assets, entry.media_id, batch_id=str(processing.get("batch_id") or self.new_batch()))
@@ -672,6 +863,7 @@ class MediaPipeline:
         try:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
                                            translation="", translation_counts={}, translation_reason="", translation_retry_after=0, translation_continuation={}, asr_filtered=0, asr_flagged=0,
+                                           transcript_correction_state="", transcript_correction_detail="", transcript_corrections=[], transcript_correction_rejected=[],
                                            caption_kind="", caption_provider="", caption_language="", caption_fallback="", caption_fallback_detail="", reprocess_reason="", reprocess_detail="", reprocess_message="")
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
@@ -688,12 +880,14 @@ class MediaPipeline:
         public_checks = [{"id": check["id"], "pass": bool(check["pass"])} for check in checks]
         if reason:
             if self._restore_previous(store, media_id, reason):
+                self._clear_correction_admission(store, media_id)
                 return  # the item had a good transcript; the new one is not kept over it
             # A transcript was made and it is not usable. Keep what was made so an operator can see it; do not publish.
             entry = self._store_lesson(store, entry, lines, origin, duration, status="review", words=words)
             self._write_processing(store, entry, state=STATE_FAILED, stage=STAGE_SEGMENT, reason=reason,
                                    detail="", checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
                                    **_screen_fields(screen))
+            self._clear_correction_admission(store, media_id)
             return
         entry = self._store_lesson(store, entry, lines, origin, duration, status="processing", words=words)
         stop: dict[str, Any] = {}
@@ -703,15 +897,27 @@ class MediaPipeline:
         rights = str(entry.source.get("rights") or RIGHTS_UNKNOWN)
         common = dict(previous={}, checks=public_checks, origin=origin, cost_usd=round(cost, 6), asr_seconds=round(asr_seconds, 1),
                       translation=translation, translation_counts=translation_counts, rights=rights, **_screen_fields(screen))
-        if personal or rights == RIGHTS_CLEARED:
+        # Only an eligible shared item has a correction state (a learner's own import never does). Anything but `applied`
+        # means the cleared rights do not yet cover the text a learner would read, so it is not published by itself. An item
+        # already held for an unfinished correction stays held until a run ends `applied`: a retry that did not correct
+        # (no state, or `unavailable`) must not turn the raw text into an automatic publication.
+        correction_state = str((entry.processing or {}).get("transcript_correction_state") or "")
+        owed = bool((entry.processing or {}).get(CORRECTION_UNRESOLVED_KEY)) and not personal
+        correction_incomplete = correction_state in CORRECTION_HOLD_STATES or (owed and correction_state != "applied")
+        common[CORRECTION_UNRESOLVED_KEY] = bool(correction_incomplete and not personal)
+        if personal or (rights == RIGHTS_CLEARED and not correction_incomplete):
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
             self._prepare_model_clips(assets, entry)
         if personal:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=False, **common, status="published")
+        elif rights == RIGHTS_CLEARED and correction_incomplete:
+            self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_READY, reason=REASON_CORRECTION_INCOMPLETE, detail=correction_state,
+                                   auto_published=False, **common, status="review")
         elif rights == RIGHTS_CLEARED:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=True, **common, status="published")
         else:
             self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_READY, reason="rights_unknown", detail="", auto_published=False, **common, status="review")
+        self._clear_correction_admission(store, media_id)
 
     def _prepare_model_clips(self, assets: BookAssetStore, entry: MediaLibraryEntry) -> None:
         """Cut each speakable line's model clip once, from the source this item was admitted from.
@@ -750,10 +956,13 @@ class MediaPipeline:
             return
         if entry.status == "archived" or stop.code == "cancelled":
             self._clear_previous(store, media_id)
+            self._clear_correction_admission(store, media_id)
             return
         if self._restore_previous(store, media_id, stop.code, stop.detail):
+            self._clear_correction_admission(store, media_id)
             return
         self._write_processing(store, entry, state=STATE_FAILED, reason=stop.code, detail=stop.detail, status="review", previous={})
+        self._clear_correction_admission(store, media_id)
 
     def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
@@ -807,7 +1016,8 @@ class MediaPipeline:
                 if not first_failure(checks):
                     self._write_processing(store, entry, caption_kind=kind, caption_provider=provider,
                                            caption_language=caption_language, caption_fallback="", caption_fallback_detail="")
-                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], {}
+                    lines, correction = self._correct_transcript(store, entry, batch_id, lines, origin=ORIGIN_CAPTION)
+                    return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], correction
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
                 fallback = "captions_unusable"
                 # Which check refused them, with its own count, so an operator is not left to guess (D-218).
@@ -841,7 +1051,280 @@ class MediaPipeline:
         raw = clean_asr_cues(raw, words, language or detected)
         words = normalise_words(words, language or detected)  # the same script as the lines, so taps stay aligned
         lines = segment_lines(raw, language)
-        return lines, ORIGIN_ASR, cost, seconds, detected, words, screen
+        lines, correction = self._correct_transcript(store, entry, batch_id, lines, origin=ORIGIN_ASR)
+        return lines, ORIGIN_ASR, cost, seconds, detected, words, {**screen, **correction}
+
+    @staticmethod
+    def _is_correction_eligible(entry: MediaLibraryEntry) -> bool:
+        """Only a never-published, shared admin import may be corrected automatically."""
+        if entry.library != "shared" or str((entry.source or {}).get("imported_by") or "").casefold() == "learner":
+            return False
+        processing = entry.processing if isinstance(entry.processing, Mapping) else {}
+        if processing.get(CORRECTION_ADMISSION_KEY) != CORRECTION_ADMISSION_NEW_ADMIN:
+            return False
+        previous = processing.get("previous")
+        if isinstance(previous, Mapping) and previous:
+            status = str(previous.get("_status") or previous.get("status") or "").casefold()
+            lesson = previous.get("lesson") if isinstance(previous.get("lesson"), Mapping) else {}
+            if status in {"published", "ready"} or str(lesson.get("status") or "").casefold() == "published":
+                return False
+        # lesson.status is projected as PUBLISHED even for newly acquired media. Durable admission evidence,
+        # created before the first upsert, distinguishes those from legacy and previously admitted records.
+        return True
+
+    def _correct_transcript(
+        self, store: Any, entry: MediaLibraryEntry, batch_id: str, lines: list[Cue], *, origin: str
+    ) -> tuple[list[Cue], dict[str, Any]]:
+        """Correct an eligible admin transcript in bounded, metered batches, one cue at a time.
+
+        Acceptance is per cue: every valid repair is kept, an offending cue keeps its raw text and is recorded with a
+        reason code (`transcript_correction_rejected`). A later batch that fails keeps the batches already accepted.
+        The outcome (`applied`, `partial`, `failed`, `unavailable` + `transcript_correction_detail`) is recorded and
+        never stops the item: the pipeline goes on to translation on the best available text."""
+        language = primary_language(entry.language)
+        if language == "zh" and origin != ORIGIN_ASR:
+            return lines, {}
+        if not self._is_correction_eligible(entry):
+            return lines, {}
+        from writing_coach.media_transcript_quality import repair_english_caption_text
+
+        if language not in {"en", "zh"}:
+            return lines, self._correction_outcome(store, entry, "unavailable", "unsupported_language")
+        # Deterministic baseline (English only): speaker marks and sound tags out. A cue that is nothing but noise is
+        # dropped, as the canonical caption cleaning drops it; it never aborts the repair. Chinese text is never stripped.
+        baseline: list[tuple[int, Cue]] = []
+        dropped: list[int] = []
+        for index, line in enumerate(lines):
+            text = repair_english_caption_text(line.text) if language == "en" else line.text
+            if text.strip():
+                baseline.append((index, Cue(line.start_ms, line.end_ms, text)))
+            else:
+                dropped.append(index)
+        if not baseline:
+            return lines, self._correction_outcome(store, entry, "failed", "empty_cue")
+        accepted: dict[int, str] = {index: cue.text for index, cue in baseline}
+        rejected: list[dict[str, Any]] = []
+        reasons: dict[int, str] = {}
+        providers: list[str] = []
+        models: list[str] = []
+        correct = getattr(self._corrector, "correct", None)
+        if not callable(correct) or getattr(self._corrector, "configured", True) is False:
+            state, detail = "unavailable", "corrector_unconfigured"
+        else:
+            state, detail = self._run_correction_batches(
+                entry, batch_id, language, baseline, correct, accepted, reasons, rejected, providers, models)
+        return self._finish_correction(store, entry, lines, baseline, dropped, accepted, reasons, rejected,
+                                       providers, models, state, detail)
+
+    def _run_correction_batches(
+        self, entry: MediaLibraryEntry, batch_id: str, language: str, baseline: list[tuple[int, Cue]], correct: Any,
+        accepted: dict[int, str], reasons: dict[int, str], rejected: list[dict[str, Any]],
+        providers: list[str], models: list[str],
+    ) -> tuple[str, str]:
+        """Run the model over `baseline` (filling the accepted/reasons/rejected collectors); returns (state, detail)."""
+        batches: list[list[tuple[int, Cue]]] = []
+        current: list[tuple[int, Cue]] = []
+        characters = 0
+        for item in baseline:
+            size = len(item[1].text)
+            if size > CORRECTION_BATCH_CHARACTERS:
+                return "failed", "request_too_large"
+            if current and (len(current) >= CORRECTION_BATCH_CUES or characters + size > CORRECTION_BATCH_CHARACTERS):
+                batches.append(current)
+                current, characters = [], 0
+            current.append(item)
+            characters += size
+        if current:
+            batches.append(current)
+        description = str((entry.source or {}).get("description") or "")[:1000]
+        model = str(getattr(self._corrector, "model_version", "") or getattr(self._corrector, "model", "") or "")
+        # One allowance of seconds, shared by every batch: what the provider may wait inside a call for its output-token
+        # window (D-218) and what a named rate-limit wait between attempts draws on. Spent, a batch is not retried.
+        pace = media_translation.PacingBudget(CORRECTION_MAX_TOTAL_WAIT)
+        succeeded = 0
+        failure = ""
+        queue = deque(batches)
+        while queue:
+            batch = queue.popleft()
+            batch_cues = tuple(cue for _, cue in batch)
+            result: Any = None
+            skipped = False
+            for attempt in range(CORRECTION_ATTEMPTS):
+                # What one request can really carry is the provider's per-request completion cap (always) combined with the
+                # output allowance it learns from its first refusal (later), so the batch is fitted to it at every attempt,
+                # the retry after a rate limit included: an answer that does not fit is cut off mid-JSON and is unusable (the
+                # live trial's `malformed_result`). The cues that do not fit go back to the front of the queue.
+                ceiling = correction_ceiling(self._corrector)
+                fitted = fit_correction_batch(batch, ceiling)
+                if len(fitted) < len(batch):
+                    queue.appendleft(batch[len(fitted):])
+                    batch = fitted
+                    batch_cues = tuple(cue for _, cue in batch)
+                if len(batch) == 1 and not correction_cue_fits(batch[0][1], ceiling):
+                    # One cue whose answer alone cannot fit a request: it is not sent (the answer would be cut off). It keeps
+                    # its raw text and is recorded, like any other cue the correction could not take.
+                    index, cue = batch[0]
+                    rejected.append({"index": index, "start_ms": cue.start_ms, "code": "cue_too_large",
+                                     "before": cue.text[:1000], "proposed": ""})
+                    skipped = True
+                    break
+                context_bytes = len(entry.title.encode("utf-8")) + len(description.encode("utf-8"))
+                tokens = max(512, min(8192, sum(len(cue.text.encode("utf-8")) for cue in batch_cues) + context_bytes + 1000))
+                try:
+                    self._ledger.check(KIND_AI, batch_id, self._ai_cost(model, {"prompt_tokens": tokens, "completion_tokens": tokens}))
+                except SpendCapReached:
+                    failure = "spend_cap"
+                    break
+                except Exception:  # noqa: BLE001
+                    _logger.warning("transcript correction could not be prepared for %s", entry.media_id, exc_info=True)
+                    failure = "correction_unavailable"
+                    break
+                usage: list[tuple[str, Any]] = []
+                retry_after = 0.0
+                # One call may wait inside the provider (for the output-token window) at most CORRECTION_MAX_WAIT, and what it
+                # spends there comes off the shared total: the provider only knows the budget it is handed, so the per-wait cap
+                # is the budget of the call, not the whole allowance.
+                call_pace = media_translation.PacingBudget(min(CORRECTION_MAX_WAIT, pace.remaining))
+                offered = call_pace.remaining
+                try:
+                    with media_translation.translation_pacing(call_pace):
+                        if self._translation_sink is not None:
+                            with self._translation_sink(lambda used, value, captured=usage: captured.append((used, value))):
+                                result = correct(language=language, cues=batch_cues, title=entry.title, description=description)
+                        else:
+                            result = correct(language=language, cues=batch_cues, title=entry.title, description=description)
+                    # A corrector that returns nothing and raises nothing has still not answered: a stable failure, never a
+                    # silent skip of the batch.
+                    failure = "" if result is not None else "malformed_result"
+                except Exception as exc:  # noqa: BLE001 - the provider's stable reason is kept, never its message
+                    code = str(getattr(exc, "reason", "") or "")
+                    failure = code if code in CORRECTION_PROVIDER_REASONS else "correction_failed"
+                    retry_after = float(getattr(exc, "retry_after", 0.0) or 0.0)
+                    result = None
+                pace.remaining = max(0.0, pace.remaining - (offered - call_pace.remaining))
+                self._book_correction_usage(entry, batch_id, usage)
+                if result is not None:
+                    break
+                # Bounded retry: only a rate limit, only once per batch, only a wait the provider named that fits the
+                # per-wait cap and what is left of the shared allowance.
+                if (failure == "rate_limited" and attempt + 1 < CORRECTION_ATTEMPTS
+                        and 0.0 < retry_after <= min(CORRECTION_MAX_WAIT, pace.remaining)):
+                    pace.remaining -= retry_after
+                    self._sleep(retry_after)
+                    continue
+                # One request that is larger than the model's whole output allowance (a refusal with no window to wait for):
+                # waiting does not help, asking for less does. The refusal taught the provider its limit, so the next attempt
+                # re-reads the ceiling and sends a smaller batch at once, with no wait and no draw on the allowance. Only
+                # when the ceiling really went down: the same request would be refused the same way.
+                if (failure == "request_too_large" and attempt + 1 < CORRECTION_ATTEMPTS
+                        and (correction_ceiling(self._corrector) or 0) > 0
+                        and len(fit_correction_batch(batch, correction_ceiling(self._corrector))) < len(batch)):
+                    continue
+                break
+            if skipped:
+                continue
+            if result is None:
+                break
+            problem = self._take_batch(language, batch, result, accepted, reasons, rejected, providers, models, model)
+            if problem:
+                failure = problem
+                break
+            succeeded += 1
+        if failure:
+            _logger.warning("transcript correction stopped for %s: %s", entry.media_id, failure)
+            return ("partial" if succeeded else "failed"), failure
+        return ("partial" if rejected else "applied"), ""
+
+    def _book_correction_usage(self, entry: MediaLibraryEntry, batch_id: str, usage: list[tuple[str, Any]]) -> None:
+        """Book what the provider reported it billed (a refused or failed call reports nothing)."""
+        if not usage:
+            return
+        actual = sum(self._ai_cost(used, value) for used, value in usage)
+        units = len(usage)
+        usage.clear()
+        self._ledger.record(KIND_AI, actual, batch_id=batch_id, media_id=entry.media_id, units=units, provider="groq")
+
+    @staticmethod
+    def _take_batch(
+        language: str, batch: list[tuple[int, Cue]], result: Any, accepted: dict[int, str], reasons: dict[int, str],
+        rejected: list[dict[str, Any]], providers: list[str], models: list[str], model: str,
+    ) -> str:
+        """Accept the valid cues of one batch result. Returns "" or `malformed_result` when it cannot be mapped to cues."""
+        if not isinstance(result, Mapping):
+            return "malformed_result"
+        texts, edit_reasons = result.get("texts"), result.get("reasons")
+        if (not isinstance(texts, (list, tuple)) or len(texts) != len(batch)
+                or not isinstance(edit_reasons, (list, tuple)) or len(edit_reasons) != len(batch)
+                or any(not isinstance(text, str) for text in texts)):
+            return "malformed_result"
+        from writing_coach.media_transcript_quality import repair_english_caption_text
+        providers.append(str(result.get("provider") or "groq")[:80])
+        models.append(str(result.get("model") or model)[:120])
+        for (index, cue), proposed, why in zip(batch, texts, edit_reasons, strict=True):
+            proposed = proposed.strip()
+            if language == "en":
+                # The model may re-add what the deterministic repair removed (`>>`, a sound tag): clean it the same way.
+                proposed = repair_english_caption_text(proposed)
+            code = reject_cue_edit(language, cue.text, proposed)
+            unchanged = proposed == cue.text
+            # A cue the model left as it was needs no reason: an invalid reason beside unchanged text is not an edit to refuse.
+            if not code and not unchanged and (not isinstance(why, str) or not why.strip() or len(why.strip()) > 240):
+                code = "malformed_result"
+            if code:
+                rejected.append({"index": index, "start_ms": cue.start_ms, "code": code, "before": cue.text[:1000], "proposed": proposed[:1000]})
+                continue
+            accepted[index] = proposed
+            if unchanged:
+                continue
+            # Stored as a code from the closed list (the Admin screen words it in EN/VI/ZH); a sentence is never kept.
+            reason_code = why.strip().casefold().replace("-", "_").replace(" ", "_")
+            reasons[index] = reason_code if reason_code in media_translation.CORRECTION_REASON_CODES else "other"
+        return ""
+
+    def _finish_correction(
+        self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], baseline: list[tuple[int, Cue]], dropped: list[int],
+        accepted: dict[int, str], reasons: dict[int, str], rejected: list[dict[str, Any]],
+        providers: list[str], models: list[str], state: str, detail: str,
+    ) -> tuple[list[Cue], dict[str, Any]]:
+        provider = ";".join(dict.fromkeys(providers))[:80]
+        model = ";".join(dict.fromkeys(models))[:120]
+        corrected: list[Cue] = []
+        rows: list[dict[str, Any]] = []
+        base = dict(baseline)
+        for index in dropped:
+            before = lines[index]
+            rows.append({"index": index, "start_ms": before.start_ms, "end_ms": before.end_ms, "before": before.text[:1000],
+                         "after": "", "reason": "", "reason_code": "noise_removed", "provider": "", "model": ""})
+        for index, before in enumerate(lines):
+            if index not in base:
+                continue
+            after = accepted[index]
+            corrected.append(Cue(before.start_ms, before.end_ms, after))
+            if after == before.text:
+                continue
+            by_model = after != base[index].text
+            rows.append({"index": index, "start_ms": before.start_ms, "end_ms": before.end_ms,
+                         "before": before.text[:1000], "after": after[:1000],
+                         "reason": reasons.get(index, "")[:240] if by_model else "",
+                         "reason_code": "model_edit" if by_model else "noise_removed",
+                         "provider": provider if by_model else "", "model": model if by_model else ""})
+        rows.sort(key=lambda row: row["index"])
+        rejected.sort(key=lambda row: row["index"])
+        if rejected and not detail:
+            counts: dict[str, int] = {}
+            for item in rejected:
+                counts[item["code"]] = counts.get(item["code"], 0) + 1
+            detail = max(counts, key=lambda code: (counts[code], code))
+        fields = {"transcript_correction_state": state, "transcript_correction_detail": detail,
+                  "transcript_corrections": rows, "transcript_correction_rejected": rejected}
+        self._write_processing(store, store.get(entry.media_id) or entry, **fields)
+        return corrected, fields
+
+    def _correction_outcome(self, store: Any, entry: MediaLibraryEntry, state: str, detail: str) -> dict[str, Any]:
+        fields = {"transcript_correction_state": state, "transcript_correction_detail": detail,
+                  "transcript_corrections": [], "transcript_correction_rejected": []}
+        self._write_processing(store, store.get(entry.media_id) or entry, **fields)
+        return fields
 
     def _captions(self, entry: MediaLibraryEntry) -> tuple[list[Cue], str, str, str, str]:
         """(cues, why-none, kind, provider, language): the provider's category when it failed, "" when there were simply no
@@ -900,32 +1383,49 @@ class MediaPipeline:
                 raise PipelineStop(capped.code, f"{capped.spent:.2f}/{capped.limit:.2f} USD") from capped
             results: list[tuple[SpeechAsrResult, float]] = []
             cost = 0.0
+            # Title context only for short audio (ASR_PROMPT_MAX_SECONDS): a long item loses more than a prompt gains.
+            prompt = (build_asr_prompt(entry.title, str((entry.source or {}).get("description") or ""), language=entry.language)
+                      if total <= ASR_PROMPT_MAX_SECONDS else "")
             for path, offset in chunks:
                 estimate = self._ledger.asr_estimate(_probe_seconds(path))
                 try:
                     self._ledger.check(KIND_ASR, batch_id, estimate)
                 except SpendCapReached as capped:
                     raise PipelineStop(capped.code, f"{capped.spent:.2f}/{capped.limit:.2f} USD") from capped
-                try:
-                    result = self._asr.transcribe_bytes(
-                        path.read_bytes(), filename=path.name, content_type="audio/mpeg", language=primary_language(entry.language) or None
-                    )
-                except SpeechAsrTimedOut as exc:
-                    raise PipelineStop("asr_timeout") from exc
-                except SpeechAsrRequestFailed as exc:
-                    status = getattr(exc, "status_code", None)
-                    code = "asr_rate_limited" if status == 429 else "asr_auth" if status in {401, 403} else "asr_failed"
-                    raise PipelineStop(code) from exc
-                except (SpeechAsrMalformed, SpeechAsrPayloadTooLarge) as exc:
-                    raise PipelineStop("asr_failed") from exc
+                result = self._recognise(path, entry, prompt)
                 # What was billed is the audio the provider processed, at least the provider's minimum.
                 self._ledger.record(KIND_ASR, estimate, batch_id=batch_id, media_id=entry.media_id, units=_probe_seconds(path), provider="groq")
                 cost += estimate
+                if prompt and asr_text_has_junk("".join(segment.text for segment in result.segments) or result.text):
+                    # The prompt misled this chunk (full-width junk): listen again without it, once. The extra call is
+                    # checked against the cap and booked like the first.
+                    try:
+                        self._ledger.check(KIND_ASR, batch_id, estimate)
+                    except SpendCapReached as capped:
+                        raise PipelineStop(capped.code, f"{capped.spent:.2f}/{capped.limit:.2f} USD") from capped
+                    result = self._recognise(path, entry, "")
+                    self._ledger.record(KIND_ASR, estimate, batch_id=batch_id, media_id=entry.media_id, units=_probe_seconds(path), provider="groq")
+                    cost += estimate
                 results.append((result, offset))
         cues, words, detected, screen = _asr_cues(results, entry.language)
         if not cues:
             raise PipelineStop("empty_transcript", f"{screen['filtered']} filtered" if screen["filtered"] else "")
         return cues, words, detected, cost, total, screen
+
+    def _recognise(self, path: Path, entry: MediaLibraryEntry, prompt: str) -> SpeechAsrResult:
+        try:
+            return self._asr.transcribe_bytes(
+                path.read_bytes(), filename=path.name, content_type="audio/mpeg",
+                language=primary_language(entry.language) or None, prompt=prompt or None,
+            )
+        except SpeechAsrTimedOut as exc:
+            raise PipelineStop("asr_timeout") from exc
+        except SpeechAsrRequestFailed as exc:
+            status = getattr(exc, "status_code", None)
+            code = "asr_rate_limited" if status == 429 else "asr_auth" if status in {401, 403} else "asr_failed"
+            raise PipelineStop(code) from exc
+        except (SpeechAsrMalformed, SpeechAsrPayloadTooLarge) as exc:
+            raise PipelineStop("asr_failed") from exc
 
     def _audio_source(self, assets: BookAssetStore, entry: MediaLibraryEntry, work: Path, max_seconds: int) -> Path:
         if entry.provider == "youtube":
