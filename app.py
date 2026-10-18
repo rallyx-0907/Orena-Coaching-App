@@ -1102,6 +1102,8 @@ from writing_coach.ai import spend_gate as _spend_gate
 
 
 def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
+    """The whole AI ledger: every capability, speech recognition, pronunciation and word audio included (they record
+    their priced `ai.operation` rows through ai/audio_telemetry.py), media AI and ASR too."""
     return _persistence_runtime.platform_repository.ai_spend_since(since)
 
 
@@ -1627,6 +1629,21 @@ async def _funding_required(_request, exc):  # noqa: ANN001 - FastAPI's handler 
     return JSONResponse(status_code=503, content={"detail": error_detail(
         "funding_required", "This request could not be funded right now. Please try again.", retryable=False,
         context={"reason": exc.reason})})
+
+
+@app.exception_handler(_spend_gate.SpendCeilingReached)
+async def _spend_ceiling_reached(_request, exc):  # noqa: ANN001 - FastAPI's handler signature
+    """The system's daily AI spend ceiling (ai/spend_gate.py) refused a paid request that no caller answered itself:
+    told plainly, never retried until the reset (the agent's own routes answer it as contract §2.1 `daily_ai_limit`)."""
+    from fastapi.responses import JSONResponse
+
+    from writing_coach.core.errors import error_detail
+
+    status = _spend_gate.ceiling_status()
+    wait = _spend_gate.ceiling_wait() or 60.0
+    return JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait)))}, content={"detail": error_detail(
+        "daily_ai_limit", "The daily AI budget is used up; AI is paused until it resets.", retryable=False,
+        context={"scope": "system", "resets_at": status.get("resets_at")})})
 
 
 # I-1's backstop: FUNDING_ENFORCEMENT off (default) | log | enforce. Its live check reads the admission store.

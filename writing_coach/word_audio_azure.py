@@ -192,6 +192,9 @@ class AzureVoice:
         with quota.admit(TTS_METER, units=units, request_digest=digest) as ticket:
             # I-1's backstop (PR-MON-6 §2), inside the admission so it sees the operation's FundingContext, and before
             # dispatch: a refusal releases the admission and nothing is sent or charged.
+            from writing_coach.ai.spend_gate import require_below_ceiling
+
+            require_below_ceiling()  # the system's daily AI spend ceiling: a refusal releases the admission too
             require_paid(capability="word_tts", provider="azure", timeout_seconds=REQUEST_TIMEOUT)
             ticket.dispatch("tts")
             spoken = self._synthesize(ssml, term, language)
