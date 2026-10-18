@@ -154,6 +154,10 @@ MATRIX = {
         f"/api/admin/reading/sources/{ARTICLE}", {"json": {"state": "paused"}}, {404, 503}),
     ("POST", "/api/admin/reading/sources/{source_id}/public-name"): (
         f"/api/admin/reading/sources/{ARTICLE}/public-name", {"json": {"public_name": "Matrix"}}, {404, 503}),
+    ("POST", "/api/admin/reading/sources/{source_id}/rights"): (
+        f"/api/admin/reading/sources/{ARTICLE}/rights",
+        {"json": {"automation_allowed": False, "can_republish": True, "can_adapt": True,
+                  "attribution_required": True, "license_note": "Matrix"}}, {404, 503}),
     ("GET", "/api/admin/reading/queue"): ("/api/admin/reading/queue", {}, {200, 503}),
     ("GET", "/api/admin/reading/jobs"): ("/api/admin/reading/jobs", {}, {200, 503}),
     ("POST", "/api/admin/reading/jobs"): (
@@ -310,7 +314,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 111  # includes the media reviewed-level route (this PR), the Polar customer clean-up (PR-MON-10 §4.8), the SePay operator backfill (PR-MON-8 §6.4), the funding cost model (PR-MON-6), the held-import player (Video PR-C),  the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015), the three billing reconciliation routes (PR-MON-3), the two credit routes (PR-MON-4) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 112  # includes the Reading source rights correction (#196), the media reviewed-level route (this PR), the Polar customer clean-up (PR-MON-10 §4.8), the SePay operator backfill (PR-MON-8 §6.4), the funding cost model (PR-MON-6), the held-import player (Video PR-C),  the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015), the three billing reconciliation routes (PR-MON-3), the two credit routes (PR-MON-4) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")
