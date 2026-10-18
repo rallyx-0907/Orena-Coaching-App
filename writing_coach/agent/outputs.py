@@ -813,6 +813,11 @@ class ReplyOutputs:
         note = {"id": item.id, "kind": item.kind, "text": item.text, "weight": 1.0,
                 "last_reinforced": item.created_at.isoformat(), "expires_at": None}  # fmt: skip
         self.memory_updates.append(MemoryUpdateEvent(op="upsert", note=note, stored="server"))
+        # The learner kept, in so many words, what an unplaced device note says: it is the account's now, and the
+        # device drops its copy - a note is never both on the device and on the server (contract §5.4).
+        for device_id in sorted(self.device_notes):
+            if same_note(self.note_texts.get(device_id, ""), item.text):
+                self.memory_updates.append(MemoryUpdateEvent(op="remove", note={"id": device_id}, stored="device"))
         return f"accepted: kept as {item.id}; you may say it is noted"
 
     def _forget(self, args: Mapping[str, Any]) -> str:

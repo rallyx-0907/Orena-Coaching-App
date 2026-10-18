@@ -211,12 +211,15 @@ def with_device_notes(account: tuple[CoachNote, ...],
     chosen = list(account)
     held = {note.id for note in account}
     taken: set[str] = set()
-    for note in sorted(device, key=lambda n: (-n.weight, n.id)):
-        if note.id in held or any(same_note(note.text, kept.text) for kept in account):
-            continue
-        if len(chosen) >= MAX_COACH_NOTES or coach_notes_bytes([*chosen, note]) > MAX_COACH_NOTES_BYTES:
+    for note in sorted(device, key=lambda n: -n.weight):  # a stable sort: the client's order among equal weights
+        if note.id in held or any(same_note(note.text, kept.text) for kept in chosen):
+            continue  # the account's (by id or words), or a repeat of a device note already sent
+        if len(chosen) >= MAX_COACH_NOTES:
             break
+        if coach_notes_bytes([*chosen, note]) > MAX_COACH_NOTES_BYTES:
+            continue  # too large for the room left; a smaller one after it may still fit
         chosen.append(note)
+        held.add(note.id)
         taken.add(note.id)
     return tuple(chosen), frozenset(taken)
 

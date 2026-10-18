@@ -735,8 +735,9 @@ class _Turn:
         return self.rt.memory.turn(self.learner.user_key, version=self.stream.version, cleared=cleared)
 
     def _with_memory(self, tier1):
-        """Memory OFF: no device coach note reaches the model either (§6, F10 b). Server notes: the account's notes
-        are the model's coach notes, with their ids, and the device's are not used (contract v9 §5.4)."""
+        """Memory OFF: no device coach note reaches the model either (§6, F10 b). Server mode: the account's notes are
+        the model's coach notes, with their ids, then the device notes not placed yet, which stay the device's
+        (contract v9 §3/§5.4, D-225; agent/memory_runtime.py `with_device_notes`)."""
 
         memory = self.memory
         if memory is None:

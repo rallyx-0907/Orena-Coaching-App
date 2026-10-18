@@ -421,3 +421,40 @@ def test_voice_server_mode_sends_the_account_notes_then_unplaced_device_notes():
     answer = service.relay(sid, [forget], LEARNER, heard="Quên ghi chú đó đi")
     assert answer["events"] == []
     assert [i.text for i in store.items(scope(mem), "zh", NOW)] == ["Mình học để phỏng vấn"]
+
+
+def _note(id_, text, weight=0.5):
+    from writing_coach.agent.schemas import CoachNote
+
+    return CoachNote(id=id_, kind="preference", text=text, weight=weight, last_reinforced=T0)
+
+
+def test_with_device_notes_orders_dedupes_and_fits_what_room_is_left():
+    """Review of #281: account first; device by weight (client order on ties); a held, colliding or repeated
+    device note is dropped; a large device note that does not fit does not block a smaller one that does."""
+    from writing_coach.agent.contract import MAX_COACH_NOTES_BYTES
+    from writing_coach.agent.memory_runtime import with_device_notes
+    from writing_coach.agent.schemas import coach_notes_bytes
+
+    account = (_note("a1", "Mình học để phỏng vấn", 1.0),)
+    device = (_note("d1", "ví dụ ngắn", 0.4), _note("d2", "ví dụ về bóng đá", 0.4), _note("d3", "Ví dụ ngắn.", 0.9),
+              _note("a1", "khác hẳn", 0.9), _note("d4", "mình học để phỏng vấn", 0.8))  # fmt: skip
+    notes, ids = with_device_notes(account, device)
+    assert [n.id for n in notes] == ["a1", "d3", "d2"]  # d1 repeats d3, d4 is held, "a1" collides; d2 after d3
+    assert ids == {"d3", "d2"}
+    big = _note("big", "x" * 400, 0.9)
+    filler = tuple(_note(f"f{i}", "y" * 190, 1.0) for i in range(6))
+    notes, ids = with_device_notes(filler, (big, _note("small", "z", 0.1)))
+    assert "big" not in ids and "small" in ids and coach_notes_bytes(list(notes)) <= MAX_COACH_NOTES_BYTES
+
+
+def test_keeping_the_words_of_an_unplaced_device_note_moves_it_to_the_account():
+    """Review of #281 P2-5: a note is never both on the device and on the server (contract §5.4)."""
+    call = ("c1", "remember_note", {"kind": "preference", "text": "Giải thích thật ngắn gọn"})
+    rt, _, store = wired([call_tools(call), reply("Mình đã ghi nhớ.")])
+    events = run(rt, v9_request("Từ giờ ghi nhớ giúp mình là giải thích thật ngắn gọn"))
+    kept = [u for u in updates(events) if u.op == "upsert"]
+    gone = [u for u in updates(events) if u.op == "remove"]
+    assert kept and kept[0].stored == "server"
+    assert [(g.note, g.stored) for g in gone] == [({"id": NOTE["id"]}, "device")]
+    assert [i.text for i in store.items(scope(rt.memory), "zh", NOW)] == ["Giải thích thật ngắn gọn"]
