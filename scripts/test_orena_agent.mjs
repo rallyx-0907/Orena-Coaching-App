@@ -243,6 +243,25 @@ assert.deepEqual(reply.actions.map((a) => a.type), ['play_model', 'say_again']);
 assert.ok(reply.done && !session.state().thinking && !session.state().tool);
 session.apply({ event: 'not_an_event', data: {} });
 
+// 6a. The remembered-note line (light consent): only a server upsert, only the first one in a conversation.
+{
+  const note = { id: 'n1', kind: 'goal', text: 'x', weight: 0.5, expires_at: null };
+  const remembered = createSession({ log: () => {} });
+  remembered.learner('one');
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note, stored: 'device' } });
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note } });
+  remembered.apply({ event: 'memory_update', data: { op: 'remove', note, stored: 'server' } });
+  remembered.apply({ event: 'done', data: {} });
+  assert.ok(!remembered.state().messages.some((m) => m.remembered), 'a device note or a removal is never told');
+  remembered.learner('two');
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note, stored: 'server' } });
+  remembered.apply({ event: 'done', data: {} });
+  remembered.learner('three');
+  remembered.apply({ event: 'memory_update', data: { op: 'upsert', note: { ...note, id: 'n2' }, stored: 'server' } });
+  remembered.apply({ event: 'done', data: {} });
+  assert.deepEqual(remembered.state().messages.filter((m) => m.role === 'orena').map((m) => Boolean(m.remembered)), [false, true, false], 'told once, on the first server note');
+}
+
 // 6b. The learner's own stop and retry (§2.1 429 "the learner may cancel the wait"; §4.1 `retry`):
 //     a cancel ends the thinking and hands the question back unsent for a reason that is not a
 //     changed language; a retry removes the reply that errored and keeps the learner's message.

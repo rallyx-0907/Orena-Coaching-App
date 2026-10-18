@@ -18,7 +18,7 @@
     {
       "h": "1. Phạm vi áp dụng",
       "blocks": [
-        { "p": "Chính sách này áp dụng cho ứng dụng web Orena, mọi ứng dụng Orena kết nối với nó (ví dụ ứng dụng Android), trang web đăng tải chính sách này và mọi dịch vụ liên quan (gọi chung là “Orena”). Orena do {{fact:operator.name}}, {{fact:operator.country}} vận hành. Khi dùng Orena, bạn đồng ý với cách xử lý dữ liệu được mô tả dưới đây. Chính sách này đi kèm [Điều khoản dịch vụ](/terms)." }
+        { "p": "Chính sách này áp dụng cho ứng dụng web Orena, mọi ứng dụng Orena kết nối với nó (ví dụ ứng dụng Android), trang web đăng tải chính sách này và mọi dịch vụ liên quan (gọi chung là “Orena”). Orena do {{fact:operator.name}}, {{fact:operator.country}} vận hành. Khi dùng Orena, bạn đồng ý với cách xử lý dữ liệu được mô tả dưới đây. Orena là bên kiểm soát dữ liệu cá nhân được mô tả ở đây. Chính sách này đi kèm [Điều khoản dịch vụ](/terms)." }
       ]
     },
     {
@@ -30,7 +30,7 @@
             ["Dữ liệu học tập", "Ngôn ngữ đang học, kết quả kiểm tra trình độ, tiến độ đọc, từ vựng đã lưu, lịch ôn tập, điểm bài tập, chuỗi ngày học và mục tiêu hằng ngày. Dữ liệu này gồm cả tiến độ nghe, nói, ngữ pháp và lịch sử ôn tập của bạn."],
             ["Nội dung bạn tạo", "Bài viết bạn gửi để nhận xét cùng phần đánh giá do AI tạo, câu trả lời, bản nháp, ghi chú và phần đánh dấu, các cuộc trò chuyện đã lưu và vị trí bạn đọc dở, các cuộc thảo luận văn bản với Orena Intelligence, cùng sách, tài liệu và media bạn nhập vào. Với người học đã đăng nhập, những nội dung này được lưu trên máy chủ của chúng tôi và gắn với tài khoản của bạn."],
             ["Âm thanh giọng nói", "Đoạn âm thanh bạn ghi khi luyện nói hoặc chấm phát âm được gửi đi để xử lý và không được lưu trên máy chủ của chúng tôi. Xem mục 5."],
-            ["Gói và mức dùng", "Gói đang dùng và số lần bạn đã dùng. Thanh toán chưa hoạt động, nên Orena không giữ số thẻ, thông tin thanh toán hay lịch sử giao dịch. Nếu trong giai đoạn thử nghiệm quản trị viên gán thủ công một gói trả phí cho bạn, chỉ gói đó và giới hạn của nó được ghi lại."],
+            ["Gói và mức dùng", "Gói đang dùng và số lần bạn đã dùng. Thanh toán chưa hoạt động, nên Orena không giữ số thẻ, thông tin thanh toán hay lịch sử giao dịch. Nếu quản trị viên gán thủ công một gói trả phí cho bạn, chỉ gói đó và giới hạn của nó được ghi lại."],
             ["Bản ghi kỹ thuật", "Như mọi dịch vụ web, máy chủ của chúng tôi cùng nhà cung cấp lưu trữ và mạng thấy địa chỉ IP của bạn, nội dung bạn yêu cầu và thời điểm, và có thể giữ nhật ký vận hành. Chúng tôi cũng giữ các bản ghi gắn với tài khoản: khi bạn dùng Orena Intelligence (thời điểm và loại yêu cầu, không có nội dung tin nhắn), và phản hồi bạn gửi (số sao, các mục và nội dung tối đa 600 ký tự). Số lần dùng AI và chi phí được giữ mà không kèm nội dung của bạn. Orena không có dịch vụ quảng cáo, phân tích hay báo cáo lỗi."]
           ]
         }
@@ -58,13 +58,14 @@
       "toc": "4. Orena Intelligence và AI",
       "blocks": [
         { "p": "Khi bạn dùng Orena Intelligence hoặc một tính năng AI khác (ví dụ nhận xét bài viết, dịch, từ điển, thảo luận văn bản hay chấm phát âm), đoạn văn bản hoặc âm thanh liên quan được gửi tới các nhà cung cấp dịch vụ AI và giọng nói, họ xử lý thay mặt chúng tôi để trả kết quả. Chúng tôi gửi phần tính năng đó cần, kèm theo trình độ và ngôn ngữ đang học. Với yêu cầu gửi tới Orena Intelligence, chúng tôi loại bỏ tên, địa chỉ email, ảnh đại diện và mã định danh tài khoản của bạn." },
-        { "p": "Các nhà cung cấp này có thể đặt máy chủ ngoài Việt Nam (xem mục 6) và chúng tôi không kiểm soát hệ thống của họ, vì vậy đừng gửi vào tính năng AI điều gì bạn không muốn được xử lý theo cách này. Câu trả lời do AI tạo có thể chưa chính xác; hãy xem Điều khoản dịch vụ để biết thêm." }
+        { "p": "Các nhà cung cấp này có thể đặt máy chủ ngoài Việt Nam (xem mục 6) và chúng tôi không kiểm soát hệ thống của họ, vì vậy đừng gửi vào tính năng AI điều gì bạn không muốn được xử lý theo cách này. Câu trả lời do AI tạo có thể chưa chính xác; hãy xem Điều khoản dịch vụ để biết thêm. Các nhà cung cấp AI xử lý những yêu cầu này là Google (Gemini), Groq và OpenRouter." },
+        { "p": "Trí nhớ của Orena được bật theo mặc định. Orena ghi lại những ghi chú ngắn, viết từ chính lời của bạn, để cá nhân hoá những gì Orena nói với bạn. Bạn có thể tắt bất cứ lúc nào trong Cài đặt, mục Quyền riêng tư. Những ghi chú Orena nhớ về bạn tự động hết hạn sau 6 tháng nếu không được dùng lại." }
       ]
     },
     {
       "h": "5. Giọng nói và micro",
       "blocks": [
-        { "p": "Orena chỉ dùng micro khi bạn bấm ghi âm. Bản ghi được gửi đi để chuyển thành văn bản hoặc chấm phát âm, và máy chủ Orena không giữ âm thanh; chỉ điểm số và nhận xét được lưu lại." },
+        { "p": "Orena chỉ dùng micro khi bạn bấm ghi âm và xin sự đồng ý riêng của bạn ngay lần đầu dùng. Bản ghi được gửi đi để chuyển thành văn bản hoặc chấm phát âm, và máy chủ Orena không giữ âm thanh; chỉ điểm số và nhận xét được lưu lại." },
         { "p": "Các bản ghi bạn tạo để nghe lại chỉ nằm trong thẻ trình duyệt và mất khi bạn đóng thẻ. Ở những nơi Orena cho phép giữ các bản ghi gần đây, tối đa năm bản ghi mỗi câu nằm trên thiết bị của bạn và không bao giờ được tải lên Orena; tắt tuỳ chọn đó hoặc xoá dữ liệu trang web của trình duyệt sẽ xoá chúng." }
       ]
     },
@@ -88,7 +89,7 @@
       "h": "7. Lưu trữ và xoá",
       "blocks": [
         { "p": "Chúng tôi giữ tài khoản và dữ liệu học tập của bạn trong thời gian tài khoản còn tồn tại. Orena chưa có nút xoá tài khoản: để xoá tài khoản, hãy gửi email tới [orena.support@chillpickle.org](mailto:orena.support@chillpickle.org) từ địa chỉ email của tài khoản Google, như hướng dẫn ở trang [Xoá tài khoản](/account-deletion). Chúng tôi xử lý các yêu cầu này thủ công trong vòng 30 ngày." },
-        { "p": "Một số bản ghi có thời hạn cố định: bản ghi hoạt động của Orena Intelligence (không có nội dung tin nhắn) bị xoá sau {{fact:retention.agent_turn_days}} ngày, phản hồi bạn gửi bị xoá sau {{fact:retention.feedback_months}} tháng, và bản ghi về lượt dùng AI và chi phí (không có nội dung của bạn) sau 13 tháng. Dữ liệu đã xoá khỏi hệ thống đang chạy có thể còn trong bản sao lưu tối đa {{fact:retention.backup_days}} ngày, cho đến khi bị ghi đè. Các bản ghi âm bạn chọn giữ vẫn nằm trên thiết bị của bạn cho đến khi bạn xoá." }
+        { "p": "Một số bản ghi có thời hạn cố định: bản ghi hoạt động của Orena Intelligence (không có nội dung tin nhắn) bị xoá sau {{fact:retention.agent_turn_days}} ngày, phản hồi bạn gửi bị xoá sau {{fact:retention.feedback_months}} tháng, và bản ghi về lượt dùng AI và chi phí (không có nội dung của bạn) sau 13 tháng. Lịch sử học tập của bạn được giữ trong lúc tài khoản còn hoạt động. Dữ liệu đã xoá khỏi hệ thống đang chạy có thể còn trong bản sao lưu tối đa {{fact:retention.backup_days}} ngày, cho đến khi bị ghi đè. Các bản ghi âm bạn chọn giữ vẫn nằm trên thiết bị của bạn cho đến khi bạn xoá." }
       ]
     },
     {
@@ -123,7 +124,7 @@
     {
       "h": "11. Trẻ em",
       "blocks": [
-        { "p": "Orena dành cho người từ {{fact:min_age}} tuổi trở lên. Orena không thu thập ngày sinh của bạn và trong giai đoạn thử nghiệm chưa có cơ chế kỹ thuật kiểm tra tuổi; đăng nhập cần tài khoản Google, vốn có quy định độ tuổi riêng. Nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản và dữ liệu liên quan." }
+        { "p": "Orena dành cho người từ {{fact:min_age}} tuổi trở lên. Orena không thu thập ngày sinh của bạn và chưa có cơ chế kỹ thuật kiểm tra tuổi; đăng nhập cần tài khoản Google, vốn có quy định độ tuổi riêng. Nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản và dữ liệu liên quan." }
       ]
     },
     {

@@ -186,6 +186,10 @@ export function createSession({ log = console.warn } = {}) {
         reply.actions.push(data);
       } else if (event === 'suggestion') {
         reply.suggestions.push(data);
+      } else if (event === 'memory_update') {
+        /* The first note the account stores in this conversation is told once, on the reply it came with
+           (UI_BACKEND_GAPS "Remembered-note line"); a device note (`stored` absent or "device") never is. */
+        if (data.stored === 'server' && data.op === 'upsert' && !messages.some((m) => m.remembered)) reply.remembered = true;
       } else if (event === 'error') {
         // `quota` is the transport's own: the plan-limit refusal's figures (D-163), never a server stream event.
         reply.error = { class: data.class, message: String(data.message || ''), fallback: fallbackOf(data.fallback), ...(data.quota ? { quota: data.quota } : {}) };

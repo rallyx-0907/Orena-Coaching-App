@@ -99,14 +99,20 @@ for (const [page, count] of LEGAL) {
 }
 
 // 4. Nothing false or vendor-naming comes back. These are claims the audit found untrue, and the vendor names the
-//    human decided not to publish (2026-10-09: describe AI and speech providers by function).
+//    human decided not to publish (2026-10-09: describe AI and speech providers by function). Owner decision
+//    2026-10-18 (via delegate; the light-consent decision in DECISION_LOG): the Privacy Policy names the AI
+//    providers Google (Gemini), Groq and OpenRouter, so those three are asserted below, not forbidden.
 const text = rendered.join('\n');
 const forbidden = [
   /\bApple\b/, /orena\.app/i, /payment partner/i, /đối tác thanh toán/i, /at rest/i, /khi lưu trữ/i, /App Store/i,
   /train models/i, /huấn luyện mô hình/i, /Settings → Privacy/, /Cài đặt → Quyền riêng tư/, /Export all of your/i,
-  /Gemini/i, /Groq/i, /Azure/i, /OpenAI/i, /DeepSeek/i, /Supadata/i, /Cloudflare/i, /Anthropic/i, /Google Fonts/i,
+  /Azure/i, /OpenAI/i, /DeepSeek/i, /Supadata/i, /Cloudflare/i, /Anthropic/i, /Google Fonts/i,
 ];
 for (const re of forbidden) assert.ok(!re.test(text), `legal pages must not say ${re}`);
+for (const [lang, re] of [['en', /Google \(Gemini\), Groq and OpenRouter/], ['vi', /Google \(Gemini\), Groq và OpenRouter/]]) {
+  assert.ok(re.test(html(`privacy.${lang}.html`).replace(/<[^>]+>/g, ' ')), `privacy.${lang}: names the AI providers`);
+  assert.ok(!/thử nghiệm|pilot|trial/i.test(html(`privacy.${lang}.html`) + html(`terms.${lang}.html`)), `${lang}: no pilot wording`);
+}
 // The age statements (human decision 2026-10-09): 13 and over, no date of birth, no technical age gate in the beta.
 for (const lang of LANGS) {
   for (const page of ['privacy', 'terms']) {

@@ -86,7 +86,7 @@ export const t = defineCopy('onboarding', {
     loginTitle: 'Chào mừng trở lại', loginSub: 'Đăng nhập để tiếp tục từ chỗ bạn đã dừng.',
     tabSignup: 'Tạo tài khoản', tabLogin: 'Đăng nhập',
     googleCta: 'Tiếp tục với Google', googleBusy: 'Đang kết nối với Google…',
-    terms: 'Khi tiếp tục, bạn đồng ý với {terms} và {privacy}.', termsLink: 'Điều khoản', privacyLink: 'Chính sách quyền riêng tư',
+    terms: 'Bằng việc tiếp tục, bạn đồng ý với {terms} và {privacy}.', termsLink: 'Điều khoản sử dụng', privacyLink: 'Chính sách quyền riêng tư',
     cont: 'Tiếp tục',
     langTitle: 'Bạn đang học ngôn ngữ nào?', langSub: 'Bạn có thể đổi lại trong Cài đặt bất cứ lúc nào.',
     learningLabel: 'Tôi đang học', supportLabel: 'Ngôn ngữ hỗ trợ', supportSub: 'Bản dịch, gợi ý và giải thích',

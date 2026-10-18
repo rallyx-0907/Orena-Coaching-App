@@ -6379,3 +6379,11 @@ This supersedes the earlier entry in the Orena Home gaps ("the coach-notes sheet
 ## Word Quick Sheet: which meaning line comes first (2026-10-18)
 
 The pinned design's `Word Quick Sheet` (`Orena.dc.html`, `qs.meaning` / `qs.vi`, and `qsWC.meaning` / `qsWC.vi` on a saved word) draws the English meaning first (16px) and the Vietnamese meaning second (13px, muted). The app draws the support-language meaning first and the English original second, as the quieter line. Under D-068 (the design's words are sample content) this is defensible, but it is a deviation in order and weight. Left as built; for the human to decide (#199).
+
+## Remembered-note line in the Orena chat (D-229 proposed, 2026-10-18)
+
+The pinned design draws no line telling the learner that Orena stored a note. By owner decision (D-229, via the owner's delegate) the first server note stored in a conversation (`memory_update`, `stored: "server"`, `op: "upsert"`) shows one line under that reply: "Orena remembered this - Manage in Settings", the second part opening Settings, Privacy. It is placed with existing parts only: the `s-orena-evidence` chip (`screens/orena/orena.css`) holding the label, and the error line's text-link button (`__retry`, wired through the existing `data-plans` handler) as the link. A device note, a removal and every later note in the same conversation show nothing. The line lives on the reply, so it returns with the saved thread and is not repeated. Open for the owner: whether it should repeat per conversation (it does, since a new conversation has no earlier line) or once per account.
+
+## Consent evidence is not stored (D-229 proposed, 2026-10-18)
+
+The light-consent model records no server-side evidence of acceptance: the Account step shows the Terms and Privacy line, and nothing is saved when the learner continues. Storing which policy version and effective date a learner accepted, and when, needs a table and a decision on what counts as acceptance; it waits for the owner's schema decision (AGENTS.md section 7). The just-in-time voice consent the policy promises ("a separate consent asked at first use") is also not built here. The privacy page has no version field, only a deploy-stamped effective date (`facts.json`), which is what the evidence would reference.
