@@ -60,7 +60,7 @@ _HAN = re.compile(r"[㐀-鿿豈-﫿]")
 
 # What a caller supplies. Both are set once at start-up (app.py) so the module
 # does not import the persistence layer.
-_lookup: Callable[[str, str, str, str], Any] | None = None
+_lookup: Callable[..., Any] | None = None
 # Given the words on the sheet, which of them the learner keeps. It takes the
 # candidates rather than answering with everything saved: a sheet asks about a
 # word and a sentence, not about a library.
@@ -77,7 +77,7 @@ _admit_ai: Callable[[Request], None] | None = None
 
 def configure_word_detail(
     *,
-    lookup: Callable[[str, str, str, str], Any] | None,
+    lookup: Callable[..., Any] | None,
     saved_terms: Callable[[tuple[str, ...]], set[str]] | None,
     cache: DerivedCache | None = None,
     admit_ai: Callable[[Request], None] | None = None,
@@ -451,7 +451,7 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     _started = time.perf_counter()
     if _lookup is not None:
         try:
-            lookup = _lookup(text, context, source, payload.target_language).to_dict()
+            lookup = _lookup(text, context, source, payload.target_language, content_id=payload.content_id).to_dict()
         except Exception:  # noqa: BLE001 - a failed dictionary must not fail the sheet
             lookup = {}
     _lookup_ms = (time.perf_counter() - _started) * 1000

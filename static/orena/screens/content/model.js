@@ -9,6 +9,7 @@
    collection is a different route ("#/collection/:id") and never reaches this screen. */
 
 import { imageOf, publisherOf, sourceLine } from '../../product/provenance.js';
+import { levelIsEstimated } from '../../kit/level-label.js';
 import { isTraditional } from '../../product/script.js';
 
 export const KINDS = Object.freeze(['article', 'book', 'media', 'upload', 'text']);
@@ -176,6 +177,7 @@ export function normalizeMedia(payload) {
     language: String(catalog?.language || asset.source_language || ''),
     source: String(catalog?.source?.creator || asset.source_provider || ''),
     level: String(catalog?.level || ''),
+    levelEstimated: levelIsEstimated(catalog),
     minutes: minutesFrom(catalog?.duration_ms ?? asset.duration_ms, { unitMs: true }),
     topic: String(catalog?.topic || ''),
     desc: String(catalog?.description || ''),

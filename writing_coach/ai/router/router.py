@@ -131,7 +131,7 @@ def _parse(contract: CapabilityContract, raw_input: Any) -> Any:
 
 def route(
     capability_key: str, raw_input: Any, *, deadline: float | None = None, health: Any = None,
-    paid_standby: bool = True,
+    paid_standby: bool = True, pool: Any = None,
 ) -> RouteResult:
     """Answer one request of a routed capability.
 
@@ -140,20 +140,23 @@ def route(
     `AICapabilityNotConfigured`, or the provider error / `AllProvidersUnavailable` when no pool entry could answer.
     `health` is a private `ProviderHealth` for a background caller (D-200); a tap never passes one. `paid_standby=False`
     (the translate-ahead prefetch) never asks a paid pool entry: background work does not spend.
+    `pool` (D-228): a caller-built ordered chain of `ProviderTarget`s that replaces the stored primary/backup.
     """
 
     contract = get_contract(capability_key)
+    platform.enforce_pool_rule(contract.key, pool)  # before anything is asked or counted
     inp = _parse(contract, raw_input)
     capability = contract.key
     _stats.count(capability, "requests")
     try:
-        return _route_validated(contract, inp, deadline, health, paid_standby)
+        return _route_validated(contract, inp, deadline, health, paid_standby, pool)
     finally:
         flush_rollup()
 
 
 def _route_validated(
-    contract: CapabilityContract, inp: Any, deadline: float | None, health: Any = None, paid_standby: bool = True
+    contract: CapabilityContract, inp: Any, deadline: float | None, health: Any = None, paid_standby: bool = True,
+    pool: Any = None,
 ) -> RouteResult:
     capability = contract.key
     try:
@@ -191,7 +194,7 @@ def _route_validated(
         return RouteResult(output=dict(flight.result.output), source="cache", provenance=flight.result.provenance)
 
     try:
-        result = _ask_pool(contract, inp, policy, limit, key, health, paid_standby)
+        result = _ask_pool(contract, inp, policy, limit, key, health, paid_standby, pool)
     except BaseException as exc:
         flight.set_error(exc)
         raise
@@ -204,7 +207,7 @@ def _route_validated(
 
 def _ask_pool(
     contract: CapabilityContract, inp: Any, policy: Any, limit: float, key: str, health: Any = None,
-    paid_standby: bool = True,
+    paid_standby: bool = True, pool: Any = None,
 ) -> RouteResult:
     capability = contract.key
     started = _clock()
@@ -227,6 +230,7 @@ def _ask_pool(
             capability_mode=True,
             health=health,
             paid_standby=paid_standby,
+            pool=pool,
         )
     except AIProviderError as exc:
         attempts = list(getattr(exc, "attempts", ()))

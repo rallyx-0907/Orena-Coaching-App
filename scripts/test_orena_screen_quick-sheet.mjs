@@ -12,6 +12,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
   contextFor,
+  lookupContentId,
+  wordDetailRequest,
   surfaceFor,
   posLabel,
   savedTone,
@@ -336,17 +338,35 @@ assert.equal(noteTypeColorKey('anything-else'), 'var(--muted)');
   const wordSheet = sheetSrc.slice(sheetSrc.indexOf('export async function openWordSheet'), sheetSrc.indexOf('Sentence Quick Sheet --'));
   assert.ok(wordSheet.length > 1000, 'the word sheet source was located');
   assert.match(wordSheet, /let contextualPending = false;/, 'nothing is pending when the sheet opens');
-  assert.match(wordSheet, /depth: 'sheet', contextual: false, text: target/, 'the opening lookup is the deterministic one');
+  assert.match(wordSheet, /wordDetailRequest\(\{ contextual: false, target/,'the opening lookup is the deterministic one');
   const asks = [...wordSheet.matchAll(/askContextual\(\)/g)].map((m) => wordSheet.slice(Math.max(0, m.index - 40), m.index));
   assert.ok(asks.length >= 2, 'the explicit asks exist');
   for (const before of asks) assert.match(before, /addEventListener\('click', \(\) => $/, 'askContextual() runs only from a click handler, never on its own');
   assert.doesNotMatch(wordSheet, /meaningPending/, 'no spinner replaces an available dictionary meaning');
-  assert.match(wordSheet, /wordDetail\(\{depth: 'sheet', contextual: true, text: target/, 'the explicit Why here? ask says so: the server treats a sheet without the flag as deterministic');
+  assert.match(wordSheet, /wordDetailRequest\(\{ contextual: true, target/,'the explicit Why here? ask says so: the server treats a sheet without the flag as deterministic');
   const wordScreen = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
   assert.match(wordScreen, /depth: 'full', contextual: true/, 'Deep Word asks for its explanation explicitly');
   assert.match(wordSheet, /data-why-ask/, "frame 53's always-drawn Why here? row is the trigger");
   const listening = readFileSync(new URL('../static/orena/screens/listening/vocab-sheet.js', import.meta.url), 'utf8');
-  assert.match(listening, /depth: 'sheet', contextual: false/, 'the Listening vocabulary taps are deterministic too');
+  assert.match(listening, /wordDetailRequest\(\{ contextual: false/, 'the Listening vocabulary taps are deterministic too');
+  assert.match(listening, /resolveTerm\(row\.word, \{ lang, support, context, source \}\)/, 'and they carry the lesson as their source');
+}
+
+/* --- The lookup names the published content it is from (D-228); a personal import names none --- */
+{
+  const base = { contextual: false, target: 'bank', context: 'The bank was closed.', lang: 'en', support: 'vi' };
+  const shared = wordDetailRequest({ ...base, source: { kind: 'reading', content_id: 'article:abc-123' } });
+  assert.equal(shared.content_id, 'article:abc-123', 'a shared article reading carries its content id');
+  assert.deepEqual(
+    { depth: shared.depth, contextual: shared.contextual, text: shared.text, context: shared.context },
+    { depth: 'sheet', contextual: false, text: 'bank', context: 'The bank was closed.' },
+  );
+  assert.equal(wordDetailRequest({ ...base, contextual: true, source: { kind: 'reading', content_id: 'article:abc-123' } }).contextual, true);
+  assert.equal(wordDetailRequest({ ...base, source: { kind: 'listening', content_id: 'media:m-9', segment: 's1' } }).content_id, 'media:m-9', 'a listening item carries its content id');
+  assert.equal('content_id' in wordDetailRequest({ ...base, source: { kind: 'reading', content_id: 'text:imp-1' } }), false, 'a personal import carries none');
+  assert.equal('content_id' in wordDetailRequest({ ...base, source: null }), false, 'no source, no content id');
+  assert.equal('content_id' in wordDetailRequest({ ...base, source: { kind: 'reading', content_id: '' } }), false);
+  assert.equal(lookupContentId({ content_id: 'book:b:c1' }), 'book:b:c1');
 }
 
 console.log('test_orena_screen_quick-sheet.mjs: Word/Sentence Quick Sheet data mapping - real backend contracts (captured + serializer-built), rule 40 throughout: PASS');

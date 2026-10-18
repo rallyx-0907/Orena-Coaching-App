@@ -8,7 +8,7 @@
     "label": "At a glance",
     "items": [
       "You keep the rights to your writing, recordings and documents.",
-      "Paid plans are not live yet; during the beta an administrator may assign a plan to an account.",
+      "Paid plans are not live yet; an administrator may assign a plan to an account.",
       "Orena Intelligence can be wrong; double-check anything important.",
       "You can ask us to delete your account at any time, by email."
     ]
@@ -18,7 +18,7 @@
     {
       "h": "1. Accepting these terms",
       "blocks": [
-        { "p": "By creating an account or using Orena, you agree to these Terms and our [Privacy Policy](/privacy?lang=en). If you do not agree, please stop using the service. Orena is for people aged {{fact:min_age}} and over: you must be at least {{fact:min_age}} years old to use it. Orena does not collect your date of birth and has no technical age check during the beta; if we learn that an account belongs to someone under {{fact:min_age}}, we will delete it." }
+        { "p": "By creating an account or using Orena, you agree to these Terms and our [Privacy Policy](/privacy?lang=en). If you do not agree, please stop using the service. Orena is for people aged {{fact:min_age}} and over: you must be at least {{fact:min_age}} years old to use it. Orena does not collect your date of birth and has no technical age check; if we learn that an account belongs to someone under {{fact:min_age}}, we will delete it." }
       ]
     },
     {
@@ -37,7 +37,7 @@
     {
       "h": "3. Plans and payment",
       "blocks": [
-        { "p": "Orena has a free plan. Paid plans are not available yet: Orena does not take payments, and nothing in Orena is a charge. Usage limits depend on your plan and are shown in the app. During the beta, an administrator may change the plan or limits of an account by hand." },
+        { "p": "Orena has a free plan. Paid plans are not available yet: Orena does not take payments, and nothing in Orena is a charge. Usage limits depend on your plan and are shown in the app. An administrator may change the plan or limits of an account by hand." },
         {
           "cards": [
             ["Payments", "Payments are not live. Orena does not collect payment details today."],

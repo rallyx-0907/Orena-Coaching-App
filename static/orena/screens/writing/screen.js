@@ -37,6 +37,7 @@ import { askOrena } from '../../shell/agent-bridge.js';
 import { orenaPresent } from '../../agent/presence.js';
 import { draftSync, snapshot } from '../../product/draft-sync.js';
 import { applyFix } from '../../product/revision.js';
+import { reportLink } from '../../product/report-problem.js';
 import { t } from './copy.js';
 import {
   DEFAULT_REGISTER,
@@ -467,6 +468,7 @@ export default async function mountWriting(element, ctx) {
         )}
       </div>
       ${essay.range ? rangeMarkup() : ''}
+      ${reportLink({ area: 'writing', surface: 'writing-evaluation', id: essay.id })}
       ${next ? html`<button type="button" class="s-writing__next" data-act="next">${t('nextPrefix', { label: t('nextOpenFirst') })}</button>` : ''}
     </div>`;
   }
@@ -914,6 +916,11 @@ export default async function mountWriting(element, ctx) {
   }
 
   function onClick(event) {
+    const report = event.target.closest('[data-report-problem]');
+    if (report && root.contains(report)) {
+      ctx.go(report.dataset.reportHref);
+      return;
+    }
     const node = event.target.closest('[data-act]');
     if (!node || !root.contains(node)) return;
     const act = node.dataset.act;

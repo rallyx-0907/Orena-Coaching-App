@@ -132,6 +132,9 @@ class ReadingLookupIn(BaseModel):
     context: str = Field(min_length=1, max_length=1200)
     source_language: str = Field(min_length=2, max_length=32)
     target_language: str = Field(min_length=2, max_length=32)
+    # The published article the text is from (D-228): the server verifies the claim and, if it holds, the sentence is
+    # shared content; absent or unverified it is the learner's own, and never goes to a free-tier model.
+    content_id: str | None = Field(default=None, max_length=200)
 
 
 @router.post("/lookup")
@@ -161,7 +164,7 @@ def lookup_reading_text(payload: ReadingLookupIn) -> dict[str, Any]:
             retryable=False,
         )
     try:
-        result = _lookup_service.lookup(text, context, source, payload.target_language)
+        result = _lookup_service.lookup(text, context, source, payload.target_language, content_id=payload.content_id)
     except UnsupportedSupportLanguage as exc:
         raise orena_http_error(
             422,

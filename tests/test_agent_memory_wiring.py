@@ -154,6 +154,8 @@ def test_v9_remember_is_stored_on_the_server_and_marked_stored_server():
     assert update.stored == "server" and update.to_wire()["stored"] == "server"
     [item] = store.items(scope(rt.memory), "zh", NOW)
     assert item.text == "Giải thích bằng tiếng Việt" and update.note["id"] == item.id
+    # It says when the note goes (the pilot retention, review of #292 P2-2), and the turn's clock, not the first keep.
+    assert update.note["expires_at"] == item.expires_at.isoformat() is not None
     # The device's notes are not where it is kept; one the learner has not placed still reaches the model (ruling (b)).
     assert sent_notes(provider.requests[0])
 

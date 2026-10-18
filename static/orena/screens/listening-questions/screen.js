@@ -11,6 +11,7 @@ import { shellCopy } from '../../copy/shell.js';
 import { openMedia } from '../../product/media-source.js';
 import { sourceFromLesson } from '../../product/speaking-source.js';
 import { originalSegmentPlayer } from '../../product/original-segment-player.js';
+import { reportLink, bindReport } from '../../product/report-problem.js';
 import { encounter } from '../../product/encounter.js';
 import { optionStyle, markFor } from '../check/model.js';
 import { questionsFrom, grade } from './model.js';
@@ -76,7 +77,8 @@ export default async function listeningQuestions(element, ctx) {
         const state={index:i,graded:!!result,correctIndex:result?.correct_index,selectedIndex:result?.selected_index}, style=optionStyle(state);
         return html`<button class="s-check__option" data-option="${i}" aria-disabled="${!!result}" style="border-color:${style.border};background:${style.bg};color:${style.color}" ${langAttr(source.language)}><span class="s-check__mark" style="background:${style.markBg};color:${style.markColor}">${markFor(state)}</span>${text}</button>`;
       })}</div>
-      ${result ? html`<div class="s-check__verdict" role="status"><strong>${t(result.correct?'correct':'incorrect')}</strong><p class="s-check__explain" ${langAttr(source.language)}>${q.explanation}</p><div class="s-check__evidence-label">${t('evidence')}</div><p class="s-check__evidence" ${langAttr(source.language)}>${q.evidence_text}</p>${translatedEvidence ? html`<p class="s-check__explain" ${langAttr(support)}>${translatedEvidence}</p>` : ''}<button class="s-check__show" data-evidence>${t('replayEvidence')}</button></div>` : ''}`);
+      ${result ? html`<div class="s-check__verdict" role="status"><strong>${t(result.correct?'correct':'incorrect')}</strong><p class="s-check__explain" ${langAttr(source.language)}>${q.explanation}</p><div class="s-check__evidence-label">${t('evidence')}</div><p class="s-check__evidence" ${langAttr(source.language)}>${q.evidence_text}</p>${translatedEvidence ? html`<p class="s-check__explain" ${langAttr(support)}>${translatedEvidence}</p>` : ''}<button class="s-check__show" data-evidence>${t('replayEvidence')}</button>${reportLink({ area: 'listening', surface: 'listening-question', id: source.lessonId || ctx.params.id, text: q.id })}</div>` : ''}`);
+    bindReport(card,(to)=>ctx.go(to));
     card.querySelectorAll('[data-option]').forEach(button=>button.addEventListener('click',()=>{
       if (results.has(q.id)) return;
       results.set(q.id,grade(q,Number(button.dataset.option))); paint();

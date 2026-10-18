@@ -29,6 +29,7 @@ import { langAttr } from '../../kit/lang.js';
 import { masteryBars } from '../../kit/components.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { href } from '../../shell/routes.js';
+import { reportLink, bindReport } from '../../product/report-problem.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { askOrena } from '../../shell/agent-bridge.js';
@@ -38,6 +39,7 @@ import { t } from './copy.js';
 import {
   contextFor,
   surfaceFor,
+  wordDetailRequest,
   posLabel,
   mapWordCard,
   wordSavePayload,
@@ -278,6 +280,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
       </div>`}
       ${loading ? '' : whyMarkup()}
+      ${loading || readOnly || !card.whyHere ? '' : reportLink({ area: 'vocabulary', surface: 'word-sheet', id: source?.content_id, text: card.word })}
       ${loading || readOnly ? '' : html`<button type="button" class="s-qs__detail" data-detail>${t('fullWordDetail')} ${raw(icon('arrow-right', { size: 16 }))}</button>`}
     `;
   }
@@ -335,6 +338,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     sheetEl.querySelector('[data-save-cta]')?.addEventListener('click', toggleSave);
     sheetEl.querySelector('[data-ask]')?.addEventListener('click', () => askWordDeeper(card.word, lang, source, sentence));
     sheetEl.querySelector('[data-why]')?.addEventListener('click', () => askWordDeeper(card.word, lang, source, sentence));
+    bindReport(sheetEl, (to) => { handle?.close(); if (typeof ctx.go === 'function') ctx.go(to); });
     sheetEl.querySelector('[data-detail]')?.addEventListener('click', () => {
       if (typeof ctx.go === 'function') ctx.go(href('word', { id: card.word }));
     });
@@ -435,7 +439,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         (async () => {
           const ctxText = contextFor(target, context || sentence);
           try {
-            detail = await api.wordDetail({ depth: 'sheet', contextual: false, text: target, context: ctxText, source_language: lang, target_language: support });
+            detail = await api.wordDetail(wordDetailRequest({ contextual: false, target, context: ctxText, lang, support, source }));
           } catch {
             detail = null;
           }
@@ -448,7 +452,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             contextualPending = true;
             contextualFailed = false;
             paint();
-            withinTime(api.wordDetail({depth: 'sheet', contextual: true, text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined}), CONTEXT_WAIT_MS).then(enriched => {
+            withinTime(api.wordDetail(wordDetailRequest({ contextual: true, target, context: ctxText, lang, support, source })), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
               // Whether it is kept is the learner's own last save/unsave, not what the answer says.
@@ -617,6 +621,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
     return html`
       ${tabsMarkup()}
       ${panelMarkup()}
+      ${tab === 'Translation' && translation.text ? reportLink({ area: ['reading', 'listening'].includes(source?.kind) ? source.kind : '', surface: 'sentence-sheet', id: source?.content_id, text: subject }) : ''}
       <div class="s-qs__actions">
         ${canHighlight ? html`<button type="button" class="o-btn o-btn--primary s-qs__grow" data-save-highlight aria-pressed="${highlightOn() ? 'true' : 'false'}">${highlightOn() ? t('highlightSaved') : t('saveHighlight')}</button>` : ''}
         <button type="button" class="s-qs__ask s-qs__grow" data-ask>${markGlyph({ size: 20, symbol: 'ol-intel-still' })} ${t('askDeeper')}</button>
@@ -640,6 +645,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
 
   function bind() {
     sheetEl.querySelector('[data-sheet-close]')?.addEventListener('click', () => handle.close());
+    bindReport(sheetEl, (to) => { handle?.close(); if (typeof ctx.go === 'function') ctx.go(to); });
     sheetEl.querySelector('[data-ask]')?.addEventListener('click', () => askSentenceDeeper(subject, lang, source));
     sheetEl.querySelector('[data-save-highlight]')?.addEventListener('click', toggleSentenceHighlight);
     sheetEl.querySelector('[data-translate-retry]')?.addEventListener('click', loadTranslation);

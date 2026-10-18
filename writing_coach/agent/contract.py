@@ -33,7 +33,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from types import MappingProxyType
 
-CONTRACT_VERSION = 9
+CONTRACT_VERSION = 10
 
 
 def negotiated_version(client_version: int) -> int:
@@ -139,6 +139,9 @@ BUDGET_STATES = frozenset({"ok", "soft_limited"})
 ERROR_FALLBACKS = frozenset({"retry", "text_only", "none"})
 MEMORY_OPS = frozenset({"upsert", "remove"})
 MEMORY_STORED_VERSION = 9  # `memory_update.stored` and server-applied notes (§5.4, v9)
+# The daily AI spend limits answer `429 daily_ai_limit` (v10, accepted by the UI lane 2026-10-18), told once and
+# never waited out; a client that declared less still gets `rate_limited`. Read from the version the client declared.
+DAILY_AI_LIMIT_VERSION = 10
 
 
 # --- §5 payload types --------------------------------------------------------

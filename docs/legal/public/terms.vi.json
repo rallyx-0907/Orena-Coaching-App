@@ -8,7 +8,7 @@
     "label": "Tóm tắt nhanh",
     "items": [
       "Bạn giữ quyền với bài viết, ghi âm và tài liệu của mình.",
-      "Gói trả phí chưa hoạt động; trong giai đoạn thử nghiệm, quản trị viên có thể gán gói cho tài khoản.",
+      "Gói trả phí chưa hoạt động; quản trị viên có thể gán gói cho tài khoản.",
       "Orena Intelligence có thể sai; hãy kiểm tra lại thông tin quan trọng.",
       "Bạn có thể yêu cầu xoá tài khoản bất cứ lúc nào qua email."
     ]
@@ -18,7 +18,7 @@
     {
       "h": "1. Chấp nhận điều khoản",
       "blocks": [
-        { "p": "Khi tạo tài khoản hoặc sử dụng Orena, bạn đồng ý với các Điều khoản này và [Chính sách quyền riêng tư](/privacy). Nếu bạn không đồng ý, vui lòng ngừng sử dụng dịch vụ. Orena dành cho người từ {{fact:min_age}} tuổi trở lên: bạn phải đủ {{fact:min_age}} tuổi mới được sử dụng. Orena không thu thập ngày sinh của bạn và trong giai đoạn thử nghiệm chưa có cơ chế kỹ thuật kiểm tra tuổi; nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản đó." }
+        { "p": "Khi tạo tài khoản hoặc sử dụng Orena, bạn đồng ý với các Điều khoản này và [Chính sách quyền riêng tư](/privacy). Nếu bạn không đồng ý, vui lòng ngừng sử dụng dịch vụ. Orena dành cho người từ {{fact:min_age}} tuổi trở lên: bạn phải đủ {{fact:min_age}} tuổi mới được sử dụng. Orena không thu thập ngày sinh của bạn và chưa có cơ chế kỹ thuật kiểm tra tuổi; nếu phát hiện tài khoản thuộc về người dưới {{fact:min_age}} tuổi, chúng tôi sẽ xoá tài khoản đó." }
       ]
     },
     {
@@ -37,7 +37,7 @@
     {
       "h": "3. Gói dịch vụ và thanh toán",
       "blocks": [
-        { "p": "Orena có gói miễn phí. Gói trả phí chưa được cung cấp: Orena không thu tiền, và không có khoản nào trong Orena là khoản phải trả. Giới hạn sử dụng phụ thuộc vào gói của bạn và được hiển thị trong ứng dụng. Trong giai đoạn thử nghiệm, quản trị viên có thể thay đổi gói hoặc giới hạn của một tài khoản theo cách thủ công." },
+        { "p": "Orena có gói miễn phí. Gói trả phí chưa được cung cấp: Orena không thu tiền, và không có khoản nào trong Orena là khoản phải trả. Giới hạn sử dụng phụ thuộc vào gói của bạn và được hiển thị trong ứng dụng. Quản trị viên có thể thay đổi gói hoặc giới hạn của một tài khoản theo cách thủ công." },
         {
           "cards": [
             ["Thanh toán", "Thanh toán chưa hoạt động. Hiện tại Orena không thu thập thông tin thanh toán."],
