@@ -94,11 +94,12 @@ _CUES: Mapping[str, str] = MappingProxyType({
 # Words between the cue and the code that turn a statement about oneself into talk about learning a word
 # ("I'm learning engineering vocabulary"): such a statement says nothing about the learner.
 _LEARNING = re.compile(r"(?i)\b(?:learning|studying|practising|practicing|học|luyện)\b|学|练")
-# A negation anywhere between the cue and the end of the window makes it no statement: "I'm not an engineer", "My
+# A negation anywhere in the sentence of a match makes it no statement - before the cue ("Don't give me examples
+# about travel", "đừng lấy ví dụ về du lịch", "不要用足球的例子") as well as after it: "I'm not an engineer", "My
 # goal is not work", "Mục tiêu của tôi không phải đi làm", "我是不...", "tôi là kỹ sư đâu". Uncertain, so nothing.
 _NEGATION = re.compile(
     r"(?i)\b(?:not|no|never|no longer|isn't|aren't|wasn't|don't|doesn't|didn't|neither|nor)\b|n't\b"
-    r"|\b(?:không|chẳng|chả|chưa|đâu|chứ không|không phải|đâu phải)\b"
+    r"|\b(?:không|chẳng|chả|chưa|đâu|chứ không|không phải|đâu phải|đừng|chớ|khỏi)\b"
     r"|不|没|非|别|无|未"
 )
 _WINDOW_WORDS = 4  # words after the cue the code's word must start in
@@ -140,6 +141,17 @@ def _words_for(slot: str) -> dict[str, re.Pattern[str]]:
     return _WORD_RE["topic" if slot in ("interest", "example_domain") else slot]
 
 
+_SENTENCE_END = re.compile(r"[.!?;。！？；\n]")
+
+
+def _negated(text: str, start: int, end: int) -> bool:
+    """A negation in the sentence that holds text[start:end]: uncertain, so the match states nothing."""
+
+    begin = max((found.end() for found in _SENTENCE_END.finditer(text, 0, start)), default=0)
+    after = _SENTENCE_END.search(text, end)
+    return bool(_NEGATION.search(text[begin: after.start() if after else len(text)]))
+
+
 def _window(text: str, start: int) -> str:
     """The few words after a cue (or, in Chinese, the few characters), up to the end of the sentence."""
 
@@ -167,11 +179,15 @@ def statements(message: str | None) -> set[tuple[str, str]]:
     pairs: set[tuple[str, str]] = set()
     for slot, cue in _CUE_RE.items():
         for hit in cue.finditer(text):
+            if _negated(text, hit.start(), hit.end()):
+                continue
             codes = _codes_in(slot, _window(text, hit.end()))
             if slot in SINGLE_VALUED:
                 codes = codes[:1]
             pairs.update((slot, code) for code in codes)
     for hit in _ZH_EXAMPLES.finditer(text):
+        if _negated(text, hit.start(), hit.end()):
+            continue
         pairs.update(("example_domain", code) for code in _codes_in("example_domain", hit["topic"]))
     return pairs
 

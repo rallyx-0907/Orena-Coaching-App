@@ -111,9 +111,19 @@ def test_what_is_not_a_closed_statement_yields_nothing(message):
     "Mục tiêu của tôi không phải đi làm", "Tôi không phải là kỹ sư", "Tôi là kỹ sư đâu",
     "Mình học tiếng Trung không phải để phỏng vấn", "Mình chưa là sinh viên",
     "我是不是工程师", "我的目标是不考试", "我学中文不是为了工作", "我没有喜欢足球", "我是非工程师",
+    # a negation before the cue (re-review of PR #266)
+    "Don't give me examples about travel", "Please no examples about sport", "Never use examples about games",
+    "đừng lấy ví dụ về du lịch", "Không cần ví dụ về bóng đá", "Mình chẳng thích bóng đá",
+    "不要用足球的例子", "别举旅游的例子", "我从来不喜欢音乐", "我不想要关于游戏的例子",
 ])
 def test_a_negation_never_becomes_the_opposite_fact(message):
     assert statements(message) == set()  # review of PR #266, P1-1
+
+
+def test_a_negation_in_another_sentence_does_not_cancel_a_statement():
+    assert statements("Tôi không biết từ này. Tôi là kỹ sư.") == {("occupation", "engineering")}
+    assert statements("I don't know. Examples about travel, please.") == {("example_domain", "travel")}
+    assert statements("我不懂。用足球的例子吧。") == {("example_domain", "sport")}
 
 
 def test_a_single_valued_slot_yields_one_code():
