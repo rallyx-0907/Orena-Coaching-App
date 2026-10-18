@@ -59,17 +59,22 @@ usage.
    - events: every `subscription.*`, plus `order.paid`, `refund.created` and `refund.updated`.
 
    Copy its `whsec_…` secret.
+5. **Embedding allowlist**: add the production origin. Without it the embedded checkout (PR-MON-9) does not open
+   inside the app.
 
 ## 2. Environment (names here; the values stay on the host, never in Git or chat)
 
 | Variable | Value |
 | --- | --- |
 | `BILLING_ENABLED` | `on` |
-| `BILLING_PRICES_FILE` | the prices file (step 3) |
+| `BILLING_PRICES_FILE` | the prices file (step 3); under compose, a path inside the container on the data volume: `/data/billing/prices.json` (copy it in with `docker compose cp`) |
 | `POLAR_ACCESS_TOKEN` | the production token (step 1.3) |
 | `POLAR_WEBHOOK_SECRET` | the webhook secret (step 1.4) |
 | `POLAR_ENVIRONMENT` | `production` |
 | `BILLING_DOMESTIC_GATEWAY` | empty, unless Credits is also being enabled (gate 7a) |
+
+`compose.yaml` passes exactly these names (and `BILLING_NEW_SALES`) to the web service, empty by default. The ready
+list for this gate is `BILLING_ACTIVATION_READINESS.md`.
 
 ## 3. Prices file
 
