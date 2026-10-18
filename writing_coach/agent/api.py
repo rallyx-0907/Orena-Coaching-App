@@ -91,6 +91,12 @@ def current_memory():
     return _memory
 
 
+def current_runtime() -> AgentRuntime | None:
+    """The installed agent runtime, or None while the agent is off (read by the Admin's AI spend view)."""
+
+    return _runtime
+
+
 def _require_runtime() -> AgentRuntime:
     if _runtime is None:
         raise HTTPException(status_code=404, detail="Not Found")

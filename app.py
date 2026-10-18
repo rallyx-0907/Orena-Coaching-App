@@ -1094,6 +1094,19 @@ def _agent_grammar_lesson(grammar_id: str) -> dict[str, Any] | None:
 
 
 
+from writing_coach.ai import spend_gate as _spend_gate
+
+
+def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
+    return _persistence_runtime.platform_repository.ai_spend_since(since)
+
+
+# The system-wide daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD; AI_DAILY_SPEND_WARN_RATIO, default 0.8): unset, no
+# ceiling. An unreadable value refuses to start rather than guess.
+_spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_system_ai_spend_since,
+                              warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
+
+
 def _agent_spend_guard():
     """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
 
@@ -1105,8 +1118,11 @@ def _agent_spend_guard():
     # turn; with no cap the guard allows every turn, exactly as when none was built.
     # The strict read: if this worker has never read the settings store, or the stored cap no longer validates, the
     # guard refuses turns (fails closed) instead of treating "unknown" as "no cap".
+    # The system-wide ceiling (ai/spend_gate.py, owner 2026-10-18) is checked first: a turn stops once the whole system's
+    # daily spend is reached, whatever the agent's own cap; that check also raises the system's 80% warning.
     return LiveSpendGuard(lambda: _policies.value_strict("agent.daily_spend_cap_usd"),
-                          reader if callable(reader) else None)
+                          reader if callable(reader) else None, ceiling=_spend_gate.ceiling_wait,
+                          warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
 
 
 def _delete_agent_turns_before(before: datetime, limit: int) -> int:
@@ -4107,6 +4123,18 @@ def becoming_review_cue_get(essay_id: int | None = None) -> dict[str, Any]:
 @app.get("/api/admin/product-activity", name="admin_product_activity")
 def admin_product_activity(request: Request, window_days: int = 7) -> dict[str, Any]:
     return product_activity_response(request, _specialized_learning_repository, require_admin, window_days=window_days, operations_loader=lambda: admin_ai_operations(request, limit=500))
+
+@app.get("/api/admin/ai-spend", name="admin_ai_spend")
+def admin_ai_spend(request: Request) -> dict[str, Any]:
+    """Today's AI spend against the system ceiling and the agent cap (UTC day), for the Admin's near-limit notice."""
+    require_admin(request)
+    from writing_coach.agent.api import current_runtime
+
+    runtime = current_runtime()
+    guard = getattr(runtime, "spend_guard", None) if runtime is not None else None
+    return {"system": _spend_gate.ceiling_status(),
+            "agent": guard.status() if hasattr(guard, "status") else {"cap_usd": None}}
+
 
 @app.get("/api/admin/readiness-summary", name="admin_readiness_summary")
 def admin_readiness_summary(request: Request) -> dict[str, Any]:
