@@ -1,0 +1,635 @@
+{
+ "cases": [
+  {
+   "name": "en",
+   "notes": [
+    {
+     "id": "en-0",
+     "kind": "goal",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.9,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-1",
+     "kind": "preference",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.889999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-3",
+     "kind": "goal",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.8699993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-4",
+     "kind": "preference",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.8599990768518518,
+     "last_reinforced": "2026-10-18T07:30:11.135Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-6",
+     "kind": "goal",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.8399986111111112,
+     "last_reinforced": "2026-10-18T07:30:09.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-7",
+     "kind": "preference",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.8300000000000001,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-9",
+     "kind": "goal",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.8099995370370371,
+     "last_reinforced": "2026-10-18T07:30:13.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-10",
+     "kind": "preference",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.7999993076388889,
+     "last_reinforced": "2026-10-18T07:30:12.132Z",
+     "expires_at": null
+    },
+    {
+     "id": "en-12",
+     "kind": "goal",
+     "text": "Wants to practise short travel dialogues every morning. Want",
+     "weight": 0.7799988425925927,
+     "last_reinforced": "2026-10-18T07:30:10.123Z",
+     "expires_at": null
+    }
+   ],
+   "client_bytes": 1920,
+   "server_bytes": 1874
+  },
+  {
+   "name": "vi",
+   "notes": [
+    {
+     "id": "vi-0",
+     "kind": "goal",
+     "text": "Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. Muố",
+     "weight": 0.9,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "vi-1",
+     "kind": "preference",
+     "text": "Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. Muố",
+     "weight": 0.889999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "vi-3",
+     "kind": "goal",
+     "text": "Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. Muố",
+     "weight": 0.8699993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "vi-4",
+     "kind": "preference",
+     "text": "Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. Muố",
+     "weight": 0.8599990768518518,
+     "last_reinforced": "2026-10-18T07:30:11.135Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "vi-6",
+     "kind": "goal",
+     "text": "Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. Muố",
+     "weight": 0.8399986111111112,
+     "last_reinforced": "2026-10-18T07:30:09.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "vi-7",
+     "kind": "preference",
+     "text": "Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. Muố",
+     "weight": 0.8300000000000001,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "vi-9",
+     "kind": "goal",
+     "text": "Muốn luyện hội thoại ngắn về du lịch mỗi buổi sáng. Muố",
+     "weight": 0.8099995370370371,
+     "last_reinforced": "2026-10-18T07:30:13.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    }
+   ],
+   "client_bytes": 1810,
+   "server_bytes": 1739
+  },
+  {
+   "name": "zh",
+   "notes": [
+    {
+     "id": "zh-0",
+     "kind": "goal",
+     "text": "想每天早上练习关于旅行的简短对话，并且复习生词。想每天早上练习关于旅行的简短对话",
+     "weight": 0.9,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "zh-1",
+     "kind": "preference",
+     "text": "想每天早上练习关于旅行的简短对话，并且复习生词。想每天早上练习关于旅行的简短对话",
+     "weight": 0.889999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": null
+    },
+    {
+     "id": "zh-3",
+     "kind": "goal",
+     "text": "想每天早上练习关于旅行的简短对话，并且复习生词。想每天早上练习关于旅行的简短对话",
+     "weight": 0.8699993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "zh-4",
+     "kind": "preference",
+     "text": "想每天早上练习关于旅行的简短对话，并且复习生词。想每天早上练习关于旅行的简短对话",
+     "weight": 0.8599990768518518,
+     "last_reinforced": "2026-10-18T07:30:11.135Z",
+     "expires_at": null
+    },
+    {
+     "id": "zh-6",
+     "kind": "goal",
+     "text": "想每天早上练习关于旅行的简短对话，并且复习生词。想每天早上练习关于旅行的简短对话",
+     "weight": 0.8399986111111112,
+     "last_reinforced": "2026-10-18T07:30:09.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "zh-7",
+     "kind": "preference",
+     "text": "想每天早上练习关于旅行的简短对话，并且复习生词。想每天早上练习关于旅行的简短对话",
+     "weight": 0.8300000000000001,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "zh-9",
+     "kind": "goal",
+     "text": "想每天早上练习关于旅行的简短对话，并且复习生词。想每天早上练习关于旅行的简短对话",
+     "weight": 0.8099995370370371,
+     "last_reinforced": "2026-10-18T07:30:13.123Z",
+     "expires_at": null
+    }
+   ],
+   "client_bytes": 1908,
+   "server_bytes": 1872
+  },
+  {
+   "name": "zh_short",
+   "notes": [
+    {
+     "id": "zh_short-0",
+     "kind": "goal",
+     "text": "我我我",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-7",
+     "kind": "preference",
+     "text": "我我我",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-21",
+     "kind": "goal",
+     "text": "我我我",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-28",
+     "kind": "preference",
+     "text": "我我我",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-1",
+     "kind": "preference",
+     "text": "我我我",
+     "weight": 0.999999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-22",
+     "kind": "preference",
+     "text": "我我我",
+     "weight": 0.999999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-15",
+     "kind": "goal",
+     "text": "我我我",
+     "weight": 0.9999997685185186,
+     "last_reinforced": "2026-10-18T07:30:14.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-16",
+     "kind": "preference",
+     "text": "我我我",
+     "weight": 0.9999995384259259,
+     "last_reinforced": "2026-10-18T07:30:13.129Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-9",
+     "kind": "goal",
+     "text": "我我我",
+     "weight": 0.999999537037037,
+     "last_reinforced": "2026-10-18T07:30:13.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "zh_short-10",
+     "kind": "preference",
+     "text": "我我我",
+     "weight": 0.9999993076388889,
+     "last_reinforced": "2026-10-18T07:30:12.132Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    }
+   ],
+   "client_bytes": 1951,
+   "server_bytes": 1850
+  },
+  {
+   "name": "vi_whole_weights",
+   "notes": [
+    {
+     "id": "vi_whole_weights-0",
+     "kind": "goal",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-7",
+     "kind": "preference",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-21",
+     "kind": "goal",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-28",
+     "kind": "preference",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 1,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-1",
+     "kind": "preference",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 0.999999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-22",
+     "kind": "preference",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 0.999999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-15",
+     "kind": "goal",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 0.9999997685185186,
+     "last_reinforced": "2026-10-18T07:30:14.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-16",
+     "kind": "preference",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 0.9999995384259259,
+     "last_reinforced": "2026-10-18T07:30:13.129Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-9",
+     "kind": "goal",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 0.999999537037037,
+     "last_reinforced": "2026-10-18T07:30:13.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-10",
+     "kind": "preference",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 0.9999993076388889,
+     "last_reinforced": "2026-10-18T07:30:12.132Z",
+     "expires_at": null
+    },
+    {
+     "id": "vi_whole_weights-3",
+     "kind": "goal",
+     "text": "ỔnỔnỔnỔn",
+     "weight": 0.9999993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.123Z",
+     "expires_at": null
+    }
+   ],
+   "client_bytes": 1983,
+   "server_bytes": 1927
+  },
+  {
+   "name": "long",
+   "notes": [
+    {
+     "id": "long-0",
+     "kind": "goal",
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "weight": 0.8,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": null
+    },
+    {
+     "id": "long-1",
+     "kind": "preference",
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "weight": 0.789999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": null
+    },
+    {
+     "id": "long-3",
+     "kind": "goal",
+     "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+     "weight": 0.7699993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.123Z",
+     "expires_at": null
+    }
+   ],
+   "client_bytes": 1654,
+   "server_bytes": 1638
+  },
+  {
+   "name": "tiny",
+   "notes": [
+    {
+     "id": "tiny-28",
+     "kind": "preference",
+     "text": "a",
+     "weight": 0.528,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-27",
+     "kind": "goal",
+     "text": "a",
+     "weight": 0.5269986111111111,
+     "last_reinforced": "2026-10-18T07:30:09.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-25",
+     "kind": "preference",
+     "text": "a",
+     "weight": 0.5249990768518519,
+     "last_reinforced": "2026-10-18T07:30:11.135Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-24",
+     "kind": "goal",
+     "text": "a",
+     "weight": 0.5239993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-22",
+     "kind": "preference",
+     "text": "a",
+     "weight": 0.521999769212963,
+     "last_reinforced": "2026-10-18T07:30:14.126Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-21",
+     "kind": "goal",
+     "text": "a",
+     "weight": 0.521,
+     "last_reinforced": "2026-10-18T07:30:15.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-19",
+     "kind": "preference",
+     "text": "a",
+     "weight": 0.5189988460648148,
+     "last_reinforced": "2026-10-18T07:30:10.138Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-18",
+     "kind": "goal",
+     "text": "a",
+     "weight": 0.5179990740740741,
+     "last_reinforced": "2026-10-18T07:30:11.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-16",
+     "kind": "preference",
+     "text": "a",
+     "weight": 0.5159995384259259,
+     "last_reinforced": "2026-10-18T07:30:13.129Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    },
+    {
+     "id": "tiny-15",
+     "kind": "goal",
+     "text": "a",
+     "weight": 0.5149997685185186,
+     "last_reinforced": "2026-10-18T07:30:14.123Z",
+     "expires_at": "2026-11-17T07:30:15.123Z"
+    }
+   ],
+   "client_bytes": 1865,
+   "server_bytes": 1764
+  },
+  {
+   "name": "offset_datetime",
+   "notes": [
+    {
+     "id": "offset_datetime-0",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8941666666666667,
+     "last_reinforced": "2026-10-18T07:30:15.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-1",
+     "kind": "preference",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8841664358796296,
+     "last_reinforced": "2026-10-18T07:30:14.126+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-3",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8641659722222222,
+     "last_reinforced": "2026-10-18T07:30:12.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-4",
+     "kind": "preference",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8541657435185185,
+     "last_reinforced": "2026-10-18T07:30:11.135+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-6",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8341652777777778,
+     "last_reinforced": "2026-10-18T07:30:09.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-7",
+     "kind": "preference",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8241666666666667,
+     "last_reinforced": "2026-10-18T07:30:15.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    },
+    {
+     "id": "offset_datetime-9",
+     "kind": "goal",
+     "text": "Muốn luyện nghe mỗi tối. Muốn luyện nghe mỗi tối. ",
+     "weight": 0.8041662037037037,
+     "last_reinforced": "2026-10-18T07:30:13.123+07:00",
+     "expires_at": "2026-11-17T07:30:15.123+07:00"
+    }
+   ],
+   "client_bytes": 1847,
+   "server_bytes": 1846
+  },
+  {
+   "name": "five_digit_fraction",
+   "notes": [
+    {
+     "id": "five_digit_fraction-0",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.9,
+     "last_reinforced": "2026-10-18T07:30:15.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-1",
+     "kind": "preference",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8899997685185186,
+     "last_reinforced": "2026-10-18T07:30:14.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-3",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8699993055555556,
+     "last_reinforced": "2026-10-18T07:30:12.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-4",
+     "kind": "preference",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.859999074074074,
+     "last_reinforced": "2026-10-18T07:30:11.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-6",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8399986111111112,
+     "last_reinforced": "2026-10-18T07:30:09.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-7",
+     "kind": "preference",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8300000000000001,
+     "last_reinforced": "2026-10-18T07:30:15.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    },
+    {
+     "id": "five_digit_fraction-9",
+     "kind": "goal",
+     "text": "每天练习口语。每天练习口语。每天练习口语。每天练习口语。每天",
+     "weight": 0.8099995370370371,
+     "last_reinforced": "2026-10-18T07:30:13.12345Z",
+     "expires_at": "2026-11-17T07:30:15.12345Z"
+    }
+   ],
+   "client_bytes": 2027,
+   "server_bytes": 1956
+  }
+ ]
+}
