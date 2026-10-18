@@ -382,3 +382,28 @@ YouTube model clips (S-27); Onboarding polish.
 - Re-parent proposal 0024 on the real head and update `migrations/proposed/README.md` (document and proposal file only).
 - Continue the UX queue (Onboarding, LEX-092/086 verification), on :8021 only, one unit at a time.
 - Run the CI-equivalent local sequence again after the `DESIGN_CONTRACT.md` decision.
+
+## 12. Daily :8000 backup (script prepared, human-operated)
+
+`scripts/daily_backup_8000.ps1` takes a custom-format `pg_dump` of `ai-writing-coach-postgres-1` (database and role
+`becoming`) and a read-only tar of the `ai-writing-coach-data` volume into `%USERPROFILE%\.orena\backups\`
+(`orena-8000-<UTC stamp>.dump`, `orena-8000-data-<UTC stamp>.tar.gz`). It stops, recreates and removes nothing, and never
+writes a volume. Only the human runs or schedules it (D-127); the lane only wrote it.
+
+- **Run:** `powershell -ExecutionPolicy Bypass -File scripts\daily_backup_8000.ps1` (`-KeepDays 14`, `-MinFreeRamGB 2`,
+  `-MinFreeDiskGB 5` are the defaults). With less than 2 GB free RAM or 5 GB free disk it logs one line and exits 2
+  without touching Docker.
+- **Schedule (03:30 local):** `scripts\register_daily_backup_8000.ps1` prints the `Register-ScheduledTask` command;
+  `-Apply` registers task `OrenaDailyBackup8000`.
+- **Exit codes:** 0 done, 1 a step failed (partial files removed), 2 skipped for RAM or disk, 3 prerequisite missing.
+- **Verify:** the last line of `%USERPROFILE%\.orena\backups\backup.log` reads `exit 0: backup complete`; the script has
+  already run `pg_restore --list` on the dump (a dump that cannot be listed is deleted and the run fails). Also check the
+  dump's size is not shrinking day over day, and look at the log weekly for `exit 1` or `exit 2` lines.
+- **Retention:** newest 14 of each kind; only files named `orena-8000-*` are ever removed.
+- **Restore (incident operation, needs authorisation):** run `python scripts/runtime_backup.py suppress` first so deleted
+  accounts stay deleted. Rehearse on a throwaway Postgres (`scripts\product_migration_rehearsal.ps1`) before any real
+  restore. A real restore: stop web and worker, `docker cp` the dump into the Postgres container, then
+  `pg_restore --clean --if-exists --no-owner -U becoming -d becoming <file>`, restart. Data volume: extract the tar into
+  an empty volume with `docker run --rm -v <volume>:/data -v <backupdir>:/in alpine tar xzf /in/<file> -C /data`.
+  A restore loses everything written since the backup. Never `docker compose down -v`.
+- The folder holds learner data: keep it access-controlled and outside the repository.
