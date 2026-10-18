@@ -183,3 +183,79 @@ def test_an_order_paid_after_deletion_is_one_open_paid_deleted_account_item_and_
     receipts = world.sql("SELECT processing_state FROM commerce_billing_event_receipts WHERE provider = 'polar'")
     assert [r["processing_state"] for r in receipts] == ["ignored"]
     assert world.sql("SELECT COUNT(*) AS n FROM commerce_subscriptions")[0]["n"] == before
+
+
+def test_the_operation_journal_sends_at_most_one_patch_under_real_cas_and_threads(world):
+    """PR-MON-9 §4.2.1 on PostgreSQL: a stale `pending` claimed by two workers at once -> exactly one PATCH; a stale
+    `sent` -> reads only; retention deletes only this module's keys."""
+
+    import threading
+
+    from tests.test_billing_polar_subscription import OP, Commerce, Polar, crash_after, subs
+    from writing_coach.billing.polar_subscription import LEASE, OP_PREFIX, PostgresOperationIndex
+
+    polar = Polar()
+    later = datetime.now(UTC) + LEASE + timedelta(seconds=5)
+    workers = [subs(polar, Commerce(), settings=world.settings, clock=lambda: later)[0] for _ in range(4)]
+    crash_after(workers[0], "pending", datetime.now(UTC))
+    barrier = threading.Barrier(len(workers))
+
+    def claim(worker):
+        barrier.wait()
+        worker.change("inc-1", "pro:month:polar", OP)
+
+    threads = [threading.Thread(target=claim, args=(w,)) for w in workers]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(polar.patches) == 1
+    state = world.settings.get_setting(OP_PREFIX + OP)["value"]["state"]
+    assert state == "done"
+
+    # RUNBOOK_R-MON-014 §2 grants the runtime DELETE on ordinary tables (platform_settings included; revoked only on
+    # the financial ones). The shared fixture grants less; give exactly the runbook's grant for this table.
+    world.sql(f'GRANT DELETE ON platform_settings TO "{world.role}"')
+    index = PostgresOperationIndex(world.runtime)
+    world.settings.set_setting("billing.sepay.feed_cursor", {"since_id": 1}, expected_updated_at=None)
+    assert index.keys(OP_PREFIX) == [OP_PREFIX + OP]
+    index.delete(OP_PREFIX + OP)
+    assert world.settings.get_setting(OP_PREFIX + OP) is None
+    with pytest.raises(ValueError):
+        index.delete("billing.sepay.feed_cursor")   # never another module's key
+    assert world.settings.get_setting("billing.sepay.feed_cursor") is not None
+
+
+@pytest.mark.parametrize("second", ["change", "cancel"])
+def test_two_different_operations_on_one_subscription_send_one_patch_under_real_cas(world, second):
+    """PR-MON-9 review P1-1 of 4a3b0438 on PostgreSQL: the per-subscription fence - an upgrade racing another upgrade
+    (or a cancel) under different operation ids sends exactly one PATCH; the other is refused, never sent."""
+
+    import threading
+
+    from tests.test_billing_polar_subscription import Commerce, Polar, subs
+    from writing_coach.billing.polar_subscription import SubscriptionRefused
+
+    polar = Polar()
+    workers = [subs(polar, Commerce(), settings=world.settings)[0] for _ in range(6)]
+    barrier = threading.Barrier(len(workers))
+    refused = []
+
+    def race(index, worker):
+        barrier.wait()
+        operation = f"6f1c1a2e-0000-4000-8000-{index:012d}"
+        try:
+            if second == "cancel" and index % 2:
+                worker.cancel("inc-1", None, operation)
+            else:
+                worker.change("inc-1", "pro:month:polar" if index % 3 else "pro:year:polar", operation)
+        except SubscriptionRefused as error:
+            refused.append(error.code)
+
+    threads = [threading.Thread(target=race, args=(i, w)) for i, w in enumerate(workers)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    assert len(polar.patches) == 1, polar.patches
+    assert set(refused) <= {"operation_in_progress", "no_change", "cancelling", "not_cancellable"}

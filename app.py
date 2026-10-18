@@ -1452,6 +1452,24 @@ def _polar_cleanup(service):
     return cleanup
 
 
+def _polar_subscriptions(service):
+    """PR-MON-9: an existing subscriber's change, cancel, resume and invoices through Polar's API, attached to the
+    service and run (stale operations, retention) by the reconciler."""
+
+    if service is None:
+        return None
+    from writing_coach.billing.polar_subscription import PolarSubscriptions, PostgresOperationIndex
+    from writing_coach.billing.service import load_prices
+
+    subscriptions = PolarSubscriptions(gateway=service.gateways.get("polar"), commerce=service.commerce,
+                                       prices=load_prices(os.environ),
+                                       settings=_persistence_runtime.platform_repository,
+                                       items=service.reconciliation,
+                                       index=PostgresOperationIndex(_persistence_runtime.engine))  # fmt: skip
+    service.attach_polar_subscriptions(subscriptions)
+    return subscriptions
+
+
 def _billing_reconciler(service):
     """PR-MON-3: the reconciler runs only where billing does; payOS lookups only with payOS's keys (H3)."""
 
@@ -1464,10 +1482,11 @@ def _billing_reconciler(service):
     settings = Settings.from_env(os.environ)
     feed = _sepay_feed(service)
     cleanup = _polar_cleanup(service)
+    subscriptions = _polar_subscriptions(service)
     reconciler = BillingReconciler(service=service, orders=service.orders, items=service.reconciliation,
                                    lock=PostgresTickLock(_persistence_runtime.engine),
                                    lookups=build_lookups(service.gateways), settings=settings, credits=_credits,
-                                   feed=feed, polar_cleanup=cleanup)
+                                   feed=feed, polar_cleanup=cleanup, polar_subscriptions=subscriptions)
     return BillingReconcileSchedule(reconciler, interval=settings.interval)
 
 

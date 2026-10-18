@@ -123,6 +123,31 @@ class CheckoutIn(BaseModel):
     currency: str | None = Field(default=None, min_length=3, max_length=3)
     # A credit pack's confirmed units (PR-MON-5): a checkout whose units are not the pack's does not start.
     credit_units: int | None = Field(default=None, gt=0)
+    # PR-MON-9 §3.2: open Polar's embedded checkout; the origin is the configured public base, never the client's.
+    embed: bool = False
+
+
+class ChangeIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    price: str = Field(min_length=3, max_length=120)
+    operation_id: str = Field(min_length=36, max_length=36)
+
+
+class PreviewIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    price: str = Field(min_length=3, max_length=120)
+
+
+class CancelIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    operation_id: str = Field(min_length=36, max_length=36)
+    # Optional, as the design's "Why are you cancelling? (optional)"; none sends no reason to Polar.
+    reason: Literal["too_expensive", "not_using", "missing_feature", "taking_a_break"] | None = None
+
+
+class OperationIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    operation_id: str = Field(min_length=36, max_length=36)
 
 
 # A refused checkout's HTTP answer; anything not named is a conflict with the account's state (409).
@@ -190,7 +215,8 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
                                       confirmed_amount_minor=payload.amount_minor,
                                       confirmed_currency=payload.currency,
                                       confirmed_credit_units=payload.credit_units,
-                                      customer_email=_learner_email(request))  # fmt: skip
+                                      customer_email=_learner_email(request),
+                                      embed_origin=_public_base if payload.embed and capability == "plans" else "")  # fmt: skip
     except LookupError:
         raise orena_http_error(404, "price_not_offered", "This price is not offered.", retryable=False) from None
     except CheckoutRefused as refused:
@@ -201,6 +227,123 @@ def billing_checkout(payload: CheckoutIn, request: Request) -> dict[str, Any]:
     except Exception:  # noqa: BLE001 - the gateway's own failure: say so, change nothing else
         raise orena_http_error(502, "gateway_unavailable", "The payment page could not be opened. Try again.",
                                retryable=True) from None
+
+
+# ---- PR-MON-9: an existing subscriber's plan, in the app (D-MON-033) --------------------------------------------
+
+def _subscriber() -> tuple[Any, str]:
+    """The Polar subscription service and the signed-in learner's incarnation; refusals before anything is read."""
+
+    service = _require_service()
+    subscriptions = getattr(service, "polar_subscriptions", None)
+    if subscriptions is None:
+        raise orena_http_error(503, "polar_unavailable", "Managing a plan is not available right now.", retryable=True)
+    if current_user_key() in {"", "legacy", "local-admin"}:
+        raise orena_http_error(401, "sign_in_required", "Sign in to manage your plan.", retryable=False)
+    return subscriptions, _incarnation()
+
+
+def _operation_id(value: str) -> str:
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        raise orena_http_error(422, "operation_id_invalid", "An operation id is a UUID.", retryable=False) from None
+
+
+def _subscription_call(call: Callable[[], dict[str, Any]], *, accepted: bool = False) -> Any:
+    from writing_coach.billing.polar_subscription import SubscriptionRefused
+
+    try:
+        answer = call()
+    except SubscriptionRefused as refused:
+        raise orena_http_error(refused.status, refused.code, "This plan change cannot be made.",
+                               retryable=refused.status == 503) from None
+    except Exception:  # noqa: BLE001 - Polar's own failure: nothing is granted, nothing is claimed
+        _log.warning("billing: a Polar subscription call failed", exc_info=True)
+        raise orena_http_error(502, "gateway_unavailable", "Polar could not be reached. Try again.",
+                               retryable=True) from None
+    if accepted and answer.get("state") in ("pending", "sent", "provider_unknown"):
+        return JSONResponse(answer, status_code=202)
+    if accepted and answer.get("state") == "refused":
+        status = 402 if answer.get("status") == 402 else 409
+        return JSONResponse({**answer, "code": "payment_failed" if status == 402 else "refused_by_polar"},
+                            status_code=status)
+    return answer
+
+
+@router.get("/api/billing/subscription")
+def billing_subscription() -> dict[str, Any]:
+    """§4.1: the local commerce record, fresh every request (access truth), plus cached Polar enrichment."""
+
+    subscriptions, incarnation = _subscriber()
+    return _subscription_call(lambda: subscriptions.view(incarnation))
+
+
+def _plans_open() -> None:
+    """Review P1-3 of 4a3b0438: an in-app plan change charges like a sale, so it closes with sales - the runtime's
+    readiness (BILLING_NEW_SALES=off pauses it) and the Plans capability (price integrity, the Polar-side price,
+    critical reconciliation). Cancel, resume, invoices, the portal and webhooks stay open."""
+
+    if not _billing_ready() or not _capability_ready("plans"):
+        raise orena_http_error(503, "billing_not_ready", "Plan changes are not open right now. Try again later.",
+                               retryable=True)
+
+
+@router.post("/api/billing/subscription/change/preview")
+def billing_change_preview(payload: PreviewIn) -> dict[str, Any]:
+    subscriptions, incarnation = _subscriber()
+    _plans_open()
+    return _subscription_call(lambda: subscriptions.preview(incarnation, payload.price))
+
+
+@router.post("/api/billing/subscription/change")
+def billing_change(payload: ChangeIn) -> Any:
+    subscriptions, incarnation = _subscriber()
+    _plans_open()
+    operation = _operation_id(payload.operation_id)
+    return _subscription_call(lambda: subscriptions.change(incarnation, payload.price, operation), accepted=True)
+
+
+@router.post("/api/billing/subscription/cancel")
+def billing_cancel(payload: CancelIn) -> Any:
+    subscriptions, incarnation = _subscriber()
+    operation = _operation_id(payload.operation_id)
+    return _subscription_call(lambda: subscriptions.cancel(incarnation, payload.reason, operation), accepted=True)
+
+
+@router.post("/api/billing/subscription/resume")
+def billing_resume(payload: OperationIn) -> Any:
+    subscriptions, incarnation = _subscriber()
+    operation = _operation_id(payload.operation_id)
+    return _subscription_call(lambda: subscriptions.resume(incarnation, operation), accepted=True)
+
+
+@router.get("/api/billing/subscription/operations/{operation_id}")
+def billing_operation(operation_id: str) -> Any:
+    subscriptions, incarnation = _subscriber()
+    operation = _operation_id(operation_id)
+    return _subscription_call(lambda: subscriptions.operation(incarnation, operation), accepted=True)
+
+
+@router.get("/api/billing/invoices")
+def billing_invoices(page: int = 1) -> dict[str, Any]:
+    subscriptions, incarnation = _subscriber()
+    return _subscription_call(lambda: subscriptions.invoices(incarnation, max(1, min(int(page), 1000))))
+
+
+@router.get("/api/billing/invoices/{order_id}")
+def billing_invoice(order_id: str) -> Any:
+    """§4.3: `200 {url}` when Polar has the invoice, `202 {state: "preparing"}` while it is being generated."""
+
+    subscriptions, incarnation = _subscriber()
+    try:
+        order = str(uuid.UUID(order_id))
+    except ValueError:
+        raise orena_http_error(404, "order_not_found", "No such invoice.", retryable=False) from None
+    answer = _subscription_call(lambda: subscriptions.invoice(incarnation, order))
+    if answer.get("state") == "preparing":
+        return JSONResponse(answer, status_code=202)
+    return answer
 
 
 @router.post("/api/admin/billing/polar/customer-cleanup")

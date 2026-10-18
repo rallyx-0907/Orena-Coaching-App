@@ -152,7 +152,8 @@ class BillingReconciler:
     def __init__(self, *, service: Any, orders: Any, items: Any, lock: Callable[[], Any],
                  lookups: Mapping[str, Callable[[int], Lookup]], settings: Settings = Settings(),
                  now: Callable[[], datetime] = lambda: datetime.now(UTC), credits: Any = None,
-                 feed: Any = None, polar_cleanup: Any = None) -> None:
+                 feed: Any = None, polar_cleanup: Any = None, polar_subscriptions: Any = None) -> None:
+        self._polar_subscriptions = polar_subscriptions  # PR-MON-9 §4.2.1: stale operations and retention
         self._service = service
         self._polar_cleanup = polar_cleanup  # PR-MON-10 §4.8: the Polar customer clean-up of deleted incarnations
         self._feed = feed  # PR-MON-8: the SePay recovery feed, which runs only when switched on (sepay_feed.py)
@@ -180,6 +181,8 @@ class BillingReconciler:
                 steps.append(("sepay_feed", self._feed.step))
             if self._polar_cleanup is not None and self._polar_cleanup.configured:
                 steps.append(("polar_cleanup", self._polar_cleanup.step))
+            if self._polar_subscriptions is not None:
+                steps.append(("polar_operations", self._polar_subscriptions.step))
             for name, step in steps:
                 if not lock.alive():
                     counts["lock_lost"] += 1
