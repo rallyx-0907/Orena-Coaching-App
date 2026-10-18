@@ -5,8 +5,9 @@
 
 **Who.** The owner/operator runs every step. No agent runs it, and no agent uses a production Polar token.
 
-**Where.** The production host is chosen after the app is deployed to the VPS. This runbook never applies to `:8000`,
-`:8010` or `:8021` unless the owner names one of them as production.
+**Where.** The owner named `:8000` as the production host for this gate (2026-10-18), served at
+`https://orena.chillpickle.org`. A later move to the VPS follows "Moving the production host" below. This runbook
+never applies to `:8010` or `:8021`.
 
 **What it enables:** Plus and Pro, monthly and yearly, paid by card on Polar's hosted checkout. Renewal is
 automatic. Learners cancel, change plan or card, and read invoices in Polar's customer portal, opened from Plan &

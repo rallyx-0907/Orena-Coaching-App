@@ -99,8 +99,9 @@ setting them in the host's `.env` changed nothing. They are now passed through, 
 1. **Migrations.** Apply `0027` → `0033` on the pilot's PostgreSQL after a verified backup
    (`RUNBOOK_MIGRATION_0027_0033.md`). Without them readiness reports `orders_schema_absent`, and nothing can be
    sold. This can be done while billing stays off.
-2. **Production host.** The host is named as production for gate 7b, on a public HTTPS origin (the runbook does not
-   apply to `:8000` unless the owner names it).
+2. **Production host: decided.** On 2026-10-18 the owner named `:8000` as the host for gate 7b, at
+   `https://orena.chillpickle.org`. On the same day, with billing off, `/api/health` answered 200 there and
+   the Polar webhook route answered 503 `billing_off`, as expected.
 3. **Polar production setup:**
    - the four products, the customer portal settings, and a token with the 8 scopes;
    - the webhook with its events;
