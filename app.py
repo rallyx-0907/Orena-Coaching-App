@@ -896,9 +896,8 @@ from writing_coach.media_transcript_pipeline import MediaPipeline
 from writing_coach.languages.english.ipa import ipa_for as english_ipa_for
 from writing_coach.media_providers.youtube_audio import download_audio
 
-_media_spend_ledger = SpendLedger(_media_library_root / "processing-spend.json")  # its ASR counts toward the ceiling
 _media_pipeline = MediaPipeline(
-    ledger=_media_spend_ledger,
+    ledger=SpendLedger(_media_library_root / "processing-spend.json"),
     asr=_speech_asr_provider,
     ingestion=_media_ingestion_service,
     admin_ingestion=_admin_media_ingestion_service,
@@ -1103,10 +1102,9 @@ from writing_coach.ai import spend_gate as _spend_gate
 
 
 def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
-    """The whole AI ledger, plus media speech recognition, kept in its own ledger (media AI is in the AI ledger)."""
-    usd, unpriced = _persistence_runtime.platform_repository.ai_spend_since(since)
-    media = globals().get("_media_spend_ledger")
-    return float(usd) + (media.asr_spent_since(since) if media is not None else 0.0), unpriced
+    """The whole AI ledger: every capability, speech recognition, pronunciation and word audio included (they record
+    their priced `ai.operation` rows through ai/audio_telemetry.py), media AI and ASR too."""
+    return _persistence_runtime.platform_repository.ai_spend_since(since)
 
 
 # The system-wide daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD; AI_DAILY_SPEND_WARN_RATIO, default 0.8): unset, no
@@ -1631,6 +1629,21 @@ async def _funding_required(_request, exc):  # noqa: ANN001 - FastAPI's handler 
     return JSONResponse(status_code=503, content={"detail": error_detail(
         "funding_required", "This request could not be funded right now. Please try again.", retryable=False,
         context={"reason": exc.reason})})
+
+
+@app.exception_handler(_spend_gate.SpendCeilingReached)
+async def _spend_ceiling_reached(_request, exc):  # noqa: ANN001 - FastAPI's handler signature
+    """The system's daily AI spend ceiling (ai/spend_gate.py) refused a paid request that no caller answered itself:
+    told plainly, never retried until the reset (the agent's own routes answer it as contract §2.1 `daily_ai_limit`)."""
+    from fastapi.responses import JSONResponse
+
+    from writing_coach.core.errors import error_detail
+
+    status = _spend_gate.ceiling_status()
+    wait = _spend_gate.ceiling_wait() or 60.0
+    return JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait)))}, content={"detail": error_detail(
+        "daily_ai_limit", "The daily AI budget is used up; AI is paused until it resets.", retryable=False,
+        context={"scope": "system", "resets_at": status.get("resets_at")})})
 
 
 # I-1's backstop: FUNDING_ENFORCEMENT off (default) | log | enforce. Its live check reads the admission store.

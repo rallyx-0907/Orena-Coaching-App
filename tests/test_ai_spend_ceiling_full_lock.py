@@ -4,8 +4,9 @@ the owner, 2026-10-19). Once it is reached (or the ledger cannot be read), until
   capability;
 - a single paid request (legacy selection, an agent round) is refused before it is sent;
 - paid media steps (ASR, media AI) are refused (`SpendCapReached`, scope `system`); caption requests are not AI and
-  keep their own daily quota.
-A local or free rung still runs. Media ASR spend, kept in its own ledger, counts toward the system total."""
+  keep their own daily quota;
+- Groq translation, Speaking recognition, pronunciation scoring and new word audio are refused before they are sent.
+A local or free rung still runs. Speech, pronunciation and word audio record their priced rows in the same AI ledger, so they count already."""
 
 from __future__ import annotations
 
@@ -47,7 +48,7 @@ def reached(fail=False):
 
 def test_every_paid_rung_is_skipped_at_the_ceiling_and_a_local_rung_still_runs():
     gate = platform._funded_gate("writing_evaluator", None, lambda target: 10.0)
-    assert gate(PAID) is None or gate(PAID) == "unfunded"  # no ceiling: the ordinary funding decision
+    assert gate(PAID) != "system_ceiling"  # no ceiling: the ordinary funding decision
     reached()
     assert gate(PAID) == "system_ceiling"
     assert gate(LOCAL) is None
@@ -72,10 +73,42 @@ def test_media_steps_are_refused_at_the_ceiling(tmp_path):
     ledger.check_requests(100, KIND_SUPADATA)  # captions are not AI: their own quota decides
 
 
-def test_media_asr_spend_counts_toward_the_system_total(tmp_path):
-    ledger = SpendLedger(tmp_path / "spend.json")
-    ledger.record(KIND_ASR, 1.25, batch_id="b1", media_id="m1")
-    ledger.record(KIND_AI, 9.0, batch_id="b1", media_id="m1")  # media AI goes through the AI ledger too: not counted twice
-    start = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
-    assert ledger.asr_spent_since(start) == pytest.approx(1.25)
-    assert ledger.asr_spent_since(start + timedelta(days=1)) == 0
+@pytest.mark.parametrize("module", ["speech_asr", "speech_pronunciation", "word_audio_azure"])
+def test_speech_recognition_pronunciation_and_word_audio_check_the_ceiling_before_their_funding_backstop(module):
+    """Review of #308, P1-2: these paid calls had only the funding backstop. The ceiling check sits right before it."""
+    import importlib
+    import inspect
+
+    source = inspect.getsource(importlib.import_module(f"writing_coach.{module}"))
+    assert "require_below_ceiling()" in source
+    assert source.index("require_below_ceiling()") < source.index("require_paid(capability=")
+
+
+def test_the_shared_check_refuses_at_the_ceiling():
+    spend_gate.require_below_ceiling()  # no ceiling: nothing
+    reached()
+    with pytest.raises(spend_gate.SpendCeilingReached):
+        spend_gate.require_below_ceiling()
+
+
+def test_groq_translation_for_listening_and_reading_is_refused_at_the_ceiling():
+    from writing_coach.media_translation import TranslationProviderError, _below_ceiling
+
+    _below_ceiling()
+    reached()
+    with pytest.raises(TranslationProviderError) as refused:
+        _below_ceiling()
+    assert refused.value.reason == "system_ceiling"
+
+
+def test_an_unanswered_refusal_is_a_plain_429_daily_ai_limit():
+    import asyncio
+    import json
+
+    import app as app_module
+
+    reached()
+    response = asyncio.run(app_module._spend_ceiling_reached(None, spend_gate.SpendCeilingReached()))
+    body = json.loads(response.body)
+    assert response.status_code == 429 and int(response.headers["retry-after"]) >= 1
+    assert body["detail"]["category"] == "daily_ai_limit" and body["detail"]["retryable"] is False

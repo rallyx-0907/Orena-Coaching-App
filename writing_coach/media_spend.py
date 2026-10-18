@@ -174,13 +174,6 @@ class SpendLedger:
         if day_spent + estimate_usd > limits["day"] + 1e-12:
             raise SpendCapReached("spend_cap_day", limit=limits["day"], spent=day_spent, scope="day")
 
-    def asr_spent_since(self, since: datetime) -> float:
-        """Speech recognition spend since a moment: added to the system's daily AI total (ai/spend_gate.py). Media AI
-        is not added here - it goes through the AI platform and its own ledger already."""
-        with self._lock:
-            events = self._read()
-        return self._sum(events, kind=KIND_ASR, since=since.isoformat())
-
     def requests_today(self, kind: str = KIND_SUPADATA) -> int:
         day_start = _now().replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
         with self._lock:

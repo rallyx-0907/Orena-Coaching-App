@@ -397,6 +397,15 @@ class TranslationProviderError(RuntimeError):
         self.retry_after = max(0.0, float(retry_after or 0.0))
 
 
+def _below_ceiling() -> None:
+    """A paid Groq request is not sent once the system's daily AI spend ceiling is reached (ai/spend_gate.py): Listening
+    and Reading translation outside the media pipeline have no other gate."""
+    from writing_coach.ai import spend_gate
+
+    if spend_gate.ceiling_reached():
+        raise TranslationProviderError("The daily AI budget is used up.", reason=spend_gate.CEILING_REASON)
+
+
 _DURATION_PART = re.compile(r"(\d+(?:\.\d+)?)(ms|h|m|s)")
 
 
@@ -837,6 +846,7 @@ class GroqTranslationProvider:
         """
         if not self.configured:
             raise TranslationProviderError("Groq translation is not configured.", reason="not_configured")
+        _below_ceiling()
         texts = tuple(str(getattr(cue, "text", "")) for cue in cues)
         if not texts or len(texts) > 24 or sum(len(text) for text in texts) > 6_000:
             raise TranslationProviderError("Transcript correction batch exceeds its bound.", reason="request_too_large")
@@ -1060,6 +1070,7 @@ class GroqTranslationProvider:
         segments: TranslationBatch,
     ) -> dict[str, str]:
 
+        _below_ceiling()
         wire_segments, canonical_ids = _wire_segments(segments)
         body = {
             "model": self._model,

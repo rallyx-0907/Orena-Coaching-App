@@ -34,10 +34,13 @@ DEFAULT_WARN_RATIO = 0.8
 # The system-wide daily ceiling (owner, 2026-10-18: $5 a day on :8000, a warning at 80%, AI locked until the next UTC
 # midnight once reached): today's spend across the WHOLE shared AI ledger, every capability, as the ledger prices it
 # (a free-plan call at its list price, an unpriced call at 0.01 USD). Installed by app.py from the environment; unset,
-# there is no ceiling. Media ASR, kept in its own ledger (media_spend.py), is added to the total by app.py. What it stops: Orena chat and voice (agent/budget.py); every paid rung of the router - a routed
-# primary, a backup, a rung of an uncapped capability (ai/platform.py `_funded_gate`); a single paid request, legacy
-# selection or an agent round (`_require_paid_funding`); and paid media steps, ASR and media AI (media_spend.py). Local
-# and free models are never stopped. Not counted yet: speech and pronunciation scoring, which record no cost.
+# there is no ceiling. The ledger holds every priced call: the capabilities, speech recognition, pronunciation scoring
+# and word audio (ai/audio_telemetry.py), media AI and ASR. What it stops: Orena chat and voice (agent/budget.py); every
+# paid rung of the router - a routed primary, a backup, a rung of an uncapped capability (ai/platform.py
+# `_funded_gate`); a single paid request, legacy selection or an agent round (`_require_paid_funding`); paid media
+# steps (media_spend.py); Groq translation for Listening and Reading (media_translation.py); Speaking recognition,
+# pronunciation scoring and word audio (`require_below_ceiling`, beside their funding backstop). Local and free models
+# are never stopped. Not stopped: the Admin's own provider test (admin_ai_test), an operator action.
 _ceiling: DailySpendGuard | None = None
 CEILING_REASON = "system_ceiling"
 
@@ -102,6 +105,13 @@ def ceiling_check() -> tuple[float, bool] | None:
     """(seconds until it resets, True when the ledger could not be read), or None when spending may go on."""
 
     return _ceiling.refusal() if _ceiling is not None else None
+
+
+def require_below_ceiling() -> None:
+    """Raise `SpendCeilingReached` before a paid request is sent once the ceiling is reached (or unreadable)."""
+
+    if ceiling_reached():
+        raise SpendCeilingReached()
 
 
 def ceiling_reached() -> bool:
