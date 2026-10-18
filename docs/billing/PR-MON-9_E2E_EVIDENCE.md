@@ -35,7 +35,26 @@ states and HTTP codes only.
   `method_metadata` carries `brand`, `last4`, `exp_month` and `exp_year`. Only those four are kept. (The customer
   object's own `default_payment_method_id` was empty, so the first method or the `is_default` one is used.)
 
-## 2. End-to-end (UI)
+## 2. End-to-end (UI), 2026-10-18
 
-To follow once the UI slice is built: the first purchase through the embed, the upgrade, cancel and resume, an
-invoice download, Update opening the portal, in EN/VI/ZH, light and dark, on desktop and phone.
+**Setup:** run on the `:8031` sandbox at `0c791767`, signed in with Google on `http://localhost:8031` in the owner's
+Chrome, driven through Claude in Chrome. The owner approved every write. The owner paid in Polar's form; Orena never
+received card data.
+
+| Check | Result |
+| --- | --- |
+| Plan & usage, desktop (VI / EN / ZH) | Pro, "Yearly · $159.99 / year" (USD in every language, D-MON-034); "Renews {date} · charged to Visa •••• 4242"; card brand, last4 and expiry; billing email; real invoices; Cancel plan. Dates and money formatted per language. |
+| Light theme (contrast) | secondary text 6.54:1, the "Paid" pill 4.55:1, primary text 17.82:1: all AA |
+| Phone (360×740, touch) | no page scroll, no horizontal overflow; the cards scroll in their own region |
+| Billing Sheet footer | measured against the frame (line 1890) and corrected: two equal 48px buttons, radius 14, 15px/600, gap 10, padding 16 24 22 (scoped) |
+| Pricing on Pro yearly | Pro shows "Current plan"; Plus → the fail-closed sheet ("not available yet…", "Cancel Pro"); Free → the cancel sheet (a browser finding, fixed) |
+| **Cancel** (phone, reason "Taking a break") | "Cancelling…" → "All set / Plan cancelled", only after the server showed `cancel_at_period_end`; then the amber banner with "Resume Pro", the pill "Cancels Oct 18", and Cancel plan hidden |
+| **Resume** | banner gone, pill "Active", Cancel plan back. *The "You're staying on Pro" toast was not captured: unverified.* |
+| **Invoice download** | 202 `preparing`, then 200 `ready` with a URL on Polar's invoice store |
+| **First purchase through the embed** (after revoking the Pro subscription through the sandbox API) | "Continue to payment" opened Polar's form **inside the app** (the Embedding allowlist holds `localhost:8031`), with no discount field and no trial, $9.99/mo. After the owner subscribed: the overlay closed, the app did not navigate, and "All set / You're on Plus / New limits are active now" appeared only once the server showed `plus · active · month`. Done → Plan & usage, which showed Plus, "Monthly · $9.99 / month" and a fourth invoice. |
+| **Update card → portal** | `POST /api/billing/portal` answered 200 to a scripted click; a scripted click is not a user gesture, so the new tab may have been blocked. The real click timed out in the browser tool. **Confirmed by the owner by hand:** pending. |
+
+**Notes:**
+- The page header's title wraps on a phone next to "See all plans". The shared header predates this PR.
+- Step 5 of PR-MON-10 (a failing renewal) and the period-end outcome of cancel-while-pending stay unproven on the
+  sandbox (§1).
