@@ -66,7 +66,13 @@ from writing_coach.media_providers.caption_source import PolicyCaptionClient
 from writing_coach.media_providers.youtube import PublicYouTubeCaptionClient
 from writing_coach.media_providers.youtube_audio import YtDlpYouTubeAudioUrlResolver
 from writing_coach.media_timing import MediaTimingService
+from writing_coach.media_ai_router import (
+    PlatformMediaCorrector,
+    PlatformMediaTranslator,
+    groq_credentials as media_groq_credentials,
+)
 from writing_coach.media_translation import (
+    FallbackTranslationProvider,
     GroqTranslationProvider,
     LocalHttpTranslationProvider,
     MediaTranslationService,
@@ -557,7 +563,10 @@ def init_db() -> None:
 
 
 install_auth(app, init_db)
-_speech_asr_provider = GroqSpeechAsrProvider.from_env()
+# D-224: the Admin-stored Groq key first. Read strictly at start: if the store cannot be read and the environment has no key,
+# the start fails loudly instead of silently choosing another engine for the life of the process.
+_media_groq_startup_key = media_groq_credentials(strict=True)[0]
+_speech_asr_provider = GroqSpeechAsrProvider.from_env(key_source=lambda: media_groq_credentials()[0])
 _media_fallback_mode = os.getenv("MEDIA_TRANSCRIPT_FALLBACK", "none").strip().casefold()
 if _media_fallback_mode not in {"none", "supadata"}:
     raise RuntimeError("MEDIA_TRANSCRIPT_FALLBACK must be 'none' or 'supadata'.")
@@ -618,25 +627,43 @@ configure_media_ingestion(_media_ingestion_service)
 # backup for a deployment with no external dependency. Switching between them is
 # an operator decision -- there is no automatic failover when one fails
 # (ARCHITECTURE_INVARIANTS.md, AI Platform).
+#
+# D-224 (PROPOSED): the one exception to "no automatic failover" is a batch Groq cannot take (a long rate limit, a spent
+# quota, a request that cannot shrink, a provider fault, or no Groq key). It goes to the platform router's
+# `media_translation` / `media_transcript_correction` capability, which the operator configures in Admin (provider,
+# model, backup); with no such capability the pipeline is Groq alone, as before. `MEDIA_TRANSLATION_PROVIDER=ai` uses
+# the router only. Groq's key is the one saved in Admin, else GROQ_API_KEY, read at every request.
 _GROQ_API_KEY = os.getenv("GROQ_API_KEY", "").strip()
+_GROQ_KEY_FOR_MEDIA = _media_groq_startup_key or _GROQ_API_KEY
 try:
     _media_translation_provider_id = resolve_translation_provider_id(
-        os.getenv("MEDIA_TRANSLATION_PROVIDER", ""), groq_key=_GROQ_API_KEY
+        os.getenv("MEDIA_TRANSLATION_PROVIDER", ""), groq_key=_GROQ_KEY_FOR_MEDIA
     )
 except ValueError as exc:
     raise RuntimeError(str(exc)) from exc
 
-_media_translation_provider = (
-    GroqTranslationProvider(
-        _GROQ_API_KEY,
+_media_router_translator = PlatformMediaTranslator()
+_media_router_corrector = PlatformMediaCorrector()
+if _media_translation_provider_id == "groq":
+    _media_groq_provider = GroqTranslationProvider(
+        _GROQ_KEY_FOR_MEDIA,
         model=os.getenv("GROQ_TRANSLATION_MODEL", "openai/gpt-oss-120b"),
         base_url=os.getenv("GROQ_BASE_URL", "https://api.groq.com/openai/v1"),
+        credentials=media_groq_credentials,
     )
-    if _media_translation_provider_id == "groq"
-    else LocalHttpTranslationProvider(
+    _media_translation_provider = FallbackTranslationProvider(_media_groq_provider, _media_router_translator)
+    _media_corrector = _media_groq_provider
+    _media_fallback_corrector = _media_router_corrector
+elif _media_translation_provider_id == "ai":
+    _media_translation_provider = _media_router_translator
+    _media_corrector = _media_router_corrector
+    _media_fallback_corrector = None
+else:
+    _media_translation_provider = LocalHttpTranslationProvider(
         os.getenv("LOCAL_TRANSLATION_URL", "http://local-translator:8090")
     )
-)
+    _media_corrector = _media_translation_provider
+    _media_fallback_corrector = None
 configure_media_translation(MediaTranslationService(_media_translation_provider))
 # Reading never inherits Listening's LLM engine: its default is the local,
 # non-LLM Marian service, and an operator must explicitly opt into Groq.
@@ -852,7 +879,8 @@ _media_pipeline = MediaPipeline(
     admin_ingestion=_admin_media_ingestion_service,
     youtube_audio=download_audio,
     meanings=prepare_media_meanings,
-    corrector=_media_translation_provider,
+    corrector=_media_corrector,
+    fallback_corrector=_media_fallback_corrector,
     # D-204: import never makes a network call per word; local CMUdict IPA, empty on a miss.
     english_reading=english_ipa_for,
     workers=1,
