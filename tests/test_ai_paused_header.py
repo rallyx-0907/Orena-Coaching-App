@@ -31,6 +31,10 @@ def client():
     async def async_ok():
         return {"translation": {"status": "unavailable"}} if spend_gate.ceiling_reached() else {"ok": True}
 
+    @app.get("/fallback")
+    def fallback():  # a paid step skipped, but the learner is still answered (word audio's next voice)
+        return {"spoken": "local"} if spend_gate.ceiling_reached(mark=False) else {"spoken": "azure"}
+
     @app.get("/no-ai")
     def no_ai():
         return {"ok": True}
@@ -60,3 +64,9 @@ def test_a_fault_is_not_paused(client):
     spend_gate.configure_ceiling(5.0, read=broken)
     answer = client.get("/sync-ai")
     assert answer.status_code == 503 and HEADER not in answer.headers
+
+
+def test_a_working_fallback_is_not_marked_and_resets_at_is_the_ceilings_own_midnight(client):
+    spend_gate.configure_ceiling(5.0, read=lambda since: (5.0, 0))
+    assert HEADER not in client.get("/fallback").headers
+    assert client.get("/sync-ai").headers[HEADER] == spend_gate.ceiling_status()["resets_at"]

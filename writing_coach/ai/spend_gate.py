@@ -103,17 +103,22 @@ PAUSED_HEADER = "X-Orena-AI-Paused"
 _request_mark: ContextVar[dict[str, str] | None] = ContextVar("orena_ai_paused", default=None)
 
 
-def _refusal() -> tuple[float, bool] | None:
-    """The ceiling's verdict, marking the request as AI-paused when the limit is really reached (a fault is not)."""
+def _refusal(*, mark: bool = True) -> tuple[float, bool] | None:
+    """The ceiling's verdict, marking the request as AI-paused when the limit is really reached (a fault is not).
+    `mark=False`: a caller that answers anyway (a fallback that works) leaves the response unmarked."""
 
     if _ceiling is None:
         return None
     refused = _ceiling.refusal()
-    if refused is not None and not refused[1]:
-        mark = _request_mark.get()
-        if mark is not None:
-            moment = datetime.now(UTC) + timedelta(seconds=max(1, math.ceil(refused[0])))
-            mark["resets_at"] = moment.replace(microsecond=0).isoformat()
+    if mark and refused is not None and not refused[1]:
+        held = _request_mark.get()
+        if held is not None:
+            status = _ceiling.status()  # the guard's own midnight, as the 429 body says it
+            resets = status.get("resets_at")
+            if not resets:
+                moment = datetime.now(UTC) + timedelta(seconds=max(1, math.ceil(refused[0])))
+                resets = moment.replace(microsecond=0).isoformat()
+            held["resets_at"] = resets
     return refused
 
 
@@ -154,10 +159,11 @@ def require_below_ceiling() -> None:
         raise SpendCeilingReached()
 
 
-def ceiling_reached() -> bool:
-    """True when today's whole-system AI spend has reached the ceiling (or cannot be read): no paid call now."""
+def ceiling_reached(*, mark: bool = True) -> bool:
+    """True when today's whole-system AI spend has reached the ceiling (or cannot be read): no paid call now. `mark`:
+    say so on the response (`X-Orena-AI-Paused`); False for a caller whose fallback still answers the learner."""
 
-    return _refusal() is not None
+    return _refusal(mark=mark) is not None
 
 
 def ceiling_status() -> dict[str, Any]:
