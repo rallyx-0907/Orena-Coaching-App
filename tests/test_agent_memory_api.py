@@ -15,7 +15,7 @@ from fastapi.testclient import TestClient
 from writing_coach.agent.api import configure_agent, router
 from writing_coach.agent.memory_keys import MemoryKeys
 from writing_coach.agent.memory_runtime import MemoryRuntime, account_id
-from writing_coach.agent.memory_store import CONTINUITY, InMemoryMemoryStore, MemoryScope
+from writing_coach.agent.memory_store import CONTINUITY, EXPLICIT_TTL, InMemoryMemoryStore, MemoryScope
 from writing_coach.core.http_security import origin_refusal
 from writing_coach.core.request_context import LANGUAGE_CODE_CTX, USER_KEY_CTX
 from tests.test_agent_api import enable
@@ -82,8 +82,9 @@ def test_the_listing_is_by_class_with_reason_codes_and_the_switch(api):
     assert data["enabled"] is True and data["language"] == "zh-CN" and data["sessions"] == []
     [explicit] = data["items"]["explicit"]
     assert explicit["id"] == item.id and explicit["text"] == "Mình học để phỏng vấn"
+    # A kept note shows when it goes: the pilot retention (memory_store.EXPLICIT_TTL), from when it was last asked for.
     assert explicit["reason"] == {"source": "learner_asked", "evidence_count": None, "confidence": None,
-                                  "expires_at": None}  # fmt: skip
+                                  "expires_at": (T0 + EXPLICIT_TTL).isoformat()}  # fmt: skip
     [continuity] = data["items"]["continuity"]
     assert continuity["slot"] == "interest" and continuity["code"] == "sport" and continuity["reason"]["expires_at"]
     assert data["items"]["inferred"] == []

@@ -128,6 +128,9 @@ def main() -> int:  # pragma: no cover - process entry point
     from writing_coach.persistence.reading_content_repository import ReadingContentRepository
 
     logging.basicConfig(level=logging.INFO)
+    from writing_coach.core.access_log import quiet_http_client_loggers
+
+    quiet_http_client_loggers()
     try:
         # The same engine the application builds, from the same environment.
         # PostgreSQL only: the queue is the runtime's, and SQLite is frozen

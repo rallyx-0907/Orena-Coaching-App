@@ -20,6 +20,7 @@ from typing import Any, Protocol
 
 import requests
 
+from writing_coach.core.access_log import scrub_text
 from writing_coach.core.support_languages import support_language, normalize_support_language
 from writing_coach.media_ingestion import primary_language
 from writing_coach.media_learning import (
@@ -282,7 +283,7 @@ def _error_detail(response: object) -> str:
     """The provider's own sentence about a refusal (which allowance, how much was left), short and on one line.
     It names limits and counts, never a credential; empty when the answer carries none."""
     # An organisation id is an account identifier, not a limit: it stays out of the log.
-    return _ORG_ID.sub("org_<redacted>", _error_message(response))[:240]
+    return scrub_text(_ORG_ID.sub("org_<redacted>", _error_message(response)))[:240]
 
 
 def _otpm_refusal(response: object) -> tuple[int, int] | None:

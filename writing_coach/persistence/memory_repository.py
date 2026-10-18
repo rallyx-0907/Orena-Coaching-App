@@ -42,6 +42,7 @@ from writing_coach.agent.memory_keys import MemoryKeys
 from writing_coach.agent.memory_store import (
     CONTINUITY,
     EXPLICIT,
+    EXPLICIT_TTL,
     INFERRED,
     INFERRED_SUPPRESSION,
     LIMITS,
@@ -219,11 +220,25 @@ class PostgresMemoryRepository:
         with self._write() as conn:
             if not self._lock(conn, scope, now).enabled:
                 raise MemoryOff
+            # The learner's own expired notes go first: an expired row still holds the unique indexes (same words,
+            # single-valued slot) and is invisible to every read anyway (review of #292, P1-1).
+            conn.execute(sql(f"DELETE FROM learner_memories WHERE {_SCOPE} AND language_code = :lang"
+                             " AND class = 'explicit' AND expires_at IS NOT NULL AND expires_at <= :now"),
+                         _params(scope, lang=language, now=now))  # fmt: skip
             live = self._rows(conn, scope, "language_code = :lang AND class = :cls", now, lang=language, cls=EXPLICIT)
             held = next((i for i in live if (slot in SINGLE_VALUED_SLOTS and i.slot == slot)
                          or self._same_value(i, slot, text)), None)  # fmt: skip
             if held is not None and self._same_value(held, slot, text):
-                return held  # a retried remember_note (same words) does not duplicate
+                # A retried remember_note (same words) does not duplicate; asked again, it is kept from now.
+                row = conn.execute(sql(
+                    f"UPDATE learner_memories SET expires_at = :until, updated_at = :now WHERE id = :id AND {_SCOPE}"
+                    f" RETURNING {_COLUMNS}"),
+                    _params(scope, id=_uuid(held.id), until=now + EXPLICIT_TTL, now=now)).mappings().first()  # fmt: skip
+                if row is not None:
+                    return _item(row)
+                # Swept in between (it had just expired): kept anew below, and no longer counted against the limit.
+                live = [i for i in live if i.id != held.id]
+                held = None
             if held is None and len(live) >= LIMITS[EXPLICIT]:
                 raise MemoryLimit
             if held is not None:  # a single-valued slot: the learner's latest choice wins
@@ -232,11 +247,11 @@ class PostgresMemoryRepository:
             version, value_key = self._keys.stamp(slot or "", text)
             row = conn.execute(sql(
                 "INSERT INTO learner_memories (id, incarnation_id, user_id, language_code, class, kind, slot, text,"
-                " value_key, key_version, source, created_at, updated_at)"
-                " VALUES (:id, :i, :u, :lang, 'explicit', :kind, :slot, :text, :vk, :kv, :source, :now, :now)"
+                " value_key, key_version, source, expires_at, created_at, updated_at)"
+                " VALUES (:id, :i, :u, :lang, 'explicit', :kind, :slot, :text, :vk, :kv, :source, :until, :now, :now)"
                 f" RETURNING {_COLUMNS}"),
                 _params(scope, id=uuid.uuid4(), lang=language, kind=kind, slot=slot, text=text, vk=value_key,
-                        kv=version, source=source, now=now)).mappings().one()  # fmt: skip
+                        kv=version, source=source, until=now + EXPLICIT_TTL, now=now)).mappings().one()  # fmt: skip
             self._bump(conn, scope, now)
             return _item(row)
 

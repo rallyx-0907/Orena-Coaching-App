@@ -41,6 +41,7 @@ EXPECTED_KEYS = {
     "conversational_speech",
     "text_to_speech",
     "word_translation",
+    "word_sense_choice",
     "media_translation",
     "media_transcript_correction",
 }
@@ -140,6 +141,7 @@ def test_capabilities_are_product_wide_and_only_reviewed_generators_allow_fallba
         "writing_task_generator",
         "grammar_lesson_generator",
         "word_translation",  # D-195: the basic tap may fall back to its deterministic answer
+        "word_sense_choice",  # D-228: a tie keeps the neutral sense
     }
 
 

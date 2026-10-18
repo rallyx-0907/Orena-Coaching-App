@@ -7,6 +7,7 @@ import { html } from '../../kit/html.js';
 import { intelChip } from '../../kit/brand.js';
 import { langAttr } from '../../kit/lang.js';
 import { fromContractLang } from '../../agent/contract.js';
+import { href } from '../../shell/routes.js';
 import { t } from './copy.js';
 import { actionCardMarkup, evidenceMarkup, hasCard } from './cards.js';
 import { offerableActions, errorText } from './model.js';
@@ -32,6 +33,13 @@ function errorMarkup(prefix, error) {
   return html`<div class="${prefix}__error"><span>${errorText(error, t('transportError'))}</span>${action}</div>`;
 }
 
+/* "Orena remembered this - Manage in Settings": the owner's light-consent line (UI_BACKEND_GAPS "Remembered-note
+   line"). The design draws no such line, so it is the existing evidence chip (s-orena-evidence) with the
+   error line's text-link button (__retry) opening Settings, Privacy through the same data-plans hook. */
+function rememberedMarkup(prefix) {
+  return html`<div class="s-orena-evidence"><span class="s-orena-evidence__label">${t('memoryRemembered')}</span><span aria-hidden="true">·</span><button type="button" class="${prefix}__retry" data-plans="${href('settings', {}, { tab: 'privacy' })}">${t('memoryManage')}</button></div>`;
+}
+
 export function messageMarkup(message, { surface, ranActions, supported }) {
   const prefix = `s-orena-${surface}`;
   if (message.role === 'learner') {
@@ -51,6 +59,7 @@ export function messageMarkup(message, { surface, ranActions, supported }) {
       ${errorInline ? errorMarkup(prefix, message.error) : ''}
     </div>
     ${message.evidence?.length ? html`<div class="${prefix}__sources">${message.evidence.map((evidence) => evidenceMarkup(evidence))}</div>` : ''}
+    ${message.remembered ? rememberedMarkup(prefix) : ''}
     ${cards.length ? html`<div class="${prefix}__cards">${cards.map((action) => actionCardMarkup(action, { done: ranActions.has(action.id) }))}</div>` : ''}
     ${bare.length ? html`<div class="${prefix}__buttons">${bare.map((action) => actionCardMarkup(action, { done: ranActions.has(action.id) }))}</div>` : ''}
     ${message.error && !errorInline ? errorMarkup(prefix, message.error) : ''}
