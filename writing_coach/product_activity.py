@@ -8,6 +8,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import hashlib
 import hmac
+import logging
 import os
 import re
 from typing import Any
@@ -34,15 +35,33 @@ PARTICIPANT_LIST_LIMIT = 500
 _LANG = re.compile(r"[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*")
 
 
-def participant_code(account_id: str, secret: str | None = None) -> str:
-    """A stable pseudonymous code for one account: the first 12 hex digits of HMAC-SHA256(SESSION_SECRET, account id).
+_WARNED_NO_KEY: list[bool] = []
 
-    The same account always has the same code while the secret stays; nothing in it reveals the email, the name or
-    the account id, and it cannot be recomputed without the server's secret. Rotating SESSION_SECRET re-keys every
-    code (a new analytics epoch). Without a configured secret (single-user local mode) a fixed local key is used."""
-    key = (secret if secret is not None else os.getenv("SESSION_SECRET", "")).strip() or "local-single-user-mode"
-    digest = hmac.new(key.encode(), f"orena-participant:{account_id}".encode(), hashlib.sha256).hexdigest()
-    return PARTICIPANT_CODE_PREFIX + digest[:12].upper()
+
+def participant_key(secret: str | None = None) -> bytes | None:
+    """The domain-separated key for participant codes: HMAC(SESSION_SECRET, "orena/participant/v1"), so the session
+    secret itself is never the key. None when no secret is configured while sign-in is on (codes are then refused)."""
+    raw = (secret if secret is not None else os.getenv("SESSION_SECRET", "")).strip()
+    if not raw:
+        if os.getenv("GOOGLE_CLIENT_ID", "").strip():  # sign-in is on: a constant key would make codes guessable
+            return None
+        raw = "local-single-user-mode"
+    return hmac.new(raw.encode(), b"orena/participant/v1", hashlib.sha256).digest()
+
+
+def participant_code(account_id: str, secret: str | None = None) -> str:
+    """A stable pseudonymous code for one account: "P-" + the first 12 hex digits of HMAC(participant_key, account id).
+
+    The same account keeps its code while the secret stays; nothing in it reveals the email, the name or the account
+    id. Rotating SESSION_SECRET re-keys every code (a new analytics epoch). Returns "" when no key can be derived
+    (sign-in on, no secret): the caller then emits no participant data."""
+    key = participant_key(secret)
+    if key is None:
+        if not _WARNED_NO_KEY:
+            _WARNED_NO_KEY.append(True)
+            logging.getLogger(__name__).warning("participant codes refused: SESSION_SECRET is not set while sign-in is on")
+        return ""
+    return PARTICIPANT_CODE_PREFIX + hmac.new(key, account_id.encode(), hashlib.sha256).hexdigest()[:12].upper()
 
 
 def _lang(value: Any) -> str:
@@ -154,13 +173,14 @@ def aggregate_product_activity(rows: Any, *, window_days: int = 7, now: datetime
         current = {learner for learner, active_days in cohort_days.items() if key in active_days}
         returning = sum(1 for learner in current if any(day < key for day in cohort_days[learner]))
         daily_returning.append({"date": key, "returning_learners": returning})
-    return {"available": True, "data_state": "ready" if total else "insufficient_data", "has_data": bool(total), "window_days": days, "window_start": start.isoformat(), "window_end": end.isoformat(), "active_learners": len(learners) if total else None, "returning_learners": sum(1 for active_days in cohort_days.values() if len(active_days) >= 2) if total else None, "repeat_practice_learners": sum(1 for count in learner_completed.values() if count >= 2) if total else None, "cross_skill_returning_learners": sum(1 for learner, skills_seen in cohort_skills.items() if len(skills_seen) >= 2 and len(cohort_days.get(learner, set())) >= 2) if total else None, "return_windows": return_windows, "daily_returning": daily_returning, "total_activities": total, "total_completions": sum(item["completions"] for item in skills), "skills": skills, "language_pairs": _language_pairs(participants) if total else [], "participants": _participant_rows(participants) if total else []}
+    return {"available": True, "data_state": "ready" if total else "insufficient_data", "has_data": bool(total), "window_days": days, "window_start": start.isoformat(), "window_end": end.isoformat(), "active_learners": len(learners) if total else None, "returning_learners": sum(1 for active_days in cohort_days.values() if len(active_days) >= 2) if total else None, "repeat_practice_learners": sum(1 for count in learner_completed.values() if count >= 2) if total else None, "cross_skill_returning_learners": sum(1 for learner, skills_seen in cohort_skills.items() if len(skills_seen) >= 2 and len(cohort_days.get(learner, set())) >= 2) if total else None, "return_windows": return_windows, "daily_returning": daily_returning, "total_activities": total, "total_completions": sum(item["completions"] for item in skills), "skills": skills, "language_pairs": _language_pairs(participants) if total else [], "participants": _participant_rows(participants) if total else [], "total_participants": len(participants) if total else 0, "participants_truncated": len(participants) > PARTICIPANT_LIST_LIMIT if total else False}
 
 
 def _participant_rows(participants: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """One row per participant code: target_lang and interface_lang as separate fields, never an email or a name."""
     rows = []
-    for code in sorted(participants)[:PARTICIPANT_LIST_LIMIT]:
+    ordered = sorted(participants, key=lambda code: (-participants[code]["activities"], code))
+    for code in ordered[:PARTICIPANT_LIST_LIMIT]:
         entry = participants[code]
         targets, interfaces = sorted(x for x in entry["target_langs"] if x), sorted(x for x in entry["interface_langs"] if x)
         rows.append({"participant_code": code, "target_lang": targets[0] if len(targets) == 1 else ("mixed" if targets else ""), "interface_lang": interfaces[0] if len(interfaces) == 1 else ("mixed" if interfaces else ""), "activities": entry["activities"], "completions": entry["completions"], "active_days": len(entry["days"]), "skills": sorted(entry["skills"])})

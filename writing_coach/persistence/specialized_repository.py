@@ -1956,7 +1956,8 @@ class PostgresSpecializedLearningRepository:
 
         Each row carries only identifiers and counters: the skill, the time, a pseudonymous participant code
         (never the email or name), the target language the event belonged to (the row's own language scope) and the
-        account's interface language, as two separate fields. No prose, transcript or audio reference is selected."""
+        account's interface language, as two separate fields. `interface_lang` is the account's CURRENT setting, not
+        its value at event time (that would need a schema change). No prose, transcript or audio reference is selected."""
         from writing_coach.product_activity import participant_code
 
         with Session(self.engine) as s:

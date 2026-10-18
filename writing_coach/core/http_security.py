@@ -16,6 +16,7 @@ Two small rules the whole app keeps, so no route has to remember them:
 from __future__ import annotations
 
 import ipaddress
+import logging
 from collections.abc import Mapping
 from urllib.parse import urlsplit
 
@@ -137,9 +138,9 @@ def _rate_group(method: str, path: str) -> tuple[str, int, int] | None:
 
 SIGNIN_GROUPS: tuple[tuple[str, str, frozenset[str], int, int], ...] = (
     # (group, policy key, (method, path) pairs as "METHOD path", default requests, window seconds)
-    ("signin_start", "rate.signin_start_per_10min", frozenset({"GET /auth/google"}), 20, 600),
-    ("signin_callback", "rate.signin_callback_per_10min", frozenset({"GET /auth/google/callback"}), 30, 600),
-    ("signin_exchange", "rate.signin_exchange_per_10min", frozenset({"POST /api/auth/native/exchange"}), 30, 600),
+    ("signin_start", "rate.signin_start_per_10min", frozenset({"GET /auth/google"}), 120, 600),
+    ("signin_callback", "rate.signin_callback_per_10min", frozenset({"GET /auth/google/callback"}), 200, 600),
+    ("signin_exchange", "rate.signin_exchange_per_10min", frozenset({"POST /api/auth/native/exchange"}), 200, 600),
 )
 
 
@@ -175,6 +176,8 @@ def client_address(peer: object, headers: Mapping[str, str]) -> str:
     edge and not by the caller; a directly connected public peer cannot choose its own key. `X-Forwarded-For` is
     never read: any client can write it. With no usable address the key is a single shared "unknown" bucket, which
     fails closed rather than open."""
+    # Trusting a non-public peer assumes the app port is bound to loopback / reached only through the tunnel (so a
+    # caller cannot be the "private hop" itself), and that uvicorn's FORWARDED_ALLOW_IPS is never set to "*".
     direct = _ip(peer)
     if direct is None:
         return "unknown"
@@ -183,4 +186,18 @@ def client_address(peer: object, headers: Mapping[str, str]) -> str:
         edge = _ip(headers.get("cf-connecting-ip"))
         if edge is not None:
             return edge
+        _warn_shared_bucket_once(direct)
     return direct
+
+
+_WARNED_SHARED_BUCKET: list[bool] = []
+
+
+def _warn_shared_bucket_once(peer: str) -> None:
+    """A non-public peer with no edge address means every caller shares one sign-in bucket: say so once per process."""
+    if _WARNED_SHARED_BUCKET:
+        return
+    _WARNED_SHARED_BUCKET.append(True)
+    logging.getLogger("orena.request_boundary").warning(
+        "sign-in rate limit: a non-public peer (%s) arrived without CF-Connecting-IP, so callers behind it share one "
+        "bucket; check the tunnel / proxy configuration", peer)
