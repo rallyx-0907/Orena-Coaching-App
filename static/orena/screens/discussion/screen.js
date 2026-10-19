@@ -25,7 +25,7 @@ import { shellCopy } from '../../copy/shell.js';
 import { supportLanguage } from '../../product/languages.js';
 import { api } from '../../infrastructure/api.js';
 import { t } from './copy.js';
-import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
+import { isQuotaExhausted, pausedLineOf, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { loadReadable } from '../reader/source.js';
 import {
   parseContentId, discussionSourceFor, newRequestId, mapTurns, canSend, isSendKey, optimisticTurn, MAX_BODY_CHARACTERS,
@@ -148,7 +148,7 @@ export default async function mountDiscussion(element, ctx) {
         toast(quotaMessage(error), { iconName: 'circle-alert', undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
       } else {
         // A 409 with a category is the quota gate's (a repeat in flight); a plain 409 is the thread's own turn cap.
-        toast(error?.status === 409 && !error.category ? t('full', { n: maxTurns }) : t('unavailable'), { iconName: 'circle-alert' });
+        toast(error?.status === 409 && !error.category ? t('full', { n: maxTurns }) : pausedLineOf(error) || t('unavailable'), { iconName: 'circle-alert' });
       }
     } finally {
       pending = false;

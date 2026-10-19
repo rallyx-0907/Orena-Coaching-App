@@ -30,6 +30,7 @@ import { t } from './copy.js';
 import {
   DURATIONS_MS, topics, formatClock, waveBars, resultStats, ledgerFacts, fixesOf, strengthsOf, phrasesFor, headlineKind,
 } from './model.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 
 const MIN_TAKE_MS = 600;
 
@@ -335,15 +336,15 @@ export default async function freeTalk(element, ctx) {
       });
       if (!alive()) return;
       coaching = result?.available ? result : null;
-      errorText = result?.available ? '' : t('serviceError');
+      errorText = result?.available ? '' : (pausedLineNow() || t('serviceError'));
       state = 'result';
       // The take is the learner's own work, kept with the account when it keeps work (D4 I8).
       void saveResponse({ kind: 'freetalk', source: { kind: 'invitation', id: topicText.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60) || 'open' }, mode: 'free_talk', answer: heard, coaching });
       paint();
-    } catch {
+    } catch (error) {
       if (!alive()) return;
       coaching = null;
-      errorText = t('serviceError');
+      errorText = pausedLineOf(error) || t('serviceError');
       state = 'result';
       paint();
     }

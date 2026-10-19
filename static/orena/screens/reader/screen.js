@@ -38,6 +38,7 @@ import { openWordSheet, openSentenceSheet } from '../quick-sheet/sheet.js';
 import { loadNotesAcross, noteKeysFor, noteTypeColorKey } from '../quick-sheet/model.js';
 import { legacyAliases } from './legacy-sentences.js';
 import { t } from './copy.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 import { mountReaderLexical } from './lexical.js';
 import { loadHighlights, isHighlighted, toggleHighlight } from './highlights.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from './annotations-sync.js';
@@ -179,6 +180,9 @@ export default async function mountReader(element, ctx) {
   const openNoteSegs = new Set();
   const translations = new Map(); // sentence segment id -> meaning (D-130: the sentence is the shared unit)
   let translationState = 'idle'; // 'idle' | 'loading' | 'ready' | 'failed'
+  // The system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure, with no retry.
+  let translationPause = '';
+  let summaryPause = '';
   const annotations = new Map(); // segment -> tokens (offsets relative to the sentence)
   const annotationLoads = new Map(); // paragraph index -> the one shared in-flight/finished request
   let translationLoad = null;
@@ -282,13 +286,15 @@ export default async function mountReader(element, ctx) {
     paintBody();
     translationLoad = (async () => {
       let failed = false;
+      translationPause = '';
       for (const turn of sentenceTurns(missing)) {
         try {
           const response = await api.readingTranslate({ source_language: language, target_language: target, content_id: contentId, segments: turn });
           for (const [seg, meaning] of sentenceTranslationsFrom(response)) translations.set(seg, meaning);
-          if (response?.status !== 'ready') failed = true;
-        } catch {
+          if (response?.status !== 'ready') { failed = true; translationPause = translationPause || pausedLineNow(); }
+        } catch (error) {
           failed = true;
+          translationPause = translationPause || pausedLineOf(error);
         }
         if (!alive) return;
         paintBody();
@@ -580,6 +586,7 @@ export default async function mountReader(element, ctx) {
     // LEX-004: a visible placeholder in each paragraph's own slot while its meaning is asked for,
     // sized like a short translation so the text below moves little when it arrives.
     if (translationState === 'loading') return html`<div class="s-reader__translation s-reader__translation--pending" role="status" aria-label="${t('translationLoading')}"><span class="o-bone"></span><span class="o-bone"></span></div>`;
+    if (translationState === 'failed' && translationPause) return html`<p class="s-reader__translation s-reader__translation--state" role="status">${translationPause}</p>`;
     if (translationState === 'failed') {
       return html`<p class="s-reader__translation s-reader__translation--state">${t('translationFailed')} <button type="button" class="s-reader__retry" data-act="translation-retry">${t('retry')}</button></p>`;
     }
@@ -658,6 +665,7 @@ export default async function mountReader(element, ctx) {
     if (summary.state === 'ready') {
       return html`<ul class="s-reader__summary" lang="${langAttr(support())}">${summary.bullets.map((line) => html`<li>${line}</li>`)}</ul><div class="s-reader__aside-foot">${t('summaryStays')}</div>`;
     }
+    if (summary.state === 'failed' && summaryPause) return html`<div class="s-reader__aside-empty" role="status">${summaryPause}</div>`;
     if (summary.state === 'failed') {
       return html`<div class="s-reader__aside-empty">${t('summaryFailed')} <button type="button" class="s-reader__retry" data-act="summary-retry">${t('retry')}</button></div>`;
     }
@@ -683,12 +691,15 @@ export default async function mountReader(element, ctx) {
     if (summarySheet) refreshSummarySheet();
     const target = support() || 'en';
     const which = doc.kind === 'article' ? { article_id: doc.id } : doc.isBook ? { book_id: doc.bookId, chapter_id: doc.chapterId } : { text: paragraphTexts.join('\n\n') };
+    summaryPause = '';
     try {
       const value = await api.readingSummary({ source_language: language, target_language: target, ...which });
       const bullets = Array.isArray(value?.bullets) ? value.bullets.map((line) => String(line || '').trim()).filter(Boolean) : [];
       summary = bullets.length ? { state: 'ready', bullets } : { state: 'failed', bullets: [] };
-    } catch {
+      if (!bullets.length) summaryPause = pausedLineNow();
+    } catch (error) {
       summary = { state: 'failed', bullets: [] };
+      summaryPause = pausedLineOf(error);
     }
     if (!alive) return;
     paintBody();

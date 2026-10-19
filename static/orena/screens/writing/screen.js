@@ -31,7 +31,7 @@ import { langAttr } from '../../kit/lang.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api, request, newIdempotencyKey } from '../../infrastructure/api.js';
-import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
+import { isQuotaExhausted, pausedLineOf, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { editWouldFit, measureWriting } from '../../capabilities/writing-limits.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { orenaPresent } from '../../agent/presence.js';
@@ -509,7 +509,7 @@ export default async function mountWriting(element, ctx) {
      it is the next attempt, not a timer, that clears it. */
   function failedMarkup() {
     return failed
-      ? html`<div class="s-writing__failed" role="alert" lang="${langOf(uiLocale)}"><span>${failed.quota || t('reviewFailed')}</span>${failed.quota ? html`<button type="button" class="s-writing__btn" data-act="plans">${seePlansLabel()}</button>` : failed.retry ? html`<button type="button" class="s-writing__btn" data-act="review">${s('retry')}</button>` : ''}</div>`
+      ? html`<div class="s-writing__failed" role="alert" lang="${langOf(uiLocale)}"><span>${failed.paused || failed.quota || t('reviewFailed')}</span>${failed.quota ? html`<button type="button" class="s-writing__btn" data-act="plans">${seePlansLabel()}</button>` : failed.retry ? html`<button type="button" class="s-writing__btn" data-act="review">${s('retry')}</button>` : ''}</div>`
       : '';
   }
 
@@ -802,7 +802,9 @@ export default async function mountWriting(element, ctx) {
       busyReview = false;
       rightMode = essay ? 'review' : 'none';
       // The plan's limit is reached: the server's own figures, and the way to the plans - never a retry.
-      failed = isQuotaExhausted(error) ? { retry: false, quota: quotaMessage(error) } : { retry: error?.retryable !== false };
+      // The system's daily AI pause (X-Orena-AI-Paused, D-235) is told in the same place, with neither a retry nor the plans.
+      const paused = pausedLineOf(error);
+      failed = paused ? { retry: false, paused } : isQuotaExhausted(error) ? { retry: false, quota: quotaMessage(error) } : { retry: error?.retryable !== false };
       activePane = 'review';
       paintTabs();
       paintHeader();

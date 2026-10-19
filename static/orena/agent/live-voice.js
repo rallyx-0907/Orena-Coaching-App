@@ -79,13 +79,30 @@ export function chooseVoice(id, storage = globalThis.localStorage) {
   }
 }
 
-/* The voices the server offers, labelled in the interface language. Null while voice is off (404). */
+/* Whether the learner's plan includes voice chat (contract v11, D-235): `GET /api/agent/voice/voices` answers `entitled: false` for
+   a Free learner, so the voice entries can say so BEFORE a tap spends a session request. `null` is "not known" (voice off, the
+   read failed, an older server that sends no field): the entry then behaves as before and the server's own 403 decides. Kept
+   for five minutes, so an upgrade is seen soon; a 403 from the server marks it at once. */
+const ENTITLEMENT_TTL_MS = 300000;
+let entitlement = { value: null, at: 0 };
+export function voiceEntitled(now = Date.now()) {
+  return now - entitlement.at > ENTITLEMENT_TTL_MS ? null : entitlement.value;
+}
+export function noteVoiceEntitled(value, now = Date.now()) {
+  entitlement = { value: typeof value === 'boolean' ? value : null, at: now };
+}
+
+/* The voices the server offers, labelled in the interface language, and whether the plan includes them (`entitled`, only
+   ever false when the server says so). Null while voice is off (404). */
 export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch } = {}) {
   try {
     const response = await fetchImpl(`/api/agent/voice/voices?interface=${encodeURIComponent(interfaceLang || 'en')}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
     if (!response.ok) return null;
     const data = await response.json();
-    return Array.isArray(data?.voices) && data.voices.length ? { default: String(data.default || ''), voices: data.voices } : null;
+    noteVoiceEntitled(data?.entitled === false ? false : data?.entitled === true ? true : null);
+    const voices = Array.isArray(data?.voices) ? data.voices : [];
+    if (!voices.length && data?.entitled !== false) return null;
+    return { default: String(data.default || ''), voices, entitled: data?.entitled !== false };
   } catch {
     return null;
   }

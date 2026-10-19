@@ -1,6 +1,7 @@
 import { isTransientRequestError, retryOnce } from './retry.js';
 import { navigationSignal } from './navigation.js';
 import { previewRefuses, previewRefusal } from './preview-mode.js';
+import { aiPausedFromResponse, noteAiPaused } from './ai-paused.js';
 import { deviceTimezone, newIdempotencyKey, quotaHeaders as quotaHeadersFor } from './quota-headers.js';
 
 const JSON_HEADERS = {'Content-Type':'application/json'};
@@ -32,6 +33,10 @@ export async function request(url, options={}){
     ...options,
   });
 
+  /* The system's daily AI pause (contract v11, infrastructure/ai-paused.js): read here, once, for every route. */
+  const aiPaused=aiPausedFromResponse(response);
+  if(aiPaused!==null)noteAiPaused(aiPaused);
+
   let payload=null;
   const type=response.headers.get('content-type')||'';
   if(type.includes('application/json')){
@@ -59,6 +64,7 @@ export async function request(url, options={}){
     if(structured&&typeof detail.retryable==='boolean')error.retryable=detail.retryable;
     if(structured&&detail.context&&typeof detail.context==='object')error.context=detail.context;
     error.status=response.status;
+    if(aiPaused!==null)error.aiPaused=aiPaused;
     const retryAfter=Number(response.headers.get('retry-after'));
     if(Number.isFinite(retryAfter)&&retryAfter>=0)error.retryAfterMs=retryAfter*1000;
     throw error;

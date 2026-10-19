@@ -14,7 +14,7 @@
    meters), in the order the design lists them. `languages.target` is a count cap, not a windowed meter, so
    it has no usage row. */
 export const FEATURE_ORDER = Object.freeze([
-  'orena.message', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target',
+  'orena.message', 'orena.voice', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target',
 ]);
 export const USAGE_ORDER = Object.freeze(['orena.message', 'writing.review', 'pronunciation.audio', 'media.import']);
 

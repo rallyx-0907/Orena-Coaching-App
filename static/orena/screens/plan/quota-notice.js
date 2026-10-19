@@ -9,6 +9,7 @@
    one decimal otherwise ("1.1 of 5 pronunciation minutes"). */
 import { languages } from '../../copy/index.js';
 import { toast } from '../../kit/toast.js';
+import { aiPauseOf, recentAiPause } from '../../infrastructure/ai-paused.js';
 import { t } from './copy.js';
 import { displayAmount, formatNumber } from './model.js';
 import { holdLanguageRefusal, REASON_LANGUAGE } from './reason.js';
@@ -39,6 +40,31 @@ export function pausedMessage(resetsAt) {
   const at = new Date(resetsAt);
   if (!resetsAt || Number.isNaN(at.getTime())) return t('aiPausedNoTime'); // no time to promise
   return t('aiPaused', { time: new Intl.DateTimeFormat(languages().ui, { hour: 'numeric', minute: '2-digit' }).format(at) });
+}
+
+/* The same pause as any response carries it (header `X-Orena-AI-Paused`, contract v11, D-235): the surface that made the call
+   shows this line in the place it already shows a failed request - no retry (it would be refused again), no way to the plans
+   (it is not the learner's plan). `pausedLineOf(error)` reads a refused request; `pausedLineNow()` serves a call the server
+   answered 200 with part of it unavailable (Listening's meaning), which has no error to read. '' when there is no pause,
+   so a surface falls through to its own failed-request text. */
+export function isAiPaused(error) {
+  return Boolean(aiPauseOf(error));
+}
+
+export function pausedLineOf(error) {
+  const pause = aiPauseOf(error);
+  return pause ? pausedMessage(pause.resetsAt) : '';
+}
+
+export function pausedLineNow() {
+  const pause = recentAiPause();
+  return pause ? pausedMessage(pause.resetsAt) : '';
+}
+
+/* Voice chat is a Plus and Pro benefit (contract v11, D-235): `voice/session` and `voice/extend` answer a Free learner 403
+   `feature_not_in_plan` with `context.feature` `orena.voice`. Told as the voice upsell sheet (plan/voice-upsell.js), never as a failure. */
+export function isVoiceNotInPlan(error) {
+  return Boolean(error) && error.status === 403 && error.category === 'feature_not_in_plan' && error.context?.feature === 'orena.voice';
 }
 
 export function seePlansLabel() {
