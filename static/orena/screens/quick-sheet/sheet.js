@@ -31,6 +31,7 @@ import { shellCopy as s } from '../../copy/shell.js';
 import { href } from '../../shell/routes.js';
 import { reportLink, bindReport } from '../../product/report-problem.js';
 import { languages } from '../../copy/index.js';
+import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { api } from '../../infrastructure/api.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { markGlyph } from '../../kit/brand.js';
@@ -212,7 +213,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         </div>
       </div>
       <div class="s-qs__card">
-        ${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaning}</div>${
+        ${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaningLanguage ? html`<span class="s-qs__general-label">${meaningLanguageLabel(card.meaningLanguage, support, languages().ui)}</span> ` : ''}${card.meaning}</div>${
           card.generalMeaning
             ? html`<div class="s-qs__general"><span class="s-qs__general-label">${t('commonMeaning')}</span> ${card.generalMeaning}</div>`
             : card.originalDefinition
@@ -377,14 +378,14 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         keptNow = false;
         item = null;
         detail = detail ? { ...detail, saved: false } : detail;
-        card = mapWordCard(card.word, { detail, item });
+        card = mapWordCard(card.word, { detail, item, support });
         paint();
         toast(t('removedToast'), payload ? { undo: async () => {
           const restored = await api.restoreLibraryVocabulary(payload).catch(() => null);
           item = restored?.item || item;
           if (restored) keptNow = true;
           detail = detail ? { ...detail, saved: true } : detail;
-          card = mapWordCard(card.word, { detail, item });
+          card = mapWordCard(card.word, { detail, item, support });
           paint();
         }, undoLabel: s('undo') } : {});
       } else {
@@ -394,7 +395,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         void keepProvenance({ term: card.word, source, sentence });
         item = saved?.item || item;
         detail = detail ? { ...detail, saved: true } : detail;
-        card = mapWordCard(card.word, { detail, item });
+        card = mapWordCard(card.word, { detail, item, support });
         paint();
         toast(t('savedToast'));
       }
@@ -454,7 +455,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           }
           if (!alive) return;
           loading = false;
-          card = mapWordCard(target, { detail, item });
+          card = mapWordCard(target, { detail, item, support });
           keptNow = Boolean(card.saved);
           paint();
           askContextual = () => {
@@ -469,7 +470,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
               if (aiPause) contextualFailed = true;
               // Whether it is kept is the learner's own last save/unsave, not what the answer says.
               const answer = enriched ? { ...enriched, saved: keptNow } : enriched;
-              const next = mapWordCard(target, {detail: answer, item});
+              const next = mapWordCard(target, { detail: answer, item, support });
               if (next.hasContent) { detail = answer; card = next; void keepContextualMeaning(); }
             }).catch((error) => { contextualFailed = true; aiPause = pausedLineOf(error); }).finally(() => {
               contextualPending = false;
@@ -480,7 +481,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             item = await fetchSavedItem(target);
             if (!alive) return;
             keptNow = true;
-            card = mapWordCard(target, { detail, item });
+            card = mapWordCard(target, { detail, item, support });
             paint();
           }
         };
@@ -723,7 +724,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
       if (item.saved) {
         await api.deleteLibraryVocabulary(item.term);
       } else {
-        await api.saveLibraryVocabulary(vocabSavePayload(item.term, item.meaning, target, source));
+        await api.saveLibraryVocabulary(vocabSavePayload(item.term, item.meaning, target, source, support));
         void keepProvenance({ term: item.term, source, sentence: target });
       }
       item.saved = !item.saved;
