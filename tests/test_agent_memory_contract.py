@@ -429,3 +429,38 @@ def test_session_summaries_are_m3(pg):
                                              summary={}, context=[], now=T0)):  # fmt: skip
         with pytest.raises(NotImplementedError):
             call()
+
+
+def test_the_dry_run_counts_exactly_what_the_sweep_deletes_and_nothing_else_moves(pg):
+    """PRE-503 evidence for switching AGENT_MEMORY_RETENTION_SWEEP on: the dry run deletes nothing and counts, per
+    table and class, the rows the sweep then deletes; live notes, other learners, the switch rows, users and
+    incarnations are untouched."""
+    from sqlalchemy import text
+
+    s, a, b = pg.store, pg.a, pg.b
+    lapsed = add(s, a, "đi làm")
+    live = add(s, a, "Luyện HSK4", kind="plan", now=T0 + timedelta(days=100))
+    other = add(s, b, "Phỏng vấn xin việc")  # another learner: expired too
+    pg.continuity(a, "interest", "sport")
+    s.delete_item(a, next(i for i in s.items(a, "zh", T0) if i.code == "sport").id, T0)  # a suppression key
+    later = T0 + EXPLICIT_TTL + timedelta(days=1)
+
+    def tables():
+        with pg.engine.connect() as conn:
+            return {name: conn.execute(text(f"SELECT count(*) FROM {name}")).scalar()  # noqa: S608 - fixed names
+                    for name in ("learner_memories", "learner_memory_suppressions", "learner_memory_state", "users",
+                                 "account_incarnations")}  # fmt: skip
+
+    before = tables()
+    planned = s.count_expired(later)
+    assert tables() == before  # a dry run deletes nothing
+    assert planned["learner_memories"]["explicit"] >= 2 and planned["learner_memory_suppressions"] >= 1
+    removed = sum(iter(lambda: s.sweep_expired(later, batch=500), 0))
+    assert removed == sum(planned["learner_memories"].values()) + planned["learner_memory_suppressions"]
+    after = tables()
+    assert after["learner_memories"] == before["learner_memories"] - sum(planned["learner_memories"].values())
+    assert {k: after[k] for k in ("learner_memory_state", "users", "account_incarnations")} == \
+        {k: before[k] for k in ("learner_memory_state", "users", "account_incarnations")}
+    assert [i.id for i in s.items(a, "zh", later)] == [live.id]
+    assert lapsed.id not in [i.id for i in s.items(a, "zh", T0)] and s.items(b, "zh", later) == []
+    assert other.id and s.count_expired(later) == {"learner_memories": {}, "learner_memory_suppressions": 0}
