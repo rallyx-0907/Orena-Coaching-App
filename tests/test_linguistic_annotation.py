@@ -224,3 +224,19 @@ def test_di_particle_survives_a_noisy_tagger(monkeypatch) -> None:
     la._annotate_cached.cache_clear()
     assert {item["fragment"]: item["pronunciation"] for item in la.annotate("zh", "探底话")}["底话"] == "dǐ huà"
     la._annotate_cached.cache_clear()
+
+
+def test_every_particle_di_of_the_real_luohuasheng_is_read_de() -> None:
+    # Full text (zh.wikisource, public domain), real tagger: 16 底, 15 of them the particle 的 and one in 地底.
+    from pathlib import Path
+
+    raw = (Path(__file__).parent / "fixtures" / "luohuasheng_xu_dishan_1922.txt").read_text(encoding="utf-8")
+    body = "\n".join(line for line in raw.splitlines() if not line.startswith("#"))
+    la._annotate_cached.cache_clear()
+    tokens = la.annotate("zh", body, max_annotations=5000)
+    assert body.count("底") == 16
+    alone = [t for t in tokens if t["fragment"] == "底"]
+    assert len(alone) == 15 and {t["pronunciation"] for t in alone} == {"de"}
+    assert {t["pos"] for t in alone} == {"particle"}
+    inside = [t for t in tokens if "底" in t["fragment"] and t["fragment"] != "底"]
+    assert [t["fragment"] for t in inside] == ["地底"] and inside[0]["pronunciation"] == "dì dǐ"
