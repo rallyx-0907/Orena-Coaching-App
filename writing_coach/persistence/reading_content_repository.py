@@ -42,7 +42,7 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
-from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
+from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS, analyze_article
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
 from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
 from writing_coach.reading_admission import auto_publish_enabled, with_auto_publish
@@ -390,6 +390,28 @@ def _item(row: Any) -> dict[str, Any]:
         "supersedes_id": str(row.supersedes_id) if row.supersedes_id else None,
         "superseded_at": _iso(row.superseded_at),
         "fetched_at": _iso(row.fetched_at),
+    }
+
+
+def body_derived_values(body: str, language: str, analysis: Mapping[str, Any] | None) -> dict[str, Any]:
+    """What admission measures from a body, recomputed with the same function (`analyze_article`).
+
+    Word count (characters for Chinese), reading time and the counted analysis facts. The level,
+    the quality codes and the targets are not touched: they are decisions or extraction facts,
+    not counts, and targets are text phrases, not offsets into the body.
+    """
+    measured = analyze_article(body, language)
+    merged = dict(analysis or {})
+    merged.update(
+        sentence_count=measured.sentence_count,
+        average_sentence_length=measured.average_sentence_length,
+        distinct_word_ratio=measured.distinct_word_ratio,
+        long_word_ratio=measured.long_word_ratio,
+    )
+    return {
+        "word_count": measured.word_count,
+        "reading_time_seconds": measured.reading_time_seconds,
+        "analysis_json": merged,
     }
 
 
@@ -1493,6 +1515,20 @@ class ReadingContentRepository:
             if "body" in values and values["body"] == stored_body:
                 values.pop("body")
                 changes.pop("body", None)
+            if "body" in values:
+                # The counts a card shows are facts about the body: measured again, by the
+                # function admission uses, so a cut never leaves the old length behind.
+                stored = connection.execute(
+                    select(ReadingArticle.analysis_json).where(ReadingArticle.id == _uuid(article_id))
+                ).scalar_one()
+                derived = body_derived_values(values["body"], current["language"], stored)
+                values |= derived
+                changes["recounted"] = {
+                    "word_count": {"from": current["word_count"], "to": derived["word_count"]},
+                    "reading_time_seconds": {
+                        "from": current["reading_time_seconds"], "to": derived["reading_time_seconds"]},
+                }
+                values["content_revision"] = current["content_revision"] + 1
             connection.execute(
                 update(ReadingArticle)
                 .where(ReadingArticle.id == _uuid(article_id))
@@ -1514,6 +1550,34 @@ class ReadingContentRepository:
                 now=moment,
             )
         return self.get_article(article_id)
+
+    def recount_articles(
+        self, *, apply: bool = False, article_id: str | None = None, actor: str = "recount", now: datetime | None = None
+    ) -> list[dict[str, Any]]:
+        """Articles whose stored counts differ from their body; with `apply`, fix them (idempotent)."""
+        moment = _now(now)
+        found: list[dict[str, Any]] = []
+        with self.engine.begin() as connection:
+            query = select(ReadingArticle.id, ReadingArticle.body, ReadingArticle.language,
+                           ReadingArticle.word_count, ReadingArticle.reading_time_seconds,
+                           ReadingArticle.analysis_json, ReadingArticle.content_revision)
+            if article_id:
+                query = query.where(ReadingArticle.id == _uuid(article_id))
+            for row in connection.execute(query).all():
+                derived = body_derived_values(row.body, row.language, row.analysis_json)
+                if (derived["word_count"], derived["reading_time_seconds"]) == (row.word_count, row.reading_time_seconds):
+                    continue
+                found.append({
+                    "id": str(row.id), "language": row.language,
+                    "word_count": {"from": row.word_count, "to": derived["word_count"]},
+                    "reading_time_seconds": {"from": row.reading_time_seconds, "to": derived["reading_time_seconds"]},
+                })
+                if apply:
+                    connection.execute(update(ReadingArticle).where(ReadingArticle.id == row.id).values(
+                        **derived, content_revision=row.content_revision + 1, updated_at=moment))
+                    self._record_event(connection, article_id=row.id, actor=actor, action="edited",
+                                       reason="recount", changes={"recounted": found[-1]}, now=moment)
+        return found
 
     def set_status(
         self,
