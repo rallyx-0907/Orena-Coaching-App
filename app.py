@@ -4178,6 +4178,28 @@ def admin_ai_spend(request: Request) -> dict[str, Any]:
             "agent": guard.status() if hasattr(guard, "status") else {"cap_usd": None}}
 
 
+@app.delete("/api/admin/accounts/{user_id}/memory", name="admin_account_memory_erase")
+def admin_account_memory_erase(user_id: str, request: Request) -> dict[str, Any]:
+    """Delete one learner's Orena Memory on their request (the PRE-005 email channel; D-226: no notes list in the learner
+    UI). Admin only. Audited before it runs - no record, no deletion - and after, with the count; no note text is
+    returned or recorded."""
+    admin = require_admin(request)
+    from writing_coach import admin_console_api
+    from writing_coach.agent.api import current_memory
+
+    memory = current_memory()
+    if memory is None:
+        raise orena_http_error(503, "memory_unavailable", "Orena Memory is not available on this server.")
+    admin_console_api._audit(admin, "admin.memory_erase_requested", entity_type="account", entity_id=user_id,
+                             required=True)
+    removed = memory.erase_account(user_id)
+    if removed is None:
+        raise orena_http_error(404, "memory_not_found", "This account has no Orena Memory here.")
+    admin_console_api._audit(admin, "admin.memory_erased", entity_type="account", entity_id=user_id,
+                             payload={"removed": removed})
+    return {"removed": removed}
+
+
 @app.get("/api/admin/readiness-summary", name="admin_readiness_summary")
 def admin_readiness_summary(request: Request) -> dict[str, Any]:
     require_admin(request)

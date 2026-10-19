@@ -207,6 +207,20 @@ class MemoryRuntime:
         server = state.enabled and cleared and version >= MEMORY_STORED_VERSION
         return MemoryTurn(scope, state, server=server, cleared=cleared)
 
+    def erase_account(self, user_id: str) -> int | None:
+        """Every memory item and session summary of one account's active incarnation, deleted on request (an
+        administrator acting on a learner's email, the PRE-005 channel; D-226). How many went; None when the account has
+        no active incarnation, so there is nothing to erase. The text is never returned."""
+
+        try:
+            incarnation = self.incarnations.resolve(user_id)
+        except Exception:  # noqa: BLE001 - a deleted or unknown account: nothing of it is here
+            return None
+        scope = memory_scope(user_id, incarnation)
+        if scope is None:
+            return None
+        return int(self.store.delete_all(scope, "all", self.clock()))
+
     def server_notes(self, user_key: str, language: str) -> ServerNotes:
         return ServerNotes(self.store, lambda: self.scope(user_key, create=True), language, self.clock)
 
