@@ -322,9 +322,14 @@ def test_the_items_route_never_returns_a_place_only_row(env):
 
 
 def test_a_settled_put_is_accepted_and_settle_is_neither_echoed_nor_stored(client):
-    """#323: `settle` writes now instead of coalescing; it is a request flag, never part of the place."""
-    put = client.put("/api/continue/reading:14", json={"kind": "reading", "place": _place(3, 12, settle=True)})
-    assert put.status_code == 200 and put.json()["status"] == "written"
+    """#323: `settle` writes now instead of coalescing - through the route, too - and it is a request flag, never part
+    of the place."""
+    first = client.put("/api/continue/reading:14", json={"kind": "reading", "place": _place(3, 12)})
+    assert first.status_code == 200 and first.json()["status"] == "written"
+    again = client.put("/api/continue/reading:14", json={"kind": "reading", "place": _place(3, 12, within=60)})
+    assert again.json()["status"] != "written"  # the same line within 30 s: coalesced
+    put = client.put("/api/continue/reading:14", json={"kind": "reading", "place": _place(3, 12, within=70, settle=True)})
+    assert put.status_code == 200 and put.json()["status"] == "written" and put.json()["place"]["within"] == 70
     assert "settle" not in put.json()["place"]
     stored = client.get("/api/continue", params={"limit": 5}).json()["items"][0]["place"]
     assert "settle" not in stored
@@ -336,5 +341,8 @@ def test_place_writes_share_a_per_learner_floor():
     from writing_coach.core.http_security import rate_group
 
     group = rate_group("PUT", "/api/continue/reading:14")
-    assert group is not None and group[0] == "place" and group[1] >= 120 and group[2] == 600
+    assert group == ("place", 1200, 600)
+    # Above the busiest real client: Listening writes once per transcript line (2-3 s cues) plus each play/pause.
+    assert group[1] / group[2] >= 1 / 2.5 * 4  # four times a line-per-2.5 s session, for tabs and replays
+    assert rate_group("PUT", "/api/continue/media:clip") == group  # listening and reading, one bucket
     assert rate_group("GET", "/api/continue") is None  # reading the list is not a write
