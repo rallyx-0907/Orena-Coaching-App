@@ -31,7 +31,7 @@ function errorMarkup(prefix, error) {
   const action = error.quota
     ? html`<button type="button" class="${prefix}__retry" data-plans="${String(error.quota.upgrade || '#/plan/pricing')}">${seePlansLabel()}</button>`
     : error.fallback === 'retry' ? html`<button type="button" class="${prefix}__retry" data-retry>${t('errorRetry')}</button>` : '';
-  return html`<div class="${prefix}__error"><span>${errorText(error, t('transportError'))}</span>${action}</div>`;
+  return html`<div class="${prefix}__error"><span>${errorText(error, t('transportError'), t('providerError'))}</span>${action}</div>`;
 }
 
 /* "Orena remembered this - Manage in Settings": the owner's light-consent line (UI_BACKEND_GAPS "Remembered-note

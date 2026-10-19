@@ -35,27 +35,21 @@ import { wordSeed } from '../../product/word-seed.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 
+/* A failed read is not "this word is not saved": it reaches the router's load-error card (Back / Retry, retried by
+   itself when the connection returns). Only an answered, empty list means the word is not saved. */
 async function fetchItem(word) {
-  try {
-    const page = await api.libraryVocabulary({ query: word, limit: 5, order: 'word' });
-    const norm = String(word).trim().toLowerCase();
-    return (page?.items || []).find((row) => String(row.word || '').trim().toLowerCase() === norm) || null;
-  } catch {
-    return null;
-  }
+  const page = await api.libraryVocabulary({ query: word, limit: 5, order: 'word' });
+  const norm = String(word).trim().toLowerCase();
+  return (page?.items || []).find((row) => String(row.word || '').trim().toLowerCase() === norm) || null;
 }
 
 /* The catalogue's own answer for a word opened without a list before it (a direct link, a reload):
    its localizations are the sense's meanings, read-only, no provider (D-124). */
 async function catalogueSeed(word, language) {
-  try {
-    const found = await api.vocabularyCatalogueSearch(word, language, 5);
-    const norm = String(word).trim().toLowerCase();
-    const hit = (found?.items || []).find((row) => String(row.normalized_word || row.word || '').trim().toLowerCase() === norm);
-    return hit ? { pronunciation: String(hit.readings?.[0]?.text || '').trim(), short_meanings: hit.short_meanings || [], identity: { language }, entry: { ...hit, language_code: language } } : null;
-  } catch {
-    return null;
-  }
+  const found = await api.vocabularyCatalogueSearch(word, language, 5);
+  const norm = String(word).trim().toLowerCase();
+  const hit = (found?.items || []).find((row) => String(row.normalized_word || row.word || '').trim().toLowerCase() === norm);
+  return hit ? { pronunciation: String(hit.readings?.[0]?.text || '').trim(), short_meanings: hit.short_meanings || [], identity: { language }, entry: { ...hit, language_code: language } } : null;
 }
 
 function sourceNoteKey(kind) {
@@ -157,13 +151,15 @@ export default async function mountWordDetail(element, ctx) {
   let detail = null;
   let clips = [];
   let clipsReady = false;
+  let lookupFailed = false; // the lookup was refused or unreachable (not paused): with nothing else to show, the load-error card
+  let clipsFailed = false; // the clips read failed: the panel is left out, never "no context yet"
   let wordPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in the deep panel's place, no retry
   const pending = Promise.all([
     // The lookup runs in the learner's current learning language: the server refuses any other (409,
     // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
     // English IPA labelled pinyin (UI_BACKEND_GAPS VC-15); the card mapper drops a reading of the wrong kind.
-    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch((error) => { wordPause = pausedLineOf(error); return null; }),
-    api.wordClips(word, 6).catch(() => null),
+    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch((error) => { wordPause = pausedLineOf(error); lookupFailed = !wordPause; return null; }),
+    api.wordClips(word, 6).catch(() => { clipsFailed = true; return null; }),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);
   // While the lookup is still out, a card with no meaning yet says so with the kit's skeleton, never "no meaning".
@@ -171,12 +167,16 @@ export default async function mountWordDetail(element, ctx) {
   if (!hasSomethingToShow) {
     const { found, clipsPayload } = await pending;
     if (!ctx.isCurrent()) return undefined;
+    if (lookupFailed) {
+      element.replaceChildren();
+      throw Object.assign(new Error('Word detail unavailable'), { name: 'WordUnavailable' });
+    }
     // A refused or empty lookup never fails the page: the card is drawn from whatever exists - here only the
     // word itself - with no reading rather than a wrong one (rule 40).
     detail = found;
     if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
     clips = mapClips(clipsPayload);
-    clipsReady = true;
+    clipsReady = !clipsFailed;
   }
 
   // The entry's content: the saved record (which reads the catalogue entry through), else the card the
@@ -365,7 +365,7 @@ export default async function mountWordDetail(element, ctx) {
       detail = found;
       if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
       clips = mapClips(clipsPayload);
-      clipsReady = true;
+      clipsReady = !clipsFailed;
       deepRows = mapDeepWord(detail);
       model = contentOf();
       learner = learnerOf();

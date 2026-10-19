@@ -94,6 +94,27 @@
   font-size: 14px;
 }
 
+.s-discussion__failed {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: var(--red-soft);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.s-discussion__retry {
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
 .s-discussion__foot {
   flex: none;
   display: flex;

@@ -8,6 +8,7 @@ import { icon } from '../../kit/icons.js';
 import { listRow } from '../../kit/components.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
+import { errorMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
 import { catalogueLanguage } from '../../product/vocabulary-card.js';
 import { shellCopy as ts } from '../../copy/shell.js';
@@ -42,10 +43,13 @@ function safeStorage() {
   }
 }
 
-async function settled(promise) {
+/* A source that failed answers null and is counted: a search whose sources failed and found nothing is a failed
+   search (the load-error card with Retry), never "nothing found". */
+async function settled(promise, failures) {
   try {
     return await promise;
   } catch {
+    failures.count += 1;
     return null;
   }
 }
@@ -61,6 +65,8 @@ export default async function search(element, ctx) {
   let recent = readRecent(storage);
   let groups = [];
   let searchedFor = null;
+  let searchFailed = false;
+  let startedFor = ''; // the query last sent: a keystroke that normalises to it (a trailing space) sends nothing new
   let debounceTimer = 0;
   let token = 0;
 
@@ -88,6 +94,15 @@ export default async function search(element, ctx) {
       <div class="o-empty__art o-art">${raw(icon('inbox', { size: 22 }))}</div>
       <div class="s-search__none-text">${t('noneMessage', { query })}</div>
     </div>`;
+  }
+
+  function failedMarkup() {
+    return errorMarkup({
+      title: ts('errorPlace', { place: ts('search') }),
+      text: ts(navigator.onLine === false ? 'errorOffline' : 'errorServer'),
+      backLabel: ts('back'),
+      retryLabel: ts('retry'),
+    });
   }
 
   // Before typing (LEX-074, frame 27's empty state): the learner's recent searches when there are any, and the
@@ -143,6 +158,12 @@ export default async function search(element, ctx) {
       return;
     }
     if (searchedFor !== query.trim()) return; // a newer keystroke is in flight - keep showing the last settled answer, never a flash of "no results"
+    if (searchFailed && !totalItems(groups)) {
+      mount(body, failedMarkup());
+      body.querySelector('[data-error-back]').addEventListener('click', () => ctx.back());
+      body.querySelector('[data-error-retry]').addEventListener('click', () => runSearch(searchedFor, { again: true }));
+      return;
+    }
     mount(body, totalItems(groups) ? resultsMarkup() : noneMarkup());
     bindRows();
   }
@@ -162,16 +183,19 @@ export default async function search(element, ctx) {
     });
   }
 
-  async function runSearch(q) {
+  async function runSearch(q, { again = false } = {}) {
+    if (!again && q === startedFor && !searchFailed) return;
+    startedFor = q;
+    const failures = { count: 0 };
     const mine = (token += 1);
     // The catalogue is asked in the query's own language (a Han query is the Chinese catalogue, a Latin one the
     // English catalogue), whatever the learner is learning now - the Word screen reads it the same way.
     const wordLanguage = catalogueLanguage(q, language);
     const [catalogue, collection, articles, listening] = await Promise.all([
-      settled(api.vocabularyCatalogueSearch(q, wordLanguage, 8)),
-      settled(api.collection({ query: q, limit: 20 })),
-      settled(api.readingArticles(language)),
-      settled(api.listeningLibrary(language)),
+      settled(api.vocabularyCatalogueSearch(q, wordLanguage, 8), failures),
+      settled(api.collection({ query: q, limit: 20 }), failures),
+      settled(api.readingArticles(language), failures),
+      settled(api.listeningLibrary(language), failures),
     ]);
     if (mine !== token || !ctx.isCurrent()) return;
     const content = [
@@ -186,7 +210,8 @@ export default async function search(element, ctx) {
       { key: 'library', label: ts('myLibrary'), items: collectionItems(collection, relationshipLabel) },
     ].filter((g) => g.items.length);
     searchedFor = q;
-    recent = pushRecent(storage, q);
+    searchFailed = failures.count > 0;
+    if (!searchFailed) recent = pushRecent(storage, q);
     renderBody();
   }
 
@@ -199,6 +224,8 @@ export default async function search(element, ctx) {
     if (!q) {
       token += 1; // invalidate any in-flight runSearch so it can't land after the field is cleared
       searchedFor = null;
+      searchFailed = false;
+      startedFor = '';
       groups = [];
       renderBody();
       return;
