@@ -108,7 +108,7 @@ def client(stack, monkeypatch):
 
     monkeypatch.setattr(app_module, "evaluate_with_ai", fake)
     monkeypatch.setattr(app_module, "get_learner_profile", lambda *a, **k: {"support_language": "en", "native_language": "en"})
-    test_client = TestClient(app_module.app)
+    test_client = TestClient(app_module.app, headers={"Origin": "http://testserver"})
     test_client.__enter__()
     test_client.post("/api/platform/language", json={"language": "zh"})
     test_client.calls, test_client.behaviour = calls, behaviour

@@ -108,7 +108,7 @@ def _signed_in_setup(monkeypatch, nonce_echo=True):
 
 
 def _client():
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver", headers={"Origin": "http://testserver"})
 
 
 async def _sign_in(client, next_param):

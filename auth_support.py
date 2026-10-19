@@ -472,6 +472,10 @@ def auth_google_callback(request: Request):
     return RedirectResponse(safe_next_target(stored_next, default="/") if stored_next else "/", status_code=302)
 
 
+# Native is frozen (AGENTS.md section 5): the exchange answers 404 unless an operator turns it on.
+NATIVE_AUTH_ENABLED = os.getenv("NATIVE_AUTH_ENABLED", "").strip().casefold() in {"1", "true", "yes", "on"}
+
+
 class NativeSessionExchangeIn(BaseModel):
     code: StrictStr
     code_verifier: StrictStr | None = None
@@ -480,6 +484,8 @@ class NativeSessionExchangeIn(BaseModel):
 @router.post("/api/auth/native/exchange")
 def api_native_session_exchange(payload: NativeSessionExchangeIn, request: Request, response: Response) -> dict[str, str]:
     """Exchange the one-use browser handoff for a server-signed session cookie."""
+    if not NATIVE_AUTH_ENABLED:
+        raise HTTPException(404, "Not found.")
     response.headers["Cache-Control"] = "no-store"
     if not AUTH_ENABLED:
         raise HTTPException(503, "Google authentication is not configured.")

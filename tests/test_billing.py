@@ -330,7 +330,7 @@ def test_a_rejected_webhook_changes_nothing():
 def test_billing_is_off_by_default():
     import app as app_module
 
-    client = TestClient(app_module.app)
+    client = TestClient(app_module.app, headers={"Origin": "http://testserver"})
     assert client.get("/api/billing/offers").json() == {"enabled": False, "ready": False, "offers": [], "credit_packs": []}
     assert client.post("/api/billing/webhooks/payos", content=payos_body()).status_code == 503
     checkout = client.post("/api/billing/checkout", json={"price": "premium:month:payos", "operation_id": str(uuid.uuid4())})

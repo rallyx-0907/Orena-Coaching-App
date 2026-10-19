@@ -457,7 +457,7 @@ def rooms(monkeypatch, tmp_path):
     import app as app_module
     from writing_coach.persistence.learning_repository import SQLiteLearningRepository
 
-    client = TestClient(app_module.app)
+    client = TestClient(app_module.app, headers={"Origin": "http://testserver"})
     client.__enter__()
     repository = SQLiteLearningRepository(lambda: tmp_path / "writing.db")
     repository.initialize()
