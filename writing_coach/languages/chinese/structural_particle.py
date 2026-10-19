@@ -31,11 +31,19 @@ COMPOUND_EXCLUSIONS: tuple[str, ...] = (
     "到底", "底下", "底层", "底部", "底面", "底线", "彻底", "心底", "海底", "年底", "月底", "井底", "眼底",
     "根底", "底细", "底子", "底片", "底座", "底色", "底稿", "底蕴", "封底", "水底", "地底", "脚底", "鞋底", "锅底",
     "碗底", "杯底", "瓶底", "缸底", "桶底", "箱底", "船底", "河底", "湖底", "池底", "山底", "谷底", "海底捞针",
-    "底牌", "底价", "底数", "底薪", "底盘", "底漆", "底版", "底本", "底案", "底账", "底肥", "底边",
+    "底气", "追根问底", "寻根问底", "问底", "底楼", "底纹", "底图", "底妆", "底料", "底仓", "底火", "底功",
+    "底样", "底单", "底洞", "底册", "底牌", "底价", "底数", "底薪", "底盘", "底漆", "底版", "底本", "底案", "底账", "底肥", "底边",
     "底角", "底舱", "底端", "底限", "底里", "底事", "探底", "触底", "见底", "垫底", "打底", "抄底", "兜底",
     "托底", "保底", "筑底", "落底", "沉底", "掉底", "穿底", "刨根问底", "寻根究底", "归根结底", "追根究底",
     "骨子里", "胶底", "布底", "厚底", "薄底", "平底", "尖底", "圆底", "凹底", "凸底", "无底", "洞底", "窑底", "坑底",
 )
+
+# A compound above that is NOT the word when the text goes on with one of these characters: the real segment is a longer
+# word that begins after 底, so 底 is the particle (花生底气味, 它底样子).
+COMPOUND_EXCEPTIONS: Mapping[str, tuple[str, ...]] = {
+    "底气": ("味",),
+    "底样": ("子",),
+}
 
 # A word that precedes the particle as the possessor / modifier. Pronouns are decided by the word itself, so a tagger
 # that mislabels one cannot lose the reading.
@@ -71,7 +79,9 @@ def is_structural_particle(source: str, index: int, previous_word: str, previous
         while offset >= 0:
             start = index - offset
             if start >= 0 and source[start : start + len(compound)] == compound:
-                return False
+                tail = source[start + len(compound) :]
+                if not any(tail.startswith(extra) for extra in COMPOUND_EXCEPTIONS.get(compound, ())):
+                    return False
             offset = compound.find(FORM, offset + 1)
     following = source[index + 1 : index + 2]
     if following in COMPOUND_FOLLOWERS:
