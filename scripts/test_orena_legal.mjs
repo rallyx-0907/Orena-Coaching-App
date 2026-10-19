@@ -1,11 +1,12 @@
-/* Gate for the legal pages (completion plan item 5, D-128).
+/* Gate for the in-app legal pages (completion plan item 5, D-128; D-238).
 
-   1. static/orena/legal/content.js is exactly what the drafts give (scripts/build_orena_legal.mjs).
-   2. Nothing marked "strip before publishing" reaches a page: no Note to counsel, no codebase appendix,
-      no draft banner.
-   3. Every [DECISION: ...] and [OPERATOR]-style placeholder of the published sections stays visible.
-   4. The three pages are English only (D-238): every interface language reads the English text, marked
-      lang="en"; the addresses resolve (a `?lang=` is ignored) and nothing else does.
+   1. static/orena/legal/content.js is exactly what the public legal text gives (scripts/build_orena_legal.mjs,
+      from docs/legal/public/*.en.json + facts.json): one source for the in-app and the public pages.
+   2. No bracket placeholder can reach a learner: no [UPPER_CASE], [DECISION: ...] or [[...]] mark and no
+      {{token}} in any served legal string, with or without an effective date.
+   3. The operator facts the public pages state (name, country, minimum age) are shown.
+   4. The pages are English only (D-238): every interface language reads the English text, marked lang="en";
+      the addresses resolve (a `?lang=` is ignored) and nothing else does.
    5. Built from kit pieces only: the page header and section heading, and the page's own column CSS
       uses colour tokens only. */
 import assert from 'node:assert/strict';
@@ -18,40 +19,59 @@ globalThis.document = { documentElement: { lang: 'en', dataset: {} } };
 
 const { buildContent, moduleText, DOCS } = await import('./build_orena_legal.mjs');
 const generated = moduleText(buildContent());
-assert.equal(fs.readFileSync('static/orena/legal/content.js', 'utf8').replace(/\r\n/g, '\n'), generated, 'content.js is what the drafts give: run node scripts/build_orena_legal.mjs');
+assert.equal(fs.readFileSync('static/orena/legal/content.js', 'utf8').replace(/\r\n/g, '\n'), generated, 'content.js is what the public text gives: run node scripts/build_orena_legal.mjs');
 
 const { setLanguages } = await import('../static/orena/copy/index.js');
 const { legalAddress, legalMarkup, datedText, LEGAL_PAGES } = await import('../static/orena/legal/page.js');
 assert.deepEqual([...LEGAL_PAGES].sort(), Object.keys(DOCS).sort());
 
 const textOf = (markup) => String(markup).replace(/<[^>]+>/g, ' ').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ');
-const placeholders = (text) => [...text.matchAll(/\[(?:DECISION:[^\]]*|[A-Z][A-Z ]+)\]/g)].map((m) => m[0].replace(/\s+/g, ' '));
+// Any square bracket pair, [[ ]], {{ }}, ‹ ›, and the words TODO / TBD / XXX, in any case, in a served string.
+const BRACKETS = /\[[^\]]*\]|\[\[|\]\]|\{\{|\}\}|‹|›|\b(?:TODO|TBD|XXX)\b|\bDRAFT\b|awaiting approval/i;
+const facts = JSON.parse(fs.readFileSync('docs/legal/public/facts.json', 'utf8'));
+const walk = (value, visit) => {
+  if (typeof value === 'string') visit(value);
+  else if (Array.isArray(value)) value.forEach((entry) => walk(entry, visit));
+  else if (value && typeof value === 'object') Object.values(value).forEach((entry) => walk(entry, visit));
+};
 
-for (const [page, name] of Object.entries(DOCS)) {
-  const draft = fs.readFileSync(`docs/legal/DRAFT_${name}.md`, 'utf8').replace(/\r\n/g, '\n');
-  assert.ok(!draft.includes('# Tiếng Việt'), `${page}: the draft has no Vietnamese section (D-238)`);
-  const end = draft.search(/\n## Sources in the codebase/);
-  const english = draft.slice(draft.indexOf('# English'), end > 0 ? end : undefined);
+// Served strings: everything in the generated content (the dates line is a structured block the page fills in or removes).
+const noDate = (text) => text;
+for (const [page, doc] of Object.entries(buildContent())) {
+  walk(doc, (text) => assert.ok(!BRACKETS.test(noDate(text)), `${page}: no placeholder in "${text.slice(0, 60)}"`));
+}
+const { LEGAL } = await import('../static/orena/legal/content.js');
+walk(LEGAL, (text) => assert.ok(!BRACKETS.test(text), `served content.js string has no placeholder: ${text.slice(0, 60)}`));
+const reader = (override) => (name) => (name === 'facts.json' ? JSON.stringify(override) : fs.readFileSync(`docs/legal/public/${name}`, 'utf8'));
+assert.throws(() => buildContent(reader({ ...facts, operator: { name: null, country: 'x' } })), /unconfirmed/, 'an unconfirmed fact fails the build instead of showing a mark');
+
+for (const page of Object.keys(DOCS)) {
   const reference = textOf(String(legalMarkup(page, 'en')));
   for (const ui of ['en', 'vi', 'zh']) {
     setLanguages({ ui });
     const markup = String(legalMarkup(page, ui));
     const text = textOf(markup);
     assert.equal(text, reference, `${page}/${ui}: every interface language reads the same English page`);
-    for (const banned of ['Note to counsel', 'Sources in the codebase', 'strip before publishing', 'not legal advice', '中文版待批准', 'Tiếng Việt']) {
+    assert.ok(!BRACKETS.test(text) && !text.includes('Last updated'), `${page}/${ui}: no placeholder, and with no effective date the date line is left out`);
+    const dated = textOf(String(legalMarkup(page, ui, '2026-10-20')));
+    assert.ok(dated.includes('Last updated: October 20, 2026. Effective: October 20, 2026.') && !BRACKETS.test(dated), `${page}/${ui}: the server's effective date is shown`);
+    for (const banned of ['Note to counsel', 'Sources in the codebase', 'strip before publishing', 'not legal advice', 'DECISION']) {
       assert.ok(!text.includes(banned), `${page}/${ui}: "${banned}" does not reach the page`);
     }
     assert.ok(markup.includes('class="o-h1"') && markup.includes('c-section-head__title'), `${page}/${ui}: kit page header and section headings`);
-    const expected = placeholders(english.replace(/\*\*|\*|`/g, '').replace(/\s+/g, ' ')).filter((mark) => mark !== '[DATE]'); // the date is the server's, below
-    assert.ok(!text.includes('[DATE]') && !text.includes('Last updated'), `${page}/${ui}: with no effective date the date sentence is left out`);
-    assert.ok(textOf(String(legalMarkup(page, ui, '2026-10-20'))).includes('Last updated: October 20, 2026. Version'), `${page}/${ui}: the server's effective date is shown`);
-    for (const mark of expected) assert.ok(text.includes(mark), `${page}/${ui}: placeholder ${mark.slice(0, 60)} stays visible`);
     assert.ok(markup.includes('lang="en"') && !markup.includes('lang="vi"'), `${page}/${ui}: the text is marked English`);
   }
 }
+for (const page of ['terms', 'privacy']) {
+  const text = textOf(String(legalMarkup(page, 'en')));
+  assert.ok(text.includes(facts.operator.name), `${page}: the operator the public pages name is shown`);
+}
+assert.ok(textOf(String(legalMarkup('terms', 'en'))).includes(`aged ${facts.min_age} and over`), 'terms: the minimum age fact is shown');
+assert.match(textOf(String(legalMarkup('refund', 'en'))), /Payments are not live/, 'refund: states what the public Terms state');
 
-assert.equal(datedText('Last updated: [DATE]. Version: draft', '2026-10-05'), 'Last updated: October 5, 2026. Version: draft');
-assert.equal(datedText('Last updated: [DATE]. Version: draft', 'x"><b>'), 'Version: draft', 'a malformed date is left out, never shown');
+assert.equal(datedText(['Last updated', 'Effective'], '2026-10-05'), 'Last updated: October 5, 2026. Effective: October 5, 2026.');
+assert.equal(datedText(['Last updated', 'Effective'], 'x"><b>'), '', 'a malformed date is left out, never shown');
+assert.equal(datedText(['Last updated', 'Effective'], null), '', 'no date: the line is left out');
 assert.deepEqual(legalAddress('#/legal/privacy?lang=vi'), { page: 'privacy' }, 'a language on the address is ignored');
 assert.deepEqual(legalAddress('#/legal/terms?lang=fr'), { page: 'terms' });
 assert.equal(legalAddress('#/legal/other'), null);
@@ -64,10 +84,21 @@ assert.equal(legalLabel('Privacy Policy', 'en'), 'Privacy Policy', 'no note in E
 assert.equal(legalLabel('Chính sách quyền riêng tư', 'vi'), 'Chính sách quyền riêng tư (English)');
 assert.equal(legalLabel('隐私政策', 'zh'), '隐私政策 (English)');
 
+// The consent sheet and its copy carry no placeholder either (PRE-005 v2 fields are filled by the server, never shown as marks).
+for (const file of ['static/orena/screens/consent/copy.js', 'static/orena/screens/consent/sheet.js']) {
+  assert.ok(!/\[[A-Z][A-Z_ ]+\]|\[DECISION|\[\[[A-Za-z_]|\bTBD\b|\bTODO\b/.test(fs.readFileSync(file, 'utf8')), `${file}: no placeholder`);
+}
+
+// The legal-rendering modules carry no draft marker or placeholder wording of their own.
+for (const file of ['static/orena/legal/page.js', 'static/orena/legal/links.js']) {
+  assert.ok(!/DRAFT|awaiting approval|\bTBD\b|\bTODO\b|‹|›/i.test(fs.readFileSync(file, 'utf8')), `${file}: no draft marker`);
+}
+assert.ok(!/^\d+\./.test(buildContent().refund.sections[0].heading), 'refund: the reused Terms heading has no section number');
+
 const css = fs.readFileSync('static/orena/legal/legal.css', 'utf8');
 assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(/i.test(css), 'the legal column uses colour tokens only');
 
-console.log(`Orena legal pages: ${LEGAL_PAGES.length} pages, English only, content is the drafts', nothing to strip leaks, placeholders kept: PASS`);
+console.log(`Orena legal pages: ${LEGAL_PAGES.length} pages, English only, content is the public text, no placeholder reaches a learner: PASS`);
 
 // Settings, Privacy: the three legal rows get the same "(English)" note through the same helper (D-238).
 {

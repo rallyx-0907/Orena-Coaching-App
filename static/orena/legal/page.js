@@ -1,8 +1,8 @@
 /* The legal pages (completion plan item 5): Refund Policy in the app; Terms and Privacy are the public pages.
 
    The design draws no legal page; by the human's decision (D-128) they are built from existing kit
-   pieces only - the page header (o-h1 + o-sub) and the section heading - with the drafts' text as data
-   (legal/content.js, generated from docs/legal/DRAFT_*.md). They are read before signing in, so main.js
+   pieces only - the page header (o-h1 + o-sub) and the section heading - with the public legal text as data
+   (legal/content.js, generated from docs/legal/public/*.en.json and facts.json). They are read before signing in, so main.js
    draws them before it asks who the learner is, with no learner frame.
 
    Language: legal documents exist in English only (D-238). Every interface language reads the English
@@ -14,7 +14,6 @@ import { LEGAL } from './content.js';
 
 export const LEGAL_PAGES = Object.freeze(Object.keys(LEGAL));
 const TITLES = Object.freeze({ terms: 'Terms of Use', privacy: 'Privacy Policy', refund: 'Refund Policy' });
-const DRAFT_LINE = 'Draft, awaiting approval';
 
 /* "#/legal/terms?lang=vi" -> { page: 'terms' } (the language is ignored); anything else -> null. */
 export function legalAddress(hash = '') {
@@ -26,20 +25,20 @@ export function legalAddress(hash = '') {
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-/* The drafts' "Last updated: [DATE]." is the deploy-stamped effective date (GET /api/platform/languages
-   `legal_effective_date`, the value the public pages show). With no date the whole sentence is left out: a
-   placeholder never reaches a learner. */
-export function datedText(text, isoDate) {
+/* The dates block ({ dates: ['Last updated', 'Effective'] }) is filled with the deploy-stamped effective date
+   (GET /api/platform/languages `legal_effective_date`, the value the public pages show). With no valid date the
+   whole line is left out: a placeholder never reaches a learner. */
+export function datedText(labels, isoDate) {
   const found = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(isoDate || ''));
   const label = found && MONTHS[Number(found[2]) - 1] ? `${MONTHS[Number(found[2]) - 1]} ${Number(found[3])}, ${found[1]}` : null;
-  return String(text).replace(/Last updated: \[DATE\]\. ?/g, label ? `Last updated: ${label}. ` : '');
+  return label ? `${labels.map((name) => `${name}: ${label}`).join('. ')}.` : '';
 }
 
 let effectiveDate = null;
 
 function segments(list) {
   return list.map((part) => {
-    if (part.t && !part.b && !part.i && !part.c) return datedText(part.t, effectiveDate);
+    if (part.h) return html`<a href="${part.h}">${part.t}</a>`;
     if (part.b) return html`<strong>${part.t}</strong>`;
     if (part.i) return html`<em>${part.t}</em>`;
     if (part.c) return html`<code>${part.t}</code>`;
@@ -48,6 +47,10 @@ function segments(list) {
 }
 
 function block(item) {
+  if (item.dates) {
+    const line = datedText(item.dates, effectiveDate);
+    return line ? html`<p class="o-legal__p">${line}</p>` : '';
+  }
   if (item.p) return html`<p class="o-legal__p">${segments(item.p)}</p>`;
   if (item.ul) return html`<ul class="o-legal__list">${item.ul.map((entry) => html`<li>${segments(entry)}</li>`)}</ul>`;
   if (item.table) {
@@ -64,7 +67,7 @@ export function legalMarkup(page, _ui, isoDate = null) {
   effectiveDate = isoDate;
   const doc = LEGAL[page];
   return html`<main class="o-legal" data-legal="${page}">
-    ${pageHeader({ title: TITLES[page], meta: DRAFT_LINE })}
+    ${pageHeader({ title: TITLES[page] })}
     <article class="o-legal__body" lang="en">
       ${doc.intro.map(block)}
       ${doc.sections.map((section) => html`<section class="o-legal__section">${sectionHead({ title: section.heading })}${section.blocks.map(block)}</section>`)}
