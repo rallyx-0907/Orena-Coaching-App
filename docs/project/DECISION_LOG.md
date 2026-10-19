@@ -7463,7 +7463,7 @@ Status: ACCEPTED (2026-10-18, accepted by Hermes for the owner. D-entry acceptan
 
 Consequences. The contract text is pinned equal to the code constant, so this PR moves the version constant to 10 in `writing_coach/agent/contract.py`, `static/orena/agent/contract.js`, the regenerated `static/orena/copy/surfaces.json` and its pin in `scripts/test_orena_surfaces.mjs`, as D-223 did. Nothing branches on version >= 10 yet. The client handling ships in the same PR, because the client now declares v10: `transport.js` yields a `daily_ai_limit` error with no wait and no resend; the existing error line (`errorText`, no retry or plans button) and the voice toast show one sentence in English, Vietnamese and Chinese with `resets_at` in the learner's local time (`Intl.DateTimeFormat`, `screens/plan/quota-notice.js`); the learner's message stays as for `quota_exhausted`; a refused voice session does not fall back to the cascade; a refused `extend` lets the held token play out. No new visual: it reuses the failed-request line and toast. Recorded as the owner's standing decision for small UI (2026-10-18), so `UI_BACKEND_GAPS.md` is not changed. Node gates cover no resend, the copy in all three languages, and the voice session and renewal cases. Still to do: the Intelligence lane sends `daily_ai_limit` to v10 clients (PR #304, after #298).
 
-## D-233 - Voice chat with Orena is for Plus and Pro; Free chats in text (2026-10-19)
+## D-236 - Voice chat with Orena is for Plus and Pro; Free chats in text (2026-10-19)
 
 **Owner decision** (Discord, 2026-10-19, quoted by Hermes): "Phần voice chat của agent thì chỉ gói trả phí mới dùng được, Free thì không nhé." In English: the agent's voice chat is for paid plans only; Free does not get it.
 
