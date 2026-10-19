@@ -9,7 +9,8 @@ from writing_coach.reading_admission import automatic_admission
 def decision(*, source_changes=None, snapshot_changes=None, target_changes=None, analysis=None):
     body = "Trees grow beside rivers. Students observe flowers. Families enjoy gardens."
     source = {"state": "active", "languages": ["en", "zh"], "name": "Owned",
-              "base_url": "https://owned.example", "rights": {"automation_allowed": True, "can_republish": True}}
+              "base_url": "https://owned.example", "rights": {"automation_allowed": True, "can_republish": True},
+              "auto_publish": {"enabled": True}}
     snapshot = {"body": body, "language": "en", "rights": {"can_republish": True, "attribution_required": False}}
     source.update(source_changes or {})
     snapshot.update(snapshot_changes or {})
@@ -92,3 +93,12 @@ def test_fetched_url_is_bound_to_its_registered_origin(origin, url, admitted):
     outcome = decision(source_changes={"base_url": origin}, snapshot_changes={
         "metadata": {"input_kind": "url"}, "canonical_url": url})
     assert (outcome["decision"] == "published") is admitted
+
+
+@pytest.mark.parametrize("flag", [None, {}, {"enabled": False}, {"enabled": "yes"}, True])
+def test_a_source_publishes_on_its_own_only_when_auto_publish_is_on(flag):
+    """#352: cleared rights and a clean check are not enough for a polled item to reach learners - a news feed can
+    carry political or sensitive current affairs. Unless the source's auto-publish is on (off by default), the item
+    waits in review and a person publishes it."""
+    outcome = decision(source_changes={"auto_publish": flag})
+    assert outcome["decision"] == "review" and "auto_publish_off" in outcome["reasons"]

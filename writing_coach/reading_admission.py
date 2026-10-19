@@ -13,6 +13,23 @@ from writing_coach.reading_processing import normalize_url
 from writing_coach.reading_provenance import build_provenance, provenance_blockers
 
 ADMISSION_VERSION = "reading-admission/1"
+AUTO_PUBLISH_KEY = "auto_publish"  # in the source's `polling_policy` JSON, beside `image_policy` (#352)
+
+
+def auto_publish_enabled(policy: Any) -> bool:
+    """Whether a source's stored config lets its cleared items reach learners without a person. Absent or malformed
+    means no: a news feed can carry political or sensitive current affairs (owner, 2026-10-19), so it is off for every
+    source until an administrator turns it on."""
+    if not isinstance(policy, Mapping):
+        return False
+    entry = policy.get(AUTO_PUBLISH_KEY)
+    return isinstance(entry, Mapping) and entry.get("enabled") is True
+
+
+def with_auto_publish(policy: Any, enabled: bool) -> dict[str, Any]:
+    merged = dict(policy) if isinstance(policy, Mapping) else {}
+    merged[AUTO_PUBLISH_KEY] = {"enabled": bool(enabled)}
+    return merged
 
 
 def source_origin_matches(source: Mapping[str, Any], canonical_url: str) -> bool:
@@ -42,6 +59,8 @@ def automatic_admission(
     rights = snapshot.get("rights") or {}
     if source.get("state") != "active":
         reasons.append("source_not_active")
+    if not auto_publish_enabled({AUTO_PUBLISH_KEY: source.get(AUTO_PUBLISH_KEY)}):
+        reasons.append("auto_publish_off")  # #352: the item waits in review; a person publishes it
     if policy.get("automation_allowed") is not True:
         reasons.append("automation_not_allowed")
     if policy.get("can_republish") is not True or rights.get("can_republish") is not True:

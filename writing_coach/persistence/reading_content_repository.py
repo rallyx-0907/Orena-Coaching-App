@@ -45,6 +45,7 @@ from writing_coach.persistence.reading_evidence_repository import stale_sets_for
 from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
 from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
+from writing_coach.reading_admission import auto_publish_enabled, with_auto_publish
 from writing_coach.thumbnails import ThumbnailRequired
 from writing_coach.reading_images import (
     SHARED_URL_THRESHOLD,
@@ -183,6 +184,8 @@ def _source(row: Any) -> dict[str, Any]:
         "polling_enabled": bool(row.polling_enabled),
         # D-194: whether learner thumbnails from this source are permitted. Off until the owner turns it on.
         "image_policy": {"allowed": image_policy_allowed(row.polling_policy)},
+        # #352: whether cleared items publish without a person. Off until an administrator turns it on.
+        "auto_publish": {"enabled": auto_publish_enabled(row.polling_policy)},
         "last_checked_at": _iso(row.last_checked_at),
         "last_success_at": _iso(row.last_success_at),
         "last_error": row.last_error,
@@ -208,7 +211,8 @@ def _update_source_policy(
     Reads the row under a lock, applies `mutate` to a copy of the stored dict and writes back only on a
     change, so two administrators saving different keys cannot lose each other's key. Returns None when
     the source does not exist, else whether anything changed. A change on a source moves every published
-    article's `content_revision` in the same transaction: both keys are in the learner payload.
+    article's `content_revision` in the same transaction: the public name and the image policy are in the learner
+    payload (auto-publish is not, and only costs a refetch).
     """
     row = connection.execute(
         select(ReadingSource.polling_policy).where(ReadingSource.id == source_id).with_for_update()
@@ -1206,6 +1210,23 @@ class ReadingContentRepository:
             row = connection.execute(select(ReadingSource).where(ReadingSource.id == _uuid(source_id))).first()
         return _source(row)
 
+    def set_auto_publish(
+        self, source_id: str, enabled: bool, *, actor: str, now: datetime | None = None
+    ) -> dict[str, Any] | None:
+        """Let a source's cleared items publish without a person, or stop it (#352). Stored in the source's config
+        JSON beside the image policy; what was already published stays as it is."""
+        if _lookup_uuid(source_id) is None:
+            return None
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            changed = _update_source_policy(
+                connection, _uuid(source_id), lambda policy: with_auto_publish(policy, enabled), now=moment
+            )
+            if changed is None:
+                return None
+            row = connection.execute(select(ReadingSource).where(ReadingSource.id == _uuid(source_id))).first()
+        return _source(row)
+
     def _image_context(self, article_id: str) -> dict[str, Any] | None:
         if _lookup_uuid(article_id) is None:
             return None
@@ -2023,7 +2044,8 @@ class ReadingContentRepository:
 
     # Admission reasons that are about rights and source policy; any other reason is a validator that failed.
     RIGHTS_REASONS = frozenset({"source_not_active", "automation_not_allowed", "rights_not_cleared",
-                                "attribution_unknown", "attribution_missing", "source_origin_mismatch"})
+                                "attribution_unknown", "attribution_missing", "source_origin_mismatch",
+                                "auto_publish_off"})  # #352: the source waits for a person - policy, not a failure
 
     def review_reasons_summary(self, *, limit: int = 5000) -> dict[str, int]:
         """Articles waiting in review, split by why: a rights or source-policy question, or a failed validator
