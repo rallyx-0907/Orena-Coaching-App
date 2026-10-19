@@ -623,7 +623,7 @@ class VoiceService:
             "last": minted["last"],
             # Today's voice minutes end with this token (D-237): `last` alone is also a session's normal end, so the
             # client tells the learner the day's minutes are used up only when this is true. It describes this token only
-            # (a few seconds may remain for one more short chunk). Contract: the UI lane's next version (D-086).
+            # (a few seconds may remain for one more short chunk). Agent Contract v13 §9.1.
             "day_limit_reached": bool(minted.get("day_limit_reached")),
         }
 
