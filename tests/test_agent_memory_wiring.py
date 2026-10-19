@@ -5,6 +5,7 @@ a v9 client. The store here is the in-memory fake; the PostgreSQL repository pas
 
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 
 import pytest
@@ -531,3 +532,16 @@ def test_the_restated_notes_ask_for_the_answer_in_the_models_own_words():
     run(rt, v9_request("Mình học tiếng Trung để làm gì nhỉ?"))
     line = provider.requests[0].messages[-2].content
     assert "in your own words" in line and "never paste" in line
+
+
+def test_voice_never_offers_forget_note_so_it_cannot_claim_a_forget():
+    """A spoken turn derives no "asked" note, so every voice forget would be refused: it is not offered at all, and the
+    voice model cannot say a note was forgotten when nothing was (owner via Hermes, 2026-10-19)."""
+    from writing_coach.agent.voice_session import VOICE_REPLY_TOOLS
+
+    service, post, body, mem, store = voice(version=9)
+    service.open(body, __import__("tests.test_agent_voice_session", fromlist=["LEARNER"]).LEARNER)
+    setup = post.calls[-1][2]["bidiGenerateContentSetup"]
+    declared = [f["name"] for tool in setup.get("tools", []) for f in tool.get("functionDeclarations", [])]
+    assert "forget_note" not in VOICE_REPLY_TOOLS and "forget_note" not in declared and "remember_note" in declared
+    assert "cannot be forgotten in voice" in json.dumps(setup, ensure_ascii=False)  # and it says so, never claims it

@@ -153,7 +153,10 @@ RESUMPTION_HANDLE_PATTERN = re.compile(r"^[A-Za-z0-9._:=/+-]{1,2048}$")
 # carries on with the same instruction and a fresh context.
 # The reply tools a spoken turn may use besides do_action: a coach note, the address. Evidence ids, styles,
 # references and suggestions are a text thread's; the voice says what it read.
-VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, FORGET_NOTE, SET_ADDRESS, OFFER_ADDRESS, RESOLVE_PENDING})
+# No forget_note: a spoken turn derives no "asked" note, so the server refuses every voice forget - offering it only let
+# the voice model say a note was forgotten when nothing was (owner via Hermes, 2026-10-19: never claim a forget that did
+# not happen). A learner forgets a note in text chat. Back when voice derives the asked notes per utterance.
+VOICE_REPLY_TOOLS = frozenset({REMEMBER_NOTE, SET_ADDRESS, OFFER_ADDRESS, RESOLVE_PENDING})
 
 # One tool for everything the app can do (R30, 2026-10-06: "an agent that can operate anything in the app"): every
 # §7 action the client declares, with flat arguments - the live run showed the voice model never filling
@@ -227,6 +230,8 @@ formatting rule above.
   context.pending_interaction is open and the learner accepts it in any words, call do_action with that same
   action and requested true; if they decline it, call resolve_pending with that offer's id and decision cancel; if
   they ask something else, do nothing about it.
+- A coach note cannot be forgotten in voice (there is no forget_note here): when the learner asks you to forget
+  one, say in one sentence that they can ask for it in the text chat. Never say a note was forgotten.
 - A line starting "[context]" tells you where the learner is now; use it, never answer it.
 - If the learner interrupts, stop and listen; answer what they said next."""
 
@@ -507,7 +512,7 @@ class VoiceService:
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
         self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes,
                                      context=carried_state(turn, tier1, session_state), memory=pack_memory)  # fmt: skip
-        specs = self._tool_specs(request, learner, notes=notes_available)
+        specs = self._tool_specs(request, learner)
         locale = request.context.locale
         setup = live_setup(instruction, specs, model=self.model, voice=vendor_voice(body.get("voice")),
                            languages=recognition_languages(locale.support, locale.target))  # fmt: skip
@@ -790,9 +795,9 @@ class VoiceService:
             parts.append(selected)
         return "\n\n".join(parts)
 
-    def _tool_specs(self, request: TurnRequest, learner: LearnerScope, *, notes: bool = True) -> list[ProviderToolSpec]:
+    def _tool_specs(self, request: TurnRequest, learner: LearnerScope) -> list[ProviderToolSpec]:
         reads = [ProviderToolSpec.from_tool(t) for t in self.runtime.tools.tools() if learner.contract_language in t.languages]
-        offered = VOICE_REPLY_TOOLS if notes else VOICE_REPLY_TOOLS - {FORGET_NOTE}
+        offered = VOICE_REPLY_TOOLS  # forget_note is never offered in voice (VOICE_REPLY_TOOLS)
         replies = [s for s in reply_tool_specs(request.client, request.context.locale.target, version=request.version, pending=True)
                    if s.name in offered]  # fmt: skip
         actions = request.client.allowed_actions & actions_for_version(request.version)
