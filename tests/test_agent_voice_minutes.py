@@ -114,4 +114,5 @@ def test_every_token_is_clamped_to_the_minutes_left_and_unmetered_seconds_count_
 
     answer = service.open(_body(), LEARNER)
     assert answer["max_seconds"] <= 240
+    assert answer["last"] is True  # today's minutes end with this token: no renewal to be refused
     assert recorded == [("agent.voice_seconds", answer["max_seconds"])]

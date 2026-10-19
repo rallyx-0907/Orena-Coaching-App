@@ -575,7 +575,10 @@ class VoiceService:
             if left <= 0:
                 ticket.release()
                 plan_features.require_voice_time(user_key)  # the 429 the route gives, raced past it
+            clamped = left <= seconds
             seconds = max(1, min(seconds, left))
+        else:
+            clamped = False
         locked = dict(setup)
         if ticket.enforced and self._resumes():
             # Only a chunked (metered) session carries the conversation across tokens; an unmetered one is one token.
@@ -596,7 +599,8 @@ class VoiceService:
             # Unmetered: the learner's voice seconds are counted when the token exists, as a metered chunk's are, so
             # the daily cap sees an open session (D-237); the AI ledger still gets the wall-clock time at the end.
             self._meter_voice(user_key, seconds, f"{session_id}:voice:{index}")
-        last = minted + seconds >= cap or not ticket.enforced
+        # The last chunk too when today's voice minutes end with it (D-237): the client is not sent to a refused renewal.
+        last = minted + seconds >= cap or not ticket.enforced or clamped
         return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced}
 
     def _chunk_answer(self, minted: dict[str, Any], *, index: int) -> dict[str, Any]:
