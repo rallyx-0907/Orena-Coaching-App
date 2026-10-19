@@ -1,3 +1,4 @@
+# ruff: noqa: F811
 """PR-MON-7B2a: the semantic AI meters `word.assist`, `reading.assist` and `writing.task` at their call sites.
 
 Hermetic (CI, SQLite): the quota store is the in-memory test double of `test_quota_gate.py`. Each meter refuses past
@@ -345,3 +346,56 @@ def test_writing_task_refuses_past_the_limit_and_the_built_in_task_is_free(monke
     assert refused.status_code == 429 and refused.detail["context"]["feature"] == "writing.task"
     assert calls == ["writing_task_generator", "writing_task_generator"]
     assert _consumed(repository, "writing.task") == 1
+
+
+# ---- word.assist and the word tap's own caches (#423) ----------------------------------------------------------
+
+from tests.test_ai_router import env  # noqa: E402,F401 - the router's fixture: a fake free-tier pool, a fresh cache
+
+
+def test_a_router_cache_hit_and_a_free_model_answer_cost_no_word_assist(env, monkeypatch):
+    """The shared in-process `word_translation` cache (#423) is asked before the gate: a word any learner already
+    tapped is answered without an admission; the free-tier model that answered the first tap settles 0."""
+    _catalogue(word_assist=1)
+    repository = _runtime()
+    tap_router.reset_state()
+    assert tap_router.word_translation_seam("lamp", "The lamp went out.", [], "en", "vi") == "đèn"
+    assert len(env.fake.calls) == 1 and _consumed(repository, "word.assist") == 0, "a free model costs nothing"
+    monkeypatch.setattr(assist_meters, "routed_cost", lambda _result: True)    # as if a paid model had answered
+    before = list(repository.calls)
+    for _ in range(3):
+        assert tap_router.word_translation_seam("lamp", "Another lamp.", [], "en", "vi") == "đèn"
+    assert len(env.fake.calls) == 1, "a cache hit asks no provider"
+    assert repository.calls == before, "a cache hit is never admitted"
+
+
+def test_catalogue_pack_and_local_answers_never_reach_the_meter():
+    """Lookup order (#423): catalogue -> bilingual pack -> local MT -> `word_translation`. Only the last can be charged."""
+    from writing_coach import bilingual_dictionary, reading_lookup
+    from writing_coach.reading_lookup import ReadingLookupService
+
+    _catalogue(word_assist=1)
+    repository = _runtime()
+    reading_lookup.reset_seam_gate()
+    bilingual_dictionary.reset_packs()
+    asked: list[tuple] = []
+
+    def seam(*args):
+        asked.append(args)
+        return assist_meters.quiet(assist_meters.WORD_ASSIST, digest=args, ref="t", call=lambda: "x")
+
+    class _Paid:
+        engine_id = "ai"
+        model_version = "x"
+
+        def translate_batch(self, *_a, **_k):
+            raise AssertionError("a tap never uses the paid reading engine")
+
+    service = ReadingLookupService(
+        None, lambda _w: {"phonetic": ""}, ReadingTranslationService(_Paid(), cache=DerivedCache()),
+        word_translation=seam, bilingual_dictionary=lambda word, _s, _t: {"shield": "tấm chắn"}.get(word),
+    )
+    result = service.lookup("shield", "Its heat shield held.", "en", "vi").to_dict()
+    assert result["meanings"][0]["source"] == "bilingual_dictionary"
+    assert asked == [] and repository.calls == [], "the pack's answer is free and admits nothing"
+    bilingual_dictionary.reset_packs()
