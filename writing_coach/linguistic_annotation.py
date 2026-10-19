@@ -26,6 +26,8 @@ from nltk import pos_tag
 from nltk.tokenize import TreebankWordTokenizer
 from pypinyin import Style, lazy_pinyin
 
+from writing_coach.languages.chinese import structural_particle
+
 __all__ = [
     "ALLOWED_POS",
     "annotate",
@@ -159,15 +161,53 @@ def _english_annotations(source: str, limit: int) -> list[dict[str, Any]]:
     ]
 
 
-# 底 written for the structural particle 的 in older texts (Xu Dishan's 落花生). The dictionary reading of 底 is
-# dǐ; the tagger marks the particle use with a `u*` flag, and only then is it read de. Any other use keeps dǐ.
-_PARTICLE_READINGS = {"底": "de"}
-
-
-def _chinese_reading(word: str, flag: str) -> str:
-    if flag.startswith("u") and word in _PARTICLE_READINGS:
-        return _PARTICLE_READINGS[word]
+def _reading(word: str) -> str:
     return " ".join(lazy_pinyin(word, style=Style.TONE))
+
+
+# How far back the word before a 底 is looked for: a clause, not the whole text.
+_CONTEXT_WINDOW = 30
+_CLAUSE_BREAK = re.compile("[，。！？；：、,.!?;:" + chr(10) + "]")
+
+
+def _word_before(source: str, index: int) -> tuple[str, str]:
+    """The tagged word that ends at `source[index]`, read from its own clause, or an empty pair."""
+
+    window = source[max(0, index - _CONTEXT_WINDOW) : index]
+    breaks = list(_CLAUSE_BREAK.finditer(window))
+    if breaks:
+        window = window[breaks[-1].end() :]
+    last = ("", "")
+    for item in pseg.cut(window):
+        if str(item.word).strip():
+            last = (str(item.word), str(item.flag))
+    return last
+
+
+def _split_particle(source: str, start: int, word: str) -> list[tuple[str, int, str | None]]:
+    """The pieces of a tagged `word` at `source[start:]` with a 底 that is the particle 的 cut out as their own piece.
+
+    Each piece is (text, offset in source, flag); the flag is None for text the tagger has yet to see. The tagger
+    merges the particle into its neighbour (父亲底话 -> 底话), so the decision is made per character."""
+
+    pieces: list[tuple[str, int, str | None]] = []
+    mark = 0
+    for offset, char in enumerate(word):
+        if char != structural_particle.FORM:
+            continue
+        index = start + offset
+        previous = _word_before(source, index)
+        if not structural_particle.is_structural_particle(source, index, *previous):
+            continue
+        if offset > mark:
+            pieces.append((word[mark:offset], start + mark, None))
+        pieces.append((char, index, "u"))
+        mark = offset + 1
+    if not pieces:
+        return [(word, start, "")]
+    if mark < len(word):
+        pieces.append((word[mark:], start + mark, None))
+    return pieces
 
 
 def _chinese_annotations(source: str, limit: int) -> list[dict[str, Any]]:
@@ -181,19 +221,32 @@ def _chinese_annotations(source: str, limit: int) -> list[dict[str, Any]]:
         if start < 0:
             continue
         end = start + len(word)
-        output.append(
-            {
-                "fragment": word,
-                "start": start,
-                "end": end,
-                "pos": chinese_pos(str(item.flag)),
-                "pronunciation": _chinese_reading(word, str(item.flag)),
-                "lemma": word,
-            }
-        )
         cursor = end
-        if len(output) == limit:
-            break
+        if structural_particle.FORM in word:
+            pieces = _split_particle(source, start, word)
+        else:
+            pieces = [(word, start, "")]
+        for text, offset, flag in pieces:
+            if flag == "u":
+                tag, reading = "u", structural_particle.READING
+            elif flag is None:
+                inner = [(str(sub.word), str(sub.flag)) for sub in pseg.cut(text) if str(sub.word).strip()]
+                tag = inner[0][1] if len(inner) == 1 else "n"
+                reading = _reading(text)
+            else:
+                tag, reading = str(item.flag), _reading(text)
+            output.append(
+                {
+                    "fragment": text,
+                    "start": offset,
+                    "end": offset + len(text),
+                    "pos": chinese_pos(tag),
+                    "pronunciation": reading,
+                    "lemma": text,
+                }
+            )
+            if len(output) == limit:
+                return output
     return output
 
 

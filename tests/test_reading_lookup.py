@@ -212,6 +212,39 @@ def test_chinese_word_for_an_english_support_language_is_the_dictionary_meaning(
     assert provider.calls == []
 
 
+@pytest.mark.parametrize(
+    "selection,context",
+    [
+        ("底", "我们底主人"),
+        ("底", "花生底好处很多"),
+        ("底", "父亲底话"),
+        ("底", "这是我们底"),
+    ],
+)
+def test_di_written_for_the_particle_de_is_the_particle_not_bottom(selection: str, context: str) -> None:
+    """PRE-105 / D23: the same rule as the annotation, so the lookup and the reading agree."""
+    service, provider = _service()
+
+    result = service.lookup(selection, context, "zh", "en").to_dict()
+
+    assert result["pronunciation"] == "de"
+    assert result["part_of_speech"] == "particle"
+    assert result["meanings"] == [{"text": "the particle 的 (possessive / attributive)", "source": "dictionary"}]
+    assert {"part_of_speech": "", "definition": "old written form of 的"} in result["definitions"]
+    assert "bottom" not in str(result)
+    assert provider.calls == []
+
+
+@pytest.mark.parametrize("context", ["到底怎么回事", "桌子底下很暗", "海底世界", "彻底改变", "年底到了"])
+def test_di_in_a_lexical_word_is_still_bottom(context: str) -> None:
+    service, _ = _service()
+
+    result = service.lookup("底", context, "zh", "en").to_dict()
+
+    assert result["pronunciation"] in ("dǐ", "")
+    assert "old written form" not in str(result)
+
+
 def test_phrase_gets_no_part_of_speech() -> None:
     service, provider = _service()
 
