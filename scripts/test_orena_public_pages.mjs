@@ -208,4 +208,14 @@ assert.ok(pinned.includes('unpkg.com/react@18.3.1'), 'the pinned runtime is unto
   for (const l of lines) assert.ok(!/chỉ giữ|只保留|\bonly your scores/i.test(l), `settings copy: no "only scores" claim: ${l.slice(0, 60)}`);
 }
 
+// Retention text (AY): payment/billing records, usage and quota 12 months, admin action logs 24 months.
+{
+  const strip = (f) => html(f).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  const privacy = strip('privacy.en.html');
+  assert.ok(privacy.includes('Records of your plan usage and quota are kept for 12 months.'), 'privacy: usage and quota 12 months');
+  assert.ok(privacy.includes('Logs of administrator actions are kept for 24 months.'), 'privacy: admin action logs 24 months');
+  assert.ok(privacy.includes('Payment and billing records are kept for as long as accounting law requires (in Vietnam, at least 10 years)'), 'privacy: billing records');
+  assert.ok(strip('account-deletion.en.html').includes('Payment and billing records are kept as required for accounting and legal purposes.'), 'deletion: billing records kept');
+}
+
 console.log('public pages gate passed');
