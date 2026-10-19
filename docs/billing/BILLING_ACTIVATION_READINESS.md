@@ -124,7 +124,7 @@ The pilot host keeps billing **off**: every variable below is empty, or not set.
 | `POLAR_WEBHOOK_SECRET` | the production webhook secret |
 | `POLAR_ENVIRONMENT` | `production` |
 | `ORENA_ACCOUNT_BACKBONE` | `on` |
-| `APP_ENV` | unchanged (`staging` on `:8000`; plans need no `production`) |
+| `APP_ENV` | unchanged: a public value, not `development` (`staging` on `:8000`; plans need no `production`) |
 | `PUBLIC_BASE_URL` | the public HTTPS origin |
 | Google sign-in | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET` |
 
@@ -188,7 +188,7 @@ renewal, a reviewed code fix would have landed first.) `:8000` runs a build from
 | `BILLING_PRICES_FILE` | `/data/billing/prices.json`, with the four P1 product ids |
 | `POLAR_ENVIRONMENT` | `production` |
 | `POLAR_ACCESS_TOKEN` / `POLAR_WEBHOOK_SECRET` | from P3 and P4 |
-| `APP_ENV` | unchanged (`staging` on `:8000`; plans need no `production`) |
+| `APP_ENV` | unchanged: a public value, not `development` (`staging` on `:8000`; plans need no `production`) |
 | `PUBLIC_BASE_URL` | `https://orena.chillpickle.org` |
 | `ORENA_ACCOUNT_BACKBONE` | `on` |
 

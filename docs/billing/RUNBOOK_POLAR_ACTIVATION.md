@@ -20,7 +20,7 @@ usage.
 - The code is merged: revision 8.2 (#254) and PR-MON-10.
 - The sandbox end-to-end run (`PR-MON-10_DESIGN.md` §6) passed and its payloads were captured.
 - PostgreSQL is the runtime, with the account backbone on (`ORENA_ACCOUNT_BACKBONE=on`).
-- A public `APP_ENV` (`staging` or `production`), with Google sign-in configured. Plan billing needs neither in
+- A public `APP_ENV` (`staging` or `production`, never `development`), with Google sign-in configured. Plan billing needs neither in
   particular: `:8000` stays `staging` (`GATE_7B_APPROVAL_PACKAGE.md`).
 - A public **HTTPS** `PUBLIC_BASE_URL`.
 - Migrations up to `20261015_0033` are applied (`RUNBOOK_MIGRATION_0027_0033.md`), after a fresh, verified backup.
