@@ -132,6 +132,12 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
     ("reading_ai", ("/api/reading/translate", "/api/reading/summary"), 300, 600),
     # Consent answers (D-233): a learner answers a handful of times; each write is one row update, so this only stops a loop.
     ("consent", ("/api/account-settings/consent", "/api/account-settings/voice-consent"), 60, 600),
+    # A learner's place in content (#323). Each write is one row UPDATE, and nothing else bounds them: `settle` (paused,
+    # left) and a changed `segment` both write at once, so a script could force one per request. Real clients are
+    # frequent: Listening writes on every transcript line (2-3 s auto-caption cues) and on every play/pause, and an
+    # account's tabs and devices share this bucket - so the floor is one write per 0.5 s, sustained, which only a loop
+    # reaches. A refused place write fails silently on the client (the device copy stays right), so err high.
+    ("place", ("/api/continue/",), 1200, 600),
     ("media_learning", ("/api/media-learning/upload", "/api/media-learning/source", "/api/media-learning/translate",
                         "/api/media-learning/import#"), 30, 3600),
 )
