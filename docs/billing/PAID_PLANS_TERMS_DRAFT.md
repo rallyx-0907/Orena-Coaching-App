@@ -44,18 +44,26 @@ policy the code does not settle.
    - In the app, a downgrade is made by cancelling at the period end.
 
    *Source:* readiness items 5, 6 and 7.
-6. **Failed payment.** If a renewal payment fails, your plan stays active for a grace period of 2 days while the
-   payment is retried. If the payment still fails, the plan ends and the account returns to Free. Your learning data
-   is kept.
+6. **Failed payment.** If a renewal payment fails, your plan stays active for 2 days after the end of the period you
+   paid for, while Polar retries the payment. After that, your account has Free's limits until the payment succeeds.
+   If the payment succeeds later, the paid plan returns. If Polar stops retrying, the subscription ends.
 
-   *Source:* D-MON-011 (`BILLING_PAST_DUE_GRACE_HOURS`, default 48). The run on sandbox subscription F, on
-   2026-10-19, is still being observed.
+   *Source:* D-MON-011 and `writing_coach/product/billing_grace.py`.
+   - The grace is counted from `paid_through`.
+   - `BILLING_PAST_DUE_GRACE_HOURS` defaults to 48 and can be set from 0 to 336. The published number must equal the
+     value set on the host.
+   - The run on sandbox subscription F, on 2026-10-19, is still being observed.
+   - **[owner]** Before publishing, choose whether to promise that learning data is kept. No billing code deletes
+     it, but no billing document promises it either.
 
 ### Refund policy
 
 7. **[owner]** The refund rule, for example "no refunds for partial periods, except where the law requires" or "full
    refund within N days of the first charge". The code supports a full or partial refund issued from Polar's
-   dashboard. After a refund, access follows the subscription's state on Polar.
+   dashboard.
+
+   *Mechanism, not for publishing:* after a refund, access follows the subscription's state on Polar. The text that
+   is published comes from item 9.
 
    *Source:* readiness item 12.
 8. **How to ask for a refund.** Email `orena.support@chillpickle.org` from the address of your Google account.
@@ -65,7 +73,8 @@ policy the code does not settle.
 
 ## Before gate 7b opens sales
 
-- The owner approves items 7 and 9, and checks item 5 after the D result.
+- The owner approves items 7 and 9, and the data line in item 6, and checks item 5 after the D result.
+- The voice-chat decision of 2026-10-19 is recorded as a D-entry.
 - The UI lane adds the approved text to the English Terms, and adds the Refund Policy, if separate, to the public
   pages.
 - The clickwrap under "Continue with Google" links to them.
