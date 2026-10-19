@@ -6,7 +6,7 @@ a v9 client. The store here is the in-memory fake; the PostgreSQL repository pas
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 
@@ -253,6 +253,40 @@ def test_voice_gets_the_memory_when_cleared_and_none_with_memory_off():
     store.set_enabled(scope(mem), False)
     service.open(body, LEARNER)
     assert "Mình học để phỏng vấn" not in setup_text(post) and NOTE["text"] not in setup_text(post)
+
+
+def test_a_voice_open_renews_the_notes_it_sends_and_only_once_admitted():
+    """A note read into a voice session is kept 6 months from it (PRE-005 v2) - renewed only after the first chunk is
+    admitted and minted, since nothing reaches the vendor before (review of #362, P2-2)."""
+    from tests.test_agent_voice_session import LEARNER, Post, _service
+    from writing_coach.agent.memory_store import EXPLICIT_TTL
+
+    later = T0 + timedelta(days=170)
+    service, post, body, mem, store = voice(version=9)
+    mem.clock = lambda: later
+    keep(store, mem)
+    service.open(body, LEARNER)
+    assert [i.expires_at for i in store.items(scope(mem), "zh", later)] == [later + EXPLICIT_TTL]
+
+    refused, _post, body, mem, store = voice(version=9)
+    mem.clock = lambda: later
+    keep(store, mem)
+    refused.tokens = _service(Post(status=500)).tokens  # the vendor will not mint: the session never opens
+    with pytest.raises(Exception):  # noqa: B017 - a failed mint, whichever error it raises: the open fails
+        refused.open(body, LEARNER)
+    assert [i.expires_at for i in store.items(scope(mem), "zh", later)] == [T0 + EXPLICIT_TTL]
+
+
+def test_a_chat_turn_renews_the_notes_it_sends(hermetic):  # noqa: F811
+    from writing_coach.agent.memory_store import EXPLICIT_TTL
+
+    later = T0 + timedelta(days=170)
+    rt, _provider, store = wired([reply("a1")])
+    mem = rt.memory
+    mem.clock = lambda: later
+    keep(store, mem)
+    run(rt, v9_request())
+    assert [i.expires_at for i in store.items(scope(mem), "zh", later)] == [later + EXPLICIT_TTL]
 
 
 def test_voice_v9_keeps_a_note_on_the_server():

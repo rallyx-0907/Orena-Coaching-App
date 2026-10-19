@@ -43,10 +43,10 @@ from writing_coach.agent.memory_summary import without_deleted_item
 
 EXPLICIT, INFERRED, CONTINUITY = "explicit", "inferred", "continuity"
 ANY_LANGUAGE = "*"
-# A kept note lives 180 days from when the learner last asked for it: the pilot keeps learner data up to 6 months
+# A kept note lives 180 days from its last use - kept again, or read into a turn: the pilot keeps learner data up to 6 months
 # (owner, PRE-005, 2026-10-18). 180 days is within 6 calendar months from any start date.
 EXPLICIT_TTL = timedelta(days=180)
-# A note read into a turn is kept EXPLICIT_TTL from that use (owner via Hermes, 2026-10-19), written at most once a day.
+# A note read into a turn is kept EXPLICIT_TTL from that use (PRE-005 v2: 6 months if not used; owner, 2026-10-18 21:44), written at most once a day.
 RENEW_EVERY = timedelta(days=1)
 CONTINUITY_TTL = timedelta(days=14)  # G10
 INFERRED_SUPPRESSION = timedelta(days=30)

@@ -241,7 +241,8 @@ keeps them out:
 
 **Retention of explicit memory (owner, PRE-005, 2026-10-18).** The pilot keeps learner data for up to 6 months.
 A kept note therefore expires `EXPLICIT_TTL` (180 days, which is within 6 calendar months) after it was last used,
-whichever came later (owner's Privacy Policy wording, read by Hermes, 2026-10-19):
+whichever came later (PRE-005 v2, "6 months ... if not used"; the owner, 2026-10-18 21:44; the public Privacy Policy
+says the same):
 - the learner asked for it, or asked again for the same words;
 - it was read into the model's context in a real turn: chat or voice, server mode, so memory ON and the provider
   cleared for `full_memory` (`MemoryRuntime.notes` -> `renew`). That write happens at most once a day per note

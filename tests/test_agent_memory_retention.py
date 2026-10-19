@@ -69,7 +69,7 @@ def test_a_store_that_cannot_sweep_refuses_to_start_with_the_switch_on():
         runtime({MEMORY_SWEEP_SWITCH: "on"}, object())
 
 
-# --- renewed on use (owner via Hermes, 2026-10-19) ------------------------------------------------------------------
+# --- renewed on use (PRE-005 v2; the owner, 2026-10-18 21:44) -------------------------------------------------------
 
 
 class Incarnations:
