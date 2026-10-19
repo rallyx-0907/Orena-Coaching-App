@@ -38,6 +38,22 @@ _NEW_WISH = re.compile(
 )
 CORRECT, FORGET = "correct", "forget"
 
+# The verbs that also mean "I forget" (#346: "Mình hay quên ngữ pháp này quá", 我总是忘记这个语法, "I always forget the
+# grammar rules"). Alone they ask nothing of a note; only an imperative does, or one beside a note noun.
+_FORGETTING = re.compile(r"(?i)\bquên\b|\bforget\b|忘")
+_FORGET_IMPERATIVE = re.compile(
+    r"(?i)\bquên\b[^.?!\n]*\b(?:đi|nhé|nha|giùm|giúp)\b|\bđừng nhớ\b|\bkhông cần nhớ\b"
+    r"|\bforget (?:it|that|this|about (?:it|that)|the note|my note)\b|\bstop remembering\b"
+    r"|忘掉|忘了吧|忘了它|别记|不要记"
+)
+
+
+def _asks_about_a_note_by_forgetting_only(text: str) -> bool:
+    """The only change word is a forgetting verb, used as "I forget", not "forget it"."""
+
+    others = _CHANGE.sub(lambda m: "" if _FORGETTING.fullmatch(m.group(0)) else m.group(0), text)
+    return not _CHANGE.search(others) and not _FORGET_IMPERATIVE.search(text) and not _NOTE_WORD.search(text)
+
 
 def note_intent(message: str | None) -> str:
     """`forget` only for a request to forget with no new wish ("quên cái đó đi", "forget that", "忘掉吧");
@@ -45,6 +61,11 @@ def note_intent(message: str | None) -> str:
 
     text = unicodedata.normalize("NFC", message or "")
     if _FORGET.search(text) and not _NEW_WISH.search(text):
+        # "quên"/"忘" alone is "I forget" (#346): FORGET only as an imperative or beside a note noun.
+        if _FORGETTING.search(text) and not (_FORGET_IMPERATIVE.search(text) or _NOTE_WORD.search(text)):
+            others = _FORGETTING.sub("", text)
+            if not _FORGET.search(others):
+                return CORRECT
         return FORGET
     return CORRECT
 # A request to keep something (dogfood gate 3.2): the learner asks, in so many words, or states a standing wish
@@ -164,12 +185,13 @@ def _phrases(text: str) -> set[str]:
 def notes_the_message_changes(message: str | None, notes: Iterable[CoachNote]) -> tuple[CoachNote, ...]:
     """The learner's coach notes (never the address note) this message changes or cancels, by rule."""
 
-    if not message or not _CHANGE.search(unicodedata.normalize("NFC", message)):
+    text = unicodedata.normalize("NFC", message or "")
+    if not message or not _CHANGE.search(text) or _asks_about_a_note_by_forgetting_only(text):
         return ()
     own = tuple(note for note in notes if not note.id.startswith("address-"))
     if not own:
         return ()
-    if _NOTE_WORD.search(message):
+    if _NOTE_WORD.search(text):
         return own
     said = _phrases(message)
     return tuple(note for note in own if _phrases(note.text) & said)

@@ -21,7 +21,11 @@ def note(text, id_="n-1"):
     ("我的学习记录不是很好，我该学什么？", "帮我用中文解释"),
     ("帮我改一下这句话", "帮我多举例子"),
     ("Actually, what does this word mean?", "Explain in English please"),
-    ("Thôi, hôm nay mình nên học gì?", "Lưu ý: mình thích ví dụ ngắn"),
+    ("Thôi, lưu ý giúp mình cách dùng 了", "Mình thích ví dụ ngắn"),  # "lưu ý" in the message is no note noun
+    # "quên"/"忘"/"forget" as "I forget", with a real topical overlap (#346, review of #347)
+    ("Mình hay quên ngữ pháp này quá", "Giải thích ngữ pháp thật kỹ"),
+    ("我总是忘记这个语法", "多讲语法"),
+    ("I always forget the grammar rules", "Explain grammar simply"),
 ])
 def test_an_ordinary_learning_message_changes_no_note(message, kept):
     assert notes_the_message_changes(message, [note(kept)]) == ()
@@ -33,7 +37,16 @@ def test_an_ordinary_learning_message_changes_no_note(message, kept):
     ("Forget that note please", "Explain in English please", FORGET),
     ("忘掉那条笔记吧", "帮我用中文解释", FORGET),
     ("Đừng giải thích bằng tiếng Anh nữa, dùng tiếng Việt", "Giải thích bằng tiếng Anh", "correct"),
+    # a stopped phrase plus real content still matches
+    ("Thôi, đừng cho mình ví dụ ngắn nữa", "Cho mình ví dụ ngắn", "correct"),
+    ("别再帮我举例子了", "帮我多举例子", "correct"),
+    ("Quên cái ví dụ ngắn đó đi", "Cho mình ví dụ ngắn", FORGET),
 ])
 def test_a_real_note_request_still_matches(message, kept, intent):
     assert notes_the_message_changes(message, [note(kept)])
     assert note_intent(message) == intent
+
+
+def test_content_overlap_picks_only_the_note_it_is_about():
+    short, chinese = note("Cho mình ví dụ ngắn", "n-1"), note("Giải thích bằng tiếng Trung", "n-2")
+    assert notes_the_message_changes("Thôi, đừng cho mình ví dụ ngắn nữa", [short, chinese]) == (short,)
