@@ -1,30 +1,27 @@
-/* The legal pages (completion plan item 5): Terms of Use, Privacy Policy, Refund Policy.
+/* The legal pages (completion plan item 5): Refund Policy in the app; Terms and Privacy are the public pages.
 
    The design draws no legal page; by the human's decision (D-128) they are built from existing kit
    pieces only - the page header (o-h1 + o-sub) and the section heading - with the drafts' text as data
    (legal/content.js, generated from docs/legal/DRAFT_*.md). They are read before signing in, so main.js
-   draws them before it asks who the learner is, with no learner frame. They are linked from nowhere
-   until the human approves the text.
+   draws them before it asks who the learner is, with no learner frame.
 
-   Language: the interface language (or `?lang=` on the address, for review). English and Vietnamese
-   have their own text; Chinese reads the English text, marked lang="en", until a Chinese text is
-   approved. */
+   Language: legal documents exist in English only (D-238). Every interface language reads the English
+   text, marked lang="en"; `?lang=` on the address is tolerated and ignored. */
 import { html, mount } from '../kit/html.js';
 import { pageHeader, sectionHead } from '../kit/components.js';
 import { useStyles } from '../kit/styles.js';
-import { LOCALES, languages, setLanguages } from '../copy/index.js';
-import { legalCopy as t } from '../copy/legal.js';
 import { LEGAL } from './content.js';
 
 export const LEGAL_PAGES = Object.freeze(Object.keys(LEGAL));
+const TITLES = Object.freeze({ terms: 'Terms of Use', privacy: 'Privacy Policy', refund: 'Refund Policy' });
+const DRAFT_LINE = 'Draft, awaiting approval';
 
-/* "#/legal/terms?lang=vi" -> { page: 'terms', lang: 'vi' }; anything else -> null. */
+/* "#/legal/terms?lang=vi" -> { page: 'terms' } (the language is ignored); anything else -> null. */
 export function legalAddress(hash = '') {
-  const [pathPart, queryPart = ''] = String(hash).replace(/^#\/?/, '').split('?');
+  const [pathPart] = String(hash).replace(/^#\/?/, '').split('?');
   const found = /^legal\/(\w+)\/?$/.exec(pathPart);
   if (!found || !LEGAL_PAGES.includes(found[1])) return null;
-  const lang = new URLSearchParams(queryPart).get('lang') || '';
-  return { page: found[1], lang: LOCALES.includes(lang) ? lang : '' };
+  return { page: found[1] };
 }
 
 function segments(list) {
@@ -48,14 +45,12 @@ function block(item) {
   return '';
 }
 
-/* The page's markup for one document in one interface language. */
-export function legalMarkup(page, ui) {
-  const own = ui === 'vi' ? 'vi' : 'en';
-  const doc = LEGAL[page][own];
-  const meta = ui === 'zh' ? t('draftEnglish') : t('draft');
+/* The page's markup for one document: English, whatever the interface language. */
+export function legalMarkup(page) {
+  const doc = LEGAL[page];
   return html`<main class="o-legal" data-legal="${page}">
-    ${pageHeader({ title: t(page), meta })}
-    <article class="o-legal__body" lang="${own}">
+    ${pageHeader({ title: TITLES[page], meta: DRAFT_LINE })}
+    <article class="o-legal__body" lang="en">
       ${doc.intro.map(block)}
       ${doc.sections.map((section) => html`<section class="o-legal__section">${sectionHead({ title: section.heading })}${section.blocks.map(block)}</section>`)}
     </article>
@@ -63,10 +58,8 @@ export function legalMarkup(page, ui) {
 }
 
 export async function renderLegal(element, address) {
-  if (address.lang) setLanguages({ ui: address.lang });
   await useStyles('legal/legal.css');
-  const ui = languages().ui;
-  document.title = `${t(address.page)} · Orena`;
-  mount(element, legalMarkup(address.page, ui));
+  document.title = `${TITLES[address.page]} · Orena`;
+  mount(element, legalMarkup(address.page));
   window.scrollTo?.(0, 0);
 }

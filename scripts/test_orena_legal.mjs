@@ -4,8 +4,8 @@
    2. Nothing marked "strip before publishing" reaches a page: no Note to counsel, no codebase appendix,
       no draft banner.
    3. Every [DECISION: ...] and [OPERATOR]-style placeholder of the published sections stays visible.
-   4. The three pages render in English, Vietnamese and Chinese; Chinese reads the English text, marked
-      lang="en", and says so; the addresses resolve and nothing else does.
+   4. The three pages are English only (D-238): every interface language reads the English text, marked
+      lang="en"; the addresses resolve (a `?lang=` is ignored) and nothing else does.
    5. Built from kit pieces only: the page header and section heading, and the page's own column CSS
       uses colour tokens only. */
 import assert from 'node:assert/strict';
@@ -29,30 +29,38 @@ const placeholders = (text) => [...text.matchAll(/\[(?:DECISION:[^\]]*|[A-Z][A-Z
 
 for (const [page, name] of Object.entries(DOCS)) {
   const draft = fs.readFileSync(`docs/legal/DRAFT_${name}.md`, 'utf8').replace(/\r\n/g, '\n');
-  const english = draft.slice(draft.indexOf('# English'), draft.indexOf('# Tiếng Việt'));
-  const vietnamese = draft.slice(draft.indexOf('# Tiếng Việt'), draft.search(/\n## Sources in the codebase/) > 0 ? draft.search(/\n## Sources in the codebase/) : undefined);
+  assert.ok(!draft.includes('# Tiếng Việt'), `${page}: the draft has no Vietnamese section (D-238)`);
+  const end = draft.search(/\n## Sources in the codebase/);
+  const english = draft.slice(draft.indexOf('# English'), end > 0 ? end : undefined);
+  const reference = textOf(String(legalMarkup(page, 'en')));
   for (const ui of ['en', 'vi', 'zh']) {
     setLanguages({ ui });
     const markup = String(legalMarkup(page, ui));
     const text = textOf(markup);
-    for (const banned of ['Note to counsel', 'Sources in the codebase', 'strip before publishing', 'not legal advice']) {
+    assert.equal(text, reference, `${page}/${ui}: every interface language reads the same English page`);
+    for (const banned of ['Note to counsel', 'Sources in the codebase', 'strip before publishing', 'not legal advice', '中文版待批准', 'Tiếng Việt']) {
       assert.ok(!text.includes(banned), `${page}/${ui}: "${banned}" does not reach the page`);
     }
     assert.ok(markup.includes('class="o-h1"') && markup.includes('c-section-head__title'), `${page}/${ui}: kit page header and section headings`);
-    const own = ui === 'vi' ? vietnamese : english;
-    const expected = placeholders(own.replace(/\*\*|\*|`/g, '').replace(/\s+/g, ' '));
+    const expected = placeholders(english.replace(/\*\*|\*|`/g, '').replace(/\s+/g, ' '));
     for (const mark of expected) assert.ok(text.includes(mark), `${page}/${ui}: placeholder ${mark.slice(0, 60)} stays visible`);
-    assert.ok(markup.includes(`lang="${ui === 'vi' ? 'vi' : 'en'}"`), `${page}/${ui}: the text is marked with its own language`);
-    if (ui === 'zh') assert.ok(/中文版待批准/.test(text), `${page}/zh: says the Chinese text waits for approval`);
+    assert.ok(markup.includes('lang="en"') && !markup.includes('lang="vi"'), `${page}/${ui}: the text is marked English`);
   }
 }
 
-assert.deepEqual(legalAddress('#/legal/privacy?lang=vi'), { page: 'privacy', lang: 'vi' });
-assert.deepEqual(legalAddress('#/legal/terms?lang=fr'), { page: 'terms', lang: '' });
+assert.deepEqual(legalAddress('#/legal/privacy?lang=vi'), { page: 'privacy' }, 'a language on the address is ignored');
+assert.deepEqual(legalAddress('#/legal/terms?lang=fr'), { page: 'terms' });
 assert.equal(legalAddress('#/legal/other'), null);
 assert.equal(legalAddress('#/today'), null);
+
+// The links to the public pages (D-238): one address for every language; "(English)" after the label outside English.
+const { legalHref, legalLabel } = await import('../static/orena/legal/links.js');
+for (const ui of ['en', 'vi', 'zh']) assert.equal(legalHref('/privacy', ui), '/privacy', 'the address carries no language');
+assert.equal(legalLabel('Privacy Policy', 'en'), 'Privacy Policy', 'no note in English');
+assert.equal(legalLabel('Chính sách quyền riêng tư', 'vi'), 'Chính sách quyền riêng tư (English)');
+assert.equal(legalLabel('隐私政策', 'zh'), '隐私政策 (English)');
 
 const css = fs.readFileSync('static/orena/legal/legal.css', 'utf8');
 assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(/i.test(css), 'the legal column uses colour tokens only');
 
-console.log(`Orena legal pages: ${LEGAL_PAGES.length} pages x 3 languages, content is the drafts', nothing to strip leaks, placeholders kept: PASS`);
+console.log(`Orena legal pages: ${LEGAL_PAGES.length} pages, English only, content is the drafts', nothing to strip leaks, placeholders kept: PASS`);

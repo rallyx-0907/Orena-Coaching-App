@@ -13,7 +13,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 
 const html = (n) => fs.readFileSync(`templates/orena/public/${n}`, 'utf8');
 const LEGAL = [['privacy', 13], ['terms', 13], ['account-deletion', 5]];
-const LANGS = ['vi', 'en'];
+const LANGS = ['en']; // legal documents are English only (D-238)
 const readJson = (f) => JSON.parse(fs.readFileSync(f, 'utf8'));
 const build = (...args) => spawnSync(process.execPath, ['scripts/build_public_pages.mjs', ...args], { encoding: 'utf8' });
 
@@ -39,10 +39,10 @@ try {
   const ok = build('--release', '--effective-date', '2026-10-12', '--out-dir', stampDir);
   assert.equal(ok.status, 0, `the deploy step passes with a date:\n${ok.stdout}${ok.stderr}`);
   for (const [page] of LEGAL) {
-    const vi = fs.readFileSync(path.join(stampDir, `templates/orena/public/${page}.vi.html`), 'utf8');
     const en = fs.readFileSync(path.join(stampDir, `templates/orena/public/${page}.en.html`), 'utf8');
-    assert.ok(vi.includes('12 tháng 10, 2026') && en.includes('October 12, 2026'), `${page}: the stamped date, in both languages`);
-    assert.ok(!/pending:/.test(vi + en), `${page}: nothing pending once stamped`);
+    assert.ok(en.includes('October 12, 2026'), `${page}: the stamped date`);
+    assert.ok(!/pending:/.test(en), `${page}: nothing pending once stamped`);
+    assert.ok(!fs.existsSync(path.join(stampDir, `templates/orena/public/${page}.vi.html`)), `${page}: no Vietnamese page is built`);
   }
 } finally {
   fs.rmSync(stampDir, { recursive: true, force: true });
@@ -85,8 +85,9 @@ for (const [page, count] of LEGAL) {
     assert.deepEqual(data.nav.map((n) => n[0]), ['privacy', 'terms', 'account-deletion'], `${page}.${lang}: nav order`);
     for (const mail of ['orena.legal@chillpickle.org', 'orena.support@chillpickle.org']) assert.ok(h.includes(mail), `${file}: ${mail}`);
     assert.ok(h.includes('RallyX'), `${file}: the operator is named`);
-    // The language switch is two plain links.
-    assert.ok(h.includes(`<a href="/${page}" hreflang="vi"`) && h.includes(`<a href="/${page}?lang=en" hreflang="en"`), `${file}: language links`);
+    // One language: no switch, no alternate-language link (D-238).
+    assert.ok(!/hreflang=/.test(h) && !/>VI<\/a>/.test(h), `${file}: no language switch`);
+    assert.ok(!h.includes('?lang='), `${file}: links carry no language`);
     // Static: no runtime, no React, no external script, one small inline script at most.
     assert.ok(!/support\.js|<x-dc|<helmet|sc-if|style-hover|react|babel/i.test(raw), `${file}: no design runtime`);
     assert.ok(!/<script[^>]+\bsrc=/i.test(raw), `${file}: no script file`);
@@ -110,7 +111,7 @@ const forbidden = [
  /OpenRouter/i, /OpenAI/i, /DeepSeek/i, /Supadata/i, /Cloudflare/i, /Anthropic/i, /Google Fonts/i,
 ];
 for (const re of forbidden) assert.ok(!re.test(text), `legal pages must not say ${re}`);
-for (const [lang, re] of [['en', /Google \(Gemini\) and Groq, and Microsoft Azure Speech/], ['vi', /Google \(Gemini\) và Groq, và Microsoft Azure Speech/]]) {
+for (const [lang, re] of [['en', /Google \(Gemini\) and Groq, and Microsoft Azure Speech/]]) {
   assert.ok(re.test(html(`privacy.${lang}.html`).replace(/<[^>]+>/g, ' ')), `privacy.${lang}: names the AI providers`);
   assert.ok(!/thử nghiệm|pilot|trial/i.test(html(`privacy.${lang}.html`) + html(`terms.${lang}.html`)), `${lang}: no pilot wording`);
 }
@@ -121,8 +122,18 @@ for (const lang of LANGS) {
     assert.ok(/13/.test(t), `${page}.${lang}: states the minimum age 13`);
   }
 }
-assert.ok(/does not collect your date of birth/.test(html('privacy.en.html')) && /không thu thập ngày sinh/.test(html('privacy.vi.html')), 'privacy: no date of birth collected');
-assert.ok(/no technical age check/.test(html('terms.en.html')) && /chưa có cơ chế kỹ thuật kiểm tra tuổi/.test(html('terms.vi.html')), 'terms: no technical age gate in the beta');
+assert.ok(/does not collect your date of birth/.test(html('privacy.en.html')), 'privacy: no date of birth collected');
+assert.ok(/no technical age check/.test(html('terms.en.html')), 'terms: no technical age gate in the beta');
+// The recent product facts the English text states: notes kept up to 180 days (PRE-005), voice chat for Plus and Pro (D-236).
+const privacyText = noScript(html('privacy.en.html')).replace(/<[^>]+>/g, ' ');
+assert.ok(/up to 180 days/.test(privacyText), 'privacy: explicit memory is kept up to 180 days');
+assert.ok(/Voice chat with Orena is a feature of the Plus and Pro plans/.test(noScript(html('terms.en.html')).replace(/<[^>]+>/g, ' ')), 'terms: voice chat is a paid-plan feature');
+// No Vietnamese or Chinese legal text is left in the tree.
+for (const page of ['privacy', 'terms', 'account-deletion']) {
+  for (const lang of ['vi', 'zh']) {
+    assert.ok(!fs.existsSync(`templates/orena/public/${page}.${lang}.html`) && !fs.existsSync(`docs/legal/public/${page}.${lang}.json`), `${page}.${lang}: retired (D-238)`);
+  }
+}
 
 // 5. The Landing (still the design's own runtime-driven page, PUB-1) points at the deletion page; no page links to a
 //    prototype file or to Donate.

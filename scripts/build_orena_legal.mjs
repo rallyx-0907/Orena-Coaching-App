@@ -6,7 +6,7 @@
      node scripts/build_orena_legal.mjs          writes the file
      node scripts/build_orena_legal.mjs --check  fails if the file is not what the drafts give (the gate)
 
-   Kept: the English section, the Vietnamese section, and the English preamble lines (version, the Chinese
+   Kept: the English section and the English preamble lines (version, the Chinese
    placeholder, a status line). Every [DECISION: ...] / [OPERATOR] placeholder stays as written. Dropped:
    the draft banner (the page says it is a draft), "Note to counsel" and "Sources in the codebase" - both
    marked "strip before publishing" in the drafts. Inline **bold**, *italic* and `code` become segments, never
@@ -85,13 +85,12 @@ export function parseSection(lines) {
   return { intro, sections };
 }
 
-/* One draft -> { en, vi }. */
+/* One draft -> { intro, sections }: legal text is English only (D-238). */
 export function parseDraft(source) {
   const lines = source.replace(/\r\n/g, '\n').split('\n');
   const at = (pattern) => lines.findIndex((line) => pattern.test(line));
   const english = at(/^# English\s*$/);
-  const vietnamese = at(/^# Tiếng Việt\s*$/);
-  if (english < 0 || vietnamese < 0) throw new Error('a draft needs "# English" and "# Tiếng Việt" sections');
+  if (english < 0) throw new Error('a draft needs an "# English" section');
   const until = (start) => {
     const end = lines.findIndex((line, index) => index > start && /^---\s*$/.test(line));
     return lines.slice(start + 1, end < 0 ? lines.length : end);
@@ -101,7 +100,7 @@ export function parseDraft(source) {
   const preamble = lines.slice(title + 1, firstRule).filter((line) => !line.startsWith('>'));
   const en = parseSection(until(english));
   en.intro = [...parseSection(preamble).intro, ...en.intro];
-  return { en, vi: parseSection(until(vietnamese)) };
+  return en;
 }
 
 export function buildContent(read = (name) => fs.readFileSync(`docs/legal/DRAFT_${name}.md`, 'utf8')) {
