@@ -13,6 +13,7 @@ import { actionCardMarkup, evidenceMarkup, hasCard } from './cards.js';
 import { offerableActions, errorText } from './model.js';
 import { seePlansLabel } from '../plan/quota-notice.js';
 import { richSegments } from '../../kit/rich-text.js';
+import { reportLink } from '../../product/report-problem.js';
 
 /* A reply's text is Markdown (LEX-006): its meaning is rendered - headings, bold, lists, quotes, web links -
    never its syntax, and an app command written as a link is dropped (the action is its own card). The reply's
@@ -40,6 +41,14 @@ function rememberedMarkup(prefix) {
   return html`<div class="s-orena-evidence"><span class="s-orena-evidence__label">${t('memoryRemembered')}</span><span aria-hidden="true">·</span><button type="button" class="${prefix}__retry" data-plans="${href('settings', {}, { tab: 'privacy' })}">${t('memoryManage')}</button></div>`;
 }
 
+/* "Report a problem" (D-231 rule 3, PRE-206): under a FINISHED reply only - not while it streams, not on an error,
+   never on the learner's own message. The reference is the turn's trace id alone; no text is carried. */
+export function replyReport(message, surface = 'orena.chat') {
+  if (!message?.done || message.error || !message.traceId) return '';
+  if (!(message.segments || []).some((segment) => String(segment.text || '').trim())) return '';
+  return reportLink({ area: 'orena', surface, id: message.traceId });
+}
+
 export function messageMarkup(message, { surface, ranActions, supported }) {
   const prefix = `s-orena-${surface}`;
   if (message.role === 'learner') {
@@ -63,6 +72,7 @@ export function messageMarkup(message, { surface, ranActions, supported }) {
     ${cards.length ? html`<div class="${prefix}__cards">${cards.map((action) => actionCardMarkup(action, { done: ranActions.has(action.id) }))}</div>` : ''}
     ${bare.length ? html`<div class="${prefix}__buttons">${bare.map((action) => actionCardMarkup(action, { done: ranActions.has(action.id) }))}</div>` : ''}
     ${message.error && !errorInline ? errorMarkup(prefix, message.error) : ''}
+    ${replyReport(message)}
   </div>`;
 }
 
