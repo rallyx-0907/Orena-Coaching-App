@@ -100,7 +100,7 @@ def media_outcome(entry: Any) -> dict[str, Any]:
     failed (no usable transcript), ready. `reason` is the stable code stored on the item and `message` its English
     sentence (rows written before the message was stored get it from the code). Translation is reported beside, as
     `ready | partial | failed | deferred` with counts (`deferred` with a `continuation` is a rate-limited rest being asked for again): a partial translation is not a failure and never moves the state."""
-    from writing_coach.media_transcript_pipeline import reason_message
+    from writing_coach.media_transcript_pipeline import REASON_YOUTUBE_NO_CAPTIONS, reason_message, transcript_provenance
 
     processing = dict(getattr(entry, "processing", None) or {})
     raw = str(processing.get("state") or "")
@@ -118,6 +118,9 @@ def media_outcome(entry: Any) -> dict[str, Any]:
         "transcript": {
             "origin": str(processing.get("origin") or ""),
             "caption_kind": str(processing.get("caption_kind") or ""),
+            # Channel captions, machine captions or Orena's recognition (D-244); derived for an item stored before it.
+            "provenance": str(processing.get("transcript_provenance") or "")
+            or transcript_provenance(str(processing.get("origin") or ""), str(processing.get("caption_kind") or "")),
             "caption_provider": str(processing.get("caption_provider") or ""),
             "caption_language": str(processing.get("caption_language") or ""),
             "caption_fallback": fallback,
@@ -130,7 +133,7 @@ def media_outcome(entry: Any) -> dict[str, Any]:
         "reason": reason,
         "message": str(processing.get("message") or "") or reason_message(reason),
         # The failing check and its counts for a reason that has one (`captions_unusable`), ids and numbers only (D-218).
-        "detail": str(processing.get("detail") or "") if reason == "captions_unusable" else "",
+        "detail": str(processing.get("detail") or "") if reason in {"captions_unusable", REASON_YOUTUBE_NO_CAPTIONS} else "",
         "translation": {
             "state": translation, "reason": str(processing.get("translation_reason") or ""),
             "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)},

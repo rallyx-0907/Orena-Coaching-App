@@ -75,12 +75,17 @@ class Asr:
         raise AssertionError("speech recognition was used")
 
 
-def _world(tmp_path, *, origin=ORIGIN_CAPTION, state="held", ingestion=None, meanings=None, **kwargs):
-    """A youtube item that finished a run: a transcript of `origin`, translated, held for rights."""
+def _world(tmp_path, *, origin=ORIGIN_CAPTION, state="held", ingestion=None, meanings=None, upload=False, **kwargs):
+    """A youtube item (or, with `upload`, an uploaded file) that finished a run: a transcript of `origin`, translated, held
+    for rights."""
     store = FileMediaLibraryStore(tmp_path / "index")
-    base = replace(_entry(), media_type="video", provider="youtube", provider_media_id=VIDEO_ID, canonical_url=URL,
-                   duration_ms=LINES * 3000, status="review" if state == "held" else "published",
-                   source={**_entry().source, "provider": "youtube", "rights": "unknown", "caption_kind": "manual"})
+    if upload:
+        base = replace(_entry(), duration_ms=LINES * 3000, status="review" if state == "held" else "published",
+                       source={**_entry().source, "rights": "unknown"})
+    else:
+        base = replace(_entry(), media_type="video", provider="youtube", provider_media_id=VIDEO_ID, canonical_url=URL,
+                       duration_ms=LINES * 3000, status="review" if state == "held" else "published",
+                       source={**_entry().source, "provider": "youtube", "rights": "unknown", "caption_kind": "manual"})
     payload = lesson_payload(base, build_transcript(base.media_id, "en", _cues()), origin, LINES * 3000)
     processing = {"state": state, "stage": "ready", "reason": "rights_unknown" if state == "held" else "", "origin": origin,
                   "batch_id": "b1", "attempts": 1, "translation": "partial", "translation_counts": {"vi": {"done": 3, "total": LINES}},
@@ -140,9 +145,21 @@ def test_a_reprocess_that_gets_working_captions_replaces_them_and_clears_the_not
     assert not after.processing.get("previous") and after.processing["state"] == "held"
 
 
-def test_asr_fallback_for_an_item_that_never_had_captions_stays_as_it_was(tmp_path):
-    # The item was made by speech recognition: a reprocess may use it again (nothing to protect).
+def test_a_youtube_asr_item_reprocessed_without_captions_is_not_heard_again_and_stays_as_it_was(tmp_path):
+    # Rights decision 2026-10-19 (D-244): an item made by speech recognition before the decision keeps its transcript, but a
+    # reprocess never downloads the YouTube audio again; it is restored with the rights reason.
     store, before, pipeline = _world(tmp_path, origin=ORIGIN_ASR, ingestion=Ingestion(cues=None), asr=object())
+    pipeline._speech = lambda *_a: pytest.fail("YouTube audio was used for speech recognition")
+    pipeline._youtube_audio = lambda *_a, **_k: pytest.fail("YouTube audio was downloaded")
+    pipeline.retry(store, None, before.media_id)
+    after = store.get(before.media_id)
+    assert after.lesson == before.lesson and after.lesson["payload"]["transcript_origin"] == ORIGIN_ASR
+    assert after.processing["reprocess_reason"] == mtp.REASON_YOUTUBE_NO_CAPTIONS
+
+
+def test_an_uploaded_asr_item_is_still_heard_on_reprocess(tmp_path):
+    # A file the learner or admin uploaded is theirs to transcribe: speech recognition still runs.
+    store, before, pipeline = _world(tmp_path, origin=ORIGIN_ASR, upload=True, asr=object())
     asr_cues = [Cue(i * 3000, i * 3000 + 2500, text) for i, text in enumerate(SPOKEN)]
     used = []
 
@@ -153,14 +170,17 @@ def test_asr_fallback_for_an_item_that_never_had_captions_stays_as_it_was(tmp_pa
     pipeline._speech = speech
     pipeline.retry(store, None, before.media_id)
     assert used == [True]
-    assert store.get(before.media_id).lesson["payload"]["transcript_origin"] == ORIGIN_ASR
+    after = store.get(before.media_id)
+    assert after.lesson["payload"]["transcript_origin"] == ORIGIN_ASR
+    assert after.lesson["payload"]["transcript_provenance"] == mtp.PROVENANCE_ORENA_ASR
+    assert after.processing["transcript_provenance"] == mtp.PROVENANCE_ORENA_ASR
 
 
-# -- 2. the caption to ASR fallback on a first import is visible -------------------------------------------------
+# -- 2. a YouTube first import without usable captions stops before any audio (D-244) ----------------------------------
 
 
-def _first_import(tmp_path, ingestion, **entry_source):
-    store, entry, pipeline = _world(tmp_path, ingestion=ingestion)
+def _first_import(tmp_path, ingestion, upload=False, **entry_source):
+    store, entry, pipeline = _world(tmp_path, ingestion=ingestion, upload=upload)
     first = replace(entry, status="processing", processing={"state": "running"}, source={**entry.source, **entry_source})
     store.upsert(first)
     asr_cues = [Cue(i * 3000, i * 3000 + 2500, text) for i, text in enumerate(SPOKEN)]
@@ -168,33 +188,56 @@ def _first_import(tmp_path, ingestion, **entry_source):
     return store, first, pipeline
 
 
-@pytest.mark.parametrize("ingestion, source, expected", [
-    (Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_FAILURE)), {}, "captions_unavailable"),
-    (Ingestion(cues=None), {"caption_status": "unavailable"}, "captions_unavailable"),  # the importer was refused earlier
-    (Ingestion(cues=[Cue(0, 900, "Hi.")]), {}, "captions_unusable"),  # fetched, but not enough of the recording
+@pytest.mark.parametrize("ingestion, source, expected, detail", [
+    # the provider refused the caption fetch this time: its own retryable reason
+    (Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_FAILURE)), {}, "captions_unavailable", "provider_failure"),
+    (Ingestion(cues=None), {"caption_status": "unavailable"}, "captions_unavailable", "provider_failure"),
+    # no caption track, or one too poor to use: the rights reason, the cause as its detail
+    (Ingestion(cues=None), {}, mtp.REASON_YOUTUBE_NO_CAPTIONS, "no_caption_track"),
+    (Ingestion(cues=[Cue(0, 900, "Hi.")]), {}, mtp.REASON_YOUTUBE_NO_CAPTIONS, "non_empty: "),
 ])
-def test_the_caption_to_asr_fallback_on_first_import_is_recorded_with_a_stable_reason(tmp_path, ingestion, source, expected):
+def test_a_youtube_import_without_usable_captions_never_downloads_audio(tmp_path, ingestion, source, expected, detail):
     store, entry, pipeline = _first_import(tmp_path, ingestion, **source)
-    lines, origin, cost, *_ = pipeline._transcript(store, None, entry, "b1", None)
-    assert origin == ORIGIN_ASR and cost > 0
-    processing = store.get(entry.media_id).processing
-    assert processing["caption_fallback"] == expected and processing["caption_kind"] == ""
-    shown = media_outcome(store.get(entry.media_id))["transcript"]
-    assert shown["caption_fallback"] == expected and shown["caption_fallback_message"]
+    pipeline._speech = lambda *_a: pytest.fail("speech recognition was run for a YouTube video")
+    downloads = []
+    pipeline._youtube_audio = lambda *_a, **_k: downloads.append(True)
+    with pytest.raises(PipelineStop) as stop:
+        pipeline._transcript(store, None, entry, "b1", None)
+    assert stop.value.code == expected and stop.value.detail.startswith(detail)
+    assert downloads == []
+    assert mtp.reason_message(expected)
 
 
-def test_a_source_with_simply_no_captions_records_no_fallback(tmp_path):
+def test_the_whole_youtube_first_run_without_captions_fails_with_the_rights_reason(tmp_path):
     store, entry, pipeline = _first_import(tmp_path, Ingestion(cues=None))
-    pipeline._transcript(store, None, entry, "b1", None)
-    assert store.get(entry.media_id).processing["caption_fallback"] == ""
-
-
-def test_the_whole_first_run_stores_the_fallback_beside_the_origin(tmp_path):
-    store, entry, pipeline = _first_import(tmp_path, Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_TIMEOUT)))
+    pipeline._speech = lambda *_a: pytest.fail("speech recognition was run for a YouTube video")
     pipeline._run(store, None, entry.media_id, "b1", None)
-    processing = store.get(entry.media_id).processing
-    assert processing["origin"] == ORIGIN_ASR and processing["caption_fallback"] == "captions_unavailable"
-    assert store.get(entry.media_id).lesson["payload"]["transcript_origin"] == ORIGIN_ASR
+    after = store.get(entry.media_id)
+    assert after.processing["state"] == "failed" and after.processing["reason"] == mtp.REASON_YOUTUBE_NO_CAPTIONS
+    assert after.lesson is None or after.lesson.get("payload", {}).get("transcript_origin") != ORIGIN_ASR
+    shown = media_outcome(after)
+    assert shown["reason"] == mtp.REASON_YOUTUBE_NO_CAPTIONS and "does not download YouTube audio" in shown["message"]
+    assert shown["detail"] == "no_caption_track"
+
+
+def test_the_caption_path_records_channel_or_machine_captions_as_provenance(tmp_path):
+    for kind, provenance in (("manual", mtp.PROVENANCE_CHANNEL_CAPTIONS), ("auto", mtp.PROVENANCE_MACHINE_CAPTIONS),
+                             ("", mtp.PROVENANCE_CAPTIONS_UNKNOWN)):
+        store, entry, pipeline = _first_import(tmp_path / (kind or "none"), Ingestion(cues=_cues(), provenance={"caption_kind": kind}))
+        pipeline._speech = lambda *_a: pytest.fail("speech recognition was run for a YouTube video")
+        pipeline._run(store, None, entry.media_id, "b1", None)
+        after = store.get(entry.media_id)
+        assert after.lesson["payload"]["transcript_origin"] == ORIGIN_CAPTION
+        assert after.lesson["payload"]["transcript_provenance"] == provenance
+        assert after.processing["transcript_provenance"] == provenance
+        assert media_outcome(after)["transcript"]["provenance"] == provenance
+
+
+def test_an_upload_first_import_still_uses_speech_recognition(tmp_path):
+    store, entry, pipeline = _first_import(tmp_path, Ingestion(), upload=True)
+    lines, origin, cost, *_ = pipeline._transcript(store, None, entry, "b1", None)
+    assert origin == ORIGIN_ASR and cost > 0 and lines
+    assert pipeline._ingestion.calls == 0  # an upload has no caption track to ask for
 
 
 # -- 3. manual versus auto captions are recorded; the payload origin is the real one ----------------------------------
@@ -304,7 +347,8 @@ def test_the_stored_payload_origin_and_the_processing_origin_never_disagree(tmp_
 
 @pytest.mark.parametrize("breakage", ["audio", "crash", "unusable"])
 def test_a_failed_reprocess_keeps_the_good_transcript_and_translation(tmp_path, breakage):
-    store, before, pipeline = _world(tmp_path, origin=ORIGIN_ASR, ingestion=Ingestion(cues=None), asr=object())
+    # An uploaded file: the only kind of item whose reprocess still listens to the audio (D-244).
+    store, before, pipeline = _world(tmp_path, origin=ORIGIN_ASR, upload=True, asr=object())
     if breakage == "audio":
         def speech(*_a):
             raise PipelineStop("audio_unavailable")
@@ -327,7 +371,7 @@ def test_a_failed_reprocess_keeps_the_good_transcript_and_translation(tmp_path, 
 
 
 def test_a_first_import_that_fails_is_still_failed(tmp_path):
-    store, entry, pipeline = _first_import(tmp_path, Ingestion(cues=None))
+    store, entry, pipeline = _first_import(tmp_path, Ingestion(cues=None), upload=True)
     pipeline._speech = lambda *_a: (_ for _ in ()).throw(PipelineStop("audio_unavailable"))
     pipeline._job(store, None, entry.media_id, "b1", None)
     assert store.get(entry.media_id).processing["state"] == "failed"
@@ -464,7 +508,7 @@ def test_the_translation_source_is_the_real_one():
 
 
 def test_a_restore_re_arms_the_translation_continuation_it_brings_back(tmp_path):
-    store, before, pipeline = _world(tmp_path, origin=ORIGIN_ASR, ingestion=Ingestion(cues=None), asr=object())
+    store, before, pipeline = _world(tmp_path, origin=ORIGIN_ASR, upload=True, asr=object())
     record = {"attempt": 1, "max_attempts": 6, "next_at": "2026-10-15T00:00:00Z", "deadline": "2026-10-16T00:00:00Z"}
     store.update_if_present(before.media_id, lambda e: replace(e, processing={**e.processing, "translation": "deferred", "translation_continuation": record}))
     scheduled = []

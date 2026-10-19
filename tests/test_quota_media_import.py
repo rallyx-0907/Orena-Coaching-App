@@ -418,16 +418,18 @@ def test_audio_longer_than_the_reservation_is_stopped_before_it_is_heard(world: 
     assert (actual, ref) == (0, "failed:duration_mismatch")
 
 
-def test_a_youtube_video_without_captions_is_heard_and_charged_for_what_was_decoded(world: World):
+def test_a_youtube_video_without_captions_is_not_heard_and_charges_nothing(world: World, monkeypatch):
+    # Rights decision 2026-10-19 (D-244): no YouTube audio is downloaded for speech recognition; the reservation is released.
+    downloads = []
+    monkeypatch.setattr(world.pipeline, "_youtube_audio", lambda *_a, **_k: downloads.append(True))
     world.ingestion.captions_seconds = None
     world.youtube_seconds = 100
-    world.youtube_decoded = 99.2
     answer = world.source(video_url(8))
     assert answer.status_code == 200, answer.text
-    assert world.asr.calls == 1
+    assert world.asr.calls == 0 and downloads == []
     (_op, actual, ref), = world.repo.settled
-    assert (actual, ref) == (100, "completed:generated_asr"), "ceil(99.2)"
-    assert world.bucket()["consumed"] == 100
+    assert (actual, ref) == (0, "failed:youtube_no_channel_captions")
+    assert world.bucket()["consumed"] == 0
 
 
 def test_the_worker_starts_paid_work_only_against_a_live_reservation(world: World):

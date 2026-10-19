@@ -344,19 +344,19 @@ def test_no_native_track_with_captions_only_stops_before_audio_and_spends_nothin
 
 
 @pytest.mark.parametrize("policy", [None, mtp.POLICY_DEFAULT])
-@pytest.mark.parametrize("answer, fallback", [(None, ""), (SupadataTranscriptRequestFailed(), "captions_unavailable")])
-def test_no_native_track_with_the_default_policy_falls_back_to_asr(tmp_path, monkeypatch, policy, answer, fallback):
-    """A video with no captions is the ordinary route to speech recognition (no flag, as for YouTube); a refused request is
-    the visible D-213 fallback."""
+@pytest.mark.parametrize("answer, reason", [(None, mtp.REASON_YOUTUBE_NO_CAPTIONS),
+                                            (SupadataTranscriptRequestFailed(), "captions_unavailable")])
+def test_no_native_track_with_the_default_policy_no_longer_falls_back_to_asr(tmp_path, monkeypatch, policy, answer, reason):
+    """Rights decision 2026-10-19 (D-244): a YouTube video with no captions is not heard; it stops with the rights reason,
+    and a refused request keeps its own retryable reason. No audio is downloaded and nothing is spent."""
     supadata = FakeSupadata(answer)
     store, entry, pipeline, audio, spy, _ledger = make_world(
-        tmp_path / f"{policy}-{fallback}", "supadata_native", monkeypatch, supadata=supadata, policy=policy)
-    asr_cues = [Cue(i * 3000, i * 3000 + 2500, text) for i, text in enumerate(SPOKEN)]
-    pipeline._speech = lambda *_a: (asr_cues, [], "en", 0.002, 8.0, {"filtered": 0, "flagged": 0})
+        tmp_path / f"{policy}-{reason}", "supadata_native", monkeypatch, supadata=supadata, policy=policy)
+    pipeline._speech = lambda *_a: pytest.fail("speech recognition was run for a YouTube video")
     pipeline._run(store, None, entry.media_id, "b1", None)
     processing = store.get(entry.media_id).processing
-    assert processing["origin"] == mtp.ORIGIN_ASR and processing["caption_fallback"] == fallback
-    assert processing["caption_provider"] == "" and processing["caption_kind"] == ""
+    assert processing["state"] == "failed" and processing["reason"] == reason and "origin" not in processing
+    assert audio.calls == 0 and spy.recorded == []
 
 
 def test_a_refused_native_request_is_a_visible_fallback_in_the_default_and_a_stop_in_captions_only(tmp_path, monkeypatch):
@@ -379,15 +379,15 @@ def test_past_the_daily_cap_the_stable_reason_is_caption_quota_and_nothing_is_ca
     assert supadata.calls == [] and ledger.requests_today() == 0 and audio.calls == 0 and spy.recorded == []
 
 
-def test_past_the_daily_cap_the_default_policy_listens_instead_and_says_why(tmp_path, monkeypatch):
+def test_past_the_daily_cap_the_default_policy_stops_with_the_cap_and_does_not_listen(tmp_path, monkeypatch):
+    # Since D-244 the default policy no longer listens to a YouTube video in place of its captions.
     supadata = FakeSupadata(transcript())
-    store, entry, pipeline, _audio, _spy, _l = make_world(tmp_path, "supadata_native", monkeypatch, supadata=supadata, cap=0)
-    asr_cues = [Cue(i * 3000, i * 3000 + 2500, text) for i, text in enumerate(SPOKEN)]
-    pipeline._speech = lambda *_a: (asr_cues, [], "en", 0.002, 8.0, {"filtered": 0, "flagged": 0})
+    store, entry, pipeline, audio, _spy, _l = make_world(tmp_path, "supadata_native", monkeypatch, supadata=supadata, cap=0)
+    pipeline._speech = lambda *_a: pytest.fail("speech recognition was run for a YouTube video")
     pipeline._run(store, None, entry.media_id, "b1", None)
     processing = store.get(entry.media_id).processing
-    assert processing["origin"] == mtp.ORIGIN_ASR and processing["caption_fallback"] == "caption_quota"
-    assert supadata.calls == []
+    assert processing["state"] == "failed" and processing["reason"] == "caption_quota"
+    assert supadata.calls == [] and audio.calls == 0
 
 
 # -- 5. merged chunks and the five checks ---------------------------------------------------------------------------
