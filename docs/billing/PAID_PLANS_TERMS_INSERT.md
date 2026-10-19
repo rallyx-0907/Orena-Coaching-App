@@ -1,6 +1,9 @@
 # Terms insert for paid plans (ready to fill; English only)
 
-**Status: prepared, not applied.**
+**Status: the owner approved the text, which is not published yet** (D-MON-037, 2026-10-19). He approved the
+Renewal, Cancelling, Refunds, Asking for a refund, Disputes and "When a paid plan ends" cards word for word. Any
+wording change needs a new approval. The downgrade sentence will be approved separately. The text is published only
+when sales open.
 
 This file replaces section "3. Plans and payment" of `docs/legal/public/terms.en.json` when gate 7b opens sales.
 The facts behind each sentence, with their sources, are in `PAID_PLANS_TERMS_DRAFT.md`.

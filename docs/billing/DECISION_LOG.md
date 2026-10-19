@@ -404,3 +404,10 @@ D-MON-036 | 2026-10-19 | The refund rule (owner, 10:35, relayed by Hermes; model
   refund documentation (refunding a subscription order does not end the subscription). No contradiction. | A clear,
   common rule that promises nothing the system cannot do. | `PAID_PLANS_TERMS_INSERT.md`,
   `RUNBOOK_POLAR_ACTIVATION.md` "Handling a refund request".
+D-MON-037 | 2026-10-19 | The owner approved the paid-plan Terms text (17:00, relayed by Hermes: "OK câu hoàn tiền").
+  Approved verbatim: the Renewal, Cancelling, Refunds, Asking for a refund, Disputes and "When a paid plan ends"
+  cards of the block in `PAID_PLANS_TERMS_INSERT.md` as merged in #337 (`029313c2`). Any change to their wording
+  needs a new approval. The downgrade (proration) sentence is still open: it is written from sandbox subscription
+  D's result and approved separately. The text is published only when sales open (gate 7b, condition C4). The UI
+  lane then places the block in `docs/legal/public/terms.en.json`; it is not published before. | Approved words, not
+  a draft, before any charge. | `PAID_PLANS_TERMS_INSERT.md`, `GATE_7B_APPROVAL_PACKAGE.md` C4.
