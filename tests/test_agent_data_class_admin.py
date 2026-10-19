@@ -100,7 +100,7 @@ def rig(monkeypatch):
     monkeypatch.setattr(repository, "set_setting", set_setting)
     monkeypatch.setattr(app_module, "require_admin", lambda request: {"google_sub": "admin-1", "role": "admin"})
     monkeypatch.setattr(admin_console_api, "_same_origin", lambda request: None)
-    yield TestClient(app_module.app), settings, audits, app_module
+    yield TestClient(app_module.app, headers={"Origin": "http://testserver"}), settings, audits, app_module
 
 
 def test_admin_shows_the_record_its_source_and_what_each_class_sends(rig):

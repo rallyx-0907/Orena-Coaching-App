@@ -18,7 +18,9 @@ from __future__ import annotations
 import base64
 import hashlib
 import ipaddress
+import json
 import logging
+import os
 import re
 from collections.abc import Mapping
 from functools import lru_cache
@@ -27,8 +29,12 @@ from urllib.parse import urlsplit
 
 STATE_CHANGING = frozenset({"POST", "PUT", "PATCH", "DELETE"})
 GUARDED_PREFIXES = ("/api/", "/auth/")
-# Callers that are not a browser page by design (the native app's code exchange).
+# Machine endpoints that authenticate themselves (a gateway's signed event) and so need no browser origin even
+# when a cookie happens to ride along. Nothing else is exempt.
+MACHINE_PREFIXES = ("/api/billing/webhooks/",)
+# The native app's code exchange (off by default, 404) has no browser origin and no session cookie by design.
 EXEMPT_PATHS = frozenset({"/api/auth/native/exchange"})
+SESSION_COOKIE = "writing_coach_session"
 
 HARDENING_HEADERS = {
     "X-Content-Type-Options": "nosniff",
@@ -42,7 +48,7 @@ HSTS = "max-age=31536000; includeSubDomains"
 def origin_refusal(method: str, path: str, headers: Mapping[str, str]) -> str | None:
     """Why this request must be refused, or None. `headers` are the request's, lower-cased keys."""
 
-    if method.upper() not in STATE_CHANGING or not path.startswith(GUARDED_PREFIXES) or path in EXEMPT_PATHS:
+    if method.upper() not in STATE_CHANGING or not path.startswith(GUARDED_PREFIXES) or path in EXEMPT_PATHS or path.startswith(MACHINE_PREFIXES):
         return None
     origin = (headers.get("origin") or "").strip()
     host = (headers.get("host") or "").strip().casefold()
@@ -57,6 +63,14 @@ def origin_refusal(method: str, path: str, headers: Mapping[str, str]) -> str | 
     fetch_site = (headers.get("sec-fetch-site") or "").strip().casefold()
     if fetch_site in {"cross-site", "same-site"}:
         return "cross_site_request"
+    if fetch_site:
+        return None
+    # Neither header: a script or a test client carries no session cookie and passes (its route has its own
+    # credential, or none). A request that does carry the session cookie is a cookie-authenticated change and
+    # must say where it came from.
+    cookies = headers.get("cookie") or ""
+    if any(part.strip().startswith(SESSION_COOKIE + "=") for part in cookies.split(";")):
+        return "origin_missing"
     return None
 
 
@@ -76,6 +90,12 @@ def inline_script_hashes() -> tuple[str, ...]:
             digest = hashlib.sha256(match.group(1).encode("utf-8")).digest()
             found.add("'sha256-" + base64.b64encode(digest).decode("ascii") + "'")
     return tuple(sorted(found))
+
+
+CSP_ENFORCED = "Content-Security-Policy"
+# The directives that never break a page we serve (no plugins, no <base>, no form posts to another origin, never
+# framed). The full policy stays Report-Only until a browser sweep.
+ENFORCED_DIRECTIVES = "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
 
 
 def content_security_policy_report_only() -> str:
@@ -113,6 +133,8 @@ def hardening_headers(existing: Mapping[str, str], *, https: bool) -> dict[str, 
     content_type = next((v for k, v in existing.items() if k.casefold() == "content-type"), "")
     if content_type.casefold().startswith("text/html") and CSP_REPORT_ONLY.casefold() not in present:
         added[CSP_REPORT_ONLY] = content_security_policy_report_only()
+        if CSP_ENFORCED.casefold() not in present:
+            added[CSP_ENFORCED] = ENFORCED_DIRECTIVES
     return added
 
 
@@ -140,6 +162,26 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
     ("place", ("/api/continue/",), 1200, 600),
     ("media_learning", ("/api/media-learning/upload", "/api/media-learning/source", "/api/media-learning/translate",
                         "/api/media-learning/import#"), 30, 3600),
+    # PRE-502 R3: AI-backed routes that were in no group. Each is generous for a learner (a word lookup about once a
+    # second, sustained) and only stops one account looping a paid provider - which, with the system daily ceiling
+    # shared by everyone, would otherwise pause AI for every learner until midnight.
+    ("reading_lookup", ("/api/reading/lookup#",), 600, 600),
+    ("media_explain", ("/api/media-learning/explain#",), 120, 600),
+    ("discussion_ai", ("/api/texts/discussion/turns#",), 60, 600),
+    # A model reference line with no canonical timings asks the pronunciation provider (cached afterwards).
+    ("speaking_reference", ("/api/speaking/model-reference/",), 300, 600),
+)
+
+# Reads that can reach a paid provider (PRE-502 R3): counted although a GET changes nothing. Exact paths only.
+# `/api/dictionary` falls back to the AI dictionary for Chinese on a cache miss.
+READ_RATE_GROUPS: tuple[tuple[str, frozenset[str], int, int], ...] = (
+    ("dictionary_lookup", frozenset({"/api/dictionary"}), 600, 600),
+)
+# Reads with an id in the path, matched by (prefix, suffix): a word's audio, which may synthesise speech on a cache miss
+# (behind a shared spend cap), and its deep explanation, which may call the model on a cache miss.
+READ_RATE_PATTERNS: tuple[tuple[str, str, str, int, int], ...] = (
+    ("word_audio", "/api/library/vocabulary/", "/audio", 600, 600),
+    ("word_deep", "/api/library/vocabulary/", "/deep", 300, 600),
 )
 
 
@@ -180,6 +222,15 @@ SELF_COUNTED_PATHS = frozenset({"/api/dictionary/word-detail"})
 
 
 def _rate_group(method: str, path: str) -> tuple[str, int, int] | None:
+    if method.upper() == "GET":
+        bare = path.rstrip("/")
+        for name, paths, limit, window in READ_RATE_GROUPS:
+            if bare in paths:
+                return name, limit, window
+        for name, prefix, suffix, limit, window in READ_RATE_PATTERNS:
+            if bare.startswith(prefix) and bare.endswith(suffix) and len(bare) > len(prefix) + len(suffix):
+                return name, limit, window
+        return None
     if method.upper() not in STATE_CHANGING or path.rstrip("/") in SELF_COUNTED_PATHS:
         return None
     for name, prefixes, limit, window in RATE_GROUPS:
@@ -260,3 +311,116 @@ def _warn_shared_bucket_once(peer: str) -> None:
     logging.getLogger("orena.request_boundary").warning(
         "sign-in rate limit: a non-public peer (%s) arrived without CF-Connecting-IP, so callers behind it share one "
         "bucket; check the tunnel / proxy configuration", peer)
+
+
+# ---- a global request body cap ------------------------------------------------------------------------------
+# Every state-changing /api/ or /auth/ request is limited to DEFAULT_BODY_LIMIT; the upload routes below carry
+# their own, at their existing per-file caps (times the files a request may hold). Enforced on the declared
+# Content-Length and again on the bytes actually received (a chunked body declares nothing).
+
+DEFAULT_BODY_LIMIT = 2 * 1024 * 1024
+_MIB = 1024 * 1024
+UPLOAD_BODY_LIMITS: tuple[tuple[str, int], ...] = (
+    # (path prefix, bytes)
+    ("/api/admin/console/imports/books", 256 * _MIB),  # EPUB, 80 MiB each
+    ("/api/admin/console/imports/media-upload", 256 * _MIB),  # media, 64 MiB each
+    ("/api/admin/content-packs/", 64 * _MIB),  # pack, 50 MiB
+    ("/api/admin/grammar/imports", 40 * _MIB),  # grammar package, 32 MiB
+    ("/api/admin/reading/jobs", 40 * _MIB),
+    ("/api/admin/vocabulary/", 128 * _MIB),  # source files, 25 MiB each
+    ("/api/reading/library/import", 256 * _MIB),  # EPUB, 80 MiB each
+    ("/api/media-learning/upload", 96 * _MIB),  # media, 64 MiB
+    ("/api/media/admin/upload", 256 * _MIB),
+    ("/api/speech/transcribe", 32 * _MIB),  # recording, operator-set cap up to 24 MiB
+    ("/api/speech/pronunciation", 16 * _MIB),  # recording, 8 MiB by default; see pronunciation_body_limit
+)
+_PRONUNCIATION_PATH = "/api/speech/pronunciation"
+_PRONUNCIATION_MAX_BYTES_ENV = ("AZURE_PRONUNCIATION_MAX_BYTES", "DEMO_PRONUNCIATION_MAX_BYTES")
+_PRONUNCIATION_FORM_OVERHEAD = _MIB  # the reference text and multipart framing beside the recording
+
+
+def pronunciation_body_limit() -> int:
+    """The pronunciation route's body cap: the 16 MiB default, or more when an operator raised a provider's
+    `*_PRONUNCIATION_MAX_BYTES`, so the request boundary never refuses a recording the provider would accept."""
+    limit = dict(UPLOAD_BODY_LIMITS)[_PRONUNCIATION_PATH]
+    for name in _PRONUNCIATION_MAX_BYTES_ENV:
+        try:
+            configured = int(os.environ.get(name) or 0)
+        except ValueError:
+            continue
+        limit = max(limit, configured + _PRONUNCIATION_FORM_OVERHEAD)
+    return limit
+
+
+def body_limit(method: str, path: str) -> int | None:
+    """The largest body this request may carry, or None when the cap does not apply (reads, other prefixes)."""
+    if method.upper() not in STATE_CHANGING or not path.startswith(GUARDED_PREFIXES):
+        return None
+    for prefix, limit in UPLOAD_BODY_LIMITS:
+        if path.startswith(prefix):
+            return pronunciation_body_limit() if prefix == _PRONUNCIATION_PATH else limit
+    return DEFAULT_BODY_LIMIT
+
+
+class BodyTooLarge(Exception):
+    pass
+
+
+class BodyLimitMiddleware:
+    """Pure ASGI middleware: 413 before a route reads an oversized body."""
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        limit = body_limit(scope.get("method", ""), scope.get("path", "")) if scope.get("type") == "http" else None
+        if limit is None:
+            await self.app(scope, receive, send)
+            return
+        declared = next((v for k, v in scope.get("headers", ()) if k == b"content-length"), None)
+        try:
+            too_big = declared is not None and int(declared) > limit
+        except ValueError:
+            too_big = False
+        if too_big:
+            await self._refuse(send)
+            return
+        received = 0
+        started = False
+        refused = False
+
+        async def counted_receive():
+            nonlocal received, refused
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > limit and not started:
+                    # Answer now: the framework would turn the exception below into a 500 first.
+                    refused = True
+                    await self._refuse(send)
+                    raise BodyTooLarge
+            return message
+
+        async def tracking_send(message):
+            nonlocal started
+            if refused:
+                return
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, counted_receive, tracking_send)
+        except Exception:
+            if not refused:
+                raise
+
+    @staticmethod
+    async def _refuse(send):
+        from writing_coach.core.errors import error_detail
+
+        body = json.dumps({"detail": error_detail("body_too_large", "This request is larger than Orena accepts.",
+                                                  retryable=False)}).encode("utf-8")
+        await send({"type": "http.response.start", "status": 413,
+                    "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
+        await send({"type": "http.response.body", "body": body})

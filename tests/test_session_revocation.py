@@ -28,7 +28,7 @@ def _run(coro):
 
 
 def _client():
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver", headers={"Origin": "http://testserver"})
 
 
 def test_old_cookie_is_refused_after_logout_for_reads_and_writes(monkeypatch):
@@ -99,6 +99,7 @@ def test_fresh_sign_in_after_logout_works_and_other_users_are_unaffected(monkeyp
 
 
 def test_native_exchange_cookie_is_revoked_by_logout(monkeypatch):
+    monkeypatch.setattr(auth_support, "NATIVE_AUTH_ENABLED", True)
     _signed_in(monkeypatch)
     sub = f"native-{time.time_ns()}"
     cookie = auth_support._native_session_cookie(sub)
@@ -150,3 +151,18 @@ def test_one_keyed_read_per_request(monkeypatch):
 
     assert _run(exercise()).status_code == 200
     assert len(calls) == 1
+
+
+def test_revoke_never_lowers_the_stored_instant(monkeypatch):
+    from tests.policy_support import MemoryPolicyStore
+
+    store = MemoryPolicyStore()
+    monkeypatch.setattr(auth_support, "_session_revocation_store", store)
+    key = auth_support._session_revoked_key("skew-user")
+    far_future = auth_support._now_ms() + 10_000_000
+    store.set_setting(key, {"before_ms": far_future})  # a skewed or concurrent writer got there first
+    auth_support.revoke_user_sessions("skew-user")
+    assert store.rows[key]["value"]["before_ms"] == far_future
+    store.set_setting(key, {"before_ms": 5})
+    auth_support.revoke_user_sessions("skew-user")
+    assert store.rows[key]["value"]["before_ms"] > 5

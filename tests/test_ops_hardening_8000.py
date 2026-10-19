@@ -87,7 +87,7 @@ def test_html_pages_carry_a_report_only_csp_and_json_does_not():
     policy = page.headers[CSP_REPORT_ONLY.lower()]
     for part in ("default-src 'self'", "frame-ancestors 'none'", "https://www.youtube-nocookie.com", "https://www.youtube.com"):
         assert part in policy
-    assert "content-security-policy" not in page.headers
+    assert page.headers["content-security-policy"] == "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     assert CSP_REPORT_ONLY.lower() not in client.get("/api/health").headers
     assert CSP_REPORT_ONLY in hardening_headers({"content-type": "text/html; charset=utf-8"}, https=False)
     assert inline_script_hashes() and all(policy.count(h) == 1 for h in inline_script_hashes())
@@ -131,3 +131,167 @@ def test_health_check_reads_the_ai_spend_warning_lines_the_guard_really_logs():
     assert "$failures" not in branch
     for sample in ("system daily spend near cap: 4.0100 of 5.00 USD (80%)", "system daily spend cap reached: 5.0100 of 5.00 USD"):
         assert re.search(r"daily spend (near cap|cap reached):", sample)
+
+
+# ---- pre-deploy hardening ---------------------------------------------------------------------------------------
+
+
+def test_the_deploy_script_refuses_to_start_without_the_runtime_safety_keys():
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "scripts" / "staging_8000_deploy.ps1").read_text(encoding="utf-8")
+    for key in ("AI_DAILY_SPEND_CEILING_USD", "AI_DAILY_SPEND_WARN_RATIO", "LEGAL_EFFECTIVE_DATE",
+                "AGENT_MEMORY_HMAC_KEYS", "AGENT_MEMORY_RETENTION_SWEEP"):
+        assert f"'{key}'" in script
+    # The check runs before anything is started, fails through Fail (exit 1), and never prints a value.
+    check = script[script.index("$runtimeKeys"):script.index("if ($names['APP_ENV']")]
+    assert script.index("$runtimeKeys") < script.index("docker.exe")
+    assert "Fail " in check and "Write-Host" not in check
+    assert "function Fail" in script and "exit 1" in script
+
+
+def test_enforced_csp_carries_the_always_safe_directives_beside_the_report_only_policy():
+    added = hardening_headers({"content-type": "text/html; charset=utf-8"}, https=True)
+    enforced = added["Content-Security-Policy"]
+    for directive in ("object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'"):
+        assert directive in enforced
+    assert "script-src" not in enforced and CSP_REPORT_ONLY in added
+    # A non-HTML answer carries neither; a route's own enforced policy is kept.
+    assert "Content-Security-Policy" not in hardening_headers({"content-type": "application/json"}, https=True)
+    assert "Content-Security-Policy" not in hardening_headers(
+        {"content-type": "text/html", "Content-Security-Policy": "sandbox"}, https=True)
+
+
+def test_nothing_in_the_shipped_pages_posts_a_form_elsewhere_or_frames_us():
+    root = Path(__file__).resolve().parents[1]
+    for folder in ("templates", "static"):
+        for page in (root / folder).rglob("*.html"):
+            text = page.read_text(encoding="utf-8")
+            for action in re.findall(r"<form[^>]*\baction=[\"']([^\"']+)", text, re.IGNORECASE):
+                assert not re.match(r"https?://", action), f"{page}: form posts to {action}"
+
+
+def _ops(name):
+    return (Path(__file__).resolve().parents[1] / "scripts" / name).read_text(encoding="utf-8")
+
+
+def test_both_registrations_run_headless_with_a_fallback_and_stay_under_the_user():
+    for name in ("register_health_check_8000.ps1", "register_daily_backup_8000.ps1"):
+        text = _ops(name)
+        assert "conhost.exe" in text and "--headless powershell.exe" in text
+        assert "Test-HeadlessConhost" not in text and "$headless = ($BuildNumber -ge 22000)" in text  # build only, no probe
+        code = " ".join(line for line in text.splitlines() if not line.lstrip().startswith("Write-Host"))
+        assert not re.search(r"-(Execute|Argument)\s+'\$", code), "single-quoted variable in the action"
+        assert "-WindowStyle Hidden" in text  # the fallback
+        assert "SYSTEM" not in text and "-Password" not in text and "-RunLevel" not in text
+
+
+def test_no_msg_exe_and_toast_is_off_by_default():
+    root = Path(__file__).resolve().parents[1]
+    for script in (root / "scripts").glob("*8000*.ps1"):
+        assert "msg.exe" not in script.read_text(encoding="utf-8"), script.name
+    health = _ops("health_check_8000.ps1")
+    assert "[switch]$NoToast" in health and "if ($NoToast) { return $false }" in health
+    register = _ops("register_health_check_8000.ps1")
+    assert "[switch]$Toast" in register and "' -NoToast'" in register
+
+
+def test_maintenance_flag_and_no_backup_yet_do_not_count_as_failures():
+    health = _ops("health_check_8000.ps1")
+    assert "maintenance.flag" in health
+    paused = health[health.index("if (Test-Path -LiteralPath $MaintenanceFlag)"):health.index("# 1-2.")]
+    assert "'paused'" in paused and "exit 0" in paused and "$state.failures" not in paused
+    start = health.index("$backupStatus = 'no_backup_yet'")
+    skipped = health[start:health.index("} else {", start)]
+    assert "Check " not in skipped
+
+
+def test_state_json_keeps_its_keys_and_only_adds_paused_and_last_status():
+    health = _ops("health_check_8000.ps1")
+    init = re.search(r"\$state = @\{(.*?)\}\r?\n", health).group(1)
+    keys = [k.strip().split(" = ")[0] for k in init.split(";")]
+    assert keys[:4] == ["failures", "restarts", "spendDay", "spendLevel"]
+    assert keys[4:] == ["paused", "last_status"]
+    assert "$state.last_status = 'ok'" in health and "$state.last_status = 'unhealthy'" in health
+
+
+def test_powershell_scripts_parse_when_powershell_is_available():
+    import shutil
+    import subprocess
+
+    exe = shutil.which("powershell") or shutil.which("pwsh")
+    if not exe:
+        pytest.skip("no PowerShell on this host")
+    root = Path(__file__).resolve().parents[1] / "scripts"
+    for name in ("health_check_8000.ps1", "register_health_check_8000.ps1", "register_daily_backup_8000.ps1"):
+        command = ("$e=$null;[void][System.Management.Automation.Language.Parser]::ParseFile('%s',[ref]$null,[ref]$e);"
+                   "if($e.Count){$e|%%{$_.Message};exit 1}" % (root / name))
+        done = subprocess.run([exe, "-NoProfile", "-Command", command], capture_output=True, text=True)
+        assert done.returncode == 0, done.stdout + done.stderr
+
+
+def test_the_deploy_script_validates_the_runtime_keys_with_the_apps_own_rules():
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "scripts" / "staging_8000_deploy.ps1").read_text(encoding="utf-8")
+    check = script[script.index("$runtimeKeys"):script.index("if ($names['APP_ENV']")]
+    assert "TryParseExact" in check and "'yyyy-MM-dd'" in check and "InvariantCulture" in script
+    assert "twice" in check and "shorter than 32" in check and "[1-9][0-9]{0,3}" in check
+    assert "-cnotmatch '^(on|off)$'" in check
+    assert "FEEDBACK_RETENTION_SWEEP" in check and "AGENT_TURN_RETENTION_SWEEP" in check and "Write-Warning" in check
+    assert "Write-Host" not in check
+
+
+def test_pronunciation_body_cap_follows_an_operator_raised_provider_limit(monkeypatch):
+    from writing_coach.core.http_security import body_limit
+
+    for name in ("AZURE_PRONUNCIATION_MAX_BYTES", "DEMO_PRONUNCIATION_MAX_BYTES"):
+        monkeypatch.delenv(name, raising=False)
+    assert body_limit("POST", "/api/speech/pronunciation") == 16 * 1024 * 1024
+    monkeypatch.setenv("AZURE_PRONUNCIATION_MAX_BYTES", str(4 * 1024 * 1024))
+    assert body_limit("POST", "/api/speech/pronunciation") == 16 * 1024 * 1024
+    monkeypatch.setenv("AZURE_PRONUNCIATION_MAX_BYTES", str(24 * 1024 * 1024))
+    assert body_limit("POST", "/api/speech/pronunciation") == 25 * 1024 * 1024
+    monkeypatch.setenv("AZURE_PRONUNCIATION_MAX_BYTES", "not-a-number")
+    assert body_limit("POST", "/api/speech/pronunciation") == 16 * 1024 * 1024
+
+
+def _run_registration(script, build, *extra):
+    """Runs a register script with -Apply under PowerShell, with the ScheduledTasks cmdlets replaced by recorders."""
+    import json
+    import shutil
+    import subprocess
+
+    exe = shutil.which("powershell") or shutil.which("pwsh")
+    if not exe:
+        pytest.skip("no PowerShell on this host")
+    path = Path(__file__).resolve().parents[1] / "scripts" / script
+    mocks = (
+        "function New-ScheduledTaskAction { param($Execute, $Argument) [pscustomobject]@{ Execute = $Execute; Arguments = $Argument } };"
+        "function New-ScheduledTaskTrigger { param([switch]$Once, [switch]$Daily, $At, $RepetitionInterval, $RepetitionDuration) 'trigger' };"
+        "function New-ScheduledTaskSettingsSet { param([switch]$StartWhenAvailable, [switch]$AllowStartIfOnBatteries, "
+        "[switch]$DontStopIfGoingOnBatteries, $ExecutionTimeLimit, $MultipleInstances) 'settings' };"
+        "function Register-ScheduledTask { param($TaskName, $Action, $Trigger, $Settings, $Description, [switch]$Force) "
+        "$global:reg = [pscustomobject]@{ Task = $TaskName; Execute = $Action.Execute; Arguments = $Action.Arguments } };"
+    )
+    command = mocks + f"& '{path}' -Apply -BuildNumber {build} {' '.join(extra)} | Out-Null; $global:reg | ConvertTo-Json -Compress"
+    done = subprocess.run([exe, "-NoProfile", "-Command", command], capture_output=True, text=True)
+    assert done.returncode == 0, done.stdout + done.stderr
+    return json.loads(done.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.parametrize("script,task,quiet_flag", [
+    ("register_health_check_8000.ps1", "OrenaHealthCheck8000", " -NoToast"),
+    ("register_daily_backup_8000.ps1", "OrenaDailyBackup8000", ""),
+])
+def test_apply_registers_the_real_action_not_a_literal_variable_name(script, task, quiet_flag):
+    modern = _run_registration(script, 26200)
+    assert modern["Task"] == task and modern["Execute"] == "conhost.exe"
+    assert modern["Arguments"].startswith("--headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File ")
+    assert modern["Arguments"].endswith(quiet_flag) or quiet_flag == ""
+    older = _run_registration(script, 19045)
+    assert older["Execute"] == "powershell.exe" and older["Arguments"].startswith("-WindowStyle Hidden -NoProfile")
+    for registered in (modern, older):
+        assert "$" not in registered["Execute"] and "$" not in registered["Arguments"]
+
+
+def test_health_registration_opts_in_to_toast_only_when_asked():
+    assert "-NoToast" not in _run_registration("register_health_check_8000.ps1", 26200, "-Toast")["Arguments"]

@@ -490,4 +490,65 @@ fixtureFor = () => ({ body: { ok: true, id: 'J', items: [], results: [{ status: 
   await assert.rejects(() => content.applyLifecycle(adminApi, 'book', 'B', 'publish'), /Unknown lifecycle/, 'an intent a kind does not have is refused, not guessed');
 }
 
+{
+  /* The auto-publish toggle's handler (#359): turning it ON asks first and the words name the no-political-news rule in every language;
+     cancel sends nothing; confirm POSTs; a failed POST shows the error and leaves the list as it was; turning it OFF never asks. */
+  const { mountReading } = await import('../static/orena/screens/admin/reading.js');
+  const listeners = { page: {}, layer: {} };
+  const part = (name) => { const el = new Fake(); el.addEventListener = (type, fn) => { listeners[name][type] = fn; }; return el; };
+  const shell = { page: Object.assign(part('page'), { contains: () => true }), layer: part('layer'), filter: new Fake(), main: new Fake(), setTitle() {}, setFilter() {} };
+  const ctx = { route: { id: 'adminSource' }, params: { id: 'SRC' }, query: new URLSearchParams(), href: () => '#', go() {}, replace() {}, setCrumb() {} };
+  let enabled = false;
+  let failPost = false;
+  const saved = fixtureFor;
+  fixtureFor = (method, path) => {
+    if (method === 'GET' && path === '/api/admin/reading/sources') return { body: { items: [source({ auto_publish: { enabled } })] } };
+    if (method === 'POST' && path === '/api/admin/reading/sources/SRC/auto-publish') {
+      if (failPost) return { status: 500, body: { detail: 'boom' } };
+      enabled = JSON.parse(requests.at(-1).body).enabled;
+      return { body: { ok: true } };
+    }
+    return saved(method, path);
+  };
+  await mountReading(shell, ctx);
+  const settle = () => new Promise((resolve) => setTimeout(resolve, 5));
+  const posts = () => requests.filter((r) => r.method === 'POST' && r.path.endsWith('/auto-publish'));
+  const click = async (name, dataset) => {
+    const control = { dataset, tagName: 'BUTTON', disabled: false };
+    const event = { target: { closest: () => control }, stopPropagation() {}, preventDefault() {} };
+    listeners[name].click(event);
+    await settle();
+  };
+  const dialogHtml = () => shell.layer.querySelector('[data-part="dialog"]').innerHTML;
+  const turnOn = { a: 'source-auto-publish', id: 'SRC', enabled: '1' };
+  for (const lang of ['en', 'vi', 'zh']) {
+    copyIndex.setLanguages({ ui: lang, support: lang });
+    const body = common(lang).t('srcAutoConfirmBody');
+    assert.ok(/political|chính trị|政治/.test(body) && /sensitive|nhạy cảm|敏感/.test(body), `${lang}: the confirm names the no political or sensitive news rule`);
+    assert.notEqual(common(lang).t('srcAutoPillOn'), 'srcAutoPillOn', `${lang}: the auto-publish pill has its own words`);
+  }
+  copyIndex.setLanguages({ ui: 'en', support: 'en' });
+  const before = posts().length;
+  await click('page', turnOn);
+  assert.ok(dialogHtml().includes('political or sensitive news'), 'turning on opens the confirmation with the rule');
+  assert.equal(posts().length, before, 'nothing is sent while the question is open');
+  await click('layer', { a: 'dialog-cancel' });
+  assert.equal(posts().length, before, 'cancel sends nothing');
+  await click('page', turnOn);
+  failPost = true;
+  await click('layer', { a: 'dialog-confirm' });
+  assert.equal(posts().length, before + 1, 'confirm sends the POST');
+  assert.ok(shell.page.innerHTML.includes('boom') || shell.page.innerHTML.includes('a-banner'), 'a failed POST shows an error');
+  assert.ok(shell.page.innerHTML.includes('data-enabled="1"'), 'a failed POST leaves the toggle offering to turn on');
+  failPost = false;
+  await click('page', turnOn);
+  await click('layer', { a: 'dialog-confirm' });
+  assert.deepEqual(JSON.parse(posts().at(-1).body), { enabled: true }, 'confirm turns it on');
+  assert.ok(shell.page.innerHTML.includes('data-enabled="0"'), 'the toggle now offers to turn off');
+  await click('page', { a: 'source-auto-publish', id: 'SRC', enabled: '0' });
+  assert.deepEqual(JSON.parse(posts().at(-1).body), { enabled: false }, 'turning off sends at once, without a question');
+  assert.equal(dialogHtml(), '', 'turning off opens no dialog');
+  fixtureFor = saved;
+}
+
 console.log(`Orena admin areas: shared Reading/Imports/Content/tray rules, ${ROUTES.filter((r) => r.admin).length} admin routes mounting for an admin on guarded endpoints only (${guarded.length} in the matrix), 3 languages x pages: PASS`);

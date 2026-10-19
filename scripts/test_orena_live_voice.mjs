@@ -165,11 +165,12 @@ const { createSession } = await import('../static/orena/agent/session.js');
   const settle = () => new Promise((resolve) => realSetTimeout(resolve, 0));
   const closedReasons = [];
   const limits = [];
+  const completed = [];
   try {
     const session = { voice_session_id: 'vs-1', chunk: 0, max_seconds: 120, renew_in: 108, connect: { url: 'wss://x', ephemeral_token: 't0', setup: { setup: { model: 'm' } } } };
     const link = connectLiveVoice(session, {
       audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl, WebSocketCtor: FakeSocket,
-      onClosed: (reason) => closedReasons.push(reason), onLimit: (error) => limits.push(error),
+      onClosed: (reason) => closedReasons.push(reason), onLimit: (error) => limits.push(error), onTurnComplete: (turn) => completed.push(turn.usageId),
     });
     assert.equal(sockets.length, 1);
     assert.ok(sockets[0].url.endsWith('access_token=t0'));
@@ -192,8 +193,15 @@ const { createSession } = await import('../static/orena/agent/session.js');
     assert.deepEqual(sockets[1].sent[0], { setup: { model: 'm' } }, 'the new socket sends the locked setup first');
     sockets[1].onmessage({ data: JSON.stringify({ serverContent: { outputTranscription: { text: 'ignored while pending' } } }) });
     await settle();
+    // #368: the chunk is already 1 (extend answered) but the conversation is still on token 0, so a turn ending now names token 0
+    sockets[0].onmessage({ data: JSON.stringify({ serverContent: { outputTranscription: { text: 'one' }, turnComplete: true } }) });
+    await settle();
+    assert.deepEqual(completed, ['vs-1:voice:0'], 'after extend, before takeover: the usage id is the ending chunk, not the newest one');
     sockets[1].onmessage({ data: JSON.stringify({ setupComplete: {} }) });
     await settle();
+    sockets[1].onmessage({ data: JSON.stringify({ serverContent: { outputTranscription: { text: 'two' }, turnComplete: true } }) });
+    await settle();
+    assert.deepEqual(completed, ['vs-1:voice:0', 'vs-1:voice:1'], 'after takeover: the usage id follows the new chunk');
     assert.equal(sockets[0].closed, true, 'handed over: the old socket is closed');
     sockets[0].onclose();
     assert.deepEqual(closedReasons, [], 'the retired socket closing does not end the session');

@@ -32,7 +32,7 @@ from __future__ import annotations
 import base64
 import json
 import uuid
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
@@ -42,7 +42,7 @@ from sqlalchemy import delete, func, insert, select, update
 from sqlalchemy.engine import Engine
 
 from writing_coach.persistence.reading_evidence_repository import stale_sets_for_body
-from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS, analyze_article
+from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS, analyze_article, quality_issues
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
 from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
 from writing_coach.reading_admission import auto_publish_enabled, with_auto_publish
@@ -391,6 +391,10 @@ def _item(row: Any) -> dict[str, Any]:
         "superseded_at": _iso(row.superseded_at),
         "fetched_at": _iso(row.fetched_at),
     }
+
+
+RECOUNT_BATCH_SIZE = 100
+SIZE_ISSUE_CODES = frozenset({"too_short", "too_long"})
 
 
 def body_derived_values(body: str, language: str, analysis: Mapping[str, Any] | None) -> dict[str, Any]:
@@ -1529,6 +1533,8 @@ class ReadingContentRepository:
                         "from": current["reading_time_seconds"], "to": derived["reading_time_seconds"]},
                 }
                 values["content_revision"] = current["content_revision"] + 1
+                changes.update(self._body_follow_ups(
+                    connection, _uuid(article_id), values["body"], current["language"], stored))
             connection.execute(
                 update(ReadingArticle)
                 .where(ReadingArticle.id == _uuid(article_id))
@@ -1552,32 +1558,81 @@ class ReadingContentRepository:
         return self.get_article(article_id)
 
     def recount_articles(
-        self, *, apply: bool = False, article_id: str | None = None, actor: str = "recount", now: datetime | None = None
+        self, *, apply: bool = False, article_id: str | None = None, actor: str = "recount",
+        now: datetime | None = None, batch_size: int = RECOUNT_BATCH_SIZE,
     ) -> list[dict[str, Any]]:
-        """Articles whose stored counts differ from their body; with `apply`, fix them (idempotent)."""
+        """Articles whose stored counts differ from their body; with `apply`, fix them (idempotent).
+
+        Ids are paged in batches (keyset) and each article is read, locked `FOR UPDATE`, corrected
+        and committed in its own transaction, so memory stays bounded to one body and a failure
+        part-way leaves every earlier row fixed. Stale size issues and orphan targets are
+        reported, never auto-cleared.
+        """
         moment = _now(now)
         found: list[dict[str, Any]] = []
-        with self.engine.begin() as connection:
-            query = select(ReadingArticle.id, ReadingArticle.body, ReadingArticle.language,
-                           ReadingArticle.word_count, ReadingArticle.reading_time_seconds,
-                           ReadingArticle.analysis_json, ReadingArticle.content_revision)
-            if article_id:
-                query = query.where(ReadingArticle.id == _uuid(article_id))
-            for row in connection.execute(query).all():
+        for row_id in self._recount_ids(article_id, batch_size):
+            with self.engine.begin() as connection:
+                query = select(ReadingArticle.id, ReadingArticle.body, ReadingArticle.language,
+                               ReadingArticle.word_count, ReadingArticle.reading_time_seconds,
+                               ReadingArticle.analysis_json, ReadingArticle.content_revision
+                               ).where(ReadingArticle.id == row_id)
+                if connection.dialect.name == "postgresql":
+                    query = query.with_for_update()
+                row = connection.execute(query).first()
+                if row is None:
+                    continue
                 derived = body_derived_values(row.body, row.language, row.analysis_json)
                 if (derived["word_count"], derived["reading_time_seconds"]) == (row.word_count, row.reading_time_seconds):
                     continue
-                found.append({
+                item = {
                     "id": str(row.id), "language": row.language,
                     "word_count": {"from": row.word_count, "to": derived["word_count"]},
                     "reading_time_seconds": {"from": row.reading_time_seconds, "to": derived["reading_time_seconds"]},
-                })
+                }
+                item.update(self._body_follow_ups(connection, row.id, row.body, row.language, row.analysis_json))
+                found.append(item)
                 if apply:
                     connection.execute(update(ReadingArticle).where(ReadingArticle.id == row.id).values(
                         **derived, content_revision=row.content_revision + 1, updated_at=moment))
                     self._record_event(connection, article_id=row.id, actor=actor, action="edited",
-                                       reason="recount", changes={"recounted": found[-1]}, now=moment)
+                                       reason="recount", changes={"recounted": item}, now=moment)
         return found
+
+    def _recount_ids(self, article_id: str | None, batch_size: int) -> Iterator[uuid.UUID]:
+        if article_id:
+            yield _uuid(article_id)
+            return
+        last: uuid.UUID | None = None
+        while True:
+            query = select(ReadingArticle.id).order_by(ReadingArticle.id).limit(max(1, batch_size))
+            if last is not None:
+                query = query.where(ReadingArticle.id > last)
+            with self.engine.connect() as connection:
+                ids = list(connection.execute(query).scalars())
+            if not ids:
+                return
+            yield from ids
+            last = ids[-1]
+
+    @staticmethod
+    def _body_follow_ups(
+        connection: Any, article_id: uuid.UUID, body: str, language: str, analysis: Mapping[str, Any] | None
+    ) -> dict[str, Any]:
+        """What a changed body leaves for an admin to decide: reported, never cleared."""
+        out: dict[str, Any] = {}
+        stored = [code for code in ((analysis or {}).get("quality_issues") or []) if code in SIZE_ISSUE_CODES]
+        current = [code for code in quality_issues(body, language) if code in SIZE_ISSUE_CODES]
+        if sorted(stored) != sorted(current):
+            out["stale_quality_issues"] = {"stored": stored, "now": current}
+        folded = body.casefold()
+        targets = connection.execute(
+            select(ReadingArticleTarget.text).where(
+                ReadingArticleTarget.article_id == article_id, ReadingArticleTarget.admin_rejected.is_(False))
+        ).scalars()
+        orphans = [text for text in targets if text.strip() and text.casefold() not in folded]
+        if orphans:
+            out["orphan_targets"] = orphans
+        return out
 
     def set_status(
         self,

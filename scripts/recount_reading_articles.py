@@ -45,6 +45,11 @@ def main(argv: list[str] | None = None) -> int:
     for item in found:
         print(f"{item['id']} {item['language']} words {item['word_count']['from']} -> {item['word_count']['to']}, "
               f"seconds {item['reading_time_seconds']['from']} -> {item['reading_time_seconds']['to']}")
+        stale = item.get("stale_quality_issues")
+        if stale:
+            print(f"  stale quality issues (not cleared): stored {stale['stored']} -> now {stale['now']}")
+        if item.get("orphan_targets"):
+            print(f"  orphan targets (phrase no longer in the body): {item['orphan_targets']}")
     print(f"{len(found)} stale; {'corrected' if args.apply else 'dry run, nothing written (use --apply)'}")
     return 0
 
