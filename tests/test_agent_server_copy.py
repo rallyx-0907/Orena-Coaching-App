@@ -257,7 +257,8 @@ def test_a_forget_ignored_twice_never_claims_it_and_asks_once_more_plainly():
         request("Quên ghi chú về ví dụ đó đi.", notes=(SHORT,), addressed={"self": "chị", "user": "em", "lang": "vi"}),
     )
     assert len(provider.requests) == 2 and not [e for e in events if e.name == "memory_update"]
-    assert segments(events)[0][1] == "Chị chưa xoá được ghi chú đó. Em nhắn lại một lần nữa để chị xoá nhé."
+    text = segments(events)[0][1]
+    assert text == "Chị chưa xoá được ghi chú đó. Em nhắn lại một lần nữa nhé." == deltas(events)  # no claim leaked
 
 
 def test_a_correction_done_at_once_is_not_asked_again():
