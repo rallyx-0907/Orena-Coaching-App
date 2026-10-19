@@ -166,7 +166,7 @@ note.
    - The refund's item in `GET /api/admin/billing/reconciliation` is resolved with `refund_confirmed`, through
      `POST /api/admin/billing/reconciliation/{item_id}/resolve`.
 6. **Reply to the learner.**
-   - The refund goes to the card that was charged; its timing is the bank's.
+   - The refund goes through Polar to the original payment method where possible; the timing is the bank's.
    - The plan has ended.
    - The learning data is kept for 3 months.
 
