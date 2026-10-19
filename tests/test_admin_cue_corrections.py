@@ -23,7 +23,7 @@ from writing_coach.content_packs import build_pack, read_pack
 from writing_coach.media_library_store import FileMediaLibraryStore, MediaLibraryEntry
 from writing_coach.media_meaning import IMPORTED_IDENTITY, cache_key, resolve_segment_meanings
 from writing_coach.persistence.admin_repository import AdminConsoleRepository
-from writing_coach.persistence.models import AuditLog, Base
+from writing_coach.persistence.models import AuditLog, Base, VocabularyCollectionMembership, VocabularyEntry
 from writing_coach.persistence.vocabulary_repository import sqlite_vocabulary_repository
 from writing_coach.vocabulary_source_import import (
     detect_vocabulary_mapping,
@@ -291,3 +291,118 @@ def test_vocabulary_gloss_correction_edits_a_published_entry_and_its_snapshot(se
     assert call(setup["app"], "PATCH", f"/api/admin/console/content/vocabulary/pack/entries/{uuid.uuid4()}/gloss",
                 json={"language": "vi", "text": "x"}).status_code == 404
     assert call(setup["app"], "PATCH", path, json={"language": "xx", "text": "x"}).status_code == 422
+
+
+QUOTED = "这个计划画蛇添足，反而不好。"
+EXAMPLES = [
+    {"language": "zh", "text": "他写完了还要加一句，真是画蛇添足。", "reading": "tā xiě wán le hái yào jiā yī jù",
+     "highlight": {"match": "画蛇添足"}, "translation": {"vi": "Viết xong còn thêm một câu.", "en": "He added one more line."},
+     "origin": "source"},
+    {"language": "zh", "text": QUOTED, "reading": "zhè ge jì huà huà shé tiān zú", "highlight": {"match": "画蛇添足"},
+     "translation": {"vi": "Kế hoạch này vẽ rắn thêm chân.", "en": "This plan gilds the lily."}, "origin": "source"},
+    {"language": "zh", "text": "不要画蛇添足。", "reading": "bú yào huà shé tiān zú",
+     "translation": {"vi": "Đừng vẽ rắn thêm chân.", "en": "Don't overdo it."}, "origin": "source"},
+]
+
+
+def _published_idiom(repository, collection="idioms"):
+    csv = "word,meaning" + chr(10) + "画蛇添足,vẽ rắn thêm chân" + chr(10)
+    parsed = parse_vocabulary_source("pack.csv", csv.encode("utf-8"))
+    detected = detect_vocabulary_mapping(parsed)
+    normalized = normalize_vocabulary_rows(parsed, mapping=detected.mapping, language_code="zh", meaning_language="vi",
+                                           collection_framework="HSK", collection_level="HSK5")
+    repository.import_source(
+        collection={"id": collection, "title": "Idioms", "language_code": "zh", "framework": "HSK", "level": "HSK5",
+                    "catalog_status": "pending_review", "origin": "imported", "provenance": {"publisher": "test"}},
+        source=normalized, records=normalized["records"], mapping=detected.mapping, imported_by="admin@example.com")
+    repository.finalize_collection_publication(collection, admission={
+        "rights_status": "licensed", "completeness": "complete", "review_status": "approved",
+        "publication_attested": True, "attested_by": "admin@example.com"})
+    entry_id = repository.list_entries(collection)[0][0]["id"]
+    with Session(repository.engine) as session, session.begin():
+        entry = session.get(VocabularyEntry, uuid.UUID(entry_id))
+        entry.examples = json.loads(json.dumps(EXAMPLES))
+        membership = session.query(VocabularyCollectionMembership).filter_by(
+            collection_id=collection, entry_id=uuid.UUID(entry_id)).one()
+        membership.membership_metadata = {**(membership.membership_metadata or {}),
+                                          "content_snapshot": {"examples": json.loads(json.dumps(EXAMPLES))}}
+    return entry_id
+
+
+def _snapshot(repository, collection, entry_id):
+    with Session(repository.engine) as session:
+        membership = session.query(VocabularyCollectionMembership).filter_by(
+            collection_id=collection, entry_id=uuid.UUID(entry_id)).one()
+        return membership.membership_metadata["content_snapshot"]
+
+
+def test_vocabulary_example_correction_replaces_one_published_example_and_its_snapshot(setup):
+    repository = setup["vocabulary"]
+    entry_id = _published_idiom(repository)
+    path = f"/api/admin/console/content/vocabulary/idioms/entries/{entry_id}/examples/1"
+    new = "我们的报告已经很好了，再加图表就是画蛇添足。"
+    body = {"text": f" {new} ", "reading": "wǒ men de bào gào yǐ jīng hěn hǎo le", "language": "zh",
+            "translations": {"vi": "Báo cáo đã tốt rồi.", "EN": "Our report is good already."},
+            "reason": "PRE-201 F3: quoted from a video transcript without credit"}
+    done = call(setup["app"], "PATCH", path, json=body)
+    assert done.status_code == 200, done.text
+    assert done.json()["changed"] is True
+    examples = repository.get_collection("idioms")["entries"][0]["examples"]
+    assert examples[0] == EXAMPLES[0] and examples[2] == EXAMPLES[2]
+    assert examples[1] == {"language": "zh", "text": new, "reading": "wǒ men de bào gào yǐ jīng hěn hǎo le",
+                           "highlight": {"match": "画蛇添足"}, "origin": "source",
+                           "translation": {"vi": "Báo cáo đã tốt rồi.", "en": "Our report is good already."}}
+    snapshot = _snapshot(repository, "idioms", entry_id)["examples"]
+    assert snapshot[1]["text"] == new and snapshot[1]["translation"]["en"] == "Our report is good already."
+    assert snapshot[0] == EXAMPLES[0] and snapshot[2] == EXAMPLES[2]
+    with Session(repository.engine) as session:
+        provenance = session.get(VocabularyEntry, uuid.UUID(entry_id)).provenance
+    record = provenance["example_corrections"][0]
+    assert record["actor"] == "sub-admin" and record["from"] == QUOTED and record["to"] == new
+    assert record["index"] == 1 and record["reason"].startswith("PRE-201") and record["at"]
+    audit = _audit_rows(setup["engine"], "admin.content.vocabulary_example")
+    assert len(audit) == 1 and audit[0]["from"] == QUOTED and audit[0]["to"] == new
+    assert audit[0]["actor"] == "sub-admin" and audit[0]["outcome"] == "ok" and audit[0]["index"] == 1
+    again = call(setup["app"], "PATCH", path, json=body)
+    assert again.status_code == 200 and again.json()["changed"] is False
+
+
+def test_vocabulary_example_correction_refuses_bad_input(setup):
+    repository = setup["vocabulary"]
+    entry_id = _published_idiom(repository)
+    base = f"/api/admin/console/content/vocabulary/idioms/entries/{entry_id}/examples"
+    good = {"text": "新句子。", "reading": "xīn jù zi", "translations": {"vi": "Câu mới.", "en": "A new sentence."},
+            "reason": "uncredited quote"}
+
+    def status(path, **changes):
+        return call(setup["app"], "PATCH", path, json={**good, **changes}).status_code
+
+    assert status(f"{base}/3") == 422                                    # out of range
+    assert status(f"{base}/-1") == 422
+    assert status(f"{base}/0", text="   ") == 422                         # empty sentence
+    assert status(f"{base}/0", text="") == 422
+    assert status(f"{base}/0", reason=" ") == 422                         # a reason is required
+    assert status(f"{base}/0", language="en") == 422                      # not the entry's language
+    assert status(f"{base}/0", translations={"vi": "Câu mới."}) == 422     # the old EN gloss would go stale
+    assert status(f"{base}/0", translations={"vi": "Câu mới.", "en": " "}) == 422
+    assert status(f"{base}/0", translations={"vi": "x", "en": "x", "xx": "x"}) == 422
+    assert status(f"{base}/0", reading=None) == 422                       # the old pinyin would go stale
+    assert status(f"/api/admin/console/content/vocabulary/idioms/entries/{uuid.uuid4()}/examples/0") == 404
+    assert status(f"/api/admin/console/content/vocabulary/other/entries/{entry_id}/examples/0") == 404
+    assert repository.get_collection("idioms")["entries"][0]["examples"] == EXAMPLES
+    assert _audit_rows(setup["engine"], "admin.content.vocabulary_example") == []
+    with pytest.raises(ValueError):
+        repository.correct_entry_example("idioms", entry_id, 5, text="x", translations={}, actor="a", reason="r")
+
+
+def test_vocabulary_example_route_is_admin_only_and_same_origin(setup):
+    repository = setup["vocabulary"]
+    entry_id = _published_idiom(repository)
+    path = f"/api/admin/console/content/vocabulary/idioms/entries/{entry_id}/examples/1"
+    body = {"text": "新句子。", "reading": "xīn jù zi", "translations": {"vi": "Câu mới.", "en": "A new sentence."},
+            "reason": "uncredited quote"}
+    assert call(setup["app"], "PATCH", path, admin=False, json=body).status_code == 403
+    assert call(setup["app"], "PATCH", path, origin=None, json=body).status_code == 403
+    assert call(setup["app"], "PATCH", path, origin="https://evil.example", json=body).status_code == 403
+    assert repository.get_collection("idioms")["entries"][0]["examples"] == EXAMPLES
+    assert _audit_rows(setup["engine"], "admin.content.vocabulary_example") == []

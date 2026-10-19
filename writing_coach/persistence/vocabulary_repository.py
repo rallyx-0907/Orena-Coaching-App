@@ -1289,6 +1289,123 @@ class SQLAlchemyVocabularyRepository:
             result = _entry_dict(entry)
         return {"from": before, "to": clean_text, "entry": result}
 
+    def correct_entry_example(
+        self,
+        collection_id: str,
+        entry_id: str,
+        index: int,
+        *,
+        text: str,
+        translations: Mapping[str, str],
+        actor: str,
+        reason: str,
+        language: str | None = None,
+        reading: str | None = None,
+    ) -> dict[str, Any]:
+        """Replace one example sentence of an entry (its `examples[index]`) by hand.
+
+        The sibling of `correct_entry_gloss`: an authored import overwrites only an unpublished entry, so this is the
+        way to replace a published example (for instance one quoted from a source without credit). The item keeps its
+        shape: the sentence, its reading (pinyin) when it has one, and its language-tagged `translation`; any other
+        keys (highlight, label, origin) stay. Every support language the old item was translated into must be given
+        again, and a reading is required when the old item had one, so no stale gloss or pinyin is left beside the
+        new sentence. A collection-scoped content snapshot is corrected with the entry. Who, when, why, and the text
+        before and after are kept in `provenance.example_corrections`. No schema change; nothing learner-owned is
+        read or written.
+        """
+        self._require_available()
+        clean_text, clean_reason = _text(text), _text(reason)
+        if not clean_text:
+            raise ValueError("An example needs a sentence.")
+        if not clean_reason:
+            raise ValueError("Give the reason for the correction.")
+        if isinstance(index, bool) or not isinstance(index, int) or index < 0:
+            raise ValueError("The example index is out of range.")
+        clean_translations: dict[str, str] = {}
+        for code, value in (translations or {}).items():
+            clean_code, clean_value = _text(code).casefold(), _text(value)
+            if not clean_code or not clean_value:
+                raise ValueError("Each translation needs a language and text.")
+            clean_translations[clean_code] = clean_value
+        clean_reading = _text(reading)
+        try:
+            wanted = uuid.UUID(_text(entry_id))
+        except ValueError:
+            raise LookupError(entry_id) from None
+        now = _now()
+        with Session(self.engine) as session, session.begin():
+            membership = session.scalar(
+                select(VocabularyCollectionMembership).where(
+                    VocabularyCollectionMembership.collection_id == _text(collection_id),
+                    VocabularyCollectionMembership.entry_id == wanted,
+                )
+            )
+            entry = session.get(VocabularyEntry, wanted)
+            if membership is None or entry is None:
+                raise LookupError(entry_id)
+            entry_language = _text(entry.language_code).casefold()
+            if language is not None and _text(language).casefold() != entry_language:
+                raise ValueError("The example's language must be the entry's language.")
+            if entry_language in clean_translations:
+                raise ValueError("A translation must be in a support language, not the entry's language.")
+            examples = _copy_json(entry.examples, []) or []
+            if not isinstance(examples, list) or index >= len(examples):
+                raise ValueError("The example index is out of range.")
+            old = examples[index]
+            old_item = dict(old) if isinstance(old, Mapping) else {"language": entry_language, "text": _text(old)}
+            old_language = _text(old_item.get("language")).casefold()
+            if old_language and old_language != entry_language:
+                raise ValueError("The example's language must be the entry's language.")
+            before = _text(old_item.get("text"))
+            old_translation = old_item.get("translation")
+            old_codes = (
+                {_text(code).casefold() for code, value in old_translation.items() if _text(value)}
+                if isinstance(old_translation, Mapping)
+                else set()
+            )
+            missing = sorted(old_codes - set(clean_translations))
+            if missing:
+                raise ValueError("Give the new translation in " + ", ".join(missing) + ".")
+            if _text(old_item.get("reading")) and not clean_reading:
+                raise ValueError("This example has a reading; give the new sentence's reading.")
+
+            def corrected(item: Any) -> dict[str, Any]:
+                base = dict(item) if isinstance(item, Mapping) else {"language": entry_language, "text": _text(item)}
+                base["text"] = clean_text
+                base.setdefault("language", entry_language)
+                if clean_reading:
+                    base["reading"] = clean_reading
+                if clean_translations:
+                    base["translation"] = dict(clean_translations)
+                return base
+
+            examples[index] = corrected(old)
+            entry.examples = examples
+            metadata = _copy_json(membership.membership_metadata, {}) or {}
+            snapshot = metadata.get("content_snapshot")
+            if isinstance(snapshot, Mapping) and isinstance(snapshot.get("examples"), list):
+                copied = list(snapshot["examples"])
+                texts = [_text(item.get("text")) if isinstance(item, Mapping) else _text(item) for item in copied]
+                position = texts.index(before) if before and before in texts else index
+                if position < len(copied):
+                    copied[position] = corrected(copied[position])
+                    metadata["content_snapshot"] = {**snapshot, "examples": copied}
+                    membership.membership_metadata = metadata
+            provenance = _copy_json(entry.provenance, {}) or {}
+            history = list(provenance.get("example_corrections") or [])
+            history.append({
+                "index": index, "actor": actor, "at": now.isoformat(), "collection_id": _text(collection_id),
+                "reason": clean_reason, "from": before, "to": clean_text,
+                "translation_languages": sorted(clean_translations),
+            })
+            entry.provenance = {**provenance, "example_corrections": history[-50:]}
+            collection = session.get(VocabularyCollection, _text(collection_id))
+            if collection is not None:
+                collection.updated_at = now
+            session.flush()
+            result = _entry_dict(entry)
+        return {"from": before, "to": clean_text, "changed": examples[index] != old_item, "entry": result}
+
     def finalize_collection_publication(
         self, collection_id: str, *, admission: Mapping[str, Any]
     ) -> dict[str, Any]:
