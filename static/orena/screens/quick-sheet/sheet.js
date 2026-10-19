@@ -443,7 +443,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           const ctxText = contextFor(target, context || sentence);
           try {
             detail = await api.wordDetail(wordDetailRequest({ contextual: false, target, context: ctxText, lang, support, source }));
-            if (!detail?.available) aiPause = pausedLineNow();
+            if (!detail?.available) aiPause = pausedLineNow('/api/dictionary/word-detail');
           } catch (error) {
             detail = null;
             aiPause = pausedLineOf(error);
@@ -461,7 +461,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             withinTime(api.wordDetail(wordDetailRequest({ contextual: true, target, context: ctxText, lang, support, source })), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
-              if (contextualFailed || enriched?.available === false) aiPause = pausedLineNow();
+              if (contextualFailed || enriched?.available === false) aiPause = pausedLineNow('/api/dictionary/word-detail');
               if (aiPause) contextualFailed = true;
               // Whether it is kept is the learner's own last save/unsave, not what the answer says.
               const answer = enriched ? { ...enriched, saved: keptNow } : enriched;
@@ -568,7 +568,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
       const response = await api.readingTranslate({ source_language: lang, target_language: support, content_id: source?.content_id || undefined, segments: [{ segment_id: 's0', text: subject }] });
       const meaning = response?.status === 'ready' ? String(response.translations?.[0]?.translated_meaning || '').trim() : '';
       translation = meaning ? { state: 'ready', text: meaning } : { state: 'failed', text: '' };
-      if (!meaning) aiPause = pausedLineNow();
+      if (!meaning) aiPause = pausedLineNow('/api/reading/translate');
     } catch (error) {
       translation = { state: 'failed', text: '' };
       aiPause = pausedLineOf(error);
@@ -748,7 +748,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
           }
           if (!alive) return;
           sheetData = mapSentenceSheet(response || {});
-          if (!sheetData.available && !sheetPause) sheetPause = pausedLineNow();
+          if (!sheetData.available && !sheetPause) sheetPause = pausedLineNow('/api/dictionary/sentence-sheet');
           paint();
         })();
         return () => {

@@ -205,7 +205,7 @@ export default async function situation(element, ctx) {
       });
       if (!alive()) return;
       coaching = result?.available ? result : null;
-      errorText = result?.available ? '' : (pausedLineNow() || t('serviceError'));
+      errorText = result?.available ? '' : (pausedLineNow('/api/dictionary/spoken-response') || t('serviceError'));
     } catch (error) {
       if (!alive()) return;
       coaching = null;

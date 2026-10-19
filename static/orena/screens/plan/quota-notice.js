@@ -44,7 +44,7 @@ export function pausedMessage(resetsAt) {
 
 /* The same pause as any response carries it (header `X-Orena-AI-Paused`, contract v11, D-235): the surface that made the call
    shows this line in the place it already shows a failed request - no retry (it would be refused again), no way to the plans
-   (it is not the learner's plan). `pausedLineOf(error)` reads a refused request; `pausedLineNow()` serves a call the server
+   (it is not the learner's plan). `pausedLineOf(error)` reads a refused request; `pausedLineNow(route)` serves a call the server
    answered 200 with part of it unavailable (Listening's meaning), which has no error to read. '' when there is no pause,
    so a surface falls through to its own failed-request text. */
 export function isAiPaused(error) {
@@ -56,8 +56,8 @@ export function pausedLineOf(error) {
   return pause ? pausedMessage(pause.resetsAt) : '';
 }
 
-export function pausedLineNow() {
-  const pause = recentAiPause();
+export function pausedLineNow(routes) {
+  const pause = recentAiPause(routes);
   return pause ? pausedMessage(pause.resetsAt) : '';
 }
 

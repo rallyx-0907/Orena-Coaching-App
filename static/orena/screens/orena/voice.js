@@ -24,7 +24,7 @@ import { toast } from '../../kit/toast.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { micUnavailableReason } from '../mic/model.js';
-import { openVoiceSession, connectLiveVoice, listVoices, voiceEntitled, noteVoiceEntitled } from '../../agent/live-voice.js';
+import { openVoiceSession, connectLiveVoice, listVoices, voiceEntitled, noteVoiceEntitled, stillNotEntitled } from '../../agent/live-voice.js';
 import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
 import { isDailyAiLimit, isQuotaExhausted, isVoiceNotInPlan, pausedMessage, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
@@ -55,7 +55,7 @@ function showPlanLimit(error) {
    The entitlement is read once ahead (`GET /api/agent/voice/voices`) so the tap itself waits for nothing, which mobile Safari's
    gesture rule needs; until it is known the tap goes on and the server's 403 decides. */
 export function refreshVoiceEntitlement() {
-  return listVoices(toContractLang(languages().ui)).then(() => voiceEntitled()).catch(() => null);
+  return listVoices(toContractLang(languages().ui)).then((voices) => { if (!voices) noteVoiceEntitled(null); return voiceEntitled(); }).catch(() => null);
 }
 
 function showVoiceUpsell() {
@@ -438,7 +438,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
   }
 
-  return {
+  const self = {
     /* The main button: start listening, send what was said, or stop whatever Orena is doing. */
     main() {
       unlockSpeech(); // inside the learner's tap, so the spoken answer can play later
@@ -448,7 +448,11 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         return;
       }
       if (phase === 'idle') {
-        if (voiceEntitled() === false) return void showVoiceUpsell();
+        if (voiceEntitled() === false) {
+          // Cached "not in the plan": confirm it with a fresh read (the learner may have just upgraded), then go on or say so.
+          void stillNotEntitled(toContractLang(languages().ui)).then((still) => { if (still) showVoiceUpsell(); else if (!disposed) self.main(); });
+          return;
+        }
         if (!liveOff && startLive()) return;
         live = true;
         void begin();
@@ -501,6 +505,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       stopSpeaking();
     },
   };
+  return self;
 }
 
 /* ------------------------------------------------------------------- Inline voice row --- */
@@ -586,7 +591,7 @@ function fullMarkup({ phase, heard, reply, speakOn, session = false }, suggestio
 export async function openVoiceFull() {
   if (fullHandle) return fullHandle;
   // The rail's mic for a learner whose plan has no voice chat: the sheet, and no full-screen mode behind it.
-  if ((voiceEntitled() ?? await refreshVoiceEntitlement()) === false) {
+  if ((voiceEntitled() === true ? false : await refreshVoiceEntitlement() === false)) {
     showVoiceUpsell();
     return null;
   }

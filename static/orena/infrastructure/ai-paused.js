@@ -9,9 +9,9 @@
 export const AI_PAUSED_HEADER = 'X-Orena-AI-Paused';
 
 /* A 200 that was refused in part (Listening's meaning, a lookup's gloss) has no error to carry the signal, so the newest
-   one is kept for a minute: long enough for the surface that made the call to ask, short enough never to outlive the
+   one is kept for ten seconds with the route that received it: long enough for the surface that made the call to ask, short enough never to outlive the
    cause. Past the reset time it is void whatever its age. */
-const REMEMBER_MS = 60000;
+const REMEMBER_MS = 10000;
 let latest = null;
 
 /* The header's value from a fetch Response: the reset time (an ISO string, possibly empty when the server gave none),
@@ -23,13 +23,15 @@ export function aiPausedFromResponse(response) {
   return value == null ? null : String(value).trim();
 }
 
-export function noteAiPaused(resetsAt, now = Date.now()) {
-  latest = { resetsAt: String(resetsAt || ''), at: now };
+export function noteAiPaused(resetsAt, url = '', now = Date.now()) {
+  latest = { resetsAt: String(resetsAt || ''), at: now, path: String(url || '').split('?')[0] };
 }
 
 /* The pause in force for a call that has just returned, or null: `resetsAt` is '' when the server sent no time. */
-export function recentAiPause(now = Date.now()) {
-  if (!latest || now - latest.at > REMEMBER_MS) return null;
+export function recentAiPause(routes, now = Date.now()) {
+  const wanted = [].concat(routes || []).filter(Boolean);
+  // Only the call the surface itself made: another route's header says nothing about this one, and a fault is not a pause.
+  if (!latest || !wanted.some((route) => latest.path.startsWith(route)) || now - latest.at > REMEMBER_MS) return null;
   const end = Date.parse(latest.resetsAt);
   if (Number.isFinite(end) && end <= now) return null;
   return { resetsAt: latest.resetsAt };

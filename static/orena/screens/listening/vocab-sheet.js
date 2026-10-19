@@ -27,7 +27,7 @@ async function resolveTerm(term, { lang, support, context, source }) {
   let paused = '';
   try {
     detail = await api.wordDetail(wordDetailRequest({ contextual: false, target: term, context: lookupContext(term, context), lang, support, source }));
-    if (!detail?.available) paused = pausedLineNow();
+    if (!detail?.available) paused = pausedLineNow('/api/dictionary/word-detail');
   } catch (error) {
     detail = null;
     paused = pausedLineOf(error);

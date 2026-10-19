@@ -291,7 +291,7 @@ export default async function mountReader(element, ctx) {
         try {
           const response = await api.readingTranslate({ source_language: language, target_language: target, content_id: contentId, segments: turn });
           for (const [seg, meaning] of sentenceTranslationsFrom(response)) translations.set(seg, meaning);
-          if (response?.status !== 'ready') { failed = true; translationPause = translationPause || pausedLineNow(); }
+          if (response?.status !== 'ready') { failed = true; translationPause = translationPause || pausedLineNow('/api/reading/translate'); }
         } catch (error) {
           failed = true;
           translationPause = translationPause || pausedLineOf(error);
@@ -696,7 +696,7 @@ export default async function mountReader(element, ctx) {
       const value = await api.readingSummary({ source_language: language, target_language: target, ...which });
       const bullets = Array.isArray(value?.bullets) ? value.bullets.map((line) => String(line || '').trim()).filter(Boolean) : [];
       summary = bullets.length ? { state: 'ready', bullets } : { state: 'failed', bullets: [] };
-      if (!bullets.length) summaryPause = pausedLineNow();
+      if (!bullets.length) summaryPause = pausedLineNow('/api/reading/summary');
     } catch (error) {
       summary = { state: 'failed', bullets: [] };
       summaryPause = pausedLineOf(error);

@@ -399,7 +399,7 @@ export default async function conversationScreen(element, ctx) {
         situation: turnSituation(convo.situation, convo.turns, index),
       });
       if (!alive()) return;
-      coaching.set(index, { loading: false, result, paused: result?.available ? '' : pausedLineNow() });
+      coaching.set(index, { loading: false, result, paused: result?.available ? '' : pausedLineNow('/api/dictionary/spoken-response') });
     } catch (error) {
       if (!alive()) return;
       coaching.set(index, { loading: false, result: null, paused: pausedLineOf(error) });

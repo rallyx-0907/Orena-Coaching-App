@@ -174,7 +174,7 @@ export default async function mountWordDetail(element, ctx) {
     // A refused or empty lookup never fails the page: the card is drawn from whatever exists - here only the
     // word itself - with no reading rather than a wrong one (rule 40).
     detail = found;
-    if (!found?.available && !wordPause) wordPause = pausedLineNow();
+    if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
     clips = mapClips(clipsPayload);
     clipsReady = true;
   }
@@ -363,7 +363,7 @@ export default async function mountWordDetail(element, ctx) {
       if (!ctx.isCurrent()) return;
       lookupPending = false;
       detail = found;
-      if (!found?.available && !wordPause) wordPause = pausedLineNow();
+      if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
       clips = mapClips(clipsPayload);
       clipsReady = true;
       deepRows = mapDeepWord(detail);

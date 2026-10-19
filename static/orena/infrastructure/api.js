@@ -35,7 +35,7 @@ export async function request(url, options={}){
 
   /* The system's daily AI pause (contract v11, infrastructure/ai-paused.js): read here, once, for every route. */
   const aiPaused=aiPausedFromResponse(response);
-  if(aiPaused!==null)noteAiPaused(aiPaused);
+  if(aiPaused!==null)noteAiPaused(aiPaused,String(url));
 
   let payload=null;
   const type=response.headers.get('content-type')||'';

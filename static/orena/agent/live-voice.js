@@ -92,6 +92,16 @@ export function noteVoiceEntitled(value, now = Date.now()) {
   entitlement = { value: typeof value === 'boolean' ? value : null, at: now };
 }
 
+/* A tap on a voice entry while the cache says "not in the plan": the learner may have upgraded since, so the answer is read
+   again first and the upsell is shown only if it is still `false`. A read that fails, or a plan the server cannot read
+   (`null`), shows no upsell: the voice button stays and the server's own answer decides. */
+export async function stillNotEntitled(interfaceLang, options = {}) {
+  if (voiceEntitled() !== false) return false;
+  const fresh = await listVoices(interfaceLang, options);
+  if (!fresh) noteVoiceEntitled(null);
+  return voiceEntitled() === false;
+}
+
 /* The voices the server offers, labelled in the interface language, and whether the plan includes them (`entitled`: true, false, or null when the server could not read the plan). Null while voice is off (404). */
 export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch } = {}) {
   try {

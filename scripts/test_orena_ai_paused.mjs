@@ -44,11 +44,24 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(pausedLineNow(), '');
   reply(answer(200, { asset: {}, translation: 'unavailable' }, { 'X-Orena-AI-Paused': RESETS }));
   await request('/api/media/my/1');
-  assert.deepEqual(recentAiPause(Date.parse(RESETS) - 3600000 * 24 + 1000)?.resetsAt, RESETS);
+  assert.deepEqual(recentAiPause(['/api/media/'], Date.now())?.resetsAt, RESETS);
   clearAiPause();
   reply(answer(200, { ok: true }, { 'X-Orena-AI-Paused': RESETS }));
   await request('/api/x');
-  assert.equal(pausedLineNow() !== '' || Date.now() > Date.parse(RESETS), true, 'a 200 with the header is remembered (until its reset time)');
+  assert.equal(pausedLineNow('/api/x') !== '' || Date.now() > Date.parse(RESETS), true, 'a 200 with the header is remembered for the route that received it');
+  // Keyed to the route: another surface's "unavailable" 200 is a fault, not a pause.
+  clearAiPause();
+  reply(answer(200, { ok: true }, { 'X-Orena-AI-Paused': RESETS }));
+  await request('/api/reading/translate?x=1');
+  assert.equal(recentAiPause(['/api/dictionary/word-detail']), null, 'a different route reads no pause');
+  assert.equal(pausedLineNow('/api/dictionary/sentence-sheet'), '');
+  assert.ok(recentAiPause('/api/reading/translate'), 'the route that carried the header does');
+  // And only briefly: a pause seen ten seconds ago is not today's news for this call.
+  assert.equal(recentAiPause('/api/reading/translate', Date.now() + 11000), null, 'the window is about ten seconds');
+  // A fault after a pause (no header) does not erase the route rule: it simply is not asked for another route.
+  reply(answer(200, { available: false }));
+  await request('/api/dictionary/word-detail');
+  assert.equal(recentAiPause(['/api/dictionary/word-detail']), null, 'a fault on its own route carries no header: no pause');
 
   // The header without a time still pauses: the line has no time to promise.
   reply(answer(429, { detail: 'x' }, { 'X-Orena-AI-Paused': '' }));
@@ -71,7 +84,7 @@ const answer = (status, body, headers = {}) => ({
   assert.ok(/pausedLineOf\(error\)/.test(reader) && /translationState === 'failed' && translationPause\) return html`[^`]*\$\{translationPause\}<\/p>`/.test(reader), 'Reader: the translation says the pause, with no Retry button');
   assert.ok(/summary\.state === 'failed' && summaryPause\) return html`[^`]*\$\{summaryPause\}<\/div>`/.test(reader), 'Reader: the summary says the pause, with no Retry button');
   const listening = src('static/orena/screens/listening/screen.js');
-  assert.ok(/const meaningPause = pausedLineNow\(\)/.test(listening) && /toast\(meaningPause \|\| pausedLineNow\(\) \|\| t\('meaningUnavailable'\)\)/.test(listening), 'Listening: a 200 with its meaning unavailable says the pause');
+  assert.ok(/const meaningPause = pausedLineNow\(\['\/api\/media\/', '\/api\/listening'\]\)/.test(listening) && /toast\(meaningPause \|\| t\('meaningUnavailable'\)\)/.test(listening), 'Listening: a 200 with its meaning unavailable says the pause');
   const vocab = src('static/orena/screens/listening/vocab-sheet.js');
   assert.ok(/paused = pausedLineOf\(error\)/.test(vocab) && /pauseLine \? html`<div class="s-vocab__empty" role="status">/.test(vocab), 'Vocabulary Focus: the pause is said once above the terms');
   const sheet = src('static/orena/screens/quick-sheet/sheet.js');
@@ -117,6 +130,30 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(await listVoices('en', { fetchImpl: voices({ voices: [] }) }), null, 'voice off: no voices, no claim');
   assert.equal(voiceEntitled(Date.now() + 301000), null, 'the answer is kept for five minutes');
 
+  // A cached `false` is confirmed with a fresh read first: a learner who has just upgraded is not shown the upsell.
+  {
+    const { stillNotEntitled } = await import('../static/orena/agent/live-voice.js');
+    const reads = [];
+    const serve = (body) => async (url) => { reads.push(url); return { ok: true, json: async () => body }; };
+    noteVoiceEntitled(false);
+    assert.equal(await stillNotEntitled('en', { fetchImpl: serve({ default: 'f-clear', voices: [{ id: 'f-clear', gender: 'female', label: 'Clear' }], entitled: true }) }), false, 'upgraded: no upsell');
+    assert.equal(voiceEntitled(), true);
+    assert.equal(reads.length, 1, 'the tap re-read GET /api/agent/voice/voices');
+    noteVoiceEntitled(false);
+    assert.equal(await stillNotEntitled('en', { fetchImpl: serve({ default: 'f-clear', voices: [], entitled: false }) }), true, 'still Free: the upsell');
+    noteVoiceEntitled(false);
+    assert.equal(await stillNotEntitled('en', { fetchImpl: serve({ default: 'f-clear', voices: [{ id: 'f-clear', gender: 'female', label: 'Clear' }], entitled: null }) }), false, 'unreadable plan: no upsell');
+    noteVoiceEntitled(false);
+    assert.equal(await stillNotEntitled('en', { fetchImpl: async () => { throw new Error('offline'); } }), false, 'a failed read is not "Free"');
+    noteVoiceEntitled(true);
+    assert.equal(await stillNotEntitled('en', { fetchImpl: async () => { throw new Error('unused'); } }), false, 'entitled: no read at all');
+    // Settings draws no voice picker for the Free shape.
+    const { learningRows } = await import('../static/orena/screens/settings/model.js');
+    const free = await listVoices('en', { fetchImpl: serve({ default: 'f-clear', voices: [], entitled: false }) });
+    assert.deepEqual(free, { default: 'f-clear', voices: [], entitled: false });
+    assert.equal(learningRows({ sizeBucket: 'M', autoscroll: false, meaning: false, theme: 'system', palette: 'indigo', voices: { ...free, chosen: '' } }).some((row) => row.id === 'orenaVoice'), false, 'Settings: {entitled:false, voices:[]} shows no voice row');
+  }
+
   const refusal = Object.assign(new Error('x'), { status: 403, category: 'feature_not_in_plan', context: { feature: 'orena.voice', plan: 'free', upgrade: '/pricing' } });
   assert.equal(isVoiceNotInPlan(refusal), true);
   assert.equal(isVoiceNotInPlan(Object.assign(new Error('x'), { status: 403, category: 'feature_not_in_plan', context: { feature: 'languages.target' } })), false, 'another feature is another notice');
@@ -126,8 +163,8 @@ const answer = (status, body, headers = {}) => ({
   await assert.rejects(openVoiceSession({}, { fetchImpl: refused }), (error) => error instanceof VoiceSessionError && isVoiceNotInPlan(error), 'the session refusal reads as the voice-plan notice');
 
   const voice = src('static/orena/screens/orena/voice.js');
-  assert.ok(/if \(voiceEntitled\(\) === false\) return void showVoiceUpsell\(\);\s+if \(!liveOff && startLive\(\)\) return;/.test(voice), 'every voice trigger (rows, panel, full-screen) passes the engine\'s main(): a Free learner gets the sheet before any session or cascade');
-  assert.ok(/\(voiceEntitled\(\) \?\? await refreshVoiceEntitlement\(\)\) === false\) \{\s+showVoiceUpsell\(\);\s+return null;/.test(voice), 'the rail\'s mic opens the sheet, not the full-screen mode');
+  assert.ok(/if \(voiceEntitled\(\) === false\) \{[\s\S]*?stillNotEntitled\([\s\S]*?showVoiceUpsell\(\)[\s\S]*?return;\s+\}\s+if \(!liveOff && startLive\(\)\) return;/.test(voice), 'every voice trigger (rows, panel, full-screen) passes the engine\'s main(): a Free learner gets the sheet before any session or cascade');
+  assert.ok(/voiceEntitled\(\) === true \? false : await refreshVoiceEntitlement\(\) === false\)\) \{\s+showVoiceUpsell\(\);\s+return null;/.test(voice), 'the rail\'s mic opens the sheet, not the full-screen mode');
   assert.ok(/if \(isVoiceNotInPlan\(error\)\) \{\s+setPhase\('idle'\);\s+showVoiceUpsell\(\);/.test(voice), 'a 403 on the session opens the sheet and does not fall back to the cascade');
   assert.ok(/else if \(isVoiceNotInPlan\(error\)\) showVoiceUpsell\(\)/.test(voice), 'a 403 on a renewal opens the sheet once; the held token plays out and the session ends when it dies');
   const sheet = src('static/orena/screens/plan/voice-upsell.js');

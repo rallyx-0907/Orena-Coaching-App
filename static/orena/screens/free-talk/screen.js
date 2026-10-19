@@ -336,7 +336,7 @@ export default async function freeTalk(element, ctx) {
       });
       if (!alive()) return;
       coaching = result?.available ? result : null;
-      errorText = result?.available ? '' : (pausedLineNow() || t('serviceError'));
+      errorText = result?.available ? '' : (pausedLineNow('/api/dictionary/spoken-response') || t('serviceError'));
       state = 'result';
       // The take is the learner's own work, kept with the account when it keeps work (D4 I8).
       void saveResponse({ kind: 'freetalk', source: { kind: 'invitation', id: topicText.trim().toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60) || 'open' }, mode: 'free_talk', answer: heard, coaching });
