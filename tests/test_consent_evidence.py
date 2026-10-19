@@ -30,7 +30,7 @@ from writing_coach.persistence.auth_repository import SQLiteAuthRepository
 
 ROOT = Path(__file__).resolve().parents[1]
 NAME = "20261019_0036_consent_evidence.py"
-PROPOSED = ROOT / "migrations" / "proposed" / NAME
+PROPOSED = ROOT / "migrations" / "versions" / NAME  # promoted (D-233); the name is kept for the helpers below
 
 
 @pytest.fixture(autouse=True)
@@ -53,9 +53,9 @@ def _migration():
     return module
 
 
-def test_the_migration_is_proposed_only_and_parented_on_the_head():
+def test_the_migration_is_promoted_and_is_the_single_head_parented_on_0035():
     assert PROPOSED.exists()
-    assert not list((ROOT / "migrations" / "versions").glob("*consent*"))
+    assert not (ROOT / "migrations" / "proposed" / NAME).exists()
     tree = ast.parse(PROPOSED.read_text(encoding="utf-8"))
     values = {
         node.targets[0].id: ast.literal_eval(node.value)
@@ -63,8 +63,15 @@ def test_the_migration_is_proposed_only_and_parented_on_the_head():
         if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name) and isinstance(node.value, ast.Constant)
     }
     assert values["revision"] == "20261019_0036" and values["down_revision"] == "20261018_0035"
-    heads = sorted(p.name for p in (ROOT / "migrations" / "versions").glob("2026*.py"))
-    assert heads[-1].startswith("20261018_0035"), "0036 must be parented on the promoted head"
+    revisions = {}
+    for path in (ROOT / "migrations" / "versions").glob("2*.py"):
+        rev = {
+            n.targets[0].id: ast.literal_eval(n.value)
+            for n in ast.parse(path.read_text(encoding="utf-8")).body
+            if isinstance(n, ast.Assign) and isinstance(n.targets[0], ast.Name) and isinstance(n.value, ast.Constant)
+        }
+        revisions[rev["revision"]] = rev.get("down_revision")
+    assert set(revisions) - {p for p in revisions.values() if p} == {"20261019_0036"}, "one head, and it is 0036"
     assert {"upgrade", "downgrade"} <= {n.name for n in tree.body if isinstance(n, ast.FunctionDef)}
 
 

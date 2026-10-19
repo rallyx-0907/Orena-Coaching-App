@@ -28,7 +28,7 @@ def test_the_migration_is_in_versions_and_not_proposed():
     assert not (ROOT / "migrations" / "proposed" / NAME).exists()
 
 
-def test_the_chain_has_one_head_and_it_is_0035():
+def test_the_chain_has_one_head_and_0035_is_its_parent():
     revisions: dict[str, object] = {}
     for path in (ROOT / "migrations" / "versions").glob("*.py"):
         values = _assigned(ast.parse(path.read_text(encoding="utf-8")))
@@ -36,7 +36,8 @@ def test_the_chain_has_one_head_and_it_is_0035():
             revisions[str(values["revision"])] = values.get("down_revision")
     parents = {str(p) for p in revisions.values() if isinstance(p, str)}
     parents |= {str(p) for value in revisions.values() if isinstance(value, tuple) for p in value}
-    assert set(revisions) - parents == {"20261018_0035"}
+    assert set(revisions) - parents == {"20261019_0036"}
+    assert revisions["20261019_0036"] == "20261018_0035"
 
 
 def test_the_migration_has_upgrade_and_downgrade():

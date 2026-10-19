@@ -1,15 +1,13 @@
-"""The proposed 0036 on PostgreSQL (`ORENA_TEST_POSTGRES_URL`, a throwaway database at the migration head only).
+"""The promoted 0036 on PostgreSQL (`ORENA_TEST_POSTGRES_URL`, a throwaway database only: this test downgrades it).
 
-CI does not set the URL, so this is run by hand like the other `*_postgres.py` proofs: the head carries no consent columns,
-so the first half is the dormancy proof on the real repository; the second applies the proposed revision with Alembic's
-operations (as `test_credit_ledger_postgres` applies its proposals) and proves recording, the voice answer, the reset and
-the exact downgrade.
+CI does not set the URL, so this is run by hand like the other `*_postgres.py` proofs. The session fixture upgrades to
+head (0036); the test steps the database back to 0035, which carries no consent columns, for the dormancy proof on the
+real repository, then upgrades to 0036 with Alembic itself and proves recording, the voice answer, the reset and the
+exact downgrade, and leaves the database at head.
 """
 from __future__ import annotations
 
-import importlib.util
 import uuid
-from pathlib import Path
 
 import pytest
 
@@ -17,19 +15,20 @@ from tests.d4_support import PG_URL, pg_engine  # noqa: F401 - the session fixtu
 
 pytestmark = pytest.mark.skipif(not PG_URL, reason="ORENA_TEST_POSTGRES_URL is not set; PostgreSQL proof not run")
 
-PROPOSED = Path(__file__).resolve().parents[1] / "migrations" / "proposed" / "20261019_0036_consent_evidence.py"
 COLUMNS = ("consent_version", "consent_accepted_at", "consent_language", "voice_consent", "voice_consent_at")
 
 
 def _migrate(engine, direction):
-    from alembic.operations import Operations
-    from alembic.runtime.migration import MigrationContext
+    from alembic import command
 
-    spec = importlib.util.spec_from_file_location("consent_0036", PROPOSED)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    with engine.begin() as connection, Operations.context(MigrationContext.configure(connection)):
-        getattr(module, direction)()
+    from writing_coach.persistence.runtime import _runtime_alembic_config
+
+    cfg = _runtime_alembic_config()
+    cfg.set_main_option("sqlalchemy.url", engine.url.render_as_string(hide_password=False).replace("%", "%%"))
+    if direction == "upgrade":
+        command.upgrade(cfg, "20261019_0036")
+    else:
+        command.downgrade(cfg, "20261018_0035")
 
 
 def _present(engine):
@@ -42,7 +41,8 @@ def test_the_code_is_dormant_before_the_migration_and_records_after_it_and_the_d
     from writing_coach import consent
     from writing_coach.persistence.auth_repository import PostgresAuthRepository
 
-    assert not _present(pg_engine), "run on a database at the head: the proposal is not applied"
+    _migrate(pg_engine, "downgrade")
+    assert not _present(pg_engine), "at 0035 the consent columns do not exist"
     repo = PostgresAuthRepository(pg_engine)
     sub = f"sub-{uuid.uuid4().hex[:12]}"
     assert repo.upsert_user({"sub": sub, "email": f"{sub}@example.test", "name": sub}, set())["created_now"] is True
@@ -64,4 +64,6 @@ def test_the_code_is_dormant_before_the_migration_and_records_after_it_and_the_d
         assert after["accepted"] is False and after["voice"] is False
     finally:
         _migrate(pg_engine, "downgrade")
-    assert not _present(pg_engine)
+        downgraded = not _present(pg_engine)
+        _migrate(pg_engine, "upgrade")  # leave the shared throwaway database at head
+    assert downgraded and _present(pg_engine)
