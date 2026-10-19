@@ -115,4 +115,24 @@ def test_every_token_is_clamped_to_the_minutes_left_and_unmetered_seconds_count_
     answer = service.open(_body(), LEARNER)
     assert answer["max_seconds"] <= 240
     assert answer["last"] is True  # today's minutes end with this token: no renewal to be refused
+    assert answer["day_limit_reached"] is True  # and the client may say so when this chunk ends
     assert recorded == [("agent.voice_seconds", answer["max_seconds"])]
+
+
+def test_a_chunk_that_does_not_end_the_day_says_so(voice_day, monkeypatch):
+    from tests.test_agent_voice_session import LEARNER, _body, _service
+
+    service = _service()
+    monkeypatch.setattr(plan_features, "voice_seconds_left", lambda user_key: 5000)  # more left than one token
+    answer = service.open(_body(), LEARNER)
+    assert answer["day_limit_reached"] is False
+
+
+def test_a_token_that_uses_exactly_the_seconds_left_ends_the_day(voice_day, monkeypatch):
+    """The boundary: left == the token's seconds - today's minutes end with this token."""
+    from tests.test_agent_voice_session import LEARNER, _body, _service
+
+    service = _service()
+    monkeypatch.setattr(plan_features, "voice_seconds_left", lambda user_key: 900)  # the whole 900 s session token
+    answer = service.open(_body(), LEARNER)
+    assert answer["max_seconds"] == 900 and answer["day_limit_reached"] is True
