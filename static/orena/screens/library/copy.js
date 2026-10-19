@@ -23,6 +23,7 @@ const KEYS = [
   'activeTimedDesc', 'stageRecall', 'stageUse', 'stageTransfer', 'stageFast',
   'collectionItems', 'emptyCollections',
   'more', 'deleteFromOrena', 'deletedFromOrena', 'untitledContent', 'contentUnavailable',
+  'subtitle',
 ];
 
 export const t = defineCopy('library', {
@@ -51,6 +52,7 @@ export const t = defineCopy('library', {
     collectionItems_one: '{n} item', collectionItems_other: '{n} items',
     more: 'More', deleteFromOrena: 'Delete from Orena', deletedFromOrena: 'Deleted from Orena',
     untitledContent: 'Untitled', contentUnavailable: 'No longer available',
+    subtitle: 'Everything you\'ve saved, met, or need to come back to.',
   },
   vi: {
     tabContent: 'Nội dung đã lưu', tabLanguage: 'Từ & cụm đã lưu', tabCollections: 'Bộ sưu tập', tabActive: 'Vận dụng',
@@ -71,6 +73,7 @@ export const t = defineCopy('library', {
     collectionItems_other: '{n} mục',
     more: 'Thêm', deleteFromOrena: 'Xoá khỏi Orena', deletedFromOrena: 'Đã xoá khỏi Orena',
     untitledContent: 'Chưa có tên', contentUnavailable: 'Không còn khả dụng',
+    subtitle: 'Mọi thứ bạn đã lưu, đã gặp hoặc cần quay lại.',
   },
   zh: {
     tabContent: '已保存内容', tabLanguage: '已保存词语', tabCollections: '合集', tabActive: '运用',
@@ -91,5 +94,6 @@ export const t = defineCopy('library', {
     collectionItems_other: '{n} 项',
     more: '更多', deleteFromOrena: '从 Orena 删除', deletedFromOrena: '已从 Orena 删除',
     untitledContent: '无标题', contentUnavailable: '已不可用',
+    subtitle: '你保存过、遇到过或需要回顾的一切。',
   },
 });

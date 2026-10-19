@@ -147,9 +147,7 @@ export default async function discover(element, ctx) {
 
     const overview = !practice && state.tab === 'all';
 
-    // The overview always draws its Imported section, so an un-narrowed All is never "nothing matches".
-    const narrowed = hasFilters || Boolean(state.query.trim());
-    if (!list.length && !state.loading && !(overview && !narrowed)) {
+    if (!list.length && !state.loading) {
       const typed = state.query.trim();
       // A typed query that finds no content says what this box searches and offers global search (#/search), which also finds words.
       mount(resultsEl, typed
@@ -160,7 +158,6 @@ export default async function discover(element, ctx) {
       /* D-167: All is an overview of four sections, never one grid of every type. Each section
          draws the same cards its own tab draws (cardFor) and a "See all" that opens that tab. */
       mount(resultsEl, overviewMarkup(overviewSections(state.entries, { query: state.query, filters: state.filters }), { card: cardFor, t }));
-      resultsEl.querySelector('[data-import-cta]')?.addEventListener('click', () => openImportFlow());
       resultsEl.querySelectorAll('[data-see-all]').forEach((button) => {
         button.addEventListener('click', () => {
           openTab(button.dataset.seeAll);
@@ -240,7 +237,7 @@ export default async function discover(element, ctx) {
     });
   });
 
-  // The "Create lesson" card (design 2026-10-15) and the Imported section's call to action open the same flow.
+  // The "Create lesson" card (design 2026-10-15) is Discover's one way into the import flow.
   function openImportFlow(initial = null) {
     return openImport(ctx, { mediaRoute: speakingPractice ? 'shadow' : practice === 'dictation' ? 'dictation' : 'listening', initial });
   }
