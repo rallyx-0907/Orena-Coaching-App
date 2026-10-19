@@ -33,6 +33,7 @@ import { createStrokeTiles } from './stroke-tiles.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
 import { wordSeed } from '../../product/word-seed.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 
 async function fetchItem(word) {
   try {
@@ -156,11 +157,12 @@ export default async function mountWordDetail(element, ctx) {
   let detail = null;
   let clips = [];
   let clipsReady = false;
+  let wordPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in the deep panel's place, no retry
   const pending = Promise.all([
     // The lookup runs in the learner's current learning language: the server refuses any other (409,
     // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
     // English IPA labelled pinyin (UI_BACKEND_GAPS VC-15); the card mapper drops a reading of the wrong kind.
-    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch(() => null),
+    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch((error) => { wordPause = pausedLineOf(error); return null; }),
     api.wordClips(word, 6).catch(() => null),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);
@@ -172,6 +174,7 @@ export default async function mountWordDetail(element, ctx) {
     // A refused or empty lookup never fails the page: the card is drawn from whatever exists - here only the
     // word itself - with no reading rather than a wrong one (rule 40).
     detail = found;
+    if (!found?.available && !wordPause) wordPause = pausedLineNow();
     clips = mapClips(clipsPayload);
     clipsReady = true;
   }
@@ -243,7 +246,7 @@ export default async function mountWordDetail(element, ctx) {
       html`<button type="button" class="o-iconbtn" data-back aria-label="${shellCopy('back')}">${raw(icon('arrow-left', { size: 19 }))}</button>
       ${cardMarkup(model, learner, item, strokesMarkup, lookupPending)}
       <div class="s-word-grid">
-        <div class="s-word-col">${clipsPanel}${deepWordMarkup(deepRows)}</div>
+        <div class="s-word-col">${clipsPanel}${deepRows.length || !wordPause ? deepWordMarkup(deepRows) : html`<div class="s-word-panel"><div class="s-word-empty" role="status">${wordPause}</div></div>`}</div>
         ${evidencePanel}
       </div>`,
     );
@@ -360,6 +363,7 @@ export default async function mountWordDetail(element, ctx) {
       if (!ctx.isCurrent()) return;
       lookupPending = false;
       detail = found;
+      if (!found?.available && !wordPause) wordPause = pausedLineNow();
       clips = mapClips(clipsPayload);
       clipsReady = true;
       deepRows = mapDeepWord(detail);

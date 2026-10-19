@@ -39,6 +39,7 @@ import {
 } from '../../product/conversation.js';
 import { t } from './copy.js';
 import { situations, defaultLevel, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 
 function judgementLabel(judgement) {
   return t.has(`judge_${judgement}`) ? t(`judge_${judgement}`) : '';
@@ -61,6 +62,7 @@ export default async function conversationScreen(element, ctx) {
   let level = defaultLevel(ctx.context.level); // the Difficulty chip: B1 / B2 / C1, opening on the learner's level
   let convo = null; // the product/conversation.js state, once started
   let busy = false;
+  let turnPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the retry
   let recording = false;
   let transcribing = false; // a take is being turned into text
   let lastBlob = null; // the recording awaiting a transcript, kept so a Retry sends the same take again
@@ -148,7 +150,7 @@ export default async function conversationScreen(element, ctx) {
     const result = card.result;
     const carriedItems = strengthsOf(result);
     const landedItems = fixesOf(result);
-    if (!result?.available || (!carriedItems.length && !landedItems.length)) return html`<div class="s-conv__coach"><p class="s-conv__muted">${t('coachingUnavailable')}</p></div>`;
+    if (!result?.available || (!carriedItems.length && !landedItems.length)) return html`<div class="s-conv__coach"><p class="s-conv__muted">${card.paused || t('coachingUnavailable')}</p></div>`;
     return html`<div class="s-conv__coach">
       ${carriedItems.length ? html`<div><span class="s-conv__coach-title s-conv__coach-title--good">${t('carried')}</span>${carriedItems.map(quotedStrength)}</div>` : ''}
       ${landedItems.length ? html`<div><span class="s-conv__coach-title s-conv__coach-title--bad">${t('landed')}</span>${landedItems.map(quotedFix)}</div>` : ''}
@@ -196,6 +198,8 @@ export default async function conversationScreen(element, ctx) {
     if (isOver()) return '';
     const failed = (Boolean(pendingTurn(convo)) || needsOpening(convo)) && !busy; // the opening or the reply was requested and the request itself failed
     if (failed) {
+      // The system's daily AI pause (X-Orena-AI-Paused, D-235): the line, and no retry (it would be refused again).
+      if (turnPause) return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${turnPause}</span>${endButton()}</div>`;
       return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${t('replyFailed')}</span><button type="button" class="o-btn o-btn--secondary s-conv__retry-btn" data-retry>${t('retryCta')}</button>${endButton()}</div>`;
     }
     const locked = busy || transcribing;
@@ -276,6 +280,7 @@ export default async function conversationScreen(element, ctx) {
   /* S-24: the partner's first line. A failure leaves the conversation without one and the composer is
      replaced with Retry; nothing stands in for the line. */
   async function requestOpening() {
+    turnPause = '';
     if (!needsOpening(convo)) return;
     busy = true;
     paint({ scroll: 'bottom' });
@@ -284,8 +289,10 @@ export default async function conversationScreen(element, ctx) {
       if (!alive()) return;
       convo = withOpening(convo, reply);
       remember();
-    } catch {
+    } catch (error) {
+      turnPause = pausedLineOf(error);
       // still without an opening; the retry control asks again.
+
     } finally {
       busy = false;
       if (alive()) paint({ scroll: 'bottom' });
@@ -305,6 +312,7 @@ export default async function conversationScreen(element, ctx) {
      resends the exact same request for the same still-pending turn. */
   async function requestReply() {
     if (!pendingTurn(convo)) return;
+    turnPause = '';
     busy = true;
     paint({ scroll: 'bottom' });
     try {
@@ -313,8 +321,10 @@ export default async function conversationScreen(element, ctx) {
       convo = partnerTurn(convo, reply);
       remember();
       keepTurn(convo.turns.at(-1));
-    } catch {
+    } catch (error) {
+      turnPause = pausedLineOf(error);
       // still pending; the retry control resends it.
+
     } finally {
       busy = false;
       if (alive()) paint({ scroll: 'bottom' });
@@ -389,10 +399,10 @@ export default async function conversationScreen(element, ctx) {
         situation: turnSituation(convo.situation, convo.turns, index),
       });
       if (!alive()) return;
-      coaching.set(index, { loading: false, result });
-    } catch {
+      coaching.set(index, { loading: false, result, paused: result?.available ? '' : pausedLineNow() });
+    } catch (error) {
       if (!alive()) return;
-      coaching.set(index, { loading: false, result: null });
+      coaching.set(index, { loading: false, result: null, paused: pausedLineOf(error) });
     }
     paint();
   }

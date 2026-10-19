@@ -82,6 +82,15 @@ const answer = (status, body, headers = {}) => ({
   const writing = src('static/orena/screens/writing/screen.js');
   assert.ok(/const paused = pausedLineOf\(error\);\s+failed = paused \? \{ retry: false, paused \}/.test(writing) && /\$\{failed\.paused \|\| failed\.quota/.test(writing), 'Writing room: the pause is the review failure line, with neither retry nor plans');
   for (const room of ['respond', 'discussion', 'situation', 'free-talk', 'reading-transfer']) assert.ok(/pausedLine(Of|Now)\(/.test(src(`static/orena/screens/${room}/screen.js`)), `${room} says the pause in its own error place`);
+  const react = src('static/orena/screens/react/screen.js');
+  assert.ok(/resultPause = pausedLineOf\(error\)/.test(react) && /\$\{resultPause \|\| t\('coachingError'\)\}/.test(react), 'React: the pause replaces the coaching error line');
+  const conversation = src('static/orena/screens/conversation/screen.js');
+  assert.ok(/if \(turnPause\) return html`[^`]*\$\{turnPause\}<\/span>\$\{endButton\(\)\}<\/div>`/.test(conversation), 'Conversation: the pause replaces the reply-failed line and its retry button');
+  assert.ok(/paused: pausedLineOf\(error\)/.test(conversation) && /\$\{card\.paused \|\| t\('coachingUnavailable'\)\}/.test(conversation), 'Conversation: the coaching card says the pause');
+  const word = src('static/orena/screens/word/screen.js');
+  assert.ok(/wordPause = pausedLineOf\(error\)/.test(word) && /s-word-empty" role="status">\$\{wordPause\}/.test(word), 'Word deep screen: the deep panel says the pause');
+  const planCopy = src('static/orena/screens/plan/copy.js');
+  for (const line of ['Every plan includes all reading, listening, speaking practice,', 'Mọi gói đều gồm đầy đủ luyện đọc, nghe, luyện nói,', '每个套餐都包含全部阅读、听力、口语练习、']) assert.ok(planCopy.includes(line), line);
   const api = src('static/orena/infrastructure/api.js');
   assert.ok(/aiPausedFromResponse\(response\)/.test(api) && /error\.aiPaused=aiPaused/.test(api), 'one place reads the header: the shared fetch layer');
 }
