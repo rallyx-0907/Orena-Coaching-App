@@ -207,6 +207,22 @@ class MemoryRuntime:
         server = state.enabled and cleared and version >= MEMORY_STORED_VERSION
         return MemoryTurn(scope, state, server=server, cleared=cleared)
 
+    def erase_account(self, user_id: str) -> int | None:
+        """Every memory item and session summary of one account's CURRENT incarnation, deleted on request (an
+        administrator acting on a learner's email, the PRE-005 channel; D-226) - "delete my notes", not account erasure:
+        older incarnations' rows are the deletion runtime's (D-055), the switch row stays, and device-side notes are on
+        the learner's device. How many went; None only when the account has no active incarnation here. A store that
+        cannot be read RAISES (`MemoryUnavailable`): never "nothing to erase" while the notes may still be there."""
+
+        try:
+            incarnation = self.incarnations.resolve(user_id)
+        except Exception as error:  # noqa: BLE001 - the store failed: unknown, not empty
+            raise MemoryUnavailable("the account's incarnation could not be read") from error
+        scope = memory_scope(user_id, incarnation)
+        if scope is None:
+            return None
+        return int(self.store.delete_all(scope, "all", self.clock()))
+
     def server_notes(self, user_key: str, language: str) -> ServerNotes:
         return ServerNotes(self.store, lambda: self.scope(user_key, create=True), language, self.clock)
 
