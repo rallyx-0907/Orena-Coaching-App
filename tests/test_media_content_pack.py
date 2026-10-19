@@ -21,6 +21,7 @@ from writing_coach import reading_admin_api as admin_api
 from writing_coach.book_asset_store import FilesystemBookAssetStore
 from writing_coach.content_packs import PackError, PackItem, build_pack, read_pack
 from writing_coach.media_library_store import FileMediaLibraryStore, MediaLibraryEntry
+from writing_coach.media_meaning import IMPORTED_IDENTITY, cache_key
 
 LINES = [
     "The weather turned cold in the north of the country last week.",
@@ -437,3 +438,241 @@ def test_the_index_lock_falls_back_only_on_a_read_only_or_permission_error(tmp_p
     monkeypatch.setattr(Path, "mkdir", real)
     with writer:  # the thread lock was released by the failed attempt
         pass
+
+
+
+# ---- stored cue translations (the learning cache Listening reads) ---------------------------------------------
+
+SRC_MODEL, DST_MODEL = "GroqTranslationProvider:source-model", "GroqTranslationProvider:target-model"
+
+
+def _cache(path):
+    from writing_coach.persistence.learning_repository import SQLiteLearningCacheRepository, SQLiteLearningRepository
+
+    cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(lambda: path).connect())
+    cache.initialize()
+    return cache
+
+
+def _seed(cache, media_id="yt-good", model=SRC_MODEL, languages=("vi",)):
+
+    for code in languages:
+        for i, text in enumerate(LINES):
+            cache.put_media_translation(cache_key(media_id, f"s{i}", text, code, model), f"{code} {i}", "generated",
+                                        f"2026-10-0{i + 1}T00:00:00+00:00")
+
+
+def _read_path(store, cache, media_id, code, model, translate=None):
+    """What Listening does for a learner (`listening_api.stored_media_payload`), with a provider that must never run."""
+    from writing_coach.listening_api import _media_object_from_stored
+    from writing_coach.media_meaning import resolve_segment_meanings
+
+    def boom(*_a, **_k):
+        raise AssertionError("a provider was called")
+
+    entry = store.get(media_id)
+    obj = _media_object_from_stored(entry.lesson["payload"], entry)
+    return resolve_segment_meanings(
+        asset_id=obj.asset.asset_id, segments=obj.transcript.segments, support_language=code,
+        source_language=obj.asset.source_language, preauthored=obj.translations, cache=cache, translate=translate or boom,
+        provider_model=model)
+
+
+def _with_orders(source):
+    store, _ = source
+    for entry in store.list(status=None):
+        segs = ((entry.lesson or {}).get("payload") or {}).get("transcript", {}).get("segments", [])
+        for i, seg in enumerate(segs):
+            seg["order"] = i
+        store.upsert(entry)
+
+
+def _pack_with_translations(source, tmp_path, **seed):
+    _with_orders(source)
+    src_cache = _cache(tmp_path / "src.db")
+    _seed(src_cache, **seed)
+    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, translations=src_cache,
+                                                   provider_models=["GroqTranslationProvider:other", SRC_MODEL])
+    return items, read_pack(build_pack(items, created_by="t", environment="e", app_version="v", filters={}, assets=blobs))
+
+
+def test_stored_translations_round_trip_into_the_target_read_path_with_no_provider(source, tmp_path):
+    items, pack = _pack_with_translations(source, tmp_path, languages=("vi", "zh"))
+    good = next(item for item in items if item.natural_key == "yt-good")
+    assert media_pack.translation_counts(good) == {"vi": 3, "zh": 3}
+    assert good.data["translation_summary"] == {"vi": {"have": 3, "of": 3}, "zh": {"have": 3, "of": 3}}
+    assert {row["provider_model"] for row in good.data["translations"]} == {SRC_MODEL}
+    assert good.data["translations"][0]["created_at"].startswith("2026-10-01")
+    assert media_pack.translation_counts(next(i for i in items if i.natural_key == "yt-norights")) == {}
+
+    store, assets = _target(tmp_path)
+    dst_cache = _cache(tmp_path / "dst.db")
+    assert _read_path(source[0], _cache(tmp_path / "empty.db"), "yt-good", "vi", DST_MODEL, translate=lambda *_a: {}).status == "unavailable"
+
+    dry = media_pack.apply_media_items(pack, store, assets, dry_run=True, clip_keys=_clip_keys, translations=dst_cache,
+                                       )
+    block = next(r for r in dry if r["natural_key"] == "yt-good")["translations"]
+    assert (block["in_pack"], block["new"], block["unchanged"]) == (6, 6, 0) and "written" not in block
+    assert not (tmp_path / "dst").exists()
+
+    rows = media_pack.apply_media_items(pack, store, assets, dry_run=False, clip_keys=_clip_keys,
+                                        translations=dst_cache)
+    assert next(r for r in rows if r["natural_key"] == "yt-good")["translations"]["written"] == 6
+    assert media_pack.translation_totals(rows)["written"] == 6
+    for code in ("vi", "zh"):
+        outcome = _read_path(store, dst_cache, "yt-good", code, DST_MODEL)
+        assert outcome.status == "ready" and outcome.provider_calls == 0
+        assert [m.translated_meaning for m in outcome.meanings] == [f"{code} {i}" for i in range(3)]
+
+    again = media_pack.apply_media_items(pack, store, assets, dry_run=False, clip_keys=_clip_keys,
+                                         translations=dst_cache)
+    block = next(r for r in again if r["natural_key"] == "yt-good")["translations"]
+    assert (block["new"], block["unchanged"]) == (0, 6) and "written" not in block
+
+
+def test_a_held_translation_is_kept_unless_overwrite(source, tmp_path):
+    _items, pack = _pack_with_translations(source, tmp_path)
+    store, assets = _target(tmp_path)
+    dst_cache = _cache(tmp_path / "dst.db")
+    from writing_coach.media_meaning import cache_key
+    local = cache_key("yt-good", "s0", LINES[0], "vi", IMPORTED_IDENTITY)
+    dst_cache.put_media_translation(local, "local text", "generated", "2026-01-01T00:00:00+00:00")
+    kwargs = dict(clip_keys=_clip_keys, translations=dst_cache, dry_run=False)
+    rows = media_pack.apply_media_items(pack, store, assets, **kwargs)
+    block = next(r for r in rows if r["natural_key"] == "yt-good")["translations"]
+    assert (block["new"], block["differs"], block["kept_local"], block["written"]) == (2, 1, 1, 2)
+    assert dst_cache.get_media_translation(local)["translated_text"] == "local text"
+
+    rows = media_pack.apply_media_items(pack, store, assets, overwrite=True, **kwargs)
+    assert next(r for r in rows if r["natural_key"] == "yt-good")["translations"]["written"] == 1
+    assert dst_cache.get_media_translation(local)["translated_text"] == "vi 0"
+
+
+def test_export_without_a_cache_carries_none_and_the_preview_says_so(source):
+    items, blobs, excluded = media_pack.build_media_items(*source, clip_keys=_clip_keys)
+    preview = media_pack.export_preview(items, blobs, excluded)
+    assert preview["dry_run"] and preview["translations"] == 0
+    assert preview["without_translations"] == [i.natural_key for i in items] and preview["items"] == len(items) == 3
+
+
+def test_the_cli_export_dry_run_reports_translation_counts_and_writes_nothing(source, tmp_path, capsys):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("media_content_pack_cli", "scripts/media_content_pack.py")
+    cli = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cli)
+    _with_orders(source)
+    _seed(_cache(tmp_path / "src" / "learning_cache.db"), model="GroqTranslationProvider:m")
+    code = cli.main(["export", "--dry-run", "--root", str(tmp_path / "src"), "--asset-root", str(tmp_path / "src-assets"),
+                     "--provider-model", "GroqTranslationProvider:m", "--exclude-prefix", "qa-", "--allow-partial"])
+    report = json.loads(capsys.readouterr().out)
+    assert code == 0 and report["dry_run"] and report["translations"] == 3
+    assert next(r for r in report["per_item"] if r["media_id"] == "yt-good")["translations"] == {"vi": 3}
+    assert report["without_translations"] == ["yt-norights"]
+    assert not list(tmp_path.glob("*.orenapack"))
+
+
+def _cli():
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("media_content_pack_cli2", "scripts/media_content_pack.py")
+    cli = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cli)
+    return cli
+
+
+def test_a_two_model_export_picks_the_newest_meaning_per_cue(source, tmp_path):
+    _with_orders(source)
+    cache = _cache(tmp_path / "src.db")
+
+    old, new = "GroqTranslationProvider:old", "GroqTranslationProvider:new"
+    for i, text in enumerate(LINES):  # the old model translated every cue; the new one re-did only s1, later
+        cache.put_media_translation(cache_key("yt-good", f"s{i}", text, "vi", old), f"old {i}", "generated", "2026-10-01T00:00:00+00:00")
+    cache.put_media_translation(cache_key("yt-good", "s1", LINES[1], "vi", new), "new 1", "generated", "2026-10-09T00:00:00+00:00")
+    for order in ([old, new], [new, old]):
+        items, _, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, translations=cache, provider_models=order)
+        good = next(i for i in items if i.natural_key == "yt-good")
+        by = {row["segment_id"]: row for row in good.data["translations"]}
+        assert [by[f"s{i}"]["translated_text"] for i in range(3)] == ["old 0", "new 1", "old 2"]
+        assert by["s1"]["provider_model"] == new and by["s0"]["provider_model"] == old
+        assert good.data["translation_summary"]["vi"] == {"have": 3, "of": 3}
+
+
+def test_models_are_enumerated_from_the_ledger_rows():
+    rows = [{"capability": "media_translation", "provider": "groq", "model": "qwen/qwen3.8-27b"},
+            {"capability": "media_translation", "provider": "groq", "model": "openai/gpt-oss-120b"},
+            {"capability": "media_translation", "provider": "groq", "model": "qwen/qwen3.8-27b"},
+            {"capability": "agent_turn_fast", "provider": "gemini", "model": "gemini-3.5-flash-lite"}]
+    assert media_pack.models_from_ledger_rows(rows) == ["GroqTranslationProvider:openai/gpt-oss-120b",
+                                                        "GroqTranslationProvider:qwen/qwen3.8-27b"]
+
+    class Repo:
+        def ai_cost_rows(self, since):
+            return rows
+
+    assert media_pack.discover_provider_models(Repo(), ["X:y"]) == ["X:y", *media_pack.models_from_ledger_rows(rows)]
+    assert media_pack.discover_provider_models(object()) == []
+
+
+def test_coverage_below_full_warns_and_exits_non_zero_unless_allowed(source, tmp_path, capsys):
+    cli = _cli()
+    _with_orders(source)
+    _seed(_cache(tmp_path / "src" / "learning_cache.db"), model="GroqTranslationProvider:m")
+    ledger = tmp_path / "ledger.csv"
+    ledger.write_text("capability,provider,model\nmedia_translation,groq,m\n", encoding="utf-8")
+    base = ["--root", str(tmp_path / "src"), "--asset-root", str(tmp_path / "src-assets"), "--ledger-csv", str(ledger),
+            "--no-ledger", "--exclude-prefix", "qa-"]
+    out = tmp_path / "m.orenapack"
+    assert cli.main(["export", "--out", str(out), *base]) == 3  # yt-norights has none: no pack, a warning
+    err = capsys.readouterr().err
+    assert "WARNING" in err and "yt-norights" in err and not out.exists()
+    assert cli.main(["export", "--dry-run", *base]) == 3
+    assert json.loads(capsys.readouterr().out)["coverage"]["incomplete"] == ["yt-norights"]
+    assert cli.main(["export", "--out", str(out), "--allow-partial", *base]) == 0 and out.exists()
+    assert json.loads(capsys.readouterr().out)["coverage"]["percent"] < 100
+
+
+def test_full_coverage_exports_clean(source, tmp_path):
+    _items, _pack = _pack_with_translations(source, tmp_path)
+    items = [i for i in _items if i.natural_key == "yt-good"]
+    coverage = media_pack.translation_coverage(items)
+    assert coverage["complete"] and coverage["total"]["percent"] == 100.0 and coverage["incomplete"] == []
+
+
+def test_after_import_a_model_change_still_serves_the_imported_row_without_a_provider(source, tmp_path):
+    _items, pack = _pack_with_translations(source, tmp_path)
+    store, assets = _target(tmp_path)
+    cache = _cache(tmp_path / "dst.db")
+    media_pack.apply_media_items(pack, store, assets, dry_run=False, clip_keys=_clip_keys, translations=cache)
+    for model in ("GroqTranslationProvider:qwen/qwen3.8-27b", "GroqTranslationProvider:something-new", "AI:other"):
+        outcome = _read_path(store, cache, "yt-good", "vi", model)  # a provider raises AssertionError if it is called
+        assert outcome.status == "ready" and outcome.provider_calls == 0
+        assert [m.translated_meaning for m in outcome.meanings] == ["vi 0", "vi 1", "vi 2"]
+    # A meaning the learner's own model already holds wins over the imported one.
+
+    cache.put_media_translation(cache_key("yt-good", "s0", LINES[0], "vi", "M"), "own", "generated", "2026-11-01T00:00:00+00:00")
+    assert _read_path(store, cache, "yt-good", "vi", "M").meanings[0].translated_meaning == "own"
+    # An export from the target carries the imported rows on.
+    again, _, _ = media_pack.build_media_items(store, assets, clip_keys=_clip_keys, translations=cache, provider_models=[])
+    assert media_pack.translation_counts(next(i for i in again if i.natural_key == "yt-good")) == {"vi": 3}
+
+
+def test_the_asset_id_round_trips_and_keys_the_imported_rows(source, tmp_path):
+    store, _ = source
+    entry = store.get("yt-good")
+    payload = dict(entry.lesson["payload"])
+    payload["asset"] = {"asset_id": "asset-123", "source_language": "en"}
+    store.upsert(replace(entry, lesson={**entry.lesson, "payload": payload}))
+    _with_orders(source)
+    cache = _cache(tmp_path / "src.db")
+    _seed(cache, media_id="asset-123")  # the cache is keyed by the asset id, not the media id
+    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, translations=cache, provider_models=[SRC_MODEL])
+    good = next(i for i in items if i.natural_key == "yt-good")
+    assert media_pack.translation_counts(good) == {"vi": 3}
+    pack = read_pack(build_pack(items, created_by="t", environment="e", app_version="v", filters={}, assets=blobs))
+    dst, assets = _target(tmp_path)
+    dst_cache = _cache(tmp_path / "dst.db")
+    media_pack.apply_media_items(pack, dst, assets, dry_run=False, clip_keys=_clip_keys, translations=dst_cache)
+    assert dst.get("yt-good").lesson["payload"]["asset"]["asset_id"] == "asset-123"
+    outcome = _read_path(dst, dst_cache, "yt-good", "vi", "any")
+    assert outcome.status == "ready" and outcome.provider_calls == 0

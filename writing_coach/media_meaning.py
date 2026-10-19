@@ -33,6 +33,11 @@ PROVENANCE_EDITORIAL = "editorial"
 PROVENANCE_GENERATED = "generated"
 PROVENANCE_CACHED_GENERATED = "cached-generated"
 
+# The model-independent identity of a meaning that arrived in a content pack (D-234). A pack is moved between
+# environments whose translating model differs and changes over time, so an imported meaning is not tied to one:
+# the read path looks under the current provider/model first, then under this, before it ever calls a provider.
+IMPORTED_IDENTITY = "pack-import"
+
 # Cache identity version. Bumping it invalidates every stored meaning, which is
 # the escape hatch if the key ever has to change shape.
 CACHE_SCHEMA = "v1"
@@ -153,6 +158,10 @@ def resolve_segment_meanings(
         if cache is not None:
             hit = cache.get_media_translation(
                 cache_key(asset_id, segment_id, text, target, provider_model))
+            if not (hit and str(hit.get("translated_text") or "").strip()):
+                # An imported meaning: same asset, segment, text fingerprint and language, from any model. A cache read.
+                hit = cache.get_media_translation(
+                    cache_key(asset_id, segment_id, text, target, IMPORTED_IDENTITY))
         if hit and str(hit.get("translated_text") or "").strip():
             resolved[segment_id] = SegmentMeaning(
                 segment_id, target, str(hit["translated_text"]), PROVENANCE_CACHED_GENERATED)

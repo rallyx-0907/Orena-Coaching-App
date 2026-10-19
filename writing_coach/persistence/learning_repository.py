@@ -502,12 +502,13 @@ class SQLiteLearningCacheRepository:
 
         with self._connect() as conn:
             row = conn.execute(
-                "SELECT translated_text, provenance FROM media_translation_cache WHERE cache_key = ?",
+                "SELECT translated_text, provenance, generated_at FROM media_translation_cache WHERE cache_key = ?",
                 (key,),
             ).fetchone()
         if not row:
             return None
-        return {"translated_text": str(row["translated_text"]), "provenance": str(row["provenance"])}
+        return {"translated_text": str(row["translated_text"]), "provenance": str(row["provenance"]),
+                "generated_at": str(row["generated_at"])}
 
     def put_media_translation(
         self, key: str, translated_text: str, provenance: str, generated_at: str,

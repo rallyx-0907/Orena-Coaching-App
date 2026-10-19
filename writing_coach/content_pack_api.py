@@ -41,6 +41,8 @@ class _Packs:
     vocabulary_import: Callable[..., dict[str, Any]] | None = None
     media_store: Any = None
     media_assets: Any = None
+    media_translations: Any = None  # the learning cache Listening reads stored cue meanings from
+    media_provider_models: Callable[[], list[str]] | None = None  # identities a stored meaning may carry (ledger + current)
     environment: str = "local"
     app_version: str = ""
 
@@ -62,6 +64,7 @@ class ExportBody(BaseModel):
     collection_prefix: str = Field(default="", max_length=160)
     media_ids: list[str] = Field(default_factory=list, max_length=500)
     exclude_media_id_prefixes: list[str] = Field(default_factory=list, max_length=20)
+    allow_partial: bool = False  # export media although some cue translations are not stored (coverage below 100%)
 
 
 def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[PackItem]:
@@ -71,8 +74,11 @@ def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[Pa
             raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
         media_items, blobs, excluded = media_pack.build_media_items(
             _state.media_store, _state.media_assets, ids=body.media_ids, languages=body.languages,
-            exclude_prefixes=body.exclude_media_id_prefixes)
+            exclude_prefixes=body.exclude_media_id_prefixes, translations=_state.media_translations,
+            provider_models=_state.media_provider_models() if _state.media_provider_models else [])
         items += media_items
+        if extra is not None and _state.media_translations is not None:
+            extra["coverage"] = media_pack.translation_coverage(media_items)
         if extra is not None:
             extra["assets"], extra["excluded"] = blobs, excluded
     languages = tuple(code for code in body.languages if code in {"en", "zh"})
@@ -92,12 +98,18 @@ def export_pack(request: Request, body: ExportBody) -> Response:
     reading._same_origin(request)
     extra: dict[str, Any] = {}
     items = reading._guarded(lambda: _items_for(body, extra))
+    coverage = extra.get("coverage")
+    if coverage and not coverage["complete"] and not body.allow_partial:
+        raise orena_http_error(409, "pack_translation_coverage_incomplete",
+                               f"Stored translations cover {coverage['total']['percent']}% of the cues; "
+                               f"incomplete: {', '.join(coverage['incomplete'][:20])}. Send allow_partial to export anyway.")
     if not items:
         raise orena_http_error(404, "pack_nothing_to_export", "Nothing published matches these filters.")
     try:
         raw = build_pack(items, created_by=str(admin.get("email") or "admin"), environment=_state.environment,
                          app_version=_state.app_version, filters=body.model_dump(),
-                         assets=extra.get("assets"), extra_manifest={"media_excluded": extra.get("excluded", [])}
+                         assets=extra.get("assets"), extra_manifest={"media_excluded": extra.get("excluded", []),
+                                         "media_translation_coverage": (extra.get("coverage") or {}).get("total")}
                          if "media" in body.kinds else None)  # fmt: skip
     except PackError as exc:
         raise orena_http_error(422, exc.code, str(exc)) from exc
@@ -151,7 +163,7 @@ def _media_rows(pack: Any, *, overwrite: bool, dry_run: bool, actor: str) -> lis
     if _state.media_store is None or _state.media_assets is None:
         raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
     return media_pack.apply_media_items(pack, _state.media_store, _state.media_assets, overwrite=overwrite,
-                                        dry_run=dry_run, actor=actor)
+                                        dry_run=dry_run, actor=actor, translations=_state.media_translations)
 
 
 def _plan(pack: Any, overwrite: bool = False) -> dict[str, Any]:
