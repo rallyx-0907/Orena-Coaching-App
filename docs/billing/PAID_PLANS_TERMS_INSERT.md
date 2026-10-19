@@ -9,12 +9,14 @@ The facts behind each sentence, with their sources, are in `PAID_PLANS_TERMS_DRA
 - **A refund ends the plan at once:** filled in below.
 - **A downgrade credits the unused part:** its sentence is added once subscription D shows how Polar applies it.
 
-Two placeholders still wait for the owner, and **no agent fills them**:
+- **Learning data after a paid plan ends is kept for 3 months** (clarified 10:20): filled in below. The text must
+  not suggest that the account is deleted. Free data stays under the Privacy Policy.
+
+One placeholder still waits for the owner, and **no agent fills it**:
 
 | Placeholder | The owner's question | State |
 | --- | --- | --- |
 | `[REFUND_RULE]` | When, and within how long, is a payment refunded? | not answered |
-| `[OWNER CONFIRM: DATA_RETENTION_AFTER_CANCEL]` | The owner wrote "vẫn giữ có hạn 3 tháng" ("still kept, limited to 3 months"). There are three readings: (a) learning data is kept for at most 3 months after a plan ends or a refund; (b) a refund can be asked for within 3 months; (c) a 3-month billing period. | to be confirmed. Until then, nothing deletes data on a 3-month clock |
 
 ## How to apply it (after the owner answers)
 
@@ -42,7 +44,7 @@ Two placeholders still wait for the owner, and **no agent fills them**:
         ["Changing plan", "An upgrade applies at once, and you are charged the difference for the rest of the current period."],
         ["Failed payment", "If a renewal payment fails, your plan stays active for 2 days after the end of the period you paid for while the payment is retried. After that your account has the free plan's limits until the payment succeeds."],
         ["Refunds", "[REFUND_RULE] A refunded plan ends at once, and your account returns to the free plan. To ask for a refund, email orena.support@chillpickle.org from the address of your Google account."],
-        ["When a plan ends", "[OWNER CONFIRM: DATA_RETENTION_AFTER_CANCEL]"]
+        ["When a paid plan ends", "When a paid plan is cancelled, expires or is refunded, your account stays open on the free plan. We keep your learning data for 3 months, so you can continue where you left off if you return to a paid plan. After those 3 months, data that only a paid plan provides may be deleted. Your account and the data the free plan covers are kept while your account is active, as described in the Privacy Policy."]
       ]
     }
   ]

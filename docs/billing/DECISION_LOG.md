@@ -378,8 +378,9 @@ D-MON-035 | 2026-10-19 | A refund ends the plan at once; a downgrade credits the
   `provider_refund` on a subscription that is not ended stays open, with "revoke it on Polar"
   (`service._refund`); it is dismissable, so it closes no sales. **Downgrade:** the unused part of the higher plan
   counts against the lower one. Polar's behaviour under proration `invoice` is read from sandbox subscription D
-  (2026-10-19); the runbook's portal setting follows it. **Open (owner):** "keep for 3 months" has three readings
-  (data kept 3 months after a plan ends or a refund; a 3-month refund window; a 3-month billing period). Until the
-  owner confirms one, nothing deletes data, and the Terms keep `[OWNER CONFIRM]`. The refund rule (when and for how
+  (2026-10-19); the runbook's portal setting follows it. **Data after a paid plan ends (owner, 10:20):** learning data is kept for 3 months after a paid plan is cancelled,
+  expires or is refunded; after that, data that only a paid plan provides may be deleted; the account and Free's data stay
+  under the Privacy Policy. No code deletes anything: defining that data and a deletion job is an open item before
+  real sales, and deletion is a human gate. The refund rule (when and for how
   long) is still open. | A refunded learner neither keeps paid access nor keeps being charged. | `service.py`
   `_refund`, `tests/test_billing_reconciliation.py`, `RUNBOOK_POLAR_ACTIVATION.md` §5, `PAID_PLANS_TERMS_INSERT.md`.
