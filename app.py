@@ -4218,7 +4218,9 @@ def _data_classes_view() -> dict[str, Any]:
     from writing_coach.ai.providers import provider_definitions
 
     record, source = _AGENT_DATA_CLASSES.current()
+    stored = _persistence_runtime.platform_repository.get_setting(_DATA_CLASS_SETTING) if source == "admin" else None
     return {"source": source, "classes": record.public(), "default": "none",
+            "updated_at": stored["updated_at"] if stored else None,
             "providers": sorted(definition.id for definition in provider_definitions()),
             "choices": [{"class": name, "sends": sends} for name, sends in _DATA_CLASS_NOTES.items()]}
 
@@ -4235,12 +4237,15 @@ class _DataClassesIn(BaseModel):
     model_config = {"extra": "forbid"}
 
     classes: dict[str, str]
+    # The `updated_at` the editor read (None: no record saved yet). A save over a newer record is refused (409).
+    expected_updated_at: str | None = None
 
 
 @app.put("/api/admin/agent/data-classes", name="admin_agent_data_classes_save")
 def admin_agent_data_classes_save(payload: _DataClassesIn, request: Request) -> dict[str, Any]:
     """The owner records each provider's class after reading its retention and training terms (#264). The whole
-    record is replaced; a provider left out is `none`. Audited before it applies - no record, no change."""
+    record is replaced; a provider left out is `none`. Written with its audit in one transaction, and only over the
+    version the editor read: two editors cannot silently overwrite each other (409)."""
     admin = require_admin(request)
     from writing_coach import admin_console_api
     from writing_coach.ai.providers import provider_definitions
@@ -4254,12 +4259,20 @@ def admin_agent_data_classes_save(payload: _DataClassesIn, request: Request) -> 
     unknown = sorted(key for key in record.classes if key.partition(":")[0] not in known)
     if unknown:
         raise orena_http_error(422, "data_class_unknown_provider", f"Not a provider in the catalogue: {', '.join(unknown)}.")
+    from writing_coach.persistence.platform_repository import SettingConflict
+
+    actor = str(admin.get("email") or admin.get("google_sub") or "")
     before, source = _AGENT_DATA_CLASSES.current()
-    admin_console_api._audit(admin, "admin.agent_data_classes", entity_type="platform_setting",
-                             entity_id=_DATA_CLASS_SETTING, required=True,
-                             payload={"from": before.public(), "from_source": source, "to": record.public()})
-    _persistence_runtime.platform_repository.set_setting(
-        _DATA_CLASS_SETTING, {"classes": record.public()}, updated_by=str(admin.get("email") or admin.get("google_sub") or ""))
+    audit = {"action": "admin.agent_data_classes", "actor": actor, "entity_type": "platform_setting",
+             "entity_id": _DATA_CLASS_SETTING,
+             "payload": {"from": before.public(), "from_source": source, "to": record.public()}}
+    try:
+        _persistence_runtime.platform_repository.set_setting(
+            _DATA_CLASS_SETTING, {"classes": record.public()}, updated_by=actor,
+            expected_updated_at=payload.expected_updated_at, audit=audit)
+    except SettingConflict:
+        raise orena_http_error(409, "data_class_conflict",
+                               "The record changed since it was read. Reload it and save again.") from None
     return _data_classes_view()
 
 

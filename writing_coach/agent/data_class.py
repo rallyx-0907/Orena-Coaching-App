@@ -30,8 +30,9 @@ until each of those is covered and moved into `GOVERNED_PAYLOADS`.
 The classes are the owner's record, never guessed. `AGENT_PROVIDER_DATA_CLASSES` lists `provider=class` or
 `provider:model=class` entries separated by commas (a model entry wins over its provider's); an entry that does not
 parse refuses to start. The owner may instead record them in Admin (#264): the platform setting `SETTING_KEY`,
-written by `PUT /api/admin/agent/data-classes`, is read at each use (`LiveProviderDataClasses`) and, once saved, is
-the record; while none is saved - or it cannot be read - the environment record stays authoritative.
+written by `PUT /api/admin/agent/data-classes`, is read once per turn or voice session (`LiveProviderDataClasses`)
+and, once saved, is the record. While none is saved the environment record stands; when the record cannot be read
+every provider is `none` - a failure never raises a class (fail closed, as the rest of Orena Memory).
 """
 
 from __future__ import annotations
@@ -122,7 +123,8 @@ class ProviderDataClasses:
             if not isinstance(key, str) or not isinstance(value, str):
                 raise ValueError("each entry is provider[:model] -> class")
             name = key.strip()
-            if not name or name.startswith(":") or name.endswith(":") or name.count(":") > 1 or "," in name or "=" in name:
+            # a model id may itself carry ":" (ollama:llama3:8b): the provider is what precedes the first one
+            if not name or name.startswith(":") or name.endswith(":") or "," in name or "=" in name:
                 raise ValueError(f"{key!r} is not provider[:model]")
             if name in classes:
                 raise ValueError(f"{name!r} is named twice")
@@ -130,35 +132,38 @@ class ProviderDataClasses:
         return cls(MappingProxyType(classes))
 
 
+CLOSED = ProviderDataClasses()  # every provider `none`: what a record that cannot be read means
+
+
 class LiveProviderDataClasses:
-    """`ProviderDataClasses` read from the owner's Admin record at each use, so a class set there applies to the next
-    turn with no restart (#264, as `LiveAgentLimits` for the limits). The agent package reads no store itself: the
-    application hands it `stored()`, which returns the setting's value (`{"classes": {...}}`) or None.
+    """`ProviderDataClasses` read from the owner's Admin record, so a class set there applies to the next turn with no
+    restart (#264, as `LiveAgentLimits` for the limits). The agent package reads no store itself: the application hands
+    it `stored()`, which returns the setting's value (`{"classes": {...}}`) or None. A turn or a voice session takes one
+    `snapshot()` and uses it throughout, so every check in it sees the same record.
 
     - No record saved: the environment record (`fallback`) is the record.
-    - A record that cannot be read or does not parse: the last record read well, else the environment record - never
-      a guess - and it is logged."""
+    - A record that cannot be read or does not parse: every provider is `none` (`CLOSED`), and it is logged. Never
+      the environment record, which may be higher than what the owner saved, and never an earlier read, which may be
+      a record the owner has since lowered (#357 review P1)."""
 
     def __init__(self, fallback: ProviderDataClasses, stored: Callable[[], Mapping[str, Any] | None]) -> None:
         self._fallback = fallback
         self._stored = stored
-        self._last_good: ProviderDataClasses | None = None
 
     def current(self) -> tuple[ProviderDataClasses, str]:
-        """The record in force and where it comes from: "admin" or "environment"."""
+        """The record in force and where it comes from: "admin", "environment" or "unavailable"."""
         try:
             value = self._stored()
             if value is None:
-                self._last_good = None
                 return self._fallback, "environment"
-            record = ProviderDataClasses.from_mapping(value.get("classes") if isinstance(value, Mapping) else None)
-        except Exception as error:  # noqa: BLE001 - a store or parse failure never fails a turn, and never guesses
-            log.warning("agent data classes: the Admin record could not be used (%s)", type(error).__name__)
-            if self._last_good is not None:
-                return self._last_good, "admin"
-            return self._fallback, "environment"
-        self._last_good = record
-        return record, "admin"
+            return ProviderDataClasses.from_mapping(value.get("classes") if isinstance(value, Mapping) else None), "admin"
+        except Exception as error:  # noqa: BLE001 - a store or parse failure never fails a turn: it fails closed
+            log.warning("agent data classes: the Admin record could not be used (%s); every provider is none",
+                        type(error).__name__)
+            return CLOSED, "unavailable"
+
+    def snapshot(self) -> ProviderDataClasses:
+        return self.current()[0]
 
     def of(self, provider: str | None, model: str | None = None) -> DataClass:
         return self.current()[0].of(provider, model)

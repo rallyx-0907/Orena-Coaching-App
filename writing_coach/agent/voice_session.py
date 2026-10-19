@@ -705,7 +705,7 @@ class VoiceService:
         builder = getattr(self.runtime, "pack", None)
         if builder is None or not getattr(builder, "enabled", False):
             return None, False
-        classes = getattr(self.runtime, "data_classes", None)
+        classes = self._data_classes()
         # G8: the voice vendor is Gemini Live (the one-use token is minted there); its class is the owner's record.
         if classes is not None and not classes.cleared("gemini", self.model, PACK_CLASS):
             return None, False
@@ -738,7 +738,7 @@ class VoiceService:
         runtime_memory = getattr(self.runtime, "memory", None)
         if runtime_memory is None:
             return None
-        classes = getattr(self.runtime, "data_classes", None)
+        classes = self._data_classes()
         cleared = classes is not None and classes.cleared("gemini", self.model, DataClass.FULL_MEMORY)
         return runtime_memory.turn(learner.user_key, version=request.version, cleared=cleared)
 
@@ -761,12 +761,22 @@ class VoiceService:
             return None
         return self.runtime.memory.server_notes(learner.user_key, to_internal(request.context.locale.target))
 
+    def _data_classes(self):
+        """The provider data-class record this voice session opened with: one snapshot of the owner's record (#264).
+        None: the runtime is not gated."""
+
+        if not hasattr(self, "_classes_snapshot"):
+            classes = getattr(self.runtime, "data_classes", None)
+            snapshot = getattr(classes, "snapshot", None)
+            self._classes_snapshot = snapshot() if callable(snapshot) else classes
+        return self._classes_snapshot
+
     def _gate_data_classes(self, turn: TurnInput, tier1, session_state, *, memory_on: bool = False):
         """G8 for the voice setup (ORENA_MEMORY.md §8 b, c), while the gate is on: a conversation that has sent a class
         of data is not continued by a voice vendor cleared for less (the session does not open: text goes on), and
         coach notes reach the vendor only when it is cleared for `full_memory`."""
 
-        classes = getattr(self.runtime, "data_classes", None)
+        classes = self._data_classes()
         if not gating_on(getattr(self.runtime, "pack", None), classes, memory_on=memory_on):
             return tier1, session_state, True
         level = classes.of("gemini", self.model)  # the voice vendor is Gemini Live
@@ -781,7 +791,7 @@ class VoiceService:
 
     def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes,
                                 context: bool, memory: bool = False) -> None:  # fmt: skip
-        if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None),
+        if not gating_on(getattr(self.runtime, "pack", None), self._data_classes(),
                          memory_on=memory or getattr(self.runtime, "memory", None) is not None):  # fmt: skip
             return
         level = max(pack_class(with_memory=memory) if pack else 0, NOTES_CLASS if notes else 0,
