@@ -21,7 +21,7 @@ const generated = moduleText(buildContent());
 assert.equal(fs.readFileSync('static/orena/legal/content.js', 'utf8').replace(/\r\n/g, '\n'), generated, 'content.js is what the drafts give: run node scripts/build_orena_legal.mjs');
 
 const { setLanguages } = await import('../static/orena/copy/index.js');
-const { legalAddress, legalMarkup, LEGAL_PAGES } = await import('../static/orena/legal/page.js');
+const { legalAddress, legalMarkup, datedText, LEGAL_PAGES } = await import('../static/orena/legal/page.js');
 assert.deepEqual([...LEGAL_PAGES].sort(), Object.keys(DOCS).sort());
 
 const textOf = (markup) => String(markup).replace(/<[^>]+>/g, ' ').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ');
@@ -42,12 +42,16 @@ for (const [page, name] of Object.entries(DOCS)) {
       assert.ok(!text.includes(banned), `${page}/${ui}: "${banned}" does not reach the page`);
     }
     assert.ok(markup.includes('class="o-h1"') && markup.includes('c-section-head__title'), `${page}/${ui}: kit page header and section headings`);
-    const expected = placeholders(english.replace(/\*\*|\*|`/g, '').replace(/\s+/g, ' '));
+    const expected = placeholders(english.replace(/\*\*|\*|`/g, '').replace(/\s+/g, ' ')).filter((mark) => mark !== '[DATE]'); // the date is the server's, below
+    assert.ok(!text.includes('[DATE]') && !text.includes('Last updated'), `${page}/${ui}: with no effective date the date sentence is left out`);
+    assert.ok(textOf(String(legalMarkup(page, ui, '2026-10-20'))).includes('Last updated: October 20, 2026. Version'), `${page}/${ui}: the server's effective date is shown`);
     for (const mark of expected) assert.ok(text.includes(mark), `${page}/${ui}: placeholder ${mark.slice(0, 60)} stays visible`);
     assert.ok(markup.includes('lang="en"') && !markup.includes('lang="vi"'), `${page}/${ui}: the text is marked English`);
   }
 }
 
+assert.equal(datedText('Last updated: [DATE]. Version: draft', '2026-10-05'), 'Last updated: October 5, 2026. Version: draft');
+assert.equal(datedText('Last updated: [DATE]. Version: draft', 'x"><b>'), 'Version: draft', 'a malformed date is left out, never shown');
 assert.deepEqual(legalAddress('#/legal/privacy?lang=vi'), { page: 'privacy' }, 'a language on the address is ignored');
 assert.deepEqual(legalAddress('#/legal/terms?lang=fr'), { page: 'terms' });
 assert.equal(legalAddress('#/legal/other'), null);

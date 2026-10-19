@@ -18,6 +18,7 @@ from __future__ import annotations
 import logging
 import os
 import re
+from datetime import date
 from typing import Any
 
 from writing_coach.core.errors import orena_http_error
@@ -32,8 +33,20 @@ _DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 def current_legal_version(environ: Any = None) -> str:
     """The Terms / Privacy effective version a sign-in accepts: `LEGAL_EFFECTIVE_DATE` (YYYY-MM-DD) or `unstamped`."""
+    day = legal_effective_date(environ)
+    return day.isoformat() if day is not None else UNSTAMPED
+
+
+def legal_effective_date(environ: Any = None) -> date | None:
+    """`LEGAL_EFFECTIVE_DATE` as a real calendar date, or None when unset, malformed or not a date. One reading for
+    both the version a sign-in records and the date the public legal pages show, so they cannot differ."""
     value = str((environ if environ is not None else os.environ).get("LEGAL_EFFECTIVE_DATE") or "").strip()
-    return value if _DATE.match(value) else UNSTAMPED
+    if not _DATE.match(value):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
 
 
 def normalize_language(value: Any, default: str = "en") -> str:

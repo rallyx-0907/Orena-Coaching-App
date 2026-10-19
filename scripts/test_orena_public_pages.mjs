@@ -29,6 +29,13 @@ assert.equal(facts.operator.name, 'RallyX', 'operator is RallyX (human decision 
 assert.equal(facts.min_age, 13, 'minimum age is 13 (human decision 2026-10-09)');
 assert.deepEqual([facts.retention.agent_turn_days, facts.retention.feedback_months, facts.retention.backup_days], [90, 24, 30], 'retention: 90 days, 24 months, backups 30 days');
 assert.equal(facts.effective_date, null, 'the repository keeps the effective date null: the deploy step stamps it');
+// The unstamped build keeps the effective-date token the runtime fills with LEGAL_EFFECTIVE_DATE (app.py
+// `_legal_page`): twice per page ("Last updated" and "Effective"), never anywhere else.
+for (const [page] of LEGAL) {
+  const raw = html(`${page}.en.html`);
+  assert.equal(raw.split('<mark data-effective-date').length - 1, 2, `${page}: the effective-date token appears exactly twice`);
+  assert.equal(raw.split('[pending:').length - 1, 2, `${page}: no other pending marker`);
+}
 const rel = build('--release');
 assert.equal(rel.status, 1, `--release must fail without the publish date:\n${rel.stdout}${rel.stderr}`);
 assert.ok(/effective_date/.test(rel.stderr), 'the failure names the effective date');

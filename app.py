@@ -51,6 +51,8 @@ from writing_coach.writing_grammar_transfer import grammar_links_for_issues
 from writing_coach.writing_analytics import parse_persisted_error_events
 from auth_support import APP_ENV, AUTH_ENABLED, DEPLOYMENT, SESSION_SECRET, current_db_path, install_auth, require_admin, require_vocabulary_ingest, AUTH_DB_PATH, configure_auth_repository
 import auth_support
+from html import escape as html_escape
+from writing_coach import consent as consent_evidence
 from writing_coach.product.api import router as product_router
 from writing_coach.media_api import (
     configure_media_fallback,
@@ -2491,7 +2493,17 @@ def _legal_page(name: str) -> HTMLResponse:
     """Terms, Privacy and Delete account are static HTML with the whole text in the response (no script needed to
     read it). Legal documents exist in English only (D-238): every interface language gets the English page, and an
     old `?lang=` on the address is tolerated and ignored."""
-    return _page("public", f"{name}.en.html")
+    page = _page("public", f"{name}.en.html")
+    # The built page carries a token where the effective date goes (scripts/build_public_pages.mjs). It is filled with
+    # the deploy's LEGAL_EFFECTIVE_DATE, the very value the consent evidence records as the policy version. A release
+    # build that baked a date in has no token and passes through. Unset or invalid (development only: production
+    # refuses to start without it, core/deployment.py), the token stays, a visible pending marker.
+    day = consent_evidence.legal_effective_date()
+    if day is None:
+        return page
+    shown = html_escape(f"{day.strftime('%B')} {day.day}, {day.year}")
+    body = re.sub(r"<mark data-effective-date[^>]*>[^<]*</mark>", lambda _m: shown, page.body.decode("utf-8"))
+    return HTMLResponse(body, headers={"Cache-Control": "no-store, max-age=0"})
 
 
 @app.get("/terms", response_class=HTMLResponse)

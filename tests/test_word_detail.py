@@ -444,3 +444,23 @@ def test_source_and_learner_text_is_left_unchanged(source: str) -> None:
     assert word_detail._text(source) == source
     detail = word_detail.project_word_detail(selection=source, context=source, language="en", lookup={}, explanation=None, saved=False)
     assert detail["contextSentence"] == source
+
+
+def test_a_chinese_word_with_only_the_english_gloss_says_the_meaning_is_english_then_vietnamese_once_localized() -> None:
+    """D18: the English CC-CEDICT line is tagged "en"; the Vietnamese localization, once it exists, is tagged "vi"."""
+    english_only = {"base_form": "松树", "target_language": "vi", "definitions": [{"definition": "pine tree"}]}
+    cold = word_detail.project_word_detail(
+        selection="松树", context="", language="zh", lookup=english_only, explanation=None, saved=False
+    )
+    assert cold["contextMeaning"] == "pine tree"
+    assert cold["meaningLanguage"] == "en"
+    localized = word_detail.project_word_detail(
+        selection="松树",
+        context="",
+        language="zh",
+        lookup={**english_only, "meanings": [{"text": "cây thông", "source": "localization"}]},
+        explanation=None,
+        saved=False,
+    )
+    assert localized["contextMeaning"] == "cây thông"
+    assert localized["meaningLanguage"] == "vi"
