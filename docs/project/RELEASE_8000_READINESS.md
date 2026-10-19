@@ -21,11 +21,17 @@ is retired). Proposed :8000 env: `APP_ENV=staging`, `AGENT_ENABLED=true`, `AGENT
 image, same env). Runtime env: `%LOCALAPPDATA%\orena-product\staging-8000
 untime.env`, operator-owned, outside Git,
 ACL to the operator. Flags: `APP_ENV=staging`, `ORENA_ACCOUNT_BACKBONE=on`, `ORENA_PRACTICE_SESSION=on`,
-`AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`, `AGENT_DAILY_SPEND_CAP_USD=1`, `AI_RUNTIME_MODE=capability`,
+`AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`, `AI_RUNTIME_MODE=capability`,
 `PRONUNCIATION_PROVIDER` empty (Azure when configured). Provider credentials: Gemini and Azure Speech in the env file; a
 :8000-own `AI_PROVIDER_SECRETS_KEY`. AI routing rows (`ai.active_selection`, eight `ai.capability.*`) mirror :8021
 (gemini-3.5-flash-lite). Content: the S1 reading pack (4 sources, 30 EN + 22 ZH texts) promoted by content pack, sources
 approved in Admin, 52 jobs consumed by the worker, all published. Media has a content-pack path since D-234 (see "Moving published content :8021 to :8000" below).
+
+**Spend limits (current target, owner 2026-10-20; supersedes the `AGENT_DAILY_SPEND_CAP_USD=1` of the first deploy and
+the `=5` pin found later):** the system ceiling `AI_DAILY_SPEND_CEILING_USD=2` stays in `runtime.env` as the fuse
+(Admin can only lower it). `AGENT_DAILY_SPEND_CAP_USD` is removed from `runtime.env`, so Admin › Policies governs
+`agent.daily_spend_cap_usd`, at or below the ceiling. `word_translation` and `word_sense_choice` are on, each capped at
+0.25 USD a day. Every setting, its pilot value and whether it needs a restart: `docs/operations/SETTINGS_REFERENCE.md`.
 
 ## Decided 2026-10-08 (D-143) - read this first
 
@@ -198,7 +204,7 @@ Names only. No value was read; `.env` was not opened. "First :8000 run" is a rec
 | `ORENA_ACCOUNT_BACKBONE` | `account_backbone.py:30,53`; `compose.yaml` | off | **off.** On requires D4 limits (B3) and the deletion position (B4). Off: drafts, notes, conversations and private imports stay on-device; settings columns still exist. |
 | `ORENA_PRACTICE_SESSION` | `speech_api.py:45-51`; compose | off | **off** (also an unauthorized revision, B2). Off: take writes NULL, `session=current` answers 404, Summary uses the 7-day fallback. |
 | `BILLING_ENABLED`, `BILLING_PRICES_FILE`, `POLAR_*`, `PAYOS_*` | `billing/service.py:43`, `app.py:1033` | off / unset | **unset.** 0027 does not exist; no learner screen draws plans (BL-1). |
-| `AGENT_ENABLED`, `AGENT_VOICE_ENABLED`, `AGENT_TURN_RETENTION_SWEEP` | `agent/api.py` | off | Superseded by D-146: `AGENT_ENABLED` alone decides, in every environment. :8000 staging: `AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`; the agent needs a provider credential and `AGENT_DAILY_SPEND_CAP_USD` set by the human. |
+| `AGENT_ENABLED`, `AGENT_VOICE_ENABLED`, `AGENT_TURN_RETENTION_SWEEP` | `agent/api.py` | off | Superseded by D-146: `AGENT_ENABLED` alone decides, in every environment. :8000 staging: `AGENT_ENABLED=true`, `AGENT_VOICE_ENABLED=false`; the agent needs a provider credential and its daily cap (`agent.daily_spend_cap_usd` in Admin, see "Spend limits" above). |
 | `AI_RUNTIME_MODE` | `ai/platform.py:74` | `legacy` | Keep what :8000 uses today. |
 | `MEDIA_MODEL_CLIPS` | `media_transcript_pipeline.py:443` | on (`"1"`) | on; model clips are cut at content readiness. Needs `ffmpeg` in the image (already). |
 | `MEDIA_PIPELINE_INLINE`, `MEDIA_TRANSCRIPT_FALLBACK` (`none`/`supadata`), `SUPADATA_*`, `MEDIA_TRANSLATION_PROVIDER`, `MEDIA_PRETRANSLATE_LANGUAGES`, `MEDIA_DAILY_CAP_USD`, `MEDIA_ASR_BATCH_CAP_USD`, `MEDIA_AI_BATCH_CAP_USD` | `app.py:517-551`, pipeline | `none` / unset | Keep paid fallbacks off until the human sets caps (paid providers are a human gate). |
@@ -207,7 +213,7 @@ Names only. No value was read; `.env` was not opened. "First :8000 run" is a rec
 | `AI_PROVIDER_SECRETS_KEY` | compose | empty | Needed to save provider keys in Admin; otherwise the console refuses (closed state). |
 | `PRONUNCIATION_PROVIDER` | `speech_pronunciation.py:619-654` | compose default changed from `demo` to empty | Unset now means "do not guess"; set `azure` (with `AZURE_SPEECH_KEY`/`AZURE_SPEECH_REGION`) if :8000 should score pronunciation. Do not leave `demo` on :8000. |
 | `ORENA_LIMIT_IMPORT_TOMBSTONES` and the other `ORENA_LIMIT_*` | `account_records_api.py:54-62` | floor-validated; unset = default | Only the tombstone limit exists in code; the rest of the table is unbuilt (B3). |
-| `WORD_TTS_SPEND_CAP_USD`, `AGENT_DAILY_SPEND_CAP_USD` | app | caps | Set deliberately before any provider voice is enabled. |
+| `WORD_TTS_SPEND_CAP_USD`, `AGENT_DAILY_SPEND_CAP_USD` | app | caps | Pins of Admin policies: leave both unset so Admin › Policies holds the caps (`docs/operations/SETTINGS_REFERENCE.md`). Set them deliberately before any provider voice is enabled. |
 | `ORENA_ENVIRONMENT_LABEL` | `app.py:998` | `local` | Set to the :8000 label so Admin shows the right environment. |
 
 ### 3.2 Unchanged and already required in production

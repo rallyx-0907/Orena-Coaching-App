@@ -50,8 +50,9 @@ class RuntimeFacts:
     production: bool
     # PR-MON-10 rollback: `BILLING_NEW_SALES=off` closes new checkouts only. Webhooks, the customer portal, the
     # reconciler and the Polar customer clean-up keep running - a live card subscription still renews on Polar,
-    # so its lifecycle must still be received (review P1-2 of fdb613b0).
-    new_sales: bool = True
+    # so its lifecycle must still be received (review P1-2 of fdb613b0). BQ: a callable is read at each report (the
+    # `billing.new_sales` policy, which the variable pins), so a pause applies within seconds, without a restart.
+    new_sales: bool | Callable[[], bool] = True
 
 
 def _url_state(url: str) -> str:
@@ -61,7 +62,19 @@ def _url_state(url: str) -> str:
     return "https" if url.startswith("https://") else "http"
 
 
+def _new_sales_open(facts: RuntimeFacts) -> bool:
+    flag = facts.new_sales
+    if not callable(flag):
+        return bool(flag)
+    try:
+        return flag() is not False
+    except Exception:  # noqa: BLE001 - a switch that cannot be read keeps sales closed: not ready, never guessed open
+        _log.warning("billing new-sales switch unreadable; new sales paused", exc_info=True)
+        return False
+
+
 def report(facts: RuntimeFacts) -> dict[str, Any]:
+    new_sales = _new_sales_open(facts)
     checks = {
         "switch": "on" if facts.switch else "off",
         "database": facts.backend or "none",
@@ -70,12 +83,12 @@ def report(facts: RuntimeFacts) -> dict[str, Any]:
         "orders_schema": facts.orders_schema(),
         "entitlement_source": facts.entitlement_source(),
         "public_base_url": _url_state(facts.public_base_url),
-        "new_sales": "on" if facts.new_sales else "paused",
+        "new_sales": "on" if new_sales else "paused",
     }
     blockers: list[str] = []
     if not facts.switch:
         blockers.append("billing_off")
-    elif not facts.new_sales:
+    elif not new_sales:
         blockers.append("new_sales_paused")
     if facts.backend != "postgresql":
         blockers.append("database_not_postgresql")

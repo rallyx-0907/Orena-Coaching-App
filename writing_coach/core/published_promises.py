@@ -17,10 +17,12 @@ requested; a backbone that then fails to start makes the item an over-report, ne
 
 `enforce_at_start`:
 - On a public runtime (staging, production), it logs each unmet promise as an ERROR.
-- Production also refuses to start without a ceiling.
+- Production also refuses to start without a ceiling in the environment. An Admin ceiling
+  (`ai.daily_spend_ceiling_usd`, which can only lower it) counts as in force everywhere else.
 
-The sweeps are logged rather than refused (two are Admin-tunable at runtime, D-172; the others are env-only). Admin's readiness summary shows the
-same list (`unmet_promises`). Development says nothing. No value is printed, only the names.
+The sweeps are logged rather than refused. Each is an Admin policy its variable can pin (D-172, BQ), so this reads the
+variable when it is set and the policy otherwise; on a public runtime Admin can turn a sweep on, never off
+(policies.py `promise`). Admin's readiness summary shows the same list (`unmet_promises`). Development says nothing. No value is printed, only the names.
 """
 
 from __future__ import annotations
@@ -66,6 +68,24 @@ def _policy_on(policy: Callable[[str], Any], key: str) -> bool:
         return False
 
 
+def _sweep_on(values: Mapping[str, str], policy: Callable[[str], Any], name: str, key: str) -> bool:
+    """A sweep that is a policy its variable pins (BQ): the variable when it is set, else the policy's value - the
+    precedence `policies.value` applies, read from the environment this check was given."""
+    if str(values.get(name, "")).strip():
+        return _switch_on(values, name)
+    return _policy_on(policy, key)
+
+
+def _ceiling_in_force(values: Mapping[str, str], policy: Callable[[str], Any]) -> bool:
+    """The environment's ceiling, or one Admin set (`ai.daily_spend_ceiling_usd`)."""
+    if _ceiling_set(values):
+        return True
+    try:
+        return policy("ai.daily_spend_ceiling_usd") is not None
+    except Exception:  # noqa: BLE001 - not readable: not known to be in force
+        return False
+
+
 def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
     """The published promises not in force with this environment and these policy values (`policy(key)`)."""
 
@@ -73,14 +93,14 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
     from writing_coach.agent.memory_runtime import MEMORY_SWEEP_SWITCH
 
     problems: list[UnmetPromise] = []
-    if not _ceiling_set(values):
+    if not _ceiling_in_force(values, policy):
         problems.append(UnmetPromise("spend_ceiling_unset",
                                      "AI_DAILY_SPEND_CEILING_USD is not set: there is no system daily AI spend ceiling"))
     from writing_coach.account_backbone import requested as backbone_requested
 
     # Orena Memory exists only with its keys and the account backbone (MemoryRuntime.from_env); not otherwise.
     memory = bool(str(values.get("AGENT_MEMORY_HMAC_KEYS", "")).strip()) and backbone_requested(values)
-    if memory and not _switch_on(values, MEMORY_SWEEP_SWITCH):
+    if memory and not _sweep_on(values, policy, MEMORY_SWEEP_SWITCH, "agent.memory_retention_sweep"):
         problems.append(UnmetPromise("memory_retention_sweep_off",
                                      f"{MEMORY_SWEEP_SWITCH} is off: unused Orena Memory notes are hidden after 180 days"
                                      " but not deleted, as the Privacy Policy states"))
@@ -90,11 +110,11 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
                                      " Privacy Policy states"))
     from writing_coach.persistence.retention_sweeps import ADMIN_AUDIT_SWEEP_SWITCH, USAGE_SWEEP_SWITCH
 
-    if not _switch_on(values, USAGE_SWEEP_SWITCH):
+    if not _sweep_on(values, policy, USAGE_SWEEP_SWITCH, "usage.retention_sweep"):
         problems.append(UnmetPromise("usage_retention_sweep_off",
                                      f"{USAGE_SWEEP_SWITCH} is off: usage counts are kept past the 12 months the Privacy"
                                      " Policy states"))
-    if not _switch_on(values, ADMIN_AUDIT_SWEEP_SWITCH):
+    if not _sweep_on(values, policy, ADMIN_AUDIT_SWEEP_SWITCH, "admin_audit.retention_sweep"):
         problems.append(UnmetPromise("admin_audit_retention_sweep_off",
                                      f"{ADMIN_AUDIT_SWEEP_SWITCH} is off: records of administrative actions are kept past"
                                      " the 24 months the Privacy Policy states"))
@@ -115,6 +135,6 @@ def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) ->
     problems = unmet_promises(values, policy)
     for problem in problems:
         _log.error("published promise not in force (%s): %s", problem.code, problem.message)
-    if app_env == "production" and any(p.code == "spend_ceiling_unset" for p in problems):
+    if app_env == "production" and not _ceiling_set(values):  # the environment's fuse, whatever Admin holds
         raise RuntimeError("AI_DAILY_SPEND_CEILING_USD is required when APP_ENV=production (PRE-502 R2).")
     return problems

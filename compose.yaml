@@ -27,9 +27,10 @@ services:
       # The deploy-stamped effective date of the Terms and Privacy Policy (D-233); production refuses to start without it.
       LEGAL_EFFECTIVE_DATE: ${LEGAL_EFFECTIVE_DATE:-}
       # PRE-502 R1/R2: the system daily AI spend ceiling (unset: none) and the retention sweeps behind the periods the
-      # Privacy Policy states. Each sweep is deletion, so each stays off until the owner switches it on.
+      # Privacy Policy states. Each sweep is deletion, so each stays off until the owner switches it on. Empty: Admin
+      # decides (docs/operations/SETTINGS_REFERENCE.md); a value pins it. The ceiling is a fuse Admin can only lower.
       AI_DAILY_SPEND_CEILING_USD: ${AI_DAILY_SPEND_CEILING_USD:-}
-      AI_DAILY_SPEND_WARN_RATIO: ${AI_DAILY_SPEND_WARN_RATIO:-0.8}
+      AI_DAILY_SPEND_WARN_RATIO: ${AI_DAILY_SPEND_WARN_RATIO:-}
       AGENT_MEMORY_RETENTION_SWEEP: ${AGENT_MEMORY_RETENTION_SWEEP:-}
       AGENT_TURN_RETENTION_SWEEP: ${AGENT_TURN_RETENTION_SWEEP:-}
       FEEDBACK_RETENTION_SWEEP: ${FEEDBACK_RETENTION_SWEEP:-}

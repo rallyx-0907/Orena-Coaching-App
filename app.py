@@ -674,6 +674,8 @@ except ValueError as exc:
 
 # PRE-502 R8 (owner, 2026-10-19 16:26): usage counts kept 12 months, administrators' audit records 24 months. Each sweep
 # is deletion, off until its switch is on (an unclear value refuses to start); PostgreSQL only. Same daily schedule.
+# BQ: each switch is now a policy (`usage.retention_sweep`, `admin_audit.retention_sweep`) read at every tick, so Admin
+# can switch it on without a restart; the variable still pins it.
 from writing_coach.agent.retention import sweep_enabled as _retention_switch  # noqa: E402
 from writing_coach.persistence import retention_sweeps as _retention_sweeps  # noqa: E402
 
@@ -684,13 +686,13 @@ if _persistence_runtime.backend == "postgresql" and _persistence_runtime.engine 
     _r8_retention = [
         FeedbackRetentionSchedule(
             lambda before, limit: _retention_sweeps.delete_usage_before(_persistence_runtime.engine, before, limit),
-            enabled=lambda: _retention_switch(os.environ, _retention_sweeps.USAGE_SWEEP_SWITCH),
+            enabled=lambda: _policies.value("usage.retention_sweep"),  # BQ: Admin's switch; the variable pins it
             days=_retention_sweeps.USAGE_RETENTION_DAYS,
             label="usage counts",
         ),
         FeedbackRetentionSchedule(
             lambda before, limit: _retention_sweeps.delete_admin_audit_before(_persistence_runtime.engine, before, limit),
-            enabled=lambda: _retention_switch(os.environ, _retention_sweeps.ADMIN_AUDIT_SWEEP_SWITCH),
+            enabled=lambda: _policies.value("admin_audit.retention_sweep"),
             days=_retention_sweeps.ADMIN_AUDIT_RETENTION_DAYS,
             label="admin audit records",
         ),
@@ -1155,9 +1157,13 @@ def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
 
 
 # The system-wide daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD; AI_DAILY_SPEND_WARN_RATIO, default 0.8): unset, no
-# ceiling. An unreadable value refuses to start rather than guess.
-_spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_system_ai_spend_since,
-                              warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
+# ceiling. An unreadable value refuses to start rather than guess. BQ: both are read at each check through the policies
+# (`ai.daily_spend_ceiling_usd` can only lower the environment's ceiling; `ai.daily_spend_warn_ratio`), so Admin tunes
+# them without a restart.
+_spend_gate.ceiling_from_env(os.environ)
+_spend_gate.warn_ratio_from_env(os.environ)
+_spend_gate.configure_ceiling(_spend_gate.live_ceiling, read=_system_ai_spend_since,
+                              warn_ratio=_spend_gate.live_warn_ratio)
 # Every response a ceiling refusal touched says so: `X-Orena-AI-Paused: <resets_at>` (the client's one signal).
 _spend_gate.install_paused_header(app)
 # PRE-502 R1/R2 (#369): on a public runtime each published promise not in force is an ERROR at start (no ceiling, a
@@ -1419,7 +1425,10 @@ def _memory_store(keys):
     return PostgresMemoryRepository(_persistence_runtime.engine, keys)
 
 
-_configure_agent_memory(_MemoryRuntime.from_env(os.environ, _account_backbone, _memory_store))
+# BQ: the expired-memory sweep follows `agent.memory_retention_sweep` (AGENT_MEMORY_RETENTION_SWEEP pins it), read when
+# a sweep is due, so Admin can switch it on without a restart.
+_configure_agent_memory(_MemoryRuntime.from_env(os.environ, _account_backbone, _memory_store,
+                                                enabled=lambda: _policies.value("agent.memory_retention_sweep")))
 
 
 def _reading_cache_incarnation(user_key: str) -> str | None:
@@ -1755,7 +1764,8 @@ from writing_coach.product.entitlement import COMMERCE_TABLES as _COMMERCE_TABLE
 _billing_readiness.configure(_billing_readiness.RuntimeFacts(
     switch=_billing_enabled(os.environ),
     # PR-MON-10: pausing new sales keeps webhooks, the portal and the clean-up running (RUNBOOK_POLAR_ACTIVATION)
-    new_sales=os.getenv("BILLING_NEW_SALES", "on").strip().casefold() not in {"0", "false", "no", "off"},
+    # BQ: `billing.new_sales` in Admin (BILLING_NEW_SALES pins it), read at each readiness report
+    new_sales=lambda: _policies.value("billing.new_sales") is not False,
     backend=str(_persistence_runtime.backend or ""),
     backbone=_account_backbone.state,
     commerce_schema=lambda: _schema_state(_COMMERCE_TABLES),

@@ -140,8 +140,10 @@ class ExpiredMemorySweep:
     BATCH = 500
 
     def __init__(self, sweep: Callable[[datetime, int], int], *, clock: Callable[[], datetime],
-                 run: Callable[[Callable[[], None]], None] = _in_background) -> None:  # fmt: skip
-        self._sweep, self._clock, self._run = sweep, clock, run
+                 run: Callable[[Callable[[], None]], None] = _in_background,
+                 enabled: Callable[[], bool] | None = None) -> None:  # fmt: skip
+        """`enabled`: the switch read when a sweep is due (the `agent.memory_retention_sweep` policy, BQ); None: on."""
+        self._sweep, self._clock, self._run, self._enabled = sweep, clock, run, enabled
         self._lock = threading.Lock()
         self._last: datetime | None = None
         self._removed: int | None = None  # read back only with an inline runner (tests); a thread's count is logged
@@ -149,6 +151,8 @@ class ExpiredMemorySweep:
     def maybe_sweep(self) -> int | None:
         """Start a sweep if one is due. With an inline runner it returns how many rows went (None: none ran)."""
 
+        if self._enabled is not None and self._enabled() is not True:
+            return None  # switched off: nothing is deleted, and the day is not claimed
         now = self._clock()
         with self._lock:
             if self._last is not None and now - self._last < timedelta(days=1):
@@ -289,7 +293,8 @@ class MemoryRuntime:
 
     @classmethod
     def from_env(cls, environ: Mapping[str, Any], backbone: Any,
-                 store: Callable[[MemoryKeys], MemoryRepository]) -> MemoryRuntime | None:  # fmt: skip
+                 store: Callable[[MemoryKeys], MemoryRepository],
+                 enabled: Callable[[], bool] | None = None) -> MemoryRuntime | None:  # fmt: skip
         """The server's memory, or None: no keys (`AGENT_MEMORY_HMAC_KEYS`), or no active account backbone. `store` makes
         the repository for the keys (app.py: PostgreSQL; this package reaches no database itself). Unreadable
         keys refuse to start. Nothing is read from the database here (D-002): versions in use are checked by an
@@ -302,9 +307,13 @@ class MemoryRuntime:
             return None
         repository = store(keys)
         runtime = cls(store=repository, incarnations=backbone.incarnations)
-        if sweeping:
-            if not callable(getattr(repository, "sweep_expired", None)):
-                raise ValueError(f"{MEMORY_SWEEP_SWITCH} is on but this memory store cannot sweep")
+        can_sweep = callable(getattr(repository, "sweep_expired", None))
+        if sweeping and not can_sweep:
+            raise ValueError(f"{MEMORY_SWEEP_SWITCH} is on but this memory store cannot sweep")
+        if enabled is not None and can_sweep:
+            # BQ: a live switch (Admin's policy, the variable pinning it): the sweep exists and asks it when one is due.
+            runtime.sweep = ExpiredMemorySweep(repository.sweep_expired, clock=runtime.clock, enabled=enabled)
+        elif sweeping:
             runtime.sweep = ExpiredMemorySweep(repository.sweep_expired, clock=runtime.clock)
         return runtime
 
