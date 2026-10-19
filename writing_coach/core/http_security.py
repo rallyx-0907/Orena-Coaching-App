@@ -161,6 +161,26 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
     ("place", ("/api/continue/",), 1200, 600),
     ("media_learning", ("/api/media-learning/upload", "/api/media-learning/source", "/api/media-learning/translate",
                         "/api/media-learning/import#"), 30, 3600),
+    # PRE-502 R3: AI-backed routes that were in no group. Each is generous for a learner (a word lookup about once a
+    # second, sustained) and only stops one account looping a paid provider - which, with the system daily ceiling
+    # shared by everyone, would otherwise pause AI for every learner until midnight.
+    ("reading_lookup", ("/api/reading/lookup#",), 600, 600),
+    ("media_explain", ("/api/media-learning/explain#",), 120, 600),
+    ("discussion_ai", ("/api/texts/discussion/turns#",), 60, 600),
+    # A model reference line with no canonical timings asks the pronunciation provider (cached afterwards).
+    ("speaking_reference", ("/api/speaking/model-reference/",), 300, 600),
+)
+
+# Reads that can reach a paid provider (PRE-502 R3): counted although a GET changes nothing. Exact paths only.
+# `/api/dictionary` falls back to the AI dictionary for Chinese on a cache miss.
+READ_RATE_GROUPS: tuple[tuple[str, frozenset[str], int, int], ...] = (
+    ("dictionary_lookup", frozenset({"/api/dictionary"}), 600, 600),
+)
+# Reads with an id in the path, matched by (prefix, suffix): a word's audio, which may synthesise speech on a cache miss
+# (behind a shared spend cap), and its deep explanation, which may call the model on a cache miss.
+READ_RATE_PATTERNS: tuple[tuple[str, str, str, int, int], ...] = (
+    ("word_audio", "/api/library/vocabulary/", "/audio", 600, 600),
+    ("word_deep", "/api/library/vocabulary/", "/deep", 300, 600),
 )
 
 
@@ -201,6 +221,15 @@ SELF_COUNTED_PATHS = frozenset({"/api/dictionary/word-detail"})
 
 
 def _rate_group(method: str, path: str) -> tuple[str, int, int] | None:
+    if method.upper() == "GET":
+        bare = path.rstrip("/")
+        for name, paths, limit, window in READ_RATE_GROUPS:
+            if bare in paths:
+                return name, limit, window
+        for name, prefix, suffix, limit, window in READ_RATE_PATTERNS:
+            if bare.startswith(prefix) and bare.endswith(suffix) and len(bare) > len(prefix) + len(suffix):
+                return name, limit, window
+        return None
     if method.upper() not in STATE_CHANGING or path.rstrip("/") in SELF_COUNTED_PATHS:
         return None
     for name, prefixes, limit, window in RATE_GROUPS:

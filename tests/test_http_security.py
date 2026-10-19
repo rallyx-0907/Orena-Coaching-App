@@ -57,6 +57,43 @@ def test_paid_and_upload_routes_are_in_a_rate_group_and_polls_are_not():
     assert rate_group("GET", "/api/evaluate") is None
 
 
+@pytest.mark.parametrize(("method", "path", "group"), [
+    ("GET", "/api/dictionary", "dictionary_lookup"),
+    ("POST", "/api/reading/lookup", "reading_lookup"),
+    ("POST", "/api/media-learning/explain", "media_explain"),
+    ("POST", "/api/texts/discussion/turns", "discussion_ai"),
+    ("GET", "/api/dictionary/", "dictionary_lookup"),
+    ("GET", "/api/library/vocabulary/serendipity/audio", "word_audio"),
+    ("GET", "/api/library/vocabulary/%E4%BD%A0%E5%A5%BD/deep", "word_deep"),
+    ("POST", "/api/speaking/model-reference/lesson-1/3", "speaking_reference"),
+])  # fmt: skip
+def test_every_ai_backed_route_is_limited_per_account(method, path, group):
+    """PRE-502 R3: no AI-backed route is outside a per-account group, reads that can reach a paid provider included."""
+    assert rate_group(method, path)[0] == group
+
+
+def test_other_reads_stay_unlimited():
+    for path in ("/api/dictionary/word-detail", "/api/texts/discussion", "/api/texts/discussion/export",
+                 "/api/reading/articles", "/api/health"):
+        assert rate_group("GET", path) is None
+    assert rate_group("POST", "/api/texts/discussion/turns/extra") is None  # exact paths only
+    assert rate_group("GET", "/api/library/vocabulary/audio") is None  # a word is needed between prefix and suffix
+    assert rate_group("GET", "/api/library/vocabulary/word") is None
+
+
+def test_one_account_at_its_limit_never_limits_another():
+    """The groups count per signed-in account (app.py: the limiter is keyed by the session's user): an account looping a
+    paid route is refused at its own limit, and every other learner is still served - one learner cannot use up the
+    shared daily ceiling at the route's pace on everyone's behalf."""
+    from writing_coach.agent.ratelimit import SlidingWindowLimiter
+
+    _name, limit, window = rate_group("POST", "/api/texts/discussion/turns")
+    limiter = SlidingWindowLimiter(limit, window, max_keys=50_000)
+    assert all(limiter.check("looping-account") is None for _ in range(limit))
+    assert limiter.check("looping-account") is not None
+    assert limiter.check("another-learner") is None
+
+
 def test_the_consent_writes_are_rate_limited_and_same_origin_only():
     """D-233: both new POSTs sit behind the global same-origin guard and a per-account rate group."""
     for path in ("/api/account-settings/consent", "/api/account-settings/voice-consent"):
