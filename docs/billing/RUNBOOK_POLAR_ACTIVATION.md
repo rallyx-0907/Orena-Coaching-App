@@ -136,6 +136,11 @@ Any blocker names what is missing: fix it and recheck. Never work around a block
 The revocation ends the plan in Orena and stops renewal. A refund alone does neither. If the subscription is not
 revoked, the refund's reconciliation item stays open with the reason "revoke it on Polar".
 
+Usually the refund event arrives before the revocation, and nothing closes the item afterwards. Once the subscription
+is revoked, find the item with `GET /api/admin/billing/reconciliation` and resolve it with`n`POST /api/admin/billing/reconciliation/{item_id}/resolve` and the outcome `refund_confirmed`. A partial refund
+that should keep the plan, such as a proration difference, also opens this item: dismiss it with `recorded` and a
+note.
+
 ## Moving the production host (for example, from a staging host to the VPS)
 
 Products, prices, the token's scopes, the portal settings and every subscription stay on Polar as they are. Only

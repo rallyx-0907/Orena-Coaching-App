@@ -103,6 +103,7 @@ class ResolvingItems(FakeItems):
 @pytest.mark.parametrize(("mapped", "detail", "resolved"), [
     ({"incarnation_id": "inc-1", "state": "ended"}, "refund_matched", True),
     ({"incarnation_id": "inc-1", "state": "active"}, "refund_subscription_live", False),
+    ({"incarnation_id": "inc-1"}, "refund_subscription_live", False),  # no known state: kept open, never assumed ended
     (None, "refund_unmatched", False),
 ])  # fmt: skip
 def test_a_polar_refund_is_recorded_and_changes_no_access(mapped, detail, resolved):

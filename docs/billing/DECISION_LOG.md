@@ -371,7 +371,7 @@ D-MON-034 | 2026-10-17 | Plan prices are shown in US dollars in every language (
   language's own way; dong stay with Credits (SePay). This replaces D-153's dong-for-Vietnamese plan display. | No gap
   between the price shown and the price charged. | `PR-MON-9_DESIGN.md`, `static/orena/screens/plan/model.js`.
 D-MON-035 | 2026-10-19 | A refund ends the plan at once; a downgrade credits the unused part (owner, relayed by Hermes;
-  supersedes H4's "access does not follow a refund"). **Refund:** the paid plan ends when the refund is made and the
+  refines H4: the refund event itself still changes no access, the operator's revocation ends the plan). **Refund:** the paid plan ends when the refund is made and the
   account returns to Free. Orena keeps following Polar's subscription lifecycle, so the operator **refunds and revokes
   the subscription at once** in Polar's dashboard (`subscription.revoked` ends it, proven in PR-MON-10 step 4).
   Revoking also stops Polar from renewing a refunded subscription, which a refund alone does not do. A
