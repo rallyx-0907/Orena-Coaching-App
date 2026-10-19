@@ -98,16 +98,24 @@ def test_usage_older_than_12_months_goes_and_recent_stays(engine):
                   b=buckets["recent"]) == 1  # fmt: skip
 
 
-def test_a_bucket_still_referenced_by_a_reservation_waits(engine):
+@pytest.mark.parametrize("state", ["reserved", "dispatched"])
+def test_an_in_flight_reservation_holds_its_closed_bucket(engine, state):
+    """Review of #392: a reservation still in flight is never swept, however old its (closed) bucket - and the bucket
+    waits for it (RESTRICT). The released one beside it goes."""
     from sqlalchemy import text
 
     user, buckets = _seed(engine)
-    with engine.begin() as conn:  # a recent reservation on the old bucket (RESTRICT): the bucket must wait
+    in_flight = uuid.uuid4()
+    with engine.begin() as conn:
         conn.execute(text("INSERT INTO commerce_quota_reservations (id, bucket_id, operation_id, admitted_units, state,"
-                          " policy_version, created_at, updated_at) VALUES (:r, :b, :o, 1, 'released', 'v1', :t, :t)"),
-                     {"r": uuid.uuid4(), "b": buckets["old"], "o": f"op-{uuid.uuid4()}", "t": NOW})  # fmt: skip
+                          " policy_version, created_at, updated_at) VALUES (:r, :b, :o, 1, :s, 'v1', :t, :t)"),
+                     {"r": in_flight, "b": buckets["old"], "o": f"op-{uuid.uuid4()}", "s": state,
+                      "t": NOW - timedelta(days=400)})  # fmt: skip
     cutoff = NOW - timedelta(days=sweeps.USAGE_RETENTION_DAYS)
     sum(iter(lambda: sweeps.delete_usage_before(engine, cutoff, 500), 0))
+    assert _count(engine, "SELECT count(*) FROM commerce_quota_reservations WHERE id = :r", r=in_flight) == 1
+    assert _count(engine, "SELECT count(*) FROM commerce_quota_reservations WHERE bucket_id = :b",
+                  b=buckets["old"]) == 1  # the released one went  # fmt: skip
     assert _count(engine, "SELECT count(*) FROM commerce_quota_buckets WHERE id = :b", b=buckets["old"]) == 1
 
 
