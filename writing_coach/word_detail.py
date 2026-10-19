@@ -207,14 +207,20 @@ def project_word_detail(
     # the gloss's own `common_meaning`, else a dictionary meaning the lookup gave in the support language
     # (a collection sense or a translation; its English definitions only for an English support language).
     # Not repeated when it is the meaning already shown.
+    # When nothing gave it in the support language, the dictionary's English definition still stands beside a contextual
+    # meaning, tagged with its language: the contextual meaning is an extra and never hides the base meaning (owner
+    # decision 2026-10-18).
     general = _ai(said.get("common_meaning"))
+    general_language = ""
     if not general:
         if meanings:
             general = dictionary_meaning
-        elif found.get("definitions") and _text(found.get("target_language")).casefold() == "en":
+        elif found.get("definitions"):
             general = dictionary_meaning
+            if _text(found.get("target_language")).casefold() != "en":
+                general_language = "en"
     if _fold(general) == _fold(meaning):
-        general = ""
+        general, general_language = "", ""
 
     part_of_speech = _text(found.get("part_of_speech"))
     if not part_of_speech:
@@ -247,6 +253,9 @@ def project_word_detail(
             {"text": original_text, "language": "en", "source": "cc-cedict" if is_zh else "dictionary"} if original_text else None
         ),
         "generalMeaning": general,
+        # The language `generalMeaning` is written in when it is not the support language ("en": a dictionary
+        # definition no layer localized); empty otherwise.
+        "generalMeaningLanguage": general_language,
         "contextSentence": _text(context),
         "audioUrl": _text(found.get("audio_url")),
         "saved": bool(saved),
