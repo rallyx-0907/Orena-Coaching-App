@@ -155,13 +155,33 @@ def session_is_revoked(user_sub: str, issued_ms: Any) -> bool:
 
 
 def revoke_user_sessions(user_sub: str) -> None:
-    """End every session the account holds (logout; the account-deletion workflow calls this too)."""
+    """End every session the account holds (logout; the account-deletion workflow calls this too).
+
+    The stored instant only ever moves forward: it is `max(existing, now)`, written against the
+    version that was read, so a concurrent or clock-skewed write can never lower it.
+    """
     if not user_sub:
         return
+    from writing_coach.persistence.platform_repository import SettingConflict
+
     try:
-        _installed_revocation_store().set_setting(
-            _session_revoked_key(user_sub), {"before_ms": _now_ms()}, updated_by="session-revocation"
-        )
+        store = _installed_revocation_store()
+        key = _session_revoked_key(user_sub)
+        for _attempt in range(5):
+            row = store.get_setting(key)
+            try:
+                existing = int(((row or {}).get("value") or {}).get("before_ms") or 0)
+            except (TypeError, ValueError):
+                existing = 0
+            try:
+                store.set_setting(
+                    key, {"before_ms": max(existing, _now_ms())}, updated_by="session-revocation",
+                    expected_updated_at=(row or {}).get("updated_at"),
+                )
+                return
+            except SettingConflict:
+                continue
+        raise RuntimeError("session revocation kept conflicting")
     except Exception as error:
         raise SessionRevocationUnavailable from error
 
