@@ -89,7 +89,7 @@ def source(tmp_path):
 
 def _export(source, **kwargs):
     store, assets = source
-    items, blobs, excluded = media_pack.build_media_items(store, assets, clip_keys=_clip_keys, **kwargs)
+    items, blobs, excluded = media_pack.build_media_items(store, assets, clip_keys=_clip_keys, include_derived_text=True, **kwargs)
     raw = build_pack(items, created_by="t", environment="lane-8021", app_version="v", filters={}, assets=blobs,
                      extra_manifest={"source_commit": "abc123", "media_excluded": excluded})
     return read_pack(raw), raw, excluded
@@ -251,7 +251,7 @@ def test_the_admin_route_exports_plans_and_imports_media(source, tmp_path, monke
         denied = asyncio.run(_raw_forbidden(app))
         assert denied == 403
         response = _call(app, "POST", "/api/admin/content-packs/export",
-                         json={"kinds": ["media"], "exclude_media_id_prefixes": ["qa-"], "media_ids": ["yt-good"]})
+                         json={"kinds": ["media"], "exclude_media_id_prefixes": ["qa-"], "media_ids": ["yt-good"], "include_derived_text": True})
         assert response.status_code == 200, response.text
         store, assets = _target(tmp_path)
         content_pack_api.configure_content_packs(media_store=store, media_assets=assets)
@@ -270,7 +270,7 @@ def test_the_admin_route_exports_plans_and_imports_media(source, tmp_path, monke
 
 async def _raw_forbidden(app) -> int:
     async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://testserver") as client:
-        return (await client.post("/api/admin/content-packs/export", json={"kinds": ["media"]},
+        return (await client.post("/api/admin/content-packs/export", json={"kinds": ["media"], "include_derived_text": True},
                                   headers={"origin": "http://testserver"})).status_code
 
 
@@ -491,7 +491,7 @@ def _pack_with_translations(source, tmp_path, **seed):
     _with_orders(source)
     src_cache = _cache(tmp_path / "src.db")
     _seed(src_cache, **seed)
-    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, translations=src_cache,
+    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, include_derived_text=True, translations=src_cache,
                                                    provider_models=["GroqTranslationProvider:other", SRC_MODEL])
     return items, read_pack(build_pack(items, created_by="t", environment="e", app_version="v", filters={}, assets=blobs))
 
@@ -549,7 +549,7 @@ def test_a_held_translation_is_kept_unless_overwrite(source, tmp_path):
 
 
 def test_export_without_a_cache_carries_none_and_the_preview_says_so(source):
-    items, blobs, excluded = media_pack.build_media_items(*source, clip_keys=_clip_keys)
+    items, blobs, excluded = media_pack.build_media_items(*source, clip_keys=_clip_keys, include_derived_text=True)
     preview = media_pack.export_preview(items, blobs, excluded)
     assert preview["dry_run"] and preview["translations"] == 0
     assert preview["without_translations"] == [i.natural_key for i in items] and preview["items"] == len(items) == 3
@@ -564,7 +564,7 @@ def test_the_cli_export_dry_run_reports_translation_counts_and_writes_nothing(so
     _with_orders(source)
     _seed(_cache(tmp_path / "src" / "learning_cache.db"), model="GroqTranslationProvider:m")
     code = cli.main(["export", "--dry-run", "--root", str(tmp_path / "src"), "--asset-root", str(tmp_path / "src-assets"),
-                     "--provider-model", "GroqTranslationProvider:m", "--exclude-prefix", "qa-", "--allow-partial"])
+                     "--provider-model", "GroqTranslationProvider:m", "--exclude-prefix", "qa-", "--allow-partial", "--include-derived-text"])
     report = json.loads(capsys.readouterr().out)
     assert code == 0 and report["dry_run"] and report["translations"] == 3
     assert next(r for r in report["per_item"] if r["media_id"] == "yt-good")["translations"] == {"vi": 3}
@@ -590,7 +590,7 @@ def test_a_two_model_export_picks_the_newest_meaning_per_cue(source, tmp_path):
         cache.put_media_translation(cache_key("yt-good", f"s{i}", text, "vi", old), f"old {i}", "generated", "2026-10-01T00:00:00+00:00")
     cache.put_media_translation(cache_key("yt-good", "s1", LINES[1], "vi", new), "new 1", "generated", "2026-10-09T00:00:00+00:00")
     for order in ([old, new], [new, old]):
-        items, _, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, translations=cache, provider_models=order)
+        items, _, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, include_derived_text=True, translations=cache, provider_models=order)
         good = next(i for i in items if i.natural_key == "yt-good")
         by = {row["segment_id"]: row for row in good.data["translations"]}
         assert [by[f"s{i}"]["translated_text"] for i in range(3)] == ["old 0", "new 1", "old 2"]
@@ -621,7 +621,7 @@ def test_coverage_below_full_warns_and_exits_non_zero_unless_allowed(source, tmp
     ledger = tmp_path / "ledger.csv"
     ledger.write_text("capability,provider,model\nmedia_translation,groq,m\n", encoding="utf-8")
     base = ["--root", str(tmp_path / "src"), "--asset-root", str(tmp_path / "src-assets"), "--ledger-csv", str(ledger),
-            "--no-ledger", "--exclude-prefix", "qa-"]
+            "--no-ledger", "--exclude-prefix", "qa-", "--include-derived-text"]
     out = tmp_path / "m.orenapack"
     assert cli.main(["export", "--out", str(out), *base]) == 3  # yt-norights has none: no pack, a warning
     err = capsys.readouterr().err
@@ -653,7 +653,7 @@ def test_after_import_a_model_change_still_serves_the_imported_row_without_a_pro
     cache.put_media_translation(cache_key("yt-good", "s0", LINES[0], "vi", "M"), "own", "generated", "2026-11-01T00:00:00+00:00")
     assert _read_path(store, cache, "yt-good", "vi", "M").meanings[0].translated_meaning == "own"
     # An export from the target carries the imported rows on.
-    again, _, _ = media_pack.build_media_items(store, assets, clip_keys=_clip_keys, translations=cache, provider_models=[])
+    again, _, _ = media_pack.build_media_items(store, assets, clip_keys=_clip_keys, include_derived_text=True, translations=cache, provider_models=[])
     assert media_pack.translation_counts(next(i for i in again if i.natural_key == "yt-good")) == {"vi": 3}
 
 
@@ -666,7 +666,7 @@ def test_the_asset_id_round_trips_and_keys_the_imported_rows(source, tmp_path):
     _with_orders(source)
     cache = _cache(tmp_path / "src.db")
     _seed(cache, media_id="asset-123")  # the cache is keyed by the asset id, not the media id
-    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, translations=cache, provider_models=[SRC_MODEL])
+    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, include_derived_text=True, translations=cache, provider_models=[SRC_MODEL])
     good = next(i for i in items if i.natural_key == "yt-good")
     assert media_pack.translation_counts(good) == {"vi": 3}
     pack = read_pack(build_pack(items, created_by="t", environment="e", app_version="v", filters={}, assets=blobs))
@@ -676,3 +676,82 @@ def test_the_asset_id_round_trips_and_keys_the_imported_rows(source, tmp_path):
     assert dst.get("yt-good").lesson["payload"]["asset"]["asset_id"] == "asset-123"
     outcome = _read_path(dst, dst_cache, "yt-good", "vi", "any")
     assert outcome.status == "ready" and outcome.provider_calls == 0
+
+
+def test_the_live_identity_default_is_found_with_no_model_given(source, tmp_path):
+    """Root cause of the empty live export: the cache key's model part is `default` (the provider classes expose no
+    `.model`), so probing only `<class>:<ledger model>` found nothing."""
+    _with_orders(source)
+    cache = _cache(tmp_path / "src.db")
+    _seed(cache, model="GroqTranslationProvider:default")
+    items, _, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, include_derived_text=True, translations=cache,
+                                               provider_models=["GroqTranslationProvider:qwen/qwen3.8-27b"])
+    good = next(i for i in items if i.natural_key == "yt-good")
+    assert media_pack.translation_counts(good) == {"vi": 3}
+    assert {r["provider_model"] for r in good.data["translations"]} == {"GroqTranslationProvider:default"}
+
+
+def test_an_item_with_a_transcript_and_no_stored_translation_is_a_failure_not_zero_of_zero(source, tmp_path):
+    _with_orders(source)
+    items, _, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, include_derived_text=True, translations=_cache(tmp_path / "e.db"))
+    coverage = media_pack.translation_coverage(items)
+    assert not coverage["complete"]
+    assert all(row["expected"] == 3 and row["have"] == 0 for row in coverage["items"].values())
+    assert coverage["total"]["expected"] == 3 * len(items) and sorted(coverage["incomplete"]) == sorted(coverage["items"])
+
+
+def test_the_cli_help_renders(capsys):
+    cli = _cli()
+    for command in ("export", "import"):
+        with pytest.raises(SystemExit) as stop:
+            cli.main([command, "--help"])
+        assert stop.value.code == 0
+    assert "100%" in capsys.readouterr().out
+
+
+def test_derived_text_is_off_by_default_and_the_pack_carries_no_transcript_or_translation(source, tmp_path):
+    _with_orders(source)
+    cache = _cache(tmp_path / "src.db")
+    _seed(cache)
+    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys, translations=cache, provider_models=[SRC_MODEL])
+    good = next(i for i in items if i.natural_key == "yt-good")
+    assert good.data["derived_text"] is False and good.data["translations"] == []
+    packed = json.dumps(good.data, ensure_ascii=False)
+    assert LINES[0] not in packed and "Bản dịch" not in packed and "vi 0" not in packed
+    assert good.data["entry"]["title"] == "Title of yt-good" and good.data["entry"]["level"] == "B1"
+    assert good.data["rights"]["complete"] is True
+    assert media_pack.export_preview(items, blobs, [])["include_derived_text"] is False
+    assert media_pack.translation_coverage(items)["complete"]  # nothing to cover when no text travels
+
+    pack = read_pack(build_pack(items, created_by="t", environment="e", app_version="v", filters={}, assets=blobs))
+    store, assets = _target(tmp_path)
+    dst_cache = _cache(tmp_path / "dst.db")
+    rows = media_pack.apply_media_items(pack, store, assets, dry_run=False, clip_keys=_clip_keys, translations=dst_cache)
+    arrived = store.get("yt-good")
+    assert arrived.status == "unpublished" and next(r for r in rows if r["natural_key"] == "yt-good")["held"].startswith("transcript_")
+    assert LINES[0] not in json.dumps(arrived.lesson, ensure_ascii=False)
+    assert next(r for r in rows if r["natural_key"] == "yt-good")["translations"]["in_pack"] == 0
+
+
+def test_a_pack_without_text_never_takes_a_local_transcript_away(source):
+    items, blobs, _ = media_pack.build_media_items(*source, clip_keys=_clip_keys)
+    pack = read_pack(build_pack(items, created_by="t", environment="e", app_version="v", filters={}, assets=blobs))
+    rows = media_pack.apply_media_items(pack, *source, dry_run=True, clip_keys=_clip_keys)
+    assert {r["outcome"] for r in rows} == {"unchanged"}  # compared without text: the source itself is the same item
+    store, assets = source
+    entry = store.get("yt-good")
+    store.upsert(replace(entry, title="Changed locally"))
+    media_pack.apply_media_items(pack, store, assets, dry_run=False, overwrite=True, clip_keys=_clip_keys)
+    kept = store.get("yt-good")
+    assert kept.title == "Title of yt-good" and LINES[0] in json.dumps(kept.lesson, ensure_ascii=False)
+
+
+def test_the_cli_states_the_mode_and_defaults_to_no_derived_text(source, tmp_path, capsys):
+    cli = _cli()
+    base = ["export", "--dry-run", "--root", str(tmp_path / "src"), "--asset-root", str(tmp_path / "src-assets"),
+            "--no-ledger", "--exclude-prefix", "qa-"]
+    assert cli.main(base) == 0
+    captured = capsys.readouterr()
+    assert "NOT included" in captured.err and json.loads(captured.out)["include_derived_text"] is False
+    assert cli.main([*base, "--include-derived-text"]) == 3  # on: the gate applies, nothing is stored here
+    assert "INCLUDED" in capsys.readouterr().err

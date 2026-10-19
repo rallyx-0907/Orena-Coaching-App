@@ -64,6 +64,7 @@ class ExportBody(BaseModel):
     collection_prefix: str = Field(default="", max_length=160)
     media_ids: list[str] = Field(default_factory=list, max_length=500)
     exclude_media_id_prefixes: list[str] = Field(default_factory=list, max_length=20)
+    include_derived_text: bool = False  # carry transcript cues and translations (default off: an owner decision)
     allow_partial: bool = False  # export media although some cue translations are not stored (coverage below 100%)
 
 
@@ -75,6 +76,7 @@ def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[Pa
         media_items, blobs, excluded = media_pack.build_media_items(
             _state.media_store, _state.media_assets, ids=body.media_ids, languages=body.languages,
             exclude_prefixes=body.exclude_media_id_prefixes, translations=_state.media_translations,
+            include_derived_text=body.include_derived_text,
             provider_models=_state.media_provider_models() if _state.media_provider_models else [])
         items += media_items
         if extra is not None and _state.media_translations is not None:

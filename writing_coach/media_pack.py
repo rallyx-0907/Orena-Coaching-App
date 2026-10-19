@@ -93,9 +93,25 @@ def _read_asset(assets: Any, key: str) -> bytes | None:
     return data if isinstance(data, bytes) else None
 
 
-def _entry_data(entry: MediaLibraryEntry, assets: Any, clip_keys: ClipKeys) -> tuple[dict[str, Any], dict[str, bytes]]:
+# What a pack without derived text keeps of a lesson's payload: the asset and playback descriptors. The transcript, its
+# translations, word timing and every reading derived from the transcript stay behind.
+_PAYLOAD_KEPT_WITHOUT_TEXT = ("asset", "playback")
+
+
+def strip_derived_text(lesson: Any) -> Any:
+    if not isinstance(lesson, Mapping):
+        return lesson
+    payload = lesson.get("payload")
+    kept = {k: v for k, v in payload.items() if k in _PAYLOAD_KEPT_WITHOUT_TEXT} if isinstance(payload, Mapping) else payload
+    return {**{k: v for k, v in lesson.items() if k != "payload"}, **({"payload": kept} if payload is not None else {})}
+
+
+def _entry_data(entry: MediaLibraryEntry, assets: Any, clip_keys: ClipKeys, *, derived_text: bool = True,
+                ) -> tuple[dict[str, Any], dict[str, bytes]]:
     """The comparable form of an entry (same function for export and for judging a local entry) and its asset bytes."""
     values = {name: _plain(getattr(entry, name)) for name in _ENTRY_FIELDS}
+    if not derived_text:
+        values["lesson"] = _plain(strip_derived_text(entry.lesson))
     values["source"] = {**_public_source(values["source"]), "imported_by": PACK_ACTOR}
     described, blobs = [], {}
     for key in _asset_keys(entry, clip_keys):
@@ -155,6 +171,8 @@ def export_refusal(entry: MediaLibraryEntry, assets: Any, clip_keys: ClipKeys) -
     return ""
 
 
+KNOWN_IDENTITY_CLASSES = ("GroqTranslationProvider", "PlatformMediaTranslator", "LocalHttpTranslationProvider")
+
 # ---- stored translations ---------------------------------------------------------------------------------
 
 MAX_TRANSLATION_CHARS = 4000
@@ -183,7 +201,9 @@ def _export_translations(entry: MediaLibraryEntry, cache: Any, provider_models: 
     A language appears only when at least one cue has a stored meaning; the summary says how many cues have one."""
     if cache is None:
         return [], {}
-    models = list(dict.fromkeys([*provider_models, IMPORTED_IDENTITY]))  # an imported meaning travels on
+    # `<class>:default` is what Listening's identity really is today: the provider classes expose no `.model`
+    # (`listening_api._translation_provider_model`), so whatever the model, the key says `default`. Probed always.
+    models = list(dict.fromkeys([*provider_models, *(f"{cls}:default" for cls in KNOWN_IDENTITY_CLASSES), IMPORTED_IDENTITY]))
     asset_id, cues = _lesson_cues(entry.lesson, entry.media_id)
     rows: list[dict[str, str]] = []
     summary: dict[str, dict[str, int]] = {}
@@ -266,7 +286,7 @@ def _plan_translations(item: PackItem, candidate: MediaLibraryEntry, cache: Any,
 def build_media_items(
     store: Any, assets: Any, *, ids: Iterable[str] = (), languages: Iterable[str] = (),
     exclude_prefixes: Iterable[str] = (), clip_keys: ClipKeys | None = None,
-    translations: Any = None, provider_models: Sequence[str] = (),
+    translations: Any = None, provider_models: Sequence[str] = (), include_derived_text: bool = False,
 ) -> tuple[list[PackItem], dict[str, bytes], list[dict[str, str]]]:
     """Published shared entries as pack items, their asset bytes by key, and the published entries left out (with why).
 
@@ -276,6 +296,9 @@ def build_media_items(
 
     `translations` is the learning cache Listening reads and `provider_models` the identities its meanings may have
     been stored under (the cache key carries the translating provider/model); without both, none is exported.
+
+    `include_derived_text` (default off) is the explicit switch for the transcript cues, their word timing and the
+    translations: off, a pack carries the media metadata, rights, level, playback and assets only, and no cache is read.
     """
     clip_keys = clip_keys or default_clip_keys
     wanted, langs, skip = set(ids), set(languages), tuple(p for p in exclude_prefixes if p)
@@ -292,9 +315,11 @@ def build_media_items(
         if reason:
             excluded.append({"media_id": entry.media_id, "reason": reason})
             continue
-        data, entry_blobs = _entry_data(entry, assets, clip_keys)
+        data, entry_blobs = _entry_data(entry, assets, clip_keys, derived_text=include_derived_text)
         blobs.update(entry_blobs)
-        data["translations"], data["translation_summary"] = _export_translations(entry, translations, tuple(provider_models))
+        data["derived_text"] = include_derived_text
+        data["translations"], data["translation_summary"] = (
+            _export_translations(entry, translations, tuple(provider_models)) if include_derived_text else ([], {}))
         items.append(PackItem(kind=KIND, natural_key=entry.media_id, data=data, exported_status="published"))
     return items, blobs, excluded
 
@@ -395,12 +420,16 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
         return {**row, "outcome": NEW, "status": final.status}, final
     if existing.library != "shared":
         return {**row, "outcome": REFUSED, "reason": "id_in_use_by_personal_entry"}, None
-    local, _ = _entry_data(existing, assets, clip_keys)
+    derived = bool(item.data.get("derived_text", True))
+    local, _ = _entry_data(existing, assets, clip_keys, derived_text=derived)
     if content_hash(_local_comparable(local)) == content_hash(_local_comparable(item.data)):
         return {**row, "outcome": UNCHANGED}, None
     differs = "assets_differ" if local["entry"] == item.data["entry"] else "fields_differ"
     if not overwrite:
         return {**row, "outcome": CONFLICT, "reason": differs}, None
+    if not derived:
+        final = replace(final, lesson=existing.lesson)  # a pack without text never takes a local transcript away
+        row["kept_local_text"] = True
     if existing.status != "published" and final.status != existing.status:
         # An overwrite replaces content, never a local decision to take an item off the shelf.
         final = replace(final, status=existing.status)
@@ -500,20 +529,21 @@ def translation_coverage(items: Iterable[PackItem]) -> dict[str, Any]:
 
     Expected for an item is every cue in every target language any exported item carries (the item's own source language
     excepted): an item with none is 0%, and an item missing a language the others have is partial."""
-    items = list(items)
+    items = [item for item in items if item.data.get("derived_text", True)]  # a pack without text has none to cover
     langs = {code for item in items for code in (item.data.get("translation_summary") or {})}
     per_item: dict[str, dict[str, Any]] = {}
     have_total = expected_total = 0
     for item in items:
         _asset, cues = _lesson_cues(item.data["entry"].get("lesson"), item.natural_key)
         own = str(item.data["entry"].get("language") or "").casefold()
-        expected = len(cues) * len([c for c in langs if c != own])
+        # An item with a transcript is expected to carry at least one language: nothing stored is a failure, not "0/0".
+        expected = len(cues) * max(1, len([c for c in langs if c != own]))
         have = sum(v.get("have", 0) for v in (item.data.get("translation_summary") or {}).values())
         per_item[item.natural_key] = {"have": have, "expected": expected,
                                       "percent": round(100.0 * have / expected, 1) if expected else 0.0}
         have_total += have
         expected_total += expected
-    complete = bool(items) and all(row["expected"] > 0 and row["have"] >= row["expected"] for row in per_item.values())
+    complete = all(row["expected"] > 0 and row["have"] >= row["expected"] for row in per_item.values())
     return {"items": per_item, "total": {"have": have_total, "expected": expected_total,
                                          "percent": round(100.0 * have_total / expected_total, 1) if expected_total else 0.0},
             "languages": sorted(langs), "complete": complete,
@@ -529,7 +559,8 @@ def export_preview(items: Iterable[PackItem], blobs: Mapping[str, bytes], exclud
         rows.append({"media_id": item.natural_key, "assets": len(item.data.get("assets") or []),
                      "translations": counts, "translation_total": sum(counts.values()),
                      "translation_coverage": item.data.get("translation_summary") or {}})
-    return {"dry_run": True, "items": len(rows), "assets": len(blobs), "asset_bytes": sum(len(b) for b in blobs.values()),
+    return {"dry_run": True, "include_derived_text": all(i.data.get("derived_text", True) for i in items_list) and bool(items_list),
+            "items": len(rows), "assets": len(blobs), "asset_bytes": sum(len(b) for b in blobs.values()),
             "translations": sum(row["translation_total"] for row in rows),
             "coverage": translation_coverage(items_list),
             "without_translations": [row["media_id"] for row in rows if not row["translation_total"]],
