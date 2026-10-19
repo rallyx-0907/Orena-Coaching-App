@@ -47,7 +47,7 @@ from writing_coach.agent.tools import LearnerScope
 from writing_coach.agent.turn import AgentRuntime, TurnRefused, learner_context
 from writing_coach.agent.voice_session import VoiceService, voice_catalog
 from writing_coach.ai.live_voice import VoiceUnavailable
-from writing_coach.product import quota
+from writing_coach.product import plan_features, quota
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
 
@@ -270,7 +270,16 @@ def _voice_present(runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRu
     return runtime
 
 
+async def _voice_entitled() -> None:
+    """Voice chat with Orena is for Plus and Pro (owner, 2026-10-19; product/plan_features.py): 403
+    `feature_not_in_plan` (context.feature "orena.voice") before any limit or token. The plan is a database read."""
+
+    user_key = LearnerScope.from_request_context().user_key
+    await run_in_threadpool(plan_features.require, user_key, plan_features.VOICE)
+
+
 async def _voice_session_allowed(request: Request, runtime: AgentRuntime = Depends(_voice_present)) -> VoiceService:
+    await _voice_entitled()
     await _turn_allowed(request, runtime)  # the daily spend cap and the learner's turn window count a session as a turn
     return _voice(runtime, new_sessions=True)
 
@@ -286,7 +295,9 @@ def _voice_call_allowed(runtime: AgentRuntime = Depends(_read_allowed)) -> Voice
 async def _voice_extend_allowed(request: Request,
                                 runtime: AgentRuntime = Depends(_voice_present)) -> VoiceService:  # fmt: skip
     # A renewal mints a paid token, so the daily spend cap applies to it as to an opening; but it carries on a
-    # conversation the learner already opened, so it is not counted as one more turn of their window.
+    # conversation the learner already opened, so it is not counted as one more turn of their window. A plan that lost
+    # voice (a downgrade) mints no next chunk: the client ends the session when the token it holds dies.
+    await _voice_entitled()
     await _spend_refused(request, runtime)
     _admit(runtime.read_limiter)
     return _voice(runtime)
@@ -337,7 +348,10 @@ def agent_voice_voices(
 
     if interface not in interface_languages():
         raise HTTPException(status_code=422, detail="unknown interface language")
-    return voice_catalog(interface)
+    # `entitled`: whether this account's plan has voice chat, so the client offers the upgrade before the tap; the 403
+    # on /voice/session stays the authority.
+    user_key = LearnerScope.from_request_context().user_key
+    return {**voice_catalog(interface), "entitled": plan_features.entitled(user_key, plan_features.VOICE)}
 
 
 @router.post("/voice/tool")

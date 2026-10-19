@@ -43,6 +43,16 @@ HELP = "Màn này dùng để làm gì?"
 
 
 @pytest.fixture(autouse=True)
+def _plan_has_voice(monkeypatch):
+    """These tests are about voice itself (metering, chunks, routes), for an account whose plan has voice chat: the
+    plan rule (Plus and Pro only, owner 2026-10-19) is tested in tests/test_agent_voice_plan.py."""
+    from writing_coach.product import plan_features
+
+    monkeypatch.setattr(plan_features, "require", lambda user_key, feature: None)
+    monkeypatch.setattr(plan_features, "entitled", lambda user_key, feature: True)
+
+
+@pytest.fixture(autouse=True)
 def _isolated(monkeypatch):
     previous = quota.runtime()
     configure_plan_store(None)
