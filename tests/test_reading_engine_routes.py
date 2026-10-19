@@ -277,6 +277,31 @@ def test_an_answered_rights_question_is_recorded_as_answered(setup):
     assert source["rights_state"]["attribution_required"] == "unknown"
 
 
+def test_submit_leaves_absent_rights_fields_as_none_whatever_the_framework_release(setup, monkeypatch):
+    """POST /api/admin/reading/jobs: a rights field the form omitted reaches the engine as absent.
+
+    FastAPI 0.147 coerces an absent `bool | None = Form(None)` to False; the route reads text instead.
+    """
+    seen = []
+    real_submit = setup["engine"].submit
+
+    def spy(submitted, **kwargs):
+        seen.append(dict(submitted.rights))
+        return real_submit(submitted, **kwargs)
+
+    monkeypatch.setattr(setup["engine"], "submit", spy)
+    call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
+    call(setup["admin"], "POST", "/api/admin/reading/jobs",
+         data={"kind": "text", "text": ARTICLE + " More.", "can_adapt": "false", "attribution_required": ""})
+    assert seen == [{}, {"can_adapt": False}]
+
+
+def test_submit_refuses_an_unparseable_rights_answer(setup):
+    response = call(setup["admin"], "POST", "/api/admin/reading/jobs",
+                    data={"kind": "text", "text": ARTICLE, "can_republish": "maybe"})
+    assert response.status_code == 422
+
+
 def test_the_reviewer_can_set_the_order_targets_are_taught_in(setup):
     call(setup["admin"], "POST", "/api/admin/reading/jobs", data={"kind": "text", "text": ARTICLE})
     outcome = setup["engine"].process(setup["jobs"].claim("worker-1"))

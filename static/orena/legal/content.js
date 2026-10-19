@@ -621,6 +621,13 @@ export const LEGAL = Object.freeze({
         "t": "Some records have a fixed lifetime: Orena Intelligence activity records (without your message text) are deleted after 90 days, feedback you send is deleted after 24 months, and records of AI use and cost (without your content) after 13 months. Your learning history is kept while your account is active. Data deleted from the live system can remain in backups for up to 30 days, until they are overwritten. Recordings you chose to keep stay on your device until you delete them."
        }
       ]
+     },
+     {
+      "p": [
+       {
+        "t": "Records of your plan usage and quota are kept for 12 months. Logs of administrator actions (which may identify the account acted on) are kept for 24 months. Once payments start, payment and billing records are kept for as long as accounting law requires (in Vietnam, at least 10 years), even after your account is deleted."
+       }
+      ]
      }
     ]
    },

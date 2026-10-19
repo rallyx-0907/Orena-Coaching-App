@@ -653,6 +653,27 @@ def set_source_auto_publish(
 # -- submission ----------------------------------------------------------------
 
 
+_FORM_TRUE = frozenset({"true", "1", "on", "yes"})
+_FORM_FALSE = frozenset({"false", "0", "off", "no"})
+
+
+def _form_bool(raw: str | None, field: str) -> bool | None:
+    """A rights answer from a form field: absent stays None, never False.
+
+    Declared as `bool | None = Form(None)` FastAPI 0.147 turns an absent field into
+    False, which records a refusal nobody made. The field is read as text and
+    parsed here, so the answer does not depend on the framework release.
+    """
+    if raw is None or not raw.strip():
+        return None
+    value = raw.strip().casefold()
+    if value in _FORM_TRUE:
+        return True
+    if value in _FORM_FALSE:
+        return False
+    raise orena_http_error(422, "reading_rights_invalid", f"{field} must be true or false.")
+
+
 @router.post("/jobs", status_code=202)
 async def submit_content(
     request: Request,
@@ -670,9 +691,9 @@ async def submit_content(
     # unanswered in the snapshot: a `False` default would record a refusal
     # nobody made, and a reviewer would then be deciding against evidence that
     # was invented by a form.
-    can_republish: bool | None = Form(None),
-    can_adapt: bool | None = Form(None),
-    attribution_required: bool | None = Form(None),
+    can_republish: str | None = Form(None),
+    can_adapt: str | None = Form(None),
+    attribution_required: str | None = Form(None),
     license_note: str = Form(""),
     upload: UploadFile | None = File(None),
 ) -> dict[str, Any]:
@@ -705,9 +726,9 @@ async def submit_content(
         rights={
             key: value
             for key, value in (
-                ("can_republish", can_republish),
-                ("can_adapt", can_adapt),
-                ("attribution_required", attribution_required),
+                ("can_republish", _form_bool(can_republish, "can_republish")),
+                ("can_adapt", _form_bool(can_adapt, "can_adapt")),
+                ("attribution_required", _form_bool(attribution_required, "attribution_required")),
                 ("license_note", license_note.strip() or None),
             )
             if value is not None
