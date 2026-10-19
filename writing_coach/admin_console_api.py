@@ -38,7 +38,7 @@ from urllib.parse import urlencode, urlsplit
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
-from writing_coach import content_visibility, media_library_api, reading_library_api
+from writing_coach import content_visibility, media_corrections, media_library_api, reading_library_api
 from writing_coach.admin_content import (
     book_error_stage,
     book_record,
@@ -110,6 +110,9 @@ class _Console:
     runtime_services: dict[str, dict[str, Any]] = field(default_factory=dict)
     runtime_facts: Callable[[], Mapping[str, Any]] | None = None
     app_version: str = ""
+    media_translations: Any = None
+    media_provider_models: Callable[[], Any] | None = None
+    media_read_identity: Callable[[], str] | None = None
 
 
 _state = _Console()
@@ -127,6 +130,9 @@ def configure_admin_console(
     runtime_services: Mapping[str, Mapping[str, Any]] | None = None,
     runtime_facts: Callable[[], Mapping[str, Any]] | None = None,
     app_version: str = "",
+    media_translations: Any = None,
+    media_provider_models: Callable[[], Any] | None = None,
+    media_read_identity: Callable[[], str] | None = None,
 ) -> None:
     global _state
     _state = _Console(
@@ -140,6 +146,9 @@ def configure_admin_console(
         runtime_services={key: dict(value) for key, value in (runtime_services or {}).items()},
         runtime_facts=runtime_facts,
         app_version=app_version,
+        media_translations=media_translations,
+        media_provider_models=media_provider_models,
+        media_read_identity=media_read_identity,
     )
 
 
@@ -1360,6 +1369,198 @@ def reprocess_media(media_id: str, request: Request, response: Response, scope: 
            payload={"status": row.get("status", ""), "outcome": "ok" if row.get("status") == "ok" else "failed"})
     refreshed = store.get(media_id)
     return {"item": row, "record": media_record(refreshed) if refreshed is not None else None}
+
+
+class CueTextIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    segment_id: str = Field(min_length=1, max_length=120)
+    text: str = Field(min_length=1, max_length=2000)
+    # Optional hand-written meanings for the corrected text, by support language. Without one, the stored meaning
+    # is carried over unchanged to the corrected text (no provider call either way).
+    translations: dict[str, str] = Field(default_factory=dict, max_length=8)
+
+
+class CueTranslationIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    segment_id: str = Field(min_length=1, max_length=120)
+    language: str = Field(min_length=2, max_length=20)
+    text: str = Field(min_length=1, max_length=4000)
+
+
+def _corrections_context() -> tuple[Any, Any, str]:
+    store, cache = _state.media_store, _state.media_translations
+    if store is None:
+        raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
+    if cache is None:
+        raise orena_http_error(503, "media_translations_unavailable", "The translation store is unavailable.")
+    read_identity = str(_state.media_read_identity() or "") if _state.media_read_identity else ""
+    return store, cache, read_identity
+
+
+def _correction_entry(store: Any, media_id: str, segment_id: str):
+    entry = store.get(media_id)
+    if entry is None or entry.library != "shared" or not entry.lesson:
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    if (entry.processing or {}).get("state") in {"queued", "running"}:
+        raise orena_http_error(409, "media_processing_active", "Wait for processing to finish before correcting it.")
+    if media_corrections.find_segment(entry.lesson, segment_id) is None:
+        raise orena_http_error(404, "media_cue_not_found", "This media has no cue with this segment id.")
+    return entry
+
+
+@router.patch("/content/media/{media_id}/cues/text")
+def correct_media_cue_text(media_id: str, payload: CueTextIn, request: Request, response: Response) -> dict[str, Any]:
+    """Correct one cue's transcript text by hand. No provider is called.
+
+    The stored meanings of the cue (every support language, every identity the learner path or a pack looks under)
+    are re-keyed to the corrected text, so the learner keeps being served them; a translation sent in the body
+    replaces the carried one. Word timing is kept only if the token count still matches, otherwise dropped
+    (`media_corrections`). The lesson's `content_revision` and the response's ETag change.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    store, cache, read_identity = _corrections_context()
+    text = payload.text.strip()
+    segment_id = payload.segment_id
+    entry = _correction_entry(store, media_id, segment_id)
+    old_text = str(media_corrections.find_segment(entry.lesson, segment_id).get("original_text") or "")
+    supplied: dict[str, str] = {}
+    for code, value in payload.translations.items():
+        code, value = str(code).strip().casefold(), str(value).strip()
+        if (code not in media_corrections.support_codes() or code == str(entry.language).casefold() or not value
+                or len(value) > media_corrections.MAX_TRANSLATION_CHARS):
+            raise orena_http_error(422, "media_translation_invalid", "A translation needs a support language and text.")
+        supplied[code] = value
+    if not text:
+        raise orena_http_error(422, "media_cue_text_invalid", "A cue needs text.")
+    if text == old_text and not supplied:
+        _audit(admin, "admin.content.cue_text", entity_type="media", entity_id=media_id,
+               payload={"segment_id": segment_id, "outcome": "unchanged"})
+        return {"changed": False, "content_revision": (entry.lesson or {}).get("content_revision") or 0,
+                "record": media_record(entry)}
+    stamp = media_corrections.now_stamp()
+    asset_id = media_corrections.asset_id_of(media_id, entry.lesson)
+    provider_models = list(_state.media_provider_models() or []) if _state.media_provider_models else []
+    models = media_corrections.identities(read_identity, provider_models)
+    write_models = media_corrections.write_identities(read_identity)
+    outcome: dict[str, Any] = {}
+
+    def change(current):
+        if current.library != "shared" or not current.lesson:
+            raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+        seg = media_corrections.find_segment(current.lesson, segment_id)
+        if seg is None or str(seg.get("original_text") or "") != old_text:
+            raise orena_http_error(409, "media_cue_changed", "This cue was changed a moment ago. Reload and try again.")
+        lesson, outcome_words = media_corrections.corrected_lesson_text(current.lesson, segment_id, text)
+        from writing_coach.media_transcript_pipeline import usable_transcript
+        usable, why = usable_transcript(replace(current, lesson=lesson))
+        if not usable:
+            raise orena_http_error(422, "media_cue_text_unusable", f"The corrected transcript would not pass its checks ({why}).")
+        for code, value in supplied.items():
+            lesson, _ = media_corrections.with_editorial_translation(lesson, segment_id, code, value)
+        outcome.update(outcome_words)
+        return replace(current, lesson=media_corrections.with_revision(lesson))
+
+    # The corrected text's meanings are written before the lesson changes, so a learner never sees a gap.
+    if text != old_text:
+        outcome["translations"] = media_corrections.rekey_cue(
+            cache, asset_id=asset_id, segment_id=segment_id, old_text=old_text, new_text=text,
+            source_language=str(entry.language).casefold(), models=models, supplied=supplied,
+            write_models=write_models, stamp=stamp)
+    else:
+        for code, value in supplied.items():
+            media_corrections.put_translation(cache, asset_id=asset_id, segment_id=segment_id, source_text=text,
+                                              translation=value, language=code, write_models=write_models, stamp=stamp)
+    updated = store.update_if_present(media_id, change)
+    if updated is None:
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    _audit(admin, "admin.content.cue_text", entity_type="media", entity_id=media_id,
+           payload={"segment_id": segment_id, "from": old_text[:300], "to": text[:300], "outcome": "ok",
+                    "words": outcome.get("words", "none"), "translations": sorted(supplied)})
+    response.headers["ETag"] = media_corrections.etag(media_id, updated.lesson)
+    return {"changed": True, "content_revision": updated.lesson.get("content_revision"),
+            "words": outcome.get("words", "none"), "readings_dropped": bool(outcome.get("readings_dropped")),
+            "translations": outcome.get("translations", {}), "record": media_record(updated)}
+
+
+@router.patch("/content/media/{media_id}/cues/translation")
+def correct_media_cue_translation(media_id: str, payload: CueTranslationIn, request: Request,
+                                  response: Response) -> dict[str, Any]:
+    """Set the stored meaning of one cue in one support language by hand (provenance `manual_correction`).
+
+    Written under the identity the learner read path looks under and under `pack-import`; a pre-authored lesson
+    meaning for the cue, which would shadow the cache, is corrected too. No provider is called.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    store, cache, read_identity = _corrections_context()
+    language = payload.language.strip().casefold()
+    text = payload.text.strip()
+    entry = _correction_entry(store, media_id, payload.segment_id)
+    if language not in media_corrections.support_codes() or language == str(entry.language).casefold() or not text:
+        raise orena_http_error(422, "media_translation_invalid", "A translation needs a support language and text.")
+    seg = media_corrections.find_segment(entry.lesson, payload.segment_id)
+    stamp = media_corrections.now_stamp()
+    media_corrections.put_translation(
+        cache, asset_id=media_corrections.asset_id_of(media_id, entry.lesson), segment_id=payload.segment_id,
+        source_text=str(seg.get("original_text") or ""), translation=text, language=language,
+        write_models=media_corrections.write_identities(read_identity), stamp=stamp)
+
+    def change(current):
+        if current.library != "shared" or not current.lesson:
+            raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+        lesson, _ = media_corrections.with_editorial_translation(current.lesson, payload.segment_id, language, text)
+        return replace(current, lesson=media_corrections.with_revision(lesson))
+
+    updated = store.update_if_present(media_id, change)
+    if updated is None:
+        raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+    _audit(admin, "admin.content.cue_translation", entity_type="media", entity_id=media_id,
+           payload={"segment_id": payload.segment_id, "language": language, "text": text[:300],
+                    "cue": str(seg.get("original_text") or "")[:120], "provenance": media_corrections.PROVENANCE_MANUAL,
+                    "at": stamp, "outcome": "ok"})
+    response.headers["ETag"] = media_corrections.etag(media_id, updated.lesson)
+    return {"changed": True, "content_revision": updated.lesson.get("content_revision"), "record": media_record(updated)}
+
+
+class VocabularyGlossIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    language: str = Field(min_length=2, max_length=20)
+    text: str = Field(min_length=1, max_length=1000)
+
+
+@router.patch("/content/vocabulary/{collection_id}/entries/{entry_id}/gloss")
+def correct_vocabulary_gloss(collection_id: str, entry_id: str, payload: VocabularyGlossIn, request: Request,
+                             response: Response) -> dict[str, Any]:
+    """Correct one entry's gloss (its short meaning in one support language) in a collection, by hand.
+
+    An import with overwrite replaces only an unpublished entry, so a published gloss had no way to be corrected.
+    The entry is shared: the correction shows wherever the entry does. No learner-owned record is touched.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    repository = _state.vocabulary_repository
+    if not _vocabulary_available() or not hasattr(repository, "correct_entry_gloss"):
+        raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
+    language = payload.language.strip().casefold()
+    if language not in media_corrections.support_codes():
+        raise orena_http_error(422, "vocabulary_gloss_invalid", "Choose a support language.")
+    try:
+        result = repository.correct_entry_gloss(collection_id, entry_id, language, payload.text, actor=_actor(admin))
+    except LookupError:
+        raise orena_http_error(404, "content_not_found", "This collection has no such entry.") from None
+    except ValueError as exc:
+        raise orena_http_error(422, "vocabulary_gloss_invalid", str(exc)) from exc
+    _audit(admin, "admin.content.vocabulary_gloss", entity_type="vocabulary_entry", entity_id=entry_id,
+           payload={"collection_id": collection_id, "language": language, "from": result["from"], "to": result["to"],
+                    "outcome": "unchanged" if result["from"] == result["to"] else "ok"})
+    return {"changed": result["from"] != result["to"], "entry": result["entry"]}
 
 
 # -- imports ---------------------------------------------------------------------------

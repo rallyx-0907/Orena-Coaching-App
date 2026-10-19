@@ -1194,6 +1194,67 @@ class SQLAlchemyVocabularyRepository:
             levels, item_count = self._collection_stats(session, clean_id)
             return _collection_summary(collection, levels, item_count)
 
+    def correct_entry_gloss(
+        self, collection_id: str, entry_id: str, language: str, text: str, *, actor: str
+    ) -> dict[str, Any]:
+        """Correct one entry's gloss (its `short_meanings` text in one support language) by hand.
+
+        An authored import overwrites only an unpublished entry, so this is the way to fix a published gloss. The
+        entry must be a member of the collection. A collection-scoped content snapshot that carries the language is
+        corrected with it (the snapshot is what that collection shows). Who and when are kept in the entry's
+        provenance. No schema change; nothing learner-owned is read or written.
+        """
+        self._require_available()
+        clean_text, code = _text(text), _text(language).casefold()
+        if not clean_text or not code:
+            raise ValueError("A gloss needs a language and text.")
+        try:
+            wanted = uuid.UUID(_text(entry_id))
+        except ValueError:
+            raise LookupError(entry_id) from None
+        now = _now()
+        with Session(self.engine) as session, session.begin():
+            membership = session.scalar(
+                select(VocabularyCollectionMembership).where(
+                    VocabularyCollectionMembership.collection_id == _text(collection_id),
+                    VocabularyCollectionMembership.entry_id == wanted,
+                )
+            )
+            entry = session.get(VocabularyEntry, wanted)
+            if membership is None or entry is None:
+                raise LookupError(entry_id)
+
+            def corrected(meanings: Any) -> tuple[list[Any], str]:
+                rows, before, done = [], "", False
+                for item in meanings if isinstance(meanings, list) else []:
+                    if isinstance(item, Mapping) and _text(item.get("language")).casefold() == code:
+                        before = before or _text(item.get("text"))
+                        if not done:
+                            rows.append({**item, "text": clean_text})
+                            done = True
+                        continue
+                    rows.append(item)
+                if not done:
+                    rows.append({"language": code, "text": clean_text})
+                return rows, before
+
+            entry.short_meanings, before = corrected(_copy_json(entry.short_meanings, []))
+            metadata = _copy_json(membership.membership_metadata, {}) or {}
+            snapshot = metadata.get("content_snapshot")
+            if isinstance(snapshot, Mapping) and "short_meanings" in snapshot:
+                metadata["content_snapshot"] = {**snapshot, "short_meanings": corrected(snapshot["short_meanings"])[0]}
+                membership.membership_metadata = metadata
+            provenance = _copy_json(entry.provenance, {}) or {}
+            history = list(provenance.get("gloss_corrections") or [])
+            history.append({"language": code, "actor": actor, "at": now.isoformat(), "collection_id": _text(collection_id)})
+            entry.provenance = {**provenance, "gloss_corrections": history[-50:]}
+            collection = session.get(VocabularyCollection, _text(collection_id))
+            if collection is not None:
+                collection.updated_at = now
+            session.flush()
+            result = _entry_dict(entry)
+        return {"from": before, "to": clean_text, "entry": result}
+
     def finalize_collection_publication(
         self, collection_id: str, *, admission: Mapping[str, Any]
     ) -> dict[str, Any]:

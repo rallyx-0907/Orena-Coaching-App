@@ -1799,6 +1799,10 @@ def configure_admin_console_from_runtime() -> None:
             ),
         },
         app_version=APP_VERSION,
+        media_translations=_learning_cache,
+        media_provider_models=lambda: media_pack_discover_models(
+            _persistence_runtime.platform_repository, [_listening_translation_provider_model()]),
+        media_read_identity=_listening_translation_provider_model,
     )
 
 
