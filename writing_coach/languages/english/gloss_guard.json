@@ -1,0 +1,27 @@
+{
+  "name_guard": true,
+  "function_words": [
+    "a", "an", "the",
+    "of", "in", "on", "at", "by", "for", "with", "without", "from", "to", "into", "onto", "upon", "over",
+    "under", "about", "above", "below", "between", "through", "during", "before", "after", "as", "than",
+    "and", "or", "but", "nor", "so", "yet", "if", "because", "while", "although", "though", "unless", "until",
+    "whether",
+    "be", "am", "is", "are", "was", "were", "been", "being", "do", "does", "did", "have", "has", "had",
+    "would", "shall", "should", "could", "might", "must",
+    "i", "me", "my", "mine", "myself", "you", "your", "yours", "yourself", "he", "him", "his", "himself",
+    "she", "her", "hers", "herself", "it", "its", "itself", "we", "us", "our", "ours", "ourselves",
+    "they", "them", "their", "theirs", "themselves",
+    "this", "that", "these", "those", "who", "whom", "whose", "which", "what", "there", "not", "no"
+  ],
+  "phrasal_particles": [
+    "on", "off", "up", "down", "out", "over", "away", "back", "around", "through", "along", "apart", "aside",
+    "ahead", "forth"
+  ],
+  "fixed_expressions": ["in turn", "by turns", "take turns"],
+  "period_modifiers": ["late", "early", "mid"],
+  "period_words": [
+    "spring", "summer", "autumn", "fall", "winter", "morning", "afternoon", "evening", "night", "week", "month",
+    "year", "decade", "century", "millennium", "january", "february", "march", "april", "june", "july",
+    "august", "september", "october", "november", "december"
+  ]
+}
