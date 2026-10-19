@@ -2,8 +2,7 @@
 
 The pinned design's legal text (`Orena-Privacy.dc.html`, `Orena-Terms.dc.html`, revision of 2026-10-09) described
 things Orena does not do. The human authorised replacing the WORDS (2026-10-09, D-162); the structure (13 sections,
-same headings and order, summary card, contents list, contacts, footer), layout and tone are unchanged. Vietnamese
-and English change in parallel; one row covers both. Old text is shortened. Evidence is file:line on this branch.
+same headings and order, summary card, contents list, contacts, footer), layout and tone are unchanged. The legal text is English only (D-238); the Vietnamese text this table once covered is retired. Old text is shortened. Evidence is file:line on this branch.
 
 Source of the new text: `docs/legal/public/*.json` and `facts.json`. Audit: `PUB2_PRIVACY_TRUTH.md` claim ids
 (P = Privacy, T = Terms) in the first column.

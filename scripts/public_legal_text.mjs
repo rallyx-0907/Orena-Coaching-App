@@ -8,7 +8,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-export const LANGS = ['vi', 'en'];
+// Legal documents exist in English only (D-238): the Vietnamese and Chinese texts are retired.
+export const LANGS = ['en'];
 export const PAGES = ['privacy', 'terms', 'account-deletion'];
 
 // --- facts -----------------------------------------------------------------------------------------------------
@@ -23,11 +24,11 @@ function getPath(obj, p) {
 
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-function formatDate(iso, lang) {
+function formatDate(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) throw new Error(`effective_date must be YYYY-MM-DD, got ${JSON.stringify(iso)}`);
   const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
-  return lang === 'vi' ? `${d} tháng ${mo}, ${y}` : `${MONTHS_EN[mo - 1]} ${d}, ${y}`;
+  return `${MONTHS_EN[mo - 1]} ${d}, ${y}`;
 }
 
 // Every place where a fact is still unconfirmed is recorded here; --release fails when this is not empty.
@@ -115,7 +116,7 @@ export function must(re, s, name) {
 
 export const PAGE_HREF = { privacy: '/privacy', terms: '/terms', 'account-deletion': '/account-deletion' };
 
-function href(page, lang) { return PAGE_HREF[page] + (lang === 'en' ? '?lang=en' : ''); }
+function href(page) { return PAGE_HREF[page]; }
 
 function renderPane(pane, page, data, ctx) {
   let s = pane;
@@ -129,7 +130,7 @@ function renderPane(pane, page, data, ctx) {
   const pill = (key, label) => {
     const on = key === page;
     const src = on ? active : inactive;
-    return `      <a href="${href(key, ctx.lang)}" style="${src[1]}"${src[2] || ''}>${label}</a>`;
+    return `      <a href="${href(key)}" style="${src[1]}"${src[2] || ''}>${label}</a>`;
   };
   s = rep(s, nav[0], `${nav[1]}\n${data.nav.map(([key, label]) => pill(key, label)).join('\n')}\n${nav[3]}`);
 
@@ -143,7 +144,7 @@ function renderPane(pane, page, data, ctx) {
   const dates = must(/(<div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var\(--text3\)">)<span>[^<]*<\/span><span>[^<]*<\/span>(<\/div>)/, s, 'dates');
   const dateText = (t) => t.replace(/\{\{date\}\}/g, () => {
     const d = ctx.facts.effective_date;
-    return d === null || d === undefined ? ctx.pending.mark('effective_date') : formatDate(d, ctx.lang);
+    return d === null || d === undefined ? ctx.pending.mark('effective_date') : formatDate(d);
   });
   s = rep(s, dates[0], `${dates[1]}${data.dates.map((d) => `<span>${dateText(d)}</span>`).join('')}${dates[2]}`);
 
@@ -170,7 +171,7 @@ function renderPane(pane, page, data, ctx) {
   const foot = must(/(<footer [\s\S]*?<span>)[^<]*(<\/span>\n    )(<div style="display:flex;gap:20px;flex-wrap:wrap">)\n([\s\S]*?)(    <\/div>)/, s, 'footer');
   const link = must(/<a href="[^"]*" style="color:var\(--muted\)">/, foot[4], 'footer link');
   const links = data.footer.links.map(([key, label]) => {
-    const h = key === 'landing' ? '/landing' : href(key, ctx.lang);
+    const h = key === 'landing' ? '/landing' : href(key);
     return `      <a href="${h}" style="color:var(${key === page ? '--text' : '--muted'})">${label}</a>`;
   });
   s = rep(s, foot[0], `${foot[1]}${data.footer.copy}${foot[2]}${foot[3]}\n${links.join('\n')}\n${foot[5]}`);
@@ -188,18 +189,11 @@ export function split(skeleton) {
 
 export function applyText(skeleton, page, texts, facts, pending) {
   const [head, vi, en, tail] = split(skeleton);
-  const panes = { vi, en };
-  const out = {};
-  for (const lang of LANGS) {
-    const data = texts[lang];
-    out[lang] = renderPane(panes[lang], page, data, { lang, facts, pending });
-  }
-  let h = head;
-  let t = tail;
-  const titles = LANGS.map((l) => texts[l].title);
-  h = rep(h, /<title>[^<]*<\/title>/, `<title>${titles[0]}</title>`);
-  t = rep(t, /document\.title = this\.lang\(\) === 'en' \? "[^"]*" : "[^"]*"/, `document.title = this.lang() === 'en' ? "${titles[1]}" : "${titles[0]}"`);
-  return h + out.vi + out.en + t;
+  // The design's skeleton still carries its Vietnamese pane; it is passed through untouched and never served.
+  const out = renderPane(en, page, texts.en, { lang: 'en', facts, pending });
+  const h = rep(head, /<title>[^<]*<\/title>/, `<title>${texts.en.title}</title>`);
+  const t2 = rep(tail, /document\.title = this\.lang\(\) === 'en' \? "[^"]*" : "[^"]*"/, `document.title = "${texts.en.title}"`);
+  return h + vi + out + t2;
 }
 
 export function loadTexts(root, page) {

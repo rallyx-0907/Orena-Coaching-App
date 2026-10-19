@@ -6413,9 +6413,9 @@ The "Consent evidence is not stored" gap above is resolved by D-233 once its mig
 
 The pinned "My Library" frame (`Orena.dc.html`, ~535) draws one empty state, the Language tab's "Nothing saved yet" (`libLangEmpty`), which the app already renders. It draws none for the Content, Collections, Active or Due tabs, and it has no "saved" tab (`#/library?tab=saved` falls back to Content). With nothing to show, Content renders no rows. Nothing was added; whether the design should draw an empty Content tab is open for the owner.
 
-## Chinese legal text is pending (2026-10-19)
+## Chinese legal text is pending (2026-10-19) - RESOLVED by D-238
 
-`docs/legal/public` has English and Vietnamese only, and legal text is not machine-translated (Hermes decision, 2026-10-19). `/privacy?lang=zh` and `/terms?lang=zh` (and `/account-deletion?lang=zh`) show the English page with one line above it, in Chinese and English: "本页面目前仅提供英文版本。 · This page is currently available in English only." There was no existing pattern for such a note; the line is injected by `_legal_page` in `app.py`. The consent sheet's Terms and Privacy links for a Chinese interface open that English page. Pending the owner: a reviewed Chinese translation of the Terms, Privacy Policy and Delete-account text.
+Resolved on 2026-10-19 by D-238 (owner, relayed by Hermes): legal documents and app-information pages exist in English only, so there is nothing to translate. Every interface language opens the English page; the Chinese note injected by `_legal_page` is removed; the Vietnamese legal files are retired.
 
 ## AI spend ceiling notice (owner standing decision, 2026-10-19)
 
