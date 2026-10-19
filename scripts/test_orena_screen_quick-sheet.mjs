@@ -222,6 +222,24 @@ assert.deepEqual(highlightExample('No match here.', 'settled'), [{ value: 'No ma
   assert.deepEqual(payload, { word: 'exercise', definition: 'physical activity', source_fragment: 'Regular exercise is good.', source_kind: 'listening' });
 }
 
+/* --- D18: the learner-language meaning is saved as such; an English fallback never lands in translation_vi --- */
+{
+  const vi = mapWordCard('松树', { detail: { headword: '松树', meaningSource: 'dictionary', meaningLanguage: 'vi', contextMeaning: 'cây thông' }, support: 'vi' });
+  assert.equal(vi.meaningLanguage, '');
+  assert.equal(wordSavePayload(vi, '', {}).translation_vi, 'cây thông');
+  const en = mapWordCard('松树', { detail: { headword: '松树', meaningSource: 'dictionary', meaningLanguage: 'en', contextMeaning: 'pine tree' }, support: 'vi' });
+  assert.equal(en.meaningLanguage, 'en', 'the fallback is labelled with its language');
+  const saved = wordSavePayload(en, '', {});
+  assert.equal(saved.definition, 'pine tree');
+  assert.equal('translation_vi' in saved, false);
+  const context = mapWordCard('x', { detail: { headword: 'x', meaningSource: 'context', meaningLanguage: '', contextMeaning: 'nghĩa' }, support: 'vi' });
+  assert.equal(wordSavePayload(context, '', {}).translation_vi, 'nghĩa');
+  const zhSupport = mapWordCard('x', { detail: { headword: 'x', meaningSource: 'context', contextMeaning: '意思' }, support: 'zh' });
+  assert.equal('translation_vi' in wordSavePayload(zhSupport, '', {}), false);
+  assert.equal(vocabSavePayload('a', 'nghĩa', 's', {}, 'vi').translation_vi, 'nghĩa');
+  assert.equal('translation_vi' in vocabSavePayload('a', 'meaning', 's', {}, 'en'), false);
+}
+
 /* --- Notes: device memory (AGENTS.md §7), a fake Web Storage --- */
 class FakeStorage {
   constructor() {

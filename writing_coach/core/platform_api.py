@@ -3,7 +3,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, Field
 
-from writing_coach import account_settings
+from writing_coach import account_settings, consent
 from writing_coach.core.language_registry import (
     DEFAULT_LANGUAGE,
     all_languages,
@@ -29,10 +29,14 @@ def api_platform_languages(request: Request) -> dict[str, object]:
     active = enabled_language(
         request.session.get("language") or current_language_code() or DEFAULT_LANGUAGE
     ).code
+    effective = consent.legal_effective_date()
     return {
         "api_version": 1,
         "active": active,
         "data_isolation": "user+language",
+        # The deploy-stamped effective date of the legal documents (YYYY-MM-DD), null when none is set. The in-app
+        # legal text reads it before sign-in; it is the value the public pages show and consent records.
+        "legal_effective_date": effective.isoformat() if effective is not None else None,
         "support_languages": [{"code": item.code, "label": item.translation_label} for item in all_support_languages()],
         "languages": [item.public_dict() for item in all_languages()],
     }

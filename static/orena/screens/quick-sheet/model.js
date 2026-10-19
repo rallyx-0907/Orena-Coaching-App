@@ -137,7 +137,7 @@ export function highlightExample(example, word) {
    (`meaningSource !== 'none'`) draws the word/meaning/example card, otherwise the "no prepared
    gloss" fallback - the real-data equivalent of the mock's GLOSS-hit split (E5 §3.5's own note:
    the mock's `known`/`unknown` pair was unreachable by construction, not a state to reproduce). */
-export function mapWordCard(word, { detail = null, item = null } = {}) {
+export function mapWordCard(word, { detail = null, item = null, support = '' } = {}) {
   const headword = text(detail?.headword) || text(word);
   const script = detail?.script === 'hanzi' || HAN.test(headword) ? 'hanzi' : 'latin';
   const reading = script === 'hanzi' ? text(detail?.pinyin) : text(detail?.ipa);
@@ -149,8 +149,15 @@ export function mapWordCard(word, { detail = null, item = null } = {}) {
   const hasContent = Boolean(meaning) && detail?.meaningSource !== 'none';
   const saved = Boolean(detail?.saved);
   const tone = savedTone(saved);
+  // The language the main line is written in (D18): the server tags a dictionary line ("en" while the support-language
+  // localization is not ready); a contextual meaning is written in the support language. Empty = the support language.
+  const supportCode = text(support).toLowerCase();
+  const writtenIn = text(detail?.meaningLanguage).toLowerCase();
+  const meaningLanguage = hasContent && writtenIn && writtenIn !== supportCode ? writtenIn : '';
   return {
     word: headword,
+    meaningLanguage,
+    supportLanguage: supportCode,
     script,
     reading,
     hasContent,
@@ -180,12 +187,20 @@ export function mapWordCard(word, { detail = null, item = null } = {}) {
 
 /* A saved word's own new-save payload (`POST /api/library/vocabulary`) - the meaning the learner is
    actually looking at, and where they met it (`source.kind`), rather than a generic 'manual'. */
+function vietnameseMeaning(card) {
+  const written = text(card?.meaningLanguage) || text(card?.supportLanguage);
+  return written.toLowerCase() === 'vi' ? text(card?.meaning) : '';
+}
+
 export function wordSavePayload(card, sentence, source) {
   return {
     word: text(card?.word),
     phonetic: text(card?.reading),
     part_of_speech: text(card?.pos),
     definition: text(card?.meaning),
+    // The Vietnamese localization goes in its own field, and only when the line shown is Vietnamese (D18): an English
+    // fallback is never stored as the Vietnamese meaning, so a later localization can still fill it.
+    ...(vietnameseMeaning(card) ? { translation_vi: vietnameseMeaning(card) } : {}),
     source_fragment: text(sentence),
     source_kind: ['reading', 'listening', 'writing', 'speaking', 'feed', 'collection', 'feedback', 'strength', 'dictionary'].includes(text(source?.kind))
       ? text(source.kind)
@@ -257,10 +272,12 @@ export function mapSentenceSheet(response, savedVocabTerms = new Set()) {
   return { available, translation, structure, vocabulary };
 }
 
-export function vocabSavePayload(term, meaning, sentence, source) {
+export function vocabSavePayload(term, meaning, sentence, source, supportLanguage = '') {
   return {
     word: text(term),
     definition: text(meaning),
+    // The sentence sheet's vocabulary meanings are written in the support language.
+    ...(text(supportLanguage).toLowerCase() === 'vi' && text(meaning) ? { translation_vi: text(meaning) } : {}),
     source_fragment: text(sentence),
     source_kind: ['reading', 'listening', 'writing', 'speaking'].includes(text(source?.kind)) ? text(source.kind) : 'dictionary',
   };

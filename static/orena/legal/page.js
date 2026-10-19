@@ -24,8 +24,22 @@ export function legalAddress(hash = '') {
   return { page: found[1] };
 }
 
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/* The drafts' "Last updated: [DATE]." is the deploy-stamped effective date (GET /api/platform/languages
+   `legal_effective_date`, the value the public pages show). With no date the whole sentence is left out: a
+   placeholder never reaches a learner. */
+export function datedText(text, isoDate) {
+  const found = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(isoDate || ''));
+  const label = found && MONTHS[Number(found[2]) - 1] ? `${MONTHS[Number(found[2]) - 1]} ${Number(found[3])}, ${found[1]}` : null;
+  return String(text).replace(/Last updated: \[DATE\]\. ?/g, label ? `Last updated: ${label}. ` : '');
+}
+
+let effectiveDate = null;
+
 function segments(list) {
   return list.map((part) => {
+    if (part.t && !part.b && !part.i && !part.c) return datedText(part.t, effectiveDate);
     if (part.b) return html`<strong>${part.t}</strong>`;
     if (part.i) return html`<em>${part.t}</em>`;
     if (part.c) return html`<code>${part.t}</code>`;
@@ -46,7 +60,8 @@ function block(item) {
 }
 
 /* The page's markup for one document: English, whatever the interface language. */
-export function legalMarkup(page) {
+export function legalMarkup(page, _ui, isoDate = null) {
+  effectiveDate = isoDate;
   const doc = LEGAL[page];
   return html`<main class="o-legal" data-legal="${page}">
     ${pageHeader({ title: TITLES[page], meta: DRAFT_LINE })}
@@ -60,6 +75,11 @@ export function legalMarkup(page) {
 export async function renderLegal(element, address) {
   await useStyles('legal/legal.css');
   document.title = `${TITLES[address.page]} · Orena`;
-  mount(element, legalMarkup(address.page));
+  let isoDate = null;
+  try {
+    const response = await fetch('/api/platform/languages', { headers: { Accept: 'application/json' } });
+    isoDate = response.ok ? (await response.json()).legal_effective_date || null : null;
+  } catch { /* no date: the date sentence is left out */ }
+  mount(element, legalMarkup(address.page, 'en', isoDate));
   window.scrollTo?.(0, 0);
 }

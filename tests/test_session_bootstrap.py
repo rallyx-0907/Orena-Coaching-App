@@ -4,6 +4,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import time
 
 import httpx
 from itsdangerous import TimestampSigner
@@ -137,7 +138,7 @@ def test_native_handoff_requires_the_bound_verifier_and_logout_endpoint_is_best_
     async def exchange(client, verifier_payload):
         verifier = "bound-verifier"
         handoff = auth_support.issue_native_handoff(
-            "native-user",
+            f"native-logout-{time.time_ns()}",
             base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode(),
         )
         payload = {"code": handoff, **verifier_payload}

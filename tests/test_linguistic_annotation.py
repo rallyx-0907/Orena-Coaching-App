@@ -156,20 +156,87 @@ def test_curly_quotes_are_not_glued_to_the_word_and_offsets_index_the_source() -
         assert source[token["start"]:token["end"]] == token["fragment"]
 
 
-def test_di_written_for_the_particle_de_is_read_de_only_when_tagged_as_a_particle(monkeypatch) -> None:
-    # PRE D23: older texts (落花生) write 底 for 的. The dictionary reading is dǐ, which is right for every other use.
+# PRE-105 / D23: the contexts of 落花生 (Xu Dishan, 1922) where 底 is written for the particle 的.
+LUOHUASHENG_DI = [
+    "我们底主人",
+    "花生底好处很多",
+    "父亲底话",
+    "他底朋友来了",
+    "这是我们底",
+    "它底样子不好看",
+    "你底书",
+    "我们底后面有半亩隙地",
+    "母亲说，今晚可以做一个收获节，也请你们爹爹来尝尝我们底新花生，如何？",
+    "花生底用处很多",
+    "你们爱吃花生么？",
+    "妹妹底话",
+    "买种底买种，动土底动土，灌园底灌园",
+    "他们羡慕底心很重",
+    "桌上摆着几样底食品",
+    "晚上底天色很好",
+    "花生底气味很好",
+    "园里底茅亭里坐着人",
+    "姊姊底意思",
+]
+
+
+def _di_readings(text: str) -> list[str]:
+    la._annotate_cached.cache_clear()
+    return [item["pronunciation"] for item in la.annotate("zh", text) if item["fragment"] == "底"]
+
+
+@pytest.mark.parametrize("text", [t for t in LUOHUASHENG_DI if "底" in t])
+def test_di_written_for_the_particle_de_is_read_de(text: str) -> None:
+    assert set(_di_readings(text)) == {"de"}
+    tokens = la.annotate("zh", text)
+    for token in tokens:
+        assert text[token["start"] : token["end"]] == token["fragment"]
+    assert {t["pos"] for t in tokens if t["fragment"] == "底"} == {"particle"}
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["到底怎么回事", "桌子底下很暗", "海底世界", "彻底改变", "年底到了", "池底有水", "没有底气", "缺乏底气", "充满底气", "追根问底的人", "寻根问底", "心底的话", "脚底下", "竹竿底下", "无底的洞", "水底", "井底", "见底", "大海底里", "底子好", "花生地底", "这座山的底部", "他探底成功", "锅底"],
+)
+def test_di_in_a_lexical_word_keeps_its_dictionary_reading(text: str) -> None:
+    assert all(reading == "dǐ" for reading in _di_readings(text))
+
+
+def test_di_particle_survives_a_noisy_tagger(monkeypatch) -> None:
     class Pair:
         def __init__(self, word: str, flag: str) -> None:
             self.word, self.flag = word, flag
 
-    source = "花生底味美"
+    # The tagger mislabels the pronoun and the particle and glues 底 to the next word: the characters decide.
+    def noisy(text: str):
+        if text == "我们":
+            return [Pair("我们", "v")]
+        if text.endswith("我们"):
+            return [Pair("我们", "x")]
+        return [Pair("我们", "x"), Pair("底话", "n")]
 
-    def tagged(flag: str):
-        monkeypatch.setattr(la.pseg, "cut", lambda text: [Pair("花生", "n"), Pair("底", flag), Pair("味美", "n")])
-        la._annotate_cached.cache_clear()
-        return {item["fragment"]: item["pronunciation"] for item in la.annotate("zh", source)}
-
-    assert tagged("uj")["底"] == "de"
-    assert tagged("n")["底"] == "dǐ"
+    monkeypatch.setattr(la.pseg, "cut", noisy)
+    la._annotate_cached.cache_clear()
+    result = {item["fragment"]: item["pronunciation"] for item in la.annotate("zh", "我们底话")}
+    assert result["底"] == "de" and result["话"] == "huà"
+    # a verb before 底 is not a possessor, however the tagger labelled the rest
+    monkeypatch.setattr(la.pseg, "cut", lambda text: [Pair("探", "v"), Pair("底话", "n")])
+    la._annotate_cached.cache_clear()
+    assert {item["fragment"]: item["pronunciation"] for item in la.annotate("zh", "探底话")}["底话"] == "dǐ huà"
     la._annotate_cached.cache_clear()
 
+
+def test_every_particle_di_of_the_real_luohuasheng_is_read_de() -> None:
+    # Full text (zh.wikisource, public domain), real tagger. Every standalone 底 is the particle 的; 地底 is unchanged.
+    from pathlib import Path
+
+    raw = (Path(__file__).parent / "fixtures" / "luohuasheng_xu_dishan_1922.txt").read_text(encoding="utf-8")
+    body = "\n".join(line for line in raw.splitlines() if not line.startswith("#"))
+    la._annotate_cached.cache_clear()
+    tokens = la.annotate("zh", body, max_annotations=5000)
+    alone = [t for t in tokens if t["fragment"] == "底"]
+    assert len(alone) >= 15  # sanity: the tagger found the particles at all
+    assert {t["pronunciation"] for t in alone} == {"de"}
+    assert {t["pos"] for t in alone} == {"particle"}
+    inside = [t for t in tokens if t["fragment"] == "地底"]
+    assert inside and all(t["pronunciation"] == "dì dǐ" for t in inside)

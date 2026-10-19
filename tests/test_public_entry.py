@@ -191,3 +191,50 @@ def test_fonts_are_served_from_this_origin_and_the_shell_does_not_call_google(mo
     assert css.status_code == 200 and "font-family:'Outfit'" in css.text and "https://" not in css.text
     assert face.status_code == 200 and face.content[:4] == b"wOF2"
     assert "max-age=604800" in face.headers["cache-control"]
+
+
+LEGAL_PATHS = ("/terms", "/privacy", "/account-deletion")
+
+
+def _legal_pages():
+    async def go():
+        async with _client() as c:
+            return {p: (await c.get(p)).text for p in LEGAL_PATHS}
+
+    return _run(go())
+
+
+def test_legal_pages_show_the_runtime_effective_date(monkeypatch):
+    # The built pages carry a token; the served page shows LEGAL_EFFECTIVE_DATE, the value the consent evidence
+    # records as the policy version, in both places ("Last updated" and "Effective").
+    from writing_coach import consent
+
+    monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", "2026-10-20")
+    assert consent.current_legal_version() == "2026-10-20"
+    for path, text in _legal_pages().items():
+        assert "pending: effective_date" not in text and "data-effective-date" not in text, path
+        assert "Last updated: October 20, 2026" in text and "Effective: October 20, 2026" in text, path
+
+
+def test_legal_pages_flag_an_unset_or_invalid_effective_date(monkeypatch):
+    from writing_coach import consent
+
+    for value in ("", "20/10/2026", "2026-13-45", '2026-10-20"><script>x</script>'):
+        monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", value)
+        assert consent.current_legal_version() == consent.UNSTAMPED, value
+        for path, text in _legal_pages().items():
+            assert text.count("[pending: effective_date]") == 2, (path, value)
+            assert "<script>x</script>" not in text, (path, value)
+
+
+def test_platform_languages_gives_the_legal_effective_date_for_the_in_app_legal_text(monkeypatch):
+    async def read():
+        async with _client() as c:
+            return (await c.get("/api/platform/languages")).json()
+
+    monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", "2026-10-20")
+    assert _run(read())["legal_effective_date"] == "2026-10-20"
+    monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", "2026-13-45")
+    assert _run(read())["legal_effective_date"] is None
+    monkeypatch.delenv("LEGAL_EFFECTIVE_DATE")
+    assert _run(read())["legal_effective_date"] is None

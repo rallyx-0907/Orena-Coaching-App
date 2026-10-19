@@ -104,6 +104,75 @@ def configure_auth_repository(repository: AuthRepository) -> None:
     _auth_repository = repository
 
 
+# Server-side session revocation. The session is a signed cookie (Starlette SessionMiddleware), so it cannot be
+# deleted; instead each account may hold one "revoked before" instant in the existing `platform_settings` store (a
+# primary-key row, no schema change). A cookie carries the instant it was issued (`iat_ms`); it is refused when that
+# is not later than the account's instant. A cookie issued before this check existed has no `iat_ms` and counts as 0,
+# so it stays valid until the account's first revocation and is refused after it. Revoking is per account: it ends
+# every session of that account, on every device.
+SESSION_REVOKED_KEY_PREFIX = "auth.session_revoked_before."
+_session_revocation_store: Any = None
+
+
+class SessionRevocationUnavailable(Exception):
+    """The revocation record could not be read or written; a session is then neither accepted nor reported revoked."""
+
+
+def configure_session_revocation(store: Any) -> None:
+    """`store` is the platform repository: `get_setting(key)` and `set_setting(key, value, updated_by=...)`."""
+    global _session_revocation_store
+    _session_revocation_store = store
+
+
+def _session_revoked_key(user_sub: str) -> str:
+    return SESSION_REVOKED_KEY_PREFIX + hashlib.sha256(user_sub.encode("utf-8")).hexdigest()[:40]
+
+
+def _installed_revocation_store() -> Any:
+    if _session_revocation_store is None:
+        raise RuntimeError("Session revocation store has not been installed by the persistence runtime.")
+    return _session_revocation_store
+
+
+def _now_ms() -> int:
+    return time.time_ns() // 1_000_000
+
+
+def session_is_revoked(user_sub: str, issued_ms: Any) -> bool:
+    """One primary-key read. Raises SessionRevocationUnavailable when the record cannot be read."""
+    try:
+        row = _installed_revocation_store().get_setting(_session_revoked_key(user_sub))
+    except Exception as error:
+        raise SessionRevocationUnavailable from error
+    if not row:
+        return False
+    try:
+        before = int((row.get("value") or {}).get("before_ms") or 0)
+        issued = int(issued_ms or 0)
+    except (TypeError, ValueError):
+        return True
+    return issued <= before
+
+
+def revoke_user_sessions(user_sub: str) -> None:
+    """End every session the account holds (logout; the account-deletion workflow calls this too)."""
+    if not user_sub:
+        return
+    try:
+        _installed_revocation_store().set_setting(
+            _session_revoked_key(user_sub), {"before_ms": _now_ms()}, updated_by="session-revocation"
+        )
+    except Exception as error:
+        raise SessionRevocationUnavailable from error
+
+
+def _start_session(session: Any, user_sub: str) -> None:
+    """Every sign-in: a fresh session that records when it was issued."""
+    session.clear()
+    session["user_sub"] = user_sub
+    session["iat_ms"] = _now_ms()
+
+
 def init_auth_db() -> None:
     _installed_auth_repository().initialize(PLATFORM_ADMIN_EMAILS)
 
@@ -317,7 +386,9 @@ def _consume_native_handoff(code: str, code_verifier: str | None) -> str | None:
 
 def _native_session_cookie(user_sub: str) -> str:
     payload = base64.b64encode(
-        json.dumps({"user_sub": user_sub, "session_id": secrets.token_urlsafe(16)}).encode("utf-8")
+        json.dumps(
+            {"user_sub": user_sub, "session_id": secrets.token_urlsafe(16), "iat_ms": _now_ms()}
+        ).encode("utf-8")
     )
     return TimestampSigner(SESSION_SECRET or "local-single-user-mode").sign(payload).decode("utf-8")
 
@@ -460,8 +531,7 @@ def auth_google_callback(request: Request):
     native_redirect_uri = str(request.session.get("native_redirect_uri") or "")
     native_code_challenge = str(request.session.get("native_code_challenge") or "")
     stored_next = str(request.session.get("post_auth_next") or "")
-    request.session.clear()
-    request.session["user_sub"] = str(user["google_sub"])
+    _start_session(request.session, str(user["google_sub"]))
     if native_redirect_uri:
         handoff = issue_native_handoff(str(user["google_sub"]), native_code_challenge)
         return RedirectResponse(
@@ -492,14 +562,19 @@ def api_native_session_exchange(payload: NativeSessionExchangeIn, request: Reque
     user_sub = _consume_native_handoff(payload.code.strip(), payload.code_verifier)
     if not user_sub or not auth_user(user_sub):
         raise HTTPException(401, "Authentication handoff is invalid or expired.")
-    request.session.clear()
-    request.session["user_sub"] = user_sub
+    _start_session(request.session, user_sub)
     return {"version": NATIVE_SESSION_VERSION, "session_cookie": _native_session_cookie(user_sub)}
 
 
 @router.post("/auth/logout")
 def auth_logout(request: Request, next: str | None = None):
+    user_sub = str(request.session.get("user_sub") or "") if AUTH_ENABLED else ""
     request.session.clear()
+    try:
+        revoke_user_sessions(user_sub)
+    except SessionRevocationUnavailable:
+        # The browser's cookie is already cleared; say plainly that the server could not end the session.
+        return JSONResponse({"detail": "Sign-out could not be completed. Please try again."}, status_code=503)
     if next:
         # The new UI says where it wants to be after signing out; it navigates there itself.
         return {"ok": True, "next": safe_next_target(next)}
@@ -756,6 +831,18 @@ class UserIsolationMiddleware(BaseHTTPMiddleware):
 
         user_sub = str(request.session.get("user_sub") or "")
         if not user_sub:
+            if path.startswith("/api/"):
+                return JSONResponse({"detail": "Authentication required"}, status_code=401)
+            return RedirectResponse(f"{LEARNER_UI_ROOT}#/welcome", status_code=302)
+
+        try:
+            revoked = session_is_revoked(user_sub, request.session.get("iat_ms"))
+        except SessionRevocationUnavailable:
+            return JSONResponse(
+                {"detail": "Sign-in state cannot be checked right now. Please try again."}, status_code=503
+            )
+        if revoked:
+            request.session.clear()
             if path.startswith("/api/"):
                 return JSONResponse({"detail": "Authentication required"}, status_code=401)
             return RedirectResponse(f"{LEARNER_UI_ROOT}#/welcome", status_code=302)
