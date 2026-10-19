@@ -90,6 +90,22 @@ def _uuid(value: str) -> str | None:
         return None
 
 
+def count_expired(engine: Any, now: datetime) -> dict[str, Any]:
+    """The dry run of `PostgresMemoryRepository.sweep_expired`: how many rows it would delete at `now`, by table
+    (memories by class), in a READ ONLY transaction - nothing is deleted or locked. The same predicates as the sweep,
+    so the counts are what it removes. PRE-503: the evidence before the owner switches AGENT_MEMORY_RETENTION_SWEEP
+    on (scripts/memory_retention_dry_run.py). Needs no memory key: it reads no text."""
+
+    with engine.connect() as conn, conn.begin():
+        conn.execute(sql("SET TRANSACTION READ ONLY"))
+        by_class = conn.execute(sql(
+            "SELECT class, count(*) FROM learner_memories WHERE expires_at IS NOT NULL AND expires_at <= :now"
+            " GROUP BY class ORDER BY class"), {"now": now}).all()  # fmt: skip
+        keys = conn.execute(sql("SELECT count(*) FROM learner_memory_suppressions WHERE expires_at <= :now"),
+                            {"now": now}).scalar()  # fmt: skip
+    return {"learner_memories": {str(cls): int(n) for cls, n in by_class}, "learner_memory_suppressions": int(keys or 0)}
+
+
 class PostgresMemoryRepository:
     def __init__(self, engine: Engine, keys: MemoryKeys) -> None:
         self._engine = engine
@@ -315,6 +331,9 @@ class PostgresMemoryRepository:
                 "DELETE FROM learner_memory_suppressions WHERE id IN (SELECT id FROM learner_memory_suppressions"
                 " WHERE expires_at <= :now LIMIT :n FOR UPDATE SKIP LOCKED)"), {"now": now, "n": batch}).rowcount
         return int(items or 0) + int(keys or 0)
+
+    def count_expired(self, now: datetime) -> dict[str, Any]:
+        return count_expired(self._engine, now)
 
     # --- M3 ------------------------------------------------------------------------------------------------------
 
