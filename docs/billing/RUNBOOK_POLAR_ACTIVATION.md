@@ -137,7 +137,8 @@ The revocation ends the plan in Orena and stops renewal. A refund alone does nei
 revoked, the refund's reconciliation item stays open with the reason "revoke it on Polar".
 
 Usually the refund event arrives before the revocation, and nothing closes the item afterwards. Once the subscription
-is revoked, find the item with `GET /api/admin/billing/reconciliation` and resolve it with`n`POST /api/admin/billing/reconciliation/{item_id}/resolve` and the outcome `refund_confirmed`. A partial refund
+is revoked, find the item with `GET /api/admin/billing/reconciliation` and resolve it with
+`POST /api/admin/billing/reconciliation/{item_id}/resolve` and the outcome `refund_confirmed`. A partial refund
 that should keep the plan, such as a proration difference, also opens this item: dismiss it with `recorded` and a
 note.
 
