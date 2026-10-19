@@ -85,6 +85,10 @@ class SubmittedInput:
     source_name: str = ""
     source_id: str = ""
     rights: dict[str, Any] = field(default_factory=dict)
+    # An administrator's review carried from another environment by a content pack (#411): `reviewed_level`, `topic`,
+    # `subtopic`, `review` (when each was reviewed) and `pack_id`. The worker applies it to the article it creates;
+    # it is not part of the submission's identity (`request_digest`).
+    review: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

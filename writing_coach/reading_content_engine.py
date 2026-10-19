@@ -24,7 +24,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import replace
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -40,6 +40,8 @@ from writing_coach.persistence.reading_job_repository import ReadingJobRepositor
 from writing_coach.languages.chinese.script_detection import detect_script
 from writing_coach.reading_page_quality import QUALITY_VERSION, quality_flags
 from writing_coach.reading_processing import (
+    EN_LEVEL_BANDS,
+    ZH_LEVEL_BANDS,
     analyze_article,
     quality_issues,
     suggest_targets,
@@ -79,6 +81,56 @@ PERMANENT_ERRORS = frozenset(
     }
 )
 RETRY_BACKOFF = (timedelta(minutes=1), timedelta(minutes=5), timedelta(minutes=30))
+
+
+CARRIED_REVIEW_KEYS = ("reviewed_level", "topic", "subtopic", "review", "pack_id")
+
+
+def carried_review_changes(
+    carried: Mapping[str, Any], article: Mapping[str, Any], own: Mapping[str, Any]
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """What a review carried by a content pack (#411) changes on this article, and the outcome per part.
+
+    `carried` is the pack article's `reviewed_level`, `topic`, `subtopic` and `review` marks (when the level and the
+    topic were reviewed at the source); `own` is this article's own marks (`level_at`, `topic_at`). A review of this
+    environment's own always wins: the level arrives only onto an article never level-reviewed here (no override,
+    none cleared), the topic only when it was reviewed at the source and never here. A level that is not on the
+    article's scale is ignored, never stored, and an empty topic at the source never clears one here."""
+
+    level = str(carried.get("reviewed_level") or "").strip()
+    marks = carried.get("review") if isinstance(carried.get("review"), Mapping) else {}
+    changes: dict[str, Any] = {}
+    outcome: dict[str, str] = {}
+    if level:
+        bands = ZH_LEVEL_BANDS if article.get("language") == "zh" else EN_LEVEL_BANDS
+        if article.get("reviewed_level") or "level_at" in own:
+            outcome["level"] = "identical" if article.get("reviewed_level") == level else "kept_local"
+        elif level not in bands:
+            outcome["level"] = "ignored:reading_invalid_level"
+        else:
+            changes["reviewed_level"] = level
+            outcome["level"] = "applied"
+    if isinstance(marks.get("topic"), Mapping):
+        wanted = {key: str(carried.get(key) or "").strip() for key in ("topic", "subtopic")}
+        wanted = {key: value for key, value in wanted.items() if value}
+        if "topic_at" in own:
+            outcome["topic"] = "kept_local"
+        elif not wanted:
+            outcome["topic"] = "ignored:empty"
+        else:
+            differing = {key: value for key, value in wanted.items() if value != str(article.get(key) or "")}
+            changes.update(differing)
+            outcome["topic"] = "applied" if differing else "identical"
+    return changes, outcome
+
+
+def carried_review_reason(carried: Mapping[str, Any]) -> str:
+    """The review-trail reason for a carried review: the pack and when each part was reviewed at the source."""
+
+    marks = carried.get("review") if isinstance(carried.get("review"), Mapping) else {}
+    at = [f"{key} {(marks[key] or {}).get('at') or 'unknown'}" for key in ("level", "topic")
+          if isinstance(marks.get(key), Mapping)]
+    return f"content pack {carried.get('pack_id') or 'unknown'}: reviewed at the source ({', '.join(at) or 'unknown'})"[:2000]
 
 
 def _backoff(attempt: int) -> timedelta:
@@ -215,6 +267,8 @@ class ReadingContentEngine:
             "source_name": submitted.source_name,
             "source_id": submitted.source_id,
             "rights": dict(submitted.rights or {}),
+            **({"review": {key: submitted.review[key] for key in CARRIED_REVIEW_KEYS if key in submitted.review}}
+               if submitted.review else {}),
         }
 
     # ---- processing ------------------------------------------------------
@@ -335,6 +389,9 @@ class ReadingContentEngine:
                 return lost
             article = self._build_candidate(item, snapshot, now=now)
             result_kind = "duplicate" if article.get("duplicate") else "article_created"
+            carried = (self._apply_carried_review(article["id"], submitted.review, now=now,
+                                                  actor=str(job.get("submitted_by") or "content-pack"))
+                       if submitted.review and result_kind == "article_created" else None)  # fmt: skip
             finished = self.jobs.complete(
                 job_id,
                 worker_id=worker_id,
@@ -354,6 +411,7 @@ class ReadingContentEngine:
                 "result_kind": result_kind,
                 "article_id": article["id"],
                 "source_item_id": snapshot["id"],
+                **({"review": carried} if carried is not None else {}),
             }
         except ReadingSourceError as refusal:
             return self._fail(job, code=refusal.code, message=refusal.message, now=now)
@@ -376,7 +434,32 @@ class ReadingContentEngine:
             source_name=stored.get("source_name", ""),
             source_id=stored.get("source_id", ""),
             rights=dict(stored.get("rights") or {}),
+            review=dict(stored.get("review") or {}),
         )
+
+    def _apply_carried_review(
+        self, article_id: str, carried: Mapping[str, Any], *, actor: str, now: datetime | None
+    ) -> dict[str, str]:
+        """A content pack's review onto the article this job just created (#411): a new article has no review of its
+        own, so the same rule as for a present one decides, and the correction goes through `update_article` - one
+        review-trail event and one audit row, with the importing actor. Never fails the job: the article stands."""
+
+        try:
+            article = self.content.get_article(article_id) or {}
+            changes, outcome = carried_review_changes(carried, article, self.content.review_marks(article_id))
+            if changes:
+                updated = self.content.update_article(
+                    article_id, actor=actor, reason=carried_review_reason(carried), now=now, **changes) or {}
+                self._record_audit(
+                    actor=actor, action="admin.reading_level_override" if set(changes) == {"reviewed_level"}
+                    else "admin.reading_article_edited", entity_id=article_id,
+                    payload={"content_pack": carried.get("pack_id"), "changed": sorted(changes),
+                             "reviewed_level": updated.get("reviewed_level"),
+                             "effective_level": updated.get("effective_level")})  # fmt: skip
+            return outcome
+        except Exception:  # noqa: BLE001 - the admitted article is kept; the review can be made here by hand
+            _logger.exception("reading engine: carried review for article %s not applied", article_id)
+            return {"review": "failed"}
 
     def _build_candidate(
         self, item: NormalizedSourceItem, snapshot: dict[str, Any], *, now: datetime | None

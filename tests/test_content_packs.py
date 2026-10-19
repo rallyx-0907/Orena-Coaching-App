@@ -325,7 +325,43 @@ def _import(app, raw):
     return next(row for row in report["items"] if row["kind"] == "reading_article")
 
 
-def test_a_reviewed_level_and_topic_arrive_with_the_article_and_land_in_its_review_trail(app):
+def _repacked(raw, **changes):
+    """The same pack with the article's data changed (a key set to `...` is removed: a pack made before it)."""
+    items = []
+    for item in read_pack(raw).items:
+        data = dict(item.data)
+        if item.kind == "reading_article":
+            for key, value in changes.items():
+                if value is ...:
+                    data.pop(key, None)
+                else:
+                    data[key] = value
+        items.append(PackItem(kind=item.kind, natural_key=item.natural_key, data=data, exported_status=item.exported_status))
+    return build_pack(items, created_by="admin", environment="test", app_version="t", filters={})
+
+
+def _target_with_source():
+    """A target environment whose `sample-news` source is already approved, so one import admits the text."""
+    there = _environment()
+    _use(*there)
+    content = there[0]
+    source = content.create_source(slug="sample-news", name="Sample news", source_type="manual", base_url="",
+                                   languages=["en"], rights={"automation_allowed": True, "can_republish": True,
+                                   "can_adapt": False, "attribution_required": True, "license_note": "CC BY 4.0"},
+                                   created_by="admin")  # fmt: skip
+    content.set_source_state(source["id"], "active", actor="admin")
+    return there
+
+
+def _one_import(app, raw, there):
+    content, jobs, engine_service = there
+    assert _import(app, raw)["result"] == "submitted"
+    outcome = engine_service.process(jobs.claim("worker-1"))
+    assert outcome["result_kind"] == "article_created", outcome
+    return outcome
+
+
+def test_one_import_of_a_reviewed_pack_makes_an_article_at_its_reviewed_level_with_the_review_in_its_trail(app):
     raw = _reviewed_pack(app)
     data = next(item for item in read_pack(raw).items if item.kind == "reading_article").data
     assert data["reviewed_level"] == "B2"
@@ -333,32 +369,30 @@ def test_a_reviewed_level_and_topic_arrive_with_the_article_and_land_in_its_revi
     assert data["review"]["level"]["by"] == "administrator" and set(data["review"]["level"]) == {"by", "at"}, \
         "when, never who"
 
-    there = _environment()
-    _use(*there)
+    there = _target_with_source()
     content = there[0]
-    article_id = _arrive(app, raw, there)
-    assert content.get_article(article_id)["reviewed_level"] is None, "the engine gave it only its estimate"
-    row = _import(app, raw)
-    assert row["review"] == {"level": "applied", "topic": "applied"}
-    arrived = content.get_article(article_id)
-    assert (arrived["reviewed_level"], arrived["effective_level"]) == ("B2", "B2")
+    outcome = _one_import(app, raw, there)
+    assert outcome["review"] == {"level": "applied", "topic": "applied"}
+    arrived = content.get_article(outcome["article_id"])
+    assert (arrived["reviewed_level"], arrived["effective_level"]) == ("B2", "B2"), "one import, no second pass"
     assert (arrived["topic"], arrived["subtopic"]) == ("weather", "floods")
-    trail = [event for event in content.list_review_events(article_id) if "reviewed_level" in event["changes"]]
+    trail = [event for event in content.list_review_events(arrived["id"]) if "reviewed_level" in event["changes"]]
     assert len(trail) == 1 and trail[0]["actor"] == admin_api._actor(guard_admin())  # noqa: SLF001
     assert trail[0]["reason"].startswith("content pack ")
-    assert _import(app, raw)["review"] == {"level": "identical", "topic": "kept_local"}, "importing again changes nothing"
-    assert len([e for e in content.list_review_events(article_id) if "reviewed_level" in e["changes"]]) == 1
+    row = _import(app, raw)
+    assert row["result"] == "present" and row["review"] == {"level": "identical", "topic": "kept_local"}
+    assert len([e for e in content.list_review_events(arrived["id"]) if "reviewed_level" in e["changes"]]) == 1
 
 
-def test_a_target_review_of_its_own_is_never_overwritten(app):
+def test_a_present_article_takes_the_review_and_a_target_review_of_its_own_is_never_overwritten(app):
     raw = _reviewed_pack(app)
-    there = _environment()
-    _use(*there)
+    old = _repacked(raw, reviewed_level=..., review=...)
+    there = _target_with_source()
     content = there[0]
-    article_id = _arrive(app, raw, there)
+    article_id = _one_import(app, old, there)["article_id"]  # here before the review travelled
     content.update_article(article_id, actor="reviewer-here", reviewed_level="C1", topic="farming", reason="ours")
     row = _import(app, raw)
-    assert row["review"] == {"level": "kept_local", "topic": "kept_local"}
+    assert row["result"] == "present" and row["review"] == {"level": "kept_local", "topic": "kept_local"}
     kept = content.get_article(article_id)
     assert (kept["reviewed_level"], kept["topic"]) == ("C1", "farming")
 
@@ -368,19 +402,71 @@ def test_a_target_review_of_its_own_is_never_overwritten(app):
     assert content.get_article(article_id)["reviewed_level"] is None
 
 
-def test_a_pack_made_before_the_review_fields_still_imports(app):
+def test_a_present_article_never_reviewed_here_takes_the_review(app):
     raw = _reviewed_pack(app)
-    items = []
-    for item in read_pack(raw).items:
-        data = {key: value for key, value in item.data.items() if key not in {"reviewed_level", "review"}}
-        items.append(PackItem(kind=item.kind, natural_key=item.natural_key, data=data, exported_status=item.exported_status))
-    old = build_pack(items, created_by="admin", environment="test", app_version="t", filters={})
-    assert read_pack(old).manifest["version"] == 1
-
-    there = _environment()
-    _use(*there)
+    there = _target_with_source()
     content = there[0]
-    article_id = _arrive(app, old, there)
+    article_id = _one_import(app, _repacked(raw, reviewed_level=..., review=...), there)["article_id"]
+    assert _import(app, raw)["review"] == {"level": "applied", "topic": "applied"}
+    assert content.get_article(article_id)["effective_level"] == "B2"
+
+
+def test_a_pack_made_before_the_review_fields_still_imports(app):
+    old = _repacked(_reviewed_pack(app), reviewed_level=..., review=...)
+    assert read_pack(old).manifest["version"] == 1
+    there = _target_with_source()
+    content = there[0]
+    outcome = _one_import(app, old, there)
+    assert "review" not in outcome
+    assert content.get_article(outcome["article_id"])["reviewed_level"] is None
     row = _import(app, old)
     assert row["result"] == "present" and row["review"] == {}
-    assert content.get_article(article_id)["reviewed_level"] is None
+
+
+def test_a_level_off_the_article_scale_is_ignored_never_stored(app):
+    raw = _repacked(_reviewed_pack(app), reviewed_level="HSK4")  # a Chinese band on an English article
+    there = _target_with_source()
+    content = there[0]
+    outcome = _one_import(app, raw, there)
+    assert outcome["review"]["level"] == "ignored:reading_invalid_level"
+    assert content.get_article(outcome["article_id"])["reviewed_level"] is None
+    assert _import(app, raw)["review"]["level"] == "ignored:reading_invalid_level"
+    assert content.get_article(outcome["article_id"])["reviewed_level"] is None
+
+
+def test_an_empty_topic_at_the_source_never_clears_a_topic_here(app):
+    raw = _repacked(_reviewed_pack(app), topic="", subtopic="")
+    there = _target_with_source()
+    content = there[0]
+    article_id = _one_import(app, _repacked(raw, reviewed_level=..., review=...), there)["article_id"]
+    from sqlalchemy import update as sql_update
+
+    from writing_coach.persistence.models import ReadingArticle
+
+    with content.engine.begin() as connection:  # a topic the engine gave it here, not a review
+        connection.execute(sql_update(ReadingArticle).values(topic="weather", subtopic="rain"))
+    row = _import(app, raw)
+    assert row["review"]["topic"] == "ignored:empty"
+    kept = content.get_article(article_id)
+    assert (kept["topic"], kept["subtopic"]) == ("weather", "rain")
+
+
+@pytest.mark.parametrize(("language", "level", "expected"), [
+    ("zh", "HSK4", "applied"), ("zh", "B2", "ignored:reading_invalid_level"),
+    ("en", "B2", "applied"), ("en", "HSK4", "ignored:reading_invalid_level"), ("zh", "HSK7", "ignored:reading_invalid_level"),
+])
+def test_the_carried_level_is_read_on_the_article_language_scale(language, level, expected):
+    from writing_coach.reading_content_engine import carried_review_changes
+
+    changes, outcome = carried_review_changes({"reviewed_level": level}, {"language": language, "reviewed_level": None}, {})
+    assert outcome == {"level": expected}
+    assert changes == ({"reviewed_level": level} if expected == "applied" else {})
+
+
+def test_a_carried_topic_keeps_a_part_the_source_left_empty():
+    from writing_coach.reading_content_engine import carried_review_changes
+
+    carried = {"topic": "weather", "subtopic": "", "review": {"topic": {"by": "administrator", "at": "t"}}}
+    changes, outcome = carried_review_changes(carried, {"language": "en", "topic": "", "subtopic": "rain"}, {})
+    assert changes == {"topic": "weather"} and outcome == {"topic": "applied"}
+

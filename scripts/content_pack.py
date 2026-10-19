@@ -138,7 +138,8 @@ def classify_results(report: dict[str, Any]) -> list[dict[str, Any]]:
             if result == "source_created_for_review":
                 reason = "source created unapproved; an administrator here approves it once"
             elif result == "submitted":
-                reason = "submitted to this environment's admission engine, which decides its status"
+                reason = ("submitted to this environment's admission engine, which decides its status; "
+                          "a reviewed level and topic the pack carries are applied to the article it creates")
             elif row.get("status") == "pending_review":
                 reason = "vocabulary collection waits for review under this environment's publication rule"
         elif result in {"kept_local", "identical", "present"}:
