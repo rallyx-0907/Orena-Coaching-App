@@ -8,6 +8,7 @@ import time
 import statistics
 import unicodedata
 import threading
+import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -4186,16 +4187,30 @@ def admin_account_memory_erase(user_id: str, request: Request) -> dict[str, Any]
     admin = require_admin(request)
     from writing_coach import admin_console_api
     from writing_coach.agent.api import current_memory
+    from writing_coach.agent.memory_store import MemoryUnavailable
 
+    admin_console_api._same_origin(request)  # the console's own page only, as every admin console change
+    try:
+        account = str(uuid.UUID(user_id))  # an account id, never an email or free text (it goes into the audit)
+    except ValueError:
+        raise orena_http_error(404, "memory_not_found", "No account has this identifier.") from None
     memory = current_memory()
     if memory is None:
         raise orena_http_error(503, "memory_unavailable", "Orena Memory is not available on this server.")
-    admin_console_api._audit(admin, "admin.memory_erase_requested", entity_type="account", entity_id=user_id,
+    admin_console_api._audit(admin, "admin.memory_erase_requested", entity_type="account", entity_id=account,
                              required=True)
-    removed = memory.erase_account(user_id)
+    try:
+        removed = memory.erase_account(account)
+    except MemoryUnavailable:
+        admin_console_api._audit(admin, "admin.memory_erase_failed", entity_type="account", entity_id=account,
+                                 payload={"reason": "memory_unavailable"})
+        raise orena_http_error(503, "memory_unavailable", "Orena Memory could not be read; nothing was erased.",
+                               retryable=True) from None
     if removed is None:
+        admin_console_api._audit(admin, "admin.memory_erase_failed", entity_type="account", entity_id=account,
+                                 payload={"reason": "no_active_incarnation"})
         raise orena_http_error(404, "memory_not_found", "This account has no Orena Memory here.")
-    admin_console_api._audit(admin, "admin.memory_erased", entity_type="account", entity_id=user_id,
+    admin_console_api._audit(admin, "admin.memory_erased", entity_type="account", entity_id=account,
                              payload={"removed": removed})
     return {"removed": removed}
 

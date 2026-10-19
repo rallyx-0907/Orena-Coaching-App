@@ -42,6 +42,7 @@ def rig(monkeypatch):
     monkeypatch.setattr(app_module, "require_admin", lambda request: {"google_sub": "admin-1", "role": "admin"})
     monkeypatch.setattr(admin_console_api, "_audit",
                         lambda admin, action, **kw: audits.append((action, kw)))  # fmt: skip
+    monkeypatch.setattr(admin_console_api, "_same_origin", lambda request: None)
     yield TestClient(app_module.app), store, audits, app_module
     agent_api.configure_memory(previous)
 
@@ -54,12 +55,39 @@ def test_an_admin_erases_one_learners_memory_and_learns_only_how_much(rig):
     assert store.items(MemoryScope(LEARNER, "inc-1"), "en", T0) == []
     actions = [action for action, _ in audits]
     assert actions == ["admin.memory_erase_requested", "admin.memory_erased"]
+    assert audits[0][1]["required"] is True  # no record, no deletion
     assert audits[1][1]["payload"] == {"removed": 1} and audits[1][1]["entity_id"] == LEARNER
 
 
-def test_an_account_without_memory_is_404_and_nothing_is_erased(rig):
+def test_an_account_without_memory_is_404_and_the_trail_says_so(rig):
     client, _store, audits, _ = rig
     assert client.delete(f"/api/admin/accounts/{account_id('nobody')}/memory").status_code == 404
+    assert [a for a, _ in audits] == ["admin.memory_erase_requested", "admin.memory_erase_failed"]
+    assert audits[1][1]["payload"] == {"reason": "no_active_incarnation"}
+
+
+def test_an_id_that_is_not_an_account_id_is_404_before_any_audit(rig):
+    client, _store, audits, _ = rig
+    assert client.delete("/api/admin/accounts/learner@example.com/memory").status_code == 404
+    assert audits == []  # an email typed in never reaches the audit log
+
+
+def test_a_store_that_cannot_be_read_is_503_never_nothing_to_erase(rig, monkeypatch):
+    """Review of #344, P1-1: an operator must never be told "no memory" while the notes may still be there."""
+    client, store, audits, _ = rig
+    from writing_coach.agent import api as agent_api
+
+    runtime = agent_api.current_memory()
+
+    class Down:
+        def resolve(self, account):
+            raise RuntimeError("database down")
+
+    monkeypatch.setattr(runtime, "incarnations", Down())
+    answer = client.delete(f"/api/admin/accounts/{LEARNER}/memory")
+    assert answer.status_code == 503 and answer.json()["detail"]["category"] == "memory_unavailable"
+    assert audits[-1][0] == "admin.memory_erase_failed"
+    assert store.items(MemoryScope(LEARNER, "inc-1"), "en", T0)  # nothing erased
 
 
 def test_no_audit_no_erase(rig, monkeypatch):
