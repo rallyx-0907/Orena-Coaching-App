@@ -601,7 +601,8 @@ class VoiceService:
             self._meter_voice(user_key, seconds, f"{session_id}:voice:{index}")
         # The last chunk too when today's voice minutes end with it (D-237): the client is not sent to a refused renewal.
         last = minted + seconds >= cap or not ticket.enforced or clamped
-        return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced}
+        return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced,
+                "day_limit_reached": clamped}
 
     def _chunk_answer(self, minted: dict[str, Any], *, index: int) -> dict[str, Any]:
         seconds = minted["seconds"]
@@ -620,6 +621,9 @@ class VoiceService:
             "session_max_seconds": self._session_seconds(),
             "renew_in": None if minted["last"] else max(1, seconds - RENEW_LEAD_SECONDS),
             "last": minted["last"],
+            # Today's voice minutes end with this token (D-237): `last` alone is also a session's normal end, so the
+            # client tells the learner the day's minutes are used up only when this is true (contract v12).
+            "day_limit_reached": bool(minted.get("day_limit_reached")),
         }
 
     def extend(self, voice_session_id: str, learner: LearnerScope, chunk: Any, resumption: Any = None) -> dict | None:
