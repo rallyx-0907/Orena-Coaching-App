@@ -29,6 +29,16 @@ export function quotaMessage(error) {
   return t('exhausted_generic');
 }
 
+/* The line for the day's voice minutes running out inside a chunk (`day_limit_reached`, D-237): no 429 carries the figure, so
+   `n` is the plan's own `orena.voice` limit and scale from the commerce read (GET /api/product/commerce). Without it the
+   generic line is used, never a made-up number. */
+export function voiceDayLimitMessage(commerce) {
+  const item = commerce?.features?.['orena.voice'];
+  const limit = item?.limit ?? item?.monthly_limit;
+  if (limit == null) return quotaMessage(null);
+  return quotaMessage({ context: { feature: 'orena.voice', used: limit, limit, scale: item.scale } });
+}
+
 /* At the daily voice-minute cap (429 `quota_exhausted`, feature `orena.voice`, D-237) a paying learner is told the line and
    nothing more: text chat is unchanged and an upsell would only stand in the way. The way to the plans is offered only when
    the server says a higher plan holds more (`context.options` lists `upgrade`). Every other meter keeps its link. */
