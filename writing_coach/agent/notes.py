@@ -45,7 +45,7 @@ _FORGETTING = re.compile(r"(?i)\bquên\b|\bforget\b|忘")
 # "I forget" for certain: a habit word, "quên mất/rồi", "I/always forget", 总是/又 ... 忘 in the same clause.
 _SELF_FORGETS = re.compile(
     r"(?i)\b(?:hay|thường|cứ|dễ|bị|vẫn)\s+quên\b"
-    r"|\bquên\s+(?:mất|rồi|béng|tiệt)\b"
+    r"|\bquên\s+(?:mất|béng|tiệt)\b|\bquên\b[^,;.?!\n]*\brồi\b"  # "quên ... rồi" in one clause: I forgot
     r"|\b(?:i|always|often|keep|usually|sometimes|never|tend to)\s+(?:\w+\s+)?forget"
     r"|(?:总是|老是|经常|容易|常常|又)[^，。！？,.!?;]{0,12}忘"
 )

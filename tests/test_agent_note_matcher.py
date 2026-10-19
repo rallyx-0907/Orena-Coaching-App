@@ -40,6 +40,7 @@ def note(text, id_="n-1"):
     ("Mình quên từ này rồi, nhắc lại giúp mình nhé", "Nhắc lại từ mới mỗi buổi"),
     ("Mình quên nghĩa từ này, nói lại nhé", "Nói lại nghĩa từ khi mình hỏi"),
     ("我忘了，再说一遍吧", "再说一遍时说慢一点"),
+    ("Quên nghĩa từ này rồi, nói lại nhé", "Nói lại nghĩa từ khi mình hỏi"),  # a dropped subject, "rồi" later
 ])
 def test_an_ordinary_learning_message_changes_no_note(message, kept):
     assert notes_the_message_changes(message, [note(kept)]) == ()
