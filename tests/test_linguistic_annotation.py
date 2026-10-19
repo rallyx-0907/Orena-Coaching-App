@@ -170,6 +170,12 @@ LUOHUASHENG_DI = [
     "花生底用处很多",
     "你们爱吃花生么？",
     "妹妹底话",
+    "买种底买种，动土底动土，灌园底灌园",
+    "他们羡慕底心很重",
+    "桌上摆着几样底食品",
+    "晚上底天色很好",
+    "花生底气味很好",
+    "园里底茅亭里坐着人",
     "姊姊底意思",
 ]
 
@@ -181,16 +187,16 @@ def _di_readings(text: str) -> list[str]:
 
 @pytest.mark.parametrize("text", [t for t in LUOHUASHENG_DI if "底" in t])
 def test_di_written_for_the_particle_de_is_read_de(text: str) -> None:
-    assert _di_readings(text) == ["de"]
+    assert set(_di_readings(text)) == {"de"}
     tokens = la.annotate("zh", text)
     for token in tokens:
         assert text[token["start"] : token["end"]] == token["fragment"]
-    assert [t["pos"] for t in tokens if t["fragment"] == "底"] == ["particle"]
+    assert {t["pos"] for t in tokens if t["fragment"] == "底"} == {"particle"}
 
 
 @pytest.mark.parametrize(
     "text",
-    ["到底怎么回事", "桌子底下很暗", "海底世界", "彻底改变", "年底到了", "池底有水", "心底的话", "这座山的底部", "他探底成功", "锅底"],
+    ["到底怎么回事", "桌子底下很暗", "海底世界", "彻底改变", "年底到了", "池底有水", "心底的话", "脚底下", "竹竿底下", "无底的洞", "水底", "井底", "见底", "大海底里", "底子好", "花生地底", "这座山的底部", "他探底成功", "锅底"],
 )
 def test_di_in_a_lexical_word_keeps_its_dictionary_reading(text: str) -> None:
     assert all(reading == "dǐ" for reading in _di_readings(text))

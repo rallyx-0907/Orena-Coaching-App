@@ -28,10 +28,10 @@ READING = "de"
 
 # Lexical words containing 底: 底 inside any of these (matched in the source text around it) is never the particle.
 COMPOUND_EXCLUSIONS: tuple[str, ...] = (
-    "到底", "底下", "底层", "底部", "底面", "底线", "彻底", "心底", "海底", "年底", "月底", "谷底", "井底", "眼底",
+    "到底", "底下", "底层", "底部", "底面", "底线", "彻底", "心底", "海底", "年底", "月底", "井底", "眼底",
     "根底", "底细", "底子", "底片", "底座", "底色", "底稿", "底蕴", "封底", "水底", "地底", "脚底", "鞋底", "锅底",
     "碗底", "杯底", "瓶底", "缸底", "桶底", "箱底", "船底", "河底", "湖底", "池底", "山底", "谷底", "海底捞针",
-    "底牌", "底气", "底价", "底数", "底薪", "底盘", "底漆", "底版", "底本", "底案", "底账", "底肥", "底边",
+    "底牌", "底价", "底数", "底薪", "底盘", "底漆", "底版", "底本", "底案", "底账", "底肥", "底边",
     "底角", "底舱", "底端", "底限", "底里", "底事", "探底", "触底", "见底", "垫底", "打底", "抄底", "兜底",
     "托底", "保底", "筑底", "落底", "沉底", "掉底", "穿底", "刨根问底", "寻根究底", "归根结底", "追根究底",
     "骨子里", "胶底", "布底", "厚底", "薄底", "平底", "尖底", "圆底", "凹底", "凸底", "无底", "洞底", "窑底", "坑底",
@@ -42,9 +42,10 @@ COMPOUND_EXCLUSIONS: tuple[str, ...] = (
 MODIFIER_PRONOUNS = frozenset(
     {"我", "你", "他", "她", "它", "我们", "你们", "他们", "她们", "它们", "咱们", "咱", "自己", "大家", "人家", "谁", "彼"}
 )
-# Otherwise the word before must be tagged as a noun (n*) or pronoun (r*) by the tagger, and have at least this many
+# Otherwise the word before must be tagged as a noun, pronoun, verb, numeral, measure word, time or place word
+# (n* r* v* m* q* t* s*: 买种底买种, 几样底食品, 晚上底天色) by the tagger, and have at least this many
 # characters: a lone noun before 底 is far more often the first half of a compound (池底, 锅底) than a possessor.
-MODIFIER_TAG_PREFIXES = ("n", "r")
+MODIFIER_TAG_PREFIXES = ("n", "r", "v", "m", "q", "t", "s")
 MIN_NOUN_LENGTH = 2
 
 # A character after 底 that makes it the head of a lexical compound (底下, 底层, 底部, 底面, 底线), never the particle.
