@@ -59,7 +59,7 @@ export function buildDoc(source, facts, only = null) {
   const intro = only ? [dates] : [dates, { p: inline(resolveFacts(source.intro, facts)) }];
   const sections = source.sections
     .filter((s) => !only || only.test(s.h))
-    .map((s) => ({ heading: s.h, blocks: blocks(s.blocks, facts) }));
+    .map((s) => ({ heading: only ? s.h.replace(/^\d+\.\s+/, '') : s.h, blocks: blocks(s.blocks, facts) }));
   return { intro, sections };
 }
 

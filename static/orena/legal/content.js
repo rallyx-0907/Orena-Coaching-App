@@ -772,7 +772,7 @@ export const LEGAL = Object.freeze({
   ],
   "sections": [
    {
-    "heading": "3. Plans and payment",
+    "heading": "Plans and payment",
     "blocks": [
      {
       "p": [

@@ -26,7 +26,8 @@ const { legalAddress, legalMarkup, datedText, LEGAL_PAGES } = await import('../s
 assert.deepEqual([...LEGAL_PAGES].sort(), Object.keys(DOCS).sort());
 
 const textOf = (markup) => String(markup).replace(/<[^>]+>/g, ' ').replace(/&#039;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ');
-const BRACKETS = /\[[A-Z][A-Z_ ]*\]|\[DECISION|\[\[|\]\]|\{\{|\[pending/;
+// Any square bracket pair, [[ ]], {{ }}, ‹ ›, and the words TODO / TBD / XXX, in any case, in a served string.
+const BRACKETS = /\[[^\]]*\]|\[\[|\]\]|\{\{|\}\}|‹|›|\b(?:TODO|TBD|XXX)\b|\bDRAFT\b|awaiting approval/i;
 const facts = JSON.parse(fs.readFileSync('docs/legal/public/facts.json', 'utf8'));
 const walk = (value, visit) => {
   if (typeof value === 'string') visit(value);
@@ -39,7 +40,8 @@ const noDate = (text) => text;
 for (const [page, doc] of Object.entries(buildContent())) {
   walk(doc, (text) => assert.ok(!BRACKETS.test(noDate(text)), `${page}: no placeholder in "${text.slice(0, 60)}"`));
 }
-assert.ok(!BRACKETS.test(noDate(fs.readFileSync('static/orena/legal/content.js', 'utf8'))), 'content.js carries no placeholder');
+const { LEGAL } = await import('../static/orena/legal/content.js');
+walk(LEGAL, (text) => assert.ok(!BRACKETS.test(text), `served content.js string has no placeholder: ${text.slice(0, 60)}`));
 const reader = (override) => (name) => (name === 'facts.json' ? JSON.stringify(override) : fs.readFileSync(`docs/legal/public/${name}`, 'utf8'));
 assert.throws(() => buildContent(reader({ ...facts, operator: { name: null, country: 'x' } })), /unconfirmed/, 'an unconfirmed fact fails the build instead of showing a mark');
 
@@ -84,8 +86,14 @@ assert.equal(legalLabel('隐私政策', 'zh'), '隐私政策 (English)');
 
 // The consent sheet and its copy carry no placeholder either (PRE-005 v2 fields are filled by the server, never shown as marks).
 for (const file of ['static/orena/screens/consent/copy.js', 'static/orena/screens/consent/sheet.js']) {
-  assert.ok(!BRACKETS.test(fs.readFileSync(file, 'utf8')), `${file}: no placeholder`);
+  assert.ok(!/\[[A-Z][A-Z_ ]+\]|\[DECISION|\[\[[A-Za-z_]|\bTBD\b|\bTODO\b/.test(fs.readFileSync(file, 'utf8')), `${file}: no placeholder`);
 }
+
+// The legal-rendering modules carry no draft marker or placeholder wording of their own.
+for (const file of ['static/orena/legal/page.js', 'static/orena/legal/links.js']) {
+  assert.ok(!/DRAFT|awaiting approval|\bTBD\b|\bTODO\b|‹|›/i.test(fs.readFileSync(file, 'utf8')), `${file}: no draft marker`);
+}
+assert.ok(!/^\d+\./.test(buildContent().refund.sections[0].heading), 'refund: the reused Terms heading has no section number');
 
 const css = fs.readFileSync('static/orena/legal/legal.css', 'utf8');
 assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(/i.test(css), 'the legal column uses colour tokens only');
