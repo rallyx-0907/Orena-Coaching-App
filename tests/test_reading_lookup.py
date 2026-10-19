@@ -409,3 +409,14 @@ def test_a_class_the_dictionary_never_gives_the_word_is_the_taggers_error() -> N
     assert _reconciled_part_of_speech("noun", both) == "noun"
     assert _reconciled_part_of_speech("adverb", []) == "adverb"
 
+
+def test_an_unknown_english_word_has_no_part_of_speech() -> None:
+    # The tagger answers "noun" for any unseen string; with no catalogue entry, no dictionary entry and no
+    # pronunciation nothing vouches for the word, so no class is shown (PRE D6).
+    service, _provider = _service()
+
+    unknown = service.lookup("zzzqxv", "The zzzqxv was on the table.", "en", "vi").to_dict()
+    known = service.lookup("table", "The cat was on the table.", "en", "vi").to_dict()
+
+    assert unknown["part_of_speech"] == ""
+    assert known["part_of_speech"] == "noun"

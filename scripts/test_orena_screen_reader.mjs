@@ -34,6 +34,7 @@ const {
   roleToast,
   endOfContent,
   percentFromScroll,
+  readPercent,
   scrollTopFor,
   placeFor2,
   furthest,
@@ -202,6 +203,9 @@ assert.equal(percentFromScroll(0, 1000, 500), 0);
 assert.equal(percentFromScroll(250, 1000, 500), 50);
 assert.equal(percentFromScroll(500, 1000, 500), 100);
 assert.equal(percentFromScroll(0, 400, 500), 100);
+assert.equal(readPercent(0, 400, 500), null, 'a text with nothing to scroll has not been read by scrolling');
+assert.equal(readPercent(500, 1000, 500), 100);
+assert.equal(readPercent(0, 1000, 500), 0);
 assert.equal(scrollTopFor(50, 1000, 500), 250);
 assert.equal(scrollTopFor(100, 1000, 500), 500);
 assert.equal(scrollTopFor(50, 400, 500), 0);

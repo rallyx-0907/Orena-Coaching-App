@@ -347,7 +347,30 @@ export function lookupContext(term, line) {
    reduced to the one thing this room resumes: which segment they were on. */
 export function placeFor(continuation, contentId) {
   const entry = Array.isArray(continuation) ? continuation.find((item) => item?.id === contentId) : null;
-  return { segmentId: entry?.segment || '', started: Boolean(entry) };
+  const within = entry?.place?.within;
+  return { segmentId: entry?.segment || '', started: Boolean(entry), within: Number.isFinite(within) ? within : null };
+}
+
+/* How far into the clip the learner is, as a whole percent of its duration, or null when either number
+   is not real. Playback time, not the line start: a clip with one long cue has only one line start. */
+export function withinPercent(atMs, durationMs) {
+  if (atMs == null) return null;
+  const at = Number(atMs);
+  const total = Number(durationMs);
+  if (!Number.isFinite(at) || !(total > 0) || at < 0) return null;
+  return Math.min(100, Math.round((at / total) * 100));
+}
+
+/* Where a reopened clip starts: the remembered line's start, moved forward to the remembered percent when
+   that falls inside the same line. A clip whose transcript is one cue would otherwise always reopen at 0. */
+export function resumeTimeMs(segment, within, durationMs) {
+  const start = Number(segment?.start_ms);
+  if (!Number.isFinite(start)) return null;
+  const total = Number(durationMs);
+  if (!Number.isFinite(within) || !(total > 0)) return start;
+  const at = Math.round((within / 100) * total);
+  const end = Number(segment?.end_ms);
+  return at > start && (!Number.isFinite(end) || at <= end) ? at : start;
 }
 
 /* ---- Save phrase --------------------------------------------------------------------------- */
