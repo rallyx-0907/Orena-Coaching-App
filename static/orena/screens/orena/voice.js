@@ -32,6 +32,8 @@ import { openVoiceUpsell } from '../plan/voice-upsell.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
+import { bindReport } from '../../product/report-problem.js';
+import { replyReport } from './thread.js';
 import { t } from './copy.js';
 import { voicePhaseMarkState, voicePhaseStatusKey, voicePhaseHintKey, speakableText, latestSuggestions, endsVoice, errorText } from './model.js';
 import { sendHomeTurn, abortHome, ensureOpening, subscribeHome, homeState, requestComposerFocus, homeLiveVoice, homeDispatcher } from './home-session.js';
@@ -554,7 +556,7 @@ function replyMarkup(reply) {
   if (reply.error) return html`<div class="s-orena-voicefull__reply">${errorText(reply.error, t('transportError'))}</div>`;
   const segments = reply.segments || [];
   if (!segments.length) return '';
-  return html`<div class="s-orena-voicefull__reply">${segments.map((segment) => html`<span lang="${langAttr(fromContractLang(segment.lang))}">${segment.text}</span>`)}</div>`;
+  return html`<div class="s-orena-voicefull__reply">${segments.map((segment) => html`<span lang="${langAttr(fromContractLang(segment.lang))}">${segment.text}</span>`)}</div>${replyReport(reply, 'orena.voice')}`;
 }
 
 function fullMarkup({ phase, heard, reply, speakOn, session = false }, suggestions, { fresh = false } = {}) {
@@ -639,6 +641,10 @@ export async function openVoiceFull() {
     mount(root, fullMarkup(engine.state(), latestSuggestions(homeState().messages), { fresh: !painted }));
     painted = true;
     root.querySelector('[data-voice-full-close]')?.addEventListener('click', close);
+    bindReport(root, (to) => {
+      close();
+      location.hash = to;
+    });
     root.querySelector('[data-voice-full-main]')?.addEventListener('click', () => engine.main());
     root.querySelector('[data-voice-full-speak]')?.addEventListener('click', () => engine.toggleSpeak());
     root.querySelectorAll('[data-voice-full-suggest]').forEach((button) => button.addEventListener('click', () => engine.ask(button.dataset.voiceFullSuggest)));

@@ -286,3 +286,33 @@ console.log('Orena (Home/Contextual panel/voice/memory sheet): context label, re
   assert.match(retry, /data-retry/);
   assert.doesNotMatch(retry, /data-plans/);
 }
+
+// PRE-206 (D-231 rule 3): "Report a problem" under a FINISHED Orena reply, carrying only the turn's trace id.
+{
+  const { messageMarkup, replyReport } = await import('../static/orena/screens/orena/thread.js');
+  const { createSession } = await import('../static/orena/agent/session.js');
+  const where = { surface: 'home', ranActions: new Set(), supported: new Set() };
+  const session = createSession();
+  session.learner('hello');
+  session.apply({ event: 'segment_end', data: { index: 0, lang: 'en', text: 'Hi there', voice_style: 'neutral_explain' } });
+  const streaming = session.state().messages.at(-1);
+  assert.doesNotMatch(String(messageMarkup(streaming, where)), /data-report-problem/, 'not while the reply streams');
+  session.apply({ event: 'done', data: { usage: {}, trace_id: 'tr-123' } });
+  const [learner, reply] = session.state().messages;
+  assert.equal(reply.traceId, 'tr-123');
+  const done = String(messageMarkup(reply, where));
+  assert.match(done, /data-report-problem/);
+  const address = /data-report-href="([^"]+)"/.exec(done)[1].replaceAll('&amp;', '&');
+  const query = new URLSearchParams(address.split('?')[1]);
+  assert.match(address, /^#\/feedback\?area=orena&/);
+  assert.equal(query.get('ref'), 'orena.chat | tr-123', 'the reference is surface | trace id and nothing of the text');
+  assert.doesNotMatch(address, /Hi%20there|hello/, 'no reply text or learner message in the reference');
+  assert.doesNotMatch(String(messageMarkup(learner, where)), /data-report-problem/, 'not on the learner\'s own message');
+  assert.doesNotMatch(String(messageMarkup({ ...reply, error: { class: 'transport', message: '', fallback: 'retry' } }, where)), /data-report-problem/, 'not on an error');
+  assert.equal(replyReport({ ...reply, traceId: '' }), '', 'no trace id, nothing to refer to');
+  // Full-screen voice: the same link, surface orena.voice.
+  const voice = String(replyReport(reply, 'orena.voice'));
+  assert.equal(new URLSearchParams(/data-report-href="([^"]+)"/.exec(voice)[1].replaceAll('&amp;', '&').split('?')[1]).get('ref'), 'orena.voice | tr-123');
+  assert.equal(replyReport({ ...reply, done: false }, 'orena.voice'), '', 'not on a partial voice reply');
+  assert.equal(replyReport({ ...reply, error: { class: 'transport' } }, 'orena.voice'), '', 'not on a voice error line');
+}
