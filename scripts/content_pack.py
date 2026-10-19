@@ -148,6 +148,9 @@ def classify_results(report: dict[str, Any]) -> list[dict[str, Any]]:
                 status, reason = "refused", ", ".join(str(s.get("category")) for s in sets if s.get("result") == "refused")
             elif any(s.get("result") != "refused" for s in sets) or str(row.get("thumbnail") or "") in {"attached", "typographic"}:
                 status, reason = "new", "comprehension set or thumbnail attached to the present article"
+            elif "applied" in (row.get("review") or {}).values():
+                applied = [key for key, value in row["review"].items() if value == "applied"]
+                status, reason = "new", f"the source's reviewed {' and '.join(applied)} applied to the present article"
             elif str(row.get("thumbnail") or "").startswith("refused:"):
                 status, reason = "refused", str(row["thumbnail"])
             elif row.get("outcome") == "changed":

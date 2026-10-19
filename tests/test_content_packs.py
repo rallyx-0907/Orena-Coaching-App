@@ -305,3 +305,82 @@ def test_a_set_whose_body_hash_differs_is_refused_and_leaves_no_draft(app):
     sets = next(row for row in third["items"] if row["kind"] == "reading_article")["sets"]
     assert sets == [{"support_language": "vi", "result": "refused", "category": "reading_pack_set_body_differs"}]
     assert evidence.list_sets(article_id) == [], "no draft is left behind"
+
+
+# ---- an administrator's level and topic review travels with the text (#411) --------------------------------
+
+
+def _reviewed_pack(app):
+    here = _environment()
+    _use(*here)
+    content = here[0]
+    article_id = _published_sample(*here)
+    content.update_article(article_id, actor="admin", reviewed_level="B2", reason="read it")
+    content.update_article(article_id, actor="admin", topic="weather", subtopic="floods", reason="filed it")
+    return call(app, "POST", "/api/admin/content-packs/export", json={"kinds": ["reading"], "source_slug_prefix": "sample-"}).content
+
+
+def _import(app, raw):
+    report = call(app, "POST", "/api/admin/content-packs/import", files={"file": ("p.orenapack", raw, "application/zip")}).json()
+    return next(row for row in report["items"] if row["kind"] == "reading_article")
+
+
+def test_a_reviewed_level_and_topic_arrive_with_the_article_and_land_in_its_review_trail(app):
+    raw = _reviewed_pack(app)
+    data = next(item for item in read_pack(raw).items if item.kind == "reading_article").data
+    assert data["reviewed_level"] == "B2"
+    assert set(data["review"]) == {"level", "topic"}
+    assert data["review"]["level"]["by"] == "administrator" and set(data["review"]["level"]) == {"by", "at"}, \
+        "when, never who"
+
+    there = _environment()
+    _use(*there)
+    content = there[0]
+    article_id = _arrive(app, raw, there)
+    assert content.get_article(article_id)["reviewed_level"] is None, "the engine gave it only its estimate"
+    row = _import(app, raw)
+    assert row["review"] == {"level": "applied", "topic": "applied"}
+    arrived = content.get_article(article_id)
+    assert (arrived["reviewed_level"], arrived["effective_level"]) == ("B2", "B2")
+    assert (arrived["topic"], arrived["subtopic"]) == ("weather", "floods")
+    trail = [event for event in content.list_review_events(article_id) if "reviewed_level" in event["changes"]]
+    assert len(trail) == 1 and trail[0]["actor"] == admin_api._actor(guard_admin())  # noqa: SLF001
+    assert trail[0]["reason"].startswith("content pack ")
+    assert _import(app, raw)["review"] == {"level": "identical", "topic": "kept_local"}, "importing again changes nothing"
+    assert len([e for e in content.list_review_events(article_id) if "reviewed_level" in e["changes"]]) == 1
+
+
+def test_a_target_review_of_its_own_is_never_overwritten(app):
+    raw = _reviewed_pack(app)
+    there = _environment()
+    _use(*there)
+    content = there[0]
+    article_id = _arrive(app, raw, there)
+    content.update_article(article_id, actor="reviewer-here", reviewed_level="C1", topic="farming", reason="ours")
+    row = _import(app, raw)
+    assert row["review"] == {"level": "kept_local", "topic": "kept_local"}
+    kept = content.get_article(article_id)
+    assert (kept["reviewed_level"], kept["topic"]) == ("C1", "farming")
+
+    # An override cleared here is this environment's own decision too: the pack does not bring one back.
+    content.update_article(article_id, actor="reviewer-here", reviewed_level=None, reason="the estimate is right")
+    assert _import(app, raw)["review"]["level"] == "kept_local"
+    assert content.get_article(article_id)["reviewed_level"] is None
+
+
+def test_a_pack_made_before_the_review_fields_still_imports(app):
+    raw = _reviewed_pack(app)
+    items = []
+    for item in read_pack(raw).items:
+        data = {key: value for key, value in item.data.items() if key not in {"reviewed_level", "review"}}
+        items.append(PackItem(kind=item.kind, natural_key=item.natural_key, data=data, exported_status=item.exported_status))
+    old = build_pack(items, created_by="admin", environment="test", app_version="t", filters={})
+    assert read_pack(old).manifest["version"] == 1
+
+    there = _environment()
+    _use(*there)
+    content = there[0]
+    article_id = _arrive(app, old, there)
+    row = _import(app, old)
+    assert row["result"] == "present" and row["review"] == {}
+    assert content.get_article(article_id)["reviewed_level"] is None

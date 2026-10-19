@@ -1207,6 +1207,36 @@ class ReadingContentRepository:
             )
         return found
 
+    def _review_marks(self, connection: Any, article_ids: Sequence[Any]) -> dict[Any, dict[str, str]]:
+        """When an administrator last reviewed each article's level and its topic, read from its review trail in one
+        query: `{"level_at": ..., "topic_at": ...}`, each key only when that review happened. An override cleared again
+        is a review too - the article's own decision to read at its estimate."""
+        if not article_ids:
+            return {}
+        rows = connection.execute(
+            select(ReadingReviewEvent.article_id, ReadingReviewEvent.changes_json, ReadingReviewEvent.created_at)
+            .where(
+                ReadingReviewEvent.article_id.in_(list(article_ids)),
+                ReadingReviewEvent.action.in_(("level_override", "edited")),
+            )
+            .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
+        ).all()
+        found: dict[Any, dict[str, str]] = {}
+        for row in rows:
+            changes = row.changes_json or {}
+            if "reviewed_level" in changes:
+                found.setdefault(row.article_id, {})["level_at"] = _iso(row.created_at)
+            if "topic" in changes or "subtopic" in changes:
+                found.setdefault(row.article_id, {})["topic_at"] = _iso(row.created_at)
+        return found
+
+    def review_marks(self, article_id: str) -> dict[str, str]:
+        """`_review_marks` for one article: the content-pack importer's check for a review of this environment's own."""
+        if _lookup_uuid(article_id) is None:
+            return {}
+        with self.engine.connect() as connection:
+            return self._review_marks(connection, [_uuid(article_id)]).get(_uuid(article_id), {})
+
     def _rights_decisions(
         self, connection: Any, article_ids: Sequence[Any]
     ) -> dict[Any, list[dict[str, Any]]]:
@@ -2007,7 +2037,7 @@ class ReadingContentRepository:
         query = (
             select(
                 ReadingArticle.id, ReadingArticle.title, ReadingArticle.body, ReadingArticle.language,
-                ReadingArticle.topic, ReadingArticle.subtopic, ReadingArticle.content_kind,
+                ReadingArticle.topic, ReadingArticle.subtopic, ReadingArticle.content_kind, ReadingArticle.reviewed_level,
                 ReadingSourceItem.canonical_url, ReadingSourceItem.original_author,
                 ReadingSourceItem.original_published_at, ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
                 ReadingSource.slug.label("source_slug"), ReadingSource.automation_allowed.label("source_automation"),
@@ -2025,10 +2055,12 @@ class ReadingContentRepository:
         with self.engine.connect() as connection:
             rows = connection.execute(query).all()
             decisions = self._rights_decisions(connection, [row.id for row in rows])
+            marks = self._review_marks(connection, [row.id for row in rows])
         exported = []
         for row in rows:
             answered = [entry["answers"] for entry in decisions.get(row.id, [])]
             effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            mark = marks.get(row.id, {})
             exported.append({
                 "origin_id": str(row.id), "title": row.title, "body": row.body, "language": row.language,
                 "topic": row.topic, "subtopic": row.subtopic, "content_kind": row.content_kind,
@@ -2036,6 +2068,11 @@ class ReadingContentRepository:
                 "published_at": _iso(row.original_published_at), "source_slug": row.source_slug,
                 "rights": {key: effective.get(key) for key in ("can_republish", "can_adapt", "attribution_required",
                                                                   "license_note") if key in effective},
+                # An administrator's review travels with the text (#411): the reviewed level, and when the level and
+                # the topic were reviewed - never who reviewed them (a pack carries no personal data).
+                "reviewed_level": row.reviewed_level,
+                "review": {key: {"by": "administrator", "at": mark[f"{key}_at"]}
+                           for key in ("level", "topic") if f"{key}_at" in mark},
             })
         return exported
 

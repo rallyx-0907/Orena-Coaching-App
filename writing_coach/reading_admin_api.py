@@ -1799,8 +1799,57 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str,
             if not support or support in have or not pack_set.get("questions"):
                 continue
             attached.append(_attach_pack_set(admin, found["id"], support, pack_set, pack_id=pack_id))
+    review = _apply_pack_review(admin, found["id"], data, pack_id=pack_id)
     return {"result": "present", "article_id": found["id"], "status": found["status"], "sets": attached,
-            "thumbnail": thumbnail}
+            "thumbnail": thumbnail, "review": review}
+
+
+def _apply_pack_review(admin: Mapping[str, Any], article_id: str, data: Mapping[str, Any], *,
+                       pack_id: str) -> dict[str, str]:
+    """The administrator's review a pack carries (#411), onto an article that has none of its own here.
+
+    The reviewed level arrives only when this article was never level-reviewed here (no override, none cleared); the
+    topic and subtopic only when they were reviewed at the source and never here. A review of this environment's own
+    is always kept. What arrives is one correction through the same repository call, so it lands in the article's
+    review trail and the audit log with the importing actor and the pack. A pack without these fields (made before
+    them) carries no review, and the article keeps the estimate this environment's engine gave it."""
+
+    level = str(data.get("reviewed_level") or "").strip()
+    marks = data.get("review") if isinstance(data.get("review"), Mapping) else {}
+    topic_mark = marks.get("topic") if isinstance(marks.get("topic"), Mapping) else None
+    outcome: dict[str, str] = {}
+    if not level and topic_mark is None:
+        return outcome
+    article = _guarded(lambda: _content().get_article(article_id)) or {}
+    own = _guarded(lambda: _content().review_marks(article_id))
+    changes: dict[str, Any] = {}
+    if level:
+        bands = ZH_LEVEL_BANDS if article.get("language") == "zh" else EN_LEVEL_BANDS
+        if article.get("reviewed_level") or "level_at" in own:
+            outcome["level"] = "kept_local" if article.get("reviewed_level") != level else "identical"
+        elif level not in bands:
+            outcome["level"] = "refused:reading_invalid_level"
+        else:
+            changes["reviewed_level"] = level
+            outcome["level"] = "applied"
+    if topic_mark is not None:
+        wanted = {key: str(data.get(key) or "") for key in ("topic", "subtopic")}
+        if "topic_at" in own:
+            outcome["topic"] = "kept_local"
+        else:
+            differing = {key: value for key, value in wanted.items() if value != str(article.get(key) or "")}
+            changes.update(differing)
+            outcome["topic"] = "applied" if differing else "identical"
+    if not changes:
+        return outcome
+    at = {key: (marks.get(key) or {}).get("at") for key in ("level", "topic") if isinstance(marks.get(key), Mapping)}
+    reason = f"content pack {pack_id}: reviewed at the source ({', '.join(f'{k} {v}' for k, v in at.items()) or 'unknown'})"
+    updated = _guarded(lambda: _content().update_article(article_id, actor=_actor(admin), reason=reason[:2000], **changes))
+    _audit(admin, "admin.reading_level_override" if set(changes) == {"reviewed_level"} else "admin.reading_article_edited",
+           entity_type="reading_article", entity_id=article_id,
+           payload={"reviewed_level": (updated or {}).get("reviewed_level"), "content_pack": pack_id,
+                    "effective_level": (updated or {}).get("effective_level"), "changed": sorted(changes)})  # fmt: skip
+    return outcome
 
 
 def _attach_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pack_set: Mapping[str, Any], *,
