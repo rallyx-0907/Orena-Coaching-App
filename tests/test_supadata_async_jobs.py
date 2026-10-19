@@ -50,8 +50,9 @@ def test_start_returns_provider_job_without_blocking_poll_loop() -> None:
         FakeResponse(202, {"jobId": "transcript-job-123"})
     )
 
+    # A non-YouTube source may still use `auto`; a YouTube one is native only (D-244, amended 2026-10-20).
     result = client.start(
-        "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        "https://example.org/talk.mp4",
         "en",
         mode="auto",
     )
@@ -186,7 +187,7 @@ def test_supadata_rejects_non_finite_timestamps(timestamp: float) -> None:
     )
 
     with pytest.raises(SupadataTranscriptMalformed):
-        client.start("https://youtu.be/dQw4w9WgXcQ", "en", mode="generate")
+        client.start("https://youtu.be/dQw4w9WgXcQ", "en", mode="native")
 
 
 @pytest.mark.parametrize("status", ("processing", "pending"))

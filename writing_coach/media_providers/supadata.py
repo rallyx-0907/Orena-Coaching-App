@@ -2,6 +2,10 @@
 
 Provider-specific acquisition lives here. Core Media Learning keeps using the
 existing canonical timestamped transcript contract.
+
+For a YouTube URL only `mode=native` (the captions the video already has) is ever sent. `auto` and `generate` can make
+the provider run speech recognition on the video's audio, which D-244 (amended 2026-10-20) rules out for YouTube under
+every plan and policy: such a request is refused here, before any network call, whoever the caller is.
 """
 
 from __future__ import annotations
@@ -12,6 +16,7 @@ import re
 import time
 from dataclasses import dataclass
 from typing import Any
+from urllib.parse import urlparse
 
 import requests
 
@@ -37,6 +42,33 @@ class SupadataTranscriptNotFound(SupadataTranscriptRequestFailed):
 
 class SupadataTranscriptMalformed(SupadataTranscriptError):
     pass
+
+
+class SupadataYouTubeGenerationRefused(SupadataTranscriptError, ValueError):
+    """A YouTube URL was asked for in a mode other than native (D-244, amended 2026-10-20). Nothing was sent."""
+
+
+NATIVE_MODE = "native"
+_MODES = frozenset({"auto", "generate", NATIVE_MODE})
+_YOUTUBE_HOSTS = frozenset({"youtube.com", "youtu.be", "youtube-nocookie.com"})
+
+
+def is_youtube_url(source_url: str) -> bool:
+    """Whether a URL points at YouTube (any of its hosts or subdomains)."""
+    try:
+        host = (urlparse(str(source_url or "").strip()).hostname or "").casefold().rstrip(".")
+    except ValueError:
+        return False
+    return any(host == base or host.endswith("." + base) for base in _YOUTUBE_HOSTS)
+
+
+def checked_mode(source_url: str, mode: str) -> str:
+    """The mode to send, or a refusal: YouTube gets native captions only, never provider-side recognition."""
+    if mode not in _MODES:
+        raise ValueError("Unsupported Supadata transcript mode.")
+    if mode != NATIVE_MODE and is_youtube_url(source_url):
+        raise SupadataYouTubeGenerationRefused("youtube_no_channel_captions")
+    return mode
 
 
 @dataclass(frozen=True)
@@ -122,11 +154,10 @@ class SupadataTranscriptClient:
         source_url: str,
         preferred_language: str,
         *,
-        mode: str = "auto",
+        mode: str = NATIVE_MODE,
     ) -> SupadataTranscript | SupadataTranscriptJob | None:
         """Start one transcript request without waiting for provider async work."""
-        if mode not in {"auto", "generate", "native"}:
-            raise ValueError("Unsupported Supadata transcript mode.")
+        mode = checked_mode(source_url, mode)
 
         deadline = time.monotonic() + self._request_timeout_seconds
         payload = self._get(
@@ -202,10 +233,9 @@ class SupadataTranscriptClient:
         source_url: str,
         preferred_language: str,
         *,
-        mode: str = "auto",
+        mode: str = NATIVE_MODE,
     ) -> SupadataTranscript | None:
-        if mode not in {"auto", "generate", "native"}:
-            raise ValueError("Unsupported Supadata transcript mode.")
+        mode = checked_mode(source_url, mode)
 
         deadline = time.monotonic() + self._max_wait_seconds
         payload = self._get(

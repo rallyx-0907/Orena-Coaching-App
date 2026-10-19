@@ -262,8 +262,9 @@ def test_recoverable_native_caption_failure_uses_supadata(native_error: Exceptio
     transcript = acquisition.media_object.transcript
     assert transcript is not None
     assert transcript.segments[0].original_text == "Recovered caption"
+    # Native captions only for YouTube, never `auto`/`generate` (D-244, amended 2026-10-20).
     assert fallback.calls == [
-        (f"https://www.youtube.com/watch?v={VIDEO_ID}", "en", "auto")
+        (f"https://www.youtube.com/watch?v={VIDEO_ID}", "en", "native")
     ]
 
 

@@ -65,7 +65,8 @@ assert [(x.offset_ms, x.duration_ms, x.text) for x in result.chunks] == [
     (1200, 1800, "Hello world"),
     (3000, 1400, "How are you?"),
 ]
-assert session.calls[0][1]["params"]["mode"] == "auto"
+# A YouTube URL is asked in native mode only, never `auto`/`generate` (D-244, amended 2026-10-20).
+assert session.calls[0][1]["params"]["mode"] == "native"
 
 wrong = FakeSession([
     FakeResponse(200, {

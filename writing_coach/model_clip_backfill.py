@@ -3,7 +3,8 @@
 Never runs on navigation. An operator starts it (scripts/backfill_model_clips.py) against a store it names.
 It is idempotent (a stored clip is skipped), bounded by lines cut and by audio covered, and calls no provider.
 The only network use is the source acquisition that content import itself performs: a catalogue source URL
-through the bounded fetcher, or a YouTube source through the same audio downloader the import pipeline uses.
+through the bounded fetcher. A YouTube item is never cut: Orena does not download YouTube audio (D-244, amended
+2026-10-20), so it is reported as skipped with `youtube_no_audio_download (D-244)`, never as a failure.
 """
 from __future__ import annotations
 
@@ -23,19 +24,22 @@ Acquire = Callable[[Any, Path], "Path | None"]
 def _entry_source(entry: Any, work: Path, *, max_seconds: int) -> Path | None:
     from writing_coach import speaking_library
 
-    if entry.provider == "youtube":
-        from writing_coach.media_providers.youtube_audio import download_audio
-
-        return Path(download_audio(entry.canonical_url, work, max_seconds=max_seconds))
+    if model_clips.is_youtube_provider(entry.provider):
+        return None  # never downloaded (D-244); the loop below skips YouTube before it gets here
     return speaking_library._stored_source_file(entry)
 
 
 def _lesson_source(lesson: Any) -> Path | None:
     from writing_coach import speaking_library
 
-    if str(lesson.playback.provider).casefold() == "youtube":
+    if model_clips.is_youtube_provider(lesson.playback.provider):
         return None
     return speaking_library._source_file(lesson)
+
+
+def _is_youtube(subject: Any, kind: str) -> bool:
+    provider = subject.playback.provider if kind == "catalog" else subject.provider
+    return model_clips.is_youtube_provider(provider)
 
 
 def backfill(
@@ -59,7 +63,7 @@ def backfill(
 
     wanted = {item for item in media_ids} if media_ids is not None else None
     report: dict[str, Any] = {"dry_run": dry_run, "items": [], "prepared": 0, "existing": 0, "failed": 0,
-                              "missing": 0, "audio_ms": 0, "stopped_by_bound": False}
+                              "missing": 0, "skipped": 0, "audio_ms": 0, "stopped_by_bound": False}
 
     targets: list[tuple[str, Any, list[model_clips.ClipLine], str]] = []
     if include_catalog:
@@ -79,6 +83,12 @@ def backfill(
         speakable = [line for line in lines if line.speakable()]
         item = {"id": media_id, "kind": kind, "lines": len(speakable), "missing": len(pending), "prepared": 0, "failed": 0}
         report["existing"] += len(speakable) - len(pending)
+        if pending and _is_youtube(subject, kind):
+            # Neither missing nor failed: a YouTube item is not cut at all (D-244, amended 2026-10-20).
+            report["skipped"] += 1
+            report["items"].append({**item, "skipped": model_clips.SKIP_YOUTUBE_NO_AUDIO_DOWNLOAD,
+                                    "note": model_clips.SKIP_YOUTUBE_NOTE})
+            continue
         report["missing"] += len(pending)
         if not pending:
             report["items"].append(item)
