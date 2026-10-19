@@ -21,10 +21,20 @@ $ErrorActionPreference = 'Stop'
 if (-not (Test-Path -LiteralPath $BackupScript)) { Write-Host "  $BackupScript not found." -ForegroundColor Red; exit 1 }
 $BackupScript = (Resolve-Path -LiteralPath $BackupScript).Path
 
-$arguments = '-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "{0}"' -f $BackupScript
+# Quiet by default: no console window (conhost --headless where available).
+function Test-HeadlessConhost {
+    try {
+        if ([Environment]::OSVersion.Version.Build -lt 22000) { return $false }
+        & conhost.exe --headless cmd /c exit 2>$null
+        return ($LASTEXITCODE -eq 0)
+    } catch { return $false }
+}
+$psArgs = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $BackupScript
+if (Test-HeadlessConhost) { $execute = 'conhost.exe'; $arguments = '--headless powershell.exe ' + $psArgs }
+else { $execute = 'powershell.exe'; $arguments = '-WindowStyle Hidden ' + $psArgs }
 
 Write-Host "The task would be registered with:`n"
-Write-Host "`$action   = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument '$arguments'"
+Write-Host "`$action   = New-ScheduledTaskAction -Execute '$execute' -Argument '$arguments'"
 Write-Host "`$trigger  = New-ScheduledTaskTrigger -Daily -At '$Time'"
 Write-Host "`$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew"
 Write-Host "Register-ScheduledTask -TaskName '$TaskName' -Action `$action -Trigger `$trigger -Settings `$settings -Description 'Orena :8000 daily backup' -Force"
@@ -34,7 +44,7 @@ if (-not $Apply) {
     exit 0
 }
 
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $arguments
+$action = New-ScheduledTaskAction -Execute '$execute' -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -Daily -At $Time
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description 'Orena :8000 daily backup' -Force | Out-Null

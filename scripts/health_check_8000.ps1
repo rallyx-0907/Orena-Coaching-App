@@ -17,8 +17,14 @@ Checks (each one a PASS or FAIL line):
 
 Writes %USERPROFILE%\.orena\health\health.log (one line per check, UTC) and health.state.json (the consecutive
 failure count and the restart counts). After -AlertAfter (2) consecutive failing runs it raises a Windows toast
-(BurntToast if that module is installed, else msg.exe), and again every 12th consecutive failure (hourly at a 5 minute
+(BurntToast, only when -NoToast is not given and the module is installed; no other popup path), and again every 12th consecutive failure (hourly at a 5 minute
 schedule); a recovered run resets the count.
+
+Quiet mode: -NoToast (the scheduled task passes it) raises no popup at all; the alert is the state file, which Hermes
+reads (failures >= 2). health.state.json also carries `paused` and `last_status` (ok, unhealthy, paused).
+Before the first backup exists, backup-age is skipped (status no_backup_yet, not a failure). Creating the file
+%USERPROFILE%\.orena\health\maintenance.flag pauses the whole check (status paused, nothing counted, exit 0);
+delete the file to resume.
 
 Exit codes: 0 healthy; 1 a check failed (no alert yet); 2 a check failed and an alert was raised.
 #>
@@ -30,7 +36,8 @@ param(
     [string]$HealthDir = (Join-Path $env:USERPROFILE '.orena\health'),
     [int]$MaxBackupAgeHours = 26,
     [int]$AlertAfter = 2,
-    [int]$TimeoutSec = 8
+    [int]$TimeoutSec = 8,
+    [switch]$NoToast
 )
 
 $ErrorActionPreference = 'Continue'
@@ -49,9 +56,10 @@ function Check([string]$name, [bool]$ok, [string]$detail) {
     if ($ok) { Log "PASS $name $detail" } else { Log "FAIL $name $detail"; [void]$failures.Add($name) }
 }
 
-# One notification path for every alert: BurntToast when installed, else msg.exe.
+# One notification path for every alert: BurntToast only, never when -NoToast.
 function Raise-Alert([string]$message) {
     $raised = $false
+    if ($NoToast) { return $false }
     try {
         if (Get-Module -ListAvailable -Name BurntToast) {
             Import-Module BurntToast -ErrorAction Stop
@@ -59,7 +67,6 @@ function Raise-Alert([string]$message) {
             $raised = $true
         }
     } catch { }
-    if (-not $raised) { try { & msg.exe * /TIME:600 $message 2>$null; $raised = ($LASTEXITCODE -eq 0) } catch { } }
     return $raised
 }
 
@@ -71,7 +78,9 @@ try {
     }
 } catch { }
 
-$state = @{ failures = 0; restarts = @{}; spendDay = ''; spendLevel = '' }
+# Maintenance pause: the flag file turns the whole run into a no-op that records status "paused".
+$MaintenanceFlag = Join-Path $HealthDir 'maintenance.flag'
+$state = @{ failures = 0; restarts = @{}; spendDay = ''; spendLevel = ''; paused = $false; last_status = '' }
 try {
     if (Test-Path -LiteralPath $StateFile) {
         $saved = Get-Content -LiteralPath $StateFile -Raw | ConvertFrom-Json
@@ -80,6 +89,15 @@ try {
         if ($saved.restarts) { $saved.restarts.PSObject.Properties | ForEach-Object { $state.restarts[$_.Name] = [int]$_.Value } }
     }
 } catch { }
+
+if (Test-Path -LiteralPath $MaintenanceFlag) {
+    $state.paused = $true
+    $state.last_status = 'paused'
+    Log 'PAUSED maintenance.flag present; no checks run, no failures counted'
+    try { ($state | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $StateFile -Encoding UTF8 } catch { }
+    exit 0
+}
+$state.paused = $false
 
 # 1-2. Readiness, locally and through the public tunnel. Only the status and the ready flag are read.
 foreach ($probe in @(@('local-readiness', $LocalUrl), @('public-readiness', $PublicUrl))) {
@@ -113,8 +131,10 @@ if (Test-Path -LiteralPath $BackupDir) {
     $newest = Get-ChildItem -LiteralPath $BackupDir -Filter 'orena-8000-*.dump' -File -ErrorAction SilentlyContinue |
         Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
 }
+$backupStatus = ''
 if ($null -eq $newest) {
-    Check 'backup-age' $false 'no orena-8000-*.dump found'
+    $backupStatus = 'no_backup_yet'
+    Log 'SKIP backup-age status=no_backup_yet (no orena-8000-*.dump yet; not a failure)'
 } else {
     $age = [math]::Round(((Get-Date).ToUniversalTime() - $newest.LastWriteTimeUtc).TotalHours, 1)
     Check 'backup-age' ($age -le $MaxBackupAgeHours) ("newest={0} age_hours={1}" -f $newest.Name, $age)
@@ -124,7 +144,10 @@ $last = $null
 if (Test-Path -LiteralPath $backupLog) {
     $last = Get-Content -LiteralPath $backupLog -Tail 200 | Where-Object { $_ -match '^\S+ exit \d+: ' } | Select-Object -Last 1
 }
-if ($null -eq $last) { Check 'backup-log' $false 'no exit line in backup.log' }
+if ($null -eq $last) {
+    if ($backupStatus -eq 'no_backup_yet') { Log 'SKIP backup-log status=no_backup_yet' }
+    else { Check 'backup-log' $false 'no exit line in backup.log' }
+}
 else { Check 'backup-log' ($last -match '^\S+ exit 0: ') ("last=" + ($last -replace '^\S+\s', '')) }
 
 # 6. The daily AI spend ceiling (Intelligence #298/#312). The app logs one line a day when the guard crosses its warning
@@ -147,7 +170,7 @@ if ($spendLevel) {
     if (-not $already) {
         $spendMessage = if ($spendLevel -eq 'reached') { 'Orena :8000 AI daily budget reached: paid AI is paused until the next UTC midnight' } else { 'Orena :8000 AI spend is at its warning level for today' }
         $spendRaised = Raise-Alert $spendMessage
-        Log ("ALERT ai-spend {0}" -f $(if ($spendRaised) { 'raised' } else { 'could not be shown (no BurntToast, msg.exe failed); see this log' }))
+        Log ("ALERT ai-spend {0}" -f $(if ($spendRaised) { 'raised' } else { 'not shown (-NoToast or no BurntToast); see the state file' }))
         $state.spendDay = $today
         $state.spendLevel = $spendLevel
     }
@@ -159,15 +182,17 @@ if ($spendLevel) {
 $code = 0
 if ($failures.Count -eq 0) {
     $state.failures = 0
+    $state.last_status = 'ok'
     Log 'HEALTHY all checks passed'
 } else {
     $state.failures = [int]$state.failures + 1
     $code = 1
+    $state.last_status = 'unhealthy'
     Log ("UNHEALTHY run {0} failing: {1}" -f $state.failures, ($failures -join ','))
     if (($state.failures -eq $AlertAfter) -or (($state.failures -gt $AlertAfter) -and ((($state.failures - $AlertAfter) % 12) -eq 0))) {
         $message = 'Orena :8000 health check failing: ' + ($failures -join ', ')
         $raised = Raise-Alert $message
-        Log ("ALERT {0}" -f $(if ($raised) { 'raised' } else { 'could not be shown (no BurntToast, msg.exe failed); see this log' }))
+        Log ("ALERT {0}" -f $(if ($raised) { 'raised' } else { 'not shown (-NoToast or no BurntToast); see the state file' }))
         $code = 2
     }
 }

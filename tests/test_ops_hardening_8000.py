@@ -168,3 +168,61 @@ def test_nothing_in_the_shipped_pages_posts_a_form_elsewhere_or_frames_us():
             text = page.read_text(encoding="utf-8")
             for action in re.findall(r"<form[^>]*\baction=[\"']([^\"']+)", text, re.IGNORECASE):
                 assert not re.match(r"https?://", action), f"{page}: form posts to {action}"
+
+
+def _ops(name):
+    return (Path(__file__).resolve().parents[1] / "scripts" / name).read_text(encoding="utf-8")
+
+
+def test_both_registrations_run_headless_with_a_fallback_and_stay_under_the_user():
+    for name in ("register_health_check_8000.ps1", "register_daily_backup_8000.ps1"):
+        text = _ops(name)
+        assert "conhost.exe" in text and "--headless powershell.exe" in text
+        assert "Version.Build -lt 22000" in text
+        assert "conhost.exe --headless cmd /c exit" in text
+        assert "-WindowStyle Hidden" in text  # the fallback
+        assert "SYSTEM" not in text and "-Password" not in text and "-RunLevel" not in text
+
+
+def test_no_msg_exe_and_toast_is_off_by_default():
+    root = Path(__file__).resolve().parents[1]
+    for script in (root / "scripts").glob("*8000*.ps1"):
+        assert "msg.exe" not in script.read_text(encoding="utf-8"), script.name
+    health = _ops("health_check_8000.ps1")
+    assert "[switch]$NoToast" in health and "if ($NoToast) { return $false }" in health
+    register = _ops("register_health_check_8000.ps1")
+    assert "[switch]$Toast" in register and "' -NoToast'" in register
+
+
+def test_maintenance_flag_and_no_backup_yet_do_not_count_as_failures():
+    health = _ops("health_check_8000.ps1")
+    assert "maintenance.flag" in health
+    paused = health[health.index("if (Test-Path -LiteralPath $MaintenanceFlag)"):health.index("# 1-2.")]
+    assert "'paused'" in paused and "exit 0" in paused and "$state.failures" not in paused
+    start = health.index("$backupStatus = 'no_backup_yet'")
+    skipped = health[start:health.index("} else {", start)]
+    assert "Check " not in skipped
+
+
+def test_state_json_keeps_its_keys_and_only_adds_paused_and_last_status():
+    health = _ops("health_check_8000.ps1")
+    init = re.search(r"\$state = @\{(.*?)\}\r?\n", health).group(1)
+    keys = [k.strip().split(" = ")[0] for k in init.split(";")]
+    assert keys[:4] == ["failures", "restarts", "spendDay", "spendLevel"]
+    assert keys[4:] == ["paused", "last_status"]
+    assert "$state.last_status = 'ok'" in health and "$state.last_status = 'unhealthy'" in health
+
+
+def test_powershell_scripts_parse_when_powershell_is_available():
+    import shutil
+    import subprocess
+
+    exe = shutil.which("powershell") or shutil.which("pwsh")
+    if not exe:
+        pytest.skip("no PowerShell on this host")
+    root = Path(__file__).resolve().parents[1] / "scripts"
+    for name in ("health_check_8000.ps1", "register_health_check_8000.ps1", "register_daily_backup_8000.ps1"):
+        command = ("$e=$null;[void][System.Management.Automation.Language.Parser]::ParseFile('%s',[ref]$null,[ref]$e);"
+                   "if($e.Count){$e|%%{$_.Message};exit 1}" % (root / name))
+        done = subprocess.run([exe, "-NoProfile", "-Command", command], capture_output=True, text=True)
+        assert done.returncode == 0, done.stdout + done.stderr
