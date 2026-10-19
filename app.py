@@ -1303,6 +1303,8 @@ configure_content_packs(
     ],
     vocabulary_export=lambda collection_id: _vocabulary_pack_export(collection_id),
     vocabulary_import=lambda data, **kwargs: _vocabulary_pack_import(data, **kwargs),
+    media_store=_media_library_store,
+    media_assets=_media_library_assets,
     environment=os.getenv("ORENA_ENVIRONMENT_LABEL", "local"),
     app_version=(ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").is_file() else "",
 )
