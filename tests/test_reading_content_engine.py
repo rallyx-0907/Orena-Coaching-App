@@ -65,6 +65,8 @@ def test_a_cleared_source_waits_in_review_until_auto_publish_is_turned_on(engine
     turned_on = content.set_auto_publish(source["id"], True, actor="admin")
     assert turned_on["auto_publish"] == {"enabled": True}
     assert content.get_article(article["id"])["status"] == "needs_review"  # what waits keeps waiting for a person
+    # Admin's overview counts it as waiting on source policy, not as a failed validator (#356 review P2-1)
+    assert content.review_reasons_summary() == {"rights": 1, "invalid": 0, "unscreened": 0}
 
 
 @pytest.mark.parametrize("language,body", [("en", ARTICLE), ("zh", ZH_ARTICLE)])

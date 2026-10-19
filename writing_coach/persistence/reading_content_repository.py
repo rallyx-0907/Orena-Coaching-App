@@ -211,7 +211,8 @@ def _update_source_policy(
     Reads the row under a lock, applies `mutate` to a copy of the stored dict and writes back only on a
     change, so two administrators saving different keys cannot lose each other's key. Returns None when
     the source does not exist, else whether anything changed. A change on a source moves every published
-    article's `content_revision` in the same transaction: both keys are in the learner payload.
+    article's `content_revision` in the same transaction: the public name and the image policy are in the learner
+    payload (auto-publish is not, and only costs a refetch).
     """
     row = connection.execute(
         select(ReadingSource.polling_policy).where(ReadingSource.id == source_id).with_for_update()
@@ -2043,7 +2044,8 @@ class ReadingContentRepository:
 
     # Admission reasons that are about rights and source policy; any other reason is a validator that failed.
     RIGHTS_REASONS = frozenset({"source_not_active", "automation_not_allowed", "rights_not_cleared",
-                                "attribution_unknown", "attribution_missing", "source_origin_mismatch"})
+                                "attribution_unknown", "attribution_missing", "source_origin_mismatch",
+                                "auto_publish_off"})  # #352: the source waits for a person - policy, not a failure
 
     def review_reasons_summary(self, *, limit: int = 5000) -> dict[str, int]:
         """Articles waiting in review, split by why: a rights or source-policy question, or a failed validator
