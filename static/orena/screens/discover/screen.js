@@ -317,9 +317,9 @@ export default async function discover(element, ctx) {
       syncImports(memory, language).catch(() => false).then((value) => { arrived(); return value; }),
     ]);
     compose();
-    // Every catalogue request failed and nothing saved on this device stands in for it: the router's load-error
+    // A catalogue request failed and nothing else (another source, or saved on this device) stands in for it: the router's load-error
     // card (Back / Retry, retried by itself when the connection returns), never "0 results".
-    if (failed.size >= 4 && !state.entries.length) {
+    if (failed.size && !state.entries.length) {
       element.replaceChildren();
       throw Object.assign(new Error('Discover catalogue unavailable'), { name: 'CatalogueUnavailable' });
     }

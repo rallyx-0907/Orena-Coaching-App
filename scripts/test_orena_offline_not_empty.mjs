@@ -66,8 +66,20 @@ const restart = review.slice(review.indexOf('[data-restart]'), review.indexOf('[
 assert.ok(restart.indexOf('readDueQueue()') < restart.indexOf('reset()') && /if \(!fresh\) \{[^}]*return;/.test(restart), 'restart reads before reset and stops on failure');
 assert.ok(!/\.catch\(/.test(loaders), 'review queue loaders do not swallow a failure');
 const discover = read('../static/orena/screens/discover/screen.js');
-assert.match(discover, /failed\.size >= 4 && !state\.entries\.length/, 'discover throws when every catalogue source failed');
+assert.match(discover, /failed\.size && !state\.entries\.length/, 'discover throws when a catalogue source failed and nothing else filled the list');
 assert.match(discover, /new Error\('Discover catalogue unavailable'\)/);
 const progress = read('../static/orena/screens/progress/screen.js');
 assert.match(progress, /cache\.rank = api\.libraryVocabularySummary\(\)\.catch/, 'progress does not cache a rejected summary');
+// Library: the saved-content and saved-language reads are not swallowed (a failure reaches the load-error card, an
+// answered empty list keeps the designed empty state); only the secondary reads fall back, as before.
+const library = read('../static/orena/screens/library/screen.js');
+assert.match(library, /\n\s+api\.collection\(\{ domains/, 'library saved-content read is not wrapped in safe()');
+assert.match(library, /\n\s+api\.libraryVocabulary\(\{ limit: 24 \}\),/, 'library saved-language read is not wrapped in safe()');
+assert.match(library, /emptyMarkup\(\{ text: t\('emptyLanguage'\)/, 'the designed empty state for an answered empty Language tab stays');
+
+// Reading Complete: an article with no language never asks the server for the empty language (422).
+const complete = read('../static/orena/screens/reader-complete/screen.js');
+assert.match(complete, /doc\.language \|\| ctx\.context\.language \|\| ''/, 'falls back to the learner target language');
+assert.match(complete, /articleLanguage \? api\.readingArticles\(articleLanguage\)/, 'no readingArticles call when the language is empty');
+assert.ok(!/api\.readingArticles\(doc\.language\)/.test(complete));
 console.log('offline-not-empty OK');
