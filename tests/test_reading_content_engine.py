@@ -42,12 +42,29 @@ ZH_ARTICLE = (
 )
 
 
-def _cleared_source(content, *, automation=True, republish=True):
+def _cleared_source(content, *, automation=True, republish=True, auto_publish=True):
     source = content.create_source(slug="owned-test", name="Authored test source", source_type="manual",
         base_url="", languages=["en", "zh"], rights={"can_republish": republish,
         "can_adapt": True, "attribution_required": False, "automation_allowed": automation}, created_by="admin")
     content.set_source_state(source["id"], "active", actor="admin")
+    if auto_publish:  # #352: off for every new source; these tests exercise a source the owner let publish
+        content.set_auto_publish(source["id"], True, actor="admin")
     return source
+
+
+def test_a_cleared_source_waits_in_review_until_auto_publish_is_turned_on(engine_parts):
+    """#352: cleared rights and a clean check do not put a polled item before learners - a news feed may carry
+    political or sensitive current affairs. A new source has auto-publish off: its items wait for a person."""
+    engine, content, jobs = engine_parts
+    source = _cleared_source(content, auto_publish=False)
+    assert content.get_source(source["id"])["auto_publish"] == {"enabled": False}
+    engine.submit(SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"]), actor="admin")
+    article = content.get_article(engine.process(jobs.claim("worker"))["article_id"])
+    assert article["status"] == "needs_review"
+    assert article["analysis"]["admission"]["reasons"] == ["auto_publish_off"]
+    turned_on = content.set_auto_publish(source["id"], True, actor="admin")
+    assert turned_on["auto_publish"] == {"enabled": True}
+    assert content.get_article(article["id"])["status"] == "needs_review"  # what waits keeps waiting for a person
 
 
 @pytest.mark.parametrize("language,body", [("en", ARTICLE), ("zh", ZH_ARTICLE)])

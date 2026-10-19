@@ -33,7 +33,7 @@ LICENCE_URL = "https://creativecommons.org/licenses/by/3.0/"
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "check_published_reading_provenance.py"
 
 
-def _source(content, *, slug, automation, license_note="", attribution=True):
+def _source(content, *, slug, automation, license_note="", attribution=True, auto_publish=True):
     rights = {"automation_allowed": automation, "can_republish": True, "can_adapt": False,
               "attribution_required": attribution}
     if license_note:
@@ -42,7 +42,22 @@ def _source(content, *, slug, automation, license_note="", attribution=True):
         slug=slug, name="Global Voices (English) RSS - trial", public_name="Global Voices", source_type="manual",
         base_url="", languages=["en", "zh"], rights=rights, created_by="admin")
     content.set_source_state(source["id"], "active", actor="admin")
+    if auto_publish:  # #352: these tests exercise a source the owner let publish without a person
+        content.set_auto_publish(source["id"], True, actor="admin")
     return source
+
+
+def test_auto_publish_is_off_for_a_new_source_and_only_an_administrator_turns_it_on(setup):  # noqa: F811
+    source = _source(setup["content"], slug="gv-auto", automation=True, auto_publish=False)
+    path = f"/api/admin/reading/sources/{source['id']}/auto-publish"
+    assert setup["content"].get_source(source["id"])["auto_publish"] == {"enabled": False}
+    assert call(setup["admin"], "POST", path, json={"enabled": True}, admin=False).status_code == 403
+    assert call(setup["admin"], "POST", path, json={"enabled": True}, origin="https://evil.example").status_code == 403
+    assert call(setup["admin"], "POST", path, json={"enabled": "yes"}).status_code == 422
+    answer = call(setup["admin"], "POST", path, json={"enabled": True})
+    assert answer.status_code == 200 and answer.json()["auto_publish"] == {"enabled": True}
+    missing = f"/api/admin/reading/sources/{uuid.uuid4()}/auto-publish"
+    assert call(setup["admin"], "POST", missing, json={"enabled": True}).status_code == 404
 
 
 def _submit(parts, source, *, body=ARTICLE, language="en", url="https://globalvoices.org/2026/10/rain",

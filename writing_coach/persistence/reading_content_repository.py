@@ -45,6 +45,7 @@ from writing_coach.persistence.reading_evidence_repository import stale_sets_for
 from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
 from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
+from writing_coach.reading_admission import auto_publish_enabled, with_auto_publish
 from writing_coach.reading_images import (
     SHARED_URL_THRESHOLD,
     assess_candidates,
@@ -182,6 +183,8 @@ def _source(row: Any) -> dict[str, Any]:
         "polling_enabled": bool(row.polling_enabled),
         # D-194: whether learner thumbnails from this source are permitted. Off until the owner turns it on.
         "image_policy": {"allowed": image_policy_allowed(row.polling_policy)},
+        # #352: whether cleared items publish without a person. Off until an administrator turns it on.
+        "auto_publish": {"enabled": auto_publish_enabled(row.polling_policy)},
         "last_checked_at": _iso(row.last_checked_at),
         "last_success_at": _iso(row.last_success_at),
         "last_error": row.last_error,
@@ -1181,6 +1184,23 @@ class ReadingContentRepository:
         with self.engine.begin() as connection:
             changed = _update_source_policy(
                 connection, _uuid(source_id), lambda policy: with_image_policy(policy, allowed), now=moment
+            )
+            if changed is None:
+                return None
+            row = connection.execute(select(ReadingSource).where(ReadingSource.id == _uuid(source_id))).first()
+        return _source(row)
+
+    def set_auto_publish(
+        self, source_id: str, enabled: bool, *, actor: str, now: datetime | None = None
+    ) -> dict[str, Any] | None:
+        """Let a source's cleared items publish without a person, or stop it (#352). Stored in the source's config
+        JSON beside the image policy; what was already published stays as it is."""
+        if _lookup_uuid(source_id) is None:
+            return None
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            changed = _update_source_policy(
+                connection, _uuid(source_id), lambda policy: with_auto_publish(policy, enabled), now=moment
             )
             if changed is None:
                 return None

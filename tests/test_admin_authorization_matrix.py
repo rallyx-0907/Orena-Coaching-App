@@ -200,6 +200,8 @@ MATRIX = {
         f"/api/admin/reading/articles/{ARTICLE}/images/0/reject", {"json": {}}, {404, 503}),
     ("POST", "/api/admin/reading/articles/{article_id}/image/clear"): (
         f"/api/admin/reading/articles/{ARTICLE}/image/clear", {"json": {}}, {404, 503}),
+    ("POST", "/api/admin/reading/sources/{source_id}/auto-publish"): (
+        f"/api/admin/reading/sources/{ARTICLE}/auto-publish", {"json": {"enabled": True}}, {404, 503}),
     ("POST", "/api/admin/reading/sources/{source_id}/image-policy"): (
         f"/api/admin/reading/sources/{ARTICLE}/image-policy", {"json": {"allowed": True}}, {404, 503}),
     ("GET", "/api/admin/reading/operations"): ("/api/admin/reading/operations", {}, {200, 503}),
@@ -324,7 +326,7 @@ def _request(app, method: str, path: str, body: dict, who: dict | None) -> httpx
 def test_the_matrix_covers_every_admin_route_the_app_serves():
     routes = _admin_routes()
     assert routes == set(MATRIX), f"unclassified: {sorted(routes - set(MATRIX))}; stale: {sorted(set(MATRIX) - routes)}"
-    assert len(routes) == 117  # includes the three manual correction routes (media cue text, cue translation, vocabulary gloss), the memory erase on request (D-226), the AI spend view (#298), the Reading source rights correction (#196), the media reviewed-level route (this PR), the Polar customer clean-up (PR-MON-10 §4.8), the SePay operator backfill (PR-MON-8 §6.4), the funding cost model (PR-MON-6), the held-import player (Video PR-C),  the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015), the three billing reconciliation routes (PR-MON-3), the two credit routes (PR-MON-4) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
+    assert len(routes) == 118  # includes the Reading source auto-publish switch (#352), the three manual correction routes (media cue text, cue translation, vocabulary gloss), the memory erase on request (D-226), the AI spend view (#298), the Reading source rights correction (#196), the media reviewed-level route (this PR), the Polar customer clean-up (PR-MON-10 §4.8), the SePay operator backfill (PR-MON-8 §6.4), the funding cost model (PR-MON-6), the held-import player (Video PR-C),  the six Reading thumbnail routes (D-194), the Reading source public name (D-192), the operational policies (D-172), Reading rights (D-105), shared-media rights review, the AI cost report (and per account), content packs, the billing refund record, the billing readiness report (D-MON-015), the three billing reconciliation routes (PR-MON-3), the two credit routes (PR-MON-4) and the 16 grammar store routes, the plan catalogue (D-153), account membership (D-154) and the quota switch (D-161)
 
 
 @pytest.mark.parametrize("route", sorted(MATRIX), ids=lambda route: f"{route[0]} {route[1]}")

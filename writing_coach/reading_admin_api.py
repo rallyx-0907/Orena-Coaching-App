@@ -36,7 +36,7 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, Response, UploadFile
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StrictBool
 from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.core.errors import orena_http_error
@@ -415,6 +415,12 @@ class ImagePolicyBody(BaseModel):
     allowed: bool
 
 
+class AutoPublishBody(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    enabled: StrictBool  # a safety switch (#352): only a real true turns it on, never "yes" or 1
+
+
 class ImageApproveBody(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -609,6 +615,23 @@ def set_source_image_policy(
         raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
     _audit(admin, "admin.reading_source_image_policy", entity_type="reading_source", entity_id=source_id,
            payload={"allowed": payload.allowed})
+    return source
+
+
+@router.post("/sources/{source_id}/auto-publish")
+def set_source_auto_publish(
+    request: Request, response: Response, source_id: str, payload: AutoPublishBody
+) -> dict[str, Any]:
+    """Let a source's cleared items publish without a person, or send them to review (#352). Off for every source
+    until turned on here."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    source = _guarded(lambda: _content().set_auto_publish(source_id, payload.enabled, actor=_actor(admin)))
+    if source is None:
+        raise orena_http_error(404, "reading_source_not_found", "That source is not in the registry.")
+    _audit(admin, "admin.reading_source_auto_publish", entity_type="reading_source", entity_id=source_id,
+           payload={"enabled": payload.enabled})
     return source
 
 
