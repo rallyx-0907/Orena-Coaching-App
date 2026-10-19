@@ -53,10 +53,13 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: requirements.txt
-      - run: pip install -r requirements.txt pytest
+          cache-dependency-path: |
+            requirements.txt
+            constraints.txt
+      - run: pip install -r requirements.txt -c constraints.txt pytest
       - run: python -m nltk.downloader -q averaged_perceptron_tagger_eng
       - run: python scripts/validate_project_memory.py
+      - run: python scripts/validate_constraints.py
       - run: python scripts/validate_architecture.py
       - run: python scripts/test_orena_backbone.py
       - run: python scripts/test_orena_account_profile.py
@@ -97,7 +100,9 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            constraints.txt
       # The media pipeline integration tests probe real files with ffprobe, as the
       # application image does (its Dockerfile installs ffmpeg); the runner needs it too.
       - name: Install ffmpeg (ffprobe) for media integration tests
@@ -105,7 +110,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends ffmpeg
           ffprobe -version | head -n 1
-      - run: pip install -r requirements.txt pytest pytest-xdist==3.8.0
+      - run: pip install -r requirements.txt -c constraints.txt pytest pytest-xdist==3.8.0
       - run: python -m nltk.downloader -q averaged_perceptron_tagger_eng
       - name: Full suite
         if: needs.changes.outputs.code == 'true'

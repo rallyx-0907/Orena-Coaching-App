@@ -7603,3 +7603,16 @@ recommendation to lift the gate as the architecture reviewer proposed).
 
 **Not in this decision.** Re-registration (D-055) stays closed: nothing may call `mark_deleted`, `register_new` or
 `_allocate` outside the repository. No runtime deletion path for learners (the tool is the operator's). No schema change.
+
+## D-242 - Deploy dependencies are pinned with a constraints file (2026-10-19)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-19 17:12).
+
+1. **Decision.** `constraints.txt` pins the full resolved dependency set of `requirements.txt` exactly (FastAPI 0.147.0,
+   the version CI passed on after #398). The Dockerfile and the `python-gates` and `pytest` CI jobs install with
+   `-c constraints.txt`, so the image that passes on :8000 is rebuilt identically for the VPS and CI tests what ships.
+2. **Guard.** `scripts/validate_constraints.py` runs in `python-gates` and fails when a `requirements.txt` package is
+   not pinned. `requirements.txt` keeps its ranges as the intent; the constraints file is the resolved truth.
+3. **Updating.** Only by a reviewed PR that changes the pins alone (`docs/project/CI_FAST_PATH.md`).
+
+**Not in this decision.** No hashes, no change to the application code or the Python version.
