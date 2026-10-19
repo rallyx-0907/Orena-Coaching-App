@@ -26,6 +26,11 @@ def note(text, id_="n-1"):
     ("Mình hay quên ngữ pháp này quá", "Giải thích ngữ pháp thật kỹ"),
     ("我总是忘记这个语法", "多讲语法"),
     ("I always forget the grammar rules", "Explain grammar simply"),
+    # an "I forget" sentence whose words look imperative, with real content overlap (re-review of #347)
+    ("Mình hay quên từ vựng, ôn lại giúp mình", "Ôn lại từ vựng mỗi ngày"),
+    ("Mình hay quên ngữ pháp khi đi thi", "Giải thích ngữ pháp thật kỹ"),
+    ("I always forget this grammar rule", "Explain grammar simply"),
+    ("我总是忘掉这个语法", "多讲语法"),
 ])
 def test_an_ordinary_learning_message_changes_no_note(message, kept):
     assert notes_the_message_changes(message, [note(kept)]) == ()
@@ -41,6 +46,11 @@ def test_an_ordinary_learning_message_changes_no_note(message, kept):
     ("Thôi, đừng cho mình ví dụ ngắn nữa", "Cho mình ví dụ ngắn", "correct"),
     ("别再帮我举例子了", "帮我多举例子", "correct"),
     ("Quên cái ví dụ ngắn đó đi", "Cho mình ví dụ ngắn", FORGET),
+    ("quên giùm mình cái ví dụ ngắn", "Cho mình ví dụ ngắn", FORGET),
+    ("Quên chuyện ví dụ ngắn", "Cho mình ví dụ ngắn", FORGET),
+    ("Forget the short examples", "Give me short examples", FORGET),
+    ("忘记那个例子吧", "多举例子", FORGET),
+    ("把那个例子忘了", "多举例子", FORGET),
 ])
 def test_a_real_note_request_still_matches(message, kept, intent):
     assert notes_the_message_changes(message, [note(kept)])
@@ -50,3 +60,10 @@ def test_a_real_note_request_still_matches(message, kept, intent):
 def test_content_overlap_picks_only_the_note_it_is_about():
     short, chinese = note("Cho mình ví dụ ngắn", "n-1"), note("Giải thích bằng tiếng Trung", "n-2")
     assert notes_the_message_changes("Thôi, đừng cho mình ví dụ ngắn nữa", [short, chinese]) == (short,)
+
+
+def test_a_decomposed_note_noun_still_counts():
+    import unicodedata
+
+    decomposed = unicodedata.normalize("NFD", "Quên ghi chú đó đi")
+    assert notes_the_message_changes(decomposed, [note("Mình thích ví dụ ngắn")])

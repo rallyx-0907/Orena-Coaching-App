@@ -38,21 +38,40 @@ _NEW_WISH = re.compile(
 )
 CORRECT, FORGET = "correct", "forget"
 
-# The verbs that also mean "I forget" (#346: "Mình hay quên ngữ pháp này quá", 我总是忘记这个语法, "I always forget the
-# grammar rules"). Alone they ask nothing of a note; only an imperative does, or one beside a note noun.
+# The verbs that also mean "I forget" (#346: "Mình hay quên ngữ pháp này quá", 我总是忘掉这个语法, "I always forget this
+# grammar rule"). They ask something of a note only as an imperative - at the start of a sentence, "quên giùm/giúp",
+# "quên ... đi" closing the message, 忘记...吧, 把...忘了 - or beside a note noun; never after a subject or a habit word.
 _FORGETTING = re.compile(r"(?i)\bquên\b|\bforget\b|忘")
-_FORGET_IMPERATIVE = re.compile(
-    r"(?i)\bquên\b[^.?!\n]*\b(?:đi|nhé|nha|giùm|giúp)\b|\bđừng nhớ\b|\bkhông cần nhớ\b"
-    r"|\bforget (?:it|that|this|about (?:it|that)|the note|my note)\b|\bstop remembering\b"
-    r"|忘掉|忘了吧|忘了它|别记|不要记"
+_SELF_FORGETS = re.compile(
+    r"(?i)\b(?:mình|tôi|em|tớ|anh|chị|hay|thường|cứ|dễ|bị|vẫn|lại)\s+quên\b"
+    r"|\b(?:i|we|always|often|keep|usually|sometimes|never|tend to)\s+(?:\w+\s+)?forget"
+    r"|(?:我|总是|老是|经常|容易|常常|又|还是).{0,2}忘"
 )
+_FORGET_IMPERATIVE = re.compile(
+    r"(?i)(?:^|[.!?;:\n]\s*)(?:(?:thôi|à|ừ|vậy|ok|okay|please)[,\s]+)?(?:quên|forget)\b"
+    r"|\bquên\s+(?:giùm|giúp|hộ)\b"
+    r"|\bquên\b[^.?!\n]*\b(?:đi|nhé|nha)\s*[.!?]*\s*$"
+    r"|\bđừng nhớ\b|\bkhông cần nhớ\b|\bstop remembering\b"
+    r"|\bforget (?:it|that|about (?:it|that)|the note|my note)\b"
+    r"|(?:^|[，。！？,.!?;]\s*)请?(?:忘掉|忘了|忘记)|忘了吧|忘了它|别记|不要记|忘记.{0,12}吧|把.{1,12}忘了"
+)
+
+
+def _asks_to_forget(text: str) -> bool:
+    """A forgetting verb used as "forget it", not "I forget"."""
+
+    return bool(_FORGET_IMPERATIVE.search(text)) and not _SELF_FORGETS.search(text)
+
+
+def _without_forgetting(text: str) -> str:
+    return _FORGETTING.sub(" ", text)
 
 
 def _asks_about_a_note_by_forgetting_only(text: str) -> bool:
     """The only change word is a forgetting verb, used as "I forget", not "forget it"."""
 
-    others = _CHANGE.sub(lambda m: "" if _FORGETTING.fullmatch(m.group(0)) else m.group(0), text)
-    return not _CHANGE.search(others) and not _FORGET_IMPERATIVE.search(text) and not _NOTE_WORD.search(text)
+    return (bool(_FORGETTING.search(text)) and not _CHANGE.search(_without_forgetting(text))
+            and not _asks_to_forget(text) and not _NOTE_WORD.search(text))  # fmt: skip
 
 
 def note_intent(message: str | None) -> str:
@@ -62,10 +81,9 @@ def note_intent(message: str | None) -> str:
     text = unicodedata.normalize("NFC", message or "")
     if _FORGET.search(text) and not _NEW_WISH.search(text):
         # "quên"/"忘" alone is "I forget" (#346): FORGET only as an imperative or beside a note noun.
-        if _FORGETTING.search(text) and not (_FORGET_IMPERATIVE.search(text) or _NOTE_WORD.search(text)):
-            others = _FORGETTING.sub("", text)
-            if not _FORGET.search(others):
-                return CORRECT
+        if (_FORGETTING.search(text) and not (_asks_to_forget(text) or _NOTE_WORD.search(text))
+                and not _FORGET.search(_without_forgetting(text))):  # fmt: skip
+            return CORRECT
         return FORGET
     return CORRECT
 # A request to keep something (dogfood gate 3.2): the learner asks, in so many words, or states a standing wish
