@@ -1247,16 +1247,18 @@ class _Turn:
             # Asked twice and no note changed: said plainly (agent/notes.py) - when the message named a note, or asked to
             # forget one. A correction matched by rule alone keeps the model's answer (#346): it was told to change
             # nothing unless asked, and the honesty gate strips any claim of a change.
-            if self._note_unchanged(outputs) and (self.note_confirmed is not None or self.notes_intent == FORGET
-                                                  or names_a_note(self.request.message,
-                                                                  annotation_in_view=self._annotation_in_view())):  # fmt: skip
+            # In the Reader a forget may be about a sentence note (#351): there only a confirmed keep is said plainly.
+            reader = self._annotation_in_view()
+            if self._note_unchanged(outputs) and (self.note_confirmed is not None
+                                                  or (self.notes_intent == FORGET and not reader)
+                                                  or names_a_note(self.request.message, annotation_in_view=reader)):  # fmt: skip
                 if self.note_confirmed is not None and not self.notes_asked:
                     key = "notes.not_kept"
                 else:  # a forget never claimed: the server's own words (owner via Hermes, 2026-10-19)
                     key = "notes.not_forgotten" if self.notes_intent == FORGET else "notes.unchanged"
                 unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
-            elif self.notes_blocked:
+            elif self.notes_blocked and not reader:
                 # The notes were not sent to this provider (G8): none was changed, and the learner is told so - and
                 # that the new note the same message asked for was kept, when it was.
                 key = "notes.kept_others_unavailable" if outputs.note_changed else "notes.unavailable"
