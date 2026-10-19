@@ -103,7 +103,9 @@ def export_command(args: argparse.Namespace) -> int:
     cache = _open_cache(cache_file) if cache_file.is_file() else None
     items, blobs, excluded = media_pack.build_media_items(
         store, assets, ids=args.id, languages=args.language, exclude_prefixes=args.exclude_prefix,
-        translations=cache, provider_models=_provider_models(args))
+        translations=cache, provider_models=_provider_models(args), include_derived_text=args.include_derived_text)
+    print(f"Mode: derived text (transcript cues and translations) {'INCLUDED' if args.include_derived_text else 'NOT included (default)'}.",
+          file=sys.stderr)
     coverage = media_pack.translation_coverage(items)
     partial = bool(items) and not coverage["complete"]
     if partial:
@@ -190,8 +192,10 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--no-ledger", action="store_true", help="do not read the PostgreSQL ledger")
     ex, im = sub.choices["export"], sub.choices["import"]
     ex.add_argument("--out", default="")
+    ex.add_argument("--include-derived-text", action="store_true",
+                    help="carry the transcript cues and their translations (default off: metadata, rights and level only)")
     ex.add_argument("--allow-partial", action="store_true",
-                    help="export although stored translations cover less than 100% of the cues (exit 3 otherwise)")
+                    help="export although stored translations cover less than 100%% of the cues (exit 3 otherwise)")
     ex.add_argument("--dry-run", action="store_true", help="print what would be packed (with translation counts); write nothing")
     ex.add_argument("--id", action="append", default=[])
     ex.add_argument("--language", action="append", default=[], choices=["en", "zh"])

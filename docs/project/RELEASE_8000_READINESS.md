@@ -496,6 +496,7 @@ On import an item is `new`, `unchanged` (identical), `conflict` (different; kept
 published only if its rights are cleared with a licence note and its transcript passes the same checks Publish uses;
 otherwise it arrives unpublished and the row says `held`. A second import changes nothing.
 
+0. Derived text (transcript cues, translations) travels only with `--include-derived-text` (default off, owner decision pending, D-234 item 7); the preview states the mode.
 0. Preview (reads only): `python scripts/media_content_pack.py export --dry-run --exclude-prefix qa- --exclude-prefix test-`
    lists per item the assets and translations per language, and the coverage per item and in total. The translations are
    found in `LEARNING_CACHE_DB` (else `<root>/learning_cache.db`) under every model the AI ledger shows for
