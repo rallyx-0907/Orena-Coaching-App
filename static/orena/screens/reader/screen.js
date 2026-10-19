@@ -1267,6 +1267,9 @@ export default async function mountReader(element, ctx) {
     } else if (act === 'end-primary') {
       if (hasQuiz) {
         stopSpeech();
+        // Pressing the end button is reaching the end, also for a text with nothing to scroll (opening it records nothing).
+        furthestPercent = 100;
+        recordVisit(100);
         ctx.go(ctx.href('checku', { id: contentId }, practice ? { mode: 'practice' } : {}));
       } else finish();
     } else if (act === 'end-secondary') finish();

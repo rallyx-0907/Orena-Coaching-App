@@ -40,6 +40,13 @@ assert.deepEqual(calls.map((call) => [call.method, call.url, call.body.place.ind
   ['PUT', '/api/continue/text%3Aabc', 2], ['PUT', '/api/continue/text%3Aabc', 3], ['PUT', '/api/continue/text%3Aabc', 3],
 ]);
 
+/* A pause or leave settles the position now: the final percent is not lost to the 30 s throttle (D17). */
+calls.length = 0;
+await sync.sendPlace({ id: 'media:z', title: 'Z', place: { index: 1, total: 1, within: 10 } }, stamp);
+await sync.sendPlace({ id: 'media:z', title: 'Z', place: { index: 1, total: 1, within: 40 } }, stamp + 2000);
+await sync.sendPlace({ id: 'media:z', title: 'Z', settle: true, place: { index: 1, total: 1, within: 40 } }, stamp + 3000);
+assert.deepEqual(calls.map((call) => [call.body.place.within, call.body.place.settle]), [[10, undefined], [40, true]]);
+
 /* Clearing sends the cleared flag only. */
 calls.length = 0;
 await sync.clearPlace('text:abc');

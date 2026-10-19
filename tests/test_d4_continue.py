@@ -129,6 +129,14 @@ def test_a_repeat_write_within_thirty_seconds_that_crosses_no_boundary_is_coales
     assert PLACE_COALESCE_SECONDS == 30
 
 
+def test_a_settled_write_is_not_coalesced(env):
+    # A pause or leave carries the final position (D17): it is written even inside the thirty seconds.
+    library = env.repo()
+    library.set_place(kind="listening", source_id="media:1", place=_place(1, 1, within=10))
+    settled = library.set_place(kind="listening", source_id="media:1", place=_place(1, 1, within=55), settle=True)
+    assert settled["status"] == "written" and settled["place"]["within"] == 55
+
+
 def test_after_thirty_seconds_the_same_position_is_written_again(env):
     library = env.repo()
     library.set_place(kind="reading", source_id="reading:14", place=_place(3, 10, within=10))

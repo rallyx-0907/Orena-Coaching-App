@@ -206,7 +206,7 @@ export default async function listening(element, ctx) {
     writeStage({ ...readStage(), autoscroll: autoScroll, meaning: showTrans, wordhl: wordHighlight });
   }
 
-  function rememberPlace(force = false) {
+  function rememberPlace(force = false, settle = false) {
     if (!force && currentId === rememberedId) return;
     rememberedId = currentId;
     // The line in view, for an Orena conversation already running ("explain this sentence"). In Dictation the
@@ -223,7 +223,7 @@ export default async function listening(element, ctx) {
       // The playhead when it is inside this line (a single long cue has only one start); else the line start.
       const inLine = Number.isFinite(timeMs) && timeMs >= startMs && (!Number.isFinite(endMs) || timeMs <= endMs);
       const within = line && Number.isFinite(startMs) && startMs >= 0 ? withinPercent(inLine ? timeMs : startMs, lesson.durationMs) : null;
-      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null, ...(within != null && within >= 0 ? { place: { index: 1, total: 1, within } } : {}) });
+      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null, ...(settle ? { settle: true } : {}), ...(within != null && within >= 0 ? { place: { index: 1, total: 1, within } } : {}) });
     } catch {
       /* Device memory unavailable (private window): the session still works, it just does not
          resume next time. */
@@ -373,7 +373,7 @@ export default async function listening(element, ctx) {
     if (playing && !wasPlaying) revealPlayerChrome();
     if (!playing) lastTickAt = null;
     // The place follows the playhead, not only a change of line: on a one-cue clip the line never changes.
-    if (playing !== wasPlaying || (playing && Date.now() - placeSavedAt >= PLACE_SAVE_MS)) { placeSavedAt = Date.now(); rememberPlace(true); }
+    if (playing !== wasPlaying || (playing && Date.now() - placeSavedAt >= PLACE_SAVE_MS)) { placeSavedAt = Date.now(); rememberPlace(true, !playing); }
     paintTime();
     if (seekingTo) {
       const target = segOf(seekingTo.id);
@@ -1025,7 +1025,7 @@ export default async function listening(element, ctx) {
   });
 
   return () => {
-    if (playbackOk && !ended) rememberPlace(true);
+    if (playbackOk && !ended) rememberPlace(true, true);
     clearTimeout(chromeTimer);
     clearTimeout(typingTimer);
     playerEl.removeEventListener('pointermove', revealPlayerChrome);
