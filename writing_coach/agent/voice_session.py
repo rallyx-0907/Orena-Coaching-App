@@ -85,7 +85,7 @@ from writing_coach.agent.redaction import redact_for_provider
 from writing_coach.agent.schemas import TurnRequest
 from writing_coach.agent.tools import FORBIDDEN_ARGUMENTS, LearnerScope, ToolArgumentsInvalid
 from writing_coach.core.errors import orena_http_error
-from writing_coach.product import quota
+from writing_coach.product import plan_features, quota
 
 _log = logging.getLogger(__name__)
 
@@ -560,6 +560,17 @@ class VoiceService:
         )
         # Messages not enforced: one token for what is left of the session, exactly as before the plan limit.
         seconds = int(ticket.max_seconds) if ticket.max_seconds else cap - minted
+        # The learner's daily voice minutes (D-237): never a token past what is left today.
+        try:
+            left = plan_features.voice_seconds_left(user_key)
+        except BaseException:
+            ticket.release()
+            raise
+        if left is not None:
+            if left <= 0:
+                ticket.release()
+                plan_features.require_voice_time(user_key)  # the 429 the route gives, raced past it
+            seconds = max(1, min(seconds, left))
         locked = dict(setup)
         if ticket.enforced and self._resumes():
             # Only a chunked (metered) session carries the conversation across tokens; an unmetered one is one token.
@@ -576,6 +587,10 @@ class VoiceService:
         ticket.settle(ticket.units, "chunk")
         if ticket.enforced:
             self._record_chunk(session_id, user_key, index, seconds)
+        else:
+            # Unmetered: the learner's voice seconds are counted when the token exists, as a metered chunk's are, so
+            # the daily cap sees an open session (D-237); the AI ledger still gets the wall-clock time at the end.
+            self._meter_voice(user_key, seconds, f"{session_id}:voice:{index}")
         last = minted + seconds >= cap or not ticket.enforced
         return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced}
 
@@ -648,12 +663,17 @@ class VoiceService:
                                   latency_ms=None, audio_seconds=float(seconds))  # fmt: skip
             except Exception:  # billing telemetry never fails the learner's request
                 _log.warning("voice session not recorded", exc_info=True)
+        self._meter_voice(user_key, seconds, f"{session_id}:voice:{index}")
+
+    def _meter_voice(self, user_key: str, seconds: int, request_id: str) -> None:
+        """The learner's voice seconds, counted against the daily cap (product/plan_features.py)."""
+
         meter = getattr(self.runtime, "meter", None)
         if meter is not None:
             try:
-                meter(user_key, "agent.voice_seconds", int(seconds), f"{session_id}:voice:{index}")
-            except Exception:
-                _log.warning("voice metering failed", exc_info=True)
+                meter(user_key, "agent.voice_seconds", int(seconds), request_id)
+            except Exception:  # noqa: BLE001 - never fails the learner's request, but the cap now undercounts
+                _log.error("voice metering failed: the daily voice cap undercounts", exc_info=True)
 
 
 
@@ -1097,10 +1117,5 @@ class VoiceService:
                                   latency_ms=None, audio_seconds=seconds)  # fmt: skip
             except Exception:  # billing telemetry never fails the learner's request
                 _log.warning("voice session not recorded", exc_info=True)
-        meter = getattr(self.runtime, "meter", None)
-        if meter is not None:
-            try:
-                meter(session.user_key, "agent.voice_seconds", int(seconds), f"{session.voice_session_id}:voice")
-            except Exception:
-                _log.warning("voice metering failed", exc_info=True)
+        # The learner's voice seconds were counted when the token was minted (D-237): not again here.
         return seconds

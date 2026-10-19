@@ -3,7 +3,8 @@ day would otherwise use the whole system's $5 AI budget (COST_PRE402_403). The `
 15 minutes for Plus and Pro by the code's defaults (an administrator edits it in the plan catalogue). The minutes used are
 the voice seconds the server already records per learner (`agent.voice_seconds` usage events), so the cap holds whether
 or not usage limits are enforced. At the cap: 429 `quota_exhausted` with `feature: "orena.voice"` - this learner only;
-nothing locks the system. A chunk already minted plays out: the cap can be passed by at most one chunk."""
+nothing locks the system. Every token minted is clamped to the seconds left today, and its seconds are counted when it
+is minted, metered or not, so an open session is seen by the next check."""
 
 from __future__ import annotations
 
@@ -47,6 +48,7 @@ def test_under_the_cap_voice_opens_and_at_the_cap_this_learner_is_told(voice_day
     context = detail["context"]
     assert (context["feature"], context["used"], context["limit"], context["window"]) == ("orena.voice", 900, 900, "day")
     assert context["display_unit"] == "minute" and context["scale"] == 60 and context["resets_at"] == "2026-10-20T00:00:00Z"
+    assert "upgrade" not in context  # Plus and Pro have the same minutes: no plans offer here
 
 
 def test_a_plan_without_voice_is_still_403_first(voice_day):
@@ -83,3 +85,33 @@ def test_both_voice_routes_refuse_at_the_cap_before_any_token(client, voice_day,
     refused = client.post(path, json={"contract_version": 10})
     assert refused.status_code == 429 and refused.json()["detail"]["context"]["feature"] == "orena.voice"
     assert voice.calls == []
+
+
+def test_a_placeholder_limit_saved_under_d236_reads_as_the_default(voice_day, monkeypatch):
+    """Review of #325, P1-2: an editor that saved `orena.voice` as on/off stored limit 1 - never one second a day."""
+    from dataclasses import replace
+
+    from writing_coach.product.catalog import Entitlement
+
+    stored = replace(PLUS, entitlements=tuple(
+        Entitlement("orena.voice", enabled=True, limit=1) if e.key == "orena.voice" else e for e in PLUS.entitlements))
+    voice_day["plan"] = stored
+    monkeypatch.setattr(plan_features, "current_catalog", lambda strict=True: ({"plus": stored}, "r1"))
+    voice_day["used"] = 600
+    plan_features.require_voice_time("u1")
+    assert plan_features.voice_seconds_left("u1") == 300
+
+
+def test_every_token_is_clamped_to_the_minutes_left_and_unmetered_seconds_count_at_mint(voice_day):
+    """Review of #325, P1-1: with messages not enforced a session is one token for the whole session - it must be
+    clamped to what is left today and counted when it is minted, so a second session cannot pass the cap."""
+    from tests.test_agent_voice_session import LEARNER, _body, _service
+
+    recorded = []
+    service = _service()
+    service.runtime.meter = lambda user, feature, amount, request_id: recorded.append((feature, amount))
+    voice_day["used"] = 900 - 240  # four minutes left today
+
+    answer = service.open(_body(), LEARNER)
+    assert answer["max_seconds"] <= 240
+    assert recorded == [("agent.voice_seconds", answer["max_seconds"])]

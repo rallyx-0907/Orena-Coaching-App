@@ -78,29 +78,60 @@ def entitled(user_key: str, feature: str) -> bool | None:
     return True
 
 
+def _voice_limit(plan) -> int | None:
+    """The plan's daily voice seconds. A stored limit under a minute is the on/off placeholder (1) an editor saved under
+    D-236, before the limit counted seconds: it reads as the code's default, never as one second a day."""
+
+    from writing_coach.product.catalog import PLANS
+
+    limit = plan.entitlement_map()[VOICE].limit
+    if limit is not None and limit < 60:
+        default = PLANS.get(plan.id)
+        limit = default.entitlement_map()[VOICE].limit if default is not None else None
+    return limit
+
+
+def _voice_used(user_key: str) -> int:
+    try:
+        return int(_daily_usage(user_key, VOICE_USAGE)) if _daily_usage is not None else 0
+    except Exception as error:  # noqa: BLE001 - the usage store is down: fail closed
+        raise quota._unavailable("usage") from error
+
+
+def voice_seconds_left(user_key: str) -> int | None:
+    """Today's voice seconds still allowed (at least 0); None when not capped (no plan system, no usage store, no limit).
+    The voice service clamps every token it mints to it, so no session runs past the cap."""
+
+    plan = _plan(user_key)
+    if plan is None or _daily_usage is None:
+        return None
+    limit = _voice_limit(plan)
+    if limit is None:
+        return None
+    return max(0, limit - _voice_used(user_key))
+
+
 def require_voice_time(user_key: str) -> None:
     """The plan has voice (403 otherwise) and today's voice minutes are not used up: 429 `quota_exhausted` with
     `feature: "orena.voice"` at the plan's daily limit - this learner only, nothing else is locked. Checked before a
-    voice chunk is minted; a chunk already minted plays out, so the cap can be passed by at most one chunk. Usage
-    that cannot be read refuses (503, fail closed)."""
+    voice session opens or a chunk is renewed; every token minted is clamped to the seconds left
+    (`voice_seconds_left`), so the cap is not passed. Usage that cannot be read refuses (503, fail closed)."""
 
     plan = _plan(user_key)
     if plan is None:
         return
     require(user_key, VOICE)
-    limit = plan.entitlement_map()[VOICE].limit
+    limit = _voice_limit(plan)
     if limit is None or _daily_usage is None:
         return
-    try:
-        used = int(_daily_usage(user_key, VOICE_USAGE))
-    except Exception as error:  # noqa: BLE001 - the usage store is down: fail closed
-        raise quota._unavailable("usage") from error
+    used = _voice_used(user_key)
     if used < limit:
         return
     now = _clock()
     resets = datetime(now.year, now.month, now.day, tzinfo=UTC) + timedelta(days=1)
     meter = METERS[VOICE]
+    # No `upgrade`: Plus and Pro have the same voice minutes, so the plans offer nothing more for this.
     raise quota.exhausted_error({
         "feature": VOICE, "used": used, "limit": limit, "unit": meter.unit, "display_unit": meter.display_unit,
         "scale": meter.scale, "window": meter.window, "resets_at": resets.isoformat().replace("+00:00", "Z"),
-        "plan": plan.id, "upgrade": quota.UPGRADE_HREF}, now=now)  # fmt: skip
+        "plan": plan.id}, now=now)  # fmt: skip
