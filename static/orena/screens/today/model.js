@@ -228,6 +228,29 @@ export function mapContinuationEntry(entry, t) {
   return null;
 }
 
+/* A continued lesson whose content is gone - a retired built-in lesson (D-245), a hidden one (D-203), a deleted
+   import - has no card: the design draws no state for it, so it is left out and the next live entry leads (or the
+   normal composition shows). The learner's record stays; only this screen's reading of it changes. `alive(id)`
+   answers for the media id after `media:`; every other kind of entry is unchanged. */
+export function liveContinuation(continuation = [], alive = () => true) {
+  return (Array.isArray(continuation) ? continuation : []).filter((entry) => {
+    const id = String(entry?.id || '');
+    return !id.startsWith('media:') || alive(id.slice('media:'.length));
+  });
+}
+
+/* The media ids among the first `limit` continued media entries, most recent first: the ones worth checking. */
+export function continuedMediaIds(continuation = [], limit = FOR_YOU_LIMIT + RECOMMEND_LIMIT) {
+  const ids = [];
+  for (const entry of Array.isArray(continuation) ? continuation : []) {
+    const id = String(entry?.id || '');
+    if (!id.startsWith('media:') || !id.slice(6)) continue;
+    if (!ids.includes(id.slice(6))) ids.push(id.slice(6));
+    if (ids.length >= limit) break;
+  }
+  return ids;
+}
+
 /* --- "For you" rail ----------------------------------------------------- */
 
 /* Everything the recommendation pool did not use: the learner's unfinished work first (most

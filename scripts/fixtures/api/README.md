@@ -103,6 +103,12 @@ Rules:
 | `writing_essay_detail.zh.json`, `writing_essay_review.zh.json` | the same two routes for a Chinese piece (an HSK-shaped `cefr_estimate` and a `conjunction` finding, a Chinese-only category) - see "Built with a fixed evaluator answer" below | 2026-09-29 |
 | `essay_evaluate.json` | `POST /api/evaluate` on the isolated stack for a real Respond-to-Content Opinion answer about a Listening lesson (the local model, `ollama`/`qwen3:8b`; English, `band_status: insufficient_evidence`) - `id`/`overall`/`issues[].{quote,suggestion,why}`/`next_actions[]`, the fields Respond's `mapFeedback` reads (`scripts/test_orena_screen_respond.mjs`'s own capture, distinct from the Writing-room `writing_evaluate.json` series above) | 2026-09-29 |
 
+## Listening payloads after D-245
+
+The `listening_*`, `speaking_library.*`, `word_clips.json` and listening-progress captures name the built-in
+sample lessons that D-245 retired (2026-10-20). They stay as captured: the screen gates read them for the response
+shape, which imported media shares. They are not evidence of what the shipped catalogue contains, which is now empty.
+
 ## Built with a fixed evaluator answer (Writing, 2026-09-29)
 
 The `writing_*.json` files above that are not `_live` came from `scripts/capture_writing_fixtures.py`,

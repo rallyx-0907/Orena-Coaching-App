@@ -13,6 +13,10 @@ from writing_coach.book_asset_store import AssetNotFound
 from writing_coach.media_library_store import MediaLibraryEntry
 from writing_coach.media_transcript_pipeline import MediaPipeline
 
+# The shipped built-in Listening catalogue is empty since D-245; this module exercises catalogue lessons on the
+# fixture-local copy of the retired manifest (conftest.fixture_listening_catalog).
+pytestmark = pytest.mark.usefixtures("fixture_listening_catalog")
+
 LESSON = "en-daily-pen-in-my-bag"
 
 

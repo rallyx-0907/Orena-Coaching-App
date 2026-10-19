@@ -69,8 +69,10 @@ SCENARIOS = [
     ("r30-speaking-vi", "en", VI, {}, "Mở phần luyện nói giúp mình.", None),
     ("r30-review", "en", {"interface": "en", "support": "en"}, {}, "Start a review of my due words.", None),
     ("r30-move-play", "en", {"interface": "en", "support": "en"},
-     {"move": {"surface": "listening.workspace", "content_id": "media:en-science-cosmic-calendar",
-               "selected_item": {"type": "sentence", "id": "s1", "text": "Imagine the whole history of the universe."}}},
+     # The lesson and its sentence come from --move-content-id / --move-sentence: the built-in Listening catalogue
+     # ships empty since D-245, so the probe names a lesson that exists on the runtime it talks to.
+     {"move": {"surface": "listening.workspace", "content_id": "",
+               "selected_item": {"type": "sentence", "id": "s1", "text": ""}}},
      "Play the model audio for this sentence.", None),
     ("r30-hear-vi", "zh", VI, {"audio": "vi-word-here.wav"}, "(spoken: a Vietnamese answer about 花生)", None),
     ("r30-hear-en", "en", {"interface": "en", "support": "en"}, {"audio": "en-word.wav"},
@@ -216,6 +218,8 @@ async def main() -> int:
     parser.add_argument("--cap-usd", type=float, required=True)
     parser.add_argument("--out", required=True)
     parser.add_argument("--only", default="")
+    parser.add_argument("--move-content-id", default="", help="a Listening lesson on this runtime, e.g. media:<id>")
+    parser.add_argument("--move-sentence", default="", help="a sentence of that lesson, for r30-move-play")
     args = parser.parse_args()
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
@@ -224,6 +228,13 @@ async def main() -> int:
     for name, learning, locale, extra, said, barge in SCENARIOS:
         if only and name not in only:
             continue
+        if "move" in extra:
+            if not (args.move_content_id and args.move_sentence):
+                rows.append({"scenario": name, "skipped": "no --move-content-id/--move-sentence given (D-245)"})
+                continue
+            move = {**extra["move"], "content_id": args.move_content_id,
+                    "selected_item": {**extra["move"]["selected_item"], "text": args.move_sentence}}
+            extra = {**extra, "move": move}
         if spent + SCENARIO_SECONDS * USD_PER_SECOND > args.cap_usd:
             rows.append({"scenario": name, "skipped": "the next scenario could pass the cap"})
             break
