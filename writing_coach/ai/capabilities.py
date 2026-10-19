@@ -191,9 +191,11 @@ _DEFINITIONS = (
         opt_in=True,
         free_primary_only=True,
         paid_standby_cap_policy="word_translation.daily_spend_cap_usd",
-        # Owner decision 2026-10-14: a cheap paid standby, behind a daily cap. Groq's non-reasoning 70B (the 8B
-        # instant model is enterprise-only, "contact sales", on Groq's public models page).
-        paid_standby_models=frozenset({("groq", "llama-3.3-70b-versatile")}),
+        # Owner decision 2026-10-14: a cheap paid standby, behind a daily cap. It was Groq's llama-3.3-70b-versatile,
+        # shut down 2026-08-16 (https://console.groq.com/docs/deprecations names openai/gpt-oss-120b as the
+        # replacement; issue #312). openai/gpt-oss-120b is a production model at 0.15 / 0.60 per million
+        # (https://console.groq.com/docs/models, read 2026-10-19).
+        paid_standby_models=frozenset({("groq", "openai/gpt-oss-120b")}),
     ),
     # D-228 (PROPOSED): which of a word's stored senses a sentence means, only when the zero-cost tap layers tie. Input is
     # the word, its sentence and the stored senses; the answer is an index, never text. The sentence of shared published

@@ -490,3 +490,59 @@ def test_the_word_detail_tap_stays_private_without_a_verified_id(monkeypatch, pu
     calls: list = []
     _sheet(monkeypatch, _service(_bank(), calls, 1), content_id)
     assert calls == []  # private: no seam, no AI
+
+
+# --- a keyed provider with no named models still has its priced catalogue models (issue #312) ---------------------------
+
+GEMINI = "gemini-3.5-flash-lite"
+
+
+class Unlisted(Fake):
+    """A keyed provider the operator named no models for: the offline read has nothing (a real Gemini without GEMINI_MODELS)."""
+
+    def list_models(self, offline: bool = False) -> list[str]:
+        return []
+
+
+@pytest.fixture
+def keyed(env, monkeypatch):
+    gemini = Unlisted("gemini", [])
+    registry = {"openrouter": env.openrouter, "groq": env.groq, "gemini": gemini}
+    monkeypatch.setattr(platform, "providers", lambda: registry)
+    return type("Keyed", (), {"gemini": gemini, "openrouter": env.openrouter, "groq": env.groq, "registry": registry,
+                              "spent": env.spent})
+
+
+def test_a_keyed_gemini_with_no_model_list_is_a_paid_rung_after_the_free_ones(keyed) -> None:
+    pool = [(t.provider, t.model) for t in tap_sense_model.build_pool(shared=True)]
+    assert pool[0] == ("openrouter", FREE_OR) and ("gemini", GEMINI) in pool
+    assert pool.index(("openrouter", FREE_OR)) < pool.index(("gemini", GEMINI))
+
+
+def test_free_rungs_failing_calls_gemini_flash_lite(keyed) -> None:
+    keyed.openrouter.script = {FREE_OR: [http_error(429)]}
+    keyed.groq.script = {"llama-3.3-70b-versatile": [http_error(503), http_error(503)]}
+    assert choose(shared=True) == 1
+    assert [c["model"] for c in keyed.gemini.calls] == ["gemini-3.1-flash-lite"]  # the cheaper of the two flash-lites
+
+
+def test_the_cap_reached_means_no_gemini_call(keyed) -> None:
+    keyed.spent["usd"] = 0.25
+    keyed.openrouter.script = {FREE_OR: [http_error(429)]}
+    keyed.groq.script = {"llama-3.3-70b-versatile": [http_error(429)]}
+    assert choose(shared=True) is None
+    assert keyed.gemini.calls == []
+
+
+def test_private_content_never_reaches_gemini(keyed) -> None:
+    assert choose(shared=False) is None
+    assert keyed.gemini.calls == [] and keyed.openrouter.calls == [] and keyed.groq.calls == []
+
+
+def test_shut_down_and_free_plan_models_are_not_a_fallback_list() -> None:
+    from writing_coach.ai.pricing import priced_catalogue_models
+
+    assert priced_catalogue_models("gemini") == [GEMINI, "gemini-3.1-flash-lite"]
+    groq = priced_catalogue_models("groq")
+    assert "llama-3.3-70b-versatile" not in groq and "openai/gpt-oss-120b" in groq
+    assert priced_catalogue_models("openrouter") == []

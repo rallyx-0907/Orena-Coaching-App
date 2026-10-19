@@ -21,7 +21,7 @@ from writing_coach.ai.config import CapabilityConfig, validate_capability_config
 from writing_coach.ai.pricing import resolve_token_pricing
 from writing_coach.ai.router import route, tap
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "openai/gpt-oss-120b"
 
 
 class GroqFake:
@@ -79,7 +79,7 @@ def test_a_429_on_the_free_primary_is_answered_by_the_groq_standby_and_the_cost_
     paid = [op for op in groq.env.repo.operations if op["provider"] == "groq"]
     assert len(paid) == 1 and paid[0]["capability"] == "word_translation" and paid[0]["tier"] == "paid"
     assert paid[0]["cost"]["state"] == "estimated"
-    assert paid[0]["cost"]["amount"] == pytest.approx((1000 * 0.59 + 100 * 0.79) / 1_000_000)
+    assert paid[0]["cost"]["amount"] == pytest.approx((1000 * 0.15 + 100 * 0.60) / 1_000_000)
     assert groq.ledger.reads[0][0] == "word_translation"
 
 
@@ -167,7 +167,7 @@ def _config(**kw: Any) -> CapabilityConfig:
 def test_the_reviewed_groq_standby_is_valid_with_a_positive_cap(monkeypatch) -> None:
     monkeypatch.setattr(policies, "value_strict", lambda key, **_: 0.5)
     validate_capability_config("word_translation", _config())
-    assert resolve_token_pricing("groq", GROQ_MODEL).input_per_million == 0.59
+    assert resolve_token_pricing("groq", GROQ_MODEL).input_per_million == 0.15
 
 
 def test_a_paid_standby_needs_a_positive_cap_to_be_saved_but_a_zero_cap_does_not_break_the_runtime(monkeypatch) -> None:
@@ -263,9 +263,11 @@ def test_the_qwen_groq_request_switches_thinking_off_and_other_models_are_untouc
 
 def test_the_other_groq_entries_keep_their_paid_prices() -> None:
     paid = resolve_token_pricing("groq", GROQ_MODEL)
-    assert (paid.input_per_million, paid.output_per_million) == (0.59, 0.79)
-    oss = resolve_token_pricing("groq", "openai/gpt-oss-120b")
-    assert (oss.input_per_million, oss.output_per_million) == (0.15, 0.60)
+    assert (paid.input_per_million, paid.output_per_million) == (0.15, 0.60)
+    oss = resolve_token_pricing("groq", "openai/gpt-oss-20b")
+    assert (oss.input_per_million, oss.output_per_million) == (0.075, 0.30)
+    old = resolve_token_pricing("groq", "llama-3.3-70b-versatile")  # shut down 2026-08-16, kept for old ledger rows
+    assert (old.input_per_million, old.output_per_million) == (0.59, 0.79)
 
 
 def test_the_free_groq_model_is_a_valid_standby_whatever_the_cap(monkeypatch) -> None:

@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-17.v9"
+PRICING_CATALOG_VERSION = "2026-10-19.v10"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -43,7 +43,11 @@ _CATALOG = MappingProxyType({
     ("openai", "gpt-4o"): TokenPricing("openai", "gpt-4o", "USD", 2.50, 10.00),
     ("deepseek", "deepseek-chat"): TokenPricing("deepseek", "deepseek-chat", "USD", 0.27, 1.10),
     ("deepseek", "deepseek-reasoner"): TokenPricing("deepseek", "deepseek-reasoner", "USD", 0.55, 2.19),
+    # SHUT DOWN 2026-08-16 (https://console.groq.com/docs/deprecations; replacement openai/gpt-oss-120b, issue #312).
+    # Kept only so ledger rows written before the shutdown still price; no capability offers it any more.
     ("groq", "llama-3.3-70b-versatile"): TokenPricing("groq", "llama-3.3-70b-versatile", "USD", 0.59, 0.79),
+    # Groq production model, https://console.groq.com/docs/models read 2026-10-19: input 0.075, output 0.30 per million.
+    ("groq", "openai/gpt-oss-20b"): TokenPricing("groq", "openai/gpt-oss-20b", "USD", 0.075, 0.30),
     # Media pre-translation (D-168): published rate, console.groq.com/docs/model/openai/gpt-oss-120b, read 2026-10-09
     # (input 0.15, output 0.60 per million; the cached-input rate 0.075 is not modelled, so this never understates).
     ("groq", "openai/gpt-oss-120b"): TokenPricing("groq", "openai/gpt-oss-120b", "USD", 0.15, 0.60),
@@ -188,6 +192,22 @@ def list_rate(provider: object, model: object) -> tuple[float, float] | None:
         return None
     rates = pricing.list_rates
     return rates if rates[0] > 0 or rates[1] > 0 else None
+
+
+# Priced entries the provider has shut down: kept so old ledger rows still price, never offered (issue #312).
+_RETIRED = frozenset({("groq", "llama-3.3-70b-versatile"), ("groq", "llama-3.1-8b-instant")})
+
+
+def priced_catalogue_models(provider: object) -> list[str]:
+    """The live, really-priced catalogue models of one provider (no free-plan zero rate, none shut down), in catalogue order.
+
+    The fallback model list of a provider whose operator named no models (D-228): a keyed provider with an empty
+    model list would otherwise offer nothing at all."""
+
+    wanted = str(provider or "").strip().casefold()
+    return [model for (owner, model) in _CATALOG
+            if owner == wanted and (owner, model) not in _RETIRED and list_rate(owner, model) is not None
+            and resolve_token_pricing(owner, model).input_per_million > 0]  # type: ignore[union-attr]
 
 
 def is_free_model(provider: object, model: object) -> bool:
