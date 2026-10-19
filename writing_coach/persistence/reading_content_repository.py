@@ -349,6 +349,40 @@ def overlay_rights(
     return effective
 
 
+OWN_RIGHTS_KEYS = (*RIGHTS_QUESTIONS, "license_note")
+
+
+def publication_rights(
+    snapshot: Any, decisions: Sequence[Mapping[str, Any]], source_policy: Mapping[str, Any] | None, *,
+    built_in: bool,
+) -> dict[str, Any]:
+    """The rights the publish confirmation reads, and where they came from (`basis`).
+
+    The article's own snapshot is authoritative for that article (the per-item
+    snapshot model, D-111): when it, or an administrator's recorded answer,
+    carries any rights answer, the source's policy is not consulted at all - a
+    text imported through the "Direct URL" input path keeps the public-domain
+    answer it was imported with, and a snapshot that says no, or leaves the
+    republish question unanswered, still asks for the confirmation.
+
+    Only an article with no rights of its own falls back to its registered
+    source's policy (`basis: "source"`). A built-in input path (manual paste,
+    direct URL, file upload) has no reviewed policy to fall back to - its
+    columns are defaults nobody answered - so there the answers stay unknown
+    (`basis: "none"`).
+    """
+    own = dict(snapshot) if isinstance(snapshot, dict) else {}
+    answered = any(key in own for key in OWN_RIGHTS_KEYS) or any(
+        any(key in answers for key in OWN_RIGHTS_KEYS) for answers in decisions
+    )
+    if answered:
+        return {"basis": "snapshot", "state": rights_state(overlay_rights(own, decisions))}
+    if built_in or not source_policy:
+        return {"basis": "none", "state": rights_state({})}
+    fallback = {key: source_policy[key] for key in RIGHTS_QUESTIONS if key in source_policy}
+    return {"basis": "source", "state": rights_state(fallback)}
+
+
 def fold_image_events(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """The thumbnail state of an article from its image events, oldest first.
 
@@ -1100,6 +1134,7 @@ class ReadingContentRepository:
                     select(
                         ReadingSource.automation_allowed, ReadingSource.name,
                         ReadingSource.slug, ReadingSource.polling_policy,
+                        ReadingSource.can_republish, ReadingSource.can_adapt, ReadingSource.attribution_required,
                     ).where(
                         ReadingSource.id == source_item.source_id
                     )
@@ -1123,6 +1158,16 @@ class ReadingContentRepository:
             article["automation"] = effective_automation(answered, source_default)
             article["source"]["rights_state"] = rights_state(effective)
             article["source"]["rights_effective"] = effective
+            # What the publish confirmation reads: the article's own snapshot when it has one, else its source.
+            article["source"]["publication_rights"] = publication_rights(
+                article["source"]["rights"], answered,
+                {
+                    "can_republish": bool(source_head.can_republish),
+                    "can_adapt": bool(source_head.can_adapt),
+                    "attribution_required": bool(source_head.attribution_required),
+                } if source_head else None,
+                built_in=bool(source_head) and source_head.slug in BUILT_IN_SLUGS,
+            )
             article["source"]["source_name"] = source_head.name if source_head else ""
             article["source"]["public_name"] = public_name_of(source_head.polling_policy) if source_head else ""
             article["provenance"] = _learner_credit(SimpleNamespace(
