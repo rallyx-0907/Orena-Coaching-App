@@ -144,7 +144,8 @@ funding enforcement.
 
 ## 7. One approval for gate 7b (prepared; waits for the owner and for R1)
 
-The owner approves every write to Polar **production** in one list. Nothing on it has been done.
+The owner approves every write to Polar **production** in one list. Nothing on it has been done. The ordered
+checklist, with a check and a rollback per step, is `GATE_7B_APPROVAL_PACKAGE.md`.
 
 **Precondition:** R1 is resolved by the 2026-10-19 renewal run (§2-§3). If Polar leaves `modified_at` empty at
 renewal, a code fix lands first, with independent review. `:8000` runs a build from `main` (item 21: the
