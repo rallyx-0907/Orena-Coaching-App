@@ -156,7 +156,15 @@ def choose_sense(word: str, sentence: str, senses: list[str], source: str, targe
         pool = build_pool(shared=shared)
         if not pool:
             return None
-        return router_module.route(CAPABILITY, raw, pool=pool).output["choice"]
+        # PR-MON-7B2a: one `word.assist` request, settled 1 only when a model the account pays for answered; over the
+        # plan's limit the sheet keeps the neutral sense (a miss).
+        from writing_coach.product import assist_meters
+
+        routed = assist_meters.quiet(
+            assist_meters.WORD_ASSIST, digest=("sense-choice", raw), ref="tap:sense-choice",
+            call=lambda: router_module.route(CAPABILITY, raw, pool=pool), charged=assist_meters.routed_cost,
+        )
+        return None if routed is None else routed.output["choice"]
     except (RouterInputInvalid, AICapabilityError, AIProviderError, FundingRequired):
         return None  # a quiet miss: not enabled, over a cap, unfunded, or every model failed
     except Exception as exc:  # noqa: BLE001 - a failing model step never blocks the sheet; the type only, never the text

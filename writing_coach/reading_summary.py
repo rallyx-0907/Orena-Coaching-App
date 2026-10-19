@@ -59,6 +59,18 @@ class ReadingSummaryService:
         self._cache = cache
         self._generate = generate
 
+    def cached(self, text: str, source_language: str, target_language: str, *,
+               scope: CacheScope | None = None) -> list[str] | None:
+        """The summary already held for this text, or None. Read-only: never calls the provider. The same key as
+        `summarize()`, so a hit here is exactly what `summarize()` would return without asking."""
+        source = primary_language(source_language)
+        target = normalize_support_language(target_language)
+        key = content_key(KIND_SUMMARY, source, normalize_text(text)[:MAX_SUMMARY_SOURCE_CHARS])
+        hit = self._cache.get(KIND_SUMMARY, target, key, scope=scope or learner_scope())
+        if hit and hit.get("bullets"):
+            return [str(item) for item in hit["bullets"]]
+        return None
+
     def summarize(self, text: str, source_language: str, target_language: str, *,
                   scope: CacheScope | None = None) -> list[str]:
         source = primary_language(source_language)

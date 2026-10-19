@@ -61,7 +61,7 @@ import {
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/annotations-sync.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { createStrokeTiles } from '../word/stroke-tiles.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
 
 let audio = null;
@@ -450,7 +450,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             if (!detail?.available) aiPause = pausedLineNow('/api/dictionary/word-detail');
           } catch (error) {
             detail = null;
-            aiPause = pausedLineOf(error);
+            aiPause = refusalLineOf(error);
             lookupFailed = !aiPause;
           }
           if (!alive) return;
@@ -472,7 +472,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
               const answer = enriched ? { ...enriched, saved: keptNow } : enriched;
               const next = mapWordCard(target, { detail: answer, item, support });
               if (next.hasContent) { detail = answer; card = next; void keepContextualMeaning(); }
-            }).catch((error) => { contextualFailed = true; aiPause = pausedLineOf(error); }).finally(() => {
+            }).catch((error) => { contextualFailed = true; aiPause = refusalLineOf(error); }).finally(() => {
               contextualPending = false;
               if (alive) paint();
             });
@@ -584,7 +584,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
       if (!meaning) aiPause = pausedLineNow('/api/reading/translate');
     } catch (error) {
       translation = { state: 'failed', text: '' };
-      aiPause = pausedLineOf(error);
+      aiPause = refusalLineOf(error);
     }
     if (alive) paint();
   }
@@ -757,7 +757,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
             response = await api.sentenceSheet({ text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined });
           } catch (error) {
             response = null;
-            sheetPause = pausedLineOf(error);
+            sheetPause = refusalLineOf(error);
           }
           if (!alive) return;
           sheetData = mapSentenceSheet(response || {});

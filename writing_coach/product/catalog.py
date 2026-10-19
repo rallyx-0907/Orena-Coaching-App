@@ -76,7 +76,7 @@ METERS: dict[str, Meter] = {
         # A count of target languages; only ADDING one beyond the cap is refused, on the server (language_limit.py, D-170).
         Meter("languages.target", None, "language", "language"),
         # PR-MON-7B1 (H7-3, D-MON-025): the semantic AI meters, one fresh remote AI operation = one request, per day.
-        # In the catalogue only: no route admits them and none is enforceable (quota.WIRED_METERS) until 7B2.
+        # Wired by PR-MON-7B2a (quota.WIRED_METERS, product/assist_meters.py): enforced when the quota switch lists them.
         Meter("word.assist", "day", "request", "request"),
         Meter("reading.assist", "day", "request", "request"),
         Meter("writing.task", "day", "request", "request"),
