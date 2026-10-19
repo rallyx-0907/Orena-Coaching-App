@@ -213,8 +213,8 @@ assert.ok(pinned.includes('unpkg.com/react@18.3.1'), 'the pinned runtime is unto
   const strip = (f) => html(f).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
   const privacy = strip('privacy.en.html');
   assert.ok(privacy.includes('Records of your plan usage and quota are kept for 12 months.'), 'privacy: usage and quota 12 months');
-  assert.ok(privacy.includes('Logs of administrator actions are kept for 24 months.'), 'privacy: admin action logs 24 months');
-  assert.ok(privacy.includes('Payment and billing records are kept for as long as accounting law requires (in Vietnam, at least 10 years)'), 'privacy: billing records');
+  assert.ok(privacy.includes('Logs of administrator actions (which may identify the account acted on) are kept for 24 months.'), 'privacy: admin action logs 24 months');
+  assert.ok(privacy.includes('Once payments start, payment and billing records are kept for as long as accounting law requires (in Vietnam, at least 10 years)'), 'privacy: billing records');
   assert.ok(strip('account-deletion.en.html').includes('Payment and billing records are kept as required for accounting and legal purposes.'), 'deletion: billing records kept');
 }
 
