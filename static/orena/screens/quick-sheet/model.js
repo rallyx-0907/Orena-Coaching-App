@@ -165,6 +165,12 @@ export function mapWordCard(word, { detail = null, item = null, support = '' } =
     meaning,
     // What the word commonly means, beside what it means here (LEX-018): shown only under a contextual meaning.
     generalMeaning: detail?.meaningSource === 'context' || detail?.meaningSource === 'contextual' ? text(detail?.generalMeaning) : '',
+    // The language that common meaning is written in when it is not the support language (an English definition no
+    // layer localized, kept beside the contextual meaning rather than hidden by it); empty = the support language.
+    generalMeaningLanguage: (() => {
+      const written = text(detail?.generalMeaningLanguage).toLowerCase();
+      return written && written !== supportCode ? written : '';
+    })(),
     example: text(detail?.deeper?.examples?.[0]),
     exampleParts: highlightExample(detail?.deeper?.examples?.[0], headword),
     audioUrl: text(detail?.audioUrl),

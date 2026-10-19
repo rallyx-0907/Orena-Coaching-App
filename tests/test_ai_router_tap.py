@@ -59,6 +59,25 @@ def test_the_second_tap_is_a_cache_hit_and_costs_no_call_and_no_brake(env, monke
     assert len(env.fake.calls) == 1
 
 
+def test_a_word_another_learner_already_tapped_costs_nothing(env) -> None:
+    """The result cache is keyed by (word, source language, support language), never by learner or sentence."""
+
+    first = USER_KEY_CTX.set("learner-one")
+    try:
+        assert tap.word_translation_seam("lamp", SENTENCE, [], "en", "vi") == "đèn"
+    finally:
+        USER_KEY_CTX.reset(first)
+    second = USER_KEY_CTX.set("learner-two")
+    try:
+        assert tap.word_translation_seam("lamp", "A different sentence about a lamp.", [], "en", "vi") == "đèn"
+    finally:
+        USER_KEY_CTX.reset(second)
+    assert len(env.fake.calls) == 1, "the second learner is a cache hit: no provider call"
+    env.fake.default[GEMMA] = {"meaning": "灯"}
+    assert tap.word_translation_seam("lamp", SENTENCE, [], "en", "zh") == "灯"  # another support language: its own entry
+    assert len(env.fake.calls) == 2
+
+
 @pytest.mark.parametrize("text", ["the quick brown fox", "x" * 41, "", "Hello, world"])
 def test_a_selection_that_is_not_a_word_or_short_phrase_is_not_sent(env, text) -> None:
     assert tap.word_translation_seam(text, SENTENCE, [], "en", "vi") is None
