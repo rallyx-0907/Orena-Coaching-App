@@ -23,8 +23,8 @@ policy the code does not settle.
    - Prices are charged in US dollars in every language. The limits of each plan are shown on the Plans page.
    - Voice chat with Orena is included in Plus and Pro only.
 
-   *Source:* D-MON-032, D-MON-034, `writing_coach/product/catalog.py`, and the owner's decision of 2026-10-19 on
-   voice chat.
+   *Source:* D-MON-032, D-MON-034, `writing_coach/product/catalog.py`, and D-235 (voice chat is a Plus and Pro
+   benefit; D-237 caps its daily minutes).
 2. **Who charges you.** Payments are processed by Polar (polar.sh), which acts as the merchant of record. Polar charges
    your card, handles taxes and issues your invoices. Orena never receives or stores your card details.
 
@@ -74,7 +74,6 @@ policy the code does not settle.
 ## Before gate 7b opens sales
 
 - The owner approves items 7 and 9, and the data line in item 6, and checks item 5 after the D result.
-- The voice-chat decision of 2026-10-19 is recorded as a D-entry.
 - The UI lane adds the approved text to the English Terms, and adds the Refund Policy, if separate, to the public
   pages.
 - The clickwrap under "Continue with Google" links to them.
