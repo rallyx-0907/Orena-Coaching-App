@@ -5,7 +5,7 @@ Dry run by default: a READ ONLY plan of what deleting one account removes, by ta
     python -m scripts.account_deletion --email learner@example.com            # dry run (POSTGRES_RUNTIME_URL)
     python -m scripts.account_deletion --user-key <google sub>                 # the same, by sign-in key
     python -m scripts.account_deletion --email ... --apply                     # delete, in one transaction
-    python -m scripts.account_deletion --email ... --apply --commerce keep     # when the account has commerce rows
+    python -m scripts.account_deletion --email ... --apply --commerce keep     # when the account has money records
 
 Nobody applies it against a public runtime until the independent architecture review named in the runbook is
 recorded in Git. The URL is never printed; prefer the environment variable to --url (shell history).
@@ -26,8 +26,8 @@ def main(argv: list[str] | None = None) -> int:
     who.add_argument("--email")
     who.add_argument("--user-key")
     parser.add_argument("--apply", action="store_true", help="delete (default: dry run)")
-    parser.add_argument("--commerce", choices=("delete", "keep"), default=None,
-                        help="required with --apply when the account has commerce rows")
+    parser.add_argument("--commerce", choices=("keep",), default=None,
+                        help="required with --apply when the account has money records: they are kept (append-only)")
     parser.add_argument("--url", default=None, help="database URL; default POSTGRES_RUNTIME_URL")
     args = parser.parse_args(argv)
     url = args.url or os.environ.get("POSTGRES_RUNTIME_URL", "")
@@ -41,7 +41,11 @@ def main(argv: list[str] | None = None) -> int:
     engine = sqlalchemy.create_engine(url, future=True)
     try:
         if not args.apply:
-            summary = plan_summary(engine, email=args.email, user_key=args.user_key)
+            try:
+                summary = plan_summary(engine, email=args.email, user_key=args.user_key)
+            except DeletionRefused as refused:
+                print(f"refused: {refused}", file=sys.stderr)
+                return 2
             if summary is None:
                 print("no such account", file=sys.stderr)
                 return 2

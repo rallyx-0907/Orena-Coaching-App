@@ -68,12 +68,19 @@ with this table. Any table not listed here is a finding for the reviewer.
 | File store | personal uploads under `data/media_library` (`MEDIA_LIBRARY_ROOT`): entries with `library='personal'`, provider `upload` or `youtube`, owner token of the account, in every learning language, with their original and thumbnail files | owner token | `writing_coach.media_library_api.delete_all_owned_media(user_key)` (`media_library_api.py:289`, `FILE_STORES`) |
 | Caches / derived | any per-account cache or derived store found by the schema scan (e.g. `reading_derived_texts` if account-scoped) | | confirm, then delete |
 | `users` row | KEPT as the barrier | | reset `learning_language`, `interface_language`, `weekly_goal_days`, `settings_updated_at` (`USER_COLUMNS_TO_RESET`); blank `name` and `picture`; replace `email` by the reviewer-approved placeholder; mark the incarnation deleted (`incarnation_repository.mark_deleted`, "no runtime caller", D-055) |
-| Session | cookie-only sessions (`writing_coach_session`, 14 days, signed, no server-side revoke) | | not revoked server-side today (session revocation is tracked separately, PRE-502). Until it lands: 14 days after the deletion (the session lifetime), run the dry run again and apply it to anything it finds |
+| Session | cookie-only sessions (`writing_coach_session`, 14 days, signed, no server-side revoke) | | revoked by the tool in the same transaction: the account's "revoked before" instant (`auth.session_revoked_before.*`, #377), so every cookie issued before the deletion is refused |
 | Device data | recordings, Orena Intelligence device memory, local settings | | not reachable by the operator; the learner clears site data. The public page says so |
 
-Order: take the journal export (`runtime_backup.py deletions`) after marking the incarnation deleted; delete the file
-store entries before the rows that name them; delete incarnation-keyed rows before anything that would orphan them.
-One database transaction for the SQL part, so a failure leaves nothing half-deleted. Row counts per table are recorded.
+Order, as the tool runs it: one database transaction marks the incarnations deleted (or writes a deleted epoch-1
+row for an account that never had one), deletes the rows, resets and anonymises the `users` row and revokes the
+sessions; a failure leaves nothing half-deleted. Then the steps it prints: the personal media files (the sign-in key
+survives, so they are still found), the Polar customer clean-up, and the journal export (`runtime_backup.py
+deletions`). Keep the dry-run and apply outputs (row counts per table) with the request.
+
+**Money records are kept.** The billing, credit and commerce tables keep their history append-only (the schema refuses
+the delete), so `--commerce keep` is the only choice when the account has any. The public deletion page
+(`account-deletion.en.json`) does not yet say payment records are kept: **owner decision before first use** -
+disclose it, or design a deletable path.
 
 ## 4. What is not deleted (and why it is on the public page)
 
@@ -93,9 +100,9 @@ One database transaction for the SQL part, so a failure leaves nothing half-dele
   whose reason starts with `polar_customer_cleanup_failed` for it. While the marker is `pending`, run the clean-up
   route again; **do not close the request while it is pending.** A marker that is missing is pending, not done.
 - `runtime_backup.py suppress --check` (deletion holds against the journal) answers that every record holds.
-- Sign-in with the same Google account yields a NEW incarnation with no data (`incarnation_repository.register_new`),
-  not the old one.
-- `GET /api/me`-style checks for the old session cookie return nothing of the account's content.
+- The account's incarnations are all `deleted` (a returning learner meets the barrier, `DeletionBarrier`), and the
+  dry run run again lists no row to delete. The operator does not sign in as the learner.
+- The session revocation row exists for the account (`platform_settings` key `auth.session_revoked_before.<hash>`).
 
 ## 6. Close
 
@@ -110,4 +117,9 @@ Record the completion date in the request log. If the 30 days are about to pass,
    deletes the same set.
 3. Whether admin-action `audit_logs` rows about the account are kept.
 4. Confirm backup rotation is applied on the host (`backup_days` = 30).
-5. Whether session revocation is needed before the runtime is built.
+5. Session revocation exists (#377); the tool applies it.
+6. **D-054's gate** (`tests/test_deletion_journal.py`, `ORENA_BACKBONE_INTEGRATION_GATES.md`): no code may mark an
+   incarnation deleted until each deletion is journaled outside the database **as it happens** and the owner-table
+   deletion is **replayed after a restore**. The tool marks incarnations, so it cannot merge until that gate is
+   lifted in its own reviewed change (continuous journal append with a defined order, a replay path wired next to
+   `suppress`, a DECISION_LOG entry, and the test edited to allow exactly `persistence/account_deletion.py`).

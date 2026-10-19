@@ -2,25 +2,31 @@
 
 The operator tool is `scripts/account_deletion.py`; the procedure around it is docs/project/ACCOUNT_DELETION_RUNBOOK.md.
 Destructive: nobody applies it against a public runtime until the independent architecture review the runbook names is
-recorded in Git. The default is a dry run.
+recorded in Git, and until D-054's gate is lifted (continuous journaling and replay, `ORENA_BACKBONE_INTEGRATION_GATES`).
+The default is a dry run.
 
 **Complete by construction.** The plan does not trust a hand-written list. It reads the live schema
 (`information_schema`) and takes every base table with a column that names the account:
 - `user_id` or `account_id`: the account's `users.id`;
 - `incarnation_id`: any of its incarnations;
 - `user_key`: its sign-in key.
-`deletion_enumeration.py` stays the documented list, and a test keeps it inside what the scan finds.
+`deletion_enumeration.py` stays the documented list, and a test keeps the ORM tables inside what the plan handles.
 
 Each table found is classified:
-- **kept as the barrier:** `users` (its columns are reset and anonymised) and `account_incarnations` (marked deleted);
-- **`audit_logs`:** the account's own rows are deleted. `admin.*` rows stay as the record of what administrators did,
-  pending the reviewer's decision (runbook §7.3);
-- **commerce** (`commerce_*`, `credit_*`, `billing_*`): money records. They are deleted only with an explicit
-  `commerce="delete"`, or kept with `"keep"`. With rows present and no choice, `apply` refuses;
-- **everything else:** the account's rows are deleted. Child rows go by their own `ON DELETE CASCADE`. A child
-  without one makes the transaction fail and roll back: nothing is half-deleted.
+- **kept as the barrier:**
+  - `users`: settings, consent and role reset; email, name and picture anonymised;
+  - `account_incarnations`: every incarnation marked deleted. An account that never had one gets a deleted epoch-1
+    row, so a returning learner meets the barrier rather than a first sign-in.
+- **`audit_logs`:** `user_id` is the actor of an administrator's action, so only the account's own learner actions go
+  (`learner.*`, `agent.*`). Every other row is kept as the record of what was done (runbook section 7.3).
+- **commerce** (`commerce_*`, `credit_*`, `billing_*`): money records. The schema keeps their history append-only
+  (RESTRICT), so they are kept. The operator says so explicitly (`commerce="keep"`); with rows present and no choice,
+  `apply` refuses. Whether the public deletion page must disclose this is the owner's decision (runbook).
+- **everything else:** the account's rows are deleted. Child rows go by their own `ON DELETE CASCADE`. A child that
+  would refuse makes `apply` stop before any change.
 
-Not here, and listed by the tool as next steps:
+The account's sessions end in the same transaction: the revocation instant auth_support reads
+(`auth.session_revoked_before.*`, #377). Not here, and listed by the tool as next steps:
 - the personal media files (`media_library_api.delete_all_owned_media`, which needs the app's stores);
 - the Polar customer clean-up (an admin route);
 - the deletion journal export (`scripts/runtime_backup.py deletions`).
@@ -28,6 +34,9 @@ Not here, and listed by the tool as next steps:
 
 from __future__ import annotations
 
+import hashlib
+import json
+import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -42,13 +51,22 @@ KEY_COLUMNS = ("user_key",)
 BARRIER_TABLES = frozenset({"users", "account_incarnations"})
 COMMERCE_PREFIXES = ("commerce_", "credit_", "billing_")
 AUDIT_TABLE = "audit_logs"
-ANONYMOUS_NAME = ""
-ANONYMOUS_PICTURE = ""
+LEARNER_AUDIT_ACTIONS = ("learner.%", "agent.%")  # the account's own actions; every other row records an actor
+SESSION_REVOKED_KEY_PREFIX = "auth.session_revoked_before."  # auth_support.py (#377)
+USER_ROLE_AFTER_DELETION = "user"
 
 
 def anonymous_email(account_id: str) -> str:
-    """`users.email` is UNIQUE and NOT NULL: a per-account placeholder that names no one (runbook §0, reviewer)."""
+    """A per-account placeholder for `users.email` (NOT NULL) that names no one; the internal id is kept anyway."""
     return f"deleted+{account_id}@deleted.invalid"
+
+
+def session_revoked_key(user_key: str) -> str:
+    return SESSION_REVOKED_KEY_PREFIX + hashlib.sha256(user_key.encode("utf-8")).hexdigest()[:40]
+
+
+class DeletionRefused(Exception):
+    """`apply` would not run, or the account cannot be named safely: nothing was changed."""
 
 
 @dataclass(frozen=True)
@@ -64,14 +82,15 @@ class Target:
     column: str
     group: str  # "delete" | "commerce" | "audit"
     rows: int
+    uuid_column: bool = True
 
 
 @dataclass
 class Plan:
     account: Account
     targets: list[Target] = field(default_factory=list)
-    audit_kept: int = 0  # admin.* rows about/by the account, kept as the record
-    blockers: list[str] = field(default_factory=list)  # child tables that would refuse the delete (no cascade)
+    audit_kept: int = 0  # rows naming the account as an actor, kept as the record
+    blockers: list[str] = field(default_factory=list)  # child tables with no cascade under a table that loses rows
 
     @property
     def commerce_rows(self) -> int:
@@ -81,42 +100,59 @@ class Plan:
         return {
             "account": {"id": self.account.id, "incarnations": len(self.account.incarnations)},
             "delete": {f"{t.table}.{t.column}": t.rows for t in self.targets if t.group in ("delete", "audit")},
-            "commerce": {f"{t.table}.{t.column}": t.rows for t in self.targets if t.group == "commerce"},
-            "audit_kept_admin_rows": self.audit_kept,
+            "commerce_kept": {f"{t.table}.{t.column}": t.rows for t in self.targets if t.group == "commerce"},
+            "audit_kept_actor_rows": self.audit_kept,
             "fk_without_cascade": self.blockers,
-            "users_row": "kept as the barrier: settings and consent reset; email, name and picture anonymised",
-            "incarnations": "marked deleted (kept as the barrier)",
+            "users_row": "kept as the barrier: settings, consent and role reset; email, name and picture anonymised",
+            "incarnations": "marked deleted (kept as the barrier); a deleted epoch-1 row when there is none",
+            "sessions": "revoked",
         }
 
 
 def find_account(conn: Any, *, email: str | None = None, user_key: str | None = None) -> Account | None:
+    """The account by exactly one of email or sign-in key. `users.email` is not unique: more than one match is
+    refused with the candidates' sign-in keys, so the operator names the account by its key."""
+
     if bool(email) == bool(user_key):
         raise ValueError("name the account by exactly one of email or user_key")
-    row = conn.execute(text("SELECT id::text AS id, user_key FROM users WHERE " +
-                            ("lower(email) = lower(:v)" if email else "user_key = :v")),
-                       {"v": email or user_key}).mappings().first()  # fmt: skip
-    if row is None:
+    rows = conn.execute(text("SELECT id::text AS id, user_key FROM users WHERE " +
+                             ("lower(email) = lower(:v)" if email else "user_key = :v") + " ORDER BY created_at"),
+                        {"v": email or user_key}).mappings().all()  # fmt: skip
+    if not rows:
         return None
-    incarnations = tuple(r[0] for r in conn.execute(
-        text("SELECT id::text FROM account_incarnations WHERE user_id::text = :u ORDER BY epoch"), {"u": row["id"]}))
-    return Account(row["id"], row["user_key"], incarnations)
+    if len(rows) > 1:
+        raise DeletionRefused(f"{len(rows)} accounts share this email; name one by --user-key: "
+                              + ", ".join(r["user_key"] for r in rows))  # fmt: skip
+    return Account(rows[0]["id"], rows[0]["user_key"], _incarnations(conn, rows[0]["id"]))
 
 
-def _owner_columns(conn: Any) -> list[tuple[str, str]]:
+def _incarnations(conn: Any, account_id: str) -> tuple[str, ...]:
+    return tuple(r[0] for r in conn.execute(
+        text("SELECT id::text FROM account_incarnations WHERE user_id = CAST(:u AS uuid) ORDER BY epoch"),
+        {"u": account_id}))  # fmt: skip
+
+
+def _owner_columns(conn: Any) -> list[tuple[str, str, bool]]:
     names = ACCOUNT_COLUMNS + INCARNATION_COLUMNS + KEY_COLUMNS
-    return [(r[0], r[1]) for r in conn.execute(text(
-        "SELECT c.table_name, c.column_name FROM information_schema.columns c"
+    return [(r[0], r[1], r[2] == "uuid") for r in conn.execute(text(
+        "SELECT c.table_name, c.column_name, c.data_type FROM information_schema.columns c"
         " JOIN information_schema.tables t ON t.table_schema = c.table_schema AND t.table_name = c.table_name"
         " WHERE c.table_schema = current_schema() AND t.table_type = 'BASE TABLE' AND c.column_name = ANY(:names)"
         " ORDER BY c.table_name, c.column_name"), {"names": list(names)})]  # fmt: skip
 
 
-def _where(column: str) -> str:
+def _quote(conn: Any, name: str) -> str:
+    return conn.dialect.identifier_preparer.quote(name)
+
+
+def _where(conn: Any, column: str, uuid_column: bool) -> str:
+    """An index-friendly match: a uuid column compared as uuid, never cast to text."""
+    col = _quote(conn, column)
     if column in ACCOUNT_COLUMNS:
-        return f'"{column}"::text = :account'
+        return f"{col} = CAST(:account AS uuid)" if uuid_column else f"{col} = :account"
     if column in INCARNATION_COLUMNS:
-        return f'"{column}"::text = ANY(:incarnations)'
-    return f'"{column}" = :user_key'
+        return f"{col} = ANY(CAST(:incarnations AS uuid[]))" if uuid_column else f"{col} = ANY(:incarnations)"
+    return f"{col} = :user_key"
 
 
 def _params(account: Account) -> dict[str, Any]:
@@ -131,25 +167,34 @@ def _group(table: str) -> str:
     return "delete"
 
 
+def _learner_actions() -> str:
+    return "(" + " OR ".join(f"action LIKE :learner{i}" for i in range(len(LEARNER_AUDIT_ACTIONS))) + ")"
+
+
+def _learner_params() -> dict[str, str]:
+    return {f"learner{i}": pattern for i, pattern in enumerate(LEARNER_AUDIT_ACTIONS)}
+
+
 def build_plan(conn: Any, account: Account) -> Plan:
     """Read-only: what deleting this account removes, by table and column, with row counts."""
 
     plan = Plan(account)
-    params = _params(account)
-    for table, column in _owner_columns(conn):
-        if table in BARRIER_TABLES:
-            continue
+    params = {**_params(account), **_learner_params()}
+    for table, column, uuid_column in _owner_columns(conn):
+        if table in BARRIER_TABLES or (column in INCARNATION_COLUMNS and not account.incarnations):
+            continue  # an account with no incarnation has no incarnation-keyed rows
         group = _group(table)
-        where = _where(column)
+        where = _where(conn, column, uuid_column)
+        name = _quote(conn, table)
         if group == "audit":
-            rows = conn.execute(text(f'SELECT count(*) FROM "{table}" WHERE {where} AND action NOT LIKE :admin'),
-                                {**params, "admin": "admin.%"}).scalar()  # fmt: skip
-            plan.audit_kept += int(conn.execute(text(f'SELECT count(*) FROM "{table}" WHERE {where}'
-                                                     " AND action LIKE :admin"), {**params, "admin": "admin.%"}).scalar())
+            rows = conn.execute(text(f"SELECT count(*) FROM {name} WHERE {where} AND {_learner_actions()}"),
+                                params).scalar()  # fmt: skip
+            plan.audit_kept += int(conn.execute(text(f"SELECT count(*) FROM {name} WHERE {where}"
+                                                     f" AND NOT {_learner_actions()}"), params).scalar() or 0)
         else:
-            rows = conn.execute(text(f'SELECT count(*) FROM "{table}" WHERE {where}'), params).scalar()
-        plan.targets.append(Target(table, column, group, int(rows or 0)))
-    deleted = {t.table for t in plan.targets}
+            rows = conn.execute(text(f"SELECT count(*) FROM {name} WHERE {where}"), params).scalar()
+        plan.targets.append(Target(table, column, group, int(rows or 0), uuid_column))
+    deleted = {t.table for t in plan.targets if t.group != "commerce"}
     for child, parent, rule in conn.execute(text(
             "SELECT tc.table_name, ccu.table_name, rc.delete_rule FROM information_schema.referential_constraints rc"
             " JOIN information_schema.table_constraints tc ON tc.constraint_name = rc.constraint_name"
@@ -163,46 +208,49 @@ def build_plan(conn: Any, account: Account) -> Plan:
     return plan
 
 
-class DeletionRefused(Exception):
-    """`apply` would not run: the plan needs a decision first. Nothing was changed."""
-
-
 def apply_plan(engine: Any, *, email: str | None = None, user_key: str | None = None, commerce: str | None = None,
                now: datetime | None = None) -> Plan:  # fmt: skip
-    """Delete the account's data in ONE transaction, re-planned inside it under a lock on the `users` row. Refused,
-    with nothing changed, when commerce rows exist and `commerce` is not "delete" or "keep"."""
+    """Delete the account's data in ONE transaction. The account row is locked first, and the incarnations and the
+    plan are read under that lock. Refused, with nothing changed: an unknown or ambiguous account; commerce rows with
+    no `commerce="keep"`; a child table that would refuse the delete."""
 
-    if commerce not in (None, "delete", "keep"):
-        raise ValueError('commerce must be "delete" or "keep"')
+    if commerce not in (None, "keep"):
+        raise ValueError('commerce must be "keep": money records are append-only and stay')
     moment = now or datetime.now(UTC)
     with engine.begin() as conn:
-        account = find_account(conn, email=email, user_key=user_key)
-        if account is None:
+        found = find_account(conn, email=email, user_key=user_key)
+        if found is None:
             raise DeletionRefused("no such account")
-        conn.execute(text("SELECT id FROM users WHERE id::text = :a FOR UPDATE"), {"a": account.id})
+        conn.execute(text("SELECT id FROM users WHERE id = CAST(:a AS uuid) FOR UPDATE"), {"a": found.id})
+        account = Account(found.id, found.user_key, _incarnations(conn, found.id))  # read under the lock
         plan = build_plan(conn, account)
         if plan.commerce_rows and commerce is None:
-            raise DeletionRefused(f"{plan.commerce_rows} commerce rows: choose commerce='delete' or 'keep' first")
-        if commerce == "delete" and plan.commerce_rows and plan.blockers:
-            # The credit ledger and quota reservations are append-only money history (RESTRICT): the schema refuses.
-            raise DeletionRefused("commerce rows are append-only money records the schema will not delete "
-                                  f"({'; '.join(plan.blockers)}): choose commerce='keep'")
-        if any(not b.split(" -> ")[0].startswith(COMMERCE_PREFIXES) for b in plan.blockers):
+            raise DeletionRefused(f"{plan.commerce_rows} commerce rows: they are kept; say so with commerce='keep'")
+        if plan.blockers:
             raise DeletionRefused(f"a child table would refuse the delete: {'; '.join(plan.blockers)}")
-        params = _params(account)
-        conn.execute(text("UPDATE account_incarnations SET status = 'deleted', deleted_at = :now"
-                          " WHERE user_id::text = :account AND status = 'active'"), {**params, "now": moment})  # fmt: skip
+        _mark_incarnations_deleted(conn, account, moment)
+        params = {**_params(account), **_learner_params()}
         for target in plan.targets:
-            if target.group == "commerce" and commerce != "delete":
+            if target.group == "commerce":
                 continue
-            where = _where(target.column)
-            if target.group == "audit":
-                conn.execute(text(f'DELETE FROM "{target.table}" WHERE {where} AND action NOT LIKE :admin'),
-                             {**params, "admin": "admin.%"})  # fmt: skip
-            else:
-                conn.execute(text(f'DELETE FROM "{target.table}" WHERE {where}'), params)
+            where = _where(conn, target.column, target.uuid_column)
+            name = _quote(conn, target.table)
+            extra = f" AND {_learner_actions()}" if target.group == "audit" else ""
+            conn.execute(text(f"DELETE FROM {name} WHERE {where}{extra}"), params)
         _reset_user(conn, account)
+        _revoke_sessions(conn, account, moment)
     return plan
+
+
+def _mark_incarnations_deleted(conn: Any, account: Account, moment: datetime) -> None:
+    if account.incarnations:
+        conn.execute(text("UPDATE account_incarnations SET status = 'deleted', deleted_at = :now"
+                          " WHERE user_id = CAST(:a AS uuid) AND status = 'active'"), {"a": account.id, "now": moment})
+        return
+    # Never registered on the backbone: a deleted epoch-1 row, so the next sign-in meets the barrier (D-054).
+    conn.execute(text("INSERT INTO account_incarnations (id, user_id, epoch, status, created_at, deleted_at)"
+                      " VALUES (CAST(:id AS uuid), CAST(:a AS uuid), 1, 'deleted', :now, :now)"),
+                 {"id": str(uuid.uuid4()), "a": account.id, "now": moment})  # fmt: skip
 
 
 def _reset_user(conn: Any, account: Account) -> None:
@@ -211,12 +259,23 @@ def _reset_user(conn: Any, account: Account) -> None:
         " AND table_name = 'users'"))}  # fmt: skip
     values: dict[str, Any] = {k: v for k, v in {**USER_COLUMNS_TO_RESET, **CONSENT_COLUMNS_TO_RESET}.items()
                               if k in present}  # fmt: skip
-    values.update({k: v for k, v in {"email": anonymous_email(account.id), "name": ANONYMOUS_NAME,
-                                     "picture": ANONYMOUS_PICTURE}.items() if k in present})  # fmt: skip
+    values.update({k: v for k, v in {"email": anonymous_email(account.id), "name": "", "picture": "",
+                                     "role": USER_ROLE_AFTER_DELETION}.items() if k in present})  # fmt: skip
     if not values:
         return
-    assignments = ", ".join(f'"{column}" = :{column}' for column in values)
-    conn.execute(text(f"UPDATE users SET {assignments} WHERE id::text = :account_id"), {**values, "account_id": account.id})
+    assignments = ", ".join(f"{_quote(conn, column)} = :{column}" for column in values)
+    conn.execute(text(f"UPDATE users SET {assignments} WHERE id = CAST(:account_id AS uuid)"),
+                 {**values, "account_id": account.id})  # fmt: skip
+
+
+def _revoke_sessions(conn: Any, account: Account, moment: datetime) -> None:
+    """Every session of the account ends: the instant auth_support refuses cookies issued before (#377)."""
+    conn.execute(text(
+        "INSERT INTO platform_settings (key, value, updated_at, updated_by) VALUES (:k, CAST(:v AS json), :now, :by)"
+        " ON CONFLICT (key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at,"
+        " updated_by = excluded.updated_by"),
+        {"k": session_revoked_key(account.user_key), "v": json.dumps({"before_ms": int(moment.timestamp() * 1000)}),
+         "now": moment, "by": "account-deletion"})  # fmt: skip
 
 
 def plan_summary(engine: Any, *, email: str | None = None, user_key: str | None = None) -> dict[str, Any] | None:
@@ -228,12 +287,11 @@ def plan_summary(engine: Any, *, email: str | None = None, user_key: str | None 
         return None if account is None else build_plan(conn, account).summary()
 
 
-def next_steps(account_user_key_hint: str = "<user_key>") -> list[str]:
+def next_steps(user_key: str = "<user_key>") -> list[str]:
     return [
         "Personal media files (inside the app container): python -c \"import app; from writing_coach.media_library_api "
-        f"import delete_all_owned_media; print(delete_all_owned_media('{account_user_key_hint}'))\"",
+        f"import delete_all_owned_media; print(delete_all_owned_media('{user_key}'))\"",
         "Polar customer clean-up: POST /api/admin/billing/polar/customer-cleanup, until its marker is 'complete'",
         "Deletion journal: python scripts/runtime_backup.py deletions --out <journal path outside any database>",
         "Verify (runbook section 5), then close the request",
     ]
-
