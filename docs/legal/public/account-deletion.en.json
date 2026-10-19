@@ -51,6 +51,7 @@
           "ul": [
             "**A deletion record.** We keep an internal identifier, the opaque sign-in identifier Google gave your account, and the time of deletion, with no name, email or content, so that your deletion still holds if a backup is ever restored.",
             "**Backups.** Backups made before the deletion can still contain your data. They are overwritten on a rolling schedule within {{fact:retention.backup_days}} days.",
+            "**Payment and billing records.** Payment and billing records are kept as required for accounting and legal purposes.",
             "**Server and network logs.** Operational logs of our servers and of our hosting and network providers may still contain your IP address and request times.",
             "**Data already sent to service providers.** Text or audio already sent to AI and speech providers to return a result is handled under their own retention, and we cannot delete it from their systems.",
             "**Recordings on your device.** Anything Orena keeps in your own browser or device stays there until you clear your browser's site data."

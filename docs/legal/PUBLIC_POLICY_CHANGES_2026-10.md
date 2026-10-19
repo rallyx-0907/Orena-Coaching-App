@@ -83,6 +83,15 @@ overwritten, operational logs, data already with service providers, device-local
   feedback are kept to personalise practice, and are deleted by asking us to delete the account (manual, 30 days, as
   the existing text states). The matching Settings line (learner audio) was reworded the same way. Code unchanged.
 
+## Retention periods (2026-10-19, owner decision "follow the proposal", AY, English only, D-238)
+
+- Privacy 7 gains one paragraph: plan usage and quota records 12 months, administrator action logs 24 months, payment and
+  billing records as long as accounting law requires (in Vietnam at least 10 years). Delete account 3 ("What is kept")
+  gains: payment and billing records are kept as required for accounting and legal purposes. Feedback (24 months) and Orena
+  Intelligence turns (90 days) were already stated and are unchanged.
+- Policy statements: the 12-month usage/quota and 24-month admin-audit sweeps are the R8 sweep PR (Intelligence lane); that
+  PR must merge and its sweep be ON before these pages deploy to :8000. Payments are not live, so no billing records exist yet.
+
 ## Facts the text states and who must confirm them
 
 `docs/legal/public/facts.json`: publish date (null in the repository; stamped at deploy with `--release
