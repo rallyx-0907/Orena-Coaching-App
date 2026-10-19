@@ -520,6 +520,7 @@ _persistence_runtime = build_runtime(
     backend=os.getenv("PERSISTENCE_BACKEND", "postgresql"),
 )
 configure_auth_repository(_persistence_runtime.auth_repository)
+auth_support.configure_session_revocation(_persistence_runtime.platform_repository)
 configure_account_settings(_persistence_runtime.auth_repository)
 configure_platform_repository(_persistence_runtime.platform_repository)
 # AC-2: AI cost per signed-in account, kept 13 months; a no-op until migration 20261005_0026 is applied.
