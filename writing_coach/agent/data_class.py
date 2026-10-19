@@ -27,19 +27,31 @@ A provider with no recorded class is `none`. **Not governed by this gate yet** (
 opening snapshot, the learner's own text and the results of tools the model calls in the turn. G8 is not complete
 until each of those is covered and moved into `GOVERNED_PAYLOADS`.
 
-The classes are configuration, read once at start, never guessed: `AGENT_PROVIDER_DATA_CLASSES` lists
-`provider=class` or `provider:model=class` entries separated by commas (a model entry wins over its provider's). An
-entry that does not parse refuses to start. Where the owner records the classes in Admin is a UI-lane question
-(the provider catalogue); until then this configuration is the record.
+The classes are the owner's record, never guessed. `AGENT_PROVIDER_DATA_CLASSES` lists `provider=class` or
+`provider:model=class` entries separated by commas (a model entry wins over its provider's); an entry that does not
+parse refuses to start. The owner may instead record them in Admin (#264): the platform setting `SETTING_KEY`,
+written by `PUT /api/admin/agent/data-classes`, is read at each use (`LiveProviderDataClasses`) and, once saved, is
+the record; while none is saved - or it cannot be read - the environment record stays authoritative.
 """
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+import logging
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 from enum import IntEnum
 from types import MappingProxyType
 from typing import Any
+
+log = logging.getLogger(__name__)
+
+SETTING_KEY = "agent.provider_data_classes"  # platform setting {"classes": {"provider[:model]": "class"}} (#264)
+# What each class sends, for the owner choosing one in Admin (ORENA_MEMORY.md §8).
+CLASS_NOTES = {
+    "none": "No learner data.",
+    "learning_profile": "The learner's profile and learning evidence.",
+    "full_memory": "That, and Orena Memory: coach notes and session summaries.",
+}
 
 
 class DataClass(IntEnum):
@@ -98,6 +110,64 @@ class ProviderDataClasses:
     @classmethod
     def from_env(cls, environ: Mapping[str, Any]) -> ProviderDataClasses:
         return cls.parse(environ.get("AGENT_PROVIDER_DATA_CLASSES"))
+
+    @classmethod
+    def from_mapping(cls, entries: Any) -> ProviderDataClasses:
+        """The Admin record, `{"provider[:model]": "class"}`. Anything malformed raises ValueError - nothing is
+        guessed, and the caller decides what a bad record means."""
+        if not isinstance(entries, Mapping):
+            raise ValueError("the data classes are a mapping of provider[:model] to class")
+        classes: dict[str, DataClass] = {}
+        for key, value in entries.items():
+            if not isinstance(key, str) or not isinstance(value, str):
+                raise ValueError("each entry is provider[:model] -> class")
+            name = key.strip()
+            if not name or name.startswith(":") or name.endswith(":") or name.count(":") > 1 or "," in name or "=" in name:
+                raise ValueError(f"{key!r} is not provider[:model]")
+            if name in classes:
+                raise ValueError(f"{name!r} is named twice")
+            classes[name] = DataClass.parse(value)
+        return cls(MappingProxyType(classes))
+
+
+class LiveProviderDataClasses:
+    """`ProviderDataClasses` read from the owner's Admin record at each use, so a class set there applies to the next
+    turn with no restart (#264, as `LiveAgentLimits` for the limits). The agent package reads no store itself: the
+    application hands it `stored()`, which returns the setting's value (`{"classes": {...}}`) or None.
+
+    - No record saved: the environment record (`fallback`) is the record.
+    - A record that cannot be read or does not parse: the last record read well, else the environment record - never
+      a guess - and it is logged."""
+
+    def __init__(self, fallback: ProviderDataClasses, stored: Callable[[], Mapping[str, Any] | None]) -> None:
+        self._fallback = fallback
+        self._stored = stored
+        self._last_good: ProviderDataClasses | None = None
+
+    def current(self) -> tuple[ProviderDataClasses, str]:
+        """The record in force and where it comes from: "admin" or "environment"."""
+        try:
+            value = self._stored()
+            if value is None:
+                self._last_good = None
+                return self._fallback, "environment"
+            record = ProviderDataClasses.from_mapping(value.get("classes") if isinstance(value, Mapping) else None)
+        except Exception as error:  # noqa: BLE001 - a store or parse failure never fails a turn, and never guesses
+            log.warning("agent data classes: the Admin record could not be used (%s)", type(error).__name__)
+            if self._last_good is not None:
+                return self._last_good, "admin"
+            return self._fallback, "environment"
+        self._last_good = record
+        return record, "admin"
+
+    def of(self, provider: str | None, model: str | None = None) -> DataClass:
+        return self.current()[0].of(provider, model)
+
+    def cleared(self, provider: str | None, model: str | None, needed: DataClass) -> bool:
+        return self.current()[0].cleared(provider, model, needed)
+
+    def public(self) -> dict[str, str]:
+        return self.current()[0].public()
 
 
 PACK_CLASS = DataClass.LEARNING_PROFILE  # what the M1 learner pack carries (profile and evidence)
