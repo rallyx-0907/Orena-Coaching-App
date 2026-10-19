@@ -80,6 +80,7 @@ from writing_coach.agent.notes import (
     FORGET,
     asks_to_remember_unaccented,
     confirmed_note,
+    names_a_note,
     note_intent,
     notes_the_message_changes,
     unaccented_wish,
@@ -1063,7 +1064,7 @@ class _Turn:
         if self.note_confirmed is not None and not self.notes_asked:
             return (f"The learner tapped to keep this note: {self.note_confirmed!r}. Call remember_note with exactly "
                     "these words as text now, then answer in one sentence.")  # fmt: skip
-        return note_nudge(self.notes_asked, self.notes_intent or CORRECT)
+        return note_nudge(self.notes_asked, self.notes_intent or CORRECT, explicit=names_a_note(self.request.message))
 
     def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str, *,
                    why: str | None = None) -> None:

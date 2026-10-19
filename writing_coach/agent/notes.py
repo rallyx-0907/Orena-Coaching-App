@@ -44,8 +44,10 @@ CORRECT, FORGET = "correct", "forget"
 _FORGETTING = re.compile(r"(?i)\bquên\b|\bforget\b|忘")
 _SELF_FORGETS = re.compile(
     r"(?i)\b(?:mình|tôi|em|tớ|anh|chị|hay|thường|cứ|dễ|bị|vẫn|lại)\s+quên\b"
+    r"|\bquên\s+(?:mất|rồi|béng|tiệt)\b"  # "quên mất", "quên rồi": I forgot, never "forget it"
     r"|\b(?:i|we|always|often|keep|usually|sometimes|never|tend to)\s+(?:\w+\s+)?forget"
-    r"|(?:我|总是|老是|经常|容易|常常|又|还是).{0,2}忘"
+    # a subject or habit word anywhere earlier in the clause: 我把这个语法忘了, 我又把单词忘了
+    r"|(?:我|总是|老是|经常|容易|常常|又|还是)[^，。！？,.!?;]{0,12}忘"
 )
 _FORGET_IMPERATIVE = re.compile(
     r"(?i)(?:^|[.!?;:\n]\s*)(?:(?:thôi|à|ừ|vậy|ok|okay|please)[,\s]+)?(?:quên|forget)\b"
@@ -53,7 +55,8 @@ _FORGET_IMPERATIVE = re.compile(
     r"|\bquên\b[^.?!\n]*\b(?:đi|nhé|nha)\s*[.!?]*\s*$"
     r"|\bđừng nhớ\b|\bkhông cần nhớ\b|\bstop remembering\b"
     r"|\bforget (?:it|that|about (?:it|that)|the note|my note)\b"
-    r"|(?:^|[，。！？,.!?;]\s*)请?(?:忘掉|忘了|忘记)|忘了吧|忘了它|别记|不要记|忘记.{0,12}吧|把.{1,12}忘了"
+    # not a bare 忘了 at the start ("(I) forgot..."), and 把...忘了 only with 吧 after it
+    r"|(?:^|[，。！？,.!?;]\s*)请?忘掉|忘了吧|忘了它|别记|不要记|忘记.{0,12}吧|把.{1,12}忘了吧"
 )
 
 
@@ -215,8 +218,23 @@ def notes_the_message_changes(message: str | None, notes: Iterable[CoachNote]) -
     return tuple(note for note in own if _phrases(note.text) & said)
 
 
-def nudge(notes: Iterable[CoachNote], intent: str = CORRECT) -> str:
+def names_a_note(message: str | None) -> bool:
+    """The message names a note outright ("ghi chú", "note", "笔记"): only then may the server order a change."""
+
+    return bool(message) and bool(_NOTE_WORD.search(unicodedata.normalize("NFC", message)))
+
+
+def nudge(notes: Iterable[CoachNote], intent: str = CORRECT, *, explicit: bool = True) -> str:
+    """`explicit`: the message named a note (`names_a_note`). Otherwise the match is by rule and may be wrong, so the
+    model is asked to change the note only if that is what the learner asks - never ordered to (#346)."""
+
     listed = "; ".join(f"{note.id}: {note.text}" for note in notes)
+    if not explicit:
+        verb = ("call forget_note with its id" if intent == FORGET
+                else "call remember_note with replaces set to its id and the new wish in their words")  # fmt: skip
+        return (f"Your answer changed no coach note. The learner's message may be about this one: {listed}. "
+                f"{verb[0].upper()}{verb[1:]} only if that is what they ask; if it is not, change no note and answer "
+                "their message.")  # fmt: skip
     if intent == FORGET:
         what = "The learner asks you to forget it: call forget_note with its id now"
     else:

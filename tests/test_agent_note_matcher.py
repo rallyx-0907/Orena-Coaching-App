@@ -31,6 +31,11 @@ def note(text, id_="n-1"):
     ("Mình hay quên ngữ pháp khi đi thi", "Giải thích ngữ pháp thật kỹ"),
     ("I always forget this grammar rule", "Explain grammar simply"),
     ("我总是忘掉这个语法", "多讲语法"),
+    # "I forgot" (re-review 2 of #347): the subject further back, a dropped subject, quên mất/rồi
+    ("我把这个语法忘了", "多讲语法"),
+    ("我又把单词忘了", "多讲单词"),
+    ("忘了这个词是什么意思", "讲词的意思时多举例"),
+    ("Quên mất từ này rồi, nghĩa là gì?", "Khi mình hỏi nghĩa là gì, cho ví dụ"),
 ])
 def test_an_ordinary_learning_message_changes_no_note(message, kept):
     assert notes_the_message_changes(message, [note(kept)]) == ()
@@ -50,7 +55,7 @@ def test_an_ordinary_learning_message_changes_no_note(message, kept):
     ("Quên chuyện ví dụ ngắn", "Cho mình ví dụ ngắn", FORGET),
     ("Forget the short examples", "Give me short examples", FORGET),
     ("忘记那个例子吧", "多举例子", FORGET),
-    ("把那个例子忘了", "多举例子", FORGET),
+    ("把那个例子忘了吧", "多举例子", FORGET),
 ])
 def test_a_real_note_request_still_matches(message, kept, intent):
     assert notes_the_message_changes(message, [note(kept)])
@@ -67,3 +72,15 @@ def test_a_decomposed_note_noun_still_counts():
 
     decomposed = unicodedata.normalize("NFD", "Quên ghi chú đó đi")
     assert notes_the_message_changes(decomposed, [note("Mình thích ví dụ ngắn")])
+
+
+def test_the_nudge_orders_a_change_only_when_a_note_is_named():
+    """#346: a false match must never push the model into deleting or rewriting a note. Only a message that names a
+    note ("ghi chú", "note", "笔记") gets the "call forget_note now"; otherwise the nudge is conditional."""
+    from writing_coach.agent.notes import nudge
+
+    kept = [note("Cho mình ví dụ ngắn")]
+    assert "call forget_note with its id now" in nudge(kept, FORGET, explicit=True)
+    soft = nudge(kept, FORGET, explicit=False)
+    assert "now" not in soft.split(":")[-1].split(",")[0] and "only if" in soft and "change no note" in soft
+    assert "only if" in nudge(kept, "correct", explicit=False)
