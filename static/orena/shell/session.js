@@ -27,6 +27,14 @@ export function signInHref(mode) {
   return `${SIGN_IN_PATH}?next=${encodeURIComponent(next)}`;
 }
 
+/* The sign-in the Account step starts (D-233): the same start, flagged so the server knows the Terms and Privacy line was
+   on screen, with the interface language the learner saw it in. Only this step sets the flag; a sign-in started any other
+   way is not recorded as consent and the learner is asked once by the consent sheet instead. */
+export function accountStepSignInHref(mode, lang) {
+  const code = ['en', 'vi', 'zh'].includes(lang) ? lang : 'en';
+  return `${signInHref(mode)}&account_step=1&lang=${code}`;
+}
+
 export function signOutUrl(next = SIGN_OUT_NEXT) {
   return `${SIGN_OUT_PATH}?next=${encodeURIComponent(next)}`;
 }

@@ -6403,6 +6403,16 @@ The pinned design draws no line telling the learner that Orena stored a note. By
 
 The light-consent model records no server-side evidence of acceptance: the Account step shows the Terms and Privacy line, and nothing is saved when the learner continues. Storing which policy version and effective date a learner accepted, and when, needs a table and a decision on what counts as acceptance; it waits for the owner's schema decision (AGENTS.md section 7). A just-in-time voice consent step does not exist and the policy does not promise one. The privacy page has no version field, only a deploy-stamped effective date (`facts.json`), which is what the evidence would reference.
 
+## Consent sheet and voice-consent sheet (D-233 proposed, 2026-10-19)
+
+The pinned design draws no one-time "I agree" sheet and no voice-consent question. By owner decision (no full page; reuse existing patterns) both are the Mic state sheet's shape (frame 62: centred icon disc, title, one paragraph, stacked buttons) with its classes and `mic.css`, nothing new drawn: the consent sheet opens once over the first screen after boot for an account whose bootstrap says `consent.consent_required`, with the Terms and Privacy Policy as two plain links and a single primary "I agree"; the voice sheet opens from `micGate`, the one gate every recording room uses, before the browser's own microphone permission step. Settings, Privacy gains a "Voice recording" toggle row in the memory switch's pattern, drawn only when the server keeps an answer. Open for the owner: the consent sheet shows the mic sheet's disc with a `file-text` glyph (the mic sheet draws `mic` in every state); and the Account step's sign-in link now carries `account_step=1&lang=<interface language>` (only that step records consent at sign-up; any other sign-in start is asked by the sheet). A 403 `voice_consent_required` from any room opens the voice sheet.
+
+The "Consent evidence is not stored" gap above is resolved by D-233 once its migration is applied.
+
 ## My Library: an empty Content tab draws nothing (2026-10-19)
 
 The pinned "My Library" frame (`Orena.dc.html`, ~535) draws one empty state, the Language tab's "Nothing saved yet" (`libLangEmpty`), which the app already renders. It draws none for the Content, Collections, Active or Due tabs, and it has no "saved" tab (`#/library?tab=saved` falls back to Content). With nothing to show, Content renders no rows. Nothing was added; whether the design should draw an empty Content tab is open for the owner.
+
+## Chinese legal text is pending (2026-10-19)
+
+`docs/legal/public` has English and Vietnamese only, and legal text is not machine-translated (Hermes decision, 2026-10-19). `/privacy?lang=zh` and `/terms?lang=zh` (and `/account-deletion?lang=zh`) show the English page with one line above it, in Chinese and English: "本页面目前仅提供英文版本。 · This page is currently available in English only." There was no existing pattern for such a note; the line is injected by `_legal_page` in `app.py`. The consent sheet's Terms and Privacy links for a Chinese interface open that English page. Pending the owner: a reviewed Chinese translation of the Terms, Privacy Policy and Delete-account text.

@@ -458,6 +458,22 @@ What the code and scripts now do. None of it was run against :8000; the human de
   sign-in is a top-level redirect and needs no directive. Open before enforcing: drop `'unsafe-eval'` (Landing) and
   `'unsafe-inline'` styles (design) only with a design change; confirm the Polar frame hosts against a live checkout.
 
+## 14. Consent evidence and voice consent (PR O, D-233, proposed migration 0036)
+
+Human gate: promoting `migrations/proposed/20261019_0036_consent_evidence.py` into `versions/` and applying it (:8021 first, then :8000, after a backup, `scripts/bootstrap_runtime_schema.py --upgrade`). Re-parent it (or Billing's 0034) on the head if the other is promoted first; never merge two heads. The code is dormant until the columns exist.
+
+- **Set `LEGAL_EFFECTIVE_DATE`** (YYYY-MM-DD) in the runtime environment to the same date passed to `build_public_pages.mjs --release --effective-date`. `APP_ENV=production` refuses to start without it; staging records `unstamped` if it is missing, so set it there too. Rebuild the public pages with the new text (shipped in the repository, effective at promotion).
+- **Every existing user starts with `voice_consent=false`.** After the migration, `/api/speech/transcribe` and `/pronunciation` return 403 `voice_consent_required` for everyone until they allow recording in the just-in-time sheet (opened by the next recording, or by the 403 itself) or in Settings, Privacy. Release note: "Orena now asks your permission before recording your voice. You will be asked once, the next time you practise speaking. You can change it in Settings, Privacy."
+- Accounts that existed before get the one-time "I agree" sheet (`consent.consent_required`). New accounts are recorded only when they sign in from the Welcome Account step.
+- `/api/agent/voice/*` is the Intelligence lane's; it does not read the flag yet.
+- **PostgreSQL rehearsal (up/down/up), by the coordinator on a throwaway copy:** point the proof at a throwaway PostgreSQL 17 database that is empty or at the migration head (the fixture runs Alembic to head on it, then applies and removes 0036):
+
+  ```
+  ORENA_TEST_POSTGRES_URL="postgresql+psycopg://USER:PASSWORD@HOST:5432/THROWAWAY_DB" python -m pytest -q -p no:cacheprovider tests/test_consent_evidence_postgres.py
+  ```
+
+  Record row count before and after, the `ADD COLUMN` time, and that the schema-drift tests pass with the columns present.
+
 ## Moving published content :8021 to :8000 (D-234, PROPOSED)
 
 One official tool moves approved content between environments at no provider cost: no provider call, no processing job, no schema

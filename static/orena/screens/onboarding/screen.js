@@ -16,7 +16,7 @@ import { adoptLearningLanguage, context as shellContext, updateContext } from '.
 import { createTargetFirst } from './target-first.js';
 import { selectLearningLanguage } from '../../product/account-settings.js';
 import { isLanguageLimit, showLanguageLimitNotice } from '../plan/quota-notice.js';
-import { signInHref } from '../../shell/session.js';
+import { accountStepSignInHref } from '../../shell/session.js';
 import { t } from './copy.js';
 import {
   STEP_COUNT, STEPS, clampStep, stepDots,
@@ -569,7 +569,7 @@ export default async function onboardingScreen(element, ctx) {
     if (state.busy) return;
     state.busy = 'google';
     render();
-    window.location.assign(signInHref(state.mode));
+    window.location.assign(accountStepSignInHref(state.mode, copyLanguages().ui));
   }
 
   /* Coming back to this page from the browser's cache after leaving for Google: the button is usable again. */

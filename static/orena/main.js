@@ -18,7 +18,7 @@ import { isAdminHash } from './shell/routes.js';
 import { drawFrame } from './shell/frame.js';
 import { createRouter } from './shell/router.js';
 import { context, loadContext, onContext } from './shell/context.js';
-import { setUnauthorizedHandler } from './infrastructure/api.js';
+import { setUnauthorizedHandler, setVoiceConsentRequiredHandler } from './infrastructure/api.js';
 import { bootOutcome, unauthorizedRoute } from './shell/session.js';
 
 const app = document.getElementById('app');
@@ -167,6 +167,11 @@ async function boot() {
   frame.main.before(banner);
   offlineBanner(banner);
   await router.start();
+  // D-233: an account with no consent record is asked once, over the first screen (the mic sheet's shape).
+  void import('./screens/consent/sheet.js').then((module) => {
+    setVoiceConsentRequiredHandler(() => void module.onVoiceConsentRefused({ isCurrent: () => true }));
+    return module.openConsentSheet({ isCurrent: () => true });
+  }).catch(() => {});
 }
 
 boot();

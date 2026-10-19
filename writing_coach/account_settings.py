@@ -16,6 +16,7 @@ from typing import Any
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from writing_coach import consent
 from writing_coach.account_profile import ACCOUNT_SETTINGS
 from writing_coach.core.language_registry import is_enabled
 from writing_coach.core.request_context import current_user_key
@@ -178,3 +179,36 @@ def patch_account_settings(payload: AccountSettingsPatchIn) -> dict[str, Any]:
     return write_account_settings(
         changes, payload.expected_settings_version, guard=_guard_of(language_adoption(changes))
     )
+
+
+# --- consent evidence and voice consent (D-233; migration 0036, proposed) ------------------------------------------
+# With the columns absent every call below answers `stored: false` and records nothing - the code is dormant until the
+# runtime has applied the migration (writing_coach/consent.py).
+
+
+class ConsentIn(BaseModel):
+    # The interface language the learner saw the sheet in; the server keeps en / vi / zh and falls back to en.
+    language: str = Field(default="", max_length=16)
+
+
+class VoiceConsentIn(BaseModel):
+    granted: bool
+
+
+@router.get("/api/account-settings/consent")
+def get_consent() -> dict[str, Any]:
+    return consent.public_shape(_repository, _user_key())
+
+
+@router.post("/api/account-settings/consent")
+def post_consent(payload: ConsentIn) -> dict[str, Any]:
+    key = _user_key()
+    consent.accept_consent(_repository, key, payload.language)
+    return consent.public_shape(_repository, key)
+
+
+@router.post("/api/account-settings/voice-consent")
+def post_voice_consent(payload: VoiceConsentIn) -> dict[str, Any]:
+    key = _user_key()
+    consent.set_voice_consent(_repository, key, payload.granted)
+    return consent.public_shape(_repository, key)

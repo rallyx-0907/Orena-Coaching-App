@@ -11,6 +11,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from writing_coach.persistence.config import create_shadow_engine
+from writing_coach.persistence.consent_store import (
+    CONSENT_COLUMNS,
+    PostgresConsentStore,
+    SQLiteConsentStore,
+)
 from writing_coach.persistence.ids import stable_uuid
 from writing_coach.persistence.models import User
 
@@ -93,6 +98,7 @@ class SQLiteAuthRepository:
 
     def __init__(self, path: Path) -> None:
         self.path = path
+        self.consent = SQLiteConsentStore(path)
 
     def connect(self) -> sqlite3.Connection:
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -127,6 +133,14 @@ class SQLiteAuthRepository:
             ):
                 if name not in cols:
                     conn.execute(f"ALTER TABLE users ADD COLUMN {name} {ddl}")
+            # Migration 0036 (proposed): consent evidence and voice consent. Test backend only.
+            for name, ddl in zip(
+                CONSENT_COLUMNS,
+                ("TEXT", "TEXT", "TEXT", "INTEGER NOT NULL DEFAULT 0", "TEXT"),
+                strict=True,
+            ):
+                if name not in cols:
+                    conn.execute(f"ALTER TABLE users ADD COLUMN {name} {ddl}")
             for email in admin_emails:
                 conn.execute("UPDATE users SET role='admin' WHERE lower(email)=?", (email,))
             conn.commit()
@@ -147,6 +161,7 @@ class SQLiteAuthRepository:
             raise ValueError("Google account did not provide a valid subject/email.")
         now = datetime.now().astimezone().isoformat(timespec="seconds")
         with self.connect() as conn:
+            created_now = conn.execute("SELECT 1 FROM users WHERE google_sub = ?", (sub,)).fetchone() is None
             conn.execute(
                 """
                 INSERT INTO users(google_sub,email,name,picture,created_at,last_login)
@@ -159,7 +174,7 @@ class SQLiteAuthRepository:
             if email.casefold() in admin_emails:
                 conn.execute("UPDATE users SET role='admin' WHERE google_sub=?", (sub,))
             conn.commit()
-        return self.get_user(sub) or {}
+        return {**(self.get_user(sub) or {}), "created_now": created_now}
 
 
     def get_account_settings(self, user_key: str) -> dict[str, Any] | None:
@@ -215,6 +230,7 @@ class PostgresAuthRepository:
 
     def __init__(self, engine: Engine | None = None, *, url: str | None = None) -> None:
         self.engine = engine or create_shadow_engine(url)
+        self.consent = PostgresConsentStore(self.engine)
 
     def _id(self, google_sub: str):
         return stable_uuid("user", google_sub)
@@ -266,6 +282,7 @@ class PostgresAuthRepository:
         with Session(self.engine) as session, session.begin():
             uid = self._id(sub)
             row = session.get(User, uid)
+            created_now = row is None
             if row is None:
                 row = User(
                     id=uid,
@@ -287,6 +304,7 @@ class PostgresAuthRepository:
                     row.role = "admin"
             session.flush()
             payload = self._payload(row)
+            payload["created_now"] = created_now
         return payload
 
     @staticmethod

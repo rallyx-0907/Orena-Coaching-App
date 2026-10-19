@@ -24,6 +24,7 @@ def test_production_https_callback_and_secure_cookie() -> None:
         "GOOGLE_CLIENT_ID": "client-id",
         "GOOGLE_CLIENT_SECRET": "client-secret",
         "SESSION_SECRET": "session-secret-for-tests-0123456789abcdef",
+        "LEGAL_EFFECTIVE_DATE": "2026-10-20",
     })
     assert resolved.public_base_url == "https://becoming.example.com"
     assert resolved.google_redirect_uri == f"https://becoming.example.com{CALLBACK_PATH}"
@@ -193,3 +194,21 @@ def test_the_product_backup_and_rehearsal_scripts_never_remove_a_volume_or_write
     assert "${DataVolume}:/data:ro" in backup, "the data volume is read-only to the backup"
     assert "'-d', '--rm'" in rehearsal, "the rehearsal's PostgreSQL removes itself with its anonymous volume"
     assert "${Backup}:/backup:ro" in rehearsal and "${Repository}:/workspace:ro" in rehearsal
+
+
+@pytest.mark.parametrize("stamp", [None, "", "unstamped", "20/10/2026", "2026-10-2"])
+def test_production_refuses_to_start_without_a_stamped_legal_effective_date(stamp) -> None:
+    """D-233: a consent record names the legal version accepted; production never records `unstamped`."""
+    values = {
+        "APP_ENV": "production",
+        "PUBLIC_BASE_URL": "https://becoming.example.com",
+        "GOOGLE_CLIENT_ID": "client-id",
+        "GOOGLE_CLIENT_SECRET": "client-secret",
+        "SESSION_SECRET": "session-secret-for-tests-0123456789abcdef",
+    }
+    if stamp is not None:
+        values["LEGAL_EFFECTIVE_DATE"] = stamp
+    with pytest.raises(RuntimeError, match="LEGAL_EFFECTIVE_DATE"):
+        resolve_deployment_config(values)
+    resolve_deployment_config({**values, "LEGAL_EFFECTIVE_DATE": "2026-10-20"})
+    resolve_deployment_config({**values, "APP_ENV": "staging"})  # staging and development stay lenient

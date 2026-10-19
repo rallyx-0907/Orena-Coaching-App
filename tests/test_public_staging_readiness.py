@@ -32,6 +32,7 @@ def valid_env(**updates: str) -> dict[str, str]:
         "PUBLIC_BASE_URL": "https://staging.example.com",
         "GOOGLE_CLIENT_ID": "google-client-id",
         "PERSISTENCE_BACKEND": "postgresql",
+        "LEGAL_EFFECTIVE_DATE": "2026-10-20",  # D-233: production refuses to start without it
         **SECRETS,
     }
     values.update(updates)
@@ -120,7 +121,7 @@ def test_env_file_accepts_comments_blanks_and_last_assignment_wins(tmp_path: Pat
         "GOOGLE_CLIENT_ID=google-client-id\n"
         f"GOOGLE_CLIENT_SECRET={SECRETS['GOOGLE_CLIENT_SECRET']}\n"
         f"SESSION_SECRET={SECRETS['SESSION_SECRET']}\n"
-        "PERSISTENCE_BACKEND=postgresql\n"
+        "PERSISTENCE_BACKEND=postgresql\nLEGAL_EFFECTIVE_DATE=2026-10-20\n"
         f"POSTGRES_RUNTIME_URL={SECRETS['POSTGRES_RUNTIME_URL']}\n"
         f"POSTGRES_SHADOW_URL={SECRETS['POSTGRES_SHADOW_URL']}\n"
         f"CLOUDFLARE_TUNNEL_TOKEN={SECRETS['CLOUDFLARE_TUNNEL_TOKEN']}\n",

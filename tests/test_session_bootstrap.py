@@ -41,7 +41,7 @@ def test_bootstrap_is_authenticated_versioned_compact_and_language_scoped(monkey
         assert payload["user"] == {"role": "user", "is_admin": False}
         assert payload["language"]["active"] == language
         assert {item["code"] for item in payload["language"]["options"]} == {"en", "zh"}
-        assert set(payload) == {"version", "authenticated", "mode", "user", "language"}
+        assert set(payload) == {"version", "authenticated", "mode", "user", "language", "consent"}
         assert response.headers["cache-control"] == "no-store"
         assert all(secret not in repr(payload) for secret in ("user-1", "@", "essay", "text"))
 

@@ -130,6 +130,8 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
     # On-demand Reading answers (a sentence's meaning, a summary): cached after the first, so a learner's own use
     # stays far below this; it only stops a script walking a corpus through the provider.
     ("reading_ai", ("/api/reading/translate", "/api/reading/summary"), 300, 600),
+    # Consent answers (D-233): a learner answers a handful of times; each write is one row update, so this only stops a loop.
+    ("consent", ("/api/account-settings/consent", "/api/account-settings/voice-consent"), 60, 600),
     ("media_learning", ("/api/media-learning/upload", "/api/media-learning/source", "/api/media-learning/translate",
                         "/api/media-learning/import#"), 30, 3600),
 )

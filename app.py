@@ -2430,9 +2430,20 @@ def landing_page() -> HTMLResponse:
 
 def _legal_page(name: str, request: Request) -> HTMLResponse:
     """Terms, Privacy and Delete account are static HTML with the whole text in the response (no script needed to
-    read it): Vietnamese by default, English for `?lang=en`, and English for `?lang=zh` (there is no Chinese text)."""
-    lang = "en" if request.query_params.get("lang", "").lower() in {"en", "zh"} else "vi"
-    return _page("public", f"{name}.{lang}.html")
+    read it): Vietnamese by default, English for `?lang=en`, and English with a one-line Chinese note for `?lang=zh` (there is no Chinese text)."""
+    asked = request.query_params.get("lang", "").lower()
+    lang = "en" if asked in {"en", "zh"} else "vi"
+    page = _page("public", f"{name}.{lang}.html")
+    if asked == "zh":
+        # Legal text is never machine-translated (Hermes, 2026-10-19): a Chinese reader gets the English page with one
+        # line saying so, in Chinese and in English.
+        note = (
+            '<p lang="zh" style="margin:0;padding:12px 16px;text-align:center;font-size:14px;opacity:.85">'
+            "本页面目前仅提供英文版本。 · This page is currently available in English only.</p>"
+        )
+        html = page.body.decode("utf-8")
+        page = HTMLResponse(html.replace("<body>", "<body>" + note, 1), headers=dict(page.headers))
+    return page
 
 
 @app.get("/terms", response_class=HTMLResponse)

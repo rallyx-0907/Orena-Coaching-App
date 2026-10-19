@@ -16,6 +16,12 @@ function quotaHeaders(idempotencyKey){
 let onUnauthorized=()=>{location.href='/#/welcome';};
 export function setUnauthorizedHandler(handler){onUnauthorized=typeof handler==='function'?handler:()=>{};}
 
+/* What a 403 `voice_consent_required` does (D-233): the server refused a recording the learner has not allowed (another
+   device turned it off, or the answer was never given). main.js installs the handler that asks; the error still reaches the
+   caller, which shows its usual failure. */
+let onVoiceConsentRequired=()=>{};
+export function setVoiceConsentRequiredHandler(handler){onVoiceConsentRequired=typeof handler==='function'?handler:()=>{};}
+
 export async function request(url, options={}){
   /* An administrator's preview of a held item stores nothing (D-210, infrastructure/preview-mode.js). */
   if(previewRefuses(options.method,url))throw previewRefusal();
@@ -36,6 +42,9 @@ export async function request(url, options={}){
 
   if(!response.ok){
     if(response.status===401)onUnauthorized();
+    if(response.status===403&&payload&&typeof payload==='object'&&payload.detail&&payload.detail.category==='voice_consent_required'){
+      try{onVoiceConsentRequired();}catch{/* asking must never hide the refusal */}
+    }
     const detail=payload && typeof payload==='object' ? payload.detail : payload;
     const structured=detail && typeof detail==='object';
     const rawMessage=structured ? detail.message : detail;

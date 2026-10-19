@@ -27,6 +27,7 @@ from writing_coach.core.language_registry import DEFAULT_LANGUAGE, all_languages
 from writing_coach.core.deployment import DeploymentConfig, resolve_deployment_config
 from writing_coach.core import request_boundary
 from writing_coach import account_settings, service_auth
+from writing_coach import consent as consent_evidence
 from writing_coach.persistence.auth_repository import AuthRepository
 
 ROOT = Path(__file__).resolve().parent
@@ -360,6 +361,8 @@ def auth_google(
     native_redirect_uri: str | None = None,
     native_code_challenge: str | None = None,
     next: str | None = None,
+    account_step: str | None = None,
+    lang: str | None = None,
 ):
     if not AUTH_ENABLED:
         raise HTTPException(503, "Google authentication is not configured.")
@@ -372,6 +375,14 @@ def auth_google(
         request.session["post_auth_next"] = safe_next_target(next)
     else:
         request.session.pop("post_auth_next", None)
+    # D-233: only the Welcome Account step, which shows the Terms and Privacy line, sets `account_step`; a direct visit
+    # or a native start does not, and its new account is asked by the consent sheet instead of being recorded.
+    if account_step == "1" and not native_redirect_uri:
+        request.session["account_step"] = "1"
+        request.session["account_step_lang"] = consent_evidence.normalize_language(lang, "")
+    else:
+        request.session.pop("account_step", None)
+        request.session.pop("account_step_lang", None)
     if native_redirect_uri:
         request.session["native_redirect_uri"] = _validate_native_redirect_uri(native_redirect_uri)
         if not native_code_challenge:
@@ -434,7 +445,17 @@ def auth_google_callback(request: Request):
     if not bool(info.get("email_verified")):
         raise HTTPException(403, "Google email is not verified.")
 
+    from_account_step = request.session.get("account_step") == "1"
+    account_step_lang = str(request.session.get("account_step_lang") or "")
     user = upsert_auth_user(info)
+    if user.get("created_now") and from_account_step and not str(request.session.get("native_redirect_uri") or ""):
+        # D-229 / D-233: record the version accepted only when the sign-in began at the Account step, whose clickwrap line
+        # was on screen. The language is the one that step carried; the browser's preference is the fallback.
+        consent_evidence.record_sign_up_consent(
+            _installed_auth_repository(),
+            str(user.get("google_sub") or ""),
+            account_step_lang or request.headers.get("accept-language", ""),
+        )
     maybe_claim_legacy_data(str(user.get("email") or ""), str(user.get("google_sub") or ""))
     native_redirect_uri = str(request.session.get("native_redirect_uri") or "")
     native_code_challenge = str(request.session.get("native_code_challenge") or "")
@@ -544,6 +565,14 @@ def api_session_bootstrap(request: Request, response: Response) -> dict[str, Any
             "options": options,
             "stored": bool(settings and settings["learning_language"]),
         },
+        # D-233: `consent_required` is true for an account with no consent record (the client shows its one-time
+        # sheet); `voice_consent` is the learner's voice answer, null when it cannot be known. Both stay false/null
+        # until the runtime has applied migration 0036, and in local development without sign-in.
+        "consent": (
+            consent_evidence.public_shape(_installed_auth_repository(), account_settings._user_key())
+            if AUTH_ENABLED
+            else {"stored": False, "consent_required": False, "consent_version": "", "voice_consent": None}
+        ),
     }
 
 class _AccountLanguageUnreadable(Exception):

@@ -23,6 +23,7 @@ import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { watchMicrophone, MIC_STATES } from '../../capabilities/mic-readiness.js';
 import { t } from './copy.js';
+import { ensureVoiceConsent } from '../consent/sheet.js';
 import { micStateSpec, gateStateFor, micUnavailableReason } from './model.js';
 
 /* Session-scoped: once the browser has actually granted the microphone this visit, later gated
@@ -96,6 +97,9 @@ async function checkReadiness() {
    session and explaining plainly when the browser has refused it - never a silent failure and
    never a guessed permission state. */
 export async function micGate(ctx, start, { textFallback = true } = {}) {
+  // D-233: the learner allows their voice to be recorded and sent to an AI service before the first time (asked once;
+  // a server that keeps no answer asks nothing). "Not now" runs nothing, as the permission step's own "Not now".
+  if (!(await ensureVoiceConsent(ctx))) return;
   if (granted) {
     start();
     return;
