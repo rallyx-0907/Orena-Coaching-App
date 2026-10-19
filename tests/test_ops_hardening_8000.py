@@ -87,7 +87,7 @@ def test_html_pages_carry_a_report_only_csp_and_json_does_not():
     policy = page.headers[CSP_REPORT_ONLY.lower()]
     for part in ("default-src 'self'", "frame-ancestors 'none'", "https://www.youtube-nocookie.com", "https://www.youtube.com"):
         assert part in policy
-    assert "content-security-policy" not in page.headers
+    assert page.headers["content-security-policy"] == "object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     assert CSP_REPORT_ONLY.lower() not in client.get("/api/health").headers
     assert CSP_REPORT_ONLY in hardening_headers({"content-type": "text/html; charset=utf-8"}, https=False)
     assert inline_script_hashes() and all(policy.count(h) == 1 for h in inline_script_hashes())
@@ -131,3 +131,40 @@ def test_health_check_reads_the_ai_spend_warning_lines_the_guard_really_logs():
     assert "$failures" not in branch
     for sample in ("system daily spend near cap: 4.0100 of 5.00 USD (80%)", "system daily spend cap reached: 5.0100 of 5.00 USD"):
         assert re.search(r"daily spend (near cap|cap reached):", sample)
+
+
+# ---- pre-deploy hardening ---------------------------------------------------------------------------------------
+
+
+def test_the_deploy_script_refuses_to_start_without_the_runtime_safety_keys():
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "scripts" / "staging_8000_deploy.ps1").read_text(encoding="utf-8")
+    for key in ("AI_DAILY_SPEND_CEILING_USD", "AI_DAILY_SPEND_WARN_RATIO", "LEGAL_EFFECTIVE_DATE",
+                "AGENT_MEMORY_HMAC_KEYS", "AGENT_MEMORY_RETENTION_SWEEP"):
+        assert f"'{key}'" in script
+    # The check runs before anything is started, fails through Fail (exit 1), and never prints a value.
+    check = script[script.index("$runtimeKeys"):script.index("if ($names['APP_ENV']")]
+    assert script.index("$runtimeKeys") < script.index("docker.exe")
+    assert "Fail " in check and "Write-Host" not in check
+    assert "function Fail" in script and "exit 1" in script
+
+
+def test_enforced_csp_carries_the_always_safe_directives_beside_the_report_only_policy():
+    added = hardening_headers({"content-type": "text/html; charset=utf-8"}, https=True)
+    enforced = added["Content-Security-Policy"]
+    for directive in ("object-src 'none'", "base-uri 'self'", "form-action 'self'", "frame-ancestors 'none'"):
+        assert directive in enforced
+    assert "script-src" not in enforced and CSP_REPORT_ONLY in added
+    # A non-HTML answer carries neither; a route's own enforced policy is kept.
+    assert "Content-Security-Policy" not in hardening_headers({"content-type": "application/json"}, https=True)
+    assert "Content-Security-Policy" not in hardening_headers(
+        {"content-type": "text/html", "Content-Security-Policy": "sandbox"}, https=True)
+
+
+def test_nothing_in_the_shipped_pages_posts_a_form_elsewhere_or_frames_us():
+    root = Path(__file__).resolve().parents[1]
+    for folder in ("templates", "static"):
+        for page in (root / folder).rglob("*.html"):
+            text = page.read_text(encoding="utf-8")
+            for action in re.findall(r"<form[^>]*\baction=[\"']([^\"']+)", text, re.IGNORECASE):
+                assert not re.match(r"https?://", action), f"{page}: form posts to {action}"

@@ -108,7 +108,7 @@ def _signed_in_setup(monkeypatch, nonce_echo=True):
 
 
 def _client():
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver", headers={"Origin": "http://testserver"})
 
 
 async def _sign_in(client, next_param):
@@ -305,9 +305,10 @@ def test_logout_clears_the_session_and_names_a_validated_target(monkeypatch):
 
     async def exercise():
         results = []
-        for params in ({}, {"next": "/"}, {"next": "/#/welcome"}, {"next": "/next#/welcome"}, {"next": "https://evil.example"}, {"next": "//evil.example"}, {"next": "/next\\x"}):
+        for index, params in enumerate(({}, {"next": "/"}, {"next": "/#/welcome"}, {"next": "/next#/welcome"}, {"next": "https://evil.example"}, {"next": "//evil.example"}, {"next": "/next\\x"})):
             async with _client() as client:
-                client.cookies.set("writing_coach_session", _session_cookie(user_sub="user-1"))
+                # Sign-out now ends the account's sessions on the server, so each pass is its own account.
+                client.cookies.set("writing_coach_session", _session_cookie(user_sub=f"logout-user-{index}"))
                 before = await client.get("/api/me")
                 out = await client.post("/auth/logout", params=params)
                 # The jar keys the cookie by domain, so the deletion header is read directly.

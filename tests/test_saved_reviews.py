@@ -47,7 +47,7 @@ def _review_payload(index: int) -> dict[str, Any]:
 def client(monkeypatch: pytest.MonkeyPatch, tmp_path) -> TestClient:
     from writing_coach.persistence.learning_repository import SQLiteLearningRepository
 
-    test_client = TestClient(app_module.app)
+    test_client = TestClient(app_module.app, headers={"Origin": "http://testserver"})
     test_client.__enter__()
 
     repository = SQLiteLearningRepository(lambda: tmp_path / "writing.db")

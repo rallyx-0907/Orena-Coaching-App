@@ -4,6 +4,7 @@ import asyncio
 import base64
 import hashlib
 import json
+import time
 
 import httpx
 from itsdangerous import TimestampSigner
@@ -82,7 +83,7 @@ def test_bootstrap_accepts_native_style_session_cookie_header(monkeypatch):
         async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
             return await client.get(
                 "/api/session/bootstrap",
-                headers={"Cookie": f"writing_coach_session={cookie}"},
+                headers={"Cookie": f"writing_coach_session={cookie}", "Origin": "http://testserver"},
             )
 
     response = asyncio.run(exercise())
@@ -94,6 +95,7 @@ def test_bootstrap_accepts_native_style_session_cookie_header(monkeypatch):
 
 
 def test_native_handoff_exchange_issues_cookie_accepted_by_bootstrap(monkeypatch):
+    monkeypatch.setattr(auth_support, "NATIVE_AUTH_ENABLED", True)
     monkeypatch.setattr(auth_support, "AUTH_ENABLED", True)
     monkeypatch.setattr(auth_support, "auth_user", lambda sub: {"google_sub": sub, "role": "user"})
     monkeypatch.setattr(auth_support, "ensure_user_db", lambda: None)
@@ -113,7 +115,7 @@ def test_native_handoff_exchange_issues_cookie_accepted_by_bootstrap(monkeypatch
             cookie = exchange.json()["session_cookie"]
             bootstrap = await client.get(
                 "/api/session/bootstrap",
-                headers={"Cookie": f"writing_coach_session={cookie}"},
+                headers={"Cookie": f"writing_coach_session={cookie}", "Origin": "http://testserver"},
             )
             replay = await client.post("/api/auth/native/exchange", json={"code": handoff})
             return exchange, bootstrap, replay
@@ -128,6 +130,7 @@ def test_native_handoff_exchange_issues_cookie_accepted_by_bootstrap(monkeypatch
 
 
 def test_native_handoff_requires_the_bound_verifier_and_logout_endpoint_is_best_effort(monkeypatch):
+    monkeypatch.setattr(auth_support, "NATIVE_AUTH_ENABLED", True)
     monkeypatch.setattr(auth_support, "AUTH_ENABLED", True)
     monkeypatch.setattr(auth_support, "auth_user", lambda sub: {"google_sub": sub, "role": "user"})
     monkeypatch.setattr(auth_support, "ensure_user_db", lambda: None)
@@ -135,7 +138,7 @@ def test_native_handoff_requires_the_bound_verifier_and_logout_endpoint_is_best_
     async def exchange(client, verifier_payload):
         verifier = "bound-verifier"
         handoff = auth_support.issue_native_handoff(
-            "native-user",
+            f"native-logout-{time.time_ns()}",
             base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b"=").decode(),
         )
         payload = {"code": handoff, **verifier_payload}
@@ -150,7 +153,7 @@ def test_native_handoff_requires_the_bound_verifier_and_logout_endpoint_is_best_
             cookie = valid.json()["session_cookie"]
             logout = await client.post(
                 "/auth/logout",
-                headers={"Cookie": f"writing_coach_session={cookie}"},
+                headers={"Cookie": f"writing_coach_session={cookie}", "Origin": "http://testserver"},
             )
             return missing, wrong, valid, logout
 

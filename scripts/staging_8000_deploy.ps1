@@ -43,6 +43,16 @@ foreach ($line in [IO.File]::ReadAllLines($EnvFile)) {
 $required = 'APP_ENV', 'PUBLIC_BASE_URL', 'GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'SESSION_SECRET', 'POSTGRES_RUNTIME_URL',
     'PERSISTENCE_BACKEND', 'AI_PROVIDER_SECRETS_KEY'
 foreach ($name in $required) { if (-not $names[$name]) { Fail "$name is missing or empty in the env file" } }
+# Runtime safety keys (pre-deploy hardening): presence and format only; a value is never printed.
+$runtimeKeys = 'AI_DAILY_SPEND_CEILING_USD', 'AI_DAILY_SPEND_WARN_RATIO', 'LEGAL_EFFECTIVE_DATE', 'AGENT_MEMORY_HMAC_KEYS',
+    'AGENT_MEMORY_RETENTION_SWEEP'
+foreach ($name in $runtimeKeys) { if (-not "$($names[$name])".Trim()) { Fail "$name is missing or empty in the env file" } }
+$num = [double]0
+$ci = [Globalization.CultureInfo]::InvariantCulture
+if (-not [double]::TryParse("$($names['AI_DAILY_SPEND_CEILING_USD'])".Trim(), 'Float', $ci, [ref]$num) -or $num -le 0) { Fail 'AI_DAILY_SPEND_CEILING_USD must be a number above 0' }
+if (-not [double]::TryParse("$($names['AI_DAILY_SPEND_WARN_RATIO'])".Trim(), 'Float', $ci, [ref]$num) -or $num -le 0 -or $num -gt 1) { Fail 'AI_DAILY_SPEND_WARN_RATIO must be a number above 0 and at most 1' }
+if ("$($names['LEGAL_EFFECTIVE_DATE'])".Trim() -notmatch '^\d{4}-\d{2}-\d{2}$') { Fail 'LEGAL_EFFECTIVE_DATE must be YYYY-MM-DD' }
+if ("$($names['AGENT_MEMORY_HMAC_KEYS'])".Trim() -notmatch '^v\d+:[^,\s]{32,}(,v\d+:[^,\s]{32,})*$') { Fail 'AGENT_MEMORY_HMAC_KEYS must list v<version>:<secret> entries (secrets of 32+ characters)' }
 if ($names['APP_ENV'] -ne 'staging') { Fail 'APP_ENV must be staging for :8000 (D-146)' }
 if ($names['PRONUNCIATION_PROVIDER'] -match '^(demo|synthetic)') { Fail 'PRONUNCIATION_PROVIDER must not be a synthetic provider' }
 $flags = 'APP_ENV', 'ORENA_ACCOUNT_BACKBONE', 'ORENA_PRACTICE_SESSION', 'AGENT_ENABLED', 'AGENT_VOICE_ENABLED',
