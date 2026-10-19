@@ -288,12 +288,12 @@ const answer = (status, body, headers = {}) => ({
   assert.ok(/onLimit\(error\);\s+return;/.test(live) && !/onLimit\(error\);\s+return end/.test(live));
 }
 
-// 5. The contract text and the code constant agree on v11.
+// 5. The contract text and the code constant agree on v12.
 {
   const { CONTRACT_VERSION } = await import('../static/orena/agent/contract.js');
   const text = src('docs/project/AGENT_CONTRACT.md');
-  assert.equal(CONTRACT_VERSION, 11);
-  assert.ok(text.includes('`contract_version: 11`'));
+  assert.equal(CONTRACT_VERSION, 12);
+  assert.ok(text.includes('`contract_version: 12`'));
   assert.ok(text.includes('X-Orena-AI-Paused') && text.includes('`orena.voice`') && text.includes('"entitled": false'));
 }
 

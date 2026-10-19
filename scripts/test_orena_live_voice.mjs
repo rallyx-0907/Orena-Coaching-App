@@ -236,6 +236,11 @@ const { createSession } = await import('../static/orena/agent/session.js');
       { audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl: async () => ({ ok: true, json: async () => ({}) }), WebSocketCtor: socket },
     );
     assert.deepEqual(timers.map((timer) => timer.ms), [900000], 'one timer: the end of the only token');
+    // D-237: the chunk clamped to today's voice minutes is also `last: true` - played out, ended by its timer, never extended into a refusal.
+    // `last` also ends a normal 900 s session and the server sends no field telling the two apart, so the client says nothing at that end:
+    // the cap line is told by the next session's 429.
+    const liveSource = readFileSync('static/orena/agent/live-voice.js', 'utf8');
+    assert.ok(!/\.last\b/.test(liveSource), 'the client does not read `last`: renew_in null is the whole signal');
     link.end('learner');
   } finally {
     globalThis.setTimeout = realSetTimeout;
