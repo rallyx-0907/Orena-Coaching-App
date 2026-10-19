@@ -2,7 +2,7 @@
 
 **Status: the owner approved the text, which is not published yet** (D-MON-037, 2026-10-19). The owner approved the
 Renewal, Cancelling, Refunds, Asking for a refund, Disputes and "When a paid plan ends" cards word for word. Any
-wording change needs a new approval. The downgrade sentence will be approved separately. The text is published only
+wording change needs a new approval. The downgrade sentence was approved on 2026-10-20 (D-MON-038). The text is published only
 when sales open.
 
 This file replaces section "3. Plans and payment" of `docs/legal/public/terms.en.json` when gate 7b opens sales.
@@ -41,7 +41,7 @@ No placeholder is left. The block stays unpublished until sales open.
         ["Who charges you", "Payments are processed by Polar (polar.sh), the merchant of record. Polar charges your card, handles taxes and issues your invoices. Orena never receives or stores your card details."],
         ["Renewal", "A paid plan renews automatically at the end of each month or year, on the card you registered, until you cancel."],
         ["Cancelling", "You can cancel at any time in the app. Your plan stays active until the end of the period you have paid for and is not renewed."],
-        ["Changing plan", "An upgrade applies at once: the unused part of your current plan counts towards the new one, and you are charged the difference for the rest of the current period."],
+        ["Changing plan", "An upgrade applies at once: the unused part of your current plan counts towards the new one, and you are charged the difference for the rest of the current period. A downgrade made in the billing portal applies at once: the unused part of your current plan is credited against your next payment."],
         ["Failed payment", "If a renewal payment fails, your plan stays active for 2 days after the end of the period you paid for while the payment is retried. After that your account has the free plan's limits until the payment succeeds."],
         ["Refunds", "Payments are non-refundable, except in the cases below or where the law where you live requires a refund. We refund: (a) a duplicate charge, or a charge made in error by a payment fault; (b) a period in which a problem on Orena's side made the paid features unusable for most of that period; (c) if you live in the European Economic Area or the United Kingdom, a refund you ask for within 14 days of the purchase, less the part of the period you have already used; (d) other cases, at Orena's discretion. In these cases we ask Polar, our merchant of record, to refund you. A refunded plan ends at once, and your account returns to the free plan."],
         ["Asking for a refund", "Email orena.support@chillpickle.org from the address of your Google account, with the date of the charge. We check the request against these rules and reply. Refunds are issued through Polar, our merchant of record, to your original payment method where possible. Polar's buyer terms also apply: Polar makes the final refund decision and may refund a payment itself."],
@@ -53,16 +53,9 @@ No placeholder is left. The block stays unpublished until sales open.
 }
 ```
 
-## Proposed downgrade sentence (awaits the owner's approval; not in the block yet)
+## The downgrade sentence (approved 2026-10-20, D-MON-038)
 
-Sandbox subscription D (2026-10-19, `PR-MON-9_E2E_EVIDENCE.md` §3) showed what happens to a Pro → Plus downgrade in
-Polar's portal with proration `invoice`:
-- the downgrade applied at once;
-- the unused part of Pro was credited;
-- the next renewal was charged $0.11 instead of $9.99.
-
-In the app, a downgrade is a cancel at the period end, so there is nothing to credit. The proposed text, to be
-appended to the "Changing plan" card once approved:
-
-> "A downgrade made in the billing portal applies at once: the unused part of your current plan is credited
-> against your next payment."
+Sandbox subscription D (2026-10-19, `PR-MON-9_E2E_EVIDENCE.md` §3) moved Pro to Plus in Polar's portal with
+proration `invoice`. The change applied at once, the unused part of Pro was credited, and the next renewal was
+charged $0.11 instead of $9.99. The owner approved the sentence, which is now in the "Changing plan" card. In the
+app, a downgrade is a cancel at the period end, so there is nothing to credit.

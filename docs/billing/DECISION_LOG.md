@@ -411,3 +411,14 @@ D-MON-037 | 2026-10-19 | The owner approved the paid-plan Terms text (17:00, rel
   D's result and approved separately. The text is published only when sales open (gate 7b, condition C4). The UI
   lane then places the block in `docs/legal/public/terms.en.json`; it is not published before. | Approved words, not
   a draft, before any charge. | `PAID_PLANS_TERMS_INSERT.md`, `GATE_7B_APPROVAL_PACKAGE.md` C4.
+D-MON-038 | 2026-10-20 | The owner approved, in this session ("duyệt 1,2,3"), three things.
+  (1) **The downgrade sentence** of the Terms ("A downgrade made in the billing portal applies at once: the unused part
+  of your current plan is credited against your next payment."), now in the "Changing plan" card of
+  `PAID_PLANS_TERMS_INSERT.md`. The block is complete and is still published only when sales open.
+  (2) **The gate 7b package** (`GATE_7B_APPROVAL_PACKAGE.md`): C5 (prices Plus 9.99/79.99, Pro 19.99/159.99 USD),
+  P1-P5 on Polar production, and R1-R5 on `:8000`, in that order, each step after the previous step's check.
+  The owner does P1-P5 in Polar's dashboard. The token and webhook secret go straight into `runtime.env`; no agent
+  holds them. The product ids are configuration and are handed over for the prices file.
+  (3) **The clean-up of the sandbox test objects.** A was already ended. B, D and F were revoked. The four TEST
+  daily products were archived (2026-10-20, Polar sandbox only). | Gate 7b can run as one prepared sequence. |
+  `GATE_7B_APPROVAL_PACKAGE.md`, `PAID_PLANS_TERMS_INSERT.md`, `PR-MON-9_E2E_EVIDENCE.md` §3.
