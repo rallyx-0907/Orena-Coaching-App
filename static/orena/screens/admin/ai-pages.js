@@ -8,7 +8,11 @@
    test history, a header environment label. */
 import { html } from '../../kit/html.js';
 import {
+  DATA_CLASSES,
   capabilityRows,
+  dataClassChanged,
+  dataClassOf,
+  dataClassRows,
   compatibleProviders,
   credentialState,
   modelChoices,
@@ -152,12 +156,55 @@ function tokenUsage({ state, usage, t, ui }) {
   </div>`;
 }
 
-/* A2: the Providers, Capability routing and Token usage tabs. */
+/* A2 Learner data: which learner data each provider may be sent (G8). The design draws no such tab; it reuses the page's
+   own tab, the form block and its segmented control, and is recorded in UI_BACKEND_GAPS ("Admin: learner data classes").
+   Every label is admin copy keyed by class (copy-dataclasses.js); the server's English `choices[].sends` is never shown.
+   An environment record is read-only; an unreadable one is disabled with the existing unavailable block. */
+function dataClassesTab({ state, view, t }) {
+  const { doc, state: loadState } = state.dataClasses;
+  if (loadState === 'loading' && !doc) return skeleton(t('loading'));
+  if (!doc) return html`<div class="a-blocks">${stateBlock({ span: true, kind: 'error', heading: t('dcLoadFailed'), text: '', actions: [{ label: t('retry'), kind: 'primary', size: 'sm', a: 'dc-reload' }] })}</div>`;
+  const source = doc.source === 'environment' || doc.source === 'unavailable' ? doc.source : 'admin';
+  if (source === 'unavailable') {
+    return html`<div class="a-blocks">${stateBlock({ span: true, kind: 'unavail', heading: t('dcUnavailTitle'), text: t('dcUnavailText'), actions: [{ label: t('retry'), size: 'sm', a: 'dc-reload' }] })}</div>`;
+  }
+  const locked = source === 'environment';
+  const draft = view.dataDraft || doc.classes || {};
+  const fields = dataClassRows(doc, state.providers).map((row) => {
+    const chosen = dataClassOf(draft, row.key);
+    return {
+      id: `dc:${row.key}`,
+      kind: 'seg',
+      label: row.model ? t('dcModelRow', { provider: row.name, model: row.model }) : row.name,
+      span: true,
+      tag: t(locked ? 'dcSourceEnvironment' : 'dcSourceAdmin'),
+      options: DATA_CLASSES.map((id) => ({ id, label: t(`dcClass_${id}`), on: id === chosen, disabled: locked, tip: t(`dcSends_${id}`) })),
+      hint: t(`dcSends_${chosen}`),
+    };
+  });
+  const dirty = dataClassChanged(doc, draft);
+  return html`<div class="a-blocks">
+    ${locked ? banner({ tone: 'warn', title: t('dcSourceEnvironment'), text: t('dcEnvLine') }) : ''}
+    ${formBlock({
+      title: t('dcTitle'),
+      sub: t('dcSub'),
+      span: true,
+      fields,
+      error: view.dataError || '',
+      status: view.dataBusy ? t('dcSaving') : '',
+      actions: locked ? [] : [{ label: t('dcSave'), kind: 'primary', a: 'dc-save', disabled: !dirty || view.dataBusy }],
+    })}
+  </div>`;
+}
+
+/* A2: the Providers, Capability routing, Token usage and Learner data tabs. */
 export function listPage({ state, view, t, ui, href, now }) {
-  const tab = view.tab === 'route' ? 'route' : view.tab === 'tok' ? 'tok' : 'prov';
+  const tab = ['route', 'tok', 'data'].includes(view.tab) ? view.tab : 'prov';
   const rows = capabilityRows(state.config, state.operations, state.providers);
   let body;
-  if (tab === 'tok') {
+  if (tab === 'data') {
+    body = dataClassesTab({ state, view, t });
+  } else if (tab === 'tok') {
     body = tokenUsage({ state, usage: view.usage || { days: 30, report: null, failed: false }, t, ui });
   } else if (tab === 'prov') {
     body = rowList(
@@ -202,7 +249,7 @@ export function listPage({ state, view, t, ui, href, now }) {
       emptyList(t, view.query),
     );
   }
-  const banners = tab === 'tok' ? [] : failingBanner(t, state, href);
+  const banners = tab === 'tok' || tab === 'data' ? [] : failingBanner(t, state, href);
   return {
     title: t('aiTitle'),
     markup: html`<section class="a-page" data-screen-label="A2 AI &amp; Models">
@@ -213,8 +260,9 @@ export function listPage({ state, view, t, ui, href, now }) {
         { id: 'prov', label: t('tabProviders'), count: num(state.providers.length, ui), selected: tab === 'prov' },
         { id: 'route', label: t('tabRouting'), count: num(rows.length, ui), selected: tab === 'route' },
         { id: 'tok', label: t('tabTokens'), count: null, selected: tab === 'tok' },
+        { id: 'data', label: t('dcTab'), count: null, selected: tab === 'data' },
       ])}
-      ${tab === 'tok' ? body : html`<div class="a-blocks">${block({ span: true, flat: true, body })}</div>`}
+      ${tab === 'tok' || tab === 'data' ? body : html`<div class="a-blocks">${block({ span: true, flat: true, body })}</div>`}
     </section>`,
   };
 }

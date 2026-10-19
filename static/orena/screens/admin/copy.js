@@ -17,6 +17,7 @@ import * as grammar from './copy-grammar.js';
 import * as feedback from './copy-feedback.js';
 import * as plans from './copy-plans.js';
 import * as policies from './copy-policies.js';
+import * as dataclasses from './copy-dataclasses.js';
 import * as traffic from './copy-traffic.js';
 
 const en = {
@@ -722,9 +723,9 @@ const zh = {
 /* The Reading, Imports and Content areas keep their words in their own files and share this one
    table, so the copy gate reads every Admin key once. */
 const packs = {
-  en: { ...en, ...reading.en, ...imports.en, ...content.en, ...control.en, ...grammar.en, ...plans.en, ...feedback.en, ...traffic.en, ...policies.en },
-  vi: { ...vi, ...reading.vi, ...imports.vi, ...content.vi, ...control.vi, ...grammar.vi, ...plans.vi, ...feedback.vi, ...traffic.vi, ...policies.vi },
-  zh: { ...zh, ...reading.zh, ...imports.zh, ...content.zh, ...control.zh, ...grammar.zh, ...plans.zh, ...feedback.zh, ...traffic.zh, ...policies.zh },
+  en: { ...en, ...reading.en, ...imports.en, ...content.en, ...control.en, ...grammar.en, ...plans.en, ...feedback.en, ...traffic.en, ...policies.en, ...dataclasses.en },
+  vi: { ...vi, ...reading.vi, ...imports.vi, ...content.vi, ...control.vi, ...grammar.vi, ...plans.vi, ...feedback.vi, ...traffic.vi, ...policies.vi, ...dataclasses.vi },
+  zh: { ...zh, ...reading.zh, ...imports.zh, ...content.zh, ...control.zh, ...grammar.zh, ...plans.zh, ...feedback.zh, ...traffic.zh, ...policies.zh, ...dataclasses.zh },
 };
 
 /* A key with a plural suffix is declared once, by its bare name (copy/index.js `plural`). */

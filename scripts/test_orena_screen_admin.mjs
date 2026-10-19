@@ -482,6 +482,73 @@ fixtureFor = (method, url) => {
   assert.equal(controller.state.providerTests.get('openai').state, 'failed');
 }
 
+/* ---- 5e. Learner data classes (G8): the tab renders the record, the PUT replaces it, a conflict reloads -------- */
+{
+  const adminApiModule = (await import('../static/orena/capabilities/admin-api.js')).adminApi;
+  const doc = { source: 'admin', classes: { gemini: 'learning_profile', 'openai:gpt-x': 'full_memory' }, default: 'none', updated_at: '2026-10-19T10:00:00+00:00', providers: ['openai', 'gemini', 'groq'], choices: [{ class: 'none', sends: 'SERVER-ENGLISH-TEXT' }] };
+  const draftOf = shared.dataClassDraft(doc);
+  const rows = shared.dataClassRows(doc, providers);
+  assert.deepEqual(rows.map((r) => r.key).slice(-1), ['openai:gpt-x'], 'a provider:model row exists only because the record holds it');
+  assert.equal(shared.dataClassOf(draftOf, 'groq'), 'none', 'a provider that is not in the record is none');
+  assert.equal(shared.dataClassChanged(doc, draftOf), false);
+  assert.deepEqual(shared.dataClassBody(doc, { ...draftOf, groq: 'none', openai: 'learning_profile' }), { classes: { gemini: 'learning_profile', 'openai:gpt-x': 'full_memory', openai: 'learning_profile' }, expected_updated_at: doc.updated_at }, 'the body is the whole record plus the version read; an untouched none stays out');
+  for (const method of ['GET', 'PUT']) assert.ok(guarded.some((g) => g.method === method && g.pattern.test('/api/admin/agent/data-classes')), method + ' data-classes is in the authorization matrix');
+  assert.equal(shared.dataClassBody({ ...doc, updated_at: null }, {}).expected_updated_at, null);
+  for (const ui of ['en', 'vi', 'zh']) {
+    copyIndex.setLanguages({ ui, support: 'en' });
+    const common = { state: { ...live, dataClasses: { doc, state: 'ready' } }, t, ui, href, now: Date.now() };
+    const tab = String(pages.listPage({ ...common, view: { tab: 'data', query: '', dataDraft: draftOf } }).markup);
+    assert.ok(tab.includes(packs[ui].dcTab) && tab.includes('data-tab="data"'), `${ui}: the Learner data tab is drawn`);
+    for (const id of ['none', 'learning_profile', 'full_memory']) assert.ok(tab.includes(packs[ui][`dcSends_${id}`]), `${ui}: what ${id} sends is in the page's own copy`);
+    assert.ok(tab.includes('data-field="dc:openai:gpt-x" data-value="full_memory" aria-pressed="true"'), `${ui}: the model row shows its saved class`);
+    assert.ok(tab.includes('data-field="dc:groq" data-value="none" aria-pressed="true"'), `${ui}: an unset provider is none`);
+    assert.ok(tab.includes('data-a="dc-save"'), `${ui}: Save is drawn`);
+    assert.ok(!tab.includes('SERVER-ENGLISH-TEXT'), `${ui}: the server's English text is not shown`);
+    const env = String(pages.listPage({ ...common, state: { ...common.state, dataClasses: { doc: { ...doc, source: 'environment' }, state: 'ready' } }, view: { tab: 'data', query: '', dataDraft: draftOf } }).markup);
+    assert.ok(env.includes(packs[ui].dcEnvLine) && !env.includes('data-a="dc-save"'), `${ui}: an environment record is read-only with its explanation`);
+    const picks = [...env.matchAll(/<button[^>]*data-a="pick"[^>]*data-field="dc:[^>]*>/g)].map((m) => m[0]);
+    assert.ok(picks.length >= 9 && picks.every((b) => b.includes('disabled')), `${ui}: and every choice is disabled`);
+    const gone = String(pages.listPage({ ...common, state: { ...common.state, dataClasses: { doc: { ...doc, source: 'unavailable' }, state: 'ready' } }, view: { tab: 'data', query: '', dataDraft: draftOf } }).markup);
+    assert.ok(gone.includes(packs[ui].dcUnavailTitle) && !gone.includes('data-a="dc-save"'), `${ui}: an unavailable record is disabled`);
+    const conflict = String(pages.listPage({ ...common, view: { tab: 'data', query: '', dataDraft: { ...draftOf, groq: 'full_memory' }, dataError: packs[ui].dcConflict } }).markup);
+    assert.ok(conflict.includes(packs[ui].dcConflict), `${ui}: a conflict message shows`);
+    assert.doesNotMatch(tab + env + gone, /\{[a-z]+\}|undefined|\[object/, `${ui}: no placeholder or JS value`);
+    assert.deepEqual(problems, [], `${ui}: no copy key is missing`);
+    for (const key of Object.keys(packs.en).filter((k) => k.startsWith('dc'))) assert.ok(packs[ui][key], `${ui}: ${key} exists`);
+  }
+  assert.match(packs.en.dcSends_full_memory, /Orena Memory notes/, 'full memory says plainly that the learner’s memory notes go to the provider');
+  assert.match(packs.vi.dcSends_full_memory, /ghi chú Orena Memory/);
+  assert.match(packs.zh.dcSends_full_memory, /Orena Memory 笔记/);
+  copyIndex.setLanguages({ ui: 'en', support: 'en' });
+
+  /* The controller: GET, then a PUT with the version read, then a 409 that reloads and keeps nothing of the stale edit. */
+  const sent = [];
+  let current = doc;
+  fixtureFor = (method, url, options) => {
+    if (url !== '/api/admin/agent/data-classes') return { status: 404, body: { detail: 'nope' } };
+    if (method === 'GET') return { body: current };
+    sent.push(JSON.parse(options.body));
+    if (sent.length === 2) return { status: 409, body: { detail: { category: 'data_class_conflict', message: 'The record changed since it was read.' } } };
+    if (sent.length === 3) return { status: 422, body: { detail: { category: 'data_class_unknown_provider', message: 'Not a provider in the catalogue: no-such.' } } };
+    current = { ...current, classes: sent.at(-1).classes, updated_at: '2026-10-19T11:00:00+00:00' };
+    return { body: current };
+  };
+  const controller = shared.createAiAdmin({ api: adminApiModule });
+  await controller.loadDataClasses();
+  assert.equal(controller.state.dataClasses.doc.updated_at, doc.updated_at);
+  const first = await controller.saveDataClasses({ ...draftOf, gemini: 'full_memory' });
+  assert.equal(first.ok, true);
+  assert.deepEqual(sent[0], { classes: { gemini: 'full_memory', 'openai:gpt-x': 'full_memory' }, expected_updated_at: doc.updated_at }, 'the PUT carries the whole record and the version read');
+  assert.equal(controller.state.dataClasses.doc.updated_at, '2026-10-19T11:00:00+00:00', 'the saved record replaces the one read');
+  current = { ...current, classes: { groq: 'learning_profile' }, updated_at: '2026-10-19T12:00:00+00:00' }; // someone else saved
+  const stale = await controller.saveDataClasses({ gemini: 'none' });
+  assert.deepEqual([stale.ok, stale.conflict], [false, true]);
+  assert.equal(sent[1].expected_updated_at, '2026-10-19T11:00:00+00:00', 'the stale save sent the version it had read');
+  assert.deepEqual(controller.state.dataClasses.doc.classes, { groq: 'learning_profile' }, 'a conflict reloads the latest record');
+  const rejected = await controller.saveDataClasses({ 'no-such': 'none' });
+  assert.deepEqual([rejected.ok, rejected.conflict, rejected.code], [false, false, 'data_class_unknown_provider']);
+}
+
 /* ---- 6. nothing here borrows the old UI, and every colour is a token ------------------------------ */
 const root = path.resolve('static/orena/screens/admin');
 for (const file of fs.readdirSync(root)) {

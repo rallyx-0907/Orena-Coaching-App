@@ -7,7 +7,7 @@ import { html, mount } from '../../kit/html.js';
 import { toast } from '../../kit/toast.js';
 import { languages } from '../../copy/index.js';
 import { adminApi } from '../../capabilities/admin-api.js';
-import { createAiAdmin, credentialState, routeDraft, routingIsLive, standbyStartModel } from '../../capabilities/admin-ai.js';
+import { createAiAdmin, credentialState, dataClassDraft, routeDraft, routingIsLive, standbyStartModel } from '../../capabilities/admin-ai.js';
 import { t } from './copy.js';
 import { capabilityPage, keyPage, listPage, loadFailed, providerPage, removeDialog } from './ai-pages.js';
 import { dialog, pageHead, skeleton } from './blocks.js';
@@ -37,7 +37,7 @@ function remember(container, paint) {
 export async function mountAi(shell, ctx) {
   const routeId = ctx.route.id;
   const view = {
-    tab: ['route', 'tok'].includes(ctx.query.get('tab')) ? ctx.query.get('tab') : 'prov',
+    tab: ['route', 'tok', 'data'].includes(ctx.query.get('tab')) ? ctx.query.get('tab') : 'prov',
     usage: { days: 30, report: null, failed: false, loaded: false },
     query: '',
     id: ctx.params.id || '',
@@ -47,6 +47,9 @@ export async function mountAi(shell, ctx) {
     error: '',
     busy: false,
     dialog: null,
+    dataDraft: null,
+    dataError: '',
+    dataBusy: false,
     loading: true,
     failed: false,
   };
@@ -96,7 +99,7 @@ export async function mountAi(shell, ctx) {
     const page = build();
     shell.setTitle(page.title);
     if (page.crumb) ctx.setCrumb(page.crumb);
-    shell.setFilter({ enabled: routeId === 'adminAi' && view.tab !== 'tok' && !view.loading && !view.failed, value: view.query });
+    shell.setFilter({ enabled: routeId === 'adminAi' && view.tab !== 'tok' && view.tab !== 'data' && !view.loading && !view.failed, value: view.query });
     remember(shell.page, () => mount(shell.page, page.markup));
   }
 
@@ -115,6 +118,37 @@ export async function mountAi(shell, ctx) {
     paint();
     if (!view.failed) controller.loadCatalog().catch(() => {});
     if (!view.failed && view.tab === 'tok') loadUsage();
+    if (!view.failed && view.tab === 'data') loadDataClasses();
+  }
+
+  /* The learner-data record is read when its tab opens (and on Reload); the draft starts from what was read. */
+  async function loadDataClasses() {
+    const result = await controller.loadDataClasses();
+    if (!alive) return;
+    view.dataDraft = result.doc ? dataClassDraft(result.doc) : null;
+    view.dataError = '';
+    paint();
+  }
+
+  async function saveDataClasses() {
+    view.dataBusy = true;
+    view.dataError = '';
+    paint();
+    const result = await controller.saveDataClasses(view.dataDraft);
+    if (!alive) return;
+    view.dataBusy = false;
+    if (result.ok) {
+      view.dataDraft = dataClassDraft(controller.state.dataClasses.doc);
+      toast(t('dcSaved'));
+    } else if (result.conflict) {
+      // Changed since it was read: the latest is loaded, the edit is not applied over it.
+      view.dataDraft = controller.state.dataClasses.doc ? dataClassDraft(controller.state.dataClasses.doc) : null;
+      view.dataError = t('dcConflict');
+    } else {
+      const known = t.has(`dcErr_${result.code}`) ? t(`dcErr_${result.code}`) : t('dcErr_unknown');
+      view.dataError = t('dcRejected', { reason: known });
+    }
+    paint();
   }
 
   /* Token usage reads the AI cost ledger for the chosen period; a late answer for a period the operator left is dropped. */
@@ -235,6 +269,7 @@ export async function mountAi(shell, ctx) {
     if (a === 'tab') {
       view.tab = tab;
       paint();
+      if (tab === 'data' && !controller.state.dataClasses.doc) loadDataClasses();
       if (tab === 'tok' && !view.usage.loaded) loadUsage();
     } else if (a === 'tk-period') {
       view.usage.days = Number(value) || 30;
@@ -246,6 +281,12 @@ export async function mountAi(shell, ctx) {
     else if (a === 'ask-remove') {
       view.dialog = { providerId: id, typed: '' };
       paintDialog();
+    } else if (a === 'dc-reload') loadDataClasses();
+    else if (a === 'dc-save') saveDataClasses();
+    else if (a === 'pick' && field.startsWith('dc:')) {
+      if (view.dataDraft) view.dataDraft[field.slice(3)] = value;
+      view.dataError = '';
+      paint();
     } else if (a === 'pick') pick(field, value);
     else if (a === 'toggle') {
       view.draft.enabled = !view.draft.enabled;

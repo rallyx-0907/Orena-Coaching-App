@@ -130,6 +130,10 @@ export const adminApi = {
   history: (params) => request(`/api/admin/console/imports/history${query(params)}`),
   runtime: () => request('/api/admin/console/runtime'),
   aiConfig: () => request('/api/admin/ai/config'),
+  /* The learner-data class each AI provider may be sent (G8). The save is read raw: a 409 (changed since read) and a 422
+     are answers the page acts on, not exceptions. */
+  agentDataClasses: () => request('/api/admin/agent/data-classes'),
+  saveAgentDataClasses: (body) => raw('/api/admin/agent/data-classes', json('PUT', body)),
   aiCatalog: () => request('/api/admin/ai/catalog'),
   aiOperations: (limit = 200) => request(`/api/admin/ai/operations${query({ limit })}`),
   saveCapability: (key, body) => raw(`/api/admin/ai/config/${encodeURIComponent(key)}`, json('PUT', body)),
