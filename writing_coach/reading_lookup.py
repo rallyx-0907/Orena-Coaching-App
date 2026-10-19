@@ -1,10 +1,12 @@
 """Non-LLM word/phrase lookup for Reading.
 
 A learner tapping a word wants a fast, deterministic answer. The real order is:
-the shared local tagger (class, reading), the vocabulary catalogue, the
-dictionary senses (English: a monolingual API; Chinese: the vendored CC-CEDICT
-pack), the local machine translation (only if the Reading engine is the free
-local one), the `word_translation` seam (D-195: the AI Cost Router, bounded by
+the shared local tagger (class, reading), the vocabulary catalogue, an open
+bilingual dictionary pack for the pair (`bilingual_dictionary`; none ships yet
+for EN->VI, the seam is ready for one), the dictionary senses (English: a
+monolingual API, asked again for the lemma when the inflected form has no entry;
+Chinese: the vendored CC-CEDICT pack), the local machine translation (only if
+the Reading engine is the free local one), the `word_translation` seam (D-195: the AI Cost Router, bounded by
 the tap budget, admitted through a bounded gate, the word only), and finally
 "unavailable". Only that seam can be a language model, and only when the
 operator has enabled the capability; Explain (`POST /api/dictionary/contextual`)
@@ -130,6 +132,9 @@ def lexical_language(selection: str, fallback: str) -> str:
 # (selection, sentence, dictionary definitions, source language, support language) -> a short meaning, or None.
 # The one place the `word_translation` capability plugs in (D-195).
 WordTranslationSeam = Callable[[str, str, list[str], str, str], "str | None"]
+# (word, source language, support language) -> the base meaning from an open bilingual pack, or None. Deterministic,
+# offline, free (`writing_coach.bilingual_dictionary`); asked after the catalogue and before any translation.
+BilingualDictionarySeam = Callable[[str, str, str], "str | None"]
 # (selection, source language, support language) -> a short meaning, or None; raises when the provider side failed.
 # The translate-ahead variant (D-199): the word only, no learner, no sentence.
 WordTranslationPrefetchSeam = Callable[[str, str, str], "str | None"]
@@ -588,7 +593,9 @@ class ReadingLookupService:
         word_translation_prefetch: WordTranslationPrefetchSeam | None = None,
         sense_choice: SenseChoiceSeam | None = None,
         sense_choice_enabled: Callable[[], bool] | None = None,
+        bilingual_dictionary: BilingualDictionarySeam | None = None,
     ) -> None:
+        self._bilingual_dictionary = bilingual_dictionary
         self._sense_choice = sense_choice
         self._sense_choice_enabled = sense_choice_enabled
         self._word_translation = word_translation
@@ -622,7 +629,25 @@ class ReadingLookupService:
                 break
         if source == "zh" and target == "en" and _safe_chinese_senses(selection):
             return True
+        if self._pack_meaning(selection, "", source, target):
+            return True
         return _safe_machine_translation(self._translation_service, source, target, selection, None, cached_only=True) is not None
+
+    def _pack_meaning(self, selection: str, lemma: str, source: str, target: str) -> str:
+        """The open bilingual pack's gloss for the selection (or its lemma) in the support language, or ""."""
+
+        if self._bilingual_dictionary is None or not selection or source == target:
+            return ""
+        for word in dict.fromkeys(item for item in (selection, lemma) if item):
+            try:
+                found = self._bilingual_dictionary(word, source, target)
+            except Exception as exc:  # noqa: BLE001 - a pack is an aid; its failure is a miss
+                _log_layer("bilingual_pack", "failed", language=source, error=exc)
+                continue
+            found = str(found or "").strip()
+            if found:
+                return found
+        return ""
 
     def prefetch_meaning(self, selection: str, source: str, target: str) -> str:
         """Translate one word ahead of a tap (D-199): "deterministic" when a layer already answers it, "disabled" when
@@ -754,6 +779,13 @@ class ReadingLookupService:
             if not base_form:
                 base_form = str(entry.get("term") or "").strip()
 
+        if not meanings and target != source and not withheld and not structural:
+            # The open bilingual pack for the pair (owner decision 2026-10-18): the base meaning in the support
+            # language at no cost, before any translation layer. A miss changes nothing below.
+            packed = self._pack_meaning(selection, local["lemma"], source, target)
+            if packed:
+                meanings.append(LookupMeaning(packed, "bilingual_dictionary"))
+
         if source == "zh" and selection:
             # The vendored CC-CEDICT pack: dictionary senses for a Chinese word
             # without a provider (AI cost reduction plan P1). English is its
@@ -785,6 +817,18 @@ class ReadingLookupService:
             if meanings and self._english_dictionary_cached is not None:
                 ask = self._english_dictionary_cached
             payload = _safe_english_dictionary(ask, selection)
+            lemma = str(local["lemma"] or "").strip()
+            if (
+                payload is not None and not payload.get("definitions") and not withheld
+                and lemma and lemma.casefold() != selection.casefold()
+                and time.monotonic() - started < (self._budget if self._budget is not None else TAP_BUDGET_SECONDS) / 2
+            ):
+                # The inflected form has no entry ("shields", "orbiting"): its lemma usually has one. Asked only when the
+                # first answer came back quickly (a "no entry", not a timeout), so the tap stays within its budget.
+                # Its senses are the word's; its reading and audio are the lemma's, so they are not taken.
+                by_lemma = _safe_english_dictionary(ask, lemma)
+                if by_lemma is not None and by_lemma.get("definitions"):
+                    payload = {"definitions": by_lemma["definitions"], "phonetic": "", "audio": ""}
             if payload is not None:
                 for item in [] if withheld else (payload.get("definitions") or [])[:_MAX_DICTIONARY_DEFINITIONS]:
                     if not isinstance(item, dict):

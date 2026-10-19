@@ -215,7 +215,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       <div class="s-qs__card">
         ${card.meaningIsContextual ? html`<div class="s-qs__eyebrow">${t('meaningHere')}</div>` : ''}<div class="s-qs__meaning">${card.meaningLanguage ? html`<span class="s-qs__general-label">${meaningLanguageLabel(card.meaningLanguage, support, languages().ui)}</span> ` : ''}${card.meaning}</div>${
           card.generalMeaning
-            ? html`<div class="s-qs__general"><span class="s-qs__general-label">${t('commonMeaning')}</span> ${card.generalMeaning}</div>`
+            ? html`<div class="s-qs__general"><span class="s-qs__general-label">${t('commonMeaning')}${card.generalMeaningLanguage ? ` · ${meaningLanguageLabel(card.generalMeaningLanguage, support, languages().ui)}` : ''}</span> ${card.generalMeaningLanguage ? html`<span lang="${langAttr(card.generalMeaningLanguage)}">${card.generalMeaning}</span>` : card.generalMeaning}</div>`
             : card.originalDefinition
               ? html`<div class="s-qs__general" lang="${langAttr(card.originalDefinition.language)}">${card.originalDefinition.text}</div>`
               : ''

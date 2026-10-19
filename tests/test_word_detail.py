@@ -395,21 +395,24 @@ def test_the_common_meaning_stands_beside_the_meaning_here() -> None:
     assert detail["contextMeaning"] == "lạc (củ lạc) dùng để ăn" and detail["generalMeaning"] == "lạc; đậu phộng"
 
 
-def test_an_english_dictionary_sense_is_not_a_vietnamese_learners_common_meaning() -> None:
-    """Without the gloss's own common meaning, a dictionary sense is used only in the support language."""
+def test_an_english_dictionary_sense_stays_beside_a_contextual_meaning_tagged_as_english() -> None:
+    """Without the gloss's own common meaning and without a support-language sense, the English definition is still
+    the base meaning: the contextual meaning never hides it (owner decision 2026-10-18), and it says it is English."""
 
     english_only = word_detail.project_word_detail(
         selection="花生", context="你们那么爱吃花生。", language="zh",
         lookup={"target_language": "vi", "definitions": [{"part_of_speech": "", "definition": "peanut"}]},
         explanation={"context_meaning": "lạc"}, saved=False,
     )  # fmt: skip
-    assert english_only["generalMeaning"] == ""
+    assert english_only["generalMeaning"] == "peanut"
+    assert english_only["generalMeaningLanguage"] == "en"
     collected = word_detail.project_word_detail(
         selection="花生", context="你们那么爱吃花生。", language="zh",
         lookup={"target_language": "vi", "meanings": [{"text": "đậu phộng", "source": "collection"}]},
         explanation={"context_meaning": "lạc"}, saved=False,
     )  # fmt: skip
     assert collected["generalMeaning"] == "đậu phộng"
+    assert collected["generalMeaningLanguage"] == ""
 
 
 def test_the_common_meaning_is_not_repeated_when_it_is_the_meaning_shown() -> None:
