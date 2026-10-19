@@ -380,13 +380,13 @@ def stored_meta() -> dict[str, Any]:
     return {"updated_at": record.get("updated_at") or None, "updated_by": record.get("updated_by") or None}
 
 
-PUBLIC_ENVIRONMENTS = frozenset({"staging", "production"})
-
-
 def _refuse_loosening_on_public_runtime(normalized: dict[str, Any]) -> None:
-    """BQ (owner 2026-10-20: the pilot runs like production): on staging and production Admin may switch enforcement
-    on and add meters, never switch it off or drop a meter it enforces (ValueError, HTTP 422)."""
-    if str(_env().get("APP_ENV", "") or "").strip().casefold() not in PUBLIC_ENVIRONMENTS:
+    """BQ (owner 2026-10-20: the pilot runs like production): on staging and production (every APP_ENV alias the
+    deployment guard accepts) Admin may switch enforcement on and add meters, never switch it off or drop a meter it
+    enforces (ValueError, HTTP 422)."""
+    from writing_coach.core.deployment import is_public_environment
+
+    if not is_public_environment(_env().get("APP_ENV", "")):
         return
     if normalized["enabled"] is not True:
         raise ValueError("Quota enforcement cannot be switched off on a staging or production runtime.")

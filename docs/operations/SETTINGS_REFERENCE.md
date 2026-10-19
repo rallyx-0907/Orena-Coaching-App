@@ -57,12 +57,16 @@ A policy resolves in this order, highest first:
 
 - **`ai.daily_spend_ceiling_usd`.** `AI_DAILY_SPEND_CEILING_USD` is its hard maximum, not a lock. The ceiling in force
   is the lower of the two. Admin refuses a value above the environment. With no Admin value, the environment's ceiling
-  applies. Production still refuses to start without the environment value.
+  applies. Every public runtime (staging and production) refuses to start without the environment value, and an Admin
+  ceiling alone never counts as the published promise kept.
 - **The five retention sweeps** (`feedback.`, `agent.turn_`, `agent.memory_`, `usage.` and `admin_audit.retention_sweep`)
-  keep a published promise of the Privacy Policy. On staging and production, Admin may switch a sweep **on**, but
-  saving it off, or resetting it to the default (off), is refused. Development may switch them off.
+  keep a published promise of the Privacy Policy. On staging and production a sweep is **on by default**, so removing
+  its pin keeps it on, and saving it off is refused. Only an explicit `off` pin in the environment leaves one off, and
+  startup logs that as an ERROR. In development the default is off and Admin may switch them either way.
 - **The quota switch.** On staging and production, Admin may switch enforcement on and add meters. Switching it off, or
-  removing a meter it enforces, is refused. `ORENA_QUOTA_METERS` is a floor: the meters enforced are the variable's,
+  removing a meter it enforces, is refused.
+- "Staging and production" means every `APP_ENV` name the deployment guard treats as public, including its aliases
+  (`stage`, `prod`, `public`, any letter case). `ORENA_QUOTA_METERS` is a floor: the meters enforced are the variable's,
   plus any the Admin setting adds while it is switched on.
 
 If the settings store cannot be read, a worker keeps the last values it read. A worker that never read the store uses
@@ -95,13 +99,14 @@ These refuse to start:
 
 - **In staging and production:** `PUBLIC_BASE_URL` must be HTTPS and not local, Google OAuth must be complete,
   `SESSION_SECRET` must be at least 32 characters, and `GOOGLE_REDIRECT_URI` must share the origin.
-- **In production only:** `LEGAL_EFFECTIVE_DATE` and `AI_DAILY_SPEND_CEILING_USD` must be set.
+- **In staging and production:** `AI_DAILY_SPEND_CEILING_USD` must be set.
+- **In production only:** `LEGAL_EFFECTIVE_DATE` must be set.
 - **Everywhere:** an unclear value is refused rather than guessed for the retention sweep variables,
   `AI_DAILY_SPEND_CEILING_USD`, `AI_DAILY_SPEND_WARN_RATIO`, `AGENT_LEARNER_PACK`, `AGENT_PROMPT_LAYOUT`,
   `AGENT_STABLE_TOOLS`, `MEDIA_TRANSCRIPT_FALLBACK` and `ORENA_LIMIT_IMPORT_TOMBSTONES`.
 
-On a public runtime, an unmet published promise (no ceiling, or a promised sweep off) is logged as an ERROR at start and
-listed in Admin's readiness summary (`unmet_promises`). Both read the **effective** value: a variable when it is set,
+On a public runtime, an unmet published promise (a promised sweep pinned off) is logged as an ERROR at start and listed
+in Admin's readiness summary (`unmet_promises`); a missing environment ceiling refuses to start. Both read the **effective** value: a variable when it is set,
 else the Admin policy.
 
 ### Rule of thumb
@@ -122,7 +127,7 @@ it; the media caps are counted separately inside the same ledger.
 
 | Name | Set in | Type / range | Default | Meaning | Raise / lower | Pilot | Production | Risk if wrong | Related | Applies |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `AI_DAILY_SPEND_CEILING_USD` | env, **(c)** | USD ≥ 0; unset = no ceiling | unset | Hard daily ceiling on the whole AI ledger per UTC day. Once it is reached, every paid AI call stops until midnight UTC (`X-Orena-AI-Paused`). | Raise: more AI per day. Lower: AI pauses sooner. | **2** (owner, 2026-10-20) | Required at start. Size it from the cost model. | Unset: spend is unbounded. Too low: AI pauses for every learner. | `ai.daily_spend_ceiling_usd`, every cap below | restart |
+| `AI_DAILY_SPEND_CEILING_USD` | env, **(c)** | USD ≥ 0; unset = no ceiling (development only) | unset | Hard daily ceiling on the whole AI ledger per UTC day. Once it is reached, every paid AI call stops until midnight UTC (`X-Orena-AI-Paused`). | Raise: more AI per day. Lower: AI pauses sooner. | **2** (owner, 2026-10-20); required at start | Required at start. Size it from the cost model. | Unset: spend is unbounded. Too low: AI pauses for every learner. | `ai.daily_spend_ceiling_usd`, every cap below | restart |
 | `ai.daily_spend_ceiling_usd` | Admin › Policies › Spend caps, **(c)** lower-only | USD 0–10 000, or empty; never above the env value; confirm above 50 or empty | empty (the env ceiling) | Lowers the system ceiling without a restart. The ceiling in force is the lower of this and the env value. | Lower: AI pauses sooner. Raising past the env value is refused. | empty | empty, or lower during an incident | 0 stops all paid AI. | env ceiling | live |
 | `ai.daily_spend_warn_ratio` | Admin › Spend caps; pin `AI_DAILY_SPEND_WARN_RATIO` | 0.05–1 | 0.8 | The share of the ceiling at which a warning is logged and shown in Admin. | Raise: a later warning. Lower: an earlier one. | 0.8, in Admin (unpinned) | 0.7–0.8 | Too high leaves no time to react. | ceiling | live (Admin); restart (pin) |
 | `agent.daily_spend_cap_usd` | Admin › Spend caps; pin `AGENT_DAILY_SPEND_CAP_USD` | USD 0.01–10 000, or "no cap"; confirm above 50 | no cap | Daily cap on Orena chat and voice. It fails closed when the store was never read. | Raise: more Orena use. Lower: Orena pauses sooner. | **Remove `AGENT_DAILY_SPEND_CAP_USD` from `runtime.env`** so Admin governs it; set it at or below the 2 USD ceiling | At or below the ceiling. Never "no cap". | "No cap" leaves only the system ceiling. | ceiling, `agent.*` limits | live (Admin); restart (pin) |
@@ -157,7 +162,7 @@ it; the media caps are counted separately inside the same ledger.
 | `AGENT_PROMPT_LAYOUT`, `AGENT_STABLE_TOOLS` | env, (b) | legacy / stable; on / off (strict) | legacy / off | Prompt-cache layout (benchmark-gated). | — | legacy / off | after the benchmark | quality regressions | — | restart |
 | `AGENT_PROVIDER_DATA_CLASSES` | env seed; Admin › AI › Data classes wins once saved | `provider[:model]=none\|learning_profile\|full_memory` | none for all | Which learner data each provider may receive. | — | in Admin | in Admin | privacy leak if too broad | `AGENT_MEMORY_HMAC_KEYS` | live (Admin) |
 | `AGENT_MEMORY_HMAC_KEYS` | env, **(a)** | `v<n>:<32+ chars>`, comma list | unset (no Orena Memory) | Signing keys of Orena Memory. | — | set | set and rotated | a leak allows memory forgery | backbone | restart |
-| `agent.memory_retention_sweep` | Admin › Feedback & retention (confirmed, delete); pin `AGENT_MEMORY_RETENTION_SWEEP` (strict on/off) | bool; on public runtimes on-only | off | Deletes Orena Memory notes unused for 180 days (a published promise). | — | on (the :8000 deploy script still requires the pin, `on`) | on | Off breaks the Privacy Policy. | published promises | live (Admin); restart (pin) |
+| `agent.memory_retention_sweep` | Admin › Feedback & retention (confirmed, delete); pin `AGENT_MEMORY_RETENTION_SWEEP` (strict on/off) | bool; on public runtimes on-only | off | Deletes Orena Memory notes unused for 180 days (a published promise). | — | on (the :8000 deploy script requires the variable to be present as exactly `on` or `off`; it does not check which, so set `on`) | on | Off breaks the Privacy Policy. | published promises | live (Admin); restart (pin) |
 
 ## 4. Speech, rates, feedback and retention
 
@@ -294,7 +299,7 @@ Do these in order on the runtime being promoted. Each step names where the value
 
 1. `APP_ENV=production`, with an HTTPS `PUBLIC_BASE_URL`, complete Google OAuth, a 32+ character `SESSION_SECRET` and
    `LEGAL_EFFECTIVE_DATE`. The app refuses to start without them.
-2. `AI_DAILY_SPEND_CEILING_USD` set from the cost model. Production refuses to start without it. (Pilot: 2.)
+2. `AI_DAILY_SPEND_CEILING_USD` set from the cost model. Staging and production refuse to start without it. (Pilot: 2.)
 3. `ORENA_QUOTA_ENFORCEMENT=on` and `ORENA_QUOTA_METERS` listing every wired meter.
 4. Secrets present for the providers in use, `AI_PROVIDER_SECRETS_KEY` and `AGENT_MEMORY_HMAC_KEYS`.
 5. **Remove every tunable pin you did not mean as a fuse**: `AGENT_DAILY_SPEND_CAP_USD`, `AI_DAILY_SPEND_WARN_RATIO`,
@@ -308,7 +313,8 @@ Do these in order on the runtime being promoted. Each step names where the value
 
 8. Policies › Spend caps: the agent cap at or below the ceiling (never "no cap"); `word_translation` and
    `word_sense_choice` caps 0.25; the media caps under the ceiling; the warn ratio 0.7–0.8.
-9. Policies › Feedback & retention: all five sweeps **on**. From then on they cannot be switched off on this runtime.
+9. Policies › Feedback & retention: all five sweeps show **on** (the public-runtime default) and none is pinned `off`.
+   They cannot be switched off on this runtime.
 10. Policies › Billing: `billing.past_due_grace_hours` 48; `billing.new_sales` on once billing is approved;
     `billing.domestic_late_payment_grace_hours` 1 if SePay is used.
 11. Admin › AI: each capability on its reviewed chain; `word_translation` and `word_sense_choice` on; the `cost.free_tier.*`

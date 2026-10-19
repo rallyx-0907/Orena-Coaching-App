@@ -17,12 +17,13 @@ requested; a backbone that then fails to start makes the item an over-report, ne
 
 `enforce_at_start`:
 - On a public runtime (staging, production), it logs each unmet promise as an ERROR.
-- Production also refuses to start without a ceiling in the environment. An Admin ceiling
-  (`ai.daily_spend_ceiling_usd`, which can only lower it) counts as in force everywhere else.
+- Every public runtime refuses to start without a ceiling in the environment (review of #428: the pilot runs like
+  production). An Admin ceiling (`ai.daily_spend_ceiling_usd`) can only lower it and never counts as the promise.
 
 The sweeps are logged rather than refused. Each is an Admin policy its variable can pin (D-172, BQ), so this reads the
-variable when it is set and the policy otherwise; on a public runtime Admin can turn a sweep on, never off
-(policies.py `promise`). Admin's readiness summary shows the same list (`unmet_promises`). Development says nothing. No value is printed, only the names.
+variable when it is set and the policy otherwise. On a public runtime a promised sweep is ON by default and Admin can
+never turn it off (policies.py `promise`, `default_for`), so only an explicit `off` pin leaves one off - an environment
+decision, logged here as an ERROR. Admin's readiness summary shows the same list (`unmet_promises`). Development says nothing. No value is printed, only the names.
 """
 
 from __future__ import annotations
@@ -77,13 +78,9 @@ def _sweep_on(values: Mapping[str, str], policy: Callable[[str], Any], name: str
 
 
 def _ceiling_in_force(values: Mapping[str, str], policy: Callable[[str], Any]) -> bool:
-    """The environment's ceiling, or one Admin set (`ai.daily_spend_ceiling_usd`)."""
-    if _ceiling_set(values):
-        return True
-    try:
-        return policy("ai.daily_spend_ceiling_usd") is not None
-    except Exception:  # noqa: BLE001 - not readable: not known to be in force
-        return False
+    """The promise is the environment's ceiling (review of #428): Admin's `ai.daily_spend_ceiling_usd` can only lower
+    it and can be cleared at any time, so an Admin ceiling alone never counts as the promise kept."""
+    return _ceiling_set(values)
 
 
 def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
@@ -126,8 +123,8 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
 
 
 def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
-    """At start. A public runtime logs each unmet promise as an ERROR, and production refuses to start without a
-    ceiling. Development returns nothing and logs nothing."""
+    """At start. A public runtime logs each unmet promise as an ERROR and refuses to start without the environment's
+    ceiling (production and staging alike). Development returns nothing and logs nothing."""
 
     app_env = environment_name(values.get("APP_ENV", "development"))
     if not is_public_environment(app_env):
@@ -135,6 +132,6 @@ def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) ->
     problems = unmet_promises(values, policy)
     for problem in problems:
         _log.error("published promise not in force (%s): %s", problem.code, problem.message)
-    if app_env == "production" and not _ceiling_set(values):  # the environment's fuse, whatever Admin holds
-        raise RuntimeError("AI_DAILY_SPEND_CEILING_USD is required when APP_ENV=production (PRE-502 R2).")
+    if not _ceiling_set(values):  # the environment's fuse, whatever Admin holds; staging runs like production
+        raise RuntimeError(f"AI_DAILY_SPEND_CEILING_USD is required when APP_ENV={app_env} (PRE-502 R2).")
     return problems

@@ -62,12 +62,21 @@ def _url_state(url: str) -> str:
     return "https" if url.startswith("https://") else "http"
 
 
+def policy_new_sales() -> bool:
+    """`billing.new_sales` now (BILLING_NEW_SALES pins it). Strict (review of #428): a settings store this process has
+    never read raises `PolicyUnavailable`, which `_new_sales_open` turns into "paused" - an unreadable store never
+    reopens sales an operator paused. A store that fails after a good read keeps the last value read."""
+    from writing_coach import policies
+
+    return policies.value_strict("billing.new_sales") is True
+
+
 def _new_sales_open(facts: RuntimeFacts) -> bool:
     flag = facts.new_sales
     if not callable(flag):
         return bool(flag)
     try:
-        return flag() is not False
+        return flag() is True
     except Exception:  # noqa: BLE001 - a switch that cannot be read keeps sales closed: not ready, never guessed open
         _log.warning("billing new-sales switch unreadable; new sales paused", exc_info=True)
         return False

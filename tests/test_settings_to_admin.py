@@ -116,11 +116,33 @@ def test_the_consumers_read_the_policy_when_they_act(monkeypatch):
                                        commerce_schema=lambda: "present", orders_schema=lambda: "present",
                                        entitlement_source=lambda: "installed", service=None,
                                        public_base_url="https://x.test", production=False,
-                                       new_sales=lambda: policies.value("billing.new_sales") is not False)
+                                       new_sales=readiness.policy_new_sales)
         report = readiness.report(facts)
         assert report["checks"]["new_sales"] == "paused" and "new_sales_paused" in report["blockers"]
         save({"set": {"billing.new_sales": True}, "confirm": {"billing.new_sales": True}})
         assert readiness.report(facts)["checks"]["new_sales"] == "on", "a pause lifts without a restart"
+
+
+def test_an_unreadable_store_keeps_new_sales_closed():
+    """Review of #428 P2-2: a store this process never read means paused, never "on by default"."""
+    from writing_coach.billing import readiness
+
+    facts = readiness.RuntimeFacts(switch=True, backend="postgresql", backbone="active",
+                                   commerce_schema=lambda: "present", orders_schema=lambda: "present",
+                                   entitlement_source=lambda: "installed", service=None,
+                                   public_base_url="https://x.test", production=False,
+                                   new_sales=readiness.policy_new_sales)
+    with installed(MemoryPolicyStore(fail_reads=True)):
+        report = readiness.report(facts)
+        assert report["checks"]["new_sales"] == "paused" and "new_sales_paused" in report["blockers"]
+    store = MemoryPolicyStore({"billing.new_sales": False})
+    with installed(store):
+        assert readiness.report(facts)["checks"]["new_sales"] == "paused"
+        store.fail_reads = True
+        policies.clear_cache()
+        assert readiness.report(facts)["checks"]["new_sales"] == "paused", "a later failure keeps the pause read"
+    with installed(MemoryPolicyStore()):
+        assert readiness.report(facts)["checks"]["new_sales"] == "on", "a readable store with nothing saved: on"
 
 
 def test_the_poller_reads_its_interval_every_tick_and_zero_skips_the_poll(monkeypatch):
@@ -184,21 +206,52 @@ def test_the_ceiling_gate_applies_an_admin_change_without_a_restart():
         spend_gate.configure_ceiling(None, read=None)
 
 
+PUBLIC_ALIASES = ("staging", "production", "stage", "prod", "public", "Production", " STAGING ")
+
+
+@pytest.mark.parametrize("app_env", PUBLIC_ALIASES)
 @pytest.mark.parametrize("key", SWEEPS)
-def test_a_promised_sweep_can_be_turned_on_but_never_off_on_a_public_runtime(key):
-    for app_env in ("staging", "production"):
-        with installed(MemoryPolicyStore(), env={"APP_ENV": app_env}) as store:
-            with pytest.raises(policies.PolicyConfirmationRequired):
-                save({"set": {key: True}})
-            save({"set": {key: True}, "confirm": {key: True}})
-            assert policies.value(key) is True
-            for change in ({"set": {key: False}}, {"reset": [key]}):
-                with pytest.raises(policies.PolicyInvalid, match="never off"):
-                    save({**change, "confirm": {key: True}})
-            assert policies.value(key) is True and len(store.audits) == 1
+def test_a_promised_sweep_is_on_and_cannot_be_turned_off_on_a_public_runtime(key, app_env):
+    """Review of #428: every APP_ENV alias the deployment guard treats as public, any letter case."""
+    with installed(MemoryPolicyStore(), env={"APP_ENV": app_env}) as store:
+        assert policies.value(key) is True, "on by default: removing a pin keeps the promise"
+        assert policies.value_strict(key) is True
+        with pytest.raises(policies.PolicyInvalid, match="never off"):
+            save({"set": {key: False}, "confirm": {key: True}})
+        save({"set": {key: True}, "confirm": {key: True}})
+        with pytest.raises(policies.PolicyInvalid, match="never off"):
+            save({"set": {key: False}, "confirm": {key: True}})
+        save({"reset": [key], "confirm": {key: True}})  # back to the public default: still on
+        assert policies.value(key) is True and store.audits
+    with installed(MemoryPolicyStore({key: False}), env={"APP_ENV": app_env}):
+        assert policies.value(key) is True, "a false stored before the rule (or elsewhere) never switches it off"
+        row = {item["key"]: item for item in policies.snapshot()["policies"]}[key]
+        assert row["value"] is True and row["default"] is True
+    env_name = policies.BY_KEY[key].env
+    with installed(MemoryPolicyStore(), env={"APP_ENV": app_env, env_name: "off"}):
+        assert policies.value(key) is False, "only an explicit environment pin can (startup logs it as an ERROR)"
+
+
+@pytest.mark.parametrize("key", SWEEPS)
+def test_development_keeps_the_sweeps_off_by_default_and_editable(key):
     with installed(MemoryPolicyStore({key: True}), env={"APP_ENV": "development"}):
         save({"set": {key: False}, "confirm": {key: True}})
         assert policies.value(key) is False, "development may switch a sweep off"
+    with installed(MemoryPolicyStore(), env={}):
+        assert policies.value(key) is False
+
+
+def test_an_unpinned_promised_sweep_keeps_the_promise_at_start_on_a_public_runtime(caplog):
+    """Review of #428 P2-3: removing an env pin no longer turns a promised sweep off on staging or production."""
+    import logging
+
+    env = {"APP_ENV": "staging", "AI_DAILY_SPEND_CEILING_USD": "2", "AGENT_MEMORY_HMAC_KEYS": "v1:" + "k" * 40,
+           "ORENA_ACCOUNT_BACKBONE": "on", "AGENT_ENABLED": "true"}
+    with installed(MemoryPolicyStore(), env=env), caplog.at_level(logging.ERROR):
+        assert enforce_at_start(env, policies.value) == []
+    with installed(MemoryPolicyStore(), env={**env, "USAGE_RETENTION_SWEEP": "off"}):
+        assert [p.code for p in enforce_at_start({**env, "USAGE_RETENTION_SWEEP": "off"}, policies.value)] == \
+            ["usage_retention_sweep_off"]
 
 
 def _quota_settings(rows=None):
@@ -207,7 +260,7 @@ def _quota_settings(rows=None):
     return MemorySettings(rows)
 
 
-@pytest.mark.parametrize("app_env", ["staging", "production"])
+@pytest.mark.parametrize("app_env", PUBLIC_ALIASES)
 def test_quota_enforcement_cannot_be_switched_off_on_staging_or_production(app_env):
     from writing_coach.product import quota
 
@@ -270,13 +323,15 @@ def test_a_sweep_left_to_admin_is_read_from_its_policy():
         "a variable that pins the sweep off wins over Admin"
 
 
-def test_an_admin_ceiling_is_a_ceiling_but_production_still_needs_the_environments():
+def test_an_admin_ceiling_never_counts_as_the_promise():
+    """Review of #428 P2-1: an Admin ceiling can be cleared at any time, so only the environment's keeps the promise,
+    and every public runtime refuses to start without it."""
     with_admin = policy({**ALL_ON, "ai.daily_spend_ceiling_usd": 2.0})
-    assert unmet_promises(KEYS, with_admin) == []
-    assert [p.code for p in unmet_promises(KEYS, policy(ALL_ON))] == ["spend_ceiling_unset"]
-    assert enforce_at_start({**KEYS, "APP_ENV": "staging"}, with_admin) == []
-    with pytest.raises(RuntimeError, match="AI_DAILY_SPEND_CEILING_USD"):
-        enforce_at_start({**KEYS, "APP_ENV": "production"}, with_admin)
+    assert [p.code for p in unmet_promises(KEYS, with_admin)] == ["spend_ceiling_unset"]
+    for app_env in PUBLIC_ALIASES:
+        with pytest.raises(RuntimeError, match="AI_DAILY_SPEND_CEILING_USD"):
+            enforce_at_start({**KEYS, "APP_ENV": app_env}, with_admin)
+    assert enforce_at_start({**KEYS, "APP_ENV": "staging", "AI_DAILY_SPEND_CEILING_USD": "2"}, with_admin) == []
 
 
 def test_admin_readiness_reports_the_effective_values(monkeypatch):
@@ -294,4 +349,9 @@ def test_admin_readiness_reports_the_effective_values(monkeypatch):
     with installed(MemoryPolicyStore({"ai.daily_spend_ceiling_usd": 2.0, "usage.retention_sweep": True,
                                       "admin_audit.retention_sweep": True})):
         codes = {p["code"] for p in client.get("/api/admin/readiness-summary").json()["unmet_promises"]}
-        assert not codes & {"spend_ceiling_unset", "usage_retention_sweep_off", "admin_audit_retention_sweep_off"}
+        assert not codes & {"usage_retention_sweep_off", "admin_audit_retention_sweep_off"}
+        assert "spend_ceiling_unset" in codes, "an Admin ceiling alone is not the promise"
+    monkeypatch.setenv("AI_DAILY_SPEND_CEILING_USD", "2")
+    with installed(MemoryPolicyStore()):
+        codes = {p["code"] for p in client.get("/api/admin/readiness-summary").json()["unmet_promises"]}
+        assert "spend_ceiling_unset" not in codes

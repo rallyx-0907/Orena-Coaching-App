@@ -13,7 +13,7 @@ Precedence for every policy, highest first:
 
 Safety fuses are the exception (BQ, owner 2026-10-20: Admin may tighten, never loosen). A fuse's environment variable
 (`env_max`) is its hard maximum, not a lock: the value in force is the lower of the two. A deletion switch a published
-promise requires (`promise`) can be turned on in Admin, but never off on a public runtime. The whole list of settings,
+promise requires (`promise`) is on by default on a public runtime, and Admin can never turn it off there. The whole list of settings,
 where each is set and whether it needs a restart, is docs/operations/SETTINGS_REFERENCE.md.
 
 Consumers call `value(key)` at the moment they act, never at import, so a saved change applies within
@@ -99,7 +99,6 @@ def _p(key: str, group: str, kind: str, default: Any, **extra: Any) -> Policy:
 
 GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "vocabulary", "rates", "feedback", "spend",
                            "billing")
-PUBLIC_ENVIRONMENTS = frozenset({"staging", "production"})
 
 POLICIES: tuple[Policy, ...] = (
     # --- quota (the enforcement switch itself is product.quota_enforcement, D-161; this is what the reconciler decides)
@@ -341,9 +340,27 @@ def _lower_of(maximum: float | None, chosen: Any) -> Any:
 
 
 def public_runtime(env: Mapping[str, str] | None = None) -> bool:
-    """Whether this runtime is staging or production (`APP_ENV`), where a published promise must be kept."""
-    raw = str(_env_mapping(env if env is not None else _env).get("APP_ENV", "") or "").strip().casefold()
-    return raw in PUBLIC_ENVIRONMENTS
+    """Whether this runtime is staging or production (`APP_ENV`, with every alias the deployment guard accepts), where
+    a published promise must be kept."""
+    from writing_coach.core.deployment import is_public_environment
+
+    return is_public_environment(_env_mapping(env if env is not None else _env).get("APP_ENV", ""))
+
+
+def default_for(policy: Policy, env: Mapping[str, str] | None = None) -> Any:
+    """The default that applies here: a promised sweep is ON by default on a public runtime (review of #428), so
+    removing its pin, or never saving it, keeps the Privacy Policy's promise; elsewhere the registry's default."""
+    if policy.promise and public_runtime(env):
+        return True
+    return policy.default
+
+
+def _kept(policy: Policy, chosen: Any, env: Mapping[str, str] | None = None) -> Any:
+    """A promised sweep on a public runtime is on whatever Admin stored (an older `false` saved before the rule, or one
+    copied from another runtime, never switches it off); only an environment pin can. Anything else: `chosen`."""
+    if policy.promise and public_runtime(env):
+        return True
+    return chosen
 
 
 # --- the stored document ---------------------------------------------------------------------------------------
@@ -452,10 +469,10 @@ def value(key: str, *, env: Mapping[str, str] | None = None) -> Any:
         if pinned is not _INVALID:
             return pinned
         stored = _loaded().values
-        return _lower_of(maximum, stored[key] if key in stored else policy.default)
+        return _kept(policy, _lower_of(maximum, stored[key] if key in stored else default_for(policy, env)), env)
     except Exception:  # noqa: BLE001 - a policy read never costs a learner a request
         _log.warning("platform.policies: reading %s failed; using its default", key, exc_info=True)
-        return _lower_of(maximum, policy.default)
+        return _lower_of(maximum, default_for(policy, env))
 
 
 def value_strict(key: str, *, env: Mapping[str, str] | None = None) -> Any:
@@ -472,7 +489,7 @@ def value_strict(key: str, *, env: Mapping[str, str] | None = None) -> Any:
         raise PolicyUnavailable(f"{key}: the settings store has never been read in this process")
     if key in loaded.rejected:
         raise PolicyUnavailable(f"{key}: the stored value is not valid")
-    return loaded.values[key] if key in loaded.values else policy.default
+    return _kept(policy, loaded.values[key] if key in loaded.values else default_for(policy, env), env)
 
 
 AGENT_LIMIT_FIELDS: tuple[str, ...] = (
@@ -501,14 +518,15 @@ def snapshot() -> dict[str, Any]:
         has_admin = item.key in loaded.values
         maximum = env_maximum(item, env)
         high = item.high if maximum is None or item.high is None else min(item.high, maximum)
-        chosen = loaded.values[item.key] if has_admin else item.default
+        fallback = default_for(item, env)
+        chosen = loaded.values[item.key] if has_admin else fallback
         rows.append({
-            "key": item.key, "group": item.group, "kind": item.kind, "unit": item.unit, "default": item.default,
+            "key": item.key, "group": item.group, "kind": item.kind, "unit": item.unit, "default": fallback,
             "low": item.low, "high": high, "nullable": item.nullable, "choices": list(item.choices),
             "danger": item.danger, "confirm_above": item.confirm_above,
             "env": item.env, "locked": locked, "env_max": item.env_max, "promise": item.promise,
             "source": "env" if locked else "admin" if has_admin else "default",
-            "value": pinned if locked else _lower_of(maximum, chosen),
+            "value": pinned if locked else _kept(item, _lower_of(maximum, chosen), env),
             "admin": loaded.values.get(item.key), "has_admin": has_admin,
         })
     return {
@@ -585,8 +603,8 @@ def save(change: object, *, updated_by: str = "", actor: str = "", expected_upda
     needing: list[str] = []
     for key in sorted(set(clean) | set(resets)):
         policy = BY_KEY[key]
-        before = base_values.get(key, policy.default)
-        after = new_values.get(key, policy.default)
+        before = base_values.get(key, default_for(policy, _env))
+        after = new_values.get(key, default_for(policy, _env))
         if before == after and (key in base_values) == (key in new_values):
             continue
         if policy.promise and before is True and after is not True and public_runtime():
