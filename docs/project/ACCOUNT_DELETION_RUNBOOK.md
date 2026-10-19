@@ -39,8 +39,11 @@ the public promise it serves is `/account-deletion` (D-162): a learner emails
    - If the log has unsettled intents and the database they were written for is lost, add `--accept-unsettled`: a
      requested deletion is applied. Never reconcile against a restored database.
    - Then `suppress --check` must answer 0 not holding.
-   - A log refused for a malformed line in the middle (not a torn last line) is never edited in place: keep a copy,
-     repair it by hand under review, and record what was changed.
+   - A log refused for a damaged line (not a torn record a crash left, which is dropped and reported) is never edited
+     in place: keep a copy, repair it by hand under review, and record what was changed. Keep two off-host copies of
+     the log; `suppress` takes several `--log` files and merges them safely.
+   - A returning learner is told by comparing `users.last_login` (the app's clock) with the deletion time (the
+     database's clock): both run on the same host here. On separate hosts, keep their clocks synchronised.
 4. Nobody else operates the shared Docker runtime and volumes meanwhile (AGENTS.md section 10). Never
    `docker compose down -v`.
 

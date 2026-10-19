@@ -256,7 +256,9 @@ def suppress(url: str, into: str, journals: list[Path], check: bool = False, log
     from writing_coach.persistence.deletion_journal import (
         JournalInvalid, merge, read_journal, reapply_deletions, verify_suppressed,
     )
-    from writing_coach.persistence.deletion_log import DeletionLogInvalid, confirmed_journal, confirmed_operations
+    from writing_coach.persistence.deletion_log import (
+        DeletionLogInvalid, confirmed_journal, confirmed_operations, torn_records,
+    )
 
     logs = logs or []
     if not journals and not logs:
@@ -269,6 +271,10 @@ def suppress(url: str, into: str, journals: list[Path], check: bool = False, log
     except (JournalInvalid, DeletionLogInvalid) as error:
         print(f"refusing: {error}", file=sys.stderr)
         return 1
+    for path in logs:
+        dropped = torn_records(path)
+        if dropped:
+            print(f"note: {path}: {len(dropped)} torn record(s) from an interrupted write dropped (line {dropped})")
     from writing_coach.persistence.account_deletion import DeletionRefused, owner_rows_left, reapply_owner_deletions
 
     engine = _engine_for(url, into)

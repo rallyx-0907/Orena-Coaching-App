@@ -62,7 +62,7 @@ def log_path(environ: Mapping[str, str] | None = None) -> Path | None:
     return Path(raw) if raw else None
 
 
-_held: dict[str, int] = {}  # paths whose lock this process holds (re-entrant: a nested append must not deadlock)
+_held: dict[str, int] = {}  # (thread, path) pairs holding the lock (re-entrant: a nested append must not deadlock)
 _held_guard = threading.Lock()
 
 
@@ -86,7 +86,7 @@ def _unlock_file(handle: Any) -> None:
 def held(path: Path) -> Iterator[None]:
     """An exclusive lock on `<log>.lock` for the whole block, re-entrant within this process. The deletion tool holds it
     from its intent through its done record, and `reconcile` for its whole run, so neither sees the other half-way."""
-    key = str(Path(path).resolve())
+    key = f"{threading.get_ident()}:{Path(path).resolve()}"  # per thread: another thread still takes the file lock
     with _held_guard:
         nested = _held.get(key, 0) > 0
         _held[key] = _held.get(key, 0) + 1
@@ -113,10 +113,11 @@ def _append(path: Path, record: Mapping[str, Any]) -> None:
     line = json.dumps({"kind": LOG_KIND, "version": LOG_VERSION, **record}, ensure_ascii=False, sort_keys=True)
     with held(path):
         created = not path.exists()
-        # A torn last line (a crash mid-write) has no newline: start on a fresh line, never glue onto it.
+        # A torn last line (a crash mid-write) has no newline: close it, mark the repair, and start on a fresh line.
         torn = not created and path.stat().st_size > 0 and not path.read_bytes().endswith(b"\n")
+        repair = json.dumps({"kind": LOG_KIND, "version": LOG_VERSION, "event": "repair"}, sort_keys=True)
         with open(path, "a", encoding="utf-8") as handle:
-            handle.write(("\n" if torn else "") + line + "\n")
+            handle.write(("\n" + repair + "\n" if torn else "") + line + "\n")
             handle.flush()
             os.fsync(handle.fileno())
         if created and hasattr(os, "O_DIRECTORY"):  # the new file's directory entry too (POSIX)
@@ -149,10 +150,11 @@ def write_abandoned(path: Path, op: str) -> None:
 
 
 def read_log(path: Path) -> dict[str, dict[str, Any]]:
-    """op -> {"intent", "done" | None, "abandoned"}. A record torn by a crash (a `{...` line that does not parse) is
-    dropped: that write never finished, and every later write starts on its own line. Anything else malformed - a line
-    that is not JSON at all, or JSON that is not a log record - refuses the whole log."""
+    """op -> {"intent", "done" | None, "abandoned"}. A record torn by a crash - the last line, or one the next write
+    marked with a `repair` record - is dropped (that write never finished) and counted (`torn_records`). Any other
+    unparsable line, or JSON that is not a log record, refuses the whole log: damage after a write is never hidden."""
     ops: dict[str, dict[str, Any]] = {}
+    torn: list[int] = []
     try:
         lines = Path(path).read_text(encoding="utf-8").splitlines()
     except FileNotFoundError:
@@ -167,12 +169,18 @@ def read_log(path: Path) -> dict[str, dict[str, Any]]:
         try:
             record = json.loads(line)
         except ValueError:
-            if line.lstrip().startswith("{"):
-                continue  # a record torn by a crash mid-write: that write never finished, so its transaction never committed
-            raise DeletionLogInvalid(f"line {number} is not JSON") from None
+            # A record torn by a crash mid-write - the last line, or one the next write marked repaired - never
+            # finished, so its transaction never committed: dropped, and counted. Any other unparsable line is damage.
+            following = lines[number] if number < len(lines) else None
+            if line.lstrip().startswith("{") and (following is None or '"event": "repair"' in following):
+                torn.append(number)
+                continue
+            raise DeletionLogInvalid(f"line {number} is not a log record (damaged after it was written?)") from None
         if record.get("kind") != LOG_KIND or record.get("version") != LOG_VERSION:
             raise DeletionLogInvalid(f"line {number} is not a version-{LOG_VERSION} deletion log record")
         op, event = str(record.get("op", "")), record.get("event")
+        if event == "repair":
+            continue
         if event == "intent":
             if op in ops:
                 raise DeletionLogInvalid(f"line {number}: operation {op} has two intents")
@@ -186,7 +194,17 @@ def read_log(path: Path) -> dict[str, dict[str, Any]]:
                 ops[op]["abandoned"] = True
         else:
             raise DeletionLogInvalid(f"line {number}: unknown event {event!r}")
+    _TORN[str(path)] = torn
     return ops
+
+
+_TORN: dict[str, list[int]] = {}
+
+
+def torn_records(path: Path) -> list[int]:
+    """The line numbers of torn records the last `read_log` of this path dropped (crash leftovers, accounted for)."""
+    read_log(path)
+    return list(_TORN.get(str(path), []))
 
 
 def pending(path: Path) -> list[str]:  # intents with neither a done nor an abandoned

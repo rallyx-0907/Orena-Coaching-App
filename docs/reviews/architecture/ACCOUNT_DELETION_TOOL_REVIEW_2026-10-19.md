@@ -39,3 +39,23 @@ Remaining P2s were fixed after the round in a follow-up commit: stale runbook ro
 2. **The public deletion page and kept payment records.** Disclose that they are kept, or design a deletable path.
 3. **Before the first use:** the review recorded here, backup rotation applied on the host, and the :8000 run itself (a human gate).
 4. **Returning learners.** What a returning learner gets on the legacy owner routes is still a product question (D-055).
+
+## The deletion journal and restore replay (draft PR #386, D-054 preconditions): three rounds
+
+**Reviewer:** the same Delegated Architecture Reviewer, read-only.
+
+**Round 1 (`d998dfa5`): CHANGES REQUIRED.**
+- A repeated deletion blocked every restore.
+- An unsettled intent after a database loss could only be settled wrongly.
+- Replay could wipe a returning learner's new data (D-055).
+
+**Round 2 (`d0062a37`): CHANGES REQUIRED.**
+- A torn record corrupted the next write.
+- A reconcile racing an in-flight deletion could drop a committed one.
+
+**Round 3 (`9b721584`): APPROVE of the deletion log and replay code.** Afterwards, the remaining P2s were fixed in a follow-up commit:
+- torn records are dropped only when accounted for (a repair marker, or the last line) and are reported; any other damage refuses;
+- the lock is re-entrant per thread;
+- the runbook notes the two clocks.
+
+**Gate recommendation (reviewer):** lift D-054 in its own reviewed change: a DECISION_LOG entry, the gates paragraph and `tests/test_deletion_journal.py` together, allowing exactly `persistence/account_deletion.py` and still forbidding `register_new` and `_allocate`. Conditions (a) and (b) of the gates paragraph are met. The decision is the owner's (AGENTS.md section 7). Applying the tool on :8000 is a separate human gate.

@@ -353,8 +353,22 @@ def test_a_write_after_a_torn_line_starts_on_its_own_line(tmp_path):
     path.write_text('{"kind": "orena.deletion_log", "version": 1, "event": "int', encoding="utf-8")  # torn, no newline
     account = str(uuid.uuid4())
     deletion_log.write_done(path, _intent(path, account), deleted_at=T0)
-    assert path.read_text(encoding="utf-8").splitlines()[1].startswith('{"at"')  # the intent is a whole line
+    lines = path.read_text(encoding="utf-8").splitlines()
+    assert '"event": "repair"' in lines[1] and lines[2].startswith('{"at"')  # marked, then the intent on its own line
     assert [o["user_id"] for o in deletion_log.confirmed_operations(path)] == [account]  # and the log still reads
+    assert deletion_log.torn_records(path) == [1]  # dropped, and reported
+
+
+def test_a_record_damaged_after_it_was_written_refuses_the_log(tmp_path):
+    """Review round 3, P2-1: only a crash's torn record is dropped silently; damage elsewhere is never hidden."""
+    from writing_coach.persistence import deletion_log
+
+    path = tmp_path / "log.jsonl"
+    deletion_log.write_done(path, _intent(path), deleted_at=T0)
+    lines = path.read_text(encoding="utf-8").splitlines()
+    path.write_text(lines[0][:40] + "\n" + lines[1] + "\n", encoding="utf-8")  # the committed intent, truncated
+    with pytest.raises(deletion_log.DeletionLogInvalid, match="damaged"):
+        deletion_log.read_log(path)
 
 
 def test_a_done_after_an_abandoned_counts_as_confirmed(tmp_path):
