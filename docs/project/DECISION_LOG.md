@@ -7581,6 +7581,8 @@ Supersedes the "pending" state of D-234 item 7: the switch stays default-off in 
 
 **Not in this decision.** No schema change, no provider, no AI image, no network call at publish time, and no unpublishing of existing items. Real pictures for the existing articles (NASA, Wikimedia and the like) are attached later with the route above.
 
+**Amendment 2026-10-20 (owner report relayed by Hermes: every fable card showed a "T", the title was cut by the duration pill and "EN" hidden by the type pill).** Point 3 is narrowed to what the pinned Discover card draws over a picture (the type and duration pills only): the typographic cover prints no title and no topic/language label (the title stays its accessible name), its glyph is the first letter of the first meaningful word (a leading English article and quotes skipped; Chinese skips punctuation only), placed clear of both pills, and its second hue is chosen by the topic from the same token list (by the title when there is none). Existing covers are remade with `scripts/backfill_typographic_covers.py --regenerate-typographic` (dry run unless `--apply`; only a cover whose provenance kind is typographic; a real picture is never touched). Gap recorded in `UI_BACKEND_GAPS.md` ("Discover: the cover of a text-only item").
+
 ## D-241 - Account deletion: the D-054 gate is lifted for the reviewed operator tool (2026-10-19)
 
 **Status:** ACCEPTED (owner, 2026-10-19 16:26, relayed by Hermes: "tôi thấy cứ làm theo đề xuất" - approving the

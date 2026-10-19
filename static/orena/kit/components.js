@@ -48,12 +48,17 @@ export function coverTile(cover) {
   return html`<span class="c-media__cover" style="background:${cover.tint}">${raw(icon(cover.icon, { size: 22 }))}</span>`;
 }
 
-/* The first letter or character of a title - what a coverless card shows large (human, 2026-10-09: no blank,
-   single-colour tile). Skips opening quotes and punctuation; nothing when the title has no letter or digit. */
+/* The first letter or character of a title's first meaningful word - what a coverless card shows large (human,
+   2026-10-09: no blank, single-colour tile). Skips opening quotes and punctuation, and a leading English article
+   unless it is the whole title ("The Lion and the Mouse" -> "L"; owner, 2026-10-20: a shelf of "T"s), the same rule
+   as the stored typographic cover (`cover_glyph`, writing_coach/thumbnails.py). Nothing when the title has no letter
+   or digit. */
+const LEADING_ARTICLES = new Set(['the', 'a', 'an']);
 export function posterGlyph(title) {
-  const text = String(title ?? '');
-  const match = text.match(/[\p{L}\p{N}]/u);
-  return match ? match[0].toLocaleUpperCase() : '';
+  const words = String(title ?? '').match(/[\p{L}\p{N}]+/gu) || [];
+  if (!words.length) return '';
+  const word = words.length > 1 && LEADING_ARTICLES.has(words[0].toLowerCase()) ? words[1] : words[0];
+  return [...word][0].toLocaleUpperCase();
 }
 
 /* A coverless card's poster: the kind's hue as a gradient, two light circles, the title's first letter large and the

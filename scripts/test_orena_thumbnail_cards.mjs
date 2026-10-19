@@ -3,7 +3,15 @@
    credit but only our own same-origin address counts; a vocabulary collection's thumbnail is only its own cover route. */
 import assert from 'node:assert/strict';
 
-const { mediaCard } = await import('../static/orena/kit/components.js');
+const { mediaCard, posterGlyph } = await import('../static/orena/kit/components.js');
+
+// The poster's letter is the first meaningful word's, as the stored cover's is (thumbnails.cover_glyph): a shelf of
+// fables that all open with "The" no longer shows one "T" each (owner report, 2026-10-20).
+for (const [title, glyph] of [
+  ['The Shepherd Boy and the Wolf', 'S'], ['The North Wind and the Sun', 'N'], ['The Milkmaid and her Pail', 'M'],
+  ['The Lion and the Mouse', 'L'], ['An Apple a Day', 'A'], ['“The Fox”', 'F'], ['The', 'T'],
+  ['Theory of Everything', 'T'], ['《狐狸和乌鸦》', '狐'], ['!!!', ''],
+]) assert.equal(posterGlyph(title), glyph, title);
 const { imageOf } = await import('../static/orena/product/provenance.js');
 const { collectionViewModel } = await import('../static/orena/screens/collection/model.js');
 const { entryFromCollection } = await import('../static/orena/screens/discover/model.js');

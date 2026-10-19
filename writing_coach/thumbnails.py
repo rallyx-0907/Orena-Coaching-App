@@ -198,64 +198,64 @@ def token_hexes() -> frozenset[str]:
     return frozenset(item.upper() for item in _HEX.findall(_TOKENS.read_text(encoding="utf-8")))
 
 
-def _glyph(title: str) -> str:
-    for char in str(title or "").strip():
-        if char.isalnum():
-            return char.upper()
-    return ""
+# Words a title may open with that say nothing about it: a cover lettered by them gives a shelf of "T"s (owner,
+# 2026-10-20). Per language; a language with no entry (Chinese among them) skips only punctuation. D-240 names no
+# Chinese measure word or particle to skip, so none is.
+LEADING_ARTICLES = {"en": frozenset({"the", "a", "an"})}
+_WORD = re.compile(r"[^\W_]+")
 
 
-def _is_cjk(char: str) -> bool:
-    return "⺀" <= char <= "鿿" or "豈" <= char <= "﫿" or "＀" <= char <= "￯"
+def cover_glyph(title: str, language: str = "") -> str:
+    """The letter a cover shows large: the first letter or digit of the title's first meaningful word.
+
+    Quotes and punctuation are skipped; so is a leading article of the title's language ("The Lion and the Mouse" ->
+    "L"), unless the article is the whole title. A title with no language is read as English when it is in Latin
+    script. Nothing when the title has no letter or digit."""
+    text = str(title or "")
+    words = _WORD.findall(text)
+    if not words:
+        return ""
+    code = str(language or "").strip().casefold().split("-")[0].split("_")[0]
+    if not code and words[0].isascii():
+        code = "en"
+    articles = LEADING_ARTICLES.get(code, frozenset())
+    word = words[1] if len(words) > 1 and words[0].casefold() in articles else words[0]
+    return word[0].upper()
 
 
-def _lines(title: str, language: str) -> list[str]:
-    """The title in at most three lines, wrapped by width and never cut mid-word (Chinese by character)."""
-    text = " ".join(str(title or "").split())
-    cjk = language.casefold().startswith("zh") or any(_is_cjk(c) for c in text)
-    limit = 14 if cjk else 26
-    if cjk:
-        rows = [text[i : i + limit] for i in range(0, len(text), limit)]
-    else:
-        rows, current = [], ""
-        for word in text.split(" "):
-            if current and len(current) + 1 + len(word) > limit:
-                rows.append(current)
-                current = word
-            else:
-                current = f"{current} {word}".strip()
-        rows.append(current)
-    if len(rows) > 3:
-        rows = rows[:3]
-        rows[2] = rows[2][: max(1, limit - 1)].rstrip() + "…"
-    return [row for row in rows if row] or [""]
+def _hash(text: str) -> int:
+    value = 0
+    for char in str(text or ""):
+        value = (value * 31 + ord(char)) & 0xFFFFFFFF
+    return value
+
+
+def cover_accent(title: str, topic: str = "") -> str:
+    """The token of a cover's second hue: picked by the topic, so one topic reads as one family and different topics
+    differ; by the title when there is no topic (`posterAccent` in components.js)."""
+    key = " ".join(str(topic or "").split()).casefold()
+    return _ACCENTS[_hash(key if key else str(title or "")) % len(_ACCENTS)]
+
+
+# The glyph sits on the right, above the band the duration badge takes at the foot of a phone card (the badge is
+# 10px from the edge and about 26px tall: at a ~170px-wide card that is the lowest third of the 400-unit cover) and
+# right of the type badge at the top left. A capital spans about 87-220, a Chinese character about 53-243.
+GLYPH_BASELINE = 220
 
 
 def typographic_cover_svg(title: str, *, language: str = "", topic: str = "", kind: str = "reading") -> bytes:
-    """A 640x400 SVG cover for a title: the kind's hue as a gradient, two light circles, the title's first letter
-    large and the title set small at the foot - the same poster the app draws for a coverless card, made once and
-    stored. Deterministic (the same input gives the same bytes), no network, no AI, and no colour that is not a
-    token of the kit. Text is escaped; there is no script, no external reference and no font file."""
+    """A 640x400 SVG cover for a title: the kind's hue to the topic's hue as a gradient, two light circles and the
+    first letter of the title's first meaningful word, large - the poster the app draws for a coverless card
+    (`posterMarkup`), made once and stored. The design's card prints its type and duration badges over the artwork
+    and the title below it, so the cover prints no text of its own (owner report, 2026-10-20: the title and the
+    language label were hidden under the badges); the title is its accessible name. Deterministic (the same input
+    gives the same bytes), no network, no AI, and no colour that is not a token of the kit. Text is escaped; there is
+    no script, no external reference and no font file."""
     tokens = design_tokens()
     hue = tokens[KIND_HUE.get(kind, "--skill-read")]
-    hash_value = 0
-    for char in str(title or ""):
-        hash_value = (hash_value * 31 + ord(char)) & 0xFFFFFFFF
-    hue2 = tokens[_ACCENTS[hash_value % len(_ACCENTS)]]
+    hue2 = tokens[cover_accent(title, topic)]
     ink = tokens[INK_TOKEN]
-    glyph = html.escape(_glyph(title), quote=True)
-    lines = _lines(title, language)
-    size = 30 if len(lines) < 3 else 26
-    start = HEIGHT - 44 - (len(lines) - 1) * (size + 8)
-    spans = "".join(
-        f'<tspan x="40" y="{start + index * (size + 8)}">{html.escape(line, quote=True)}</tspan>'
-        for index, line in enumerate(lines)
-    )
-    label = html.escape(" · ".join(part for part in (str(topic or "").strip(), str(language or "").strip().upper()) if part), quote=True)
-    topic_text = (
-        f'<text x="40" y="52" fill="{ink}" fill-opacity="0.82" font-size="20" font-weight="600" letter-spacing="1">{label}</text>'
-        if label else ""
-    )
+    glyph = html.escape(cover_glyph(title, language), quote=True)
     alt = html.escape(str(title or ""), quote=True)
     svg = (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {HEIGHT}" width="{WIDTH}" height="{HEIGHT}" '
@@ -266,9 +266,8 @@ def typographic_cover_svg(title: str, *, language: str = "", topic: str = "", ki
         f'<rect width="{WIDTH}" height="{HEIGHT}" fill="url(#g)"/>'
         f'<circle cx="{WIDTH - 40}" cy="40" r="210" fill="{ink}" fill-opacity="0.14"/>'
         f'<circle cx="300" cy="{HEIGHT + 120}" r="150" fill="{ink}" fill-opacity="0.10"/>'
-        f'<text x="{WIDTH - 54}" y="236" text-anchor="end" fill="{ink}" fill-opacity="0.92" font-size="190" font-weight="700">{glyph}</text>'
-        f"{topic_text}"
-        f'<text fill="{ink}" font-size="{size}" font-weight="700">{spans}</text>'
+        f'<text x="{WIDTH - 54}" y="{GLYPH_BASELINE}" text-anchor="end" fill="{ink}" '
+        f'fill-opacity="0.92" font-size="190" font-weight="700">{glyph}</text>'
         "</svg>"
     )
     return svg.encode("utf-8")

@@ -65,12 +65,68 @@ def test_a_hostile_title_is_text_never_markup(title):
     assert svg.count("<svg") == 1
 
 
-def test_the_cover_wraps_chinese_by_character_and_names_the_title_for_assistive_tech():
+def _glyph_of(svg: bytes) -> str:
+    texts = re.findall(r"<text[^>]*>([^<]*)</text>", svg.decode())
+    assert len(texts) == 1, "the cover prints one glyph and no other text"
+    return texts[0]
+
+
+def test_the_cover_names_the_title_for_assistive_tech_and_prints_no_text_under_the_badges():
+    # The design's card puts its type badge top left and its duration badge bottom right over the artwork, and the
+    # title below it: the cover prints neither the title nor a topic/language label (owner report, 2026-10-20).
     title = "为什么海水是咸的这个问题其实很有意思而且值得慢慢读"
-    svg = typographic_cover_svg(title, language="zh", topic="科学").decode()
-    assert f'aria-label="{title}"' in svg and f"<title>{title}</title>" in svg
-    assert svg.count("<tspan") == 2  # 26 characters, 14 to a line
-    assert "海" in svg  # the large glyph is the first character
+    svg = typographic_cover_svg(title, language="zh", topic="科学")
+    assert f'aria-label="{title}"'.encode() in svg and f"<title>{title}</title>".encode() in svg
+    assert b"<tspan" not in svg and "科学".encode() not in svg and b">ZH<" not in svg
+    assert _glyph_of(svg) == "为"
+
+
+@pytest.mark.parametrize("title,language,glyph", [
+    ("The Shepherd Boy and the Wolf", "en", "S"),
+    ("The North Wind and the Sun", "en", "N"),
+    ("The Milkmaid and her Pail", "en", "M"),
+    ("A Lion and a Mouse", "en", "L"),
+    ("An Apple a Day", "en", "A"),
+    ("the lower-case title", "en", "L"),
+    ("“The Fox and the Grapes”", "en", "F"),
+    ("'A Visit,' she said", "en", "V"),
+    ("...and Then There Were None", "en", "A"),
+    ("The", "en", "T"),
+    ("A", "en", "A"),
+    ("The Lion", "", "L"),
+    ("Theory of Everything", "en", "T"),
+    ("《狐狸和乌鸦》", "zh", "狐"),
+    ("“一个”故事", "zh", "一"),
+    ("2048: a game", "en", "2"),
+    ("!!!", "en", ""),
+])
+def test_the_glyph_is_the_first_letter_of_the_first_meaningful_word(title, language, glyph):
+    assert thumbnails.cover_glyph(title, language) == glyph
+    assert _glyph_of(typographic_cover_svg(title, language=language)) == glyph
+
+
+def test_the_four_fables_no_longer_share_one_letter():
+    titles = ["The Shepherd Boy and the Wolf", "The North Wind and the Sun", "The Milkmaid and her Pail",
+              "The Lion and the Mouse"]
+    assert [thumbnails.cover_glyph(t, "en") for t in titles] == ["S", "N", "M", "L"]
+
+
+def _stop_colours(svg: bytes) -> list[str]:
+    return re.findall(r'stop-color="(#[0-9A-Fa-f]+)"', svg.decode())
+
+
+def test_the_second_hue_follows_the_topic_from_the_token_palette():
+    tokens = thumbnails.design_tokens()
+    accents = {tokens[name] for name in thumbnails._ACCENTS}
+    by_topic = {topic: _stop_colours(typographic_cover_svg("A title", language="en", topic=topic))[1]
+                for topic in ("Science", "History", "Nature", "Health", "Travel", "Food", "Sport")}
+    assert set(by_topic.values()) <= accents and len(set(by_topic.values())) > 1, "different topics differ"
+    # one topic is one family, whatever the title; the kind's hue stays the first colour (D-240)
+    same = {_stop_colours(typographic_cover_svg(t, language="en", topic="Science"))[1] for t in ("One", "Two", "Three")}
+    assert same == {by_topic["Science"]}
+    assert _stop_colours(typographic_cover_svg("A", topic="Science", kind="media"))[0] == tokens["--skill-listen"]
+    # with no topic the title picks it, as the app's own poster does
+    assert {_stop_colours(typographic_cover_svg(t))[1] for t in ("One", "Two", "Three", "Four", "Five")} <= accents
 
 
 def test_every_kind_is_tinted_by_a_skill_token_hue():
@@ -625,12 +681,101 @@ def test_books_without_a_cover_get_one():
     assert books.covers == {"b1": "books/b1/cover.svg"} and store.get("books/b1/cover.svg").startswith(b"<svg")
 
 
+def _old_rule_cover(store, article_id, title):
+    """A typographic cover as the generator drew it before 2026-10-20 (different bytes, same provenance kind)."""
+    data = f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400"><text>T {title}</text></svg>'.encode()
+    record = {"data": data, "content_type": thumbnails.SVG_TYPE, "ext": "svg", "width": 640, "height": 400,
+              "sha256": __import__("hashlib").sha256(data).hexdigest(), "alt": title}
+    from writing_coach import reading_images
+
+    key = reading_images.asset_key(article_id, record["sha256"], record["ext"])
+    thumbnails.store_record(store, key, record)
+    return thumbnails.stored_dict(record, key, normalize_provenance({}, kind="typographic"))
+
+
+def test_regenerate_replaces_old_typographic_covers_only_and_never_a_real_picture(gated):
+    repository, store = gated
+    old = _bare_article(repository)
+    real = _bare_article(repository, body="A second text about rivers and the people who live beside them all year.")
+    bare = _bare_article(repository, body="A third text that has no picture at all and is left for the backfill.")
+    repository.approve_image(old["id"], _old_rule_cover(store, old["id"], old["title"]), actor="admin")
+    record, provenance = fetch_licensed_image(GOOD_URL, LICENCE, fetcher=Fetcher(png(1200, 800)))
+    repository.approve_image(real["id"], thumbnails.store_licensed(store, "reading", real["id"], record, provenance, alt="A river"),
+                             actor="admin")
+    picture = repository.published_thumbnail(real["id"])
+    sources = thumbnail_audit.Sources(reading=repository, reading_assets=store)
+
+    files = dict(store.files)
+    dry = thumbnail_audit.regenerate(sources, include_unpublished=True)
+    assert dry["dry_run"] is True and store.files == files and dry["failed"] == []
+    assert {i["id"]: i["action"] for i in dry["items"]} == {
+        old["id"]: "would_regenerate_typographic_cover", real["id"]: "kept_real_image", bare["id"]: "no_thumbnail"}
+
+    applied = thumbnail_audit.regenerate(sources, apply=True, include_unpublished=True)
+    assert applied["failed"] == [] and {i["id"]: i["action"] for i in applied["items"]}[old["id"]] == "typographic_cover_regenerated"
+    fresh = repository.published_thumbnail(old["id"])
+    expected = thumbnails.typographic_record(old["title"], language="en", topic=old.get("topic") or "", kind="reading")
+    assert fresh["kind"] == "typographic" and fresh["sha256"] == expected["sha256"]
+    assert store.get(fresh["asset_key"]) == expected["data"]
+    assert repository.published_thumbnail(real["id"]) == picture, "a real picture is never touched"
+    assert repository.has_thumbnail(bare["id"]) is False, "an item with no thumbnail is the backfill's, not this"
+
+    again = thumbnail_audit.regenerate(sources, apply=True, include_unpublished=True)
+    assert {i["id"]: i["action"] for i in again["items"]}[old["id"]] == "typographic_cover_current", "idempotent"
+    named = thumbnail_audit.regenerate(sources, ids=(real["id"], "missing-id"))
+    assert [i["action"] for i in named["items"]] == ["kept_real_image"] and named["failed"][0]["error"] == "not_found"
+
+
+def test_regenerate_covers_media_vocabulary_and_books_by_their_provenance(vocabulary):
+    import json
+
+    store = MemoryStore()
+    # media: an old typographic cover is remade, a provider thumbnail and a licensed picture are kept
+    old_media = _entry(media_id="up-1", thumbnail={"kind": "asset", "ref": "media/up-1/thumb-" + "0" * 24 + ".svg"},
+                       source={**_entry().source, "thumbnail_kind": "typographic"})
+    youtube = _entry(media_id="yt-1", thumbnail={"kind": "provider-url", "ref": "https://i.ytimg.com/vi/x/hqdefault.jpg"})
+    licensed = _entry(media_id="up-2", thumbnail={"kind": "asset", "ref": "media/up-2/thumb-" + "1" * 24 + ".png"},
+                      source={**_entry().source, "thumbnail_kind": "library_image"})
+    media = _FakeMedia(old_media, youtube, licensed)
+    # vocabulary: an imported collection given an old cover
+    collection_id = _collection(vocabulary)
+    vocabulary.set_collection_thumbnail(collection_id, {**_old_rule_cover(store, "0" * 32, "Old"), "asset_key": "thumbnails/vocabulary/c/x.svg"})
+    _admit(vocabulary, collection_id)
+    # books: a typographic cover with its provenance record, an EPUB's own picture
+    books = _FakeBooks()
+    books.rows[0]["cover_asset_key"] = "books/b1/cover.svg"
+    store.put("books/b1/cover.svg", b'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400"><text>A</text></svg>')
+    store.put("books/b1/cover.provenance.json", json.dumps({"kind": "typographic"}).encode())
+    store.put("books/b2/cover.jpg", b"\xff\xd8\xff")
+    store.put("books/b2/cover.provenance.json", json.dumps({"kind": "source_image", "origin": "epub-embedded"}).encode())
+    sources = thumbnail_audit.Sources(vocabulary=vocabulary, books=books, media=media, reading_assets=store, media_assets=store)
+
+    dry = {(i["kind"], i["id"]): i["action"] for i in thumbnail_audit.regenerate(sources)["items"]}
+    assert dry[("media", "up-1")] == "would_regenerate_typographic_cover"
+    assert dry[("media", "yt-1")] == dry[("media", "up-2")] == dry[("book", "b2")] == "kept_real_image"
+    assert dry[("book", "b1")] == dry[("vocabulary", collection_id)] == "would_regenerate_typographic_cover"
+
+    jpeg = store.get("books/b2/cover.jpg")
+    report = thumbnail_audit.regenerate(sources, apply=True)
+    assert report["failed"] == [] and report["skipped"] == ["reading"]
+    remade = media.entries["up-1"]
+    assert remade.thumbnail["ref"] != old_media.thumbnail["ref"] and remade.source["thumbnail_kind"] == "typographic"
+    assert media.entries["yt-1"] == youtube and media.entries["up-2"] == licensed
+    book = thumbnails.typographic_record("A Book", language="en", topic="Ann", kind="book")
+    assert store.get("books/b1/cover.svg") == book["data"] and store.get("books/b2/cover.jpg") == jpeg
+    assert json.loads(store.get("books/b1/cover.provenance.json"))["sha256"] == book["sha256"]
+    assert vocabulary.collection_thumbnail(collection_id)["sha256"] != _old_rule_cover(store, "0" * 32, "Old")["sha256"]
+    again = {i["action"] for i in thumbnail_audit.regenerate(sources)["items"]}
+    assert "would_regenerate_typographic_cover" not in again, "a second run finds nothing to remake"
+
+
 def test_the_scripts_are_dry_run_by_default_and_never_print_a_url():
     audit_source = (ROOT / "scripts" / "audit_thumbnails.py").read_text(encoding="utf-8")
     backfill_source = (ROOT / "scripts" / "backfill_typographic_covers.py").read_text(encoding="utf-8")
     assert 'add_argument("--apply", action="store_true"' in backfill_source
     assert "apply=args.apply" in backfill_source
     assert '"--include-unpublished"' in backfill_source and 'action="append"' in backfill_source
+    assert '"--regenerate-typographic"' in backfill_source and "regenerate if args.regenerate else backfill" in backfill_source
     assert "print(args.url" not in audit_source + backfill_source
     assert "backfill" not in audit_source.split("def main", 1)[1], "the audit never writes"
 
