@@ -180,10 +180,11 @@ async def _import_one(
             asset_store.put(cover_key, record["data"])
             written_keys.append(cover_key)
             thumbnail_provenance = {**normalize_provenance({}, kind=KIND_TYPOGRAPHIC), "sha256": record["sha256"]}
-            # The cover's provenance sits beside it, not in the manifest (whose shape other readers rely on).
-            provenance_key = f"books/{book_id}/cover.provenance.json"
-            asset_store.put(provenance_key, json.dumps(thumbnail_provenance).encode("utf-8"))
-            written_keys.append(provenance_key)
+        # The cover's provenance - an EPUB's own cover or Orena's typographic one - sits beside it, not in the manifest
+        # (whose shape other readers rely on).
+        provenance_key = f"books/{book_id}/cover.provenance.json"
+        asset_store.put(provenance_key, json.dumps(thumbnail_provenance).encode("utf-8"))
+        written_keys.append(provenance_key)
 
         chapter_inputs: list[ChapterInput] = []
         for index, chapter in enumerate(parsed.chapters):

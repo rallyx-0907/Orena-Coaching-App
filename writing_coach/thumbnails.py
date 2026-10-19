@@ -308,7 +308,9 @@ def fetch_licensed_image(
     if clean["kind"] == KIND_TYPOGRAPHIC:
         raise ThumbnailRefused("thumbnail_kind_invalid", "A typographic cover is generated, not downloaded.")
     try:
-        fetched = images.fetch_image(clean["source_url"], fetcher=fetcher or FETCHER)
+        # The allow-list goes into the fetch itself, so every redirect hop (an open redirect on an allowed host
+        # included) is re-checked against it, not only the address the administrator typed.
+        fetched = images.fetch_image(clean["source_url"], fetcher=fetcher or FETCHER, allowed_hosts=frozenset(ALLOWED_HOSTS))
     except images.ImageRefused as exc:
         raise ThumbnailRefused(exc.code, str(exc)) from exc
     return fetched, clean

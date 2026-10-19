@@ -222,7 +222,9 @@ def sniff_image(data: bytes) -> tuple[str, int, int] | None:
     return None
 
 
-def fetch_image(url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = None) -> dict[str, Any]:
+def fetch_image(
+    url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = None, allowed_hosts: frozenset[str] | None = None
+) -> dict[str, Any]:
     """Fetch one candidate under the existing SSRF guard and prove it is a usable picture.
 
     Returns {"data", "content_type", "ext", "width", "height", "sha256"}; raises ImageRefused otherwise.
@@ -240,6 +242,7 @@ def fetch_image(url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = 
             timeout=FETCH_TIMEOUT_SECONDS,
             total_timeout=TOTAL_FETCH_SECONDS,
             content_types=frozenset(ALLOWED_TYPES),
+            **({"allowed_hosts": allowed_hosts} if allowed_hosts is not None else {}),
         )
     except UnsafeMediaFetch as exc:
         message = str(exc)

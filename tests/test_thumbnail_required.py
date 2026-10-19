@@ -562,3 +562,77 @@ def test_the_decision_is_recorded():
     entry = log.split("## D-240 ", 1)[1].split("\n## D-", 1)[0]
     assert "ACCEPTED (owner, 2026-10-19 11:28, relayed by Hermes)" in entry
     assert "Bài nào cũng cần có ảnh thumbnail hết nhé, không được để trống." in entry
+
+
+# ---- redirects and the EPUB cover record (review of #354) --------------------------------------------------------
+
+def _redirect(monkeypatch, new_url):
+    """The redirect handler of the real fetch, asked about one hop; DNS answers a public address."""
+    import socket
+    from urllib.request import Request
+
+    from writing_coach import media_safe_fetch
+
+    monkeypatch.setattr(media_safe_fetch.socket, "getaddrinfo",
+                        lambda host, port, **_: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port))])
+    handler = media_safe_fetch._CheckedRedirects(max_redirects=3, allowed_hosts=frozenset(thumbnails.ALLOWED_HOSTS))
+    return handler.redirect_request(Request(GOOD_URL), None, 302, "Found", {}, new_url)
+
+
+def test_a_redirect_to_a_foreign_host_is_refused_at_every_hop(monkeypatch):
+    for target in ("https://evil.example/a.png", "https://nasa.gov.evil.example/a.png", "https://evilnasa.gov/a.png",
+                   "https://commons.wikimedia.org/a.png"):
+        with pytest.raises(UnsafeMediaFetch):
+            _redirect(monkeypatch, target)
+
+
+def test_a_redirect_inside_the_allow_list_is_followed(monkeypatch):
+    for target in ("https://www.nasa.gov/a.png", "https://images-assets.nasa.gov/b.png", "https://upload.wikimedia.org/c.jpg"):
+        assert _redirect(monkeypatch, target).full_url == target
+
+
+def test_the_allow_list_travels_into_the_fetch_so_redirects_are_checked():
+    fetcher = Fetcher(png(1200, 800))
+    fetch_licensed_image(GOOD_URL, LICENCE, fetcher=fetcher)
+    assert fetcher.calls[0][1]["allowed_hosts"] == frozenset(thumbnails.ALLOWED_HOSTS)
+
+
+def _epub_with_cover(title):
+    import io
+    import zipfile
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zf:
+        zf.writestr("META-INF/container.xml",
+                    '<?xml version="1.0"?><container xmlns="urn:oasis:names:tc:opendocument:xmlns:container" version="1.0">'
+                    '<rootfiles><rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>'
+                    "</rootfiles></container>")
+        zf.writestr("OEBPS/content.opf",
+                    '<?xml version="1.0"?><package xmlns="http://www.idpf.org/2007/opf" version="3.0">'
+                    f'<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>{title}</dc:title>'
+                    '<dc:language>en</dc:language><meta name="cover" content="cover-img"/></metadata>'
+                    '<manifest><item id="c1" href="c1.xhtml" media-type="application/xhtml+xml"/>'
+                    '<item id="cover-img" href="cover.jpg" media-type="image/jpeg"/></manifest>'
+                    '<spine><itemref idref="c1"/></spine></package>')
+        zf.writestr("OEBPS/c1.xhtml", '<html xmlns="http://www.w3.org/1999/xhtml"><body><p>Hello world.</p></body></html>')
+        zf.writestr("OEBPS/cover.jpg", b"\xff\xd8\xff\xe0fakejpegbytes")
+    return buffer.getvalue()
+
+
+def test_every_book_cover_has_its_provenance_stored_beside_it():
+    import json
+
+    from tests.test_reading_library_api import _client, _minimal_epub_bytes
+
+    client, repo, store = _client()
+    for title, raw, expected_kind in (("Embedded", _epub_with_cover("Embedded"), "source_image"),
+                                      ("Plain", _minimal_epub_bytes("Plain"), "typographic")):
+        response = client.post("/api/reading/library/import", files=[("files", ("b.epub", raw, "application/epub+zip"))],
+                               data={"learning_language": "en"}, headers={"x-test-admin": "1"})
+        book_id = response.json()["results"][0]["book_id"]
+        cover_key = repo.get_book(book_id)["cover_asset_key"]
+        assert cover_key and cover_key in store.data, title
+        recorded = json.loads(store.data[f"books/{book_id}/cover.provenance.json"])
+        assert recorded["kind"] == expected_kind, title
+    assert recorded["licence"] == "" and len(recorded["sha256"]) == 64
+    assert cover_key.endswith(".svg")
