@@ -7,9 +7,14 @@ from fastapi import HTTPException
 from tests.policy_support import MemoryPolicyStore
 from writing_coach import content_visibility, listening_api, speaking_library, word_clips
 from writing_coach.collection_api import catalog_lesson_resolver
-from writing_coach.listening_catalog import CATALOG, catalog_lesson, catalog_lessons
+from writing_coach import listening_catalog
+from writing_coach.listening_catalog import catalog_lesson, catalog_lessons
 from writing_coach.media_library_store import FileMediaLibraryStore
 from writing_coach.persistence.platform_repository import SettingConflict
+
+# The shipped built-in Listening catalogue is empty since D-245; this module exercises catalogue lessons on the
+# fixture-local copy of the retired manifest (conftest.fixture_listening_catalog).
+pytestmark = pytest.mark.usefixtures("fixture_listening_catalog")
 
 PEN = "en-daily-pen-in-my-bag"
 
@@ -37,7 +42,7 @@ def test_everything_is_visible_by_default_and_without_a_store():
     content_visibility.configure(None)
     assert content_visibility.hidden_ids("listening") == frozenset()
     assert {lesson.lesson_id for lesson in catalog_lessons()} == {
-        lesson.lesson_id for lesson in CATALOG if lesson.content_status == "PUBLISHED"
+        lesson.lesson_id for lesson in listening_catalog.CATALOG if lesson.content_status == "PUBLISHED"
     }
 
 
@@ -46,7 +51,7 @@ def test_a_hidden_lesson_is_absent_from_every_learner_list_and_open_route(store)
     assert word_clips.word_clips("pen", 6)["total"] >= 1
     assert "media:" + PEN in {item["id"] for item in speaking_library.speaking_library("en")}
     assert PEN in {item["lesson_id"] for item in listening_api.listening_library(language="en", level=None, topic=None, tag=None)["items"]}
-    assert catalog_lesson_resolver()("commons-voa-anna-pen", CATALOG[0].source.segments[0]["segment_id"]) is not None
+    assert catalog_lesson_resolver()("commons-voa-anna-pen", listening_catalog.CATALOG[0].source.segments[0]["segment_id"]) is not None
 
     assert _hide(store)["changed"] is True
 
@@ -63,20 +68,20 @@ def test_a_hidden_lesson_is_absent_from_every_learner_list_and_open_route(store)
     assert "media:" + PEN not in {item["id"] for item in speaking_library.speaking_library("en")}
     assert word_clips.word_clips("pen", 6)["total"] == 0
     with pytest.raises(LookupError):
-        speaking_library._resolve_model_line(PEN, CATALOG[0].media_object.transcript.segments[0].segment_id)
+        speaking_library._resolve_model_line(PEN, listening_catalog.CATALOG[0].media_object.transcript.segments[0].segment_id)
     # A progress row for it can no longer be written or resolved, and a stored one is "unavailable" with no title.
-    assert listening_api.resolve_progress_line("commons-voa-anna-pen", CATALOG[0].source.segments[0]["segment_id"]) is None
-    assert catalog_lesson_resolver()("commons-voa-anna-pen", CATALOG[0].source.segments[0]["segment_id"]) is None
+    assert listening_api.resolve_progress_line("commons-voa-anna-pen", listening_catalog.CATALOG[0].source.segments[0]["segment_id"]) is None
+    assert catalog_lesson_resolver()("commons-voa-anna-pen", listening_catalog.CATALOG[0].source.segments[0]["segment_id"]) is None
     # The other lessons are untouched.
     assert catalog_lesson("zh-daily-what-is-this") is not None
 
 
 def test_showing_a_hidden_lesson_again_restores_it_and_the_catalogue_is_never_written(store):
-    before = [lesson.lesson_id for lesson in CATALOG]
+    before = [lesson.lesson_id for lesson in listening_catalog.CATALOG]
     _hide(store)
     assert content_visibility.set_hidden("listening", PEN, False, updated_by="a", actor="sub-admin")["changed"] is True
     assert catalog_lesson(PEN) is not None
-    assert [lesson.lesson_id for lesson in CATALOG] == before
+    assert [lesson.lesson_id for lesson in listening_catalog.CATALOG] == before
 
 
 def test_each_change_is_audited_with_actor_item_and_both_states(store):

@@ -701,7 +701,9 @@ def test_dev_overlay_cannot_redefine_a_reviewed_base_lesson(tmp_path: Path) -> N
     dev_path = tmp_path / "dev.json"
     _write(manifest, dev_path)
 
-    _, lessons = load_catalog(dev_path=dev_path, env={"ENABLE_DEV_LISTENING_CATALOG": "1"})
+    # The shipped base catalogue is empty since D-245, so the base is the fixture-local copy of the retired manifest.
+    base_path = Path(__file__).parent / "fixtures" / "listening_catalog.fixture.v1.json"
+    _, lessons = load_catalog(base_path=base_path, dev_path=dev_path, env={"ENABLE_DEV_LISTENING_CATALOG": "1"})
     clash = [item for item in lessons if item.lesson_id == "en-science-cosmic-calendar"]
     assert len(clash) == 1
     assert clash[0].source.source_provider == "wikimedia-commons", "the reviewed lesson wins"

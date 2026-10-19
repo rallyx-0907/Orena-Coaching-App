@@ -7,7 +7,14 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {mediaPlayer, playbackAvailable} from '../static/orena/capabilities/media-player.js';
 
-const manifest = JSON.parse(readFileSync(new URL('../writing_coach/content/listening_catalog.v1.json', import.meta.url), 'utf8'));
+// The shipped built-in catalogue is empty since D-245 (its sample lessons were retired). The contract is about the
+// catalogue format and the one player, so it runs on the fixture-local copy of the retired manifest the tests use.
+const manifest = JSON.parse(readFileSync(new URL('../tests/fixtures/listening_catalog.fixture.v1.json', import.meta.url), 'utf8'));
+// Whatever the shipped catalogue carries later is held to the same reviewed-host rule.
+const shipped = JSON.parse(readFileSync(new URL('../writing_coach/content/listening_catalog.v1.json', import.meta.url), 'utf8'));
+for (const source of shipped.sources) {
+  assert.equal(playbackAvailable(source.playback), true, `${source.source_media_id} must be playable from a reviewed host`);
+}
 const sources = new Map(manifest.sources.map(source => [source.source_media_id, source]));
 
 const REAL_VIDEO_LESSONS = ['en-science-cosmic-calendar', 'zh-technology-search-wikipedia'];

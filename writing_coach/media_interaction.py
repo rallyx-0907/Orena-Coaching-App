@@ -18,6 +18,7 @@ from writing_coach.core.support_languages import (
 from writing_coach.linguistic_annotation import ALLOWED_POS as _SHARED_POS
 from writing_coach.linguistic_annotation import annotate as _annotate
 from writing_coach.conversation import ConversationIn, respond as conversation_reply
+from writing_coach.product import assist_meters
 
 
 router = APIRouter()
@@ -546,12 +547,25 @@ def answer_learner_question(
 
 
 @router.post("/explain")
+def explain_media_text_route(payload: MediaExplainIn) -> dict[str, Any]:
+    """`POST /api/media-learning/explain`: one `reading.assist` request (PR-MON-7B2a), admitted before the provider.
+
+    Nothing caches this route's answer, so every call that reaches the provider is one fresh remote AI request; an
+    answer with no summary (the provider gave nothing usable) settles 0."""
+    digest = ("explain", payload.model_dump())
+    with assist_meters.fresh(assist_meters.READING_ASSIST, digest=digest, ref="media-explain") as ticket:
+        result = explain_media_text(payload)
+        ticket.settle(1 if str(result.get("summary") or "").strip() else 0, "media-explain")
+        return result
+
+
 def explain_media_text(payload: MediaExplainIn) -> dict[str, Any]:
     """Explain selected text, optionally answering the learner's own question.
 
     One explanation contract serves reading, listening, writing and practice.
     A follow-up is this same call carrying a question, so going deeper never
-    loses the selection or the context it came from.
+    loses the selection or the context it came from. Unmetered itself: each caller admits its own meter (the
+    route above, the word sheet, the contextual dictionary, the deep word page).
     """
     question = str(payload.question or "").strip()
     language = _validated_source_language(payload.source_language)
@@ -1026,11 +1040,20 @@ def contextual_dictionary(payload: ContextualDictionaryIn) -> dict[str, Any]:
         raise HTTPException(422, "Selected text is required.")
     if source.casefold() not in context.casefold():
         raise HTTPException(422, "Selected text must come from the supplied learner context.")
-    try:
-        result = explain_media_text(payload)
-    except HTTPException as exc:
-        if exc.status_code not in {502, 503}:
-            raise
+    # A word in its context is `word.assist` (PR-MON-7B2a). Admitted outside the provider's try, so the gate's own
+    # 429 / 503 reaches the learner instead of becoming "unavailable".
+    with assist_meters.fresh(assist_meters.WORD_ASSIST, digest=("contextual", payload.model_dump()),
+                             ref="contextual-dictionary") as ticket:
+        try:
+            result = explain_media_text(payload)
+        except HTTPException as exc:
+            if exc.status_code not in {502, 503}:
+                raise
+            ticket.settle(0, "contextual-dictionary:unavailable")
+            result = None
+        if result is not None:
+            ticket.settle(1 if str(result.get("summary") or "").strip() else 0, "contextual-dictionary")
+    if result is None:
         return {
             "available": False,
             "source_language": _primary_language(payload.source_language),

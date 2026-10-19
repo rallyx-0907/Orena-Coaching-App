@@ -29,6 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from writing_coach import media_interaction
 from writing_coach.core.errors import orena_http_error
+from writing_coach.product import assist_meters
 from writing_coach.reading_lookup import lexical_language
 from writing_coach.reading_cache_scope import scope_for
 from writing_coach.reading_derived import (
@@ -207,14 +208,20 @@ def project_word_detail(
     # the gloss's own `common_meaning`, else a dictionary meaning the lookup gave in the support language
     # (a collection sense or a translation; its English definitions only for an English support language).
     # Not repeated when it is the meaning already shown.
+    # When nothing gave it in the support language, the dictionary's English definition still stands beside a contextual
+    # meaning, tagged with its language: the contextual meaning is an extra and never hides the base meaning (owner
+    # decision 2026-10-18).
     general = _ai(said.get("common_meaning"))
+    general_language = ""
     if not general:
         if meanings:
             general = dictionary_meaning
-        elif found.get("definitions") and _text(found.get("target_language")).casefold() == "en":
+        elif found.get("definitions"):
             general = dictionary_meaning
+            if _text(found.get("target_language")).casefold() != "en":
+                general_language = "en"
     if _fold(general) == _fold(meaning):
-        general = ""
+        general, general_language = "", ""
 
     part_of_speech = _text(found.get("part_of_speech"))
     if not part_of_speech:
@@ -247,6 +254,9 @@ def project_word_detail(
             {"text": original_text, "language": "en", "source": "cc-cedict" if is_zh else "dictionary"} if original_text else None
         ),
         "generalMeaning": general,
+        # The language `generalMeaning` is written in when it is not the support language ("en": a dictionary
+        # definition no layer localized); empty otherwise.
+        "generalMeaningLanguage": general_language,
         "contextSentence": _text(context),
         "audioUrl": _text(found.get("audio_url")),
         "saved": bool(saved),
@@ -408,6 +418,16 @@ def _tutor(text: str, context: str, source: str, target: str, question: str, his
     return result if _text(result.get("answer")) else None
 
 
+def _metered(meter: str, ref: str, digest: object, compute: Callable[[], dict[str, Any] | None]) -> dict[str, Any] | None:
+    """A fresh provider call of the sheet as one `meter` request (PR-MON-7B2a): admitted after the cache missed, before
+    the provider; settled 1 when it answered, 0 when it answered nothing or the provider was down (`_ProviderFailed`
+    passes through, settled 0)."""
+    with assist_meters.fresh(meter, digest=digest, ref=ref) as ticket:
+        result = compute()
+        ticket.settle(1 if result is not None else 0, ref)
+        return result
+
+
 def _saved(candidates: object = ()) -> set[str]:
     """Which of `candidates` the learner has saved, folded for comparison.
 
@@ -458,10 +478,17 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     # The language of the selection's own words (by script), not of the sentence around it: it labels the reading
     # (pinyin / IPA) and the original definition. The contextual asks below keep the sentence's language.
     lexical = _text(lookup.get("source_language")) or lexical_language(text, source) or source
+    if payload.uses_ai:
+        # PR-MON-6 section 4 step 1: feature access before any cached answer; a no-op while `word.assist` is not enforced.
+        assist_meters.require_feature(assist_meters.WORD_ASSIST)
     if payload.question.strip():
         # The learner's own question is a conversation with a tutor, not a request for the fixed
-        # explanation: the answer is the tutor's, whatever the question is about.
-        tutor = _tutor(text, context, source, payload.target_language, payload.question, payload.history)
+        # explanation: the answer is the tutor's, whatever the question is about. Never cached: one `word.assist`.
+        tutor = _metered(
+            assist_meters.WORD_ASSIST, "word-detail:question",
+            ("question", source, payload.target_language, text, context, payload.question, payload.model_dump()["history"]),
+            lambda: _tutor(text, context, source, payload.target_language, payload.question, payload.history),
+        )
         detail = project_word_detail(
             selection=text, context=context, language=lexical, lookup=lookup, explanation=None, saved=text.casefold() in _saved((text,))
         )
@@ -480,12 +507,14 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
     if payload.asks_ai and payload.depth == "sheet":
         explanation, status = _through_cache(
             KIND_GLOSS, source, target, text, context, payload.content_id,
-            lambda: _gloss(text, context, source, target),
+            lambda: _metered(assist_meters.WORD_ASSIST, "word-detail:gloss", ("gloss", source, target, text, context),
+                             lambda: _gloss(text, context, source, target)),
         )  # fmt: skip
     elif payload.asks_ai:
         explanation, status = _through_cache(
             KIND_EXPLANATION, source, target, text, context, payload.content_id,
-            lambda: _explain(text, context, source, target, ""),
+            lambda: _metered(assist_meters.WORD_ASSIST, "word-detail:explain", ("explain", source, target, text, context),
+                             lambda: _explain(text, context, source, target, "")),
         )  # fmt: skip
     _log.debug(
         "word-detail depth=%s contextual=%s deterministic=%.0f ms contextual=%.0f ms status=%s",
@@ -518,8 +547,16 @@ def word_detail(payload: WordDetailIn) -> dict[str, Any]:
 def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
     sentence = payload.text.strip()
     source = media_interaction._primary_language(payload.source_language)
+    # A sentence's meaning in Reading / Listening is `reading.assist` (PR-MON-7B2a); feature access before any cache.
+    assist_meters.require_feature(assist_meters.READING_ASSIST)
     if payload.question.strip():
-        tutor = _tutor(sentence, payload.context.strip() or sentence, source, payload.target_language, payload.question, payload.history)
+        tutor = _metered(
+            assist_meters.READING_ASSIST, "sentence-sheet:question",
+            ("question", source, payload.target_language, sentence, payload.context.strip(), payload.question,
+             payload.model_dump()["history"]),
+            lambda: _tutor(sentence, payload.context.strip() or sentence, source, payload.target_language,
+                           payload.question, payload.history),
+        )
         answer = _ai((tutor or {}).get("answer"))
         return {
             "sentence": sentence,
@@ -531,7 +568,9 @@ def sentence_sheet(payload: SentenceSheetIn) -> dict[str, Any]:
     sheet_context = payload.context.strip() or sentence
     explanation, status = _through_cache(
         KIND_EXPLANATION, source, payload.target_language, sentence, sheet_context, payload.content_id,
-        lambda: _explain(sentence, sheet_context, source, payload.target_language, ""),
+        lambda: _metered(assist_meters.READING_ASSIST, "sentence-sheet:explain",
+                         ("explain", source, payload.target_language, sentence, sheet_context),
+                         lambda: _explain(sentence, sheet_context, source, payload.target_language, "")),
     )  # fmt: skip
     if explanation is None:
         return {

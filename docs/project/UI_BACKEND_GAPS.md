@@ -5527,6 +5527,26 @@ the meters below.
   four meters; the count is in the comparison table only), so none was added although the commerce read supplies `used` /
   `limit` / `remaining`; decide whether the design should draw one. (b) A Free learner who picked a language and used nothing
   cannot change their mind to another new language (the stored language counts; D-170 point 12c). Owner: BACKEND + UI.
+- **QTA-19 Word, Reading and Writing-task AI - ENFORCED when the switch lists `word.assist`, `reading.assist`,
+  `writing.task`** (PR-MON-7B2a, H7-3; requests per day in the learner's timezone, Free / Plus / Pro 30/300/1500, 10/100/500 and
+  5/30/100 from the Admin-editable catalogue, never at a route). One fresh remote AI call is one request, admitted through the
+  same gate before the provider (`writing_coach/product/assist_meters.py`) and settled 1 only when the learner got an answer;
+  a cached, stored or deterministic answer is never admitted, and a provider failure, an empty answer or the built-in writing
+  task settles 0. `word.assist`: the word sheet's meaning, "Why here?" and the learner's own question
+  (`POST /api/dictionary/word-detail`), `POST /api/dictionary/contextual`, the AI dictionary entry (`GET /api/dictionary`),
+  `POST /api/translate`, the deep word page's explanation, and the tap's last layers (word translation, sense choice - a
+  refusal there is a miss and the tap keeps its deterministic answer; an answer from a model the account gets free settles 0,
+  the word-audio rule). `reading.assist`: `POST /api/reading/translate` (paid engines only; the local engine costs nothing),
+  `POST /api/reading/summary`, `POST /api/dictionary/sentence-sheet`, `POST /api/media-learning/explain`. `writing.task`:
+  `POST /api/tasks/generate` and `POST /api/practice/next`. The word sheet, sentence sheet, Reader and word page show the
+  meter's sentence ("You have used 30 of 30 word explanations today.") in the place they already show a failed request, with
+  no Retry (`refusalLineOf`), EN/VI/ZH; they draw no "See all plans" control there (none is drawn in a sheet; the Plan screen
+  and the other rooms keep theirs). **:8000:** `ORENA_QUOTA_METERS` is an explicit list, so these meters are enforced there only
+  once the operator adds `word.assist,reading.assist,writing.task` to it (a human gate). **Open for Hermes / the owner:**
+  (a) `speech.transcribe` and `audio.tts` have no catalogue meter and no Free/Plus/Pro numbers (pending meters, wired as no-ops,
+  PR-MON-7D2); proposed: their own meters (`speech.transcribe` seconds a day, `audio.tts` characters a day), not folded into
+  `word.assist`; (b) the speaking coach routes (`/api/dictionary/conversation-turn`, `/spoken-response`, `/registers`) are
+  not metered by any plan meter; (c) whether a sheet should draw the plans link. Owner: human + design.
 - **QTA-18 Target-language audit (2026-10-10, `origin/main` 2c04fc1e).** Owner: BACKEND. (1) Mutation paths: only
   `POST /api/platform/language` (`core/platform_api.py`) and `PATCH /api/account-settings` (`account_settings.py`) give an account
   a learning language; session seeding (`auth_support.py`) reads what they stored; the learner-profile PUT/PATCH write the
@@ -6441,3 +6461,18 @@ The pinned `Orena-Admin.dc.html` draws no per-source "publish on its own" contro
 ## Admin: learner data classes on AI & Models (G8, #264, D-067, 2026-10-19)
 
 The pinned `Orena-Admin.dc.html` (A2 to A5) draws no control for which learner data an AI provider may be sent. Placed with the page's own patterns instead of invented ones: a fourth tab, "Learner data", on A2 AI & Models beside Providers, Capability routing and Token usage. One form block holds a row per catalogue provider, plus a row per `provider:model` the record already holds, each with the segmented control the route editor uses (None / Learning profile / Full memory) and the field hint saying what the selected class sends; one Save sends the whole record with `expected_updated_at` (`GET`/`PUT /api/admin/agent/data-classes`). An `environment` record is read-only with the existing warn banner; an `unavailable` one is the existing unavailable block with Retry. A 409 reloads the record and shows a message in the block's error line; a 422 shows its reason there. What each class sends is Admin copy keyed by class (`copy-dataclasses.js`, EN/VI/ZH), not the server's English `choices[].sends`. The "Full memory" text states plainly that the learner's Orena Memory notes and session summaries go to that provider. No new model row can be added from the page (the record's `provider:model` keys come from the environment record or the API). Open for the owner: whether the design should draw this, and whether a model row should be addable.
+
+## Word sheet: base meaning in the support language (BP, owner decision 2026-10-18)
+
+The owner's report (2026-10-20, :8000, Vietnamese support): some words show "Nghĩa theo ngữ cảnh chưa được chuẩn bị cho từ này", and "shields" shows "Tiếng Anh: Anything that protects or defends; ...".
+
+- **What the design draws.** Frame 53 (`Orena.dc.html`, `qsHasWC` / `qsNoWC`) draws the meaning line and the support-language gloss (`m`, `vi`). For a word with no gloss at all it draws "Meaning here", "Contextual meaning not prepared for this word." and the "No prepared gloss..." notice. The app draws that branch only when `/api/dictionary/word-detail` returns `meaningSource: "none"`, meaning no layer gave any base meaning. It is not reached because a contextual meaning is missing.
+- **A meaning that is not in the support language.** The design draws no label for this. The app uses the existing D-124 language-name label (`meaningLanguageLabel`, `s-qs__general-label`: "Tiếng Anh" / "English" / "英语"), only when the line is not in the support language. An English learner never sees it. Open for the owner: whether that label is clear enough as "fallback", or whether the design should draw its own wording.
+- **The base meaning beside a contextual meaning.** Once "Why here?" answers, the common meaning stays under it ("Nghĩa thường gặp"). When no layer localized it, the English definition stands there with the same language label after the existing copy (`commonMeaning · Tiếng Anh`). Before, it was dropped. That combined label is not drawn by the design either. It is recorded here.
+- **Lookup order.** Catalogue, then an open bilingual pack for the pair (`writing_coach/bilingual_dictionary.py`; a `<source>-<target>.tsv` dropped into `writing_coach/data/bilingual_packs/`, or `register_pack`), then the free local translation, then `word_translation` (the word and the language pair only). An English inflected form with no dictionary entry is asked again by its lemma, at no cost. No EN->VI pack ships. Choosing one (FreeDict, a Wiktionary extract, ...) is a licence decision per pack, for the owner.
+- **The shared word cache is in process memory only.** `word_translation` answers are cached by (word, source language, support language) for every learner, in the router's L1 cache (`ai/router/cache.py`, 4096 entries, 180 days). A second learner's tap costs nothing, but a restart or another worker process pays again. The only fitting durable store, `reading_derived_texts`, is the unpromoted proposed migration 0028 (RD-3). Making the cache durable needs that table, so it is a human gate and not done here.
+
+## Discover: an empty shelf with no filter set (D-245, 2026-10-20)
+
+The built-in Listening catalogue ships empty since D-245, so a learner on a runtime with no imported media can open Discover (or its Listen tab) with nothing on the shelf and no filter set. The pinned `Orena.dc.html` draws exactly one empty line for the results grid, "Nothing matches these filters yet." with "Clear filters", and no line for an empty shelf without filters. The app keeps the design's line and, as before, leaves out the Clear filters action when no filter is set (`screens/discover/screen.js`, `emptyText`); no wording was invented. Open for the owner: whether the design should draw a no-filter empty line, and its words in en/vi/zh.
+
