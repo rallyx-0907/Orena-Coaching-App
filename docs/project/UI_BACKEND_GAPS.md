@@ -5679,6 +5679,8 @@ the meters below.
   and the page's "+ Import" control), and that control, with the header's, carries a rainbow border the design does not
   draw (explicit human exception to D-147, D-167 point 7). The call-to-action card, its copy and the rainbow are
   implemented from the human's words, not from a frame: the design needs to draw them. Owner: DESIGN / human.
+  **Resolved 2026-10-19 (D-243):** the owner asked for the design's import only; the call to action, the always-drawn
+  Imported section and the rainbow control are deleted. Imported is omitted when empty, like every other section.
 - **DAS-2 No "featured" ordering exists, so "representative" is the tab's first five.** Read lists every article before any
   book, so on All the Read row shows articles until a learner's catalogue has fewer than five. A mix of articles and books
   (or a recommendation order) needs a ranking the content model does not carry. Owner: BACKEND / human.
@@ -6315,7 +6317,9 @@ Not fixed, logged (the balance "—" is no longer open: owner decision of 2026-1
 ## Create lesson card on Discover (design pin 2026-10-15)
 
 The 2026-10-15 design replaces Discover's header "+ Import" with a "Create lesson" card (`screens/discover/create-lesson.js`)
-that hands what was entered to the unchanged Import sheet. Recorded, not resolved:
+that hands what was entered to the unchanged Import sheet. Since 2026-10-19 (D-243) it is the only import entry: Today's
+featured card, My Library's header "+ Import" and the Discover overview's Imported call to action are deleted, as the
+design draws none of them. Recorded, not resolved:
 
 - **CL-1 Document import (PDF, EPUB, DOCX).** The design draws the Document tab and its drop zone but its own handler toasts
   "not built in this round", and the backend has no document import route (`/api/media-learning/upload` takes audio and video

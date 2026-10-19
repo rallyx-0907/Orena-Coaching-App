@@ -7,14 +7,9 @@
   padding-top: 22px;
 }
 
-/* The page head: the title and the VIP "+ Import" (kit) on one line, wrapping on a narrow phone. */
-.s-library__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 12px 20px;
-}
+/* The page head, as the design draws it: the title and one muted line, no import control (owner, 2026-10-19). */
+.s-library__head .o-h1 { margin: 0; }
+.s-library__sub { margin: 8px 0 0; color: var(--muted); font-size: 16px; line-height: 24px; }
 
 /* ---- Content tab: a row per saved book/article/listening item ---- */
 .s-library-content-grid {

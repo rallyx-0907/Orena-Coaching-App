@@ -7616,3 +7616,25 @@ recommendation to lift the gate as the architecture reviewer proposed).
 3. **Updating.** Only by a reviewed PR that changes the pins alone (`docs/project/CI_FAST_PATH.md`).
 
 **Not in this decision.** No hashes, no change to the application code or the Python version.
+
+## D-243 - Import has one way in: the design's Create lesson card (2026-10-19)
+
+**Status:** ACCEPTED (explicit owner instruction, 2026-10-19: "phần import trong learner app — tôi đã đưa thiết kế và
+bạn cũng đã làm rồi mà sao giờ vẫn giữ cái nút import cũ"). The number is assigned at merge.
+
+1. **Supersedes D-167 points 6-8.** The pinned design (`Orena.dc.html`, 2026-10-15 pin) draws exactly one entry to the
+   Import sheet: Discover's "Create lesson" card (and the sheet's own Back to its type step). Today, My Library and the
+   Discover overview draw no import control. The old entries are deleted, with their code (Design Contract rule 44):
+   Today's featured import card, My Library's header "+ Import", the Discover All overview's always-drawn Imported
+   section with its "+ Import" call to action, the kit `vipButton` and its rainbow `.o-btn--vip` CSS (the D-147 exception
+   of D-167 point 7 ends with it), and their words (`shell.importAction`, `today.importValue`, `discover.importAction`,
+   `discover.importCta`).
+2. **Discover All.** Imported is a section like the others: left out when nothing is imported. A learner with nothing at
+   all sees the page's empty state, with the Create lesson card above it.
+3. **My Library's head is the design's:** the title and its one muted line ("Everything you've saved, met, or need to come
+   back to.", en/vi/zh).
+4. **Unchanged.** The Create lesson card (including its practice-chooser variant, CL-7), the Import sheet, its steps and the
+   recorded gaps CL-1 to CL-7. The practice choosers keep the card per CL-7.
+5. **Gate.** `scripts/test_orena_screen_discover.mjs` refuses every old entry, control and string, and asserts Discover is the
+   only screen that opens the import flow.
+

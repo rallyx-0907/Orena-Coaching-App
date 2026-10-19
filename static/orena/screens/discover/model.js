@@ -292,21 +292,19 @@ export function visibleEntries(entries, { tab = 'all', query = '', filters = nul
    Read, Collections, Imported - each the first `OVERVIEW_LIMIT` entries of its own tab (the very list
    `visibleEntries` gives that tab, in its order), and a "See all" that opens that tab. `tab` is both the section's
    identity and the tab it leads to; its heading is that tab's own label. Search and filters narrow every section
-   alike, and a section with nothing to show is left out - except Imported, which is always drawn while nothing
-   narrows the page: with nothing imported it carries `empty: true` and the screen draws its import call to action
-   instead of cards. `total` is the tab's full match count. */
+   alike, and a section with nothing to show is left out - Imported too: the design's way to import is the Create
+   lesson card above the page (2026-10-15 pin; owner, 2026-10-19), so an empty Imported draws no call to action of
+   its own. `total` is the tab's full match count. */
 export const OVERVIEW_TABS = Object.freeze(['listen', 'read', 'collections', 'imported']);
 export const OVERVIEW_LIMIT = 5;
-const ALWAYS_TAB = 'imported';
 
 export function overviewSections(entries, { query = '', filters = null, limit = OVERVIEW_LIMIT } = {}) {
-  const narrowed = Boolean(String(query || '').trim()) || hasAnyFilter(filters);
   return OVERVIEW_TABS
     .map((tab) => {
       const all = visibleEntries(entries, { tab, query, filters });
-      return { tab, total: all.length, entries: all.slice(0, limit), empty: tab === ALWAYS_TAB && !all.length && !narrowed };
+      return { tab, total: all.length, entries: all.slice(0, limit) };
     })
-    .filter((section) => section.total > 0 || section.empty);
+    .filter((section) => section.total > 0);
 }
 
 /* entry -> kit/components.js#mediaCard() props. `t` is copy/discover.js's translate function
