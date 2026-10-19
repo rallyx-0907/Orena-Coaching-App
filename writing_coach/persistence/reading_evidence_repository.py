@@ -252,7 +252,7 @@ class ReadingEvidenceRepository:
     def _article(self, connection: Any, article_id: uuid.UUID, mode: str) -> Any:
         return connection.execute(self._for(
             select(ReadingArticle.id, ReadingArticle.body, ReadingArticle.language,
-                   ReadingArticle.status, ReadingArticle.effective_level, ReadingArticle.title,
+                   ReadingArticle.status, ReadingArticle.effective_level, ReadingArticle.reviewed_level, ReadingArticle.title,
                    ReadingArticle.content_kind, ReadingArticle.published_at)
             .where(ReadingArticle.id == article_id), mode)).first()
 
@@ -620,7 +620,8 @@ class ReadingEvidenceRepository:
                 return None
             payload = self._set_payload(connection, row, with_answers=False, approved_only=True)
             payload["article"] = {"id": str(article.id), "title": article.title,
-                                  "level": article.effective_level, "content_kind": article.content_kind}
+                                  "level": article.effective_level, "content_kind": article.content_kind,
+                                  "level_source": "editorial-review" if article.reviewed_level else "deterministic-estimate"}
             return payload
 
     def grade_question(self, set_id: str, question_id: str, selected_index: int,

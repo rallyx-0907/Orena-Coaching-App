@@ -6385,9 +6385,9 @@ The pinned design's `Word Quick Sheet` (`Orena.dc.html`, `qs.meaning` / `qs.vi`,
 The design draws none of these. Owner decision (via the delegate, 2026-10-18): reuse existing patterns, no new visual. Built: the "est." qualifier after a listening level that is only estimated (the vocabulary card's `level_source` is a provenance name such as "Oxford 5000", not an estimated/reviewed flag, so the qualifier follows the compare screen's "est." word-timing label instead); a muted "Automatic estimate, for reference only." line under the Speak result and the Compare word detail; and a "Report a problem" text link on the AI outputs, opening the existing Feedback screen prefilled.
 
 Gaps for the human or the backend lane:
-1. Reading articles: the learner list and detail send only the effective `level`, so an estimated reading level cannot be marked. Needs `reviewed_level` (or a `level_source`) in the learner payload.
+1. Resolved (PRE-204, AC): reading articles now send `level_source` (`editorial-review` when `reviewed_level` is set, else `deterministic-estimate`) on the learner list, detail and the served comprehension set's `article` - a plain read of existing columns, no schema change. Reading levels read "B1 · est." until an admin reviews them. Still plain: a speaking-library level (authored by hand, not estimated), and the learner's own declared level (Profile, Progress, Orena header).
 2. `POST /api/feedback` has no context field. The reference is carried in `text` (`[surface | id | word] `). A structured field is a schema change and a human gate.
-3. Speak summary and the Compare attempt metrics (Accuracy, Fluency) carry no score line; only the result block and the word detail do.
+3. Resolved (PRE-204, AC): the same "Automatic estimate, for reference only." line now sits under the Compare score ring, the Attempts list, the Speak summary's key-improvement score and the Writing scorecard (shell copy `scoreNote`).
 4. No inline "AI may be wrong" hint exists in the app or the design; only the Terms line. Left to the human.
 5. Orena chat has no report link (Intelligence lane).
 

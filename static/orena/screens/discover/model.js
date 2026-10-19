@@ -62,6 +62,8 @@ export function entryFromArticle(item, continuation) {
     author: publisherOf(item),
     traditional: isTraditional(item),
     level: item.level || '',
+    // PRE-204: a reading level nobody reviewed is the machine's estimate.
+    levelEstimated: levelIsEstimated(item),
     topic: item.topic || '',
     readingSeconds: Number.isFinite(item.reading_time_seconds) ? item.reading_time_seconds : null,
     // D-194: the approved same-origin picture, else '' and the generated tile.

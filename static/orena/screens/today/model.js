@@ -13,6 +13,7 @@ import { tidyTitle } from '../../product/tidy-title.js';
 import { placePercent } from '../../product/place-progress.js';
 import { speakingResumeTarget } from '../../product/speaking-resume.js';
 import { contentIdFor } from '../content/model.js';
+import { itemLevelLabel } from '../../kit/level-label.js';
 
 export const RECOMMEND_LIMIT = 3;
 export const FOR_YOU_LIMIT = 12;
@@ -89,7 +90,7 @@ export function buildRecommendationPool({ reading, listening = [], speaking = []
       id: article.id,
       kind: t('kindRead'),
       title: article.title || '',
-      level: article.level || '',
+      level: itemLevelLabel(article),
       durationLabel: '',
       image: '',
       tint: 'var(--skill-read)',
@@ -106,7 +107,7 @@ export function buildRecommendationPool({ reading, listening = [], speaking = []
       id: firstListening.lesson_id,
       kind: t('kindListen'),
       title: firstListening.title || '',
-      level: firstListening.level || '',
+      level: itemLevelLabel(firstListening),
       durationLabel: formatDuration(firstListening.duration_ms),
       image: firstListening.thumbnail_url || firstListening.poster_url || '',
       tint: 'var(--skill-listen)',
@@ -258,7 +259,7 @@ export function buildForYou({ continuation = [], listening = [], speaking = [], 
       id: item.lesson_id,
       kind: t('kindListen'),
       title: item.title || '',
-      meta: item.level || '',
+      meta: itemLevelLabel(item),
       tag: null,
       durationLabel: formatDuration(item.duration_ms),
       image: item.thumbnail_url || item.poster_url || '',

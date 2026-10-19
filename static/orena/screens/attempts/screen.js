@@ -74,6 +74,7 @@ export default async function mountAttemptHistory(element, ctx) {
         <div class="s-attempts-stat"><div class="s-attempts-stat__label">${t('statChange')}</div><div class="s-attempts-stat__value" style="color:var(--accent-on-photo, var(--accent))">${deltaLabel(stats.delta)}</div></div>
       </div>
       <div class="s-attempts-rows">${rows.map(rowMarkup)}</div>
+      <p class="s-attempts-note" data-score-note>${shellCopy('scoreNote')}</p>
       <p class="s-attempts-note">${t(keepRecent.value ? 'privacyNoteKept' : 'privacyNoteSession')}</p>
     </div>`,
   );

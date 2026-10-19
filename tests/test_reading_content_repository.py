@@ -282,10 +282,11 @@ def test_the_learner_list_is_lightweight_and_says_nothing_about_review(repositor
     repository.set_status(article["id"], "published", actor="admin@example.com")
     item = repository.list_published(language="en")["items"][0]
     assert set(item) == {
-        "id", "title", "language", "level", "topic", "reading_time_seconds",
+        "id", "title", "language", "level", "level_source", "topic", "reading_time_seconds",
         "excerpt", "word_count", "published_at", "content_revision", "provenance", "image",
     }
     assert item["level"] == "B1"
+    assert item["level_source"] == "deterministic-estimate"
 
 
 def test_the_learner_detail_carries_the_body_and_only_approved_targets(repository):
@@ -624,3 +625,5 @@ def test_the_learner_list_filters_on_the_effective_level(repository):
     assert [i["id"] for i in repository.list_published(language="en", level="C1")["items"]] == [article["id"]]
     assert repository.list_published(language="en", level="B1")["items"] == []
     assert repository.get_published_article(article["id"])["level"] == "C1"
+    assert repository.get_published_article(article["id"])["level_source"] == "editorial-review"
+    assert repository.list_published(language="en")["items"][0]["level_source"] == "editorial-review"

@@ -28,6 +28,7 @@ import { openMedia } from './media-source.js';
 import { wordSpans } from '../capabilities/word-timeline.js';
 import { encounter } from './encounter.js';
 import { primaryLanguage } from '../kit/lang.js';
+import { levelIsEstimated, levelWithQualifier } from '../kit/level-label.js';
 import { playbackAvailable } from '../capabilities/media-player.js';
 
 /* The segment a route names (`?segment=`), or none: the first line of the source. */
@@ -94,7 +95,7 @@ export function sourceFromLesson(lessonId, payload, segmentId = '', support = ''
     sourceId: `media:${lessonId}`,
     lessonId,
     title: asset.title || catalog.title || '',
-    level: catalog.reviewed_level || catalog.level || '',
+    level: levelWithQualifier(catalog.reviewed_level || catalog.level || '', levelIsEstimated(catalog)),
     language: primaryLanguage(asset.source_language, primaryLanguage(catalog.language, '')),
     assetId: asset.asset_id || '',
     lines: segments.map((item,index)=>({lineId:item.segment_id,ordinal:index+1,text:catalog.spoken_text_by_segment?.[item.segment_id] || item.original_text || ''})),
