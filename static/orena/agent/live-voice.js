@@ -92,8 +92,7 @@ export function noteVoiceEntitled(value, now = Date.now()) {
   entitlement = { value: typeof value === 'boolean' ? value : null, at: now };
 }
 
-/* The voices the server offers, labelled in the interface language, and whether the plan includes them (`entitled`, only
-   ever false when the server says so). Null while voice is off (404). */
+/* The voices the server offers, labelled in the interface language, and whether the plan includes them (`entitled`: true, false, or null when the server could not read the plan). Null while voice is off (404). */
 export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch } = {}) {
   try {
     const response = await fetchImpl(`/api/agent/voice/voices?interface=${encodeURIComponent(interfaceLang || 'en')}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
@@ -102,7 +101,7 @@ export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch }
     noteVoiceEntitled(data?.entitled === false ? false : data?.entitled === true ? true : null);
     const voices = Array.isArray(data?.voices) ? data.voices : [];
     if (!voices.length && data?.entitled !== false) return null;
-    return { default: String(data.default || ''), voices, entitled: data?.entitled !== false };
+    return { default: String(data.default || ''), voices, entitled: data?.entitled === false ? false : data?.entitled === true ? true : null };
   } catch {
     return null;
   }

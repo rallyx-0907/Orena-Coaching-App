@@ -17,7 +17,7 @@ export const FEATURE_ORDER = Object.freeze([
   'orena.message', 'orena.voice', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target',
 ]);
 /* Included or not, never a count: the catalogue stores `orena.voice` as on/off with a limit of 1, which is not a figure to show. */
-const BOOLEAN_FEATURES = Object.freeze(['orena.voice']);
+export const BOOLEAN_FEATURES = Object.freeze(['orena.voice']);
 export const USAGE_ORDER = Object.freeze(['orena.message', 'writing.review', 'pronunciation.audio', 'media.import']);
 
 /* An entitlement's limit (catalogue v2 `limit`, in its stored unit; v1 answers carried `monthly_limit`). */

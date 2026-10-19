@@ -523,7 +523,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      transcription. Unclear or wrong-language input is answered "say it again", never acted on.
 5. **Voices (R29).**
    - `GET /api/agent/voice/voices?interface=<en|vi|zh-CN>` answers
-     `{ default, voices: [{ id, gender: "female"|"male", label }], entitled }`. `entitled` (v11) is `false` for a learner whose plan has no live voice chat (Free) and `true` otherwise; a client that reads `false` shows the voice upsell sheet on any voice entry without sending a session request, and treats a missing field as `true`. The answer is `200` either way (voice being on is not the plan).
+     `{ default, voices: [{ id, gender: "female"|"male", label }], entitled }`. `entitled` (v11) is `true | false | null`: `false` for a learner whose plan has no live voice chat (Free), `true` when it has, `null` when the plan cannot be read right now. A client that reads `false` shows the voice upsell sheet on any voice entry without sending a session request; on `null` (or a missing field) it shows no upsell, keeps the voice button and lets `voice/session` answer (403 `feature_not_in_plan` opens the sheet, 503 takes the existing error handling). The answer is `200` either way (voice being on is not the plan).
    - There are ten voices: `f-clear`, `f-bright`, `f-warm`, `f-soft`, `f-young`, `f-gentle`, `m-calm`, `m-lively`,
      `m-friendly`, `m-steady`. Labels are in the interface language, and no vendor name appears.
    - The route has the same gates as `/voice/tool`.

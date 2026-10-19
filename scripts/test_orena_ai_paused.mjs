@@ -100,8 +100,11 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(plus.entitled, true);
   assert.equal(voiceEntitled(), true);
   const older = await listVoices('en', { fetchImpl: voices({ default: 'f-clear', voices: [{ id: 'f-clear', gender: 'female', label: 'Clear' }] }) });
-  assert.equal(older.entitled, true, 'a server that sends no field is treated as entitled');
+  assert.equal(older.entitled, null, 'a server that sends no field says nothing about the plan');
   assert.equal(voiceEntitled(), null, 'and nothing is claimed about the plan');
+  const unreadable = await listVoices('en', { fetchImpl: voices({ default: 'f-clear', voices: [{ id: 'f-clear', gender: 'female', label: 'Clear' }], entitled: null }) });
+  assert.equal(unreadable.entitled, null, 'null: the plan cannot be read right now - no upsell, the button stays and the answer of the server decides');
+  assert.equal(voiceEntitled(), null);
   assert.equal(await listVoices('en', { fetchImpl: voices({ voices: [] }) }), null, 'voice off: no voices, no claim');
   assert.equal(voiceEntitled(Date.now() + 301000), null, 'the answer is kept for five minutes');
 
@@ -151,6 +154,23 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(compareRows(bare).some((item) => item.key === 'orena.voice'), false);
   const copy = src('static/orena/screens/plan/copy.js');
   for (const line of ["compare_orena_voice: 'Voice chat with Orena'", "compare_orena_voice: 'Trò chuyện bằng giọng nói với Orena'", "compare_orena_voice: '与 Orena 语音聊天'"]) assert.ok(copy.includes(line), line);
+}
+
+// 4b. Admin plan editor: orena.voice is toggle-only; its stored limit of 1 is kept, never edited.
+{
+  const { draftOf, plansPayload } = await import('../static/orena/screens/admin/plans.js');
+  const plan = { id: 'plus', prices: {}, entitlements: [
+    { key: 'orena.voice', enabled: true, limit: 1, params: {} },
+    { key: 'orena.message', enabled: true, limit: 200, params: {} },
+  ] };
+  const draft = draftOf(plan);
+  const [voice, message] = draft.entitlements;
+  assert.equal(voice.metered, false, 'no limit field for an on/off entitlement');
+  assert.equal(message.metered, true);
+  voice.enabled = false;
+  const sent = plansPayload([draft]).plans[0].entitlements;
+  assert.deepEqual([sent[0].enabled, sent[0].limit], [false, 1], 'the toggle is saved with its limit as the catalogue held it');
+  assert.equal(sent[1].limit, 200);
 }
 
 // 5. The contract text and the code constant agree on v11.
