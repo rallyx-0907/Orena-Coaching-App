@@ -1,115 +1,81 @@
-/* Builds static/orena/legal/content.js from the legal drafts (docs/legal/DRAFT_{TERMS,PRIVACY,REFUND}.md).
-
-   The drafts are the human's to approve (completion plan item 5); the pages render them as data, so the
-   text the human reads in the browser is the text in the drafts, word for word. Run after editing a draft:
+/* Builds static/orena/legal/content.js from the public legal text (docs/legal/public/{terms,privacy}.en.json and
+   facts.json) - the same source the public pages are built from (scripts/public_legal_text.mjs), so the in-app
+   legal pages and the public pages cannot disagree and no draft placeholder can reach a learner.
 
      node scripts/build_orena_legal.mjs          writes the file
-     node scripts/build_orena_legal.mjs --check  fails if the file is not what the drafts give (the gate)
+     node scripts/build_orena_legal.mjs --check  fails if the file is not what the sources give (the gate)
 
-   Kept: the English section and the English preamble lines (version, the Chinese
-   placeholder, a status line). Every [DECISION: ...] / [OPERATOR] placeholder stays as written. Dropped:
-   the draft banner (the page says it is a draft), "Note to counsel" and "Sources in the codebase" - both
-   marked "strip before publishing" in the drafts. Inline **bold**, *italic* and `code` become segments, never
-   HTML. */
+   {{fact:...}} tokens resolve from facts.json here; an unconfirmed (null) fact fails the build rather than render a
+   bracketed mark. {{date}} stays a token: the page fills it with the deploy-stamped effective date, or leaves the
+   sentence out. The Refund page has no public source of its own (payments are not live); it shows the public Terms'
+   "Plans and payment" section, which states that, and nothing the repository has not published. Inline **bold**
+   and [text](/path) become segments, never HTML. */
 import fs from 'node:fs';
 
-export const DOCS = Object.freeze({ terms: 'TERMS', privacy: 'PRIVACY', refund: 'REFUND' });
+export const DOCS = Object.freeze({ terms: 'terms', privacy: 'privacy', refund: 'terms' });
 const OUT = 'static/orena/legal/content.js';
+const REFUND_SECTION = /^3\. Plans and payment$/;
+
+const getPath = (obj, p) => p.split('.').reduce((o, k) => (o == null ? undefined : o[k]), obj);
+
+export function resolveFacts(text, facts) {
+  return text.replace(/\{\{fact:([A-Za-z0-9_.]+)\}\}/g, (_m, name) => {
+    const v = getPath(facts, name);
+    if (v === null || v === undefined || typeof v === 'object') throw new Error(`fact ${name} is unconfirmed: cannot build in-app legal text`);
+    return String(v);
+  });
+}
 
 export function inline(text) {
   const segments = [];
-  const pattern = /\*\*([^*]+)\*\*|\*([^*]+)\*|`([^`]+)`/g;
+  const pattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
   let last = 0;
   for (const match of text.matchAll(pattern)) {
     if (match.index > last) segments.push({ t: text.slice(last, match.index) });
     if (match[1] != null) segments.push({ t: match[1], b: true });
-    else if (match[2] != null) segments.push({ t: match[2], i: true });
-    else segments.push({ t: match[3], c: true });
+    else segments.push({ t: match[2], h: match[3] });
     last = match.index + match[0].length;
   }
   if (last < text.length) segments.push({ t: text.slice(last) });
   return segments;
 }
 
-function cells(line) {
-  return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => inline(cell.trim()));
+function blocks(list, facts) {
+  const out = [];
+  const seg = (t) => inline(resolveFacts(t, facts));
+  for (const b of list) {
+    if ('p' in b) out.push({ p: seg(b.p) });
+    else if ('lead' in b) out.push({ p: seg(b.lead) });
+    else if ('ul' in b) out.push({ ul: b.ul.map(seg) });
+    else if ('cards' in b) out.push({ ul: b.cards.map(([title, body]) => [{ t: resolveFacts(title, facts), b: true }, ...seg(`: ${body}`)]) });
+    else if ('contact' in b) out.push({ ul: b.contact.map(([label, mail]) => [{ t: `${label}: ` }, { t: mail, h: `mailto:${mail}` }]) });
+    else throw new Error(`unknown legal block ${JSON.stringify(b).slice(0, 60)}`);
+  }
+  return out;
 }
 
-/* Lines of one language's section -> blocks: { p }, { ul: [...] }, { table: { head, rows } }, and sections. */
-export function parseSection(lines) {
-  const intro = [];
-  const sections = [];
-  let target = intro;
-  let list = null;
-  let table = null;
-  const close = () => {
-    list = null;
-    table = null;
-  };
-  for (const raw of lines) {
-    const line = raw.replace(/\s+$/, '');
-    if (!line.trim()) {
-      close();
-      continue;
-    }
-    const heading = /^##\s+(.*)$/.exec(line);
-    if (heading) {
-      close();
-      const section = { heading: heading[1].trim(), blocks: [] };
-      sections.push(section);
-      target = section.blocks;
-      continue;
-    }
-    const item = /^[-*]\s+(.*)$/.exec(line);
-    if (item) {
-      table = null;
-      if (!list) {
-        list = { ul: [] };
-        target.push(list);
-      }
-      list.ul.push(inline(item[1]));
-      continue;
-    }
-    if (line.trim().startsWith('|')) {
-      list = null;
-      if (/^\|\s*:?-{3,}/.test(line.trim())) continue;
-      if (!table) {
-        table = { table: { head: cells(line), rows: [] } };
-        target.push(table);
-      } else table.table.rows.push(cells(line));
-      continue;
-    }
-    close();
-    target.push({ p: inline(line.trim()) });
-  }
+export function buildDoc(source, facts, only = null) {
+  const dates = { p: inline('Last updated: {{date}}. Effective: {{date}}.') };
+  const intro = only ? [dates] : [dates, { p: inline(resolveFacts(source.intro, facts)) }];
+  const sections = source.sections
+    .filter((s) => !only || only.test(s.h))
+    .map((s) => ({ heading: s.h, blocks: blocks(s.blocks, facts) }));
   return { intro, sections };
 }
 
-/* One draft -> { intro, sections }: legal text is English only (D-238). */
-export function parseDraft(source) {
-  const lines = source.replace(/\r\n/g, '\n').split('\n');
-  const at = (pattern) => lines.findIndex((line) => pattern.test(line));
-  const english = at(/^# English\s*$/);
-  if (english < 0) throw new Error('a draft needs an "# English" section');
-  const until = (start) => {
-    const end = lines.findIndex((line, index) => index > start && /^---\s*$/.test(line));
-    return lines.slice(start + 1, end < 0 ? lines.length : end);
+export function buildContent(read = (name) => fs.readFileSync(`docs/legal/public/${name}`, 'utf8')) {
+  const facts = JSON.parse(read('facts.json'));
+  const source = (name) => JSON.parse(read(`${name}.en.json`));
+  return {
+    terms: buildDoc(source('terms'), facts),
+    privacy: buildDoc(source('privacy'), facts),
+    refund: buildDoc(source('terms'), facts, REFUND_SECTION),
   };
-  const title = at(/^# Orena/);
-  const firstRule = lines.findIndex((line, index) => index > title && /^---\s*$/.test(line));
-  const preamble = lines.slice(title + 1, firstRule).filter((line) => !line.startsWith('>'));
-  const en = parseSection(until(english));
-  en.intro = [...parseSection(preamble).intro, ...en.intro];
-  return en;
-}
-
-export function buildContent(read = (name) => fs.readFileSync(`docs/legal/DRAFT_${name}.md`, 'utf8')) {
-  return Object.fromEntries(Object.entries(DOCS).map(([id, name]) => [id, parseDraft(read(name))]));
 }
 
 export function moduleText(content) {
-  return `/* GENERATED by scripts/build_orena_legal.mjs from docs/legal/DRAFT_*.md - do not edit by hand.
-   The legal drafts as data (completion plan item 5, D-128); the human approves the text in the drafts. */
+  return `/* GENERATED by scripts/build_orena_legal.mjs from docs/legal/public/*.en.json and facts.json - do not edit by hand.
+   The public legal text as data (D-128, D-238): the in-app pages and the public pages share one source. */
 export const LEGAL = Object.freeze(${JSON.stringify(content, null, 1)});
 `;
 }
@@ -120,10 +86,10 @@ if (isMain) {
   if (process.argv.includes('--check')) {
     const current = fs.existsSync(OUT) ? fs.readFileSync(OUT, 'utf8').replace(/\r\n/g, '\n') : '';
     if (current !== text) {
-      console.error(`${OUT} is not what the drafts give: run node scripts/build_orena_legal.mjs`);
+      console.error(`${OUT} is not what the sources give: run node scripts/build_orena_legal.mjs`);
       process.exit(1);
     }
-    console.log(`${OUT} matches the drafts`);
+    console.log(`${OUT} matches the sources`);
   } else {
     fs.mkdirSync('static/orena/legal', { recursive: true });
     fs.writeFileSync(OUT, text);
