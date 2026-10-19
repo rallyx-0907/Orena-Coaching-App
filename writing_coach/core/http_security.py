@@ -140,6 +140,18 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
     ("place", ("/api/continue/",), 1200, 600),
     ("media_learning", ("/api/media-learning/upload", "/api/media-learning/source", "/api/media-learning/translate",
                         "/api/media-learning/import#"), 30, 3600),
+    # PRE-502 R3: AI-backed routes that were in no group. Each is generous for a learner (a word lookup about once a
+    # second, sustained) and only stops one account looping a paid provider - which, with the system daily ceiling
+    # shared by everyone, would otherwise pause AI for every learner until midnight.
+    ("reading_lookup", ("/api/reading/lookup#",), 600, 600),
+    ("media_explain", ("/api/media-learning/explain#",), 120, 600),
+    ("discussion_ai", ("/api/texts/discussion/turns#",), 60, 600),
+)
+
+# Reads that can reach a paid provider (PRE-502 R3): counted although a GET changes nothing. Exact paths only.
+# `/api/dictionary` falls back to the AI dictionary for Chinese on a cache miss.
+READ_RATE_GROUPS: tuple[tuple[str, frozenset[str], int, int], ...] = (
+    ("dictionary_lookup", frozenset({"/api/dictionary"}), 600, 600),
 )
 
 
@@ -180,6 +192,11 @@ SELF_COUNTED_PATHS = frozenset({"/api/dictionary/word-detail"})
 
 
 def _rate_group(method: str, path: str) -> tuple[str, int, int] | None:
+    if method.upper() == "GET":
+        for name, paths, limit, window in READ_RATE_GROUPS:
+            if path.rstrip("/") in paths:
+                return name, limit, window
+        return None
     if method.upper() not in STATE_CHANGING or path.rstrip("/") in SELF_COUNTED_PATHS:
         return None
     for name, prefixes, limit, window in RATE_GROUPS:
