@@ -1111,6 +1111,8 @@ def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
 # ceiling. An unreadable value refuses to start rather than guess.
 _spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_system_ai_spend_since,
                               warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
+# Every response a ceiling refusal touched says so: `X-Orena-AI-Paused: <resets_at>` (the client's one signal).
+_spend_gate.install_paused_header(app)
 
 
 def _agent_spend_guard():
@@ -1301,6 +1303,8 @@ configure_content_packs(
     ],
     vocabulary_export=lambda collection_id: _vocabulary_pack_export(collection_id),
     vocabulary_import=lambda data, **kwargs: _vocabulary_pack_import(data, **kwargs),
+    media_store=_media_library_store,
+    media_assets=_media_library_assets,
     environment=os.getenv("ORENA_ENVIRONMENT_LABEL", "local"),
     app_version=(ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").is_file() else "",
 )
@@ -2426,9 +2430,20 @@ def landing_page() -> HTMLResponse:
 
 def _legal_page(name: str, request: Request) -> HTMLResponse:
     """Terms, Privacy and Delete account are static HTML with the whole text in the response (no script needed to
-    read it): Vietnamese by default, English for `?lang=en`, and English for `?lang=zh` (there is no Chinese text)."""
-    lang = "en" if request.query_params.get("lang", "").lower() in {"en", "zh"} else "vi"
-    return _page("public", f"{name}.{lang}.html")
+    read it): Vietnamese by default, English for `?lang=en`, and English with a one-line Chinese note for `?lang=zh` (there is no Chinese text)."""
+    asked = request.query_params.get("lang", "").lower()
+    lang = "en" if asked in {"en", "zh"} else "vi"
+    page = _page("public", f"{name}.{lang}.html")
+    if asked == "zh":
+        # Legal text is never machine-translated (Hermes, 2026-10-19): a Chinese reader gets the English page with one
+        # line saying so, in Chinese and in English.
+        note = (
+            '<p lang="zh" style="margin:0;padding:12px 16px;text-align:center;font-size:14px;opacity:.85">'
+            "本页面目前仅提供英文版本。 · This page is currently available in English only.</p>"
+        )
+        html = page.body.decode("utf-8")
+        page = HTMLResponse(html.replace("<body>", "<body>" + note, 1), headers=dict(page.headers))
+    return page
 
 
 @app.get("/terms", response_class=HTMLResponse)

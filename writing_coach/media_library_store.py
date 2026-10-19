@@ -9,6 +9,7 @@ rather than pretending a JSON file has cross-process locks.
 """
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
 import os
@@ -40,15 +41,78 @@ def valid_provider_media_id(provider: str, provider_media_id: str) -> bool:
     return bool((_YOUTUBE_ID if provider == "youtube" else _ID).fullmatch(provider_media_id))
 
 
-_WRITERS: dict[str, threading.Lock] = {}
+class _IndexWriter:
+    """The write lock of one index: a thread lock inside this process and an OS file lock across processes.
+
+    The operator CLI (`scripts/media_content_pack.py`) is a separate process from the server, and an atomic replace
+    keeps the file whole but cannot merge two read-modify-write cycles. The sidecar `index.json.lock` is held for the
+    whole cycle by every writer. If the sidecar cannot be opened (a read-only mount), the thread lock still holds and
+    the write that follows fails on its own.
+    """
+
+    def __init__(self, index: Path) -> None:
+        self._thread = threading.Lock()
+        self._path = index.with_name(index.name + ".lock")
+        self._handle: Any = None
+
+    def __enter__(self) -> _IndexWriter:
+        self._thread.acquire()
+        try:
+            self._path.parent.mkdir(parents=True, exist_ok=True)
+            handle = open(self._path, "a+b")  # noqa: SIM115 - held until __exit__
+        except OSError as exc:
+            if isinstance(exc, PermissionError) or exc.errno in (errno.EROFS, errno.EACCES):
+                return self  # a read-only or unwritable directory: the write that follows fails on its own
+            self._thread.release()
+            raise
+        try:
+            if os.name == "nt":
+                import msvcrt
+
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)  # blocks, retrying for about ten seconds
+            else:
+                import fcntl
+
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        except OSError:
+            handle.close()
+            self._thread.release()
+            raise
+        self._handle = handle
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        handle, self._handle = self._handle, None
+        try:
+            if handle is not None:
+                try:
+                    if os.name == "nt":
+                        import msvcrt
+
+                        handle.seek(0)
+                        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+                    else:
+                        import fcntl
+
+                        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+                finally:
+                    handle.close()
+        finally:
+            self._thread.release()
+
+
+_WRITERS: dict[str, _IndexWriter] = {}
 _WRITERS_GUARD = threading.Lock()
 
 
-def _writer_for(index: Path) -> threading.Lock:
-    """One lock per index file, shared by every store object that opens it."""
+def _writer_for(index: Path) -> _IndexWriter:
+    """One writer per index file, shared by every store object that opens it."""
     key = os.path.normcase(os.path.abspath(index))
     with _WRITERS_GUARD:
-        return _WRITERS.setdefault(key, threading.Lock())
+        if key not in _WRITERS:
+            _WRITERS[key] = _IndexWriter(Path(key))
+        return _WRITERS[key]
 
 
 @dataclass(frozen=True)

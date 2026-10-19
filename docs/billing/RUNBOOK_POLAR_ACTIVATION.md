@@ -37,6 +37,14 @@ usage.
 
    No trial on any of them. An archived product, a second live price, or a different amount closes plan sales: the
    Polar-side check (R-MON-011) reports `polar_price_mismatch`.
+
+   **Description (what the buyer reads on Polar's checkout).** Each Plus and Pro description says that **voice chat
+   with Orena is included**. Free has no voice chat (owner, 2026-10-19). The final wording is the owner's.
+
+   No Polar benefit is needed for voice or any other entitlement. Orena grants every entitlement, voice included,
+   from its own plan catalogue (`writing_coach/product/catalog.py`), keyed by the plan the webhook records. The
+   product id only maps to the plan, through the prices file (§3). Polar benefits stay empty, so Polar grants
+   nothing Orena does not track.
 2. **Customer portal** (owner Q2):
    - customers may update their subscription: `allow_customer_updates` on;
    - plan changes are allowed between the four products: `update_plan` on;

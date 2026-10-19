@@ -83,6 +83,8 @@ def test_public_pages_need_no_session(monkeypatch):
     assert '<html lang="en">' in r["/terms?lang=en"].text and "Terms of Service" in r["/terms?lang=en"].text
     assert "Chính sách quyền riêng tư" in r["/privacy"].text
     assert '<html lang="en">' in r["/privacy?lang=zh"].text and "Privacy Policy" in r["/privacy?lang=zh"].text
+    assert "本页面目前仅提供英文版本。" in r["/privacy?lang=zh"].text, "a Chinese reader is told the page is English only"
+    assert "本页面目前仅提供英文版本。" not in r["/terms?lang=en"].text and "本页面" not in r["/terms"].text
     assert "Xoá tài khoản" in r["/account-deletion"].text and "Delete account" in r["/account-deletion?lang=en"].text
     for path, res in r.items():
         if path != "/landing":
