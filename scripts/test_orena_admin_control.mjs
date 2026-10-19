@@ -66,3 +66,19 @@ console.log('Admin control-center rendering and truthful state checks passed');
   assert.match(legacy, /Now: Pro/);
   console.log('Admin account plan: ended and legacy plans read as the server applies them: PASS');
 }
+
+/* The system AI ceiling's notice on the overview: nothing below the warning, a warning strip at it, paused at 100%. */
+{
+  const base = { overview: { accounts: { available: true, total: 3 }, activity: { available: true, active_7d: 1 }, content: {}, attention: [] } };
+  const ceiling = { ceiling_usd: 5, spent_usd: 0, ratio: 0, warned: false, reached: false, readable: true, resets_at: '2026-10-20T00:00:00+00:00' };
+  const page = (system) => String(controlPage('adminOverview', { ...base, spend: system ? { system, agent: { cap_usd: null } } : null }, { href }).markup);
+  for (const none of [page(null), page(ceiling), page({ ...ceiling, spent_usd: 3.9, ratio: 0.78 }), page({ ceiling_usd: null })]) {
+    assert.ok(!none.includes('a-banner'), 'below the warning ratio (or with no ceiling) the overview draws no spend notice');
+  }
+  const warned = page({ ...ceiling, spent_usd: 4.0, ratio: 0.8, warned: true });
+  assert.ok(warned.includes('data-tone="warn"') && warned.includes('AI spend today $4 of $5 - 80% reached'), 'the warning at 80%');
+  const paused = page({ ...ceiling, spent_usd: 5.01, ratio: 1.002, warned: true, reached: true });
+  assert.ok(paused.includes('data-tone="err"') && paused.includes('AI paused until') && !paused.includes('80% reached'), 'paused at 100%');
+  assert.ok(!paused.includes('Invalid Date'));
+  console.log('Admin AI spend ceiling notice checks passed');
+}

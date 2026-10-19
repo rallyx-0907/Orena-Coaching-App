@@ -218,6 +218,7 @@ export const adminApi = {
     return request('/api/admin/reading/jobs', { method: 'POST', body: form });
   },
   readiness: () => request('/api/admin/readiness-summary'),
+  aiSpend: () => request('/api/admin/ai-spend'),
   productActivity: (days = 7) => request(`/api/admin/product-activity${query({ window_days: days })}`),
 };
 

@@ -113,3 +113,21 @@ def test_health_check_parses_the_real_backup_log_line_format():
     sample = "2026-10-18T14:35:59Z exit 0: backup complete: orena-8000-20261018T143559Z.dump, orena-8000-data-20261018T143559Z.tar.gz"
     assert re.match(r"^\S+ exit \d+: ", sample) and re.match(r"^\S+ exit 0: ", sample)
     assert not re.match(r"^\S+ exit 0: ", "2026-10-18T14:35:59Z exit 1: dump failed")
+
+
+def test_health_check_reads_the_ai_spend_warning_lines_the_guard_really_logs():
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "scripts" / "health_check_8000.ps1").read_text(encoding="utf-8")
+    guard = (root / "writing_coach" / "agent" / "budget.py").read_text(encoding="utf-8")
+    # The two phrases the script greps are the guard's own log formats.
+    assert '"%s daily spend near cap:' in guard and '"%s daily spend cap reached:' in guard
+    assert "'daily spend near cap:'" in script and "'daily spend cap reached:'" in script
+    # Read-only (docker logs), today's UTC lines, once per UTC day and level, through the shared alert path.
+    assert "docker.exe logs $spendContainer --since $sinceUtc" in script
+    assert "$state.spendDay" in script and "$state.spendLevel" in script
+    assert script.count("Raise-Alert") >= 3
+    # Not a health failure: the branch never adds to $failures.
+    branch = script[script.index("# 6. The daily AI spend ceiling"):script.index("# Alerting: after")]
+    assert "$failures" not in branch
+    for sample in ("system daily spend near cap: 4.0100 of 5.00 USD (80%)", "system daily spend cap reached: 5.0100 of 5.00 USD"):
+        assert re.search(r"daily spend (near cap|cap reached):", sample)
