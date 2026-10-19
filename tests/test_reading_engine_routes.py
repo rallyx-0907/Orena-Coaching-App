@@ -518,3 +518,19 @@ def test_a_chinese_article_takes_hsk_levels_only(setup):
     before = len(setup["audit"])
     call(setup["admin"], "POST", path, json={"reviewed_level": "HSK3"})
     assert not any(r["action"] == "admin.reading_level_override" for r in setup["audit"][before:])
+
+
+def test_an_empty_language_reads_as_the_learners_own_language(setup):
+    """#324: a client asks with `language=` when an article has no language of its own. That is "the learner's", not an
+    error: the learner's active learning language (the request's) is used. An unsupported language is still 422."""
+    from writing_coach.core.request_context import LANGUAGE_CODE_CTX
+
+    _publish_one(setup, language="en")
+    token = LANGUAGE_CODE_CTX.set("en")
+    try:
+        own = call(setup["learner"], "GET", "/api/reading/articles?language=")
+        assert own.status_code == 200
+        assert own.json()["items"] == call(setup["learner"], "GET", "/api/reading/articles?language=en").json()["items"]
+    finally:
+        LANGUAGE_CODE_CTX.reset(token)
+    assert call(setup["learner"], "GET", "/api/reading/articles?language=xx").status_code == 422

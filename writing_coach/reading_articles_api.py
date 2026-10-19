@@ -78,6 +78,12 @@ def _require_repository() -> ReadingContentRepository:
 def _language(raw: str) -> str:
     language = (raw or "").strip().casefold()
     if not language:
+        # A client that asks with `language=` (an article with no language of its own, #324) means the learner's: their
+        # active learning language for this request - not an error.
+        from writing_coach.core.request_context import current_language_code
+
+        language = (current_language_code() or "").strip().casefold()
+    if not language:
         raise orena_http_error(422, "reading_invalid_language", "Choose a learning language.")
     if _language_supported is not None and not _language_supported(language):
         raise orena_http_error(422, "reading_invalid_language", "Unsupported learning language.")
