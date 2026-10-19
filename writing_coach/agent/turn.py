@@ -77,6 +77,7 @@ from writing_coach.agent.summary import summarize
 from writing_coach.agent.honesty import ClaimGate, asks_for_heading, nothing_done, offer, offer_instead
 from writing_coach.agent.notes import (
     CORRECT,
+    FORGET,
     asks_to_remember_unaccented,
     confirmed_note,
     note_intent,
@@ -1231,7 +1232,10 @@ class _Turn:
                 _log.warning("agent notes: %s", "unchanged after asking again" if self._note_unchanged(outputs)
                              else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
             if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
-                key = "notes.not_kept" if self.note_confirmed is not None and not self.notes_asked else "notes.unchanged"
+                if self.note_confirmed is not None and not self.notes_asked:
+                    key = "notes.not_kept"
+                else:  # a forget never claimed: the server's own words (owner via Hermes, 2026-10-19)
+                    key = "notes.not_forgotten" if self.notes_intent == FORGET else "notes.unchanged"
                 unchanged = learner_copy.text(key, interface=self.locale.interface, support=support,
                                               address=self.address)[1]  # fmt: skip
             elif self.notes_blocked:

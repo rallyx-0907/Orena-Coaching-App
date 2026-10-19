@@ -106,6 +106,14 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
              "vi": "{self_cap} chưa sửa hay xoá ghi chú nào của {user}. {user_cap} nói rõ ghi chú nào cần sửa hoặc xoá nhé?",
              "zh-CN": "{self}还没有修改或删除{user}的笔记。请告诉{self}要修改或删除哪一条？"},
         ),
+        # A forget the learner asked for and the model did not do, even when asked again: never claimed, said plainly,
+        # and asked for once more (owner via Hermes, 2026-10-19). There is no notes screen to point to (D-226).
+        "notes.not_forgotten": _entry(
+            CopyLayer.SUPPORT,
+            {"en": "I haven't deleted that note yet. Please ask me once more and I'll delete it.",
+             "vi": "{self_cap} chưa xoá được ghi chú đó. {user_cap} nhắn lại một lần nữa để {self} xoá nhé.",
+             "zh-CN": "{self}还没有删除那条笔记。请再说一次，{self}来删除它。"},
+        ),
         # A keep request typed without Vietnamese diacritics (agent/notes.py): asked back, never refused in silence;
         # kept only when the learner taps `notes.keep_label` (human direction 2026-10-04).
         "notes.confirm": _entry(

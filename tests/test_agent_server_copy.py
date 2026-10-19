@@ -248,6 +248,18 @@ def test_a_note_ignored_twice_is_said_plainly_in_the_learners_address():
     assert segments(events)[0][1] == "Chị chưa sửa hay xoá ghi chú nào của em. Em nói rõ ghi chú nào cần sửa hoặc xoá nhé?"
 
 
+def test_a_forget_ignored_twice_never_claims_it_and_asks_once_more_plainly():
+    """Owner (via Hermes, 2026-10-19): a reply never says a note is forgotten when no forget succeeded. Asked again and
+    still ignored, the server's own line says it is not deleted yet and asks for the request once more - not "which
+    note?" when the learner already named it, and no Notes screen to point to (one Settings switch, D-226)."""
+    events, provider = run(
+        [reply("Mình đã quên rồi."), reply("Mình đã xoá ghi chú đó.")],
+        request("Quên ghi chú về ví dụ đó đi.", notes=(SHORT,), addressed={"self": "chị", "user": "em", "lang": "vi"}),
+    )
+    assert len(provider.requests) == 2 and not [e for e in events if e.name == "memory_update"]
+    assert segments(events)[0][1] == "Chị chưa xoá được ghi chú đó. Em nhắn lại một lần nữa để chị xoá nhé."
+
+
 def test_a_correction_done_at_once_is_not_asked_again():
     correct = (
         ToolCallRequest("c1", REMEMBER_NOTE, {"kind": "preference", "text": "Thích ví dụ dài hơn", "replaces": SHORT.id}),
