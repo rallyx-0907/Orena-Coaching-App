@@ -136,8 +136,10 @@ funding enforcement.
    - the Embedding allowlist, which must hold the production origin.
 4. **Commercial and legal:**
    - final prices;
-   - the refund, renewal and grace policy;
-   - tax.
+   - the refund, renewal and grace policy, **in the public English Terms before any charge**. The current Terms promise
+     this. `PAID_PLANS_TERMS_DRAFT.md` is the draft. Legal text is English only (owner, 2026-10-19); no vi/zh
+     version is required;
+   - tax: Polar is the merchant of record (D-MON-032).
 5. **Gate 7b itself.** Readiness `ready: true`, then the owner's first real subscription (runbook §4-§5).
 
 ## 7. One approval for gate 7b (prepared; waits for the owner and for R1)
