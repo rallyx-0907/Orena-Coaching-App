@@ -55,6 +55,8 @@ _language_supported: Callable[[str], bool] | None = None
 MAX_IMPORT_FILES = 20
 _UPLOAD_READ_CHUNK_BYTES = 1024 * 1024
 _CONTENT_TYPE_BY_EXTENSION = {ext: content_type for content_type, ext in COVER_CONTENT_TYPES.items()}
+# Orena's own typographic cover (D-240) - never an uploaded file; the cover response is sandboxed with `default-src 'none'`.
+_CONTENT_TYPE_BY_EXTENSION[".svg"] = "image/svg+xml"
 
 _logger = logging.getLogger(__name__)
 
@@ -168,6 +170,21 @@ async def _import_one(
                 cover_key = f"books/{book_id}/cover{extension}"
                 asset_store.put(cover_key, parsed.cover.data)
                 written_keys.append(cover_key)
+        thumbnail_provenance: dict[str, Any] = {"kind": "source_image", "origin": "epub-embedded"} if cover_key else {}
+        if cover_key is None:
+            # D-240: every book on the shelf has a cover. An EPUB without one gets Orena's typographic cover.
+            from writing_coach.thumbnails import KIND_TYPOGRAPHIC, normalize_provenance, typographic_record
+
+            record = typographic_record(parsed.title, language=language, topic=parsed.author, kind="book")
+            cover_key = f"books/{book_id}/cover.svg"
+            asset_store.put(cover_key, record["data"])
+            written_keys.append(cover_key)
+            thumbnail_provenance = {**normalize_provenance({}, kind=KIND_TYPOGRAPHIC), "sha256": record["sha256"]}
+        # The cover's provenance - an EPUB's own cover or Orena's typographic one - sits beside it, not in the manifest
+        # (whose shape other readers rely on).
+        provenance_key = f"books/{book_id}/cover.provenance.json"
+        asset_store.put(provenance_key, json.dumps(thumbnail_provenance).encode("utf-8"))
+        written_keys.append(provenance_key)
 
         chapter_inputs: list[ChapterInput] = []
         for index, chapter in enumerate(parsed.chapters):
@@ -395,7 +412,8 @@ def get_cover(book_id: str, request: Request) -> Response:
     except AssetNotFound as exc:
         raise HTTPException(404, "Cover not found.") from exc
     etag = '"' + hashlib.md5(data).hexdigest() + '"'
-    headers = {"Cache-Control": "no-cache", "ETag": etag}
+    headers = {"Cache-Control": "no-cache", "ETag": etag, "X-Content-Type-Options": "nosniff",
+               "Content-Security-Policy": "default-src 'none'; sandbox"}
     if request.headers.get("if-none-match") == etag:
         return Response(status_code=304, headers=headers)
     return Response(content=data, media_type=content_type, headers=headers)

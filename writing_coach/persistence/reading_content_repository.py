@@ -46,6 +46,7 @@ from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QUALITY_VERSION, QualityRefused, hard_issues
 from writing_coach.languages.chinese.script_detection import SCRIPTS, UNKNOWN, detect_script
 from writing_coach.reading_admission import auto_publish_enabled, with_auto_publish
+from writing_coach.thumbnails import ThumbnailRequired
 from writing_coach.reading_images import (
     SHARED_URL_THRESHOLD,
     assess_candidates,
@@ -488,6 +489,13 @@ def _script_field(language: str, stored: Any) -> dict[str, Any]:
 
 
 class ReadingContentRepository:
+    # D-240: every learner-visible article has a thumbnail. The application turns this on at wiring; a bare
+    # repository (a script, a unit test) stays permissive so it can set up content without art.
+    require_thumbnail = False
+    # Set at wiring: makes and stores a typographic cover for {article_id, title, language, topic} and returns the
+    # stored-image dict an `image_set` event carries, or None. Used only where the engine admits an article by itself.
+    cover_factory: Callable[[dict[str, Any]], dict[str, Any] | None] | None = None
+
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
 
@@ -932,6 +940,7 @@ class ReadingContentRepository:
         article_id = uuid.uuid4()
         with self.engine.begin() as connection:
             admitted = False
+            cover = None
             prepared_analysis = dict(analysis or {})
             if automatic_admission:
                 from writing_coach.reading_admission import automatic_admission as check_admission
@@ -951,6 +960,13 @@ class ReadingContentRepository:
                     min_targets=MIN_TARGETS, max_targets=MAX_TARGETS)
                 prepared_analysis["admission"] = decision
                 admitted = decision["decision"] == "published" and status == "needs_review"
+                if admitted and self.require_thumbnail:
+                    # An automatic admission publishes with nobody looking, so it makes the cover itself (D-240);
+                    # without one it waits for review instead.
+                    cover = self.cover_factory({"article_id": str(article_id), "title": title, "language": language,
+                                                "topic": topic}) if self.cover_factory else None
+                    if cover is None:
+                        admitted = False
                 if admitted:
                     status = LEARNER_VISIBLE_STATUS
             connection.execute(
@@ -1007,6 +1023,9 @@ class ReadingContentRepository:
                          **({"admission": decision} if automatic_admission else {})},
                 now=moment,
             )
+            if admitted and cover is not None:
+                self._record_event(connection, article_id=article_id, actor=actor, action=IMAGE_SET_EVENT, reason="",
+                    changes={"from": None, "to": {"image": dict(cover)}}, now=moment)
             if admitted:
                 self._record_event(connection, article_id=article_id, actor=actor,
                     action="auto_published", reason="",
@@ -1266,7 +1285,7 @@ class ReadingContentRepository:
                 approved_url=str((approved or {}).get("candidate_url") or ""),
             ),
             "approved": (
-                {key: approved.get(key) for key in ("width", "height", "content_type", "credit", "alt")}
+                {key: approved.get(key) for key in ("width", "height", "content_type", "credit", "alt", "kind")}
                 if approved else None
             ),
             "shown_to_learners": shown is not None,
@@ -1345,6 +1364,30 @@ class ReadingContentRepository:
             article_id, IMAGE_SET_EVENT, {"from": None, "to": {"image": None}},
             actor=actor, reason=reason, now=now,
         )
+
+    def has_thumbnail(self, article_id: str) -> bool:
+        """Whether a learner would be shown a picture for this article (a typographic cover, a licensed image or an
+        approved source image the source's policy allows). The publish gate asks this (D-240)."""
+        if _lookup_uuid(article_id) is None:
+            return False
+        with self.engine.connect() as connection:
+            row = connection.execute(
+                select(ReadingArticle.id, ReadingArticle.content_revision).where(ReadingArticle.id == _uuid(article_id))
+            ).first()
+            if row is None:
+                return False
+            _, images = self._credits_and_images(connection, [row.id], revisions={row.id: row.content_revision})
+        return images.get(row.id) is not None
+
+    def published_thumbnail(self, article_id: str) -> dict[str, Any] | None:
+        """The stored thumbnail (asset key, type, hash and provenance) a learner is shown for this article, or None.
+        Content packs carry it with the article (D-240)."""
+        if not self.has_thumbnail(article_id):
+            return None
+        with self.engine.connect() as connection:
+            events = self._decision_events(connection, [_uuid(article_id)]).get(_uuid(article_id), [])
+        approved = fold_image_events([e for e in events if e["action"] in IMAGE_EVENTS])["approved"] or {}
+        return dict(approved) if approved.get("asset_key") else None
 
     def approved_image_asset(self, article_id: str) -> dict[str, Any] | None:
         """The stored picture a learner may be served for a published article, or None. Re-checks the
@@ -1505,6 +1548,8 @@ class ReadingContentRepository:
         values: dict[str, Any] = {"status": status, "updated_at": moment}
         overridden: list[str] = []
         if status == LEARNER_VISIBLE_STATUS:
+            if self.require_thumbnail and current["status"] != LEARNER_VISIBLE_STATUS and not self.has_thumbnail(article_id):
+                raise ThumbnailRequired("reading article")
             overridden = hard_issues((current.get("analysis") or {}).get("quality_issues"))
             if overridden and not quality_override:
                 raise QualityRefused(overridden)

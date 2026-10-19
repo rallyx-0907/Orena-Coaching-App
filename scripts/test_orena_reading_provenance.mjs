@@ -107,6 +107,8 @@ for (const bad of [
   { ...own, credit: '' }, { ...own, credit: '   ' }, null, 'x', {},
 ]) assert.equal(imageOf({ image: bad }), null, `no picture for ${JSON.stringify(bad)}`);
 assert.equal(imageOf({}), null);
+assert.equal(imageOf({ image: { ...own, credit: '', typographic: true } }).credit, '', 'a typographic cover needs no credit (D-240)');
+assert.equal(creditOf({ provenance, image: { ...own, credit: '', typographic: true } }).image, '');
 assert.equal(creditOf({ provenance, image: own }).image, 'Photo: A. Tran', 'the picture credit joins the footnote');
 assert.equal(creditOf({ provenance }).image, '', 'no picture, no picture credit');
 assert.equal(creditOf({ provenance: { publisher: '', url: '' }, image: own }).image, 'Photo: A. Tran');

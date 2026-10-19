@@ -64,6 +64,7 @@ from writing_coach.admin_metrics import (
     retention_windows,
 )
 from writing_coach.core.errors import orena_http_error
+from writing_coach.thumbnails import ThumbnailRequired, required_message
 from writing_coach.listening_catalog import EN_LEVELS, ZH_LEVELS
 from writing_coach.persistence.platform_repository import SettingConflict
 
@@ -1082,6 +1083,8 @@ def publish_collection(collection_id: str, payload: PublishIn, request: Request,
     }
     try:
         collection = _state.vocabulary_repository.finalize_collection_publication(collection_id, admission=admission)
+    except ThumbnailRequired as exc:
+        raise orena_http_error(409, "thumbnail_required", required_message("vocabulary collection")) from exc
     except ValueError as exc:
         # The repository refuses for technical invariants only - a collection
         # that was never imported, content the runtime could not serve.
@@ -1124,6 +1127,8 @@ def set_collection_status(
         collection = _state.vocabulary_repository.set_collection_status(
             collection_id, wanted, actor=_actor(admin)
         )
+    except ThumbnailRequired as exc:
+        raise orena_http_error(409, "thumbnail_required", required_message("vocabulary collection")) from exc
     except ValueError as exc:
         raise orena_http_error(422, "vocabulary_status_refused", str(exc)) from exc
     _audit(admin, "admin.content.status", entity_type="vocabulary_collection", entity_id=collection_id,
@@ -1305,6 +1310,10 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
                 raise orena_http_error(409, "media_transcript_required", "A usable transcript is required before publishing.")
             if current.source.get("rights") != "cleared":
                 raise orena_http_error(409, "media_rights_required", "Source rights must be cleared before publishing.")
+            from writing_coach.thumbnails import has_media_thumbnail, required_message
+
+            if previous != "published" and not has_media_thumbnail(current.thumbnail):
+                raise orena_http_error(409, "thumbnail_required", required_message("media item"))
         processing = dict(current.processing or {})
         if target == "published":
             # A person publishing by hand has checked the transcript: the hold for an unfinished correction ends here.
@@ -1321,6 +1330,115 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
     _audit(admin, "admin.content.status", entity_type="media", entity_id=media_id,
            payload=transition)
     return {"record": media_record(refreshed) if refreshed is not None else None}
+
+
+class ThumbnailIn(BaseModel):
+    """Give an item a thumbnail (D-240): Orena's typographic cover, or a licensed picture from an allow-listed host."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    mode: str = Field(default="typographic", max_length=20)
+    url: str = Field(default="", max_length=1000)
+    author: str = Field(default="", max_length=300)
+    licence: str = Field(default="", max_length=60)
+    licence_url: str = Field(default="", max_length=1000)
+    kind: str = Field(default="library_image", max_length=30)
+    alt: str = Field(default="", max_length=240)
+
+
+def _thumbnail_target(kind: str, item_id: str):
+    """(title, language, topic, save) for one item of a kind that has no router of its own for this."""
+    from dataclasses import replace as _replace
+
+    from writing_coach import thumbnails
+
+    if kind == "vocabulary":
+        repository = _state.vocabulary_repository
+        if not _vocabulary_available() or getattr(repository, "cover_store", None) is None:
+            raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
+        found = repository.get_collection(item_id, limit=0, status=None)
+        if found is None:
+            raise orena_http_error(404, "content_not_found", "This collection is not in the catalog.")
+
+        def save_collection(record, provenance):
+            key = thumbnails.asset_key("vocabulary", item_id, record["sha256"], record["ext"])
+            thumbnails.store_record(repository.cover_store, key, record)
+            stored = thumbnails.stored_dict(record, key, provenance)
+            repository.set_collection_thumbnail(item_id, stored)
+            return stored
+
+        return found["title"], found["language_code"], found.get("topic") or found.get("framework") or "", save_collection
+    if kind == "media":
+        media = _state.media_store
+        entry = media.get(item_id) if media is not None else None
+        if entry is None or entry.library != "shared":
+            raise orena_http_error(404, "content_not_found", "This media is not in the shared library.")
+        asset_store = media_library_api._installed()[1]
+
+        def save_media(record, provenance):
+            key = thumbnails.media_cover_key(entry.media_id, record)
+            thumbnails.store_record(asset_store, key, record)
+            source = {**dict(entry.source), **{name: str(provenance.get(field) or "") for field, name in thumbnails.MEDIA_SOURCE_KEYS.items()}}
+            media.update_if_present(item_id, lambda current: _replace(current, thumbnail={"kind": "asset", "ref": key}, source=source))
+            return thumbnails.stored_dict(record, key, provenance)
+
+        topic = str((entry.lesson or {}).get("topic") or "") if isinstance(entry.lesson, Mapping) else ""
+        return entry.title, entry.language, topic, save_media
+    if kind == "book":
+        repository, asset_store = reading_library_api._require_backend()
+        book = repository.get_book(item_id)
+        if book is None:
+            raise orena_http_error(404, "content_not_found", "This book is not in the catalog.")
+
+        def save_book(record, provenance):
+            import json as _json
+
+            key = f"books/{item_id}/cover-{str(record['sha256'])[:24]}.{record['ext']}"
+            thumbnails.store_record(asset_store, key, record)
+            stored = thumbnails.stored_dict(record, key, provenance)
+            asset_store.put(f"books/{item_id}/cover.provenance.json", _json.dumps(
+                {k: stored.get(k, "") for k in ("kind", "source_url", "author", "licence", "licence_url", "sha256")}).encode("utf-8"))
+            repository.set_cover_key(item_id, key)
+            return stored
+
+        return book["title"], book["learning_language"], book.get("author") or "", save_book
+    raise orena_http_error(404, "content_not_found", "That kind of content has no thumbnail route.")
+
+
+@router.post("/content/{kind}/{item_id}/thumbnail")
+def set_content_thumbnail(kind: str, item_id: str, payload: ThumbnailIn, request: Request, response: Response) -> dict[str, Any]:
+    """Attach a thumbnail to a vocabulary collection, media item or book, audited (D-240).
+
+    `mode: typographic` makes Orena's own cover from the title, language and topic ($0, no AI). `mode: url` downloads
+    a picture server-side into our own asset store, only from the allow-listed hosts, only with a licence in
+    {public domain, CC0, CC BY, CC BY-SA, Unsplash, Pexels}, as an image of at most 5 MB; the learner is only ever
+    served our copy.
+    """
+    from writing_coach import thumbnails
+
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    title, language, topic, save = _thumbnail_target(kind, item_id)
+    mode = payload.mode.strip().casefold()
+    try:
+        if mode == "typographic":
+            record = thumbnails.typographic_record(title, language=language, topic=topic, kind=kind)
+            provenance = thumbnails.normalize_provenance({}, kind=thumbnails.KIND_TYPOGRAPHIC)
+        elif mode == "url":
+            record, provenance = thumbnails.fetch_licensed_image(
+                payload.url, {"author": payload.author, "licence": payload.licence, "licence_url": payload.licence_url, "kind": payload.kind}
+            )
+        else:
+            raise orena_http_error(422, "thumbnail_mode_invalid", "A thumbnail is made from a typographic cover or a licensed URL.")
+        record = {**record, "alt": payload.alt.strip() or title}
+        stored = save(record, provenance)
+    except thumbnails.ThumbnailRefused as exc:
+        raise orena_http_error(422, exc.code, str(exc)) from exc
+    _audit(admin, "admin.content.thumbnail", entity_type=kind, entity_id=item_id,
+           payload={"mode": mode, "kind": provenance["kind"], "licence": provenance["licence"], "sha256": record["sha256"],
+                    "host": (urlsplit(provenance["source_url"]).hostname or "")[:200]})
+    return {"thumbnail": {k: stored.get(k, "") for k in ("kind", "asset_key", "content_type", "alt", "author", "licence", "licence_url", "source_url")}}
 
 
 @router.post("/content/media/{media_id}/reprocess")

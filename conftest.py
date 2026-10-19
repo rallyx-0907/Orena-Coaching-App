@@ -32,6 +32,8 @@ def _isolate_databases_per_xdist_worker() -> None:
         ("AUTH_DB", "auth.db"),
         ("PLATFORM_DB", "platform.db"),
         ("PRODUCT_DB", "product.db"),
+        # Thumbnails (D-240) are stored in the Reading asset root: a worker writes its own, never the repository's.
+        ("READING_LIBRARY_ASSET_ROOT", "reading_library_assets"),
     ):
         os.environ[variable] = str(root / name)
     # A worker's own temp directory, too: tests that assert "nothing was left behind" in the temp directory

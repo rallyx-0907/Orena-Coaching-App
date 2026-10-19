@@ -229,9 +229,11 @@ def build_poller() -> ReadingSourcePoller:  # pragma: no cover - process wiring
     from writing_coach.reading_content_engine import ReadingContentEngine
 
     database = create_runtime_engine()
-    content, jobs = ReadingContentRepository(database), ReadingJobRepository(database)
-    engine = ReadingContentEngine(content=content, jobs=jobs, asset_store=FilesystemBookAssetStore(
-        Path(os.getenv("READING_LIBRARY_ASSET_ROOT", "data/reading_library_assets"))))
+    from writing_coach.thumbnails import require_reading_thumbnails
+
+    store = FilesystemBookAssetStore(Path(os.getenv("READING_LIBRARY_ASSET_ROOT", "data/reading_library_assets")))
+    content, jobs = require_reading_thumbnails(ReadingContentRepository(database), store), ReadingJobRepository(database)
+    engine = ReadingContentEngine(content=content, jobs=jobs, asset_store=store)
     return ReadingSourcePoller(content=content, jobs=jobs, engine=engine, interval_seconds=configured_interval())
 
 

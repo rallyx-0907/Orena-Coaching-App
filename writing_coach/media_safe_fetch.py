@@ -54,6 +54,18 @@ def _is_public_address(raw: str) -> bool:
     return address.is_global and not address.is_multicast
 
 
+def _host_listed(host: str, allowed_hosts: frozenset[str]) -> bool:
+    """Exact host, or - for an entry with a leading dot (".nasa.gov") - that domain and every sub-domain of it."""
+    for item in allowed_hosts:
+        entry = item.casefold().rstrip(".")
+        if entry.startswith("."):
+            if host == entry[1:] or host.endswith(entry):
+                return True
+        elif host == entry:
+            return True
+    return False
+
+
 def validate_public_http_url(
     url: str,
     *,
@@ -79,7 +91,7 @@ def validate_public_http_url(
     default_port = 80 if parsed.scheme == "http" else 443
     if port is not None and port != default_port and (allowed_ports is None or port not in allowed_ports):
         raise _unsafe("This media address is not allowed.")
-    if allowed_hosts is not None and host not in {item.casefold().rstrip(".") for item in allowed_hosts}:
+    if allowed_hosts is not None and not _host_listed(host, allowed_hosts):
         raise _unsafe("This media address is not allowed.")
     try:
         addresses = socket.getaddrinfo(host, port or default_port, type=socket.SOCK_STREAM)

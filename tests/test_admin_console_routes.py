@@ -96,7 +96,7 @@ def setup(tmp_path):
         media_id="youtube-abcdefghijk", media_type="video", provider="youtube", provider_media_id="abcdefghijk",
         canonical_url="https://www.youtube.com/watch?v=abcdefghijk",
         playback={"provider": "youtube", "kind": "embed", "url": "https://www.youtube-nocookie.com/embed/abcdefghijk"},
-        title="Station announcements", thumbnail={"kind": "none", "ref": ""}, duration_ms=42000, language="zh", level="",
+        title="Station announcements", thumbnail={"kind": "provider-url", "ref": "https://i.ytimg.com/vi/abcdefghijk/hqdefault.jpg"}, duration_ms=42000, language="zh", level="",
         creator="", source={"provider": "youtube", "type": "admin-import", "provenance_url": "https://www.youtube.com/watch?v=abcdefghijk",
                             "license": "x", "rights": "cleared", "review_status": "checked", "imported_by": "admin@example.com"},
         library="shared", created_at=(NOW - timedelta(days=1)).isoformat(),

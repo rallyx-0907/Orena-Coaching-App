@@ -908,6 +908,13 @@ class MediaPipeline:
         owed = bool((entry.processing or {}).get(CORRECTION_UNRESOLVED_KEY)) and not personal
         correction_incomplete = correction_state in CORRECTION_HOLD_STATES or (owed and correction_state != "applied")
         common[CORRECTION_UNRESOLVED_KEY] = bool(correction_incomplete and not personal)
+        if not personal and rights == RIGHTS_CLEARED and not correction_incomplete:
+            # D-240: an item that publishes by itself has a thumbnail. A provider-hosted or extracted one stands; an
+            # audio file with no artwork gets Orena's typographic cover (source 3), made here once.
+            from writing_coach.thumbnails import has_media_thumbnail, media_entry_with_cover
+
+            if assets is not None and not has_media_thumbnail(entry.thumbnail):
+                entry = media_entry_with_cover(entry, assets)
         if personal or (rights == RIGHTS_CLEARED and not correction_incomplete):
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
             self._prepare_model_clips(assets, entry)
