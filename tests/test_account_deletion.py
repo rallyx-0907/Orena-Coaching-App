@@ -100,8 +100,7 @@ def test_the_dry_run_changes_nothing_and_apply_deletes_only_that_account(engine)
     summary = deletion.plan_summary(engine, user_key=gone_key)
     assert summary["delete"]["learner_memories.incarnation_id"] == 1
     assert summary["delete"]["audit_logs.user_id"] == 2 and summary["audit_kept_actor_rows"] == 2
-    # Only the append-only money records refuse a delete (RESTRICT): learner data always cascades.
-    assert all(b.split(" -> ")[0].startswith(enumeration.COMMERCE_TABLE_PREFIXES) for b in summary["fk_without_cascade"])
+    assert summary["fk_without_cascade"] == []  # learner data always cascades; money records are kept, not counted
     assert _one(engine, "SELECT count(*) FROM learner_memories WHERE user_id::text = :u", u=gone_id) == 1  # unchanged
 
     deletion.apply_plan(engine, user_key=gone_key)
