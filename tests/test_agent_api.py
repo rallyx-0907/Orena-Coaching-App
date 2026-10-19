@@ -304,13 +304,17 @@ class _Voice:
         self.calls.append("open")
         return {}
 
-    def extend(self, body, learner):
+    def extend(self, *args, **kwargs):  # the real call: (session_id, learner, chunk, resumption)
         self.calls.append("extend")
         return {}
 
 
 @pytest.mark.parametrize(("version", "expected"), [(10, "daily_ai_limit"), (9, "rate_limited")])
-def test_voice_open_and_extend_answer_the_daily_limit_and_mint_nothing(client, version, expected):
+def test_voice_open_and_extend_answer_the_daily_limit_and_mint_nothing(client, version, expected, monkeypatch):
+    from writing_coach.product import plan_features
+
+    # an account whose plan has voice chat (the plan rule is tests/test_agent_voice_plan.py)
+    monkeypatch.setattr(plan_features, "require", lambda user_key, feature: None)
     from writing_coach.agent import api as agent_api
     from writing_coach.agent.limits import AgentLimits
 

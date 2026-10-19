@@ -38,6 +38,16 @@ NOW = datetime(2026, 10, 9, 12, 0, tzinfo=UTC)
 URL = "/api/agent/voice/session"
 
 
+@pytest.fixture(autouse=True)
+def _plan_has_voice(monkeypatch):
+    """These tests are about voice itself (metering, chunks, routes), for an account whose plan has voice chat: the
+    plan rule (Plus and Pro only, owner 2026-10-19) is tested in tests/test_agent_voice_plan.py."""
+    from writing_coach.product import plan_features
+
+    monkeypatch.setattr(plan_features, "require", lambda user_key, feature: None)
+    monkeypatch.setattr(plan_features, "entitled", lambda user_key, feature: True)
+
+
 def session_body(**extra):
     return {**_body(target="en"), **extra}
 

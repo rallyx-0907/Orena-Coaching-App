@@ -80,6 +80,9 @@ METERS: dict[str, Meter] = {
         Meter("word.assist", "day", "request", "request"),
         Meter("reading.assist", "day", "request", "request"),
         Meter("writing.task", "day", "request", "request"),
+        # Owner 2026-10-19: voice chat with Orena, on or off by plan (product/plan_features.py); not counted - its time
+        # is charged as Orena messages (`voice_seconds_per_message`).
+        Meter("orena.voice", None, "access", "access"),
     )
 }
 
@@ -162,7 +165,7 @@ ASSIST_LIMITS: dict[str, tuple[int, int, int]] = {"free": (30, 10, 5), "plus": (
 
 
 def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, import_minutes: int,
-                  languages: int, assist: tuple[int, int, int]) -> tuple[Entitlement, ...]:
+                  languages: int, assist: tuple[int, int, int], *, voice: bool = True) -> tuple[Entitlement, ...]:
     word_assist, reading_assist, writing_task = assist
     return (
         Entitlement("orena.message", limit=messages, params={"voice_seconds_per_message": VOICE_SECONDS_PER_MESSAGE}),
@@ -173,6 +176,7 @@ def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, impor
         Entitlement("word.assist", limit=word_assist),
         Entitlement("reading.assist", limit=reading_assist),
         Entitlement("writing.task", limit=writing_task),
+        Entitlement("orena.voice", enabled=voice, limit=1),
     )
 
 
@@ -183,7 +187,7 @@ FREE = Plan(
     price_label="Free",
     rank=0,
     prices=_prices(0, 0, 0, 0),
-    entitlements=_entitlements(20, 2, 5, 15, 1, ASSIST_LIMITS["free"]),
+    entitlements=_entitlements(20, 2, 5, 15, 1, ASSIST_LIMITS["free"], voice=False),  # voice chat: Plus and Pro
 )
 
 PLUS = Plan(

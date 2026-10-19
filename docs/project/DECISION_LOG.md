@@ -7462,3 +7462,20 @@ Status: ACCEPTED (2026-10-18, accepted by Hermes for the owner. D-entry acceptan
 5. **Older clients.** A client that declares `contract_version` <= 9 is served exactly as under v9 and keeps receiving `rate_limited` for the same condition. The server reads the declared `contract_version` from the raw request body, and the spend check runs before validation (a schema-invalid v10 body is answered `429`, not `422`) and before anything runs or is metered. v9 behaviour stays documented.
 
 Consequences. The contract text is pinned equal to the code constant, so this PR moves the version constant to 10 in `writing_coach/agent/contract.py`, `static/orena/agent/contract.js`, the regenerated `static/orena/copy/surfaces.json` and its pin in `scripts/test_orena_surfaces.mjs`, as D-223 did. Nothing branches on version >= 10 yet. The client handling ships in the same PR, because the client now declares v10: `transport.js` yields a `daily_ai_limit` error with no wait and no resend; the existing error line (`errorText`, no retry or plans button) and the voice toast show one sentence in English, Vietnamese and Chinese with `resets_at` in the learner's local time (`Intl.DateTimeFormat`, `screens/plan/quota-notice.js`); the learner's message stays as for `quota_exhausted`; a refused voice session does not fall back to the cascade; a refused `extend` lets the held token play out. No new visual: it reuses the failed-request line and toast. Recorded as the owner's standing decision for small UI (2026-10-18), so `UI_BACKEND_GAPS.md` is not changed. Node gates cover no resend, the copy in all three languages, and the voice session and renewal cases. Still to do: the Intelligence lane sends `daily_ai_limit` to v10 clients (PR #304, after #298).
+
+## D-233 - Voice chat with Orena is for Plus and Pro; Free chats in text (2026-10-19)
+
+**Owner decision** (Discord, 2026-10-19, quoted by Hermes): "Phần voice chat của agent thì chỉ gói trả phí mới dùng được, Free thì không nhé." In English: the agent's voice chat is for paid plans only; Free does not get it.
+
+1. **Entitlement.** The plan catalogue has a new on/off entitlement, `orena.voice`. It is off for Free and on for Plus and Pro by the code's defaults, and an administrator may change it in the catalogue. A stored catalogue that does not name it keeps those defaults, so no data change is needed. Voice time is still charged as Orena messages (`voice_seconds_per_message`, D-169).
+2. **Server check (`product/plan_features.py`).**
+   - It reads the strict catalogue and the account's effective plan. A plan an administrator granted (D-154) counts.
+   - It holds whether or not usage limits are enforced, because it is a product rule.
+   - A plan or catalogue that cannot be read refuses with 503 `quota_unavailable` (fail closed).
+   - A server with no plan system (tests, a bare development server) lets voice through.
+3. **Routes.**
+   - `POST /api/agent/voice/session` and `/voice/extend` answer **403 `feature_not_in_plan`**, with `context.feature: "orena.voice"`, the plan and `upgrade`. This comes after the 404 of an absent voice and before any spend limit, window or token.
+   - On a downgrade mid-session, the next chunk is refused and the client ends the session when the token it holds dies.
+   - `GET /api/agent/voice/voices` gains `"entitled": bool`, so the client offers the upgrade before the tap. The 403 stays the authority.
+4. **Unchanged.** Text chat on Free, with its own message quota. Speaking practice and pronunciation scoring.
+5. **Other lanes.** The UI lane writes the Agent Contract v11 row (the feature value, `entitled`, the extend behaviour), the upgrade sheet, and the Pricing and Plan rows in VI/EN/ZH (PRE-401). The Billing lane maps the entitlement into the Polar products. For the pilot, billing is off, so an administrator grants a plan by hand (D-154) to test voice.
