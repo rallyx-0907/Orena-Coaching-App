@@ -311,6 +311,30 @@ copyIndex.setLanguages({ ui: 'en', support: 'en' });
   /* The behaviours the pages promise. */
   const c = common('en');
   {
+    /* Per-source auto-publish (#352): default off from the payload, on when the payload says so, the POST body, and the held reason in words. */
+    const off = String(rp.sourcePage({ ...c, source: { ...source(), auto_publish: { enabled: false } }, view: {} }).markup);
+    assert.ok(off.includes('data-a="source-auto-publish"') && off.includes('data-enabled="1"'), 'off: the toggle offers to turn it on');
+    const on = String(rp.sourcePage({ ...c, source: { ...source(), auto_publish: { enabled: true } }, view: {} }).markup);
+    assert.ok(on.includes('data-enabled="0"'), 'on: the toggle offers to turn it off');
+    assert.ok(String(rp.sourcePage({ ...c, source: source(), view: {} }).markup).includes('data-enabled="1"'), 'no payload field reads as off');
+    const before = requests.length;
+    const savedFixture = fixtureFor;
+    fixtureFor = () => ({ status: 200, body: { ok: true } });
+    await adminApi.readingSetAutoPublish('SRC 1', true);
+    fixtureFor = savedFixture;
+    const sent = requests.slice(before).at(-1);
+    assert.equal(sent.method, 'POST');
+    assert.equal(sent.path, '/api/admin/reading/sources/SRC%201/auto-publish');
+    assert.deepEqual(JSON.parse(sent.body), { enabled: true });
+    for (const lang of ['en', 'vi', 'zh']) {
+      copyIndex.setLanguages({ ui: lang, support: lang });
+      const word = common(lang).t('rdIssue_auto_publish_off');
+      assert.ok(word && word !== 'rdIssue_auto_publish_off', `${lang}: the auto_publish_off reason has words`);
+      assert.ok(!common(lang).t('srcAuto').startsWith('srcAuto'), `${lang}: the toggle copy exists`);
+    }
+    copyIndex.setLanguages({ ui: 'en', support: 'en' });
+  }
+  {
     /* A held import's page (Video PR-C): every transcript line in its own scrolling region, the source address readable, a way to open it as a learner. */
     const segments = Array.from({ length: 40 }, (_, i) => ({ start_ms: i * 3000, text: `Line number ${i}` }));
     const held = String(cp.mediaPage({ ...c, detail: { record: record('media', { status: 'review', actions: ['reprocess'] }), source: { original_url: 'https://archive.org/download/x/Tears%20of%20Steel.mp4' }, transcript: { segment_count: 40, segments } }, view: {} }).markup);

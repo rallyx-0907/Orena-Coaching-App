@@ -532,6 +532,11 @@ export function sourcePage({ source, view, t, ui, href }) {
           actions: [{ label: t(source.image_policy?.allowed ? 'srcImagesStop' : 'srcImagesAllow'), size: 'sm', kind: source.image_policy?.allowed ? '' : 'primary', a: 'source-images', data: { id: source.id, allowed: source.image_policy?.allowed ? '0' : '1' } }],
           body: html`<div class="a-hint">${t('srcImagesText')}</div>`,
         })}
+        ${block({
+          title: t('srcAuto'), sub: t('srcAutoSub'),
+          pills: [source.auto_publish?.enabled ? { label: t('srcImagesOn'), tone: 'ok' } : { label: t('srcImagesOff'), tone: 'mute' }],
+          actions: [{ label: t(source.auto_publish?.enabled ? 'srcAutoStop' : 'srcAutoAllow'), size: 'sm', kind: source.auto_publish?.enabled ? '' : 'primary', a: 'source-auto-publish', data: { id: source.id, enabled: source.auto_publish?.enabled ? '0' : '1' } }],
+        })}
         ${block({ title: t('srcPolling'), pills: [{ label: t('pillFuture'), tone: 'fut' }], body: html`<div class="a-hint">${t('srcPollingText')}</div>` })}
         ${source.last_error ? block({ title: t('srcLastError'), body: html`<div class="a-text a-text--mono">${source.last_error}</div>` }) : ''}
       </div>
