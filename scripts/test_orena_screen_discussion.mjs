@@ -120,8 +120,15 @@ const __src = (p) => __read(new URL(p, import.meta.url), 'utf8');
 // request id (the metered operation under the old id is settled: 409 operation_finished), an unanswered one keeps it.
 {
   const src = __src('../static/orena/screens/discussion/screen.js');
-  assert.match(src, /requestId: error\?\.status \? newRequestId\(\) : requestId/, 'fresh id after an answered refusal, same id after a network failure');
+  assert.match(src, /retryPlan\(error, requestId\)/, 'the screen takes the next id and Retry from retryPlan');
+  const { retryPlan } = await import('../static/orena/screens/discussion/model.js');
+  const mk = () => 'NEW';
+  assert.deepEqual(retryPlan({ status: 503, category: 'provider_unavailable', retryable: true }, 'OLD', mk), { requestId: 'NEW', retry: true });
+  assert.deepEqual(retryPlan(new Error('network'), 'OLD', mk), { requestId: 'OLD', retry: true }, 'unanswered: same id');
+  assert.deepEqual(retryPlan({ status: 409, category: 'operation_finished', retryable: false }, 'OLD', mk), { requestId: 'NEW', retry: true }, 'a released id is resent fresh, Retry stays');
+  assert.deepEqual(retryPlan({ status: 409, category: 'operation_in_progress', retryable: true }, 'OLD', mk), { requestId: 'OLD', retry: true }, 'still running: keep the id');
+  assert.equal(retryPlan({ status: 500, retryable: false }, 'OLD', mk).retry, false);
   assert.match(src, /send\(failed\.question, failed\)/, 'Retry resends the kept question');
-  assert.match(src, /retry: !paused && error\?\.retryable !== false/, 'no Retry under the AI pause or a non-retryable answer');
+  assert.match(src, /retry: !paused && plan\.retry/, 'no Retry under the AI pause or a non-retryable answer');
 }
 console.log('test_orena_screen_discussion.mjs: Discussion model - content-id source mapping, request ids, send guard, real thread shape: PASS');

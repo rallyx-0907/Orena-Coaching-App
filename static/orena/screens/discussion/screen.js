@@ -29,7 +29,7 @@ import { isQuotaExhausted, pausedLineOf, quotaMessage, seePlansLabel } from '../
 import { loadReadable } from '../reader/source.js';
 import {
   parseContentId, discussionSourceFor, newRequestId, mapTurns, canSend, isSendKey, optimisticTurn, MAX_BODY_CHARACTERS,
-  passageFor,
+  passageFor, retryPlan,
 } from './model.js';
 
 async function loadTitle(kind, id, chapterId, ctx) {
@@ -160,7 +160,8 @@ export default async function mountDiscussion(element, ctx) {
         // An answered refusal (a status) settled or released the metered operation under this id and stored nothing, so Retry
         // is a new submission with a fresh id (resending the id answers 409 operation_finished). Only an unanswered request
         // (network, timeout) may have been stored, and keeps its id so the server returns the stored exchange.
-        failed = { question, requestId: error?.status ? newRequestId() : requestId, before, text: paused || t('unavailable'), retry: !paused && error?.retryable !== false };
+        const plan = retryPlan(error, requestId);
+        failed = { question, requestId: plan.requestId, before, text: paused || t('unavailable'), retry: !paused && plan.retry };
         return;
       }
       turns = before;
