@@ -196,7 +196,7 @@ def test_the_product_backup_and_rehearsal_scripts_never_remove_a_volume_or_write
     assert "${Backup}:/backup:ro" in rehearsal and "${Repository}:/workspace:ro" in rehearsal
 
 
-@pytest.mark.parametrize("stamp", [None, "", "unstamped", "20/10/2026", "2026-10-2"])
+@pytest.mark.parametrize("stamp", [None, "", "unstamped", "20/10/2026", "2026-10-2", "2026-02-30", "2026-13-01"])
 def test_production_refuses_to_start_without_a_stamped_legal_effective_date(stamp) -> None:
     """D-233: a consent record names the legal version accepted; production never records `unstamped`."""
     values = {

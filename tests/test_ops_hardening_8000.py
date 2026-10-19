@@ -168,3 +168,28 @@ def test_nothing_in_the_shipped_pages_posts_a_form_elsewhere_or_frames_us():
             text = page.read_text(encoding="utf-8")
             for action in re.findall(r"<form[^>]*\baction=[\"']([^\"']+)", text, re.IGNORECASE):
                 assert not re.match(r"https?://", action), f"{page}: form posts to {action}"
+
+
+def test_the_deploy_script_validates_the_runtime_keys_with_the_apps_own_rules():
+    root = Path(__file__).resolve().parents[1]
+    script = (root / "scripts" / "staging_8000_deploy.ps1").read_text(encoding="utf-8")
+    check = script[script.index("$runtimeKeys"):script.index("if ($names['APP_ENV']")]
+    assert "TryParseExact" in check and "'yyyy-MM-dd'" in check and "InvariantCulture" in script
+    assert "twice" in check and "shorter than 32" in check and "[1-9][0-9]{0,3}" in check
+    assert "-cnotmatch '^(on|off)$'" in check
+    assert "FEEDBACK_RETENTION_SWEEP" in check and "AGENT_TURN_RETENTION_SWEEP" in check and "Write-Warning" in check
+    assert "Write-Host" not in check
+
+
+def test_pronunciation_body_cap_follows_an_operator_raised_provider_limit(monkeypatch):
+    from writing_coach.core.http_security import body_limit
+
+    for name in ("AZURE_PRONUNCIATION_MAX_BYTES", "DEMO_PRONUNCIATION_MAX_BYTES"):
+        monkeypatch.delenv(name, raising=False)
+    assert body_limit("POST", "/api/speech/pronunciation") == 16 * 1024 * 1024
+    monkeypatch.setenv("AZURE_PRONUNCIATION_MAX_BYTES", str(4 * 1024 * 1024))
+    assert body_limit("POST", "/api/speech/pronunciation") == 16 * 1024 * 1024
+    monkeypatch.setenv("AZURE_PRONUNCIATION_MAX_BYTES", str(24 * 1024 * 1024))
+    assert body_limit("POST", "/api/speech/pronunciation") == 25 * 1024 * 1024
+    monkeypatch.setenv("AZURE_PRONUNCIATION_MAX_BYTES", "not-a-number")
+    assert body_limit("POST", "/api/speech/pronunciation") == 16 * 1024 * 1024
