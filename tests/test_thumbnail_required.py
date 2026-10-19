@@ -111,6 +111,18 @@ def test_the_four_fables_no_longer_share_one_letter():
     assert [thumbnails.cover_glyph(t, "en") for t in titles] == ["S", "N", "M", "L"]
 
 
+@pytest.mark.parametrize("cover_px", [145, 160])  # the phone card's cover at 360 and 390 wide
+def test_the_glyph_keeps_the_pill_inset_clear_of_both_pills(cover_px):
+    scale = cover_px / thumbnails.WIDTH
+    inset, pill_h, type_pill_w = 10, 26, 68  # the design's pills; the widest type label (vi "Bài viết")
+    size, baseline = thumbnails.GLYPH_SIZE, thumbnails.GLYPH_BASELINE
+    glyph_bottom = baseline + 0.27 * size  # the whole line box (descent included), not only the ink
+    glyph_left = thumbnails.WIDTH - 54 - size  # a full-width character
+    assert (thumbnails.HEIGHT - glyph_bottom) * scale >= inset + pill_h + inset, "clear of the duration pill"
+    assert glyph_left * scale >= inset + type_pill_w + inset, "clear of the type pill"
+    assert baseline - 0.88 * size >= 0, "the glyph is not cut at the top"
+
+
 def _stop_colours(svg: bytes) -> list[str]:
     return re.findall(r'stop-color="(#[0-9A-Fa-f]+)"', svg.decode())
 

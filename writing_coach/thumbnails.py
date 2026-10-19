@@ -233,14 +233,16 @@ def _hash(text: str) -> int:
 def cover_accent(title: str, topic: str = "") -> str:
     """The token of a cover's second hue: picked by the topic, so one topic reads as one family and different topics
     differ; by the title when there is no topic (`posterAccent` in components.js)."""
-    key = " ".join(str(topic or "").split()).casefold()
+    key = " ".join(str(topic or "").split()).lower()
     return _ACCENTS[_hash(key if key else str(title or "")) % len(_ACCENTS)]
 
 
-# The glyph sits on the right, above the band the duration badge takes at the foot of a phone card (the badge is
-# 10px from the edge and about 26px tall: at a ~170px-wide card that is the lowest third of the 400-unit cover) and
-# right of the type badge at the top left. A capital spans about 87-220, a Chinese character about 53-243.
-GLYPH_BASELINE = 220
+# The glyph sits top right and keeps clear of both pills by at least the pill inset (10px) at the narrowest phone
+# card (360 wide: a 145px cover, 0.227px per unit). The duration pill takes the bottom 10-35px, so the glyph ends
+# 46px (203 units) above the foot, its whole line box included: a capital spans about 60-158 and the line box ends
+# near 196. The type pill ends 78px (344 units) from the left at its widest label; the glyph starts at about 446 units.
+GLYPH_BASELINE = 158
+GLYPH_SIZE = 140
 
 
 def typographic_cover_svg(title: str, *, language: str = "", topic: str = "", kind: str = "reading") -> bytes:
@@ -267,7 +269,7 @@ def typographic_cover_svg(title: str, *, language: str = "", topic: str = "", ki
         f'<circle cx="{WIDTH - 40}" cy="40" r="210" fill="{ink}" fill-opacity="0.14"/>'
         f'<circle cx="300" cy="{HEIGHT + 120}" r="150" fill="{ink}" fill-opacity="0.10"/>'
         f'<text x="{WIDTH - 54}" y="{GLYPH_BASELINE}" text-anchor="end" fill="{ink}" '
-        f'fill-opacity="0.92" font-size="190" font-weight="700">{glyph}</text>'
+        f'fill-opacity="0.92" font-size="{GLYPH_SIZE}" font-weight="700">{glyph}</text>'
         "</svg>"
     )
     return svg.encode("utf-8")
