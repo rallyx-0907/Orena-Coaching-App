@@ -80,6 +80,7 @@ from writing_coach.agent.notes import (
     FORGET,
     asks_to_remember_unaccented,
     confirmed_note,
+    names_a_note,
     note_intent,
     notes_the_message_changes,
     unaccented_wish,
@@ -648,6 +649,7 @@ class _Turn:
             stored=STORED_DEVICE if self.stream.version >= MEMORY_STORED_VERSION else None,
             note_texts={note.id: note.text for note in tier1.coach_notes},
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
+            notes_named=names_a_note(self.request.message),
             asked=tuple(n.id for n in self.notes_asked),
             notes_intent=self.notes_intent,
             learner_words=turn.message or "",
@@ -1063,7 +1065,7 @@ class _Turn:
         if self.note_confirmed is not None and not self.notes_asked:
             return (f"The learner tapped to keep this note: {self.note_confirmed!r}. Call remember_note with exactly "
                     "these words as text now, then answer in one sentence.")  # fmt: skip
-        return note_nudge(self.notes_asked, self.notes_intent or CORRECT)
+        return note_nudge(self.notes_asked, self.notes_intent or CORRECT, explicit=names_a_note(self.request.message))
 
     def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str, *,
                    why: str | None = None) -> None:
@@ -1231,7 +1233,11 @@ class _Turn:
                 self.notes_verdict_logged = True
                 _log.warning("agent notes: %s", "unchanged after asking again" if self._note_unchanged(outputs)
                              else "changed", extra={"trace_id": self.trace_id})  # fmt: skip
-            if self._note_unchanged(outputs):  # asked twice and no note changed: said plainly (agent/notes.py)
+            # Asked twice and no note changed: said plainly (agent/notes.py) - when the message named a note, or asked to
+            # forget one. A correction matched by rule alone keeps the model's answer (#346): it was told to change
+            # nothing unless asked, and the honesty gate strips any claim of a change.
+            if self._note_unchanged(outputs) and (self.note_confirmed is not None or self.notes_intent == FORGET
+                                                  or names_a_note(self.request.message)):  # fmt: skip
                 if self.note_confirmed is not None and not self.notes_asked:
                     key = "notes.not_kept"
                 else:  # a forget never claimed: the server's own words (owner via Hermes, 2026-10-19)

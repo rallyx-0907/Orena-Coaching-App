@@ -237,7 +237,7 @@ def test_a_note_ignored_is_asked_once_more_and_then_forgotten():
     assert text == "Mình đã quên ghi chú đó rồi." == deltas(events)
 
 
-def test_a_note_ignored_twice_is_said_plainly_in_the_learners_address():
+def test_a_correction_matched_by_rule_and_ignored_twice_keeps_the_answer():
     events, provider = run(
         [reply("Mình hiểu rồi."), reply("Để chị lấy ví dụ dài hơn nhé.")],
         request("À không, ví dụ dài hơn một chút thì em dễ hiểu hơn.", notes=(SHORT,),
@@ -245,7 +245,9 @@ def test_a_note_ignored_twice_is_said_plainly_in_the_learners_address():
     )
     assert len(provider.requests) == 2  # once more, not more
     assert not [e for e in events if e.name == "memory_update"]
-    assert segments(events)[0][1] == "Chị chưa sửa hay xoá ghi chú nào của em. Em nói rõ ghi chú nào cần sửa hoặc xoá nhé?"
+    # A correction matched by rule (no note named) keeps the model's answer (#346): the learner is not told "which note?"
+    # instead of an answer. The honesty gate strips any claim that the note was changed.
+    assert segments(events)[0][1] == "Để chị lấy ví dụ dài hơn nhé."
 
 
 def test_a_forget_ignored_twice_never_claims_it_and_asks_once_more_plainly():
@@ -439,3 +441,43 @@ def test_the_instruction_forbids_button_syntax_and_unsourced_attribution():
 
     assert "never write tags, square brackets or any button syntax" in INSTRUCTION
     assert "words due come from the\n  review schedule, not the evaluator" in INSTRUCTION
+
+
+GRAMMAR = CoachNote.model_validate(
+    {"id": "n-gram123456", "kind": "preference", "text": "Giải thích ngữ pháp thật kỹ", "weight": 0.6,
+     "last_reinforced": "2026-09-28T06:14:30+00:00", "expires_at": None}  # fmt: skip
+)
+
+
+def test_a_match_that_names_no_note_keeps_the_models_answer():
+    """#346 (review of #347, P1-a): a message matched by rule only ("sửa" + "ngữ pháp") that is really a learning
+    question: the model answers it and changes nothing - and the learner gets that answer, not "which note?"."""
+    events, provider = run([reply("Câu đúng là: 我是学生。"), reply("Câu đúng là: 我是学生。")],
+                           request("Sửa lỗi ngữ pháp trong câu này", notes=(GRAMMAR,)))
+    assert not [e for e in events if e.name == "memory_update"]
+    assert segments(events)[0][1] == "Câu đúng là: 我是学生。"
+    assert "only if that is what they ask" in provider.requests[1].messages[-1].content  # the conditional nudge
+
+
+def test_a_new_note_on_a_match_that_names_no_note_stays_new():
+    """#346 (review of #347, P1-b): the server fills in `replaces` only when the message names a note; a new wish on a
+    turn matched by rule is a new note, never an overwrite of the matched one."""
+    keep = (ToolCallRequest("c1", REMEMBER_NOTE, {"kind": "goal", "text": "Mình đang ôn HSK4"}),
+            TurnFinished(0, 3, "tool_calls"))  # fmt: skip
+    events, _provider = run([keep, reply("Mình đã ghi nhớ.")],
+                            request("Sửa lỗi ngữ pháp trong câu này. Từ giờ nhớ là mình đang ôn HSK4.", notes=(GRAMMAR,)))
+    [update] = [e for e in events if e.name == "memory_update"]
+    assert update.op == "upsert" and update.note["id"] != GRAMMAR.id and update.note["text"] == "Mình đang ôn HSK4"
+
+
+def test_i_forgot_with_a_polite_ending_keeps_the_answer():
+    """Re-review 4 of #347: "Mình quên từ này rồi, nhắc lại giúp mình nhé" is a learning question; it is not read as a
+    forget, so the learner gets the model's answer, not "please ask me once more"."""
+    remind = CoachNote.model_validate(
+        {"id": "n-remind1234", "kind": "preference", "text": "Nhắc lại từ mới mỗi buổi", "weight": 0.6,
+         "last_reinforced": "2026-09-28T06:14:30+00:00", "expires_at": None}  # fmt: skip
+    )
+    events, provider = run([reply("从 nghĩa là từ, kể từ.")],
+                           request("Mình quên từ này rồi, nhắc lại giúp mình nhé", notes=(remind,)))
+    assert len(provider.requests) == 1 and not [e for e in events if e.name == "memory_update"]
+    assert segments(events)[0][1] == "从 nghĩa là từ, kể từ."

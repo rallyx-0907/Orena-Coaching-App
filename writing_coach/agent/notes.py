@@ -38,6 +38,55 @@ _NEW_WISH = re.compile(
 )
 CORRECT, FORGET = "correct", "forget"
 
+# The verbs that also mean "I forget" (#346: "Mình hay quên ngữ pháp này quá", 我总是忘掉这个语法, "I always forget this
+# grammar rule"). They ask something of a note only as an imperative - at the start of a sentence, "quên giùm/giúp",
+# "quên ... đi" closing the message, 忘记...吧, 把...忘了 - or beside a note noun; never after a subject or a habit word.
+_FORGETTING = re.compile(r"(?i)\bquên\b|\bforget\b|忘")
+# "I forget" for certain: a habit word, "quên mất/rồi", "I/always forget", 总是/又 ... 忘 in the same clause.
+_SELF_FORGETS = re.compile(
+    r"(?i)\b(?:hay|thường|cứ|dễ|bị|vẫn)\s+quên\b"
+    r"|\bquên\s+(?:mất|béng|tiệt)\b|\bquên\b[^,;.?!\n]*\brồi\b"  # "quên ... rồi" in one clause: I forgot
+    r"|\b(?:i|always|often|keep|usually|sometimes|never|tend to)\s+(?:\w+\s+)?forget"
+    r"|(?:总是|老是|经常|容易|常常|又)[^，。！？,.!?;]{0,12}忘"
+)
+# A pronoun before the verb: the learner speaking of themself ("mình quên", 我把这个语法忘了) - or addressing Orena
+# ("Chị quên vụ đó đi") or "us" (我们把那个忘了吧). A closing đi/nhé/nha/吧 makes it a request.
+_PRONOUN_FORGETS = re.compile(
+    r"(?i)\b(?:mình|tôi|em|tớ|anh|chị)\s+quên\b|(?<!们)我(?!们)[^，。！？,.!?;]{0,12}忘"
+)
+# The request closes the very clause the verb is in ("Chị quên vụ đó đi"), not a later one ("Mình quên từ này rồi,
+# nhắc lại giúp mình nhé" is "I forgot; remind me").
+_CLOSING_REQUEST = re.compile(
+    r"(?i)\bquên\b[^,;.?!\n]*\b(?:đi|nhé|nha)\s*[.!?]*\s*$|忘[^，。！？,.!?;]*吧\s*[。！？!?.]*\s*$")
+_FORGET_IMPERATIVE = re.compile(
+    r"(?i)(?:^|[.!?;:\n]\s*)(?:(?:thôi|à|ừ|vậy|ok|okay|please)[,\s]+)?(?:quên|forget)\b"
+    r"|\bquên\s+(?:giùm|giúp|hộ)\b"
+    r"|\bquên\b[^,;.?!\n]*\b(?:đi|nhé|nha)\s*[.!?]*\s*$"
+    r"|\bđừng nhớ\b|\bkhông cần nhớ\b|\bstop remembering\b"
+    r"|\bforget (?:it|that|about (?:it|that)|the note|my note)\b"
+    # not a bare 忘了 at the start ("(I) forgot..."), and 把...忘了 only with 吧 after it
+    r"|(?:^|[，。！？,.!?;]\s*)请?忘掉|忘了吧|忘了它|别记|不要记|忘记[^，。！？,.!?;]{0,12}吧|把[^，。！？,.!?;]{1,12}忘[了掉]吧"
+)
+
+
+def _asks_to_forget(text: str) -> bool:
+    """A forgetting verb used as "forget it", not "I forget"."""
+
+    if not _FORGET_IMPERATIVE.search(text) or _SELF_FORGETS.search(text):
+        return False
+    return not _PRONOUN_FORGETS.search(text) or bool(_CLOSING_REQUEST.search(text))
+
+
+def _without_forgetting(text: str) -> str:
+    return _FORGETTING.sub(" ", text)
+
+
+def _asks_about_a_note_by_forgetting_only(text: str) -> bool:
+    """The only change word is a forgetting verb, used as "I forget", not "forget it"."""
+
+    return (bool(_FORGETTING.search(text)) and not _CHANGE.search(_without_forgetting(text))
+            and not _asks_to_forget(text) and not _NOTE_WORD.search(text))  # fmt: skip
+
 
 def note_intent(message: str | None) -> str:
     """`forget` only for a request to forget with no new wish ("quên cái đó đi", "forget that", "忘掉吧");
@@ -45,6 +94,10 @@ def note_intent(message: str | None) -> str:
 
     text = unicodedata.normalize("NFC", message or "")
     if _FORGET.search(text) and not _NEW_WISH.search(text):
+        # "quên"/"忘" alone is "I forget" (#346): FORGET only as an imperative or beside a note noun.
+        if (_FORGETTING.search(text) and not (_asks_to_forget(text) or _NOTE_WORD.search(text))
+                and not _FORGET.search(_without_forgetting(text))):  # fmt: skip
+            return CORRECT
         return FORGET
     return CORRECT
 # A request to keep something (dogfood gate 3.2): the learner asks, in so many words, or states a standing wish
@@ -135,8 +188,17 @@ def unaccented_wish(message: str) -> str | None:
     return wish or None
 
 
-_NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|lưu ý|note|notes)\b|笔记|那条|记录")
-_EN_STOP = frozenset({"that", "this", "with", "have", "from", "they", "them", "more", "less", "like", "want"})
+# An explicit note noun (#346: not "lưu ý" or 记录 - an everyday "note that" and "records" named every note at once).
+_NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|note|notes)\b|笔记|备注")
+_EN_STOP = frozenset({"that", "this", "with", "have", "from", "they", "them", "more", "less", "like", "want", "what",
+                      "does", "word", "mean", "please", "help", "about", "just"})
+# Phrases every learner says - who is asked, which thing is meant - name no note (#346): a request to fix a sentence
+# "giúp mình" never touches a note that also says "giúp mình".
+_STOP_PHRASES = frozenset({
+    "giúp mình", "cho mình", "giúp tôi", "cho tôi", "giúp em", "cho em", "giúp với", "mình muốn", "tôi muốn",
+    "câu này", "từ này", "cái này", "cái đó", "hôm nay", "bây giờ", "được không",
+    "帮我", "给我", "这个", "那个", "一下", "我的", "我们", "你的", "什么", "怎么", "可以", "一点",
+})
 
 
 def _phrases(text: str) -> set[str]:
@@ -149,25 +211,41 @@ def _phrases(text: str) -> set[str]:
     phrases |= {w for w in words if w.isascii() and len(w) >= 4 and w not in _EN_STOP}
     for run in re.findall(r"[一-鿿]+", lowered):
         phrases |= {run[i : i + 2] for i in range(len(run) - 1)}
-    return phrases
+    return phrases - _STOP_PHRASES
 
 
 def notes_the_message_changes(message: str | None, notes: Iterable[CoachNote]) -> tuple[CoachNote, ...]:
     """The learner's coach notes (never the address note) this message changes or cancels, by rule."""
 
-    if not message or not _CHANGE.search(unicodedata.normalize("NFC", message)):
+    text = unicodedata.normalize("NFC", message or "")
+    if not message or not _CHANGE.search(text) or _asks_about_a_note_by_forgetting_only(text):
         return ()
     own = tuple(note for note in notes if not note.id.startswith("address-"))
     if not own:
         return ()
-    if _NOTE_WORD.search(message):
+    if _NOTE_WORD.search(text):
         return own
     said = _phrases(message)
     return tuple(note for note in own if _phrases(note.text) & said)
 
 
-def nudge(notes: Iterable[CoachNote], intent: str = CORRECT) -> str:
+def names_a_note(message: str | None) -> bool:
+    """The message names a note outright ("ghi chú", "note", "笔记"): only then may the server order a change."""
+
+    return bool(message) and bool(_NOTE_WORD.search(unicodedata.normalize("NFC", message)))
+
+
+def nudge(notes: Iterable[CoachNote], intent: str = CORRECT, *, explicit: bool = True) -> str:
+    """`explicit`: the message named a note (`names_a_note`). Otherwise the match is by rule and may be wrong, so the
+    model is asked to change the note only if that is what the learner asks - never ordered to (#346)."""
+
     listed = "; ".join(f"{note.id}: {note.text}" for note in notes)
+    if not explicit:
+        verb = ("call forget_note with its id" if intent == FORGET
+                else "call remember_note with replaces set to its id and the new wish in their words")  # fmt: skip
+        return (f"Your answer changed no coach note. The learner's message may be about this one: {listed}. "
+                f"{verb[0].upper()}{verb[1:]} only if that is what they ask; if it is not, change no note and answer "
+                "their message.")  # fmt: skip
     if intent == FORGET:
         what = "The learner asks you to forget it: call forget_note with its id now"
     else:

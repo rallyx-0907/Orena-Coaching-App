@@ -461,6 +461,8 @@ class ReplyOutputs:
     note_texts: Mapping[str, str] = field(default_factory=dict)  # coach note id -> its text (a server remove carries it)
     # A turn the server read as correcting these notes (agent/notes.py): a correction replaces, it never forgets.
     correcting: tuple[str, ...] = ()
+    # The message named a note ("ghi chú", "note", 笔记): only then does the server fill in `replaces` itself (#346).
+    notes_named: bool = False
     # The notes this message names as changed, and how (agent/notes.py): what a replace or a forget may touch (3.2).
     asked: tuple[str, ...] = ()
     notes_intent: str | None = None
@@ -747,8 +749,12 @@ class ReplyOutputs:
         if not self.notes_available and replaces is not None:
             return ("refused: earlier notes cannot be changed in this conversation - to keep these words as a new "
                     "note, call remember_note without replaces")  # fmt: skip
-        if replaces is None and len(self.correcting) == 1:
-            replaces = self.correcting[0]  # the learner corrected this very note: the new words replace it
+        if replaces is None and len(self.correcting) == 1 and (self.notes_named
+                                                               or not asks_to_remember(self.learner_words)):
+            # The learner corrected this very note: the new words replace it. But a message that also asks to keep
+            # something new ("... Từ giờ nhớ là mình đang ôn HSK4"), matched to a note by rule alone, keeps a new note
+            # - it never overwrites the matched one (#346).
+            replaces = self.correcting[0]
         if kind not in COACH_NOTE_KINDS or not isinstance(text, str) or not text.strip():
             return f"refused: kind is one of {sorted(COACH_NOTE_KINDS)} and text is the learner's own words"
         if len(text.strip()) > MAX_NOTE_CHARS:
