@@ -79,6 +79,18 @@ def test_apply_writes_a_list_is_idempotent_and_preserves_other_keys(tmp_path) ->
     assert [r["change"] for r in va.apply(repo.engine)] == [False, False, False]
 
 
+def test_the_old_single_licence_key_is_removed_and_the_rerun_converges(tmp_path) -> None:
+    repo = _repo(tmp_path)
+    with Session(repo.engine) as session, session.begin():
+        row = session.get(VocabularyCollection, "zh-a")
+        row.provenance = {**row.provenance, "licence": va.cedict_licence(), "licences": [va.cedict_licence()]}
+    assert {r["id"]: r["change"] for r in va.plan(repo.engine)}["zh-a"] is True
+    va.apply(repo.engine)
+    assert "licence" not in _prov(repo, "zh-a") and _prov(repo, "zh-a")["licences"] == [va.cedict_licence()]
+    assert _prov(repo, "zh-a")["keep"] == 1
+    assert [r["change"] for r in va.apply(repo.engine)] == [False, False, False]
+
+
 def test_explicit_id_without_a_matching_source_is_refused_with_a_warning(tmp_path) -> None:
     repo = _repo(tmp_path)
     rows = va.apply(repo.engine, ["plain", "nope", "zh-b"])

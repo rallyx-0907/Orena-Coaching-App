@@ -88,7 +88,7 @@ def plan(engine: Engine, collection_ids: list[str] | None = None) -> list[dict[s
                                  "datasets": [], "warning": "no matching data source in provenance.data_sources"})
                 continue
             rows.append({"id": collection.id, "status": collection.catalog_status,
-                         "change": provenance.get("licences") != wanted,
+                         "change": provenance.get("licences") != wanted or "licence" in provenance,
                          "datasets": [item["id"] for item in wanted]})
     for missing in sorted(set(collection_ids or []) - seen):
         rows.append({"id": missing, "status": None, "change": False, "datasets": [], "warning": "collection not found"})
@@ -105,5 +105,6 @@ def apply(engine: Engine, collection_ids: list[str] | None = None) -> list[dict[
                 continue
             collection = session.get(VocabularyCollection, row["id"])
             current = dict(collection.provenance) if isinstance(collection.provenance, Mapping) else {}
+            current.pop("licence", None)  # the single-object key of #340 is superseded by the list
             collection.provenance = {**current, "licences": licences_for(current)}
     return changed

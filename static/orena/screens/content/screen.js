@@ -264,7 +264,7 @@ export default async function content(element, ctx) {
           </div>
           ${hasMore ? html`<div data-menu-slot></div>` : ''}
           ${detail.desc ? html`<p class="s-content__desc" lang="${langAttr(detail.language)}">${detail.desc}</p>` : ''}
-          ${detail.credit ? html`<p class="s-content__origin">${detail.credit.channel ? `${detail.credit.channel} · ` : ''}<a href="${detail.credit.url}" target="_blank" rel="noopener noreferrer">${t('watchOriginal')}</a></p>` : ''}
+          ${detail.credit ? html`<p class="s-content__origin">${detail.credit.channel}${detail.credit.channel && detail.credit.url ? ' · ' : ''}${detail.credit.url ? html`<a href="${detail.credit.url}" target="_blank" rel="noopener noreferrer">${t('watchOriginal')}</a>` : ''}</p>` : ''}
           ${isMedia
             ? html`<div class="o-card s-content__transcript">
                 <div class="s-content__transcript-head">
