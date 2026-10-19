@@ -72,10 +72,25 @@ def test_en_reviewed_sentences_with_the_real_tagger(word, sentence, pack_pos, pa
 
 @pytest.mark.parametrize(
     ("word", "sentence"),
-    [("的", "这是我的书。"), ("了", "他吃了饭。"), ("和", "我和你去学校。"), ("在", "他在学校学习。")],
+    [("的", "这是我的书。"), ("了", "我吃了。"), ("和", "我和你去学校。"), ("在", "他在学校学习。")],
 )
 def test_zh_reviewed_function_words_with_the_real_tagger(monkeypatch, word, sentence) -> None:
     monkeypatch.setattr(
         chinese_lexicon, "lookup", lambda w: (chinese_lexicon.LexiconEntry(w, w, "x", ("sense",), False),),
     )
     assert _nothing_shown(_service().lookup(word, sentence, "zh", "en").to_dict())
+
+
+@pytest.mark.parametrize(
+    ("word", "sentence"),
+    [
+        ("sat", "She sat on the chair."),
+        ("walked", "He walked through the door."),
+        ("came", "They came back."),
+        ("sit", "Please sit down."),
+    ],
+)
+def test_en_verbs_with_an_unlisted_particle_keep_their_gloss_with_the_real_tagger(word, sentence) -> None:
+    pack = {"term": word, "part_of_speech": "verb", "short_meanings": [{"language": "vi", "text": "nghĩa"}]}
+    result = _service(_Catalogue(pack)).lookup(word, sentence, "en", "vi").to_dict()
+    assert result["meanings"] == [{"text": "nghĩa", "source": "collection"}]

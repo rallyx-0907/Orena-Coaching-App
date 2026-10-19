@@ -44,7 +44,7 @@ def _entry(term: str, pos: str, vi: str) -> dict[str, Any]:
     return {"term": term, "part_of_speech": pos, "short_meanings": [{"language": "vi", "text": vi}]}
 
 
-def _tag(monkeypatch, classes: dict[str, str], language: str = "en") -> None:
+def _tag(monkeypatch, classes: dict[str, str], language: str = "en", lemmas: dict[str, str] | None = None) -> None:
     """The tagger as a table: a word's class by its lower-case text (default: noun), one token per word or Han char."""
 
     pattern = re.compile(r"[一-鿿]" if language == "zh" else r"[\w']+")
@@ -53,7 +53,8 @@ def _tag(monkeypatch, classes: dict[str, str], language: str = "en") -> None:
         return [
             {
                 "fragment": m.group(), "start": m.start(), "end": m.end(),
-                "pos": classes.get(m.group().casefold(), "noun"), "pronunciation": "", "lemma": m.group().casefold(),
+                "pos": classes.get(m.group().casefold(), "noun"), "pronunciation": "",
+                "lemma": (lemmas or {}).get(m.group().casefold(), m.group().casefold()),
             }
             for m in pattern.finditer(text)
         ]
@@ -94,7 +95,8 @@ def _nothing_shown(result: dict[str, Any]) -> bool:
 def test_function_words_come_from_each_languages_own_list() -> None:
     assert is_function_word("en", "With") and is_function_word("en", "the") and is_function_word("en", "and")
     assert not is_function_word("en", "turn")
-    assert all(is_function_word("zh", w) for w in ("的", "了", "和", "在"))
+    assert is_function_word("zh", "的") and not is_function_word("zh", "给")  # prepositions come from the tagger
+    assert not any(is_function_word("en", w) for w in ("have", "do", "be", "over", "yet", "so", "while", "as"))
     assert not is_function_word("zh", "学习")
     assert not is_function_word("fr", "le")  # a language without an adapter list has none: nothing is guessed
 
@@ -193,14 +195,80 @@ def test_en_the_common_word_keeps_its_gloss_outside_a_name(monkeypatch) -> None:
     assert _tap(service, "morning", "Good morning.")["meanings"][0]["text"] == "buổi sáng"
 
 
-def test_en_a_pack_sense_of_another_class_is_withheld_and_nothing_second_guesses_it(monkeypatch) -> None:
+def test_en_a_pack_sense_of_another_class_yields_to_a_dictionary_sense_of_the_sentence_class(monkeypatch) -> None:
     _tag(monkeypatch, {"we": "pronoun", "turn": "verb", "left": "adverb"})
-    calls: list = []
-    service = _service(_Catalogue(_entry("left", "noun", "bên trái")), _dictionary(("adverb", "On the left side.")), calls)
+    service = _service(_Catalogue(_entry("left", "noun", "bên trái")), _dictionary(("adverb", "On the left side.")))
     result = _tap(service, "left", "We turn left.")
-    assert result["meanings"] == []  # neither the noun gloss nor a word-alone translation or AI answer
+    assert {"text": "bên trái", "source": "collection"} not in result["meanings"]  # the noun gloss is not shown
     assert result["definitions"] == [{"part_of_speech": "adverb", "definition": "On the left side."}]
+    assert result["available"] is True  # the sheet is never emptied by the class check
+
+
+def test_en_a_tagger_error_on_a_one_sense_word_keeps_the_pack_gloss(monkeypatch) -> None:
+    """"We plan." tagged as a verb, the pack holds the noun only and no dictionary sense contradicts it: shown."""
+
+    _tag(monkeypatch, {"we": "pronoun", "plan": "verb"})
+    calls: list = []
+    result = _tap(_service(_Catalogue(_entry("plan", "noun", "kế hoạch")), seam_calls=calls), "plan", "We plan.")
+    assert result["meanings"] == [{"text": "kế hoạch", "source": "collection"}]
+    # a dictionary that lists only the pack's class does not contradict it either
+    service = _service(_Catalogue(_entry("plan", "noun", "kế hoạch")), _dictionary(("noun", "A scheme.")))
+    assert _tap(service, "plan", "We plan.")["meanings"] == [{"text": "kế hoạch", "source": "collection"}]
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("word", "sentence", "classes"),
+    [
+        ("sat", "She sat on the chair.", {"she": "pronoun", "sat": "verb", "on": "preposition", "the": "determiner"}),
+        ("walked", "He walked through the door.", {"he": "pronoun", "walked": "verb", "through": "preposition"}),
+        ("came", "They came back.", {"they": "pronoun", "came": "verb", "back": "adverb"}),
+        ("sit", "Please sit down.", {"please": "other", "sit": "verb", "down": "adverb"}),
+    ],
+)
+def test_en_a_verb_with_a_preposition_or_adverb_that_is_not_a_listed_pair_keeps_its_gloss(
+    monkeypatch, word, sentence, classes
+) -> None:
+    _tag(monkeypatch, classes)
+    service = _service(_Catalogue(_entry(word, "verb", "nghĩa của động từ")))
+    assert _tap(service, word, sentence)["meanings"] == [{"text": "nghĩa của động từ", "source": "collection"}]
+
+
+def test_en_a_listed_phrasal_pair_is_found_from_the_lemma_too(monkeypatch) -> None:
+    _tag(monkeypatch, {"she": "pronoun", "turned": "verb", "off": "other"}, lemmas={"turned": "turn"})
+    service = _service(_Catalogue(_entry("turn", "verb", "rẽ")))
+    assert _nothing_shown(_tap(service, "turned", "She turned off the light."))
+
+
+def test_en_a_period_word_must_be_written_as_a_period_word(monkeypatch) -> None:
+    _tag(monkeypatch, {"late": "adjective", "morning": "noun"})
+    service = _service(_Catalogue(_entry("late", "adjective", "muộn")))
+    assert _tap(service, "late", "The Late Morning Show began.")["meanings"][0]["text"] == "muộn"
+    _tag(monkeypatch, {"late": "adjective", "march": "noun"})
+    assert _nothing_shown(_tap(_service(_Catalogue(_entry("late", "adjective", "muộn"))), "late", "It ended in late March."))
+
+
+def test_the_tapped_word_is_found_on_word_boundaries(monkeypatch) -> None:
+    """"late" inside "chocolate" is not the tapped word: its neighbours are the real ones'."""
+
+    found = reading_lookup._find_selection("A chocolate is late.", "late")
+    assert found is not None and found.start() == 15
+    assert reading_lookup._find_selection("other", "the") is None
+    assert reading_lookup._find_selection("他在家", "在").start() == 1
+
+
+def test_a_withheld_gloss_never_reaches_the_paid_sense_choice(monkeypatch) -> None:
+    _tag(monkeypatch, {"with": "preposition"})
+    asked: list = []
+    service = ReadingLookupService(
+        _Catalogue(_entry("with", "adverb", "cùng"), _entry("with", "adverb", "kèm theo")),
+        _dictionary(("adverb", "x"), ("adverb", "y")),
+        ReadingTranslationService(_Engine(), cache=DerivedCache()),
+        sense_choice=lambda *args: asked.append(args) or 1,
+        sense_choice_enabled=lambda: True,
+    )
+    assert _nothing_shown(_tap(service, "with", "Do you want to come with?"))
+    assert asked == []
 
 
 def test_the_prefetch_never_spends_a_translation_on_a_function_word(monkeypatch) -> None:
@@ -213,7 +281,7 @@ def test_the_prefetch_never_spends_a_translation_on_a_function_word(monkeypatch)
 
 @pytest.mark.parametrize(
     ("word", "sentence"),
-    [("的", "这是我的书。"), ("了", "他吃了饭。"), ("和", "我和你去。"), ("在", "我在家。")],
+    [("的", "这是我的书。"), ("了", "我吃了。"), ("和", "我和你去。"), ("在", "我在家。")],
 )
 def test_zh_function_words_show_no_headword_gloss(monkeypatch, word, sentence) -> None:
     _tag(monkeypatch, {word: "particle"}, "zh")

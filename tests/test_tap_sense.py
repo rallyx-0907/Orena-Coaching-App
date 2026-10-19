@@ -183,9 +183,9 @@ def test_en_polysemous_word_takes_the_sense_of_its_class_in_the_sentence(monkeyp
 
 
 def test_a_repository_without_find_entries_still_gives_its_first_sense(monkeypatch, seam_calls) -> None:
-    _tagger(monkeypatch, pos="noun")  # a sense of another class than the word's here is withheld (PRE-202)
+    _tagger(monkeypatch, pos="verb")
     service = _service(_FirstOnly(_entry("plan", "noun", vi="kế hoạch")), seam_calls=seam_calls)
-    assert service.lookup("plan", "The plan.", "en", "vi").to_dict()["meanings"][0]["text"] == "kế hoạch"
+    assert service.lookup("plan", "We plan.", "en", "vi").to_dict()["meanings"][0]["text"] == "kế hoạch"
 
 
 def test_en_dictionary_sense_of_the_sentence_class_is_the_main_line_when_nothing_is_localised(monkeypatch, seam_calls) -> None:

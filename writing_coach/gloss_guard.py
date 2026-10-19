@@ -42,7 +42,7 @@ def _data(language: str) -> Mapping[str, frozenset[str]]:
     (松树 "pine" is tagged a name), so Chinese leaves it off."""
 
     folder = _LANGUAGE_DIRS.get(str(language or "").split("-", 1)[0].casefold())
-    keys = ("name_guard", "function_words", "phrasal_particles", "fixed_expressions", "period_modifiers", "period_words")
+    keys = ("name_guard", "function_words", "phrasal_verbs", "fixed_expressions", "period_modifiers", "period_words")
     if folder is None:
         return {key: frozenset() for key in keys}
     path = _LANGUAGES / folder / "gloss_guard.json"
@@ -50,7 +50,11 @@ def _data(language: str) -> Mapping[str, frozenset[str]]:
         raw = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {key: frozenset() for key in keys}
-    data = {key: frozenset(str(item).casefold() for item in raw.get(key) or ()) for key in keys[1:]}
+    # `period_words` is matched as written (months are capitalised, seasons are not): "Morning" in a title is not a time.
+    data = {
+        key: frozenset(str(item) if key == "period_words" else str(item).casefold() for item in raw.get(key) or ())
+        for key in keys[1:]
+    }
     return {"name_guard": frozenset({"on"}) if raw.get("name_guard") else frozenset(), **data}
 
 
@@ -78,6 +82,7 @@ def withhold_reason(
     tagged_pos: str,
     previous: Mapping[str, Any] | None = None,
     following: Mapping[str, Any] | None = None,
+    lemma: str = "",
 ) -> str:
     """Why no headword gloss may be shown for `selection` where it stands, or ``""`` when none applies.
 
@@ -101,17 +106,23 @@ def withhold_reason(
     for phrase in (f"{before} {word}", f"{word} {after}", f"{before} {word} {after}"):
         if phrase.strip() in data["fixed_expressions"] and len(phrase.split()) > 1:
             return "multiword"
-    if tagged_pos == "verb" and after in data["phrasal_particles"]:
-        return "multiword"
+    # A phrasal verb is withheld only as a listed pair ("turn off", "give up"): a verb followed by a preposition
+    # ("sat on the chair", "walked through the door") or an adverb ("came back") keeps the verb's own sense.
+    if after and tagged_pos == "verb":
+        for head in {word, str(lemma or "").casefold()} - {""}:
+            if f"{head} {after}" in data["phrasal_verbs"]:
+                return "multiword"
+    raw_after = _fragment(following, fold=False)
     if word in data["period_modifiers"] and after:
-        if after in data["period_words"] or _DIGITS.match(after) or str((following or {}).get("pos")) == "numeral":
+        if raw_after in data["period_words"] or _DIGITS.match(after) or str((following or {}).get("pos")) == "numeral":
             return "multiword"
     return ""
 
 
-def _fragment(token: Mapping[str, Any] | None) -> str:
+def _fragment(token: Mapping[str, Any] | None, *, fold: bool = True) -> str:
     # The English tokenizer leaves a sentence-final full stop on the last word ("autumn.", "1800s.").
-    return str((token or {}).get("fragment") or "").strip().strip(".,;:!?\"')(").casefold()
+    text = str((token or {}).get("fragment") or "").strip().strip(".,;:!?\"')(")
+    return text.casefold() if fold else text
 
 
 def neighbours(
