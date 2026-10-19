@@ -56,5 +56,28 @@ received card data.
 
 **Notes:**
 - The page header's title wraps on a phone next to "See all plans". The shared header predates this PR.
-- Step 5 of PR-MON-10 (a failing renewal) and the period-end outcome of cancel-while-pending stay unproven on the
-  sandbox (§1).
+- Step 5 of PR-MON-10 (a failing renewal) and the period-end outcome of cancel-while-pending were proven on
+  2026-10-19 (§3).
+
+## 3. Period ends on the Polar sandbox, 2026-10-19 (owner-approved test subscriptions)
+
+Daily test products were used (1-day period). A and B ran on the Polar API only; D and F ran through the `:8031`
+sandbox, with Orena receiving webhooks. All times are UTC. Every payment was test money.
+
+| Run | Setup | At the period end | Reading |
+| --- | --- | --- | --- |
+| **A** | High ($2/day): downgrade to Low scheduled (`next_period`), then cancel at period end | `canceled`, `ended_at` 11:31:54 = the period end. No Low order; the only order is the $2.00 creation. The pending Low stays listed but never applied | **Cancel wins over a pending change.** §1 (2) is now proven |
+| **B** | High: downgrade to Low scheduled only | Low, `active`, the next period started at 11:33:05. Order `subscription_cycle` $1.00 `paid`, created 15 min after the cycle. `modified_at` 11:33:06 (set) | the pending change applies at the period end. **R1 on Polar: `modified_at` IS set at renewal** |
+| **D** | Daily Pro ($19.99), downgraded to Daily Plus ($9.99) in Polar's portal on 2026-10-18 (applied at once, proration `invoice`) | Plus, `active`, period 14:03:16 → +1 day. Renewal order `subscription_cycle` **$0.11** `paid` | **The unused Pro part was credited**: the renewal charged $0.11 instead of $9.99. Polar carried the credit from the immediate downgrade to the next invoice |
+| | Orena (`commerce_subscriptions`) | `active · plus`, `paid_through` 2026-10-20 14:03:16 (moved one day), `object_version` = the renewal's `modified_at`. The renewal receipt `applied`; its duplicate delivery `ignored · stale` | **R1 in Orena: the renewal was applied, not dropped** |
+| **F** | Daily Pro, card changed to the declining test card | Polar `past_due`; renewal order $19.99 `pending`; `modified_at` 14:19:40 | the failed renewal is `past_due` |
+| | Orena | `past_due · pro`, `paid_through` 14:19:40 (Polar's `past_due_at`, `polar._paid_through`), receipt `applied` | grace (48 h, D-MON-011) counts from the failed charge, 15 min after the period end, so it is slightly more generous than "2 days after the end of the period" |
+
+**Consequences:**
+- **R1 is closed: no code change is needed.** Polar sets `modified_at` at renewal, and Orena applied the renewal.
+- **`SCHEDULED_CHANGES` can be reconsidered:** cancel wins over a pending change. It stays off until the owner asks
+  for scheduled downgrades; the in-app downgrade is still a cancel at the period end.
+- **Downgrade in the portal:** proration `invoice` applies the downgrade at once and credits the unused part to the
+  next invoice. This matches the owner's rule (D-MON-035), so the portal setting stays `invoice`.
+- Still not observed: F's end after Polar's retries (`unpaid` → `ended`), and whether the grace then ends access.
+  Hermetic tests cover both.
