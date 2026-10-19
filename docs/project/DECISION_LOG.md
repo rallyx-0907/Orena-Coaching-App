@@ -7684,6 +7684,8 @@ two items left open above are decided.
    plan or policy. `SupadataTranscriptClient` refuses them before any request (`SupadataYouTubeGenerationRefused`) and
    defaults to `native`; the YouTube adapter's inline fallback and the older learner route's fallback service
    (`POST /api/media-learning/import`) ask in native mode only. A YouTube video with no channel captions there ends
-   as `youtube_no_channel_captions` (the admin reason D-244 already defines), which the learner's Import sheet says in
-   its existing error slot (`error_youtube_no_channel_captions`, en/vi/zh). A non-YouTube source keeps its fallback.
+   as `youtube_no_channel_captions` (the admin reason D-244 already defines). The live learner route
+   (`POST /api/media-learning/source`, and `GET /api/media/my/{id}` while it is polled) now answers a failed item with
+   that reason as `import_job.failure_kind` too, so the Import sheet says it in its existing error slot
+   (`error_youtube_no_channel_captions`, en/vi/zh) on either route. A non-YouTube source keeps its fallback.
 

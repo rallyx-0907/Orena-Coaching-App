@@ -36,12 +36,13 @@ YOUTUBE_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
 
 def _youtube_entry(**overrides):
-    return _entry(
+    fields = dict(
         media_id="yt-item", media_type="video", provider="youtube", provider_media_id="dQw4w9WgXcQ",
         canonical_url=YOUTUBE_URL, library="shared", source={"rights": "cleared"},
         playback={"provider": "youtube", "kind": "embed", "url": "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"},
-        **overrides,
     )
+    fields.update(overrides)
+    return _entry(**fields)
 
 
 @pytest.fixture
@@ -259,6 +260,48 @@ def test_no_production_code_requests_generate_for_youtube():
 
 
 # ---- the learner's words -----------------------------------------------------------------------------------------
+
+def _failed_youtube_import(reason: str):
+    return _youtube_entry(library="personal", status="review", lesson=None,
+                          processing={"state": "failed", "reason": reason, "detail": "no_caption_track"})
+
+
+def test_the_live_source_route_answers_the_failure_kind_the_sheet_maps(monkeypatch):
+    """`POST /api/media-learning/source` and `GET /api/media/my/{id}` answer with `stored_media_payload`."""
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from writing_coach import listening_api, media_library_api
+
+    entry = _failed_youtube_import("youtube_no_channel_captions")
+    monkeypatch.setattr(listening_api, "stored_media_entry", lambda _id, **_kw: entry)
+    monkeypatch.setattr(listening_api, "get_learner_profile", lambda: {"native_language": "vi"})
+
+    class Importer:
+        def import_personal_url(self, *_a, **_k):
+            return entry
+
+    monkeypatch.setattr(media_library_api, "_installed", lambda: (object(), object(), Importer()))
+    monkeypatch.setattr(media_library_api, "_learner_payload", listening_api.stored_media_payload)
+    app = FastAPI()
+    app.include_router(media_library_api.media_learning_router)
+    answer = TestClient(app).post("/api/media-learning/source", json={"source_url": YOUTUBE_URL, "target_language": "vi"})
+    assert answer.status_code == 200, answer.text
+    body = answer.json()
+    assert body["asset"]["processing_state"] == "failed"
+    assert body["import_job"]["failure_kind"] == "youtube_no_channel_captions"
+    assert body["import_job"]["resumable"] is False
+
+
+def test_a_processing_or_ready_item_carries_no_failure_kind(monkeypatch):
+    from writing_coach import listening_api
+
+    entry = _failed_youtube_import("youtube_no_channel_captions")
+    queued = _youtube_entry(library="personal", status="processing", lesson=None, processing={"state": "queued"})
+    monkeypatch.setattr(listening_api, "get_learner_profile", lambda: {"native_language": "vi"})
+    monkeypatch.setattr(listening_api, "stored_media_entry", lambda _id, **_kw: queued)
+    assert "import_job" not in listening_api.stored_media_payload(entry.media_id, "vi", allow_unpublished=True)
+
 
 def test_the_learner_refusal_exists_in_three_languages_in_the_existing_error_slot():
     copy = (ROOT / "static/orena/screens/import/copy.js").read_text(encoding="utf-8")

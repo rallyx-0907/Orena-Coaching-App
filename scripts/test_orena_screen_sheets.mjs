@@ -39,6 +39,8 @@ assert.equal(countSentences(''), 0);
 assert.equal(importErrorKey('malformed_url'), 'error_malformed_url');
 assert.equal(importErrorKey('media_unavailable'), 'error_media_unavailable');
 assert.equal(importErrorKey('something_the_backend_never_sent'), 'error_generic');
+// D-244: a YouTube video without channel captions is said in the sheet's error slot, from either import route.
+assert.equal(importErrorKey('youtube_no_channel_captions'), 'error_youtube_no_channel_captions');
 assert.equal(importErrorKey(undefined), 'error_generic');
 // The upload route's own categories are not mapped: the frame draws no File upload step (no
 // `impIsFile` block; its own handler is a toast), so this screen never reaches that route.
