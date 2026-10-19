@@ -4201,9 +4201,10 @@ def admin_account_memory_erase(user_id: str, request: Request) -> dict[str, Any]
                              required=True)
     try:
         removed = memory.erase_account(account)
-    except MemoryUnavailable:
+    except Exception as error:  # noqa: BLE001 - MemoryUnavailable or a store error mid-delete: rolled back, said
+        reason = "memory_unavailable" if isinstance(error, MemoryUnavailable) else "store_error"
         admin_console_api._audit(admin, "admin.memory_erase_failed", entity_type="account", entity_id=account,
-                                 payload={"reason": "memory_unavailable"})
+                                 payload={"reason": reason})
         raise orena_http_error(503, "memory_unavailable", "Orena Memory could not be read; nothing was erased.",
                                retryable=True) from None
     if removed is None:

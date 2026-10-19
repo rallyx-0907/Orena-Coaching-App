@@ -111,3 +111,15 @@ def test_a_learner_cannot_erase_anyone(rig, monkeypatch):
     monkeypatch.setattr(app_module, "require_admin", refuse)
     assert client.delete(f"/api/admin/accounts/{LEARNER}/memory").status_code == 403
     assert store.items(MemoryScope(LEARNER, "inc-1"), "en", T0)
+
+
+def test_a_store_error_mid_delete_is_503_with_its_reason(rig, monkeypatch):
+    client, store, audits, _ = rig
+
+    def boom(scope, what, now):
+        raise RuntimeError("connection lost")
+
+    monkeypatch.setattr(store, "delete_all", boom)
+    assert client.delete(f"/api/admin/accounts/{LEARNER}/memory").status_code == 503
+    assert audits[-1] == ("admin.memory_erase_failed", {"entity_type": "account", "entity_id": LEARNER,
+                                                        "payload": {"reason": "store_error"}})  # fmt: skip
