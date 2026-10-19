@@ -10,7 +10,8 @@
   is not kept.
 
 A promise about data the runtime does not keep is not unmet: no memory keys means no Orena Memory, and the agent off
-means no agent.turn row.
+means no agent.turn row. (Memory is counted when its keys are set and the backbone is
+requested; a backbone that then fails to start makes the item an over-report, never a miss.)
 
 `enforce_at_start`:
 - On a public runtime (staging, production), it logs each unmet promise as an ERROR.
@@ -73,7 +74,11 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
     if not _ceiling_set(values):
         problems.append(UnmetPromise("spend_ceiling_unset",
                                      "AI_DAILY_SPEND_CEILING_USD is not set: there is no system daily AI spend ceiling"))
-    if str(values.get("AGENT_MEMORY_HMAC_KEYS", "")).strip() and not _switch_on(values, MEMORY_SWEEP_SWITCH):
+    from writing_coach.account_backbone import requested as backbone_requested
+
+    # Orena Memory exists only with its keys and the account backbone (MemoryRuntime.from_env); not otherwise.
+    memory = bool(str(values.get("AGENT_MEMORY_HMAC_KEYS", "")).strip()) and backbone_requested(values)
+    if memory and not _switch_on(values, MEMORY_SWEEP_SWITCH):
         problems.append(UnmetPromise("memory_retention_sweep_off",
                                      f"{MEMORY_SWEEP_SWITCH} is off: unused Orena Memory notes are hidden after 180 days"
                                      " but not deleted, as the Privacy Policy states"))

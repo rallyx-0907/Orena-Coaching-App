@@ -13,7 +13,7 @@ from writing_coach.core.published_promises import enforce_at_start, unmet_promis
 
 ON = {"feedback.retention_sweep": True, "agent.turn_retention_sweep": True}
 KEPT = {"AI_DAILY_SPEND_CEILING_USD": "5", "AGENT_MEMORY_HMAC_KEYS": "v1:" + "k" * 40,
-        "AGENT_MEMORY_RETENTION_SWEEP": "on", "AGENT_ENABLED": "true"}
+        "ORENA_ACCOUNT_BACKBONE": "on", "AGENT_MEMORY_RETENTION_SWEEP": "on", "AGENT_ENABLED": "true"}
 
 
 def policy(values):
@@ -46,9 +46,11 @@ def test_each_unmet_admin_sweep_is_named(key, code):
 
 
 def test_a_promise_about_data_the_runtime_does_not_keep_is_not_unmet():
-    """No memory keys: Orena Memory keeps nothing here. Agent off: no agent.turn row is written."""
+    """No memory keys, or no account backbone: Orena Memory keeps nothing here. Agent off: no agent.turn row."""
     values = {"AI_DAILY_SPEND_CEILING_USD": "5"}
     assert unmet_promises(values, policy({**ON, "agent.turn_retention_sweep": False})) == []
+    keys_only = {**values, "AGENT_MEMORY_HMAC_KEYS": "v1:" + "k" * 40}
+    assert unmet_promises(keys_only, policy(ON)) == []
 
 
 def test_a_policy_that_cannot_be_read_counts_as_off():
@@ -71,7 +73,9 @@ def test_staging_starts_but_logs_each_unmet_promise_as_an_error(caplog):
     with caplog.at_level(logging.ERROR):
         problems = enforce_at_start(values, policy({**ON, "feedback.retention_sweep": False}))
     assert {p.code for p in problems} == {"spend_ceiling_unset", "feedback_retention_sweep_off"}
-    assert caplog.text.count("ERROR") >= 2 or len([r for r in caplog.records if r.levelno == logging.ERROR]) == 2
+    errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(errors) == 2 and any("spend_ceiling_unset" in e for e in errors)
+    assert any("feedback_retention_sweep_off" in e for e in errors)
 
 
 def test_development_says_nothing(caplog):
@@ -87,6 +91,7 @@ def test_admin_readiness_lists_the_unmet_promises_by_name(monkeypatch):
 
     monkeypatch.setattr(app_module, "require_admin", lambda request: {"google_sub": "admin-1", "role": "admin"})
     monkeypatch.delenv("AI_DAILY_SPEND_CEILING_USD", raising=False)
+    monkeypatch.setenv("FEEDBACK_RETENTION_SWEEP", "false")  # pinned off: no earlier test's stored value matters
     summary = TestClient(app_module.app).get("/api/admin/readiness-summary").json()
     codes = [p["code"] for p in summary["unmet_promises"]]
     assert "spend_ceiling_unset" in codes and "feedback_retention_sweep_off" in codes
