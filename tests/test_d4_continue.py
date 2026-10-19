@@ -319,3 +319,22 @@ def test_the_items_route_never_returns_a_place_only_row(env):
         assert [row["relationship"] for row in items] == ["kept"]
     finally:
         library_api.configure_library(None)
+
+
+def test_a_settled_put_is_accepted_and_settle_is_neither_echoed_nor_stored(client):
+    """#323: `settle` writes now instead of coalescing; it is a request flag, never part of the place."""
+    put = client.put("/api/continue/reading:14", json={"kind": "reading", "place": _place(3, 12, settle=True)})
+    assert put.status_code == 200 and put.json()["status"] == "written"
+    assert "settle" not in put.json()["place"]
+    stored = client.get("/api/continue", params={"limit": 5}).json()["items"][0]["place"]
+    assert "settle" not in stored
+
+
+def test_place_writes_share_a_per_learner_floor():
+    """#323: `settle` bypasses the 30 s coalescing, so a script could force one UPDATE per request; place writes count
+    in their own per-account group (writing_coach/core/http_security.py) - generous for reading, a stop for a loop."""
+    from writing_coach.core.http_security import rate_group
+
+    group = rate_group("PUT", "/api/continue/reading:14")
+    assert group is not None and group[0] == "place" and group[1] >= 120 and group[2] == 600
+    assert rate_group("GET", "/api/continue") is None  # reading the list is not a write

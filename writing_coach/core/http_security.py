@@ -132,6 +132,10 @@ RATE_GROUPS: tuple[tuple[str, tuple[str, ...], int, int], ...] = (
     ("reading_ai", ("/api/reading/translate", "/api/reading/summary"), 300, 600),
     # Consent answers (D-233): a learner answers a handful of times; each write is one row update, so this only stops a loop.
     ("consent", ("/api/account-settings/consent", "/api/account-settings/voice-consent"), 60, 600),
+    # A learner's place in content (#323): writes coalesce to one per 30 s, but `settle` (the reader paused or left)
+    # writes at once - so a script could force one UPDATE per request. Reading makes about 20 in ten minutes; this only
+    # stops a loop.
+    ("place", ("/api/continue/",), 240, 600),
     ("media_learning", ("/api/media-learning/upload", "/api/media-learning/source", "/api/media-learning/translate",
                         "/api/media-learning/import#"), 30, 3600),
 )
