@@ -39,7 +39,9 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     import sqlalchemy
 
-    from writing_coach.persistence.account_deletion import DeletionRefused, apply_plan, next_steps, plan_summary
+    from writing_coach.persistence.account_deletion import (
+        CommittedUnconfirmed, DeletionRefused, apply_plan, next_steps, plan_summary,
+    )
 
     engine = sqlalchemy.create_engine(url, future=True)
     try:
@@ -64,6 +66,9 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         try:
             plan = apply_plan(engine, log=log, email=args.email, user_key=args.user_key, commerce=args.commerce)
+        except CommittedUnconfirmed as unconfirmed:
+            print(f"DELETED, but: {unconfirmed}", file=sys.stderr)
+            return 1
         except DeletionRefused as refused:
             print(f"refused, nothing changed: {refused}", file=sys.stderr)
             return 1 if str(refused) != "no such account" else 2

@@ -168,24 +168,72 @@ def test_an_email_shared_by_two_accounts_is_refused_and_names_both_keys(engine, 
 # --- the continuous deletion log (D-054 a) and the replay after a restore (D-054 b) --------------------------------
 
 
+def _intent(path, account=None, inc=None):
+    from writing_coach.persistence import deletion_log
+
+    return deletion_log.write_intent(path, account_id=account or str(uuid.uuid4()),
+                                     incarnations=[{"id": inc or str(uuid.uuid4()), "epoch": 1, "created_at": T0}],
+                                     at=T0)  # fmt: skip
+
+
 def test_a_log_records_intent_then_done_and_only_confirmed_operations_replay(tmp_path):
     from writing_coach.persistence import deletion_log
 
     path = tmp_path / "log.jsonl"
     account, inc = str(uuid.uuid4()), str(uuid.uuid4())
-    done = deletion_log.write_intent(path, account_id=account, incarnations=[{"id": inc, "epoch": 1, "created_at": T0}],
-                                     at=T0)  # fmt: skip
-    deletion_log.write_done(path, done, deleted_at=T0)
-    rolled_back = deletion_log.write_intent(path, account_id=str(uuid.uuid4()),
-                                            incarnations=[{"id": str(uuid.uuid4()), "epoch": 1, "created_at": T0}], at=T0)
+    deletion_log.write_done(path, _intent(path, account, inc), deleted_at=T0)
+    rolled_back = _intent(path)
     assert deletion_log.pending(path) == [rolled_back]
     with pytest.raises(deletion_log.DeletionLogInvalid, match="unsettled"):
         deletion_log.confirmed_journal(path)  # never replayed while an intent is unsettled
     deletion_log.write_abandoned(path, rolled_back)
     body = deletion_log.confirmed_journal(path)
     assert [(r["id"], r["user_id"], r["epoch"]) for r in body["records"]] == [(inc, account, 1)]
-    assert deletion_log.confirmed_accounts(path) == [account]
+    assert [op["user_id"] for op in deletion_log.confirmed_operations(path)] == [account]
     assert "@" not in path.read_text(encoding="utf-8")  # ids and times only
+
+
+def test_a_deletion_logged_twice_is_one_record_at_its_earliest_time(tmp_path):
+    """Review P1-1: two confirmed operations naming the same incarnation must not block every future restore."""
+    from writing_coach.persistence import deletion_log
+
+    path = tmp_path / "log.jsonl"
+    account, inc = str(uuid.uuid4()), str(uuid.uuid4())
+    deletion_log.write_done(path, _intent(path, account, inc), deleted_at=T0)
+    later = datetime(2026, 10, 20, tzinfo=UTC)
+    deletion_log.write_done(path, _intent(path, account, inc), deleted_at=later)
+    records = deletion_log.confirmed_journal(path)["records"]
+    assert len(records) == 1 and datetime.fromisoformat(records[0]["deleted_at"]) == T0
+
+
+def test_after_a_database_loss_an_unsettled_intent_is_applied_only_when_the_operator_accepts_it(tmp_path):
+    """Review P1-2: a restore cannot show whether the commit happened; reconciling against it would abandon a committed
+    deletion. So reconcile needs the live database, and a restore accepts unsettled intents explicitly."""
+    from writing_coach.persistence import deletion_log
+
+    path = tmp_path / "log.jsonl"
+    account = str(uuid.uuid4())
+    _intent(path, account)
+    with pytest.raises(deletion_log.DeletionLogInvalid, match="live"):
+        deletion_log.reconcile(object(), path, live=False)
+    with pytest.raises(deletion_log.DeletionLogInvalid):
+        deletion_log.confirmed_operations(path)
+    assert [op["user_id"] for op in deletion_log.confirmed_operations(path, accept_unsettled=True)] == [account]
+
+
+def test_a_torn_last_line_is_dropped_but_a_torn_middle_line_refuses(tmp_path):
+    from writing_coach.persistence import deletion_log
+
+    path = tmp_path / "log.jsonl"
+    account = str(uuid.uuid4())
+    deletion_log.write_done(path, _intent(path, account), deleted_at=T0)
+    with open(path, "a", encoding="utf-8") as handle:
+        handle.write('{"kind": "orena.deletion_log", "version": 1, "event": "int')  # a crash mid-write
+    assert [op["user_id"] for op in deletion_log.confirmed_operations(path)] == [account]
+    with open(path, "a", encoding="utf-8") as handle:
+        handle.write("\n" + path.read_text(encoding="utf-8").splitlines()[0] + "\n")
+    with pytest.raises(deletion_log.DeletionLogInvalid):
+        deletion_log.read_log(path)
 
 
 @pytest.mark.parametrize("line", ["not json", '{"kind": "other"}',
@@ -194,7 +242,7 @@ def test_a_log_that_cannot_be_trusted_is_refused_whole(tmp_path, line):
     from writing_coach.persistence import deletion_log
 
     path = tmp_path / "log.jsonl"
-    path.write_text(line + "\n", encoding="utf-8")
+    path.write_text(line + "\n" + line + "\n", encoding="utf-8")  # not only a torn last line
     with pytest.raises(deletion_log.DeletionLogInvalid):
         deletion_log.read_log(path)
 
@@ -204,31 +252,61 @@ def test_apply_without_a_log_is_refused():
         deletion.apply_plan(object(), log=None, user_key="x")
 
 
-def test_a_deletion_is_logged_and_a_restore_replays_it_in_full(engine, log):
+def _restore_note(engine, account_id, incarnation):
     from sqlalchemy import text
 
     from writing_coach.agent.memory_keys import MemoryKeys
     from writing_coach.agent.memory_store import MemoryScope
+    from writing_coach.persistence.memory_repository import PostgresMemoryRepository
+
+    with engine.begin() as conn:
+        conn.execute(text("UPDATE account_incarnations SET status = 'active', deleted_at = NULL"
+                          " WHERE id = CAST(:i AS uuid)"), {"i": incarnation})  # fmt: skip
+    PostgresMemoryRepository(engine, MemoryKeys.parse("v1:" + "k" * 40)).add_explicit(
+        MemoryScope(account_id, incarnation), language="zh", kind="goal", text="Phỏng vấn xin việc", slot=None,
+        source="learner_asked", now=T0)  # fmt: skip
+
+
+def test_a_deletion_is_logged_and_a_restore_replays_it_in_full(engine, log):
     from writing_coach.persistence import deletion_log
     from writing_coach.persistence.deletion_journal import reapply_deletions
-    from writing_coach.persistence.memory_repository import PostgresMemoryRepository
 
     gone_id, key, inc = _account(engine, f"restored-{uuid.uuid4()}@example.com")
     deletion.apply_plan(engine, log=log, user_key=key)
-    assert deletion_log.pending(log) == [] and deletion_log.confirmed_accounts(log) == [gone_id]
-    # A restore from a backup taken before the deletion: the incarnation active again, the note back.
-    with engine.begin() as conn:
-        conn.execute(text("UPDATE account_incarnations SET status = 'active', deleted_at = NULL WHERE id = CAST(:i AS uuid)"),
-                     {"i": inc})  # fmt: skip
-    store = PostgresMemoryRepository(engine, MemoryKeys.parse("v1:" + "k" * 40))
-    store.add_explicit(MemoryScope(gone_id, inc), language="zh", kind="goal", text="Phỏng vấn xin việc", slot=None,
-                       source="learner_asked", now=T0)  # fmt: skip
-    assert _one(engine, "SELECT count(*) FROM learner_memories WHERE user_id::text = :u", u=gone_id) == 1
+    deletion.apply_plan(engine, log=log, user_key=key)  # applied twice: still one record per incarnation
+    assert deletion_log.pending(log) == []
+    _restore_note(engine, gone_id, inc)  # a restore from before the deletion
+    ops = deletion_log.confirmed_operations(log)
+    assert deletion.owner_rows_left(engine, ops)  # --check sees it
     summary = reapply_deletions(engine, deletion_log.confirmed_journal(log))
-    owners = deletion.reapply_owner_deletions(engine, deletion_log.confirmed_accounts(log))
-    assert summary["reapplied"] == 1 and owners == {"replayed": 1, "absent": 0}
+    owners = deletion.reapply_owner_deletions(engine, ops)
+    assert summary["reapplied"] == 1 and owners["replayed"] == 1 and owners["returned"] == []
     assert _one(engine, "SELECT status FROM account_incarnations WHERE id::text = :i", i=inc) == "deleted"
     assert _one(engine, "SELECT count(*) FROM learner_memories WHERE user_id::text = :u", u=gone_id) == 0
+    assert deletion.owner_rows_left(engine, ops) == []
+
+
+def test_a_learner_who_came_back_keeps_what_they_wrote_after_the_deletion(engine, log):
+    """Review P1-3 (D-055): a replay deletes what the deletion removed, never the returning learner's new life."""
+    from sqlalchemy import text
+
+    from writing_coach.persistence import deletion_log
+
+    gone_id, key, inc = _account(engine, f"returned-{uuid.uuid4()}@example.com")
+    deletion.apply_plan(engine, log=log, user_key=key, now=T0)
+    _restore_note(engine, gone_id, inc)  # restored rows from before the deletion
+    with engine.begin() as conn:  # the learner signed in again afterwards and wrote something new
+        conn.execute(text("UPDATE users SET last_login = :later, name = 'Back Again' WHERE id = CAST(:u AS uuid)"),
+                     {"u": gone_id, "later": datetime(2026, 10, 25, tzinfo=UTC)})  # fmt: skip
+        conn.execute(text("INSERT INTO audit_logs (id, user_id, action, entity_type, entity_id, payload, created_at)"
+                          " VALUES (:a, CAST(:u AS uuid), 'learner.feedback', 'feedback', '', '{}', :later)"),
+                     {"a": uuid.uuid4(), "u": gone_id, "later": datetime(2026, 10, 25, tzinfo=UTC)})  # fmt: skip
+    owners = deletion.reapply_owner_deletions(engine, deletion_log.confirmed_operations(log))
+    assert owners["returned"] == [gone_id]
+    assert _one(engine, "SELECT count(*) FROM learner_memories WHERE user_id::text = :u", u=gone_id) == 0  # logged inc
+    assert _one(engine, "SELECT count(*) FROM audit_logs WHERE user_id::text = :u AND action = 'learner.feedback'",
+                u=gone_id) == 1  # the new feedback stays  # fmt: skip
+    assert _one(engine, "SELECT name FROM users WHERE id::text = :u", u=gone_id) == "Back Again"
 
 
 def test_a_deletion_that_does_not_commit_is_reconciled_as_abandoned(engine, log, monkeypatch):
@@ -246,6 +324,22 @@ def test_a_deletion_that_does_not_commit_is_reconciled_as_abandoned(engine, log,
         deletion.apply_plan(engine, log=log, user_key=key)
     monkeypatch.setattr(deletion_log, "write_intent", real)
     assert _one(engine, "SELECT status FROM account_incarnations WHERE id::text = :i", i=inc) == "active"
-    assert len(deletion_log.pending(log)) == 1
-    assert deletion_log.reconcile(engine, log) == {"done": 0, "abandoned": 1}
-    assert deletion_log.confirmed_accounts(log) == []  # an account that was never deleted is never replayed
+    assert deletion_log.reconcile(engine, log, live=True) == {"done": 0, "abandoned": 1}
+    assert deletion_log.confirmed_operations(log) == []  # an account that was never deleted is never replayed
+
+
+def test_a_committed_deletion_whose_done_was_lost_is_confirmed_by_reconcile(engine, log, monkeypatch):
+    from writing_coach.persistence import deletion_log
+
+    gone_id, key, _inc = _account(engine, f"nodone-{uuid.uuid4()}@example.com")
+
+    def lost(*args, **kwargs):
+        raise OSError("crash after the commit")
+
+    monkeypatch.setattr(deletion_log, "write_done", lost)
+    with pytest.raises(deletion.CommittedUnconfirmed):
+        deletion.apply_plan(engine, log=log, user_key=key)
+    monkeypatch.undo()
+    assert _one(engine, "SELECT email FROM users WHERE id::text = :u", u=gone_id) == deletion.anonymous_email(gone_id)
+    assert deletion_log.reconcile(engine, log, live=True) == {"done": 1, "abandoned": 0}
+    assert [op["user_id"] for op in deletion_log.confirmed_operations(log)] == [gone_id]

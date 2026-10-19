@@ -24,13 +24,21 @@ the public promise it serves is `/account-deletion` (D-162): a learner emails
      the human-gated deploy.
    - **Whether `ai_cost_records` exists** on the public database (migration 0026-0028 are absent from
      `migrations/versions`; `ai/account_costs.py` pauses if the table is missing).
-3. Set **`ORENA_DELETION_LOG`** to a file outside the database, beside the backups and under the same access control.
-   `--apply` refuses without it. Each deletion appends an intent before its commit and a done after
-   (`persistence/deletion_log.py`, D-054 a). After any restore, run `python scripts/runtime_backup.py suppress --into
-   <restored db> --log <ORENA_DELETION_LOG> [--deletions <exports>]` before serving. It puts every barrier back and
-   deletes every logged account's owner rows again (D-054 b). `--check` then must answer 0 not holding. If the tool
-   crashed between intent and done, settle the log against the live database first:
-   `deletion_log.reconcile(engine, path)`, which reads only.
+3. Set **`ORENA_DELETION_LOG`** to a file that is **not on the database's volume**. Copy it off-host together with
+   the backups, under the same access control; a log lost with the database is no log. fsync guarantees are weak on
+   network filesystems. `--apply` refuses without it.
+   - Each deletion appends an intent before its commit and a done after (`persistence/deletion_log.py`, D-054 a).
+     Writers take `<log>.lock`.
+   - If the tool reports `DELETED, but ... unconfirmed`, run, on the live database only:
+     `python scripts/runtime_backup.py reconcile-log --log <path> --live`.
+   - After any restore, before serving:
+     `python scripts/runtime_backup.py suppress --into <restored db> --log <ORENA_DELETION_LOG> [--deletions <exports>]`.
+     It puts every barrier back and deletes each logged deletion's owner rows again, bounded to that deletion (D-054 b).
+     A learner who signed in again after their deletion keeps what they wrote since and their account row; tables
+     without a timestamp are named for the operator to decide.
+   - If the log has unsettled intents and the database they were written for is lost, add `--accept-unsettled`: a
+     requested deletion is applied. Never reconcile against a restored database.
+   - Then `suppress --check` must answer 0 not holding.
 4. Nobody else operates the shared Docker runtime and volumes meanwhile (AGENTS.md section 10). Never
    `docker compose down -v`.
 

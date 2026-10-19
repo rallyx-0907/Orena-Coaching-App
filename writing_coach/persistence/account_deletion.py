@@ -69,6 +69,15 @@ class DeletionRefused(Exception):
     """`apply` would not run, or the account cannot be named safely: nothing was changed."""
 
 
+class CommittedUnconfirmed(Exception):
+    """The deletion COMMITTED, but its done record could not be written: run `reconcile` on the live database."""
+
+    def __init__(self, op: str) -> None:
+        super().__init__(f"the deletion committed, but its log record {op} is unconfirmed: reconcile the log against "
+                         "the live database (scripts/runtime_backup.py reconcile-log --live)")  # fmt: skip
+        self.op = op
+
+
 @dataclass(frozen=True)
 class Account:
     id: str
@@ -241,7 +250,10 @@ def apply_plan(engine: Any, *, log: Any, email: str | None = None, user_key: str
         _revoke_sessions(conn, account, moment)
         # D-054 a: on disk outside the database before the commit. A failure here rolls the whole deletion back.
         op = deletion_log.write_intent(log, account_id=account.id, incarnations=barrier, at=moment)
-    deletion_log.write_done(log, op, deleted_at=moment)  # committed: confirmed (`reconcile` settles a crash between)
+    try:
+        deletion_log.write_done(log, op, deleted_at=moment)  # committed: confirmed
+    except OSError as error:
+        raise CommittedUnconfirmed(op) from error
     return plan
 
 
@@ -255,44 +267,141 @@ def _delete_owned(conn: Any, account: Account, plan: Plan) -> None:
         conn.execute(text(f"DELETE FROM {_quote(conn, target.table)} WHERE {where}{extra}"), params)
 
 
-def reapply_owner_deletions(engine: Any, account_ids: list[str], *, now: datetime | None = None) -> dict[str, int]:
-    """After a restore (D-054 b): each confirmed deletion's owner-table rows are deleted again, and the users row is
-    reset, anonymised and its sessions revoked. Incarnation barriers are `deletion_journal.reapply_deletions`. One
-    transaction for all; an account the restore does not hold is `absent`."""
+TIMESTAMP_COLUMNS = ("created_at", "occurred_at", "recorded_at", "added_at", "started_at", "updated_at")
+
+
+def _timestamp_column(conn: Any, table: str) -> str | None:
+    present = {r[0] for r in conn.execute(text(
+        "SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema()"
+        " AND table_name = :t"), {"t": table})}  # fmt: skip
+    return next((c for c in TIMESTAMP_COLUMNS if c in present), None)
+
+
+@dataclass
+class Replay:
+    """One logged account's replay, bounded to what its deletion removed (D-055: a re-registration is a new life)."""
+
+    account: Account
+    deleted_at: datetime
+    returned: bool  # signed in again after the deletion: only rows from before it go, the users row is left
+    unbounded: list[str] = field(default_factory=list)  # account-keyed tables with no timestamp, for a returned learner
+    rows: dict[str, int] = field(default_factory=dict)
+
+
+def _replay_for(conn: Any, operations: list[dict[str, Any]], *, lock: bool) -> Replay | None:
+    """The bounded replay of one account's logged deletions: incarnation-keyed rows of the LOGGED incarnations only;
+    account-keyed rows - all of them, or, when the learner signed in again after the latest deletion, only those
+    created at or before it."""
+    account_id = operations[0]["user_id"]
+    suffix = " FOR UPDATE" if lock else ""
+    row = conn.execute(text(f"SELECT user_key, last_login FROM users WHERE id = CAST(:a AS uuid){suffix}"),
+                       {"a": account_id}).first()  # fmt: skip
+    if row is None:
+        return None
+    deleted_at = max(datetime.fromisoformat(op["deleted_at"]) for op in operations)
+    logged = tuple(dict.fromkeys(inc["id"] for op in operations for inc in op["incarnations"]))
+    returned = row[1] is not None and row[1] > deleted_at
+    replay = Replay(Account(account_id, row[0], logged), deleted_at, returned)
+    for target in build_plan(conn, replay.account).targets:
+        if target.group == "commerce":
+            continue
+        bound = ""
+        if returned and target.column not in INCARNATION_COLUMNS:
+            stamp = _timestamp_column(conn, target.table)
+            if stamp is None:
+                replay.unbounded.append(target.table)
+                continue
+            bound = f" AND {_quote(conn, stamp)} <= :deleted_at"
+        replay.rows[f"{target.table}.{target.column}|{bound}|{target.group}|{int(target.uuid_column)}"] = 0
+    return replay
+
+
+def _replay_where(conn: Any, key: str) -> tuple[str, str]:
+    table_col, bound, group, uuid_column = key.split("|")
+    table, column = table_col.split(".", 1)
+    where = _where(conn, column, uuid_column == "1") + bound
+    if group == "audit":
+        where += f" AND {_learner_actions()}"
+    return table, where
+
+
+def _group_by_account(operations: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for op in operations:
+        grouped.setdefault(op["user_id"], []).append(op)
+    return grouped
+
+
+def owner_rows_left(engine: Any, operations: list[dict[str, Any]]) -> list[str]:
+    """Read-only, for `suppress --check`: each logged account whose deleted rows are back, within the same bound."""
+    problems: list[str] = []
+    with engine.connect() as conn:
+        for ops in _group_by_account(operations).values():
+            replay = _replay_for(conn, ops, lock=False)
+            if replay is None:
+                continue
+            params = {**_params(replay.account), **_learner_params(), "deleted_at": replay.deleted_at}
+            left = 0
+            for key in replay.rows:
+                table, where = _replay_where(conn, key)
+                left += int(conn.execute(text(f"SELECT count(*) FROM {_quote(conn, table)} WHERE {where}"), params).scalar() or 0)
+            if left:
+                problems.append(f"account {replay.account.id} holds {left} row(s) its deletion removed")
+            if replay.unbounded:
+                problems.append(f"account {replay.account.id} signed in again after its deletion; the operator decides "
+                                f"for tables with no timestamp: {', '.join(sorted(replay.unbounded))}")  # fmt: skip
+    return problems
+
+
+def reapply_owner_deletions(engine: Any, operations: list[dict[str, Any]], *, now: datetime | None = None) -> dict[str, Any]:
+    """After a restore (D-054 b): each logged deletion's owner rows are deleted again, BOUNDED to it.
+
+    - Incarnation-keyed rows: those of the logged incarnations only. A later re-registration is a new life (D-055).
+    - Account-keyed rows: all of them. For a learner who signed in again after the deletion, only the rows created at
+      or before it; a table with no timestamp is reported to the operator instead.
+    - The users row is reset and anonymised, and its sessions revoked, unless the learner came back after it.
+
+    One transaction. An account the restore does not hold is `absent`. `operations`: `deletion_log.confirmed_operations`."""
 
     moment = now or datetime.now(UTC)
-    summary = {"replayed": 0, "absent": 0}
+    summary: dict[str, Any] = {"replayed": 0, "absent": 0, "returned": [], "unbounded": {}}
     with engine.begin() as conn:
-        for account_id in account_ids:
-            row = conn.execute(text("SELECT user_key FROM users WHERE id = CAST(:a AS uuid) FOR UPDATE"),
-                               {"a": account_id}).first()  # fmt: skip
-            if row is None:
+        for ops in _group_by_account(operations).values():
+            replay = _replay_for(conn, ops, lock=True)
+            if replay is None:
                 summary["absent"] += 1
                 continue
-            account = Account(account_id, row[0], _incarnations(conn, account_id))
-            plan = build_plan(conn, account)
+            plan = build_plan(conn, replay.account)
             if plan.blockers:
                 raise DeletionRefused(f"a child table would refuse the replay: {'; '.join(plan.blockers)}")
-            _delete_owned(conn, account, plan)
-            _reset_user(conn, account)
-            _revoke_sessions(conn, account, moment)
+            params = {**_params(replay.account), **_learner_params(), "deleted_at": replay.deleted_at}
+            for key in replay.rows:
+                table, where = _replay_where(conn, key)
+                conn.execute(text(f"DELETE FROM {_quote(conn, table)} WHERE {where}"), params)
+            if replay.returned:
+                summary["returned"].append(replay.account.id)
+                if replay.unbounded:
+                    summary["unbounded"][replay.account.id] = sorted(replay.unbounded)
+            else:
+                _reset_user(conn, replay.account)
+                _revoke_sessions(conn, replay.account, moment)
             summary["replayed"] += 1
     return summary
 
 
 def _mark_incarnations_deleted(conn: Any, account: Account, moment: datetime) -> list[dict[str, Any]]:
-    """Every incarnation deleted; returns them (id, epoch, created_at) for the journal."""
+    """Every active incarnation deleted. Returns the ones THIS call changed (id, epoch, created_at) for the journal."""
     if not account.incarnations:
         # Never registered on the backbone: a deleted epoch-1 row, so the next sign-in meets the barrier (D-054).
+        ident = str(uuid.uuid4())
         conn.execute(text("INSERT INTO account_incarnations (id, user_id, epoch, status, created_at, deleted_at)"
                           " VALUES (CAST(:id AS uuid), CAST(:a AS uuid), 1, 'deleted', :now, :now)"),
-                     {"id": str(uuid.uuid4()), "a": account.id, "now": moment})  # fmt: skip
-    else:
-        conn.execute(text("UPDATE account_incarnations SET status = 'deleted', deleted_at = :now"
-                          " WHERE user_id = CAST(:a AS uuid) AND status = 'active'"), {"a": account.id, "now": moment})
-    return [{"id": str(r[0]), "epoch": int(r[1]), "created_at": r[2]} for r in conn.execute(text(
-        "SELECT id, epoch, created_at FROM account_incarnations WHERE user_id = CAST(:a AS uuid) ORDER BY epoch"),
-        {"a": account.id})]  # fmt: skip
+                     {"id": ident, "a": account.id, "now": moment})  # fmt: skip
+        return [{"id": ident, "epoch": 1, "created_at": moment}]
+    rows = conn.execute(text("UPDATE account_incarnations SET status = 'deleted', deleted_at = :now"
+                             " WHERE user_id = CAST(:a AS uuid) AND status = 'active' RETURNING id, epoch, created_at"),
+                        {"a": account.id, "now": moment}).all()  # fmt: skip
+    return [{"id": str(r[0]), "epoch": int(r[1]), "created_at": r[2]} for r in rows]
 
 
 def _reset_user(conn: Any, account: Account) -> None:
