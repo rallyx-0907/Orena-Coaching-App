@@ -78,6 +78,13 @@ def _require_repository() -> ReadingContentRepository:
 def _language(raw: str) -> str:
     language = (raw or "").strip().casefold()
     if not language:
+        # A client that asks with `language=` (an article with no language of its own, #324) means the learner's: their
+        # active learning language for this request - not an error. The request context always has one (the session's,
+        # else the account's, else the default), so the 422 below is only for a context set empty.
+        from writing_coach.core.request_context import current_language_code
+
+        language = (current_language_code() or "").strip().casefold()
+    if not language:
         raise orena_http_error(422, "reading_invalid_language", "Choose a learning language.")
     if _language_supported is not None and not _language_supported(language):
         raise orena_http_error(422, "reading_invalid_language", "Unsupported learning language.")
@@ -118,7 +125,12 @@ def list_articles(
             limit=max(1, min(int(limit), MAX_ARTICLE_PAGE)),
         )
     )
-    response.headers["Cache-Control"] = LEARNER_CACHE_CONTROL
+    if (language or "").strip():
+        response.headers["Cache-Control"] = LEARNER_CACHE_CONTROL
+    else:
+        # The learner's own language answered an empty one: the same URL differs per learner, so never a shared cache.
+        response.headers["Cache-Control"] = "private, max-age=60"
+        response.headers["Vary"] = "Cookie"
     return page
 
 

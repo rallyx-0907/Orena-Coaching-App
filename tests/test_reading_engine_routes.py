@@ -518,3 +518,25 @@ def test_a_chinese_article_takes_hsk_levels_only(setup):
     before = len(setup["audit"])
     call(setup["admin"], "POST", path, json={"reviewed_level": "HSK3"})
     assert not any(r["action"] == "admin.reading_level_override" for r in setup["audit"][before:])
+
+
+def test_an_empty_language_reads_as_the_learners_own_language(setup):
+    """#324: a client asks with `language=` when an article has no language of its own. That is "the learner's", not an
+    error: the learner's active learning language (the request's) is used - and, since the same URL now differs per
+    learner, the answer is never shared-cacheable. An unsupported language is still 422."""
+    from writing_coach.core.request_context import LANGUAGE_CODE_CTX
+
+    _publish_one(setup, language="en")  # an English article only
+    english = call(setup["learner"], "GET", "/api/reading/articles?language=en").json()["items"]
+    token = LANGUAGE_CODE_CTX.set("zh")  # a Chinese learner, not the default: proves the request's language is read
+    try:
+        own = call(setup["learner"], "GET", "/api/reading/articles?language=")
+        assert own.status_code == 200
+        zh = call(setup["learner"], "GET", "/api/reading/articles?language=zh").json()["items"]
+        assert english and own.json()["items"] == zh != english  # the learner's language, never the default
+        assert own.headers["cache-control"].startswith("private") and own.headers["vary"] == "Cookie"
+        named = call(setup["learner"], "GET", "/api/reading/articles?language=zh")
+        assert named.headers["cache-control"].startswith("public")  # a named language keeps its shared cache
+    finally:
+        LANGUAGE_CODE_CTX.reset(token)
+    assert call(setup["learner"], "GET", "/api/reading/articles?language=xx").status_code == 422
