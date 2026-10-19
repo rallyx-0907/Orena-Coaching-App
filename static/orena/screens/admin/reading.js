@@ -441,6 +441,22 @@ export async function mountReading(shell, ctx) {
     }
     host.paint();
   });
+  host.on('source-auto-publish', async (control, dataset) => {
+    const enable = dataset.enabled === '1';
+    if (enable) {
+      const answer = await host.confirm({ title: t('srcAutoConfirmTitle'), body: t('srcAutoConfirmBody'), cancel: t('actCancel'), confirm: t('srcAutoAllow') });
+      if (!answer.confirmed) return;
+    }
+    try {
+      await api.readingSetAutoPublish(dataset.id, enable);
+      data.sources = (await api.readingSources()).items || [];
+      view.error = '';
+      host.toast(t(enable ? 'srcAutoOnToast' : 'srcAutoOffToast'));
+    } catch (error) {
+      view.error = explain(error);
+    }
+    host.paint();
+  });
   host.on('source-state', async (control, dataset) => {
     const source = data.sources.find((item) => item.id === dataset.id);
     if (['blocked', 'archived'].includes(dataset.state)) {

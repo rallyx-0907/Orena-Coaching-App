@@ -159,6 +159,8 @@ export const adminApi = {
     request(`/api/admin/reading/articles/${encodeURIComponent(id)}/image/clear`, json('POST', body)),
   readingSetImagePolicy: (id, allowed) =>
     request(`/api/admin/reading/sources/${encodeURIComponent(id)}/image-policy`, json('POST', { allowed })),
+  readingSetAutoPublish: (id, enabled) =>
+    request(`/api/admin/reading/sources/${encodeURIComponent(id)}/auto-publish`, json('POST', { enabled })),
   readingQueue: (params) => request(`/api/admin/reading/queue${query(params)}`),
   readingArticle: (id) => request(`/api/admin/reading/articles/${encodeURIComponent(id)}`),
   readingEditArticle: (id, body) =>
