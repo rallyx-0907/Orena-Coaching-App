@@ -139,12 +139,16 @@ funding enforcement.
    - the refund, renewal and grace policy, **in the public English Terms before any charge**. The current Terms promise
      this. `PAID_PLANS_TERMS_DRAFT.md` is the draft. Legal text is English only (owner, 2026-10-19); no vi/zh
      version is required;
-   - tax: Polar is the merchant of record (D-MON-032).
+   - tax: Polar is the merchant of record (D-MON-032);
+   - **open, before real sales:** what counts as "data that only a paid plan provides". The Terms say it may be deleted
+     3 months after a paid plan ends (D-MON-035). A deletion job also needs approval, since deletion is a human gate.
+     Until both exist, nothing is deleted, so "kept for at least 3 months" already holds.
 5. **Gate 7b itself.** Readiness `ready: true`, then the owner's first real subscription (runbook §4-§5).
 
 ## 7. One approval for gate 7b (prepared; waits for the owner and for R1)
 
-The owner approves every write to Polar **production** in one list. Nothing on it has been done.
+The owner approves every write to Polar **production** in one list. Nothing on it has been done. The ordered
+checklist, with a check and a rollback per step, is `GATE_7B_APPROVAL_PACKAGE.md`.
 
 **Precondition:** R1 is resolved by the 2026-10-19 renewal run (§2-§3). If Polar leaves `modified_at` empty at
 renewal, a code fix lands first, with independent review. `:8000` runs a build from `main` (item 21: the
@@ -174,7 +178,7 @@ renewal, a code fix lands first, with independent review. `:8000` runs a build f
 | `ORENA_ACCOUNT_BACKBONE` | `on` |
 
 **Verified with no money taken** (sales paused):
-- readiness shows `capabilities.plans` ready, except for the `new_sales_paused` blocker;
+- readiness shows `capabilities.plans` ready with no blockers, and the top level blocked only by `new_sales_paused`;
 - `provider_prices: match` against the P1 products;
 - an unsigned POST to the webhook answers 401.
 

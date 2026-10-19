@@ -800,18 +800,27 @@ class BillingService:
 
     def _refund(self, fact: PaymentFact) -> WebhookOutcome:
         """A provider's refund is recorded, matched to an account only through its subscription's committed mapping
-        (§4.6). It never changes access: the subscription's own lifecycle events do (H4)."""
+        (§4.6). It never changes access: the subscription's own lifecycle events do (H4).
+
+        A refund ends the plan at once (owner, 2026-10-19, D-MON-035): the operator revokes the subscription on
+        Polar, whose `subscription.revoked` ends it here. A refund on a subscription that is not ended yet stays open
+        as a reminder - Polar would otherwise keep renewing it - and is resolved by the operator."""
 
         extra = fact.extra or {}
         refund_id = extra.get("refund_id") or fact.event_id
         subscription = extra.get("subscription_id") or ""
         mapped = self._commerce.get_provider_subscription(fact.gateway, subscription) if subscription else None
         incarnation = str(mapped["incarnation_id"]) if mapped else None
+        live = mapped is not None and mapped.get("state") != "ended"
+        reason = f"subscription {subscription}" if subscription else f"order {extra.get('order_id') or ''}"
+        if live:
+            reason += "; still live: revoke it on Polar (a refund ends the plan at once, D-MON-035)"
         self._item("provider_refund", fact.gateway, refund_id, external_event_id=fact.event_id,
                    reported_amount_minor=fact.amount_minor, reported_currency=fact.currency,
                    provider_state=fact.provider_state, payload_digest=fact.payload_digest or None,
-                   reason=f"subscription {subscription}" if subscription else f"order {extra.get('order_id') or ''}",
-                   incarnation_id=incarnation)  # fmt: skip
+                   reason=reason, incarnation_id=incarnation)  # fmt: skip
+        if live:
+            return WebhookOutcome("recorded", "refund_subscription_live")
         if incarnation is not None and self._items.auto_resolve(
                 kind="provider_refund", gateway=fact.gateway, dedupe_key=refund_id, outcome="recorded",
                 note="matched to its subscription's account; access follows subscription events", now=self._now()):

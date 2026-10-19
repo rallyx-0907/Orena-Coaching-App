@@ -370,3 +370,37 @@ D-MON-034 | 2026-10-17 | Plan prices are shown in US dollars in every language (
   USD only, so Pricing and the Billing Sheet show the dollar amount the learner is charged, formatted in the interface
   language's own way; dong stay with Credits (SePay). This replaces D-153's dong-for-Vietnamese plan display. | No gap
   between the price shown and the price charged. | `PR-MON-9_DESIGN.md`, `static/orena/screens/plan/model.js`.
+D-MON-035 | 2026-10-19 | A refund ends the plan at once; a downgrade credits the unused part (owner, relayed by Hermes;
+  refines H4: the refund event itself still changes no access, the operator's revocation ends the plan). **Refund:** the paid plan ends when the refund is made and the
+  account returns to Free. Orena keeps following Polar's subscription lifecycle, so the operator **refunds and revokes
+  the subscription at once** in Polar's dashboard (`subscription.revoked` ends it, proven in PR-MON-10 step 4).
+  Revoking also stops Polar from renewing a refunded subscription, which a refund alone does not do. A
+  `provider_refund` on a subscription that is not ended stays open, with "revoke it on Polar"
+  (`service._refund`); it is dismissable, so it closes no sales. **Downgrade:** the unused part of the higher plan
+  counts against the lower one. Polar's behaviour under proration `invoice` is read from sandbox subscription D
+  (2026-10-19); the runbook's portal setting follows it. **Data after a paid plan ends (owner, 10:20):** learning data is kept for 3 months after a paid plan is cancelled,
+  expires or is refunded; after that, data that only a paid plan provides may be deleted; the account and Free's data stay
+  under the Privacy Policy. No code deletes anything: defining that data and a deletion job is an open item before
+  real sales, and deletion is a human gate. The refund rule (when and for how
+  long) is still open. | A refunded learner neither keeps paid access nor keeps being charged. | `service.py`
+  `_refund`, `tests/test_billing_reconciliation.py`, `RUNBOOK_POLAR_ACTIVATION.md` §5, `PAID_PLANS_TERMS_INSERT.md`.
+D-MON-036 | 2026-10-19 | The refund rule (owner, 10:35, relayed by Hermes; modelled on Claude's (Anthropic's) published
+  refund rules, adapted).
+  - Payments are non-refundable, except where the law where the learner lives requires a refund, or in these cases:
+    (a) a duplicate or erroneous charge from a payment fault;
+    (b) a problem on Orena's side made the paid features unusable for most of a billing period;
+    (c) in the EEA or the UK, within 14 days of the purchase, less the share of the period already used;
+    (d) other cases, at Orena's discretion.
+  - The learner asks by email to `orena.support@chillpickle.org`, from the account's address.
+  - Refunds are issued through Polar, the merchant of record, whose buyer terms also apply. Polar may refund an order
+    itself within 60 days to prevent chargebacks; that also cancels the subscription.
+  - While a bank dispute or chargeback is open, no refund is processed.
+  - A refund ends the plan at once (D-MON-035). Cancelling works at any time and takes effect at the period end.
+    An upgrade applies at once, with the unused part counted. A downgrade credits the unused part.
+  - Every refund on Polar production is a production write, so it needs the owner's approval until the owner
+    changes that rule.
+
+  Checked on 2026-10-19 against Polar's buyer terms (refunds under law and policy; chargeback rights kept) and its
+  refund documentation (refunding a subscription order does not end the subscription). No contradiction. | A clear,
+  common rule that promises nothing the system cannot do. | `PAID_PLANS_TERMS_INSERT.md`,
+  `RUNBOOK_POLAR_ACTIVATION.md` "Handling a refund request".
