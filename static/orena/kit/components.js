@@ -112,7 +112,7 @@ export function mediaCard({
   const posterTitle = full || (typeof title === 'string' ? title : '');
   return html`<button type="button" class="o-card o-card--hover c-media"${dataAttrs(dataset)}>
     <span class="${cls('c-media__img', !image && cover?.icon && 'c-media__img--blank')}" style="${imgRules}"${image && cover?.icon ? raw(` data-cover-url="${esc(String(image).replace(/^url\(["']?|["']?\)$/g, ''))}" data-cover-icon="${esc(cover.icon)}" data-cover-tint="${esc(cover.tint)}" data-cover-glyph="${esc(posterGlyph(posterTitle))}"`) : ''}>
-      ${image ? '' : posterMarkup(cover, posterTitle)}
+      ${image ? (posterTitle ? html`<span class="c-media__alt" role="img" aria-label="${posterTitle}"></span>` : '') : posterMarkup(cover, posterTitle)}
       ${kind ? html`<span class="o-overlay-pill c-media__badge c-media__badge--tl">${kind}</span>` : ''}
       ${duration ? html`<span class="o-overlay-pill c-media__badge c-media__badge--br">${duration}</span>` : ''}
       ${pct != null ? html`<span class="c-media__progress"><span style="width:${pct}%"></span></span>` : ''}

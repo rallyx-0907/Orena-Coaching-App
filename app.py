@@ -1318,6 +1318,7 @@ configure_content_packs(
     ],
     vocabulary_export=lambda collection_id: _vocabulary_pack_export(collection_id),
     vocabulary_import=lambda data, **kwargs: _vocabulary_pack_import(data, **kwargs),
+    thumbnail_reader=lambda key: _thumbnail_asset_store.get(key),
     media_store=_media_library_store,
     media_assets=_media_library_assets,
     media_translations=_learning_cache,
@@ -1733,6 +1734,13 @@ from writing_coach.book_asset_store import FilesystemBookAssetStore  # noqa: E40
 from writing_coach.persistence.reading_library_repository import (  # noqa: E402
     PostgresReadingLibraryRepository,
 )
+from writing_coach.thumbnails import (  # noqa: E402
+    collection_view as _collection_thumbnail_view,
+    require_reading_thumbnails,
+    pack_meta as _pack_thumbnail_meta,
+    stored_thumbnail as _stored_thumbnail,
+    typographic_cover_svg as _typographic_cover_svg,
+)
 from writing_coach.reading_library_api import (  # noqa: E402
     configure_reading_library,
     router as reading_library_router,
@@ -1741,6 +1749,11 @@ from writing_coach.reading_library_api import (  # noqa: E402
 _reading_library_asset_root = Path(
     os.getenv("READING_LIBRARY_ASSET_ROOT", str(ROOT / "data" / "reading_library_assets"))
 )
+# D-240: vocabulary collections keep their cover bytes in the same runtime asset root; setting the store turns the
+# publish gate on and lets the import pipeline make a typographic cover when it publishes.
+_thumbnail_asset_store = FilesystemBookAssetStore(_reading_library_asset_root)
+if getattr(_persistence_runtime, "vocabulary_repository", None) is not None:
+    _persistence_runtime.vocabulary_repository.cover_store = _thumbnail_asset_store
 configure_reading_library(
     PostgresReadingLibraryRepository(_persistence_runtime.engine)
     if _persistence_runtime.backend == "postgresql"
@@ -1840,6 +1853,9 @@ def configure_reading_engine_from_runtime() -> None:
     global _reading_evidence_repository
     engine = _persistence_runtime.engine
     content = ReadingContentRepository(engine) if engine is not None else None
+    if content is not None:
+        # D-240: no article is published without a thumbnail; the engine's automatic admission makes a cover itself.
+        require_reading_thumbnails(content, FilesystemBookAssetStore(_reading_library_asset_root))
     # Recommendations from /next are signed with a key derived from the
     # session secret, so a submit can prove the policy recommended its set.
     evidence = ReadingEvidenceRepository(engine, recommendation_secret=SESSION_SECRET) if engine is not None else None
@@ -4508,6 +4524,28 @@ VOCABULARY_PACK_RECORD_KEYS = (
 )
 
 
+def _apply_vocabulary_pack_thumbnail(repository: Any, collection_id: str, metadata: dict[str, Any], data: dict[str, Any],
+                                     assets: dict[str, bytes]) -> None:
+    """Every imported collection has a thumbnail (D-240): the verified picture its pack carries, else the
+    deterministic typographic cover. An invalid thumbnail fails the item (a ThumbnailRefused with its code)."""
+    from writing_coach import thumbnails
+
+    if repository.collection_thumbnail(collection_id) is not None:
+        return
+    parsed = thumbnails.read_pack_thumbnail(data.get("thumbnail"), assets)
+    if parsed is not None:
+        record, provenance = parsed
+        key = thumbnails.asset_key("vocabulary", collection_id, record["sha256"], record["ext"])
+        thumbnails.store_record(_thumbnail_asset_store, key, record)
+        stored = thumbnails.stored_dict(record, key, provenance)
+    else:
+        stored = thumbnails.make_cover(
+            _thumbnail_asset_store, "vocabulary", collection_id, title=str(metadata.get("title") or collection_id),
+            language=str(metadata.get("language_code") or ""), topic=str(metadata.get("topic") or metadata.get("framework") or ""),
+            kind="vocabulary")
+    repository.set_collection_thumbnail(collection_id, stored)
+
+
 def _vocabulary_pack_export(collection_id: str) -> dict[str, Any] | None:
     """A published collection as a pack carries it: its metadata, its admission answers and its entries."""
 
@@ -4525,11 +4563,14 @@ def _vocabulary_pack_export(collection_id: str) -> dict[str, Any] | None:
         "meaning_language": next(iter(meanings)) if len(meanings) == 1 else "",
         "rights_status": admission.get("rights_status", ""), "completeness": admission.get("completeness", ""),
         "label": provenance.get("label", ""),
+        # D-240: the collection's thumbnail travels with it (its provenance here, a downloaded picture's bytes in the pack).
+        **({"thumbnail": meta} if (meta := _pack_thumbnail_meta(_stored_thumbnail(provenance))) else {}),
         "entries": [{key: entry.get(key) for key in VOCABULARY_PACK_RECORD_KEYS} for entry in collection.get("entries", [])],
     }
 
 
-def _vocabulary_pack_import(data: dict[str, Any], *, imported_by: str, pack_id: str) -> dict[str, Any]:
+def _vocabulary_pack_import(data: dict[str, Any], *, imported_by: str, pack_id: str,
+                            assets: dict[str, bytes] | None = None) -> dict[str, Any]:
     """One pack collection through the same path a CSV import takes after parsing: the metadata normaliser, the
     D-111 publication rule, `import_source`, localization, and publication only when every entry imported."""
 
@@ -4559,6 +4600,7 @@ def _vocabulary_pack_import(data: dict[str, Any], *, imported_by: str, pack_id: 
                                             default_vocabulary_localization_sources())  # fmt: skip
     result = repository.import_source(collection=collection, source=source, records=records, mapping={},
                                       imported_by=imported_by)  # fmt: skip
+    _apply_vocabulary_pack_thumbnail(repository, collection_id, collection_metadata, data, assets or {})
     if _localization_table_available(repository):
         try:
             materialize_localizations(repository, collection_metadata["language_code"],
@@ -5208,6 +5250,9 @@ def becoming_vocabulary_library_collections(language_code: str = Query(default="
         summary["progress"] = _vocabulary_collection_progress(
             catalogs[summary["id"]].get("entries", []), saved_by_word
         )
+        summary["thumbnail"] = summary.get("thumbnail") or _collection_thumbnail_view(
+            summary["id"], summary.get("title") or "", summary.get("provenance")
+        )
         summaries.append(summary)
     summaries.sort(key=lambda item: (str(item.get("framework") or ""), str(item.get("title") or "")))
     general = _general_catalogue_summary(code)
@@ -5251,6 +5296,7 @@ def _general_catalogue_summary(code: str) -> dict[str, Any] | None:
             return None
         summary = dict(summary)
         summary["progress"] = _general_progress(code)
+        summary["thumbnail"] = _collection_thumbnail_view(summary.get("id") or "", summary.get("title") or "", None)
         return summary
     except (VocabularyContentUnavailable, RuntimeError, OSError):
         return None
@@ -5292,6 +5338,42 @@ def _vocabulary_collection_progress(
 
 
 @app.get(
+    "/api/vocabulary/library/collections/{collection_id}/cover",
+    name="becoming_vocabulary_library_collection_cover",
+    include_in_schema=False,
+)
+def becoming_vocabulary_library_collection_cover(collection_id: str, request: Request) -> Response:
+    """A collection's thumbnail from our own copy (D-240): the stored picture or cover, else the deterministic
+    typographic cover made from its title. Never a third party's address."""
+    if is_reserved_collection_id(collection_id):
+        collection = _general_catalogue_page(collection_id, search="", level="", limit=1, offset=0)
+    else:
+        collection = _persisted_vocabulary_collection(collection_id, limit=1) or get_vocabulary_collection(collection_id)
+    if collection is None:
+        raise HTTPException(404, "Vocabulary collection not found.")
+    title = str(collection.get("title") or "")
+    stored = _stored_thumbnail(collection.get("provenance"))
+    data, content_type, etag = b"", "image/svg+xml", ""
+    if stored:
+        try:
+            data, content_type = _thumbnail_asset_store.get(stored["asset_key"]), str(stored.get("content_type") or "")
+            etag = f'"{str(stored.get("sha256") or "")[:32]}"'
+        except Exception:  # noqa: BLE001 - a stored cover that cannot be read falls back to the generated one
+            data = b""
+    if not data:
+        data = _typographic_cover_svg(
+            title, language=str(collection.get("language_code") or ""),
+            topic=str(collection.get("topic") or collection.get("framework") or ""), kind="vocabulary",
+        )
+        content_type, etag = "image/svg+xml", '"t' + hashlib.sha256(data).hexdigest()[:31] + '"'
+    headers = {"Cache-Control": "private, no-cache", "ETag": etag, "X-Content-Type-Options": "nosniff",
+               "Content-Security-Policy": "default-src 'none'; sandbox", "Cross-Origin-Resource-Policy": "same-origin"}
+    if request.headers.get("if-none-match") == etag:
+        return Response(status_code=304, headers=headers)
+    return Response(content=data, media_type=content_type, headers=headers)
+
+
+@app.get(
     "/api/vocabulary/library/collections/{collection_id}",
     name="becoming_vocabulary_library_collection_detail",
 )
@@ -5319,6 +5401,9 @@ def becoming_vocabulary_library_collection_detail(
     if collection is None:
         raise HTTPException(404, "Vocabulary collection not found.")
     entries = collection.pop("entries")
+    collection["thumbnail"] = collection.get("thumbnail") or _collection_thumbnail_view(
+        collection.get("id") or collection_id, collection.get("title") or "", collection.get("provenance")
+    )
     if search or level:
         needle = search.strip().casefold()
         wanted_level = level.strip().casefold()

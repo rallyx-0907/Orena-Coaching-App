@@ -39,6 +39,7 @@ class _Packs:
     vocabulary_ids: Callable[[tuple[str, ...], str], list[str]] | None = None
     vocabulary_export: Callable[[str], dict[str, Any] | None] | None = None
     vocabulary_import: Callable[..., dict[str, Any]] | None = None
+    thumbnail_reader: Callable[[str], bytes] | None = None  # the bytes of a stored thumbnail, by its asset key (D-240)
     media_store: Any = None
     media_assets: Any = None
     media_translations: Any = None  # the learning cache Listening reads stored cue meanings from
@@ -82,14 +83,20 @@ def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[Pa
         if extra is not None and _state.media_translations is not None:
             extra["coverage"] = media_pack.translation_coverage(media_items)
         if extra is not None:
-            extra["assets"], extra["excluded"] = blobs, excluded
+            extra.setdefault("assets", {}).update(blobs)
+            extra["excluded"] = excluded
     languages = tuple(code for code in body.languages if code in {"en", "zh"})
     if "reading" in body.kinds:
-        items += reading.pack_reading_items(source_slug_prefix=body.source_slug_prefix.strip(), languages=languages)
+        items += reading.pack_reading_items(source_slug_prefix=body.source_slug_prefix.strip(), languages=languages,
+                                            assets_out=extra.setdefault("assets", {}) if extra is not None else None)
     if "vocabulary" in body.kinds and _state.vocabulary_ids and _state.vocabulary_export:
         for collection_id in _state.vocabulary_ids(languages, body.collection_prefix.strip()):
             data = _state.vocabulary_export(collection_id)
             if data is not None:
+                meta = data.get("thumbnail")
+                if (extra is not None and isinstance(meta, dict) and meta.get("kind") != "typographic"
+                        and _state.thumbnail_reader is not None):
+                    extra.setdefault("assets", {})[meta["asset_key"]] = _state.thumbnail_reader(meta["asset_key"])
                 items.append(PackItem(kind="vocabulary_collection", natural_key=collection_id, data=data))
     return items
 
@@ -217,9 +224,10 @@ async def import_pack(request: Request, file: UploadFile | None = File(default=N
                     result = {"result": "failed", "category": "vocabulary_unavailable"}
                 else:
                     result = {"result": "imported", **_state.vocabulary_import(
-                        dict(item.data), imported_by=reading._actor(admin), pack_id=pack_id)}
+                        dict(item.data), imported_by=reading._actor(admin), pack_id=pack_id, assets=pack.assets)}
             else:
-                result = reading._guarded(lambda item=item: reading.pack_import_reading(item, admin, pack_id=pack_id))
+                result = reading._guarded(lambda item=item: reading.pack_import_reading(
+                    item, admin, pack_id=pack_id, assets=pack.assets))
         except Exception as exc:  # noqa: BLE001 - one item never fails the pack; its failure is reported
             result = {"result": "failed", "category": getattr(exc, "code", type(exc).__name__)}
         results.append({"kind": item.kind, "natural_key": item.natural_key, "outcome": outcome, **result})

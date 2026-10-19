@@ -83,6 +83,9 @@ export function collectionViewModel(collection = {}, support = '') {
     // `_summary`'s `language_code`).
     language: String(collection.language_code || ''),
     level: String(collection.level_range || collection.level || ''),
+    // D-240: the collection's thumbnail is the backend's own same-origin cover route; anything else is no picture.
+    image: /^\/api\/vocabulary\/library\/collections\/[^/?#"')]{1,200}\/cover(\?v=[A-Za-z0-9]{1,16})?$/.test(String(collection.thumbnail?.url || '')) ? String(collection.thumbnail.url) : '',
+    imageAlt: String(collection.thumbnail?.alt || ''),
     description: '', // rule 40: no description field exists on VocabularyCollection
     wordCount,
     metInSources: 0, // rule 40: no source-encounter aggregate exists for a collection

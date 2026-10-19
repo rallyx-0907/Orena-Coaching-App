@@ -128,6 +128,8 @@ export function entryFromMedia(item, continuation) {
 
 /* GET /api/vocabulary/library/collections item -> entry. Progress is the collection's own
    learned/total count, not the continuation shelf (a collection is learned, not read). */
+const OWN_COLLECTION_COVER = /^\/api\/vocabulary\/library\/collections\/[^/?#"')]{1,200}\/cover(\?v=[A-Za-z0-9]{1,16})?$/;
+const ownCollectionCover = (thumbnail) => OWN_COLLECTION_COVER.test(String(thumbnail?.url || ''));
 export function entryFromCollection(item) {
   const id = `collection:${item.id}`;
   const total = Number(item.item_count) || 0;
@@ -144,7 +146,8 @@ export function entryFromCollection(item) {
     level: item.level_range || item.level || '',
     topic: item.topic || '',
     itemCount: total || null,
-    image: '',
+    // D-240: every collection has a thumbnail (the backend's own same-origin cover route).
+    image: ownCollectionCover(item.thumbnail) ? `url("${item.thumbnail.url}")` : '',
     started: total > 0 && learned > 0,
     progressPct: total > 0 && learned > 0 ? Math.max(1, Math.min(100, Math.round((learned / total) * 100))) : null,
     progressLearned: learned,

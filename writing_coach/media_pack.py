@@ -37,6 +37,7 @@ from writing_coach.content_packs import Pack, PackItem, content_hash
 from writing_coach.core.support_languages import all_support_languages
 from writing_coach.media_meaning import IMPORTED_IDENTITY, cache_key
 from writing_coach.media_library_store import MediaLibraryEntry, validate_entry
+from writing_coach.thumbnails import has_media_thumbnail, media_cover_key, typographic_record
 
 KIND = "media_item"
 NEW, UNCHANGED, CONFLICT, REFUSED, OVERWRITTEN = "new", "unchanged", "conflict", "refused", "overwritten"
@@ -402,6 +403,15 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
     problem = _asset_problem(item, pack.assets, candidate, assets, store, clip_keys)
     if problem:
         return {**row, "outcome": REFUSED, "reason": problem}, None
+    # D-240: an item arrives with a thumbnail. One that carries none (a pack from before the rule) gets the deterministic
+    # typographic cover, whose bytes `apply_media_items` writes with the entry; a provider-hosted one stays provider-served.
+    if not has_media_thumbnail(candidate.thumbnail):
+        record = typographic_record(candidate.title, language=candidate.language, topic=_lesson_topic(candidate), kind="media")
+        candidate = replace(
+            candidate, thumbnail={"kind": "asset", "ref": media_cover_key(candidate.media_id, record)},
+            source={**dict(candidate.source), "thumbnail_kind": "typographic", "thumbnail_source_url": "",
+                    "thumbnail_author": "", "thumbnail_licence": "", "thumbnail_licence_url": ""})
+        row["thumbnail"] = "typographic"
     # Published only if the rights are complete and the stored transcript passes the same checks Publish uses.
     hold = ""
     if not rights_complete(candidate.source):
@@ -435,6 +445,10 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
         final = replace(final, status=existing.status)
         row["kept_status"] = existing.status
     return {**row, "outcome": OVERWRITTEN, "reason": differs, "status": final.status}, final
+
+
+def _lesson_topic(entry: Any) -> str:
+    return str(entry.lesson.get("topic") or "") if isinstance(entry.lesson, Mapping) else ""
 
 
 def apply_media_items(pack: Pack, store: Any, assets: Any, *, overwrite: bool = False, dry_run: bool = True,
@@ -471,6 +485,9 @@ def apply_media_items(pack: Pack, store: Any, assets: Any, *, overwrite: bool = 
                 if final is not None:
                     for asset in item.data["assets"]:
                         assets.put(asset["key"], pack.assets[f"assets/{asset['key']}"])
+                    if row.get("thumbnail") == "typographic":
+                        cover = typographic_record(final.title, language=final.language, topic=_lesson_topic(final), kind="media")
+                        assets.put(final.thumbnail["ref"], cover["data"])
                     store.upsert(final)
                     row["written"] = True
                 stamp = datetime.now(UTC).isoformat()

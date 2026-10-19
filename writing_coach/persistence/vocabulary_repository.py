@@ -38,6 +38,7 @@ from writing_coach.persistence.models import (
     VocabularySenseLocalization,
     VocabularySourceImport,
 )
+from writing_coach.thumbnails import ThumbnailRequired, collection_view, make_cover, stored_thumbnail
 from writing_coach.vocabulary_source_import import (
     canonical_vocabulary_identity,
     canonical_vocabulary_normalized_term,
@@ -483,6 +484,11 @@ def _entry_dict(entry: VocabularyEntry) -> dict[str, Any]:
 
 class SQLAlchemyVocabularyRepository:
     """Shared repository implementation for PostgreSQL and test SQLite."""
+
+    # D-240: a collection is published only with a thumbnail. The application sets `cover_store` (the runtime asset
+    # store) at wiring, which turns the gate on and lets the import pipeline's own publication make a typographic
+    # cover; a bare repository (a script, a unit test) stays permissive.
+    cover_store: Any = None
 
     def __init__(self, engine: Engine, *, allow_sqlite_initialize: bool = False) -> None:
         self.engine = engine
@@ -1180,6 +1186,8 @@ class SQLAlchemyVocabularyRepository:
                     # Reaching learners is gated by the same admission record as
                     # `finalize_collection_publication`, whichever route asks.
                     _publication_admission(provenance)
+                    if self.cover_store is not None and stored_thumbnail(provenance) is None:
+                        raise ThumbnailRequired("vocabulary collection")
                 history = list(provenance.get("status_history") or [])
                 history.append({"from": current, "to": wanted, "actor": actor, "at": now.isoformat()})
                 collection.catalog_status = wanted
@@ -1193,6 +1201,32 @@ class SQLAlchemyVocabularyRepository:
                 collection.updated_at = now
             levels, item_count = self._collection_stats(session, clean_id)
             return _collection_summary(collection, levels, item_count)
+
+    def set_collection_thumbnail(self, collection_id: str, stored: Mapping[str, Any]) -> dict[str, Any]:
+        """Record a collection's stored thumbnail in its existing `provenance` JSON (no schema change)."""
+        self._require_available()
+        clean_id = _text(collection_id)
+        if is_reserved_collection_id(clean_id):
+            raise ValueError(_RESERVED_ID_MESSAGE)
+        now = _now()
+        with Session(self.engine) as session, session.begin():
+            collection = session.get(VocabularyCollection, clean_id)
+            if collection is None:
+                raise ValueError(f"Vocabulary collection '{clean_id}' was not imported.")
+            provenance = _copy_json(collection.provenance, {}) or {}
+            if not isinstance(provenance, Mapping):
+                provenance = {}
+            collection.provenance = {**dict(provenance), "thumbnail": dict(stored)}
+            collection.updated_at = now
+            levels, item_count = self._collection_stats(session, clean_id)
+            return _collection_summary(collection, levels, item_count)
+
+    def collection_thumbnail(self, collection_id: str) -> dict[str, Any] | None:
+        """The stored thumbnail of one collection (any status), or None."""
+        self._require_available()
+        with Session(self.engine) as session:
+            collection = session.get(VocabularyCollection, _text(collection_id))
+            return stored_thumbnail(collection.provenance) if collection is not None else None
 
     def correct_entry_gloss(
         self, collection_id: str, entry_id: str, language: str, text: str, *, actor: str
@@ -1276,9 +1310,17 @@ class SQLAlchemyVocabularyRepository:
                 existing_provenance = _copy_json(collection.provenance, {}) or {}
                 if not isinstance(existing_provenance, Mapping):
                     existing_provenance = {}
+                thumbnail = {}
+                if self.cover_store is not None and stored_thumbnail(existing_provenance) is None:
+                    # The import pipeline publishes with nobody looking: it gives the collection its own typographic
+                    # cover (D-240, source 3) in the same step.
+                    thumbnail = {"thumbnail": make_cover(
+                        self.cover_store, "vocabulary", collection.id, title=collection.title,
+                        language=collection.language_code, topic=collection.topic or collection.framework, kind="vocabulary")}
                 collection.catalog_status = "published"
                 collection.provenance = {
                     **dict(existing_provenance),
+                    **thumbnail,
                     "catalog_status": "published",
                     "admission": _copy_json(final_admission, {}),
                 }
@@ -2130,6 +2172,7 @@ def _collection_summary(
         "provenance": _copy_json(collection.provenance, {}),
         "catalog_status": collection.catalog_status,
         "origin": collection.origin,
+        "thumbnail": collection_view(collection.id, collection.title, collection.provenance),
     }
 
 
