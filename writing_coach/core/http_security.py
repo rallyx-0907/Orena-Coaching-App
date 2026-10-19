@@ -20,6 +20,7 @@ import hashlib
 import ipaddress
 import json
 import logging
+import os
 import re
 from collections.abc import Mapping
 from functools import lru_cache
@@ -331,8 +332,24 @@ UPLOAD_BODY_LIMITS: tuple[tuple[str, int], ...] = (
     ("/api/media-learning/upload", 96 * _MIB),  # media, 64 MiB
     ("/api/media/admin/upload", 256 * _MIB),
     ("/api/speech/transcribe", 32 * _MIB),  # recording, operator-set cap up to 24 MiB
-    ("/api/speech/pronunciation", 16 * _MIB),  # recording, 8 MiB
+    ("/api/speech/pronunciation", 16 * _MIB),  # recording, 8 MiB by default; see pronunciation_body_limit
 )
+_PRONUNCIATION_PATH = "/api/speech/pronunciation"
+_PRONUNCIATION_MAX_BYTES_ENV = ("AZURE_PRONUNCIATION_MAX_BYTES", "DEMO_PRONUNCIATION_MAX_BYTES")
+_PRONUNCIATION_FORM_OVERHEAD = _MIB  # the reference text and multipart framing beside the recording
+
+
+def pronunciation_body_limit() -> int:
+    """The pronunciation route's body cap: the 16 MiB default, or more when an operator raised a provider's
+    `*_PRONUNCIATION_MAX_BYTES`, so the request boundary never refuses a recording the provider would accept."""
+    limit = dict(UPLOAD_BODY_LIMITS)[_PRONUNCIATION_PATH]
+    for name in _PRONUNCIATION_MAX_BYTES_ENV:
+        try:
+            configured = int(os.environ.get(name) or 0)
+        except ValueError:
+            continue
+        limit = max(limit, configured + _PRONUNCIATION_FORM_OVERHEAD)
+    return limit
 
 
 def body_limit(method: str, path: str) -> int | None:
@@ -341,7 +358,7 @@ def body_limit(method: str, path: str) -> int | None:
         return None
     for prefix, limit in UPLOAD_BODY_LIMITS:
         if path.startswith(prefix):
-            return limit
+            return pronunciation_body_limit() if prefix == _PRONUNCIATION_PATH else limit
     return DEFAULT_BODY_LIMIT
 
 
