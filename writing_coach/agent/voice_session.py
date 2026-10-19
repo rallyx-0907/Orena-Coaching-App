@@ -502,15 +502,16 @@ class VoiceService:
         request = TurnRequest.model_validate({**dict(body), "trigger": "open"})
         turn = TurnInput.from_request(request)
         session_state, _ = self.runtime.sessions.open(request.session_id, learner.user_key)
-        memory = self._memory_turn(learner, request)
+        classes = self._data_classes()  # one snapshot of the owner's record for this session (#264), a local
+        memory = self._memory_turn(learner, request, classes)
         tier1, session_state, notes_available = self._gate_data_classes(
             turn, build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state,
-            memory_on=getattr(self.runtime, "memory", None) is not None)  # fmt: skip
+            classes, memory_on=getattr(self.runtime, "memory", None) is not None)  # fmt: skip
         tier1, device_notes = self._with_memory(tier1, memory, request)
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
-        pack, pack_memory = self._learner_pack(session_state, learner, request, memory)
+        pack, pack_memory = self._learner_pack(session_state, learner, request, classes, memory)
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
-        self._record_data_class_sent(session_state, learner, pack=pack, notes=tier1.coach_notes,
+        self._record_data_class_sent(session_state, learner, classes, pack=pack, notes=tier1.coach_notes,
                                      context=carried_state(turn, tier1, session_state), memory=pack_memory)  # fmt: skip
         specs = self._tool_specs(request, learner)
         locale = request.context.locale
@@ -695,7 +696,7 @@ class VoiceService:
         target = tier1.contract_locale.target
         return tuple(entry.id for entry in self.runtime.capabilities.for_surface(tier1.surface, target))
 
-    def _learner_pack(self, session_state, learner: LearnerScope, request: TurnRequest,
+    def _learner_pack(self, session_state, learner: LearnerScope, request: TurnRequest, classes,
                       memory: MemoryTurn | None = None) -> tuple[str | None, bool]:
         """The learner pack (agent/memory_pack.py) for the voice setup: the conversation's own when its text turns
         built one for this language pair and memory version - the same learner, the same bytes - else one at the voice
@@ -705,7 +706,6 @@ class VoiceService:
         builder = getattr(self.runtime, "pack", None)
         if builder is None or not getattr(builder, "enabled", False):
             return None, False
-        classes = getattr(self.runtime, "data_classes", None)
         # G8: the voice vendor is Gemini Live (the one-use token is minted there); its class is the owner's record.
         if classes is not None and not classes.cleared("gemini", self.model, PACK_CLASS):
             return None, False
@@ -731,14 +731,13 @@ class VoiceService:
             return None, False
         return pack.text, carries_memory(pack)
 
-    def _memory_turn(self, learner: LearnerScope, request: TurnRequest) -> MemoryTurn | None:
+    def _memory_turn(self, learner: LearnerScope, request: TurnRequest, classes) -> MemoryTurn | None:
         """Orena Memory for this voice session, as for a turn (agent/turn.py `_memory_turn`): the vendor is Gemini Live,
         so its record decides whether the session may carry memory."""
 
         runtime_memory = getattr(self.runtime, "memory", None)
         if runtime_memory is None:
             return None
-        classes = getattr(self.runtime, "data_classes", None)
         cleared = classes is not None and classes.cleared("gemini", self.model, DataClass.FULL_MEMORY)
         return runtime_memory.turn(learner.user_key, version=request.version, cleared=cleared)
 
@@ -761,12 +760,19 @@ class VoiceService:
             return None
         return self.runtime.memory.server_notes(learner.user_key, to_internal(request.context.locale.target))
 
-    def _gate_data_classes(self, turn: TurnInput, tier1, session_state, *, memory_on: bool = False):
+    def _data_classes(self):
+        """A fresh snapshot of the owner's provider data-class record (#264), taken by each `open()` and passed down as
+        a local: the service is shared by every session, so it keeps none. None: the runtime is not gated."""
+
+        classes = getattr(self.runtime, "data_classes", None)
+        snapshot = getattr(classes, "snapshot", None)
+        return snapshot() if callable(snapshot) else classes
+
+    def _gate_data_classes(self, turn: TurnInput, tier1, session_state, classes, *, memory_on: bool = False):
         """G8 for the voice setup (ORENA_MEMORY.md §8 b, c), while the gate is on: a conversation that has sent a class
         of data is not continued by a voice vendor cleared for less (the session does not open: text goes on), and
         coach notes reach the vendor only when it is cleared for `full_memory`."""
 
-        classes = getattr(self.runtime, "data_classes", None)
         if not gating_on(getattr(self.runtime, "pack", None), classes, memory_on=memory_on):
             return tier1, session_state, True
         level = classes.of("gemini", self.model)  # the voice vendor is Gemini Live
@@ -779,9 +785,9 @@ class VoiceService:
             tier1, session_state = without_carried_state(turn, tier1, session_state)
         return tier1, session_state, notes_available
 
-    def _record_data_class_sent(self, session_state, learner: LearnerScope, *, pack: str | None, notes,
+    def _record_data_class_sent(self, session_state, learner: LearnerScope, classes, *, pack: str | None, notes,
                                 context: bool, memory: bool = False) -> None:  # fmt: skip
-        if not gating_on(getattr(self.runtime, "pack", None), getattr(self.runtime, "data_classes", None),
+        if not gating_on(getattr(self.runtime, "pack", None), classes,
                          memory_on=memory or getattr(self.runtime, "memory", None) is not None):  # fmt: skip
             return
         level = max(pack_class(with_memory=memory) if pack else 0, NOTES_CLASS if notes else 0,

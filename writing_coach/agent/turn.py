@@ -684,6 +684,16 @@ class _Turn:
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
 
+    def _data_classes(self):
+        """The provider data-class record for this turn: one snapshot of the owner's record (#264), so every check in
+        the turn sees the same one. None: the runtime is not gated."""
+
+        if not hasattr(self, "_classes_snapshot"):
+            classes = self.rt.data_classes
+            snapshot = getattr(classes, "snapshot", None)
+            self._classes_snapshot = snapshot() if callable(snapshot) else classes
+        return self._classes_snapshot
+
     def _gate_data_classes(self, turn: TurnInput, tier1, session):
         """G8 for the whole request (ORENA_MEMORY.md §8 b, c), while the gate is on, before anything is pinned or sent:
         a conversation that has sent a class of data is not continued on a provider cleared for less; coach notes
@@ -691,7 +701,7 @@ class _Turn:
         a new note the learner asks for is still kept (owner, 2026-10-18); the chat context's learning evidence
         (`earlier_in_session`) only to one cleared for `learning_profile`. The tier-1 context and the session the model is shown."""
 
-        classes = self.rt.data_classes
+        classes = self._data_classes()
         if not gating_on(self.rt.pack, classes, memory_on=self.rt.memory is not None):
             return tier1, session
         provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
@@ -717,7 +727,7 @@ class _Turn:
         """The highest class this request carries - the pack (with Orena Memory: full_memory), coach notes, and the chat
         context's learning evidence - raises the conversation's class (§8 c), whichever of them was actually sent."""
 
-        if self.no_model or not gating_on(self.rt.pack, self.rt.data_classes,
+        if self.no_model or not gating_on(self.rt.pack, self._data_classes(),
                                           memory_on=memory or self.rt.memory is not None):  # fmt: skip
             return
         level = max(pack_class(with_memory=memory) if pack else DataClass.NONE, NOTES_CLASS if notes else DataClass.NONE,
@@ -732,7 +742,7 @@ class _Turn:
 
         if self.rt.memory is None:
             return None
-        classes = self.rt.data_classes
+        classes = self._data_classes()
         provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
         cleared = classes is not None and classes.cleared(provider, model, DataClass.FULL_MEMORY)
         return self.rt.memory.turn(self.learner.user_key, version=self.stream.version, cleared=cleared)
@@ -768,7 +778,7 @@ class _Turn:
         builder = self.rt.pack
         if builder is None or not getattr(builder, "enabled", False):
             return None
-        classes = self.rt.data_classes
+        classes = self._data_classes()
         if classes is not None:  # G8: never to a provider not cleared for it - the turn is then as before M1
             provider, model = (self.route.provider, self.route.model) if self.route is not None else (None, None)
             if not classes.cleared(provider, model, PACK_CLASS):

@@ -639,8 +639,12 @@ for `full_memory` (§8). The UI is UI-lane work and needs a contract change (§8
     fallback is allowed only to a provider at least as high; otherwise the existing "unavailable" path answers. A
     call is never trimmed to fit a lower class.
   - (d) The summariser needs `full_memory` (table above).
-  - (e) The class lives in configuration, set by the owner; the Admin field is UI-lane work (issue #264). Test: no
-    call path sends a pack, a coach note or a session's turns to a provider below the class the call needs.
+  - (e) The class is set by the owner. Since #264 (PR #357) the record lives in Admin: the platform setting
+    `agent.provider_data_classes`, written by `PUT /api/admin/agent/data-classes` (audited with the change, refused
+    over a newer version) and read once per turn or voice session. While none is saved, the environment record
+    (`AGENT_PROVIDER_DATA_CLASSES`) stands. When the record cannot be read, every provider is `none`, never the
+    environment's or an earlier read. The Admin page is UI-lane work. Test: no call path sends a pack, a coach note
+    or a session's turns to a provider below the class the call needs.
 - Switching provider sends the same pack; nothing is stored at a provider that Orena would need back.
 - Contract: `AGENT_CONTRACT.md` v8 says coach notes and history are device memory and the account store is out of
   scope (§3, §5.4, §10). Server memory needs contract v9 on `codex/work` (this lane never edits the contract):

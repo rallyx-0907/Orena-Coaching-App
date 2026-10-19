@@ -453,3 +453,39 @@ def test_voice_below_full_memory_offers_no_forget_and_refuses_one_but_keeps_a_ne
     assert answer["responses"][0]["response"]["result"].startswith("accepted")
     assert [e["event"] for e in answer["events"]] == ["memory_update"]
 
+
+
+def test_each_voice_open_reads_the_owners_record_afresh():
+    """#357 re-review P1: the voice service is one object for every session. A class the owner lowers in Admin
+    applies to the next voice open - the service keeps no snapshot of its own."""
+    from writing_coach.agent.data_class import LiveProviderDataClasses
+    from tests.test_agent_voice_session import LEARNER, Post, _body, _service
+
+    stored = {"value": {"classes": {"gemini": "learning_profile"}}}
+    post = Post()
+    service = _service(post)
+    service.runtime.pack = PackBuilder(sources=sources(), enabled=True, clock=lambda: NOW)
+    service.runtime.data_classes = LiveProviderDataClasses(ProviderDataClasses(), lambda: stored["value"])
+
+    def instruction(call):
+        return post.calls[call][2]["bidiGenerateContentSetup"]["systemInstruction"]["parts"][0]["text"]
+
+    service.open(_body(), LEARNER)
+    assert PACK_OPEN in instruction(0)
+    stored["value"] = {"classes": {"gemini": "none"}}  # the owner lowers it
+    service.open(_body(), LEARNER)
+    assert PACK_OPEN not in instruction(-1)
+
+
+def test_each_turn_reads_the_owners_record_once_and_afresh():
+    """One snapshot per turn (#357 review P2-1): every check in the turn sees one record, and the next turn sees a
+    record the owner changed in between."""
+    from writing_coach.agent.data_class import LiveProviderDataClasses
+
+    reads = []
+    stored = {"value": {"classes": {"gemini": "learning_profile"}}}
+    live = LiveProviderDataClasses(ProviderDataClasses(), lambda: reads.append(1) or stored["value"])
+    first = live.snapshot()
+    stored["value"] = {"classes": {"gemini": "none"}}
+    assert first.of("gemini") is DataClass.LEARNING_PROFILE and live.snapshot().of("gemini") is DataClass.NONE
+    assert len(reads) == 2

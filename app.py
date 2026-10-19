@@ -1046,7 +1046,21 @@ from writing_coach.agent.retention import TurnTelemetryRetention, sweep_enabled 
 from writing_coach.agent.limits import DEFAULT_LIMITS as _AGENT_DEFAULT_LIMITS, LiveAgentLimits  # noqa: E402
 from writing_coach.agent.prompts import PromptLayout  # noqa: E402
 from writing_coach.agent.memory_pack import PackBuilder, PackSources, pack_enabled_from_env  # noqa: E402
-from writing_coach.agent.data_class import ProviderDataClasses  # noqa: E402
+from writing_coach.agent.data_class import (  # noqa: E402
+    CLASS_NOTES as _DATA_CLASS_NOTES,
+    SETTING_KEY as _DATA_CLASS_SETTING,
+    LiveProviderDataClasses,
+    ProviderDataClasses,
+)
+
+
+def _stored_data_classes() -> dict[str, Any] | None:
+    """The owner's Admin record of provider data classes (#264), read at each use; None while none is saved."""
+    row = _persistence_runtime.platform_repository.get_setting(_DATA_CLASS_SETTING)
+    return row["value"] if row else None
+
+
+_AGENT_DATA_CLASSES = LiveProviderDataClasses(ProviderDataClasses.from_env(os.environ), _stored_data_classes)
 from writing_coach.agent.budget import LiveSpendGuard  # noqa: E402
 
 
@@ -1295,8 +1309,9 @@ configure_agent(_with_voice(
         # ORENA_MEMORY.md M1: the learner pack, off unless AGENT_LEARNER_PACK=on. Each read runs inside the learner's
         # request context, through the same compositions the routes and the read tools use.
         pack=PackBuilder(enabled=pack_enabled_from_env(os.environ), sources=_agent_pack_sources()),
-        # G8: which provider may receive the pack (learning_profile); a provider not listed is `none`.
-        data_classes=ProviderDataClasses.from_env(os.environ),
+        # G8: which provider may receive the pack (learning_profile); a provider not listed is `none`. The owner's
+        # Admin record (#264) is read at each use; until one is saved the environment record stands.
+        data_classes=_AGENT_DATA_CLASSES,
     )
     if agent_enabled(os.environ)
     else None
@@ -4197,6 +4212,75 @@ def admin_ai_spend(request: Request) -> dict[str, Any]:
     guard = getattr(runtime, "spend_guard", None) if runtime is not None else None
     return {"system": _spend_gate.ceiling_status(),
             "agent": guard.status() if hasattr(guard, "status") else {"cap_usd": None}}
+
+
+def _data_classes_view() -> dict[str, Any]:
+    from writing_coach.ai.providers import provider_definitions
+
+    # One read: the classes shown and the version a save must name come from the same row (#357 review).
+    row: dict[str, Any] | None = None
+
+    def stored() -> dict[str, Any] | None:
+        nonlocal row
+        row = _persistence_runtime.platform_repository.get_setting(_DATA_CLASS_SETTING)
+        return row["value"] if row else None
+
+    record, source = LiveProviderDataClasses(ProviderDataClasses.from_env(os.environ), stored).current()
+    return {"source": source, "classes": record.public(), "default": "none",
+            "updated_at": row["updated_at"] if row and source == "admin" else None,
+            "providers": sorted(definition.id for definition in provider_definitions()),
+            "choices": [{"class": name, "sends": sends} for name, sends in _DATA_CLASS_NOTES.items()]}
+
+
+@app.get("/api/admin/agent/data-classes", name="admin_agent_data_classes")
+def admin_agent_data_classes(request: Request) -> dict[str, Any]:
+    """Which learner data each AI provider (or one of its models) may receive (G8, #264), and where the record comes
+    from: "admin" once the owner saved one here, else "environment". A provider not listed is `none`."""
+    require_admin(request)
+    return _data_classes_view()
+
+
+class _DataClassesIn(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    classes: dict[str, str]
+    # The `updated_at` the editor read (None: no record saved yet). A save over a newer record is refused (409).
+    expected_updated_at: str | None = None
+
+
+@app.put("/api/admin/agent/data-classes", name="admin_agent_data_classes_save")
+def admin_agent_data_classes_save(payload: _DataClassesIn, request: Request) -> dict[str, Any]:
+    """The owner records each provider's class after reading its retention and training terms (#264). The whole
+    record is replaced; a provider left out is `none`. Written with its audit in one transaction, and only over the
+    version the editor read: two editors cannot silently overwrite each other (409)."""
+    admin = require_admin(request)
+    from writing_coach import admin_console_api
+    from writing_coach.ai.providers import provider_definitions
+
+    admin_console_api._same_origin(request)
+    try:
+        record = ProviderDataClasses.from_mapping(payload.classes)
+    except ValueError as error:
+        raise orena_http_error(422, "data_class_invalid", str(error)) from None
+    known = {definition.id for definition in provider_definitions()}
+    unknown = sorted(key for key in record.classes if key.partition(":")[0] not in known)
+    if unknown:
+        raise orena_http_error(422, "data_class_unknown_provider", f"Not a provider in the catalogue: {', '.join(unknown)}.")
+    from writing_coach.persistence.platform_repository import SettingConflict
+
+    actor = str(admin.get("email") or admin.get("google_sub") or "")
+    before, source = _AGENT_DATA_CLASSES.current()
+    audit = {"action": "admin.agent_data_classes", "actor": actor, "entity_type": "platform_setting",
+             "entity_id": _DATA_CLASS_SETTING,
+             "payload": {"from": before.public(), "from_source": source, "to": record.public()}}
+    try:
+        _persistence_runtime.platform_repository.set_setting(
+            _DATA_CLASS_SETTING, {"classes": record.public()}, updated_by=actor,
+            expected_updated_at=payload.expected_updated_at, audit=audit)
+    except SettingConflict:
+        raise orena_http_error(409, "data_class_conflict",
+                               "The record changed since it was read. Reload it and save again.") from None
+    return _data_classes_view()
 
 
 @app.delete("/api/admin/accounts/{user_id}/memory", name="admin_account_memory_erase")
