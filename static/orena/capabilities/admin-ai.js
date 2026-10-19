@@ -255,6 +255,53 @@ export function capabilityRows(config, operations, providers) {
   });
 }
 
+/* ---- Learner data classes (G8; GET/PUT /api/admin/agent/data-classes) ---------------------------- */
+
+export const DATA_CLASSES = ['none', 'learning_profile', 'full_memory'];
+
+/* The rows of the record: every catalogue provider (a class it is not listed under is `none`), then each
+   `provider:model` the record already holds. A model row is never invented; it exists because the record has it. */
+export function dataClassRows(doc, providers) {
+  const name = (id) => (providers || []).find((item) => item.id === id)?.name || id;
+  const classes = doc?.classes || {};
+  const ids = [...new Set([...(doc?.providers || []), ...(providers || []).map((item) => item.id)])];
+  const rows = ids.map((id) => ({ key: id, provider: id, model: '', name: name(id) }));
+  for (const key of Object.keys(classes)) {
+    if (!key.includes(':')) {
+      if (!ids.includes(key)) rows.push({ key, provider: key, model: '', name: name(key) });
+      continue;
+    }
+    const at = key.indexOf(':');
+    rows.push({ key, provider: key.slice(0, at), model: key.slice(at + 1), name: name(key.slice(0, at)) });
+  }
+  return rows;
+}
+
+export function dataClassDraft(doc) {
+  return { ...(doc?.classes || {}) };
+}
+
+export function dataClassOf(draft, key, fallback = 'none') {
+  return DATA_CLASSES.includes(draft?.[key]) ? draft[key] : fallback;
+}
+
+/* A class the record does not hold stays out of the body when it is `none` (that is the default); one it holds is kept. */
+export function dataClassChanged(doc, draft) {
+  const saved = doc?.classes || {};
+  const keys = new Set([...Object.keys(saved), ...Object.keys(draft || {})]);
+  return [...keys].some((key) => dataClassOf(saved, key) !== dataClassOf(draft, key));
+}
+
+/* The PUT body replaces the whole record, against the version the page read. */
+export function dataClassBody(doc, draft) {
+  const saved = doc?.classes || {};
+  const classes = {};
+  for (const [key, value] of Object.entries(draft || {})) {
+    if (value !== 'none' || key in saved) classes[key] = value;
+  }
+  return { classes, expected_updated_at: doc?.updated_at ?? null };
+}
+
 /* The controller behind the screens: the state one AI & Models session holds and the requests that
    change it. It never draws; `onChange` says something moved. Every request goes through `api`
    (the shared client), so a screen has no fetch of its own. */
@@ -267,6 +314,7 @@ export function createAiAdmin({ api = adminApi, onChange = () => {} } = {}) {
     providers: [],
     routeTests: new Map(),
     providerTests: new Map(),
+    dataClasses: { doc: null, state: 'loading' },
   };
   const emit = () => {
     state.providers = mergeProviders(state.config, state.catalog);
@@ -384,5 +432,32 @@ export function createAiAdmin({ api = adminApi, onChange = () => {} } = {}) {
     return { ok: result.ok, reason: result.ok ? '' : failureReason(result) };
   }
 
-  return { state, loadCore, loadCatalog, testRoute, saveRoute, testProvider, saveProvider, removeProvider };
+  async function loadDataClasses() {
+    state.dataClasses = { doc: state.dataClasses.doc, state: 'loading' };
+    emit();
+    try {
+      state.dataClasses = { doc: await api.agentDataClasses(), state: 'ready' };
+    } catch {
+      state.dataClasses = { doc: null, state: 'failed' };
+    }
+    emit();
+    return state.dataClasses;
+  }
+
+  /* Replaces the record. A 409 means it changed since it was read: the latest is loaded and nothing is overwritten. */
+  async function saveDataClasses(draft) {
+    const result = await api.saveAgentDataClasses(dataClassBody(state.dataClasses.doc, draft));
+    if (result.ok) {
+      state.dataClasses = { doc: result.body, state: 'ready' };
+      emit();
+      return { ok: true };
+    }
+    const detail = result.body?.detail;
+    const code = (detail && typeof detail === 'object' ? detail.category || detail.error : typeof detail === 'string' ? detail : '') || '';
+    const conflict = result.status === 409 || code === 'data_class_conflict';
+    if (conflict) await loadDataClasses();
+    return { ok: false, conflict, code, reason: failureReason(result) };
+  }
+
+  return { state, loadDataClasses, saveDataClasses, loadCore, loadCatalog, testRoute, saveRoute, testProvider, saveProvider, removeProvider };
 }
