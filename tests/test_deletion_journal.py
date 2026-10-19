@@ -275,10 +275,14 @@ def test_an_identity_disagreement_stops_the_whole_reapplication(engine, disagree
 # --- The gate: nothing may delete or re-register until its preconditions exist
 
 def test_no_runtime_code_deletes_or_re_registers_an_account_yet():
-    """D-054's preconditions (continuous out-of-database journaling and the
-    owner-table deletion workflow, `ORENA_BACKBONE_INTEGRATION_GATES.md`) are
-    not built, so no runtime path may call `mark_deleted` or `register_new`.
-    Lifting this is a reviewed change to the gate, not an edit to this list."""
+    """D-054's preconditions are built and reviewed (D-241): the continuous
+    out-of-database journal (`persistence/deletion_log.py`) and the owner-table
+    deletion with its bounded replay after a restore. Exactly one module may now
+    write a deleted status: the operator deletion tool,
+    `persistence/account_deletion.py`, which journals every deletion. Nothing may
+    call `mark_deleted`, `register_new` or `_allocate` outside the repository:
+    re-registration (D-055) stays closed. Widening this is a reviewed change to
+    the gate, not an edit to this list."""
     import ast
     import re
     from pathlib import Path
@@ -286,6 +290,8 @@ def test_no_runtime_code_deletes_or_re_registers_an_account_yet():
     root = Path(__file__).resolve().parents[1]
     repository = root / 'writing_coach' / 'persistence' / 'incarnation_repository.py'
     journal_module = root / 'writing_coach' / 'persistence' / 'deletion_journal.py'
+    # D-241: the one reviewed deletion path, journaled before it commits.
+    deletion_tool = root / 'writing_coach' / 'persistence' / 'account_deletion.py'
     # A raw write of a deleted status, the way round the repository methods.
     raw_delete = re.compile(r"account_incarnations\s+SET\s+status\s*=\s*'deleted'", re.IGNORECASE)
     callers = []
@@ -298,7 +304,7 @@ def test_no_runtime_code_deletes_or_re_registers_an_account_yet():
                 callers.append(f'{path.relative_to(root)}:{node.lineno}')
             # Restore suppression re-marks deletions that already happened;
             # that one module may write the status, nothing else may.
-            if (path != journal_module and isinstance(node, ast.Constant)
+            if (path not in (journal_module, deletion_tool) and isinstance(node, ast.Constant)
                     and isinstance(node.value, str) and raw_delete.search(node.value)):
                 callers.append(f'{path.relative_to(root)}:{node.lineno} (raw SQL)')
     assert callers == []

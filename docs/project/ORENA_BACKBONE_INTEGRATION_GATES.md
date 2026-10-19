@@ -81,16 +81,21 @@ These are adapter-level requirements, pending until real implementations exist.
 7. Exercise the matrix, load profile, migration and restore gates. Activate a
    coherent domain with all its direct/contextual paths, not a partial bypass.
 
-**Hard gate - deletion and re-registration (D-054, D-055).** No runtime path
-may call `mark_deleted` or `register_new` (enforced by
-`tests/test_deletion_journal.py::test_no_runtime_code_deletes_or_re_registers_an_account_yet`)
-until both exist and have passed independent review: (a) each deletion is
-appended, as it happens, to a journal outside the database, so a restore after
-losing the database still knows it; (b) the account-deletion workflow removes
-the account's rows from owner tables keyed by account rather than incarnation,
-and is replayed after a restore. Restore suppression (`runtime_backup.py
-suppress`) covers incarnation barriers only. Lifting the gate is a reviewed
-change to this paragraph and that test together.
+**Gate - deletion and re-registration (D-054, D-055; deletion lifted by D-241).**
+Both preconditions exist and passed independent architecture review
+(`docs/reviews/architecture/ACCOUNT_DELETION_TOOL_REVIEW_2026-10-19.md`):
+(a) each deletion is appended, as it happens, to a journal outside the database
+(`persistence/deletion_log.py`, `ORENA_DELETION_LOG`; intent before the commit,
+done after); (b) the account-deletion workflow (`persistence/account_deletion.py`,
+`scripts/account_deletion.py`, a dry run by default) removes the account's rows
+from owner tables, and `runtime_backup.py suppress --log` replays it after a
+restore, bounded to each deletion. So exactly that module may mark an
+incarnation deleted (enforced by
+`tests/test_deletion_journal.py::test_no_runtime_code_deletes_or_re_registers_an_account_yet`).
+Re-registration stays closed: nothing may call `mark_deleted`, `register_new` or
+`_allocate` outside the repository (D-055). Each real deletion on a public
+runtime is announced to the owner first. Widening this is a reviewed change to
+this paragraph and that test together.
 
 Deployment gate inputs: approved schema, retention/deletion policy values,
 commercial plan/price/grace/meter policies, any achievement/pedagogical policies,

@@ -7580,3 +7580,26 @@ Supersedes the "pending" state of D-234 item 7: the switch stays default-off in 
 **Owner question (open).** May Orena copy a YouTube video's thumbnail into its own asset root? It may conflict with YouTube's terms, so nothing was copied; the embeds keep the provider-served thumbnail.
 
 **Not in this decision.** No schema change, no provider, no AI image, no network call at publish time, and no unpublishing of existing items. Real pictures for the existing articles (NASA, Wikimedia and the like) are attached later with the route above.
+
+## D-241 - Account deletion: the D-054 gate is lifted for the reviewed operator tool (2026-10-19)
+
+**Status:** ACCEPTED (owner, 2026-10-19 16:26, relayed by Hermes: "tôi thấy cứ làm theo đề xuất" - approving the
+recommendation to lift the gate as the architecture reviewer proposed).
+
+1. **What is lifted.** D-054's gate blocked every runtime path that marks an incarnation deleted until (a) each deletion
+   is journaled outside the database as it happens and (b) the owner-table deletion exists and is replayed after a
+   restore. Both are built and passed independent architecture review (PR #380, the tool; PR #386, the journal and
+   the replay; `docs/reviews/architecture/ACCOUNT_DELETION_TOOL_REVIEW_2026-10-19.md`). Exactly one module may now
+   write a deleted status: `writing_coach/persistence/account_deletion.py`.
+2. **How it is used.** `scripts/account_deletion.py` is a dry run by default; `--apply` deletes one account in one
+   transaction and requires the journal (`ORENA_DELETION_LOG`, off the database's volume, copied off-host with the
+   backups). After any restore, `runtime_backup.py suppress --log` replays every logged deletion before serving.
+   `docs/project/ACCOUNT_DELETION_RUNBOOK.md` is the procedure.
+3. **Still a human step.** The first real deletion on a public runtime is announced to Hermes and the owner first;
+   every deletion answers a learner's request within the 30 days the public page promises.
+4. **Payment records are kept.** The schema keeps billing and credit history append-only; the tool keeps them, and
+   the public deletion page says so ("Payment and billing records are kept as required for accounting and legal
+   purposes", owner, same decision).
+
+**Not in this decision.** Re-registration (D-055) stays closed: nothing may call `mark_deleted`, `register_new` or
+`_allocate` outside the repository. No runtime deletion path for learners (the tool is the operator's). No schema change.
