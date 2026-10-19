@@ -365,6 +365,9 @@ def test_media_gets_a_cover_under_the_directory_its_entry_owns():
 @pytest.fixture()
 def media_console(console_setup, monkeypatch):  # noqa: F811
     assets = MemoryStore()
+    # The module's globals are shared with other tests in this worker: put back exactly what was there.
+    before = (media_library_api._store, media_library_api._asset_store, media_library_api._importer,
+              media_library_api._admin_guard, media_library_api._language_supported)
     media_library_api.configure_media_library(
         console_setup["store"], assets, object(), admin_guard=lambda request: {"email": "admin@example.com"},
         language_supported=lambda code: True)
@@ -376,7 +379,8 @@ def media_console(console_setup, monkeypatch):  # noqa: F811
         lesson={"payload": {"transcript": {"segments": [
             {"start_ms": 0, "end_ms": 42000, "original_text": "各位旅客请注意，开往北京的列车马上到站，请准备上车。"}]}}}))
     yield {**console_setup, "assets": assets, "http": app}
-    media_library_api.configure_media_library(None, None, None, admin_guard=None, language_supported=None)
+    (media_library_api._store, media_library_api._asset_store, media_library_api._importer,
+     media_library_api._admin_guard, media_library_api._language_supported) = before
 
 
 MEDIA_ID = "youtube-abcdefghijk"
