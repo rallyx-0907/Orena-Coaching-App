@@ -65,4 +65,4 @@ In the app, a downgrade is a cancel at the period end, so there is nothing to cr
 appended to the "Changing plan" card once approved:
 
 > "A downgrade made in the billing portal applies at once: the unused part of your current plan is credited
-> against your next payments."
+> against your next payment."

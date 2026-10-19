@@ -44,4 +44,4 @@ and Polar can disable the endpoint (runbook "Rollback").
 ## 3. What this package does not do
 
 It does not enable Credits, SePay, payOS, quota or funding enforcement, migration `0034`, scheduled downgrades
-(`SCHEDULED_CHANGES` stays off until the 2026-10-19 runs are recorded), discounts or trials.
+(`SCHEDULED_CHANGES` stays off until the owner asks for scheduled downgrades; the 2026-10-19 runs answered which change wins), discounts or trials.

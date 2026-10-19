@@ -41,14 +41,14 @@ Updated 2026-10-19.
 | 17 | In-app change, cancel or resume where Polar's answer is lost | tested | `tests/test_billing_polar_subscription.py` and `tests/test_billing_polar_postgres.py` (journal, per-subscription fence, `modified_at` rule, one PATCH under real CAS races) |
 | 18 | Polar's `modified_at` is empty after a scheduled change | **closed 2026-10-19** | risk R1: renewal sets it |
 
-**Risk R1 (closed 2026-10-19, no code change).** On sandbox B and D, Polar set `modified_at` at renewal and Orena applied the renewal (`PR-MON-9_E2E_EVIDENCE.md` §3). The analysis that opened it: Orena orders a subscription's webhooks by Polar's `modified_at`, falling back to
-`created_at` (`writing_coach/billing/polar.py`). Equal or older events are `stale`.
-- The daily test showed that a scheduled change leaves `modified_at` empty, while a cancel sets it.
-- If a **renewal** also left `modified_at` empty, the renewal event would carry the same version as the creation
-  event and be dropped as `stale`. `paid_through` would not move, and a paying learner would lose the plan after the
-  first period.
-- Subscription B's renewal on 2026-10-19 shows whether Polar sets `modified_at` on renewal. If it does not, the
-  version must be fixed (for example, from the current period start) before gate 7b, with independent review.
+**Risk R1 (closed 2026-10-19, no code change).**
+- Orena orders a subscription's webhooks by Polar's `modified_at`, falling back to `created_at`
+  (`writing_coach/billing/polar.py`). Equal or older events are `stale`.
+- On 2026-10-18, a scheduled change left `modified_at` empty, while a cancel set it. A renewal with an empty
+  `modified_at` would have been dropped as `stale`, and a paying learner would have lost the plan after the first
+  period.
+- On 2026-10-19, Polar set `modified_at` at renewal (sandbox B), and Orena applied D's renewal: `paid_through`
+  moved one day (`PR-MON-9_E2E_EVIDENCE.md` §3).
 
 ## 3. The period-end run (owner-approved 2026-10-18)
 
@@ -161,7 +161,7 @@ funding enforcement.
      Until both exist, nothing is deleted, so "kept for at least 3 months" already holds.
 5. **Gate 7b itself.** Readiness `ready: true`, then the owner's first real subscription (runbook §4-§5).
 
-## 7. One approval for gate 7b (prepared; waits for the owner and for R1)
+## 7. One approval for gate 7b (prepared; waits for the owner)
 
 The owner approves every write to Polar **production** in one list. Nothing on it has been done. The ordered
 checklist, with a check and a rollback per step, is `GATE_7B_APPROVAL_PACKAGE.md`.
