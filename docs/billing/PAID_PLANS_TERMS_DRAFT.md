@@ -10,6 +10,14 @@ So gate 7b cannot open sales until the owner approves this text and it is added 
 Policy. The legal pages are **English only** (owner, 2026-10-19): every interface language links to the English page.
 The UI lane owns `docs/legal/public/` and its D-entry; this lane supplies the billing facts.
 
+**Superseded for publishing by `PAID_PLANS_TERMS_INSERT.md`.** The owner answered the **[owner]** items on 2026-10-19:
+- the refund rule (D-MON-036);
+- a refund ends the plan at once (D-MON-035);
+- learning data is kept for 3 months (D-MON-035);
+- a downgrade credits the unused part (D-MON-035; Polar's behaviour comes from sandbox subscription D).
+
+This file keeps the sources.
+
 Every sentence below states what the code does today, with its source. A bracketed **[owner]** item is a
 policy the code does not settle.
 

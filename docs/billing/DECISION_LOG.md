@@ -384,3 +384,23 @@ D-MON-035 | 2026-10-19 | A refund ends the plan at once; a downgrade credits the
   real sales, and deletion is a human gate. The refund rule (when and for how
   long) is still open. | A refunded learner neither keeps paid access nor keeps being charged. | `service.py`
   `_refund`, `tests/test_billing_reconciliation.py`, `RUNBOOK_POLAR_ACTIVATION.md` §5, `PAID_PLANS_TERMS_INSERT.md`.
+D-MON-036 | 2026-10-19 | The refund rule (owner, 10:35, relayed by Hermes; modelled on Claude's (Anthropic's) published
+  refund rules, adapted).
+  - Payments are non-refundable, except where the law where the learner lives requires a refund, or in these cases:
+    (a) a duplicate or erroneous charge from a payment fault;
+    (b) a problem on Orena's side made the paid features unusable for most of a billing period;
+    (c) in the EEA or the UK, within 14 days of the purchase, less the share of the period already used;
+    (d) other cases, at Orena's discretion.
+  - The learner asks by email to `orena.support@chillpickle.org`, from the account's address.
+  - Refunds are issued through Polar, the merchant of record, whose buyer terms also apply. Polar may refund an order
+    itself within 60 days to prevent chargebacks; that also cancels the subscription.
+  - While a bank dispute or chargeback is open, no refund is processed.
+  - A refund ends the plan at once (D-MON-035). Cancelling works at any time and takes effect at the period end.
+    An upgrade applies at once, with the unused part counted. A downgrade credits the unused part.
+  - Every refund on Polar production is a production write, so it needs the owner's approval until the owner
+    changes that rule.
+
+  Checked on 2026-10-19 against Polar's buyer terms (refunds under law and policy; chargeback rights kept) and its
+  refund documentation (refunding a subscription order does not end the subscription). No contradiction. | A clear,
+  common rule that promises nothing the system cannot do. | `PAID_PLANS_TERMS_INSERT.md`,
+  `RUNBOOK_POLAR_ACTIVATION.md` "Handling a refund request".

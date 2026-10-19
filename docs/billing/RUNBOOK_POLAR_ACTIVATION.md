@@ -142,6 +142,38 @@ is revoked, find the item with `GET /api/admin/billing/reconciliation` and resol
 that should keep the plan, such as a proration difference, also opens this item: dismiss it with `recorded` and a
 note.
 
+## Handling a refund request (operator; D-MON-036)
+
+**The owner approves each refund**: it is a write to Polar production. That stays the rule until the owner changes it.
+
+1. **Identify the account.** The request must come from the account's Google address. Find the customer in Polar's
+   dashboard by that email or by its external id, which is the Orena account's incarnation id (`writing_coach/billing/polar.py`), with its order, date and amount.
+2. **Check the rule.**
+   - Is a dispute or chargeback open on that order in Polar? If so, stop: no refund until it is closed or withdrawn.
+   - Which case applies?
+     - (a) A duplicate or erroneous charge: two orders for one period, or a charge Polar marks as failed or reversed.
+     - (b) An outage on Orena's side made the paid features unusable for most of the period. Use incident or health
+       evidence.
+     - (c) The learner lives in the EEA or the UK and is within 14 days of the purchase. The amount is the charge less
+       the share of the period already used: days used ÷ days in the period.
+     - (d) Another case: the owner decides.
+   - Otherwise, reply that the payment is not refundable, citing the Terms.
+3. **Ask the owner**, with the account, the order, the case, the amount, and full or partial.
+4. **Refund in Polar's dashboard** (owner, or an operator with the owner's yes). Refund the order, giving the amount
+   for a partial refund. Then **revoke** the subscription immediately (§5, D-MON-035).
+5. **Confirm in Orena.**
+   - The account's plan reads Free. `subscription.revoked` ended it.
+   - The refund's item in `GET /api/admin/billing/reconciliation` is resolved with `refund_confirmed`, through
+     `POST /api/admin/billing/reconciliation/{item_id}/resolve`.
+6. **Reply to the learner.**
+   - The refund goes to the card that was charged; its timing is the bank's.
+   - The plan has ended.
+   - The learning data is kept for 3 months.
+
+**Polar's own refunds.** Within 60 days of a purchase, Polar may refund an order itself to prevent a chargeback, and
+it then cancels the subscription. Orena records the refund and follows the subscription's events. Check that the
+plan reads Free. If the subscription is still live, revoke it, then resolve the item.
+
 ## Moving the production host (for example, from a staging host to the VPS)
 
 Products, prices, the token's scopes, the portal settings and every subscription stay on Polar as they are. Only
