@@ -17,8 +17,8 @@ would lose the record of that deletion, and a restore would bring the account ba
   unless the operator states the database is the live one. A restore takes the unsettled intent as confirmed instead,
   once the operator acknowledges it (`accept_unsettled`): the learner asked for the deletion, so applying it is the
   safe direction.
-- **A torn last line** (a crash part-way through writing an intent) is dropped. That write never finished, so its
-  transaction never committed.
+- **A torn record** (a crash part-way through writing an intent) is dropped. That write never finished, so its
+  transaction never committed. The next write starts on its own line.
 
 The file is JSON Lines and append-only. Writers take a lock file, so the operator tool and `reconcile` never
 interleave. It holds opaque ids and times only, never an email, name or content.
@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import uuid
 from collections.abc import Iterator, Mapping
 from contextlib import contextmanager
@@ -42,6 +43,15 @@ LOG_KIND = "orena.deletion_log"
 LOG_VERSION = 1
 LOG_ENV = "ORENA_DELETION_LOG"
 
+try:  # the platform is chosen once, outside any lock context
+    import fcntl
+
+    _POSIX = True
+except ImportError:  # Windows
+    import msvcrt
+
+    _POSIX = False
+
 
 class DeletionLogInvalid(ValueError):
     """A log that cannot be trusted is refused whole."""
@@ -52,40 +62,61 @@ def log_path(environ: Mapping[str, str] | None = None) -> Path | None:
     return Path(raw) if raw else None
 
 
+_held: dict[str, int] = {}  # paths whose lock this process holds (re-entrant: a nested append must not deadlock)
+_held_guard = threading.Lock()
+
+
+def _lock_file(handle: Any) -> None:
+    if _POSIX:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+    else:
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
+
+
+def _unlock_file(handle: Any) -> None:
+    if _POSIX:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+    else:
+        handle.seek(0)
+        msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+
+
 @contextmanager
-def _locked(path: Path) -> Iterator[None]:
-    """One writer at a time: an exclusive lock on `<log>.lock` (fcntl on POSIX, msvcrt on Windows)."""
-    lock = Path(str(path) + ".lock")
-    lock.parent.mkdir(parents=True, exist_ok=True)
-    with open(lock, "a+b") as handle:
-        try:
-            import fcntl
-
-            fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+def held(path: Path) -> Iterator[None]:
+    """An exclusive lock on `<log>.lock` for the whole block, re-entrant within this process. The deletion tool holds it
+    from its intent through its done record, and `reconcile` for its whole run, so neither sees the other half-way."""
+    key = str(Path(path).resolve())
+    with _held_guard:
+        nested = _held.get(key, 0) > 0
+        _held[key] = _held.get(key, 0) + 1
+    try:
+        if nested:
+            yield
+            return
+        lock = Path(str(path) + ".lock")
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        with open(lock, "a+b") as handle:
+            _lock_file(handle)
             try:
                 yield
             finally:
-                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
-        except ImportError:  # Windows
-            import msvcrt
-
-            handle.seek(0)
-            msvcrt.locking(handle.fileno(), msvcrt.LK_LOCK, 1)
-            try:
-                yield
-            finally:
-                handle.seek(0)
-                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+                _unlock_file(handle)
+    finally:
+        with _held_guard:
+            _held[key] -= 1
 
 
 def _append(path: Path, record: Mapping[str, Any]) -> None:
     """One line, flushed and fsynced before returning: on disk, not in a buffer."""
     path = Path(path)
     line = json.dumps({"kind": LOG_KIND, "version": LOG_VERSION, **record}, ensure_ascii=False, sort_keys=True)
-    with _locked(path):
+    with held(path):
         created = not path.exists()
+        # A torn last line (a crash mid-write) has no newline: start on a fresh line, never glue onto it.
+        torn = not created and path.stat().st_size > 0 and not path.read_bytes().endswith(b"\n")
         with open(path, "a", encoding="utf-8") as handle:
-            handle.write(line + "\n")
+            handle.write(("\n" if torn else "") + line + "\n")
             handle.flush()
             os.fsync(handle.fileno())
         if created and hasattr(os, "O_DIRECTORY"):  # the new file's directory entry too (POSIX)
@@ -118,8 +149,9 @@ def write_abandoned(path: Path, op: str) -> None:
 
 
 def read_log(path: Path) -> dict[str, dict[str, Any]]:
-    """op -> {"intent", "done" | None, "abandoned"}. A malformed line refuses the whole log, except a torn LAST line,
-    which is dropped (a write that never finished)."""
+    """op -> {"intent", "done" | None, "abandoned"}. A record torn by a crash (a `{...` line that does not parse) is
+    dropped: that write never finished, and every later write starts on its own line. Anything else malformed - a line
+    that is not JSON at all, or JSON that is not a log record - refuses the whole log."""
     ops: dict[str, dict[str, Any]] = {}
     try:
         lines = Path(path).read_text(encoding="utf-8").splitlines()
@@ -135,8 +167,8 @@ def read_log(path: Path) -> dict[str, dict[str, Any]]:
         try:
             record = json.loads(line)
         except ValueError:
-            if number == len(lines):
-                break  # torn last line: its transaction never committed
+            if line.lstrip().startswith("{"):
+                continue  # a record torn by a crash mid-write: that write never finished, so its transaction never committed
             raise DeletionLogInvalid(f"line {number} is not JSON") from None
         if record.get("kind") != LOG_KIND or record.get("version") != LOG_VERSION:
             raise DeletionLogInvalid(f"line {number} is not a version-{LOG_VERSION} deletion log record")
@@ -157,7 +189,7 @@ def read_log(path: Path) -> dict[str, dict[str, Any]]:
     return ops
 
 
-def pending(path: Path) -> list[str]:
+def pending(path: Path) -> list[str]:  # intents with neither a done nor an abandoned
     return [op for op, entry in read_log(path).items() if entry["done"] is None and not entry["abandoned"]]
 
 
@@ -169,7 +201,7 @@ def confirmed_operations(path: Path, *, accept_unsettled: bool = False) -> list[
     out: list[dict[str, Any]] = []
     unsettled = 0
     for op, entry in read_log(path).items():
-        if entry["abandoned"]:
+        if entry["abandoned"] and entry["done"] is None:  # a done beats an abandoned: the commit is a fact
             continue
         if entry["done"] is None:
             unsettled += 1
@@ -210,8 +242,8 @@ def reconcile(engine: Any, path: Path, *, live: bool) -> dict[str, int]:
         raise DeletionLogInvalid("reconcile only against the live database it was written for (live=True); "
                                  "after a database loss, accept unsettled intents instead")  # fmt: skip
     summary = {"done": 0, "abandoned": 0}
-    ops = read_log(path)
-    with engine.connect() as conn:
+    with held(path), engine.connect() as conn:  # no deletion is between its intent and its done meanwhile
+        ops = read_log(path)
         for op in [o for o, e in ops.items() if e["done"] is None and not e["abandoned"]]:
             ids = [inc["id"] for inc in ops[op]["intent"]["incarnations"]]
             rows = conn.execute(text("SELECT status, deleted_at FROM account_incarnations"

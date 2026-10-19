@@ -232,28 +232,31 @@ def apply_plan(engine: Any, *, log: Any, email: str | None = None, user_key: str
         raise ValueError(f"a deletion log is required (D-054): pass log= or set {deletion_log.LOG_ENV}")
     if commerce not in (None, "keep"):
         raise ValueError('commerce must be "keep": money records are append-only and stay')
-    moment = now or datetime.now(UTC)
-    with engine.begin() as conn:
-        found = find_account(conn, email=email, user_key=user_key)
-        if found is None:
-            raise DeletionRefused("no such account")
-        conn.execute(text("SELECT id FROM users WHERE id = CAST(:a AS uuid) FOR UPDATE"), {"a": found.id})
-        account = Account(found.id, found.user_key, _incarnations(conn, found.id))  # read under the lock
-        plan = build_plan(conn, account)
-        if plan.commerce_rows and commerce is None:
-            raise DeletionRefused(f"{plan.commerce_rows} commerce rows: they are kept; say so with commerce='keep'")
-        if plan.blockers:
-            raise DeletionRefused(f"a child table would refuse the delete: {'; '.join(plan.blockers)}")
-        barrier = _mark_incarnations_deleted(conn, account, moment)
-        _delete_owned(conn, account, plan)
-        _reset_user(conn, account)
-        _revoke_sessions(conn, account, moment)
-        # D-054 a: on disk outside the database before the commit. A failure here rolls the whole deletion back.
-        op = deletion_log.write_intent(log, account_id=account.id, incarnations=barrier, at=moment)
-    try:
-        deletion_log.write_done(log, op, deleted_at=moment)  # committed: confirmed
-    except OSError as error:
-        raise CommittedUnconfirmed(op) from error
+    with deletion_log.held(log), engine.connect() as conn:  # intent to done under the log lock (reconcile waits)
+        with conn.begin():  # ONE transaction: it commits when this block ends, rolls back on any error
+            # One clock for `deleted_at` and `users.last_login`: the database's (a returning learner is told by comparing).
+            moment = now or conn.execute(text("SELECT now()")).scalar()
+            found = find_account(conn, email=email, user_key=user_key)
+            if found is None:
+                raise DeletionRefused("no such account")
+            conn.execute(text("SELECT id FROM users WHERE id = CAST(:a AS uuid) FOR UPDATE"), {"a": found.id})
+            account = Account(found.id, found.user_key, _incarnations(conn, found.id))  # read under the lock
+            plan = build_plan(conn, account)
+            if plan.commerce_rows and commerce is None:
+                raise DeletionRefused(f"{plan.commerce_rows} commerce rows: they are kept; say so with commerce='keep'")
+            if plan.blockers:
+                raise DeletionRefused(f"a child table would refuse the delete: {'; '.join(plan.blockers)}")
+            barrier = _mark_incarnations_deleted(conn, account, moment)
+            _delete_owned(conn, account, plan)
+            _reset_user(conn, account)
+            _revoke_sessions(conn, account, moment)
+            # D-054 a: on disk outside the database before the commit. A failure here rolls the whole deletion back.
+            op = deletion_log.write_intent(log, account_id=account.id, incarnations=barrier, at=moment)
+        # Committed, still inside the log lock: the done record follows before anyone can reconcile.
+        try:
+            deletion_log.write_done(log, op, deleted_at=moment)  # committed: confirmed
+        except OSError as error:
+            raise CommittedUnconfirmed(op) from error
     return plan
 
 
@@ -267,6 +270,8 @@ def _delete_owned(conn: Any, account: Account, plan: Plan) -> None:
         conn.execute(text(f"DELETE FROM {_quote(conn, target.table)} WHERE {where}{extra}"), params)
 
 
+# The first present bounds a returning learner's rows. `updated_at` is last on purpose: a returning learner's restored
+# rows are all post-return, so a row updated since is theirs too; do not move it earlier.
 TIMESTAMP_COLUMNS = ("created_at", "occurred_at", "recorded_at", "added_at", "started_at", "updated_at")
 
 

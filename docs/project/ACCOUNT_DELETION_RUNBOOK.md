@@ -39,6 +39,8 @@ the public promise it serves is `/account-deletion` (D-162): a learner emails
    - If the log has unsettled intents and the database they were written for is lost, add `--accept-unsettled`: a
      requested deletion is applied. Never reconcile against a restored database.
    - Then `suppress --check` must answer 0 not holding.
+   - A log refused for a malformed line in the middle (not a torn last line) is never edited in place: keep a copy,
+     repair it by hand under review, and record what was changed.
 4. Nobody else operates the shared Docker runtime and volumes meanwhile (AGENTS.md section 10). Never
    `docker compose down -v`.
 

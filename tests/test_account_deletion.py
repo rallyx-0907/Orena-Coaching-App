@@ -221,7 +221,7 @@ def test_after_a_database_loss_an_unsettled_intent_is_applied_only_when_the_oper
     assert [op["user_id"] for op in deletion_log.confirmed_operations(path, accept_unsettled=True)] == [account]
 
 
-def test_a_torn_last_line_is_dropped_but_a_torn_middle_line_refuses(tmp_path):
+def test_a_torn_record_is_dropped_but_garbage_refuses(tmp_path):
     from writing_coach.persistence import deletion_log
 
     path = tmp_path / "log.jsonl"
@@ -231,7 +231,7 @@ def test_a_torn_last_line_is_dropped_but_a_torn_middle_line_refuses(tmp_path):
         handle.write('{"kind": "orena.deletion_log", "version": 1, "event": "int')  # a crash mid-write
     assert [op["user_id"] for op in deletion_log.confirmed_operations(path)] == [account]
     with open(path, "a", encoding="utf-8") as handle:
-        handle.write("\n" + path.read_text(encoding="utf-8").splitlines()[0] + "\n")
+        handle.write("\nnot a record at all\n")
     with pytest.raises(deletion_log.DeletionLogInvalid):
         deletion_log.read_log(path)
 
@@ -343,3 +343,36 @@ def test_a_committed_deletion_whose_done_was_lost_is_confirmed_by_reconcile(engi
     assert _one(engine, "SELECT email FROM users WHERE id::text = :u", u=gone_id) == deletion.anonymous_email(gone_id)
     assert deletion_log.reconcile(engine, log, live=True) == {"done": 1, "abandoned": 0}
     assert [op["user_id"] for op in deletion_log.confirmed_operations(log)] == [gone_id]
+
+
+def test_a_write_after_a_torn_line_starts_on_its_own_line(tmp_path):
+    """Review round 2, P1-A: the next record must not be glued onto a torn last line."""
+    from writing_coach.persistence import deletion_log
+
+    path = tmp_path / "log.jsonl"
+    path.write_text('{"kind": "orena.deletion_log", "version": 1, "event": "int', encoding="utf-8")  # torn, no newline
+    account = str(uuid.uuid4())
+    deletion_log.write_done(path, _intent(path, account), deleted_at=T0)
+    assert path.read_text(encoding="utf-8").splitlines()[1].startswith('{"at"')  # the intent is a whole line
+    assert [o["user_id"] for o in deletion_log.confirmed_operations(path)] == [account]  # and the log still reads
+
+
+def test_a_done_after_an_abandoned_counts_as_confirmed(tmp_path):
+    """Review round 2, P1-B: a commit is a fact; an abandoned is only an inference."""
+    from writing_coach.persistence import deletion_log
+
+    path = tmp_path / "log.jsonl"
+    account = str(uuid.uuid4())
+    op = _intent(path, account)
+    deletion_log.write_abandoned(path, op)
+    deletion_log.write_done(path, op, deleted_at=T0)
+    assert [o["user_id"] for o in deletion_log.confirmed_operations(path)] == [account]
+
+
+def test_the_log_lock_is_reentrant_within_a_process(tmp_path):
+    from writing_coach.persistence import deletion_log
+
+    path = tmp_path / "log.jsonl"
+    with deletion_log.held(path):
+        deletion_log.write_done(path, _intent(path), deleted_at=T0)  # appends inside the held lock: no deadlock
+    assert len(deletion_log.confirmed_operations(path)) == 1
