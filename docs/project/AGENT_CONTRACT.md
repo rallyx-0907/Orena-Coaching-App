@@ -6,7 +6,9 @@ Purpose: the single interface between the Orena Intelligence backend (lane `feat
 Authority: D-085, D-086, D-092, D-094, D-095, D-096, D-222, D-223. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit only through a reviewed pull request to `main` from the UI lane that bumps `contract_version` and records the change in DECISION_LOG.md (D-223 point 9; the practice since v7, D-164; `codex/work` has been dormant since 2026-10-08 - D-223); the intelligence lane receives it by merging `main` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 11`
+`contract_version: 12`
+
+v12 (D-237, 2026-10-19): each learner's live voice chat with Orena has a daily cap, the `orena.voice` meter of the plan catalogue (window `day`, unit `second`, `display_unit` `minute`, `scale` 60; Plus and Pro 15 minutes by default, edited in Platform Admin). At the cap `POST /api/agent/voice/session` (and `POST /api/agent/voice/extend`, as a guard) answers `429 quota_exhausted` with `context.feature` `orena.voice` (§2.1, §9.1), and the final chunk of the day carries `last: true` (§9.1). No event, field, action or intent changed; like v11 it is the plan's entitlement, not a feature of the version a client declares.
 
 v11 (D-235, 2026-10-19): live voice chat with Orena is a Plus and Pro benefit; Free keeps text chat, and Speaking practice is unchanged. `403 feature_not_in_plan` (§2.1) gains the feature value `orena.voice` and now also answers `POST /api/agent/voice/session` and `POST /api/agent/voice/extend` (§9) for a Free learner, before anything is minted or charged; `GET /api/agent/voice/voices` (§9.5) answers `200` with `"entitled": false` for a Free learner, so a client can say so before a session request. §2.1 also names the response header `X-Orena-AI-Paused: <resets_at, ISO 8601 UTC>` as a cross-surface signal: any response the system's daily AI ceiling refused (any route, any status, any body) carries it, a fault never does. No event, field, action or intent changed; the voice refusal is the plan's entitlement, not a feature of the contract version, so it does not depend on the version a client declares.
 
@@ -441,7 +443,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      `max_seconds` is that token's life in whole seconds (`connect.expires_at`); `chunk` is its index (0 for the first);
      `session_max_seconds` is the whole session's ceiling, 900; `renew_in` is how many seconds after receiving it the
      client asks for the next chunk, or `null` when there is none; `last` is true for the chunk that reaches the 900 s
-     ceiling and for a session that is not metered (one token for what is left of the 900 s, no `extend`, and the setup
+     ceiling, for the chunk clamped to what is left of today's voice minutes (D-237: no `extend` is then asked into a refusal; the next `voice/session` is answered `429 quota_exhausted`, `orena.voice`) and for a session that is not metered (one token for what is left of the 900 s, no `extend`, and the setup
      sent to the vendor is exactly what it was before the plan limit: no session resumption).
    - What a chunk costs: `2 x voice_seconds_per_message` seconds (never under 60 s, never past the session's 900 s) is
      `ceil(seconds / voice_seconds_per_message)` messages, reserved and charged whole when its token is minted - the
@@ -451,6 +453,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - Errors:
      - 429 `rate_limited` with Retry-After (the daily cap and turn window apply first);
      - 429 `daily_ai_limit` (v10): `{"detail": {"category": "daily_ai_limit", …, "context": {"scope", "resets_at"}}}` (§2.1) - Orena's AI is paused for everyone until `resets_at`. No token is minted and nothing was charged. The client tells the learner once, does **not** fall back to its device cascade, and does not offer the plans. A client that declares `contract_version` <= 9 receives `rate_limited` instead;
+     - 429 `quota_exhausted` with `context.feature` `orena.voice` (D-237): `{"detail": {"category": "quota_exhausted", …, "context": {"feature": "orena.voice", "used", "limit", "unit": "second", "display_unit": "minute", "scale": 60, "window": "day", "resets_at", "plan"}}}`, header `Retry-After` - today's voice minutes are used up (`limit` / `scale` minutes). There is no `upgrade` and no `options` (Plus and Pro hold the same minutes). No token is minted and nothing was charged. The client tells the learner once, in the interface language and from its own copy, that today's voice minutes are used and that text chat goes on; it does **not** retry, does **not** fall back to its device cascade, and offers no way to the plans. It affects voice only: nothing else is locked. The Free upsell (`403 feature_not_in_plan`, below) is a different refusal and is unchanged;
      - 429 `quota_exhausted` (v8): `{"detail": {"category": "quota_exhausted", …, "context": {"feature": "orena.message", …}}}` (§2.1) - not even one message is left in the learner's day, so no chunk can be minted. No token is minted and nothing was charged. The client shows the server's figures where it shows a failed request, with the way to the plans, and does **not** fall back to its device cascade (its turns would be refused as well);
      - 409 `target_language_mismatch`, or `operation_in_progress | operation_finished | operation_conflict | account_not_ready` (v8, §2.1: the request's `Idempotency-Key` repeats a session already open or finished); 403 `account_deleted | feature_not_in_plan` (v11: `context.feature` `orena.voice` for a plan without live voice chat; see §2.1 - the client opens the voice upsell sheet and does **not** fall back to its cascade, whose turns would be voice chat too);
      - 503 `voice_unavailable`;
@@ -536,6 +539,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
      the server puts it into the new token's locked setup, so the conversation carries on and a client cannot make the
      vendor resume anything but what it names there. A client that has none sends none and gets a fresh conversation
      with the same instruction. The request carries `X-Orena-Timezone` (§3).
+   - 429 `quota_exhausted` (D-237, `context.feature` `orena.voice`): as for `voice/session` above; a guard, since the final chunk of the day carries `last: true`. Nothing is minted; the client lets the token it holds play out, tells the learner once and ends the session when the token dies.
    - 403 `feature_not_in_plan` (v11, `context.feature` `orena.voice`): the plan no longer has live voice chat (it changed mid-session). Nothing is minted; the client lets the token it holds play out, opens the voice upsell sheet once, and ends the session when the token dies.
    - 200: `{ voice_session_id, chunk, connect: { url, ephemeral_token, expires_at, setup }, max_seconds,
      session_max_seconds, renew_in, last }`, as in §9.1. A repeat of the last request (its answer was lost) returns the
