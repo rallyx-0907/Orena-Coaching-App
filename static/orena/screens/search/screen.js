@@ -197,7 +197,10 @@ export default async function search(element, ctx) {
       settled(api.readingArticles(language), failures),
       settled(api.listeningLibrary(language), failures),
     ]);
-    if (mine !== token || !ctx.isCurrent()) return;
+    if (mine !== token || !ctx.isCurrent()) {
+      if (startedFor === q) startedFor = '';
+      return;
+    }
     const content = [
       ...articleItems(articles, q, language),
       ...listeningItems(listening, q, language),

@@ -124,4 +124,27 @@ assert.deepEqual(summaryRows(items2, results2), [
   assert.equal(mergeDrillItems([], items, 1).length, 1);
 }
 
+import { readFileSync as __read } from 'node:fs';
+const __src = (p) => __read(new URL(p, import.meta.url), 'utf8');
+
+// Provider 503 vs network wording (Orena chat) and the word sheet's failed-lookup line exist in EN/VI/ZH.
+{
+  globalThis.document ||= { documentElement: { lang: 'en', dataset: {} } };
+  const { setLanguages } = await import('../static/orena/copy/index.js');
+  const { t: orenaT } = await import('../static/orena/screens/orena/copy.js');
+  const { t: sheetT } = await import('../static/orena/screens/quick-sheet/copy.js');
+  const { errorText } = await import('../static/orena/screens/orena/model.js');
+  const seen = new Set();
+  for (const ui of ['en', 'vi', 'zh']) {
+    setLanguages({ ui, support: ui });
+    const provider = orenaT('providerError');
+    assert.ok(provider && provider !== orenaT('transportError'), `${ui}: provider wording differs from network wording`);
+    assert.equal(errorText({ class: 'provider_unavailable', message: '' }, orenaT('transportError'), provider), provider);
+    assert.equal(errorText({ class: 'transport', message: '' }, orenaT('transportError'), provider), orenaT('transportError'));
+    assert.ok(sheetT('translationFailed') && sheetT('retry'), `${ui}: word sheet failed-lookup copy`);
+    seen.add(provider);
+  }
+  assert.equal(seen.size, 3, 'three languages, three texts');
+  setLanguages({ ui: 'en', support: 'en' });
+}
 console.log('test_orena_screen_errors.mjs: From Your Errors data mapping - real practice-outcome + essay-issue join, rule 40 throughout: PASS');

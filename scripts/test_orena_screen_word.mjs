@@ -292,4 +292,17 @@ assert.equal(mapWordCard('车站', { detail: null, item: null, supportLanguage: 
 assert.match(screenSrc, /speakOnDevice\(word,\s*catalogueLanguage\(word,\s*language\)\)/, 'the device voice takes the word\'s own language');
 assert.doesNotMatch(screenSrc, /speakOnDevice\(word,\s*language\)/, 'never the learning language alone');
 
+import { readFileSync as __read } from 'node:fs';
+const __src = (p) => __read(new URL(p, import.meta.url), 'utf8');
+
+// A failed lookup is not an empty word: the fetches throw to the load-error card; an answered empty result stays designed.
+{
+  const src = __src('../static/orena/screens/word/screen.js');
+  const fetchItem = src.slice(src.indexOf('async function fetchItem'), src.indexOf('async function catalogueSeed'));
+  assert.ok(!/catch/.test(fetchItem), 'fetchItem lets a failure through');
+  assert.match(src, /lookupFailed = !wordPause/);
+  assert.match(src, /throw Object\.assign\(new Error\('Word detail unavailable'\)/);
+  assert.match(src, /clipsReady = !clipsFailed/);
+  assert.match(src, /contextClipsEmpty/, 'the designed empty state is still drawn for an answered empty clips list');
+}
 console.log('test_orena_screen_word.mjs: Word Detail data mapping - real backend contracts, rule 40 throughout: PASS');

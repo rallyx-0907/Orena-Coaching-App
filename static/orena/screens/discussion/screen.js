@@ -157,7 +157,10 @@ export default async function mountDiscussion(element, ctx) {
       if (plain) {
         // The learner's message stays; the line says the tutor did not answer, with Retry unless the AI is paused (D-235).
         const paused = pausedLineOf(error);
-        failed = { question, requestId, before, text: paused || t('unavailable'), retry: !paused && error?.retryable !== false };
+        // An answered refusal (a status) settled or released the metered operation under this id and stored nothing, so Retry
+        // is a new submission with a fresh id (resending the id answers 409 operation_finished). Only an unanswered request
+        // (network, timeout) may have been stored, and keeps its id so the server returns the stored exchange.
+        failed = { question, requestId: error?.status ? newRequestId() : requestId, before, text: paused || t('unavailable'), retry: !paused && error?.retryable !== false };
         return;
       }
       turns = before;
