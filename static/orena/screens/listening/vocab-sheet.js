@@ -20,7 +20,7 @@ import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { lookupContext } from './model.js';
 import { wordDetailRequest } from '../quick-sheet/model.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
 
 async function resolveTerm(term, { lang, support, context, source }) {
   let detail = null;
@@ -30,7 +30,7 @@ async function resolveTerm(term, { lang, support, context, source }) {
     if (!detail?.available) paused = pausedLineNow('/api/dictionary/word-detail');
   } catch (error) {
     detail = null;
-    paused = pausedLineOf(error);
+    paused = refusalLineOf(error);
   }
   return {
     paused,
