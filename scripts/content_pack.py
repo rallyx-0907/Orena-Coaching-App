@@ -138,7 +138,8 @@ def classify_results(report: dict[str, Any]) -> list[dict[str, Any]]:
             if result == "source_created_for_review":
                 reason = "source created unapproved; an administrator here approves it once"
             elif result == "submitted":
-                reason = "submitted to this environment's admission engine, which decides its status"
+                reason = ("submitted to this environment's admission engine, which decides its status; "
+                          "a reviewed level and topic the pack carries are applied to the article it creates")
             elif row.get("status") == "pending_review":
                 reason = "vocabulary collection waits for review under this environment's publication rule"
         elif result in {"kept_local", "identical", "present"}:
@@ -148,6 +149,9 @@ def classify_results(report: dict[str, Any]) -> list[dict[str, Any]]:
                 status, reason = "refused", ", ".join(str(s.get("category")) for s in sets if s.get("result") == "refused")
             elif any(s.get("result") != "refused" for s in sets) or str(row.get("thumbnail") or "") in {"attached", "typographic"}:
                 status, reason = "new", "comprehension set or thumbnail attached to the present article"
+            elif "applied" in (row.get("review") or {}).values():
+                applied = [key for key, value in row["review"].items() if value == "applied"]
+                status, reason = "new", f"the source's reviewed {' and '.join(applied)} applied to the present article"
             elif str(row.get("thumbnail") or "").startswith("refused:"):
                 status, reason = "refused", str(row["thumbnail"])
             elif row.get("outcome") == "changed":

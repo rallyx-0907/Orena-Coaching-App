@@ -75,7 +75,7 @@ from writing_coach.persistence.reading_job_repository import (
     InvalidCursor,
     ReadingJobRepository,
 )
-from writing_coach.reading_content_engine import ReadingContentEngine
+from writing_coach.reading_content_engine import ReadingContentEngine, carried_review_changes, carried_review_reason
 from writing_coach.reading_processing import content_fingerprint
 from writing_coach.reading_provenance import provenance_blockers
 from writing_coach.reading_source_import import (
@@ -1787,9 +1787,12 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str,
             kind="text", text=data["body"], url=str(data.get("canonical_url") or ""), title=str(data.get("title") or ""),
             author=str(data.get("author") or ""), language=str(data.get("language") or ""),
             published_at=str(data.get("published_at") or ""), source_name=source["name"], source_id=source["id"],
-            rights=rights,
+            rights=rights, review=_carried_review(data, pack_id),
         ), actor=actor)  # fmt: skip
-        return {"result": "submitted", "job_id": job["id"], "note": "sets attach when the article is published; import again"}
+        # The reviewed level and topic travel in the job and land on the article the worker creates; comprehension
+        # sets and the thumbnail attach to a present article, so they need a later import once it is published.
+        return {"result": "submitted", "job_id": job["id"],
+                "note": "its reviewed level and topic arrive with the article; sets attach on an import once it is published"}
     attached = []
     thumbnail = _apply_pack_thumbnail(admin, found, data, assets or {}) if _state.asset_store is not None else "unavailable"
     if found["status"] == "published" and _state.evidence is not None:
@@ -1799,8 +1802,47 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str,
             if not support or support in have or not pack_set.get("questions"):
                 continue
             attached.append(_attach_pack_set(admin, found["id"], support, pack_set, pack_id=pack_id))
+    review = _apply_pack_review(admin, found["id"], data, pack_id=pack_id)
     return {"result": "present", "article_id": found["id"], "status": found["status"], "sets": attached,
-            "thumbnail": thumbnail}
+            "thumbnail": thumbnail, "review": review}
+
+
+def _carried_review(data: Mapping[str, Any], pack_id: str) -> dict[str, Any]:
+    """The review a pack article carries (#411), in the engine's shape; empty for a pack made before it."""
+
+    marks = data.get("review") if isinstance(data.get("review"), Mapping) else {}
+    if not str(data.get("reviewed_level") or "").strip() and not isinstance(marks.get("topic"), Mapping):
+        return {}
+    return {"reviewed_level": data.get("reviewed_level"), "topic": data.get("topic"), "subtopic": data.get("subtopic"),
+            "review": dict(marks), "pack_id": pack_id}
+
+
+def _apply_pack_review(admin: Mapping[str, Any], article_id: str, data: Mapping[str, Any], *,
+                       pack_id: str) -> dict[str, str]:
+    """The administrator's review a pack carries (#411), onto a present article that has none of its own here (a new
+    article receives it from the worker, through the job, by the same rule: `carried_review_changes`).
+
+    The reviewed level arrives only when this article was never level-reviewed here (no override, none cleared); the
+    topic and subtopic only when they were reviewed at the source and never here. A review of this environment's own
+    is always kept. What arrives is one correction through the same repository call, so it lands in the article's
+    review trail and the audit log with the importing actor and the pack. A pack without these fields (made before
+    them) carries no review, and the article keeps the estimate this environment's engine gave it."""
+
+    carried = _carried_review(data, pack_id)
+    if not carried:
+        return {}
+    article = _guarded(lambda: _content().get_article(article_id)) or {}
+    own = _guarded(lambda: _content().review_marks(article_id))
+    changes, outcome = carried_review_changes(carried, article, own)
+    if not changes:
+        return outcome
+    updated = _guarded(lambda: _content().update_article(
+        article_id, actor=_actor(admin), reason=carried_review_reason(carried), **changes))
+    _audit(admin, "admin.reading_level_override" if set(changes) == {"reviewed_level"} else "admin.reading_article_edited",
+           entity_type="reading_article", entity_id=article_id,
+           payload={"reviewed_level": (updated or {}).get("reviewed_level"), "content_pack": pack_id,
+                    "effective_level": (updated or {}).get("effective_level"), "changed": sorted(changes)})  # fmt: skip
+    return outcome
 
 
 def _attach_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pack_set: Mapping[str, Any], *,
