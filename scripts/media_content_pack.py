@@ -12,10 +12,10 @@ library roots of the environment (`MEDIA_LIBRARY_ROOT`, `MEDIA_LIBRARY_ASSET_ROO
 
 `export` reads only shared entries with status `published`, and each one's stored cue translations from the learning
 cache Listening reads (`LEARNING_CACHE_DB`, else `<root>/learning_cache.db`, or `--learning-cache`) under the translating
-identity named by `--provider-model` (default `GroqTranslationProvider:$GROQ_TRANSLATION_MODEL`). `import` is a dry run
+identities found in the AI ledger (`--ledger-csv`, or PostgreSQL when POSTGRES_RUNTIME_URL is set; `--provider-model` overrides) and keeps the newest per cue; coverage below 100% warns and exits 3 unless `--allow-partial`. `import` is a dry run
 unless `--apply` is given, prints one row per item (new / unchanged / conflict / refused, with the reason, and the
 translations it would write), and exits 0 when no item was refused or in conflict. With `--apply` it puts the
-translations into the target's learning cache under the target's `--provider-model`, so Listening serves them with no
+translations into the target's learning cache as `pack-import` rows, so Listening serves them with no
 provider call, and appends one line to `media-pack-imports.jsonl` beside the index. Back up the target's media library
 root and learning cache before the first `--apply`. The same implementation is the Admin route
 (`/api/admin/content-packs`, kind `media`); this script is for packs too large for an upload.
@@ -24,6 +24,7 @@ root and learning cache before the first `--apply`. The same implementation is t
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import os
 import subprocess
@@ -67,9 +68,21 @@ def _open_cache(path: Path, *, init: bool = False) -> SQLiteLearningCacheReposit
 
 
 def _provider_models(args: argparse.Namespace) -> list[str]:
-    """The identities a stored meaning's cache key may carry (`listening_api._translation_provider_model`)."""
-    given = [model for model in (args.provider_model or []) if model]
-    return given or [f"GroqTranslationProvider:{os.getenv('GROQ_TRANSLATION_MODEL', 'openai/gpt-oss-120b')}"]
+    """Every identity a stored meaning's cache key may carry: `--provider-model` overrides first, then the AI ledger's
+    distinct media_translation provider/model pairs (`--ledger-csv` rows, or the PostgreSQL ledger when
+    POSTGRES_RUNTIME_URL is set), then this environment's configured model."""
+    models = [m for m in (args.provider_model or []) if m]
+    rows = []
+    if args.ledger_csv:
+        with Path(args.ledger_csv).open(encoding="utf-8-sig", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+    models += media_pack.models_from_ledger_rows(rows)
+    if os.getenv("POSTGRES_RUNTIME_URL") and not args.no_ledger:
+        from writing_coach.persistence.platform_repository import PostgresPlatformRepository
+
+        models = media_pack.discover_provider_models(PostgresPlatformRepository(url=os.environ["POSTGRES_RUNTIME_URL"]), models)
+    models.append(f"GroqTranslationProvider:{os.getenv('GROQ_TRANSLATION_MODEL', 'openai/gpt-oss-120b')}")
+    return list(dict.fromkeys(models))
 
 
 def _commit() -> str:
@@ -91,9 +104,20 @@ def export_command(args: argparse.Namespace) -> int:
     items, blobs, excluded = media_pack.build_media_items(
         store, assets, ids=args.id, languages=args.language, exclude_prefixes=args.exclude_prefix,
         translations=cache, provider_models=_provider_models(args))
+    coverage = media_pack.translation_coverage(items)
+    partial = bool(items) and not coverage["complete"]
+    if partial:
+        total = coverage["total"]
+        print(f"WARNING: stored translations cover {total['percent']}% of the cues ({total['have']}/{total['expected']}); "
+              f"incomplete items: {', '.join(coverage['incomplete'][:30])}. Probed: {', '.join(_provider_models(args))}. "
+              "Pass --provider-model / --ledger-csv for a model not probed, or --allow-partial to export anyway.",
+              file=sys.stderr)
     if args.dry_run:
         print(json.dumps(media_pack.export_preview(items, blobs, excluded), ensure_ascii=False, indent=2))
-        return 0 if items else 1
+        return 0 if items and not (partial and not args.allow_partial) else (3 if partial else 1)
+    if partial and not args.allow_partial:
+        print("No pack written (coverage below 100%).", file=sys.stderr)
+        return 3
     if not items:
         print(json.dumps({"exported": 0, "excluded": excluded}, indent=2))
         print("Nothing published matches; no pack written.", file=sys.stderr)
@@ -109,7 +133,7 @@ def export_command(args: argparse.Namespace) -> int:
     out = Path(args.out)
     out.write_bytes(raw)
     translations = sum(sum(media_pack.translation_counts(item).values()) for item in items)
-    print(json.dumps({"exported": len(items), "assets": len(blobs), "translations": translations, "bytes": len(raw),
+    print(json.dumps({"exported": len(items), "assets": len(blobs), "translations": translations, "coverage": coverage["total"], "bytes": len(raw),
                       "excluded": excluded, "pack": str(out)}, indent=2))
     return 0
 
@@ -127,7 +151,7 @@ def import_command(args: argparse.Namespace) -> int:
     # A dry run never creates the cache file; it reads one that is there, and counts everything as new otherwise.
     cache = _open_cache(cache_file, init=args.apply) if args.apply or cache_file.is_file() else _EmptyCache()
     rows = media_pack.apply_media_items(pack, store, assets, overwrite=args.overwrite, dry_run=not args.apply,
-                                        actor="cli", translations=cache, provider_model=_provider_models(args)[0])
+                                        actor="cli", translations=cache)
     summary = media_pack.summarize(rows)
     print(json.dumps({"dry_run": not args.apply, "pack_id": pack.manifest.get("pack_id"),
                       "pack_version": pack.manifest.get("version"), "summary": summary,
@@ -159,11 +183,15 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--learning-cache", default="", help="learning cache db holding stored cue translations; "
                        "default LEARNING_CACHE_DB, else <root>/learning_cache.db")
         p.add_argument("--provider-model", action="append", default=[],
-                       help="translating identity the cache keys carry, e.g. GroqTranslationProvider:<model>; export "
-                       "probes every one given, import uses the first as the target's own (default: from "
-                       "GROQ_TRANSLATION_MODEL)")
+                       help="override: a translating identity the cache keys carry, e.g. "
+                       "GroqTranslationProvider:<model>; added to the ledger's models")
+        p.add_argument("--ledger-csv", default="", help="AI ledger rows (capability,provider,model,...) to read the "
+                       "translating models from, e.g. a cost export")
+        p.add_argument("--no-ledger", action="store_true", help="do not read the PostgreSQL ledger")
     ex, im = sub.choices["export"], sub.choices["import"]
     ex.add_argument("--out", default="")
+    ex.add_argument("--allow-partial", action="store_true",
+                    help="export although stored translations cover less than 100% of the cues (exit 3 otherwise)")
     ex.add_argument("--dry-run", action="store_true", help="print what would be packed (with translation counts); write nothing")
     ex.add_argument("--id", action="append", default=[])
     ex.add_argument("--language", action="append", default=[], choices=["en", "zh"])

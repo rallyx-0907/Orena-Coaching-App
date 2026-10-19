@@ -13,7 +13,7 @@ Translations: a cue's stored meaning lives in the learning cache (`media_transla
 fingerprint of the cue text, language and the translating provider/model), not on the media record, and that cache is
 what Listening reads (`listening_api.stored_media_payload` -> `media_meaning.resolve_segment_meanings`). Export reads the
 meanings from that same cache for every support language present and carries them with their provenance; import writes
-them into the target's cache under the target's own provider identity, so its read path serves them with no provider
+them into the target's cache under the model-independent identity `pack-import`, which its read path checks right after the current provider/model and before any provider
 call. They are additive and idempotent: a meaning already held is kept, and replaced only with `overwrite`.
 
 Import is idempotent by `media_id`: absent -> `new`, identical -> `unchanged`, different -> `conflict` and left
@@ -35,7 +35,7 @@ from typing import Any
 from writing_coach.book_asset_store import AssetNotFound, InvalidAssetKey, _validate_key
 from writing_coach.content_packs import Pack, PackItem, content_hash
 from writing_coach.core.support_languages import all_support_languages
-from writing_coach.media_meaning import cache_key
+from writing_coach.media_meaning import IMPORTED_IDENTITY, cache_key
 from writing_coach.media_library_store import MediaLibraryEntry, validate_entry
 
 KIND = "media_item"
@@ -181,8 +181,9 @@ def _export_translations(entry: MediaLibraryEntry, cache: Any, provider_models: 
     """Every stored meaning of this entry's cues, per target language, read where the learner UI reads it.
 
     A language appears only when at least one cue has a stored meaning; the summary says how many cues have one."""
-    if cache is None or not provider_models:
+    if cache is None:
         return [], {}
+    models = list(dict.fromkeys([*provider_models, IMPORTED_IDENTITY]))  # an imported meaning travels on
     asset_id, cues = _lesson_cues(entry.lesson, entry.media_id)
     rows: list[dict[str, str]] = []
     summary: dict[str, dict[str, int]] = {}
@@ -191,14 +192,18 @@ def _export_translations(entry: MediaLibraryEntry, cache: Any, provider_models: 
             continue
         found = []
         for segment_id, text in cues:
-            for model in provider_models:
+            best: dict[str, str] | None = None
+            for model in models:  # every model that may have translated this cue: the newest meaning wins
                 hit = cache.get_media_translation(cache_key(asset_id, segment_id, text, code, model))
                 if hit and str(hit.get("translated_text") or "").strip():
-                    found.append({"segment_id": segment_id, "target_language": code,
-                                  "translated_text": str(hit["translated_text"]),
-                                  "provenance": str(hit.get("provenance") or "generated"),
-                                  "created_at": str(hit.get("generated_at") or ""), "provider_model": model})
-                    break
+                    row = {"segment_id": segment_id, "target_language": code,
+                           "translated_text": str(hit["translated_text"]),
+                           "provenance": str(hit.get("provenance") or "generated"),
+                           "created_at": str(hit.get("generated_at") or ""), "provider_model": model}
+                    if best is None or row["created_at"] > best["created_at"]:
+                        best = row
+            if best is not None:
+                found.append(best)
         if found:
             rows += found
             summary[code] = {"have": len(found), "of": len(cues)}
@@ -217,14 +222,14 @@ def translation_counts(item: PackItem) -> dict[str, int]:
 Put = tuple[str, str, str, str]  # cache key, text, provenance, generated_at
 
 
-def _plan_translations(item: PackItem, candidate: MediaLibraryEntry, cache: Any, provider_model: str, *,
+def _plan_translations(item: PackItem, candidate: MediaLibraryEntry, cache: Any, *,
                        overwrite: bool) -> tuple[dict[str, Any], list[Put]]:
     """What import does with an item's translations: the report block and the cache rows to put. Reads, never writes."""
     rows = item.data.get("translations") or []
     block: dict[str, Any] = {"in_pack": len(rows), "languages": translation_counts(item)}
     if not rows:
         return block, []
-    if cache is None or not provider_model:
+    if cache is None:
         return {**block, "skipped": "no_translation_store"}, []
     asset_id, cues = _lesson_cues(candidate.lesson, candidate.media_id)
     texts = dict(cues)
@@ -240,7 +245,7 @@ def _plan_translations(item: PackItem, candidate: MediaLibraryEntry, cache: Any,
         if segment_id not in texts or not text or len(text) > MAX_TRANSLATION_CHARS or code not in _support_codes():
             invalid += 1
             continue
-        key = cache_key(asset_id, segment_id, texts[segment_id], code, provider_model)
+        key = cache_key(asset_id, segment_id, texts[segment_id], code, IMPORTED_IDENTITY)
         held_text = str((cache.get_media_translation(key) or {}).get("translated_text") or "").strip()
         if not held_text:
             new += 1
@@ -405,20 +410,19 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
 
 def apply_media_items(pack: Pack, store: Any, assets: Any, *, overwrite: bool = False, dry_run: bool = True,
                       actor: str = PACK_ACTOR, clip_keys: ClipKeys | None = None,
-                      translations: Any = None, provider_model: str | Callable[[], str] = "") -> list[dict[str, Any]]:
+                      translations: Any = None) -> list[dict[str, Any]]:
     """Judge every `media_item` of a pack, and when `dry_run` is false write what the judgement allows.
 
     The asset bytes are put first and the entry last, so an entry never points at a file that was not written.
     A failure of one item is that item's `refused` row; it never stops the others.
 
-    `translations` is the learning cache this environment's Listening reads and `provider_model` its translating
-    identity (a string or a callable returning it): the pack's meanings are put under that identity, so the read path
-    finds them without a provider call. A held meaning is kept unless `overwrite`. Every row reports its counts, so a
-    dry run says what a real run would write.
+    `translations` is the learning cache this environment's Listening reads. The pack's meanings are put under the
+    model-independent identity `media_meaning.IMPORTED_IDENTITY`, which the read path checks after the current
+    provider/model and before any provider call, so a later change of translating model re-translates nothing. A held
+    meaning is kept unless `overwrite`. Every row reports its counts, so a dry run says what a real run would write.
     """
     clip_keys = clip_keys or default_clip_keys
     pack_id = str(pack.manifest.get("pack_id") or "")
-    model = provider_model() if callable(provider_model) else str(provider_model or "")
     rows = []
     for item in pack.items:
         if item.kind != KIND:
@@ -428,7 +432,7 @@ def apply_media_items(pack: Pack, store: Any, assets: Any, *, overwrite: bool = 
         if row["outcome"] != REFUSED:
             try:
                 candidate = _entry_from(item, status="unpublished", processing={}, actor=actor)
-                row["translations"], puts = _plan_translations(item, candidate, translations, model, overwrite=overwrite)
+                row["translations"], puts = _plan_translations(item, candidate, translations, overwrite=overwrite)
             except (ValueError, TypeError, KeyError):
                 row["translations"], puts = {"in_pack": 0}, []
             if row["outcome"] == CONFLICT:
@@ -461,16 +465,73 @@ def translation_totals(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
     return totals
 
 
+# The translating identities a cache key may carry, read from the AI ledger (`audit_logs` `ai.operation`, capability
+# `media_translation`, distinct provider/model). The ledger is the one place that records every model that ever
+# translated, whatever the current configuration says; the cache itself holds only hashed keys and cannot be listed.
+_IDENTITY_CLASS = {"groq": "GroqTranslationProvider", "local_marian": "LocalHttpTranslationProvider"}
+
+
+def models_from_ledger_rows(rows: Iterable[Mapping[str, Any]]) -> list[str]:
+    """Cache identities (`<Provider class>:<model>`) of the distinct media_translation provider/model pairs in ledger rows."""
+    found: list[str] = []
+    for row in rows:
+        if str(row.get("capability") or "") != "media_translation":
+            continue
+        cls, model = _IDENTITY_CLASS.get(str(row.get("provider") or "")), str(row.get("model") or "").strip()
+        if cls and model:
+            found.append(f"{cls}:{model}")
+    return sorted(dict.fromkeys(found))
+
+
+def discover_provider_models(platform_repository: Any, extra: Iterable[str] = ()) -> list[str]:
+    """Every identity worth probing: the ledger's (when it can be read) and the ones given; `extra` first."""
+    models = [m for m in extra if m]
+    loader = getattr(platform_repository, "ai_cost_rows", None)
+    if loader is not None:
+        try:
+            models += models_from_ledger_rows(loader(datetime(2020, 1, 1, tzinfo=UTC)))
+        except Exception:  # noqa: BLE001 - an unreadable ledger leaves the given identities; coverage then says what is missing
+            pass
+    return list(dict.fromkeys(models))
+
+
+def translation_coverage(items: Iterable[PackItem]) -> dict[str, Any]:
+    """Cue translations present against expected, per item and in total.
+
+    Expected for an item is every cue in every target language any exported item carries (the item's own source language
+    excepted): an item with none is 0%, and an item missing a language the others have is partial."""
+    items = list(items)
+    langs = {code for item in items for code in (item.data.get("translation_summary") or {})}
+    per_item: dict[str, dict[str, Any]] = {}
+    have_total = expected_total = 0
+    for item in items:
+        _asset, cues = _lesson_cues(item.data["entry"].get("lesson"), item.natural_key)
+        own = str(item.data["entry"].get("language") or "").casefold()
+        expected = len(cues) * len([c for c in langs if c != own])
+        have = sum(v.get("have", 0) for v in (item.data.get("translation_summary") or {}).values())
+        per_item[item.natural_key] = {"have": have, "expected": expected,
+                                      "percent": round(100.0 * have / expected, 1) if expected else 0.0}
+        have_total += have
+        expected_total += expected
+    complete = bool(items) and all(row["expected"] > 0 and row["have"] >= row["expected"] for row in per_item.values())
+    return {"items": per_item, "total": {"have": have_total, "expected": expected_total,
+                                         "percent": round(100.0 * have_total / expected_total, 1) if expected_total else 0.0},
+            "languages": sorted(langs), "complete": complete,
+            "incomplete": [key for key, row in per_item.items() if row["expected"] == 0 or row["have"] < row["expected"]]}
+
+
 def export_preview(items: Iterable[PackItem], blobs: Mapping[str, bytes], excluded: Sequence[Mapping[str, str]]) -> dict[str, Any]:
     """A read-only summary of what an export would pack, per item and in total. Writes nothing."""
     rows = []
-    for item in items:
+    items_list = list(items)
+    for item in items_list:
         counts = translation_counts(item)
         rows.append({"media_id": item.natural_key, "assets": len(item.data.get("assets") or []),
                      "translations": counts, "translation_total": sum(counts.values()),
                      "translation_coverage": item.data.get("translation_summary") or {}})
     return {"dry_run": True, "items": len(rows), "assets": len(blobs), "asset_bytes": sum(len(b) for b in blobs.values()),
             "translations": sum(row["translation_total"] for row in rows),
+            "coverage": translation_coverage(items_list),
             "without_translations": [row["media_id"] for row in rows if not row["translation_total"]],
             "excluded": list(excluded), "per_item": rows}
 
@@ -483,4 +544,5 @@ def summarize(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
 
 
 __all__ = ["KIND", "apply_media_items", "build_media_items", "export_preview", "rights_complete", "summarize",
-           "translation_counts", "translation_totals"]
+           "translation_counts", "translation_totals", "translation_coverage", "discover_provider_models",
+           "models_from_ledger_rows"]

@@ -497,11 +497,13 @@ published only if its rights are cleared with a licence note and its transcript 
 otherwise it arrives unpublished and the row says `held`. A second import changes nothing.
 
 0. Preview (reads only): `python scripts/media_content_pack.py export --dry-run --exclude-prefix qa- --exclude-prefix test-`
-   lists per item the assets and translations per language and the items with none. The translations are found in
-   `LEARNING_CACHE_DB` (else `<root>/learning_cache.db`) under the source's translating identity; pass
-   `--provider-model GroqTranslationProvider:<model>` if it is not `$GROQ_TRANSLATION_MODEL` (default `openai/gpt-oss-120b`).
-   On :8000 `import` puts them under :8000's own `--provider-model`, so Listening serves them with no provider call; the
-   dry-run report shows `translations` new/unchanged/differs per item, and a held translation is kept unless `--overwrite`.
+   lists per item the assets and translations per language, and the coverage per item and in total. The translations are
+   found in `LEARNING_CACHE_DB` (else `<root>/learning_cache.db`) under every model the AI ledger shows for
+   `media_translation` (`--ledger-csv <cost export>` or PostgreSQL via `POSTGRES_RUNTIME_URL`; `--provider-model` adds
+   one); the newest meaning per cue wins. Coverage below 100% prints a WARNING and exits 3 (no pack is written) unless
+   `--allow-partial`. On :8000 `import` stores them as model-independent `pack-import` rows, so Listening serves them
+   with no provider call even after :8000 changes model; the dry-run report shows new/unchanged/differs per item and a
+   held translation is kept unless `--overwrite`.
 1. On :8021 (the lane runtime; the application image has the dependencies), export:
    `python scripts/media_content_pack.py export --out /tmp/media.orenapack --environment lane-8021 --exclude-prefix qa- --exclude-prefix test-`
    Read the printed `excluded` list. Copy the file out of the container.
