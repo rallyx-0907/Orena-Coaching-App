@@ -1,6 +1,6 @@
 # Gate 7b: the one-approval package for the owner (`:8000`, `https://orena.chillpickle.org`)
 
-**Status: prepared, nothing executed.** The owner approves this list once and runs every Polar production step
+**Status: approved by the owner on 2026-10-20 (D-MON-038); not executed yet. Next: the owner's P1.** The owner approves this list once and runs every Polar production step
 in Polar's dashboard. No agent writes to Polar production or holds its token. Secret values go straight into
 `runtime.env`, never into chat or Git.
 
