@@ -13,7 +13,8 @@ from writing_coach.core.published_promises import enforce_at_start, unmet_promis
 
 ON = {"feedback.retention_sweep": True, "agent.turn_retention_sweep": True}
 KEPT = {"AI_DAILY_SPEND_CEILING_USD": "5", "AGENT_MEMORY_HMAC_KEYS": "v1:" + "k" * 40,
-        "ORENA_ACCOUNT_BACKBONE": "on", "AGENT_MEMORY_RETENTION_SWEEP": "on", "AGENT_ENABLED": "true"}
+        "ORENA_ACCOUNT_BACKBONE": "on", "AGENT_MEMORY_RETENTION_SWEEP": "on", "AGENT_ENABLED": "true",
+        "USAGE_RETENTION_SWEEP": "on", "ADMIN_AUDIT_RETENTION_SWEEP": "on"}
 
 
 def policy(values):
@@ -34,6 +35,8 @@ def test_a_zero_ceiling_is_a_ceiling():
     ({"AI_DAILY_SPEND_CEILING_USD": "lots"}, "spend_ceiling_unset"),
     ({"AGENT_MEMORY_RETENTION_SWEEP": "off"}, "memory_retention_sweep_off"),
     ({"AGENT_MEMORY_RETENTION_SWEEP": ""}, "memory_retention_sweep_off"),
+    ({"USAGE_RETENTION_SWEEP": "off"}, "usage_retention_sweep_off"),
+    ({"ADMIN_AUDIT_RETENTION_SWEEP": ""}, "admin_audit_retention_sweep_off"),
 ])
 def test_each_unmet_environment_promise_is_named(change, code):
     assert [p.code for p in unmet_promises({**KEPT, **change}, policy(ON))] == [code]
@@ -47,7 +50,7 @@ def test_each_unmet_admin_sweep_is_named(key, code):
 
 def test_a_promise_about_data_the_runtime_does_not_keep_is_not_unmet():
     """No memory keys, or no account backbone: Orena Memory keeps nothing here. Agent off: no agent.turn row."""
-    values = {"AI_DAILY_SPEND_CEILING_USD": "5"}
+    values = {"AI_DAILY_SPEND_CEILING_USD": "5", "USAGE_RETENTION_SWEEP": "on", "ADMIN_AUDIT_RETENTION_SWEEP": "on"}
     assert unmet_promises(values, policy({**ON, "agent.turn_retention_sweep": False})) == []
     keys_only = {**values, "AGENT_MEMORY_HMAC_KEYS": "v1:" + "k" * 40}
     assert unmet_promises(keys_only, policy(ON)) == []

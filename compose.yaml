@@ -33,6 +33,8 @@ services:
       AGENT_MEMORY_RETENTION_SWEEP: ${AGENT_MEMORY_RETENTION_SWEEP:-}
       AGENT_TURN_RETENTION_SWEEP: ${AGENT_TURN_RETENTION_SWEEP:-}
       FEEDBACK_RETENTION_SWEEP: ${FEEDBACK_RETENTION_SWEEP:-}
+      USAGE_RETENTION_SWEEP: ${USAGE_RETENTION_SWEEP:-}
+      ADMIN_AUDIT_RETENTION_SWEEP: ${ADMIN_AUDIT_RETENTION_SWEEP:-}
       # Where the port below is published on the host. The application reads it to decide whether a request that
       # Docker's port proxy relays may count as the developer's own (writing_coach/core/request_boundary.py): that
       # is true only while this is a loopback address. Never LAN-bound by default (issue #137).

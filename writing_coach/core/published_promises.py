@@ -5,7 +5,9 @@
 - **The retention sweeps behind the periods the Privacy Policy states** (docs/legal/public/privacy.en.json, facts.json):
   - Orena Memory: unused notes deleted after 180 days (`AGENT_MEMORY_RETENTION_SWEEP`);
   - agent activity: 90 days (`agent.turn_retention_sweep`);
-  - feedback: 24 months (`feedback.retention_sweep`).
+  - feedback: 24 months (`feedback.retention_sweep`);
+  - usage counts: 12 months (`USAGE_RETENTION_SWEEP`); records of administrative actions: 24 months
+    (`ADMIN_AUDIT_RETENTION_SWEEP`) (PRE-502 R8).
   Each is deletion, so each defaults off and is switched on by the owner (D-172). While one is off, the stated period
   is not kept.
 
@@ -86,6 +88,16 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
         problems.append(UnmetPromise("agent_turn_retention_sweep_off",
                                      "agent.turn_retention_sweep is off: agent activity is kept past the 90 days the"
                                      " Privacy Policy states"))
+    from writing_coach.persistence.retention_sweeps import ADMIN_AUDIT_SWEEP_SWITCH, USAGE_SWEEP_SWITCH
+
+    if not _switch_on(values, USAGE_SWEEP_SWITCH):
+        problems.append(UnmetPromise("usage_retention_sweep_off",
+                                     f"{USAGE_SWEEP_SWITCH} is off: usage counts are kept past the 12 months the Privacy"
+                                     " Policy states"))
+    if not _switch_on(values, ADMIN_AUDIT_SWEEP_SWITCH):
+        problems.append(UnmetPromise("admin_audit_retention_sweep_off",
+                                     f"{ADMIN_AUDIT_SWEEP_SWITCH} is off: records of administrative actions are kept past"
+                                     " the 24 months the Privacy Policy states"))
     if not _policy_on(policy, "feedback.retention_sweep"):
         problems.append(UnmetPromise("feedback_retention_sweep_off",
                                      "feedback.retention_sweep is off: feedback is kept past the 24 months the Privacy"

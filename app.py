@@ -672,6 +672,28 @@ try:
 except ValueError as exc:
     raise RuntimeError(str(exc)) from exc
 
+# PRE-502 R8 (owner, 2026-10-19 16:26): usage counts kept 12 months, administrators' audit records 24 months. Each sweep
+# is deletion, off until its switch is on (an unclear value refuses to start); PostgreSQL only. Same daily schedule.
+from writing_coach.agent.retention import sweep_enabled as _retention_switch  # noqa: E402
+from writing_coach.persistence import retention_sweeps as _retention_sweeps  # noqa: E402
+
+_retention_switch(os.environ, _retention_sweeps.USAGE_SWEEP_SWITCH)
+_retention_switch(os.environ, _retention_sweeps.ADMIN_AUDIT_SWEEP_SWITCH)
+_r8_retention: list[FeedbackRetentionSchedule] = []
+if _persistence_runtime.backend == "postgresql" and _persistence_runtime.engine is not None:
+    _r8_retention = [
+        FeedbackRetentionSchedule(
+            lambda before, limit: _retention_sweeps.delete_usage_before(_persistence_runtime.engine, before, limit),
+            enabled=lambda: _retention_switch(os.environ, _retention_sweeps.USAGE_SWEEP_SWITCH),
+            days=_retention_sweeps.USAGE_RETENTION_DAYS,
+        ),
+        FeedbackRetentionSchedule(
+            lambda before, limit: _retention_sweeps.delete_admin_audit_before(_persistence_runtime.engine, before, limit),
+            enabled=lambda: _retention_switch(os.environ, _retention_sweeps.ADMIN_AUDIT_SWEEP_SWITCH),
+            days=_retention_sweeps.ADMIN_AUDIT_RETENTION_DAYS,
+        ),
+    ]
+
 _media_router_translator = PlatformMediaTranslator()
 _media_router_corrector = PlatformMediaCorrector()
 if _media_translation_provider_id == "groq":
@@ -2448,6 +2470,8 @@ def startup() -> None:
     init_db()
     if _feedback_retention is not None:
         _feedback_retention.start()
+    for _sweep in _r8_retention:
+        _sweep.start()
     if _quota_reconciler is not None:
         _quota_reconciler.start()
     if _media_intents is not None:
@@ -2461,6 +2485,8 @@ def _stop_feedback_retention() -> None:
     _reading_prefetcher.shutdown()  # D-200: drop queued translate-ahead jobs; a running call finishes on its own
     if _feedback_retention is not None:
         _feedback_retention.stop()
+    for _sweep in _r8_retention:
+        _sweep.stop()
     if _quota_reconciler is not None:
         _quota_reconciler.stop()
     if _media_intents is not None:
