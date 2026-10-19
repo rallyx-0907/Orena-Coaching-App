@@ -86,16 +86,20 @@ assert.equal((await retryRead(evidence.value)).checked_attempt_count, 4);
 // Every topic the catalog actually ships is named in every interface language. A missing label is
 // silent - the card simply loses its topic - so the gap only ever shows up as one language quietly
 // losing its framing.
-const catalog = JSON.parse(
-  fs.readFileSync('writing_coach/content/listening_catalog.v1.json', 'utf8'),
-);
+// The shipped built-in catalogue is empty since D-245, so the topics of the fixture-local catalogue the tests use are
+// checked beside it: the check keeps a subject, and a topic the shipped catalogue gains later is checked too.
 const catalogTopics = new Set();
-(function collect(node) {
-  if (Array.isArray(node)) return node.forEach(collect);
-  if (!node || typeof node !== 'object') return;
-  if (typeof node.topic === 'string') catalogTopics.add(node.topic);
-  Object.values(node).forEach(collect);
-})(catalog);
+for (const manifestPath of [
+  'writing_coach/content/listening_catalog.v1.json',
+  'tests/fixtures/listening_catalog.fixture.v1.json',
+]) {
+  (function collect(node) {
+    if (Array.isArray(node)) return node.forEach(collect);
+    if (!node || typeof node !== 'object') return;
+    if (typeof node.topic === 'string') catalogTopics.add(node.topic);
+    Object.values(node).forEach(collect);
+  })(JSON.parse(fs.readFileSync(manifestPath, 'utf8')));
+}
 assert.ok(catalogTopics.size, 'the catalog should declare topics');
 const discover = registeredCopy().get('discover');
 for (const topic of catalogTopics) {

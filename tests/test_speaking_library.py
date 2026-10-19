@@ -12,6 +12,10 @@ from fastapi.testclient import TestClient
 from writing_coach import speaking_library
 from writing_coach.speaking_library import SpeakingCatalogInvalid, parse_catalog
 
+# The shipped built-in Listening catalogue is empty since D-245; this module exercises catalogue lessons on the
+# fixture-local copy of the retired manifest (conftest.fixture_listening_catalog).
+pytestmark = pytest.mark.usefixtures("fixture_listening_catalog")
+
 
 class _MemoryAssets:
     def __init__(self, items=None):

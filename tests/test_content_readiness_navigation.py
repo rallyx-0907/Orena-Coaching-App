@@ -102,11 +102,13 @@ def test_preparation_then_navigation_reads_persisted_meaning(monkeypatch, langua
     assert len(calls) == 1
 
 
+# The shipped built-in catalogue is empty since D-245: the curated lesson comes from the fixture-local catalogue.
+@pytest.mark.usefixtures("fixture_listening_catalog")
 def test_curated_open_does_not_translate_missing_language(monkeypatch):
     monkeypatch.setattr(listening_api, "_translation_cache", MemoryCache())
     calls = []
     monkeypatch.setattr(listening_api, "_curated_translator", lambda _media: lambda *_: calls.append("paid"))
-    # The shipped catalogue is real domain data; its missing locale must stay
+    # A curated catalogue lesson is real domain data; its missing locale must stay
     # unavailable until content preparation, without a provider on this GET.
     lesson = next(iter(listening_api.catalog_lessons()))
     monkeypatch.setattr(listening_api, "catalog_lesson", lambda _id: lesson)
