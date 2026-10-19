@@ -155,3 +155,21 @@ def test_curly_quotes_are_not_glued_to_the_word_and_offsets_index_the_source() -
     for token in tokens:
         assert source[token["start"]:token["end"]] == token["fragment"]
 
+
+def test_di_written_for_the_particle_de_is_read_de_only_when_tagged_as_a_particle(monkeypatch) -> None:
+    # PRE D23: older texts (落花生) write 底 for 的. The dictionary reading is dǐ, which is right for every other use.
+    class Pair:
+        def __init__(self, word: str, flag: str) -> None:
+            self.word, self.flag = word, flag
+
+    source = "花生底味美"
+
+    def tagged(flag: str):
+        monkeypatch.setattr(la.pseg, "cut", lambda text: [Pair("花生", "n"), Pair("底", flag), Pair("味美", "n")])
+        la._annotate_cached.cache_clear()
+        return {item["fragment"]: item["pronunciation"] for item in la.annotate("zh", source)}
+
+    assert tagged("uj")["底"] == "de"
+    assert tagged("n")["底"] == "dǐ"
+    la._annotate_cached.cache_clear()
+

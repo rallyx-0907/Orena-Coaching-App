@@ -11,7 +11,7 @@ import {
   SPEEDS, nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
   wordTokens, hanTokens, lookupContext, estimatedTokenIndex, currentTokenIndex, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey,
   selectionAfterModeChange, previousIndex, nextIndex, keyWordsFrom, PHRASE_MAX, phraseSaveable, phraseSavePayload,
-  phraseSaved, vocabularyForSegment, placeFor, dictationLinesCompleted,
+  phraseSaved, vocabularyForSegment, placeFor, withinPercent, resumeTimeMs, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
 } from '../static/orena/screens/listening/model.js';
 
@@ -214,9 +214,9 @@ assert.equal(metaLine([null, undefined]), '');
 /* --- placeFor: device-memory continuation, real content-id namespace --- */
 {
   const continuation = [{ id: 'media:abc', segment: 'abc:002' }, { id: 'article:xyz', segment: 'p3' }];
-  assert.deepEqual(placeFor(continuation, 'media:abc'), { segmentId: 'abc:002', started: true });
-  assert.deepEqual(placeFor(continuation, 'media:none'), { segmentId: '', started: false });
-  assert.deepEqual(placeFor(null, 'media:abc'), { segmentId: '', started: false }, 'no continuation array at all does not throw');
+  assert.deepEqual(placeFor(continuation, 'media:abc'), { segmentId: 'abc:002', started: true, within: null });
+  assert.deepEqual(placeFor(continuation, 'media:none'), { segmentId: '', started: false, within: null });
+  assert.deepEqual(placeFor(null, 'media:abc'), { segmentId: '', started: false, within: null }, 'no continuation array at all does not throw');
 }
 
 /* --- dictationLinesCompleted: only real checked/revealed evidence counts, never a "prompt" row --- */
@@ -344,3 +344,18 @@ console.log('test_orena_screen_listening.mjs: Listening Workspace data mapping -
   assert.deepEqual(keyWordsFrom(null, 'en'), []);
 }
 
+
+/* --- A one-cue clip resumes by playback time, not by line start (PRE-104 / D17) --- */
+{
+  const cue = { start_ms: 0, end_ms: 60000 };
+  assert.equal(withinPercent(30000, 60000), 50);
+  assert.equal(withinPercent(null, 60000), null);
+  assert.equal(withinPercent(1000, 0), null, 'no duration, no percent');
+  assert.equal(resumeTimeMs(cue, 50, 60000), 30000, 'one long cue reopens at the remembered time');
+  assert.equal(resumeTimeMs(cue, null, 60000), 0);
+  assert.equal(resumeTimeMs({ start_ms: 10000, end_ms: 20000 }, 90, 60000), 10000, 'a percent outside the line falls back to the line start');
+  assert.equal(resumeTimeMs({ start_ms: 10000, end_ms: 20000 }, 25, 60000), 15000);
+  assert.equal(resumeTimeMs(null, 50, 60000), null);
+  const memory = [{ id: 'media:x', segment: 'x:1', place: { index: 1, total: 1, within: 50 } }];
+  assert.equal(placeFor(memory, 'media:x').within, 50);
+}

@@ -55,6 +55,7 @@ import {
   aidsCount,
   endOfContent,
   percentFromScroll,
+  readPercent,
   scrollTopFor,
   placeFor2,
   furthest,
@@ -1266,6 +1267,9 @@ export default async function mountReader(element, ctx) {
     } else if (act === 'end-primary') {
       if (hasQuiz) {
         stopSpeech();
+        // Pressing the end button is reaching the end, also for a text with nothing to scroll (opening it records nothing).
+        furthestPercent = 100;
+        recordVisit(100);
         ctx.go(ctx.href('checku', { id: contentId }, practice ? { mode: 'practice' } : {}));
       } else finish();
     } else if (act === 'end-secondary') finish();
@@ -1298,12 +1302,14 @@ export default async function mountReader(element, ctx) {
      line follow it, and the furthest point ever reached is what the device remembers. */
   function syncPosition() {
     if (!alive || !ctx.isCurrent()) return;
-    percent = percentFromScroll(scrollEl.scrollTop, scrollEl.scrollHeight, scrollEl.clientHeight);
+    const scrolled = readPercent(scrollEl.scrollTop, scrollEl.scrollHeight, scrollEl.clientHeight);
+    // Nothing to scroll is not "read to the end": the bar stays where the learner was and nothing is recorded.
+    percent = scrolled ?? Math.min(percent, furthestPercent >= 100 ? 0 : furthestPercent);
     const bar = element.querySelector('[data-progress] > span');
     if (bar) bar.style.width = `${percent}%`;
     const meta = element.querySelector('[data-meta]');
     if (meta) mount(meta, toolbarMetaText());
-    const next = furthest(furthestPercent, percent);
+    const next = scrolled == null ? furthestPercent : furthest(furthestPercent, percent);
     if (next > furthestPercent) {
       furthestPercent = next;
       recordVisit(next);

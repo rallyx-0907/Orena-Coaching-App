@@ -159,6 +159,17 @@ def _english_annotations(source: str, limit: int) -> list[dict[str, Any]]:
     ]
 
 
+# 底 written for the structural particle 的 in older texts (Xu Dishan's 落花生). The dictionary reading of 底 is
+# dǐ; the tagger marks the particle use with a `u*` flag, and only then is it read de. Any other use keeps dǐ.
+_PARTICLE_READINGS = {"底": "de"}
+
+
+def _chinese_reading(word: str, flag: str) -> str:
+    if flag.startswith("u") and word in _PARTICLE_READINGS:
+        return _PARTICLE_READINGS[word]
+    return " ".join(lazy_pinyin(word, style=Style.TONE))
+
+
 def _chinese_annotations(source: str, limit: int) -> list[dict[str, Any]]:
     output: list[dict[str, Any]] = []
     cursor = 0
@@ -176,7 +187,7 @@ def _chinese_annotations(source: str, limit: int) -> list[dict[str, Any]]:
                 "start": start,
                 "end": end,
                 "pos": chinese_pos(str(item.flag)),
-                "pronunciation": " ".join(lazy_pinyin(word, style=Style.TONE)),
+                "pronunciation": _chinese_reading(word, str(item.flag)),
                 "lemma": word,
             }
         )

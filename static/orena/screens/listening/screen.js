@@ -51,7 +51,7 @@ import { t as dictT } from '../dictation/copy.js';
 import {
   nextSpeed, speedLabel, contentIdFor, mmss, minutesFrom, metaLine, mapLesson,
   wordTokens, hanTokens, createLineTagger, widenHanTap, taggerAllowed, currentTokenIndices, wordHighlightEstimated, rowTone, modeHintKey, selectionAfterModeChange,
-  previousIndex, nextIndex, vocabularyForSegment, placeFor, dictationLinesCompleted,
+  previousIndex, nextIndex, vocabularyForSegment, placeFor, withinPercent, resumeTimeMs, dictationLinesCompleted,
   pickNextRecommendation, progressPercent, keyWordsFrom, msAtSeekFraction, timeLabel, reachedEnd, listenedMinutesLabel,
   phraseSaveable, phraseSavePayload, phraseSaved, transcriptState,
 } from './model.js';
@@ -133,11 +133,15 @@ export default async function listening(element, ctx) {
   // A named or remembered line reopens on that line, paused (L-09): coming back from Dictation, React or
   // Shadowing never resets the learner to the first line.
   const resumeAt = segments.some((seg) => seg.segment_id === requestedSegment);
-  let timeMs = resumeAt ? (segments.find(seg=>seg.segment_id===currentId)?.start_ms ?? lesson.excerptStartMs) : lesson.excerptStartMs;
+  let timeMs = resumeAt
+    ? (explicitSegment ? segments.find((seg) => seg.segment_id === currentId)?.start_ms : resumeTimeMs(segments.find((seg) => seg.segment_id === currentId), place.within, lesson.durationMs)) ?? lesson.excerptStartMs
+    : lesson.excerptStartMs;
   let ended = false;
   let playedMs = 0;
   let lastTickAt = null;
   let rememberedId = '';
+  let placeSavedAt = 0;
+  const PLACE_SAVE_MS = 5000;
   let lastActiveIndex = -2; // which segment the clock last said we are in (-1: between lines)
   let barSeek = false; // the seek bar moved the time while paused: the line follows it
   let seekingTo = resumeAt ? {id:currentId,at:Date.now()} : null;
@@ -202,7 +206,7 @@ export default async function listening(element, ctx) {
     writeStage({ ...readStage(), autoscroll: autoScroll, meaning: showTrans, wordhl: wordHighlight });
   }
 
-  function rememberPlace(force = false) {
+  function rememberPlace(force = false, settle = false) {
     if (!force && currentId === rememberedId) return;
     rememberedId = currentId;
     // The line in view, for an Orena conversation already running ("explain this sentence"). In Dictation the
@@ -215,9 +219,11 @@ export default async function listening(element, ctx) {
       /* How far into the clip this line is, so a card and the detail page say the same percent (LEX-082). Only
          with a real line start and a real duration; otherwise the place carries none. */
       const startMs = Number(line?.start_ms);
-      const total = Number(lesson.durationMs);
-      const within = line && Number.isFinite(startMs) && startMs >= 0 && total > 0 ? Math.min(100, Math.round((startMs / total) * 100)) : null;
-      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null, ...(within != null && within >= 0 ? { place: { index: 1, total: 1, within } } : {}) });
+      const endMs = Number(line?.end_ms);
+      // The playhead when it is inside this line (a single long cue has only one start); else the line start.
+      const inLine = Number.isFinite(timeMs) && timeMs >= startMs && (!Number.isFinite(endMs) || timeMs <= endMs);
+      const within = line && Number.isFinite(startMs) && startMs >= 0 ? withinPercent(inLine ? timeMs : startMs, lesson.durationMs) : null;
+      c.memory?.enter({ id: contentId, title: lesson.title, segment: currentId || '', intent: null, ...(settle ? { settle: true } : {}), ...(within != null && within >= 0 ? { place: { index: 1, total: 1, within } } : {}) });
     } catch {
       /* Device memory unavailable (private window): the session still works, it just does not
          resume next time. */
@@ -366,6 +372,8 @@ export default async function listening(element, ctx) {
     playing = detail.player_state === 1;
     if (playing && !wasPlaying) revealPlayerChrome();
     if (!playing) lastTickAt = null;
+    // The place follows the playhead, not only a change of line: on a one-cue clip the line never changes.
+    if (playing !== wasPlaying || (playing && Date.now() - placeSavedAt >= PLACE_SAVE_MS)) { placeSavedAt = Date.now(); rememberPlace(true, !playing); }
     paintTime();
     if (seekingTo) {
       const target = segOf(seekingTo.id);
@@ -1017,6 +1025,7 @@ export default async function listening(element, ctx) {
   });
 
   return () => {
+    if (playbackOk && !ended) rememberPlace(true, true);
     clearTimeout(chromeTimer);
     clearTimeout(typingTimer);
     playerEl.removeEventListener('pointermove', revealPlayerChrome);
