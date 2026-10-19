@@ -225,3 +225,16 @@ def test_legal_pages_flag_an_unset_or_invalid_effective_date(monkeypatch):
         for path, text in _legal_pages().items():
             assert text.count("[pending: effective_date]") == 2, (path, value)
             assert "<script>x</script>" not in text, (path, value)
+
+
+def test_platform_languages_gives_the_legal_effective_date_for_the_in_app_legal_text(monkeypatch):
+    async def read():
+        async with _client() as c:
+            return (await c.get("/api/platform/languages")).json()
+
+    monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", "2026-10-20")
+    assert _run(read())["legal_effective_date"] == "2026-10-20"
+    monkeypatch.setenv("LEGAL_EFFECTIVE_DATE", "2026-13-45")
+    assert _run(read())["legal_effective_date"] is None
+    monkeypatch.delenv("LEGAL_EFFECTIVE_DATE")
+    assert _run(read())["legal_effective_date"] is None
