@@ -162,7 +162,15 @@ def word_translation_seam(
             return _meaning(held)
         if _braked(current_user_key()):
             return None
-        return _meaning(router_module.route(CAPABILITY, raw))
+        # PR-MON-7B2a: a cache miss that asks a model is one `word.assist` request, settled 1 only when a model the
+        # account pays for answered. Over the plan's limit the tap keeps its deterministic answer (a miss, never a 429).
+        from writing_coach.product import assist_meters
+
+        routed = assist_meters.quiet(
+            assist_meters.WORD_ASSIST, digest=("word-translation", raw), ref="tap:word-translation",
+            call=lambda: router_module.route(CAPABILITY, raw), charged=assist_meters.routed_cost,
+        )
+        return None if routed is None else _meaning(routed)
     except (RouterInputInvalid, AICapabilityError, AIProviderError):
         return None
 

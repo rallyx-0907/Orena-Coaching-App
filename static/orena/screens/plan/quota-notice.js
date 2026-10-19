@@ -143,6 +143,14 @@ export function pausedLineOf(error) {
   return '';
 }
 
+/* The same line for a sheet or a reading room whose AI help is a plan meter (`word.assist`, `reading.assist`, PR-MON-7B2a):
+   the pause, the brake or the unreadable plan as above, and when the plan's allowance is spent (429 `quota_exhausted`) the
+   meter's own sentence with its reset time ("You have used 30 of 30 word explanations today."), in the place the room
+   already shows a failed request - never a Retry, which would be refused again. '' for every other failure. */
+export function refusalLineOf(error) {
+  return pausedLineOf(error) || (isQuotaExhausted(error) ? quotaMessage(error) : '');
+}
+
 export function pausedLineNow(routes) {
   const pause = recentAiPause(routes);
   return pause ? pausedMessage(pause.resetsAt) : '';
