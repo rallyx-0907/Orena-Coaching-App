@@ -1,6 +1,6 @@
 # Terms insert for paid plans (ready to fill; English only)
 
-**Status: the owner approved the text, which is not published yet** (D-MON-037, 2026-10-19). He approved the
+**Status: the owner approved the text, which is not published yet** (D-MON-037, 2026-10-19). The owner approved the
 Renewal, Cancelling, Refunds, Asking for a refund, Disputes and "When a paid plan ends" cards word for word. Any
 wording change needs a new approval. The downgrade sentence will be approved separately. The text is published only
 when sales open.
