@@ -132,8 +132,10 @@ answer.calls = [];
   const sheet = source('../static/orena/screens/consent/sheet.js');
   assert.match(sheet, /className: 's-mic'/, 'the Mic state sheet\'s own shape, no new visual');
   assert.match(sheet, /onClose: \(\) => settle\(false\)/, 'the scrim or Escape never allows recording');
-  assert.match(sheet, /legalHref\('\/terms'/);
-  assert.match(sheet, /legalHref\('\/privacy'/);
+  assert.match(sheet, /legalHref\('\/terms'\)/);
+  assert.match(sheet, /legalHref\('\/privacy'\)/);
+  assert.match(sheet, /legalLabel\(t\('consentTerms'\), ui\)/, 'the Terms link says "(English)" outside an English interface');
+  assert.match(sheet, /legalLabel\(t\('consentPrivacy'\), ui\)/);
   assert.doesNotMatch(sheet, /localStorage/, 'the answer lives on the server, not the device');
 }
 
