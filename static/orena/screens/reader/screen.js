@@ -29,6 +29,7 @@ import { theme, device, toggleAppearance, onDeviceChange } from '../../kit/devic
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
+import { levelWithQualifier } from '../../kit/level-label.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { annotateWithPolicy, annotateAll } from '../../infrastructure/annotate-policy.js';
@@ -357,12 +358,12 @@ export default async function mountReader(element, ctx) {
   const KIND_LABEL = { article: 'kindArticle', book: 'kindBook', text: 'kindText' };
   const toolbarMetaText = () =>
     practice
-      ? toolbarMeta({ author: t('practiceTitle'), level: doc.level, scriptLabel: doc.traditional ? t('scriptTraditional') : '', kindLabel: '', modeLabel: doc.minutes ? t('minutes', { n: doc.minutes }) : '', pageLabel: t('pageOf', pageOf(sentenceBySeg.size, percent)) })
+      ? toolbarMeta({ author: t('practiceTitle'), level: levelWithQualifier(doc.level, doc.levelEstimated), scriptLabel: doc.traditional ? t('scriptTraditional') : '', kindLabel: '', modeLabel: doc.minutes ? t('minutes', { n: doc.minutes }) : '', pageLabel: t('pageOf', pageOf(sentenceBySeg.size, percent)) })
       : toolbarMeta({
       isBook: doc.isBook,
       chapterTitle: doc.chapterTitle,
       author: doc.author,
-      level: doc.level,
+      level: levelWithQualifier(doc.level, doc.levelEstimated),
       scriptLabel: doc.traditional ? t('scriptTraditional') : '',
       chapterIndex: doc.neighbours?.index,
       chapterTotal: doc.neighbours?.total,

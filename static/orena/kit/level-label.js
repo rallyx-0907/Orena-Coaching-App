@@ -16,3 +16,8 @@ export function levelWithQualifier(level, estimated) {
   const text = String(level || '');
   return text && estimated ? `${text} · ${shellCopy('levelEstimated')}` : text;
 }
+
+/* One call for a card or a meta line: the item's level, qualified when the item says it is only an estimate. */
+export function itemLevelLabel(item) {
+  return levelWithQualifier(item?.level || '', levelIsEstimated(item));
+}

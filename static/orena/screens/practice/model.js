@@ -18,6 +18,7 @@
 import { isDeferred } from '../../shell/routes.js';
 import { speakingResumeTarget } from '../../product/speaking-resume.js';
 import { contentIdFor } from '../content/model.js';
+import { itemLevelLabel } from '../../kit/level-label.js';
 
 /* Every mode maps to a real shell/routes.js entry; its label is that route's own crumb, already
    translated in copy/shell.js (shellCopy) - this file only decides *which* routes belong to which
@@ -180,7 +181,7 @@ export function readingModes(reading) {
   if (!article?.id) return [];
   /* The Reader takes a prefixed content id ("article:<id>", content/model.js parseContentId), never the
      bare article id. "Start Reading Practice" opens it in practice mode, as Content Detail and Check do. */
-  const mode = { key: 'reader', routeId: 'reader', params: { id: contentIdFor('article', article.id) }, level: article.level || '', query: { mode: 'practice' } };
+  const mode = { key: 'reader', routeId: 'reader', params: { id: contentIdFor('article', article.id) }, level: itemLevelLabel(article), query: { mode: 'practice' } };
   if (reading.next?.recommendation) mode.query.rec = reading.next.recommendation;
   return [mode];
 }

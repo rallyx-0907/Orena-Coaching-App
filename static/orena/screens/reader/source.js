@@ -6,6 +6,7 @@
 import { api } from '../../infrastructure/api.js';
 import { sourceLine, creditOf } from '../../product/provenance.js';
 import { isTraditional } from '../../product/script.js';
+import { levelIsEstimated } from '../../kit/level-label.js';
 import {
   blocksForSource,
   pageBlocks,
@@ -38,6 +39,7 @@ export async function loadReadable(parsed, memory) {
       author: sourceLine(article),
       credit: creditOf(article),
       level: String(article?.level || ''),
+      levelEstimated: levelIsEstimated(article),
       traditional: isTraditional(article),
       topic: String(article?.topic || ''),
       // The article's own reading time, whole minutes (practice mode's meta line).

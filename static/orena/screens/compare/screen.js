@@ -586,6 +586,7 @@ export default async function mountCompareWithModel(element, ctx) {
           <div class="s-compare-headline">${t(headlineKey(score))}</div>
           <div class="s-compare-chips">${chips.map((chip) => html`<span class="s-compare-chip"><span style="color:${KIND_INK[chip.kind]};display:flex">${glyph(chip.kind)}</span>${chip.key === 'chipUnclear' ? t.plural('chipUnclear', chip.params.n) : t(chip.key, chip.params)}</span>`)}</div>
           ${metricText ? html`<div class="s-compare-metricline">${metricText}</div>` : ''}
+          <p class="s-compare-note" data-score-note>${t('scoreNote')}</p>
         </div>
       </div>
       <div class="s-compare-legendrow">

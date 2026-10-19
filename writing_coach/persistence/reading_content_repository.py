@@ -453,6 +453,12 @@ def _queue_row(row: Any) -> dict[str, Any]:
     }
 
 
+def _level_source(row: Any) -> str:
+    """Whether the level a learner reads was reviewed by a person or is only the machine's estimate (PRE-204).
+    A plain read of the two columns; `effective_level` is `reviewed_level` when set, else `estimated_level`."""
+    return "editorial-review" if getattr(row, "reviewed_level", None) else "deterministic-estimate"
+
+
 def _learner_row(row: Any) -> dict[str, Any]:
     """The learner list projection. Every field here is one a card draws."""
     return {
@@ -460,6 +466,7 @@ def _learner_row(row: Any) -> dict[str, Any]:
         "title": row.title,
         "language": row.language,
         "level": row.effective_level,
+        "level_source": _level_source(row),
         "topic": row.topic,
         "reading_time_seconds": row.reading_time_seconds,
         "word_count": row.word_count,
@@ -1605,6 +1612,7 @@ class ReadingContentRepository:
             ReadingArticle.title,
             ReadingArticle.language,
             ReadingArticle.effective_level,
+            ReadingArticle.reviewed_level,
             ReadingArticle.topic,
             ReadingArticle.reading_time_seconds,
             ReadingArticle.word_count,
@@ -1692,6 +1700,7 @@ class ReadingContentRepository:
             "body": row.body,
             "language": row.language,
             "level": row.effective_level,
+            "level_source": _level_source(row),
             "topic": row.topic,
             "reading_time_seconds": row.reading_time_seconds,
             "word_count": row.word_count,

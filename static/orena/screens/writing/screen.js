@@ -467,6 +467,7 @@ export default async function mountWriting(element, ctx) {
           </div>`,
         )}
       </div>
+      ${essay.overall != null ? html`<div class="s-writing__range" data-score-note>${s('scoreNote')}</div>` : ''}
       ${essay.range ? rangeMarkup() : ''}
       ${reportLink({ area: 'writing', surface: 'writing-evaluation', id: essay.id })}
       ${next ? html`<button type="button" class="s-writing__next" data-act="next">${t('nextPrefix', { label: t('nextOpenFirst') })}</button>` : ''}

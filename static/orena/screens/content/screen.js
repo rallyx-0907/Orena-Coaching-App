@@ -13,7 +13,7 @@ import { icon } from '../../kit/icons.js';
 import { moreButton, moreMenu } from '../../kit/overflow.js';
 import { toast } from '../../kit/toast.js';
 import { shellCopy } from '../../copy/shell.js';
-import { levelWithQualifier, levelIsEstimated } from '../../kit/level-label.js';
+import { levelWithQualifier, levelIsEstimated, itemLevelLabel } from '../../kit/level-label.js';
 import { syncImports } from '../../shell/context.js';
 import { deleteWithUndo } from '../../product/import-undo.js';
 import { importMemberId, isRemovedContent } from '../../product/import-removed.js';
@@ -127,7 +127,7 @@ async function loadRelated(kind, id, language, current) {
           // languages-5 / finding A: the related list is the same language-scoped catalogue this
           // content item itself came from (loadRelated's own `language` argument).
           lang: language,
-          meta: metaLine([t('typeArticle'), item.level, isTraditional(item) ? t('scriptTraditional') : '', minutesLabel(minutesFrom(item.reading_time_seconds))]),
+          meta: metaLine([t('typeArticle'), itemLevelLabel(item), isTraditional(item) ? t('scriptTraditional') : '', minutesLabel(minutesFrom(item.reading_time_seconds))]),
           image: '',
         }),
       });

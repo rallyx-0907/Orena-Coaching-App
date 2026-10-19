@@ -135,6 +135,7 @@ export function normalizeArticle(article) {
     // D-189: the publisher the payload's `provenance` names; the author is only the fallback of an older payload.
     source: sourceLine(article),
     level: String(article?.level || ''),
+    levelEstimated: levelIsEstimated(article),
     traditional: isTraditional(article),
     minutes: minutesFrom(article?.reading_time_seconds),
     topic: String(article?.topic || ''),

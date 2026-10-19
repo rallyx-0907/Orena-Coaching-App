@@ -110,6 +110,26 @@ assert.equal(match('#/feedback').route.id, 'feedback');
   assert.equal(levelWithQualifier('B2', false), 'B2');
   assert.equal(levelWithQualifier('', true), '');
   copy.setLanguages({ ui: 'en', support: 'en' });
+  // PRE-204 (AC): a reading article says it (level_source from the learner payloads); every surface goes through one helper.
+  const { itemLevelLabel } = await import('../static/orena/kit/level-label.js');
+  assert.equal(itemLevelLabel({ level: 'B1', level_source: 'deterministic-estimate' }), 'B1 · est.');
+  assert.equal(itemLevelLabel({ level: 'B1', level_source: 'editorial-review' }), 'B1');
+  assert.equal(itemLevelLabel({ level: 'B1' }), 'B1');
+  assert.equal(itemLevelLabel({}), '');
+  const { articleItems, listeningItems } = await import('../static/orena/screens/search/model.js');
+  assert.equal(articleItems({ items: [{ id: 1, title: 'x', level: 'B2', level_source: 'deterministic-estimate' }] }, '')[0].meta, 'B2 · est.');
+  assert.equal(articleItems({ items: [{ id: 1, title: 'x', level: 'B2', level_source: 'editorial-review' }] }, '')[0].meta, 'B2');
+  assert.equal(listeningItems({ items: [{ lesson_id: 'm', title: 'x', level: 'A2', level_source: 'deterministic-estimate' }] }, '')[0].meta, 'A2 · est.');
+  const { normalizeArticle } = await import('../static/orena/screens/content/model.js');
+  assert.equal(normalizeArticle({ title: 't', level: 'B1', level_source: 'deterministic-estimate' }).levelEstimated, true);
+  assert.equal(normalizeArticle({ title: 't', level: 'B1', level_source: 'editorial-review' }).levelEstimated, false);
+  const { shellCopy } = await import('../static/orena/copy/shell.js');
+  for (const [ui, text] of [['en', 'Automatic estimate, for reference only.'], ['vi', 'Điểm ước tính tự động, chỉ để tham khảo.'], ['zh', '自动估算分数，仅供参考。']]) {
+    copy.setLanguages({ ui, support: ui });
+    assert.equal(shellCopy('scoreNote'), text);
+  }
+  copy.setLanguages({ ui: 'en', support: 'en' });
+  copy.setLanguages({ ui: 'en', support: 'en' });
 }
 
 console.log('Orena feedback screen: send, history, form, EN/VI/ZH markup, route, report-a-problem, estimated level: PASS');

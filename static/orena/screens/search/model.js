@@ -10,7 +10,10 @@
    Every function here is DOM-free and network-free: screen.js calls the API and memory reads, and
    hands their answers to these functions. */
 
+import { itemLevelLabel } from '../../kit/level-label.js';
+
 const RECENT_KEY = 'orena.next.search.recent.v1';
+
 export const RECENT_MAX = 8;
 
 export function normalizeQuery(raw) {
@@ -108,7 +111,7 @@ export function articleItems(payload, query, language = '') {
         // itself queried GET /api/reading/articles with (screen.js's `runSearch`).
         lang: article?.language || language,
         topic: article?.topic || '',
-        meta: article?.level || '',
+        meta: itemLevelLabel(article),
         open: { route: 'content', id: `article:${id}` },
       };
     })
@@ -137,7 +140,7 @@ export function listeningItems(payload, query, language = '') {
         // GET /api/listening/library with.
         lang: item?.language || language,
         topic: item?.topic || '',
-        meta: item?.level || '',
+        meta: itemLevelLabel(item),
         open: { route: 'content', id: `media:${id}` },
       };
     })

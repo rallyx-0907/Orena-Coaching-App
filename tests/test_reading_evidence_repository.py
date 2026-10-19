@@ -153,6 +153,7 @@ def test_one_question_returns_feedback_without_writing_attempt(world, language):
     scope.language = language
     article_id, set_id = _approved(content, evidence, language=language)
     served = evidence.served_set(article_id, support_language="vi")
+    assert served["article"]["level_source"] == "deterministic-estimate"  # PRE-204: the level is the machine's until reviewed
     question_id = served["questions"][0]["id"]
     right = evidence.grade_question(set_id, question_id, 0, support_language="vi")
     wrong = evidence.grade_question(set_id, question_id, 1, support_language="vi")

@@ -73,7 +73,7 @@ export default async function mountSpeakingSummary(element, ctx) {
               )}</div>`
             : html`<p class="s-spsummary-empty">${t('emptyTasks')}</p>`
         }
-        ${improvement ? html`<div class="s-spsummary-improve"><b>${t('keyImprovementLabel')}</b> · ${t('keyImprovement', { label: improvement.label, value: improvement.value })}</div>` : ''}
+        ${improvement ? html`<div class="s-spsummary-improve"><b>${t('keyImprovementLabel')}</b> · ${t('keyImprovement', { label: improvement.label, value: improvement.value })}</div><p class="s-spsummary-empty" data-score-note>${shellCopy('scoreNote')}</p>` : ''}
         <div class="s-spsummary-actions">
           <button type="button" class="s-spsummary-primary" data-practice-more>${t('practiceMore')}</button>
           <button type="button" class="s-spsummary-secondary" data-practice-hub>${t('backToPracticeHub')}</button>
