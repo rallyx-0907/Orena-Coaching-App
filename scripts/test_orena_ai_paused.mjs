@@ -136,12 +136,13 @@ const answer = (status, body, headers = {}) => ({
   const entitlement = (key, extra = {}) => ({ key, enabled: true, limit: null, ...extra });
   const plans = [
     { id: 'free', rank: 0, entitlements: [entitlement('orena.message', { limit: 20 }), entitlement('orena.voice', { enabled: false })] },
-    { id: 'plus', rank: 1, entitlements: [entitlement('orena.message', { limit: 200 }), entitlement('orena.voice')] },
+    { id: 'plus', rank: 1, entitlements: [entitlement('orena.message', { limit: 200 }), entitlement('orena.voice', { limit: 1 })] },
     { id: 'pro', rank: 2, entitlements: [entitlement('orena.message', { limit: 1000 }), entitlement('orena.voice')] },
   ];
   const list = pricingPlans({ plans });
   const has = (id) => list.find((plan) => plan.id === id).features.some((feature) => feature.key === 'orena.voice');
   assert.deepEqual([has('free'), has('plus'), has('pro')], [false, true, true], 'listed for Plus and Pro, not Free');
+  assert.equal(list[1].features.find((feature) => feature.key === 'orena.voice').limit, null, 'on/off with a stored limit of 1 is never drawn as a count');
   const row = compareRows(list).find((item) => item.key === 'orena.voice');
   assert.deepEqual(row.cells.map((cell) => cell.kind), ['no', 'yes', 'yes']);
   // A catalogue that does not carry it draws nothing extra.
