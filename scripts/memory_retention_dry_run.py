@@ -5,10 +5,13 @@ the application image against the database the sweep would run on, before the ow
 AGENT_MEMORY_RETENTION_SWEEP on:
 
     python -m scripts.memory_retention_dry_run            # uses POSTGRES_RUNTIME_URL
-    python -m scripts.memory_retention_dry_run --url URL  # or an explicit URL (never printed)
+    python -m scripts.memory_retention_dry_run --url URL  # or an explicit URL (never printed - but it stays in the
+                                                          # shell history and process list: prefer the variable)
     python -m scripts.memory_retention_dry_run --at 2026-12-01T00:00:00+00:00   # as of another moment
 
-Prints one JSON object: the moment, and the counts by table (memories by class).
+Prints one JSON object: the moment, and the counts by table (memories by class; a class with none is absent).
+One daily sweep removes at most MAX_BATCHES x BATCH rows per table per process (ExpiredMemorySweep): a larger backlog
+takes more than one day. A future --at overstates what will go: notes in use are renewed (PRE-005 v2).
 """
 
 from __future__ import annotations
@@ -29,7 +32,11 @@ def main(argv: list[str] | None = None) -> int:
     if not url:
         print("no database URL: set POSTGRES_RUNTIME_URL or pass --url", file=sys.stderr)
         return 2
-    at = datetime.fromisoformat(args.at) if args.at else datetime.now(UTC)
+    try:
+        at = datetime.fromisoformat(args.at) if args.at else datetime.now(UTC)
+    except ValueError:
+        print("--at is not an ISO date-time (e.g. 2026-12-01T00:00:00+00:00)", file=sys.stderr)
+        return 2
     if at.tzinfo is None:
         print("--at needs a timezone (e.g. +00:00)", file=sys.stderr)
         return 2
