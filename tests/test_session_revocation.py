@@ -151,3 +151,18 @@ def test_one_keyed_read_per_request(monkeypatch):
 
     assert _run(exercise()).status_code == 200
     assert len(calls) == 1
+
+
+def test_revoke_never_lowers_the_stored_instant(monkeypatch):
+    from tests.policy_support import MemoryPolicyStore
+
+    store = MemoryPolicyStore()
+    monkeypatch.setattr(auth_support, "_session_revocation_store", store)
+    key = auth_support._session_revoked_key("skew-user")
+    far_future = auth_support._now_ms() + 10_000_000
+    store.set_setting(key, {"before_ms": far_future})  # a skewed or concurrent writer got there first
+    auth_support.revoke_user_sessions("skew-user")
+    assert store.rows[key]["value"]["before_ms"] == far_future
+    store.set_setting(key, {"before_ms": 5})
+    auth_support.revoke_user_sessions("skew-user")
+    assert store.rows[key]["value"]["before_ms"] > 5
