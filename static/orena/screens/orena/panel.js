@@ -36,6 +36,7 @@ import { setAgentHandler } from '../../shell/agent-bridge.js';
 import { t } from './copy.js';
 import { contextParts, latestSuggestions, thinkingText } from './model.js';
 import { messageMarkup, placeThread } from './thread.js';
+import { bindReport } from '../../product/report-problem.js';
 import { runOffered, openIfAsked } from './actions.js';
 import { keepFocus } from './focus.js';
 import { createVoiceEngine, voiceRowMarkup, bindVoiceRow } from './voice.js';
@@ -123,6 +124,10 @@ export async function openOrenaPanel(context = {}, carry = null) {
       button.addEventListener('click', () => runOffered({ dispatcher, action: findAction(button.dataset.actionId), ranActions, repaint: paint })),
     );
     sheetEl.querySelectorAll('[data-retry]').forEach((button) => button.addEventListener('click', retry));
+    bindReport(sheetEl, (to) => {
+      handle.close();
+      go(to);
+    });
     // The plan's limit (D-163): the panel gives way to the plans.
     sheetEl.querySelectorAll('[data-plans]').forEach((button) =>
       button.addEventListener('click', () => {

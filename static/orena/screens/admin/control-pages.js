@@ -23,7 +23,7 @@ export function spendBanner(spend, href) {
   const system = spend?.system;
   if (!system || !system.ceiling_usd || !(system.reached || system.warned)) return '';
   const ui = languages().ui;
-  const money = (n) => new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', maximumFractionDigits: n < 100 && n % 1 ? 2 : 0 }).format(n);
+  const money = (n) => new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: n < 100 ? 2 : 0, maximumFractionDigits: n < 100 ? 2 : 0 }).format(n);
   const spent = money(Number(system.spent_usd) || 0);
   const cap = money(Number(system.ceiling_usd));
   const actions = [{ label: t('navAi'), a: 'go', data: { to: href('adminAi') } }];

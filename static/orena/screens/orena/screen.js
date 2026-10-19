@@ -16,6 +16,7 @@ import { orenaPresent, onOrenaPresence } from '../../agent/presence.js';
 import { t } from './copy.js';
 import { homeSubtitle, latestSuggestions, thinkingText } from './model.js';
 import { messageMarkup, placeThread } from './thread.js';
+import { bindReport } from '../../product/report-problem.js';
 import { runOffered, openIfAsked } from './actions.js';
 import { dockVoice, undockVoice } from './voice-dock.js';
 import { keepFocus } from './focus.js';
@@ -176,6 +177,7 @@ export default async function mountOrena(element, ctx) {
     element.querySelectorAll('[data-retry]').forEach((button) => button.addEventListener('click', retryHome));
     // The plan's limit (D-163): the way to the plans, in the retry button's place.
     element.querySelectorAll('[data-plans]').forEach((button) => button.addEventListener('click', () => ctx.go(button.dataset.plans)));
+    bindReport(element, (to) => ctx.go(to));
     element.querySelectorAll('[data-starter]').forEach((button) => button.addEventListener('click', () => sendHomeMessage(button.dataset.starter)));
     const input = element.querySelector('[data-input]');
     if (input) {

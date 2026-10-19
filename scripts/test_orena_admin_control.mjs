@@ -76,7 +76,7 @@ console.log('Admin control-center rendering and truthful state checks passed');
     assert.ok(!none.includes('a-banner'), 'below the warning ratio (or with no ceiling) the overview draws no spend notice');
   }
   const warned = page({ ...ceiling, spent_usd: 4.0, ratio: 0.8, warned: true });
-  assert.ok(warned.includes('data-tone="warn"') && warned.includes('AI spend today $4 of $5 - 80% reached'), 'the warning at 80%');
+  assert.ok(warned.includes('data-tone="warn"') && warned.includes('AI spend today $4.00 of $5.00 - 80% reached'), 'the warning at 80%');
   const paused = page({ ...ceiling, spent_usd: 5.01, ratio: 1.002, warned: true, reached: true });
   assert.ok(paused.includes('data-tone="err"') && paused.includes('AI paused until') && !paused.includes('80% reached'), 'paused at 100%');
   assert.ok(!paused.includes('Invalid Date'));
