@@ -135,8 +135,17 @@ def unaccented_wish(message: str) -> str | None:
     return wish or None
 
 
-_NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|lưu ý|note|notes)\b|笔记|那条|记录")
-_EN_STOP = frozenset({"that", "this", "with", "have", "from", "they", "them", "more", "less", "like", "want"})
+# An explicit note noun (#346: not "lưu ý" or 记录 - an everyday "note that" and "records" named every note at once).
+_NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|note|notes)\b|笔记|备注|那条")
+_EN_STOP = frozenset({"that", "this", "with", "have", "from", "they", "them", "more", "less", "like", "want", "what",
+                      "does", "word", "mean", "please", "help", "about", "just"})
+# Phrases every learner says - who is asked, which thing is meant - name no note (#346): a request to fix a sentence
+# "giúp mình" never touches a note that also says "giúp mình".
+_STOP_PHRASES = frozenset({
+    "giúp mình", "cho mình", "giúp tôi", "cho tôi", "giúp em", "cho em", "giúp với", "mình muốn", "tôi muốn",
+    "câu này", "từ này", "cái này", "cái đó", "hôm nay", "bây giờ", "được không",
+    "帮我", "给我", "这个", "那个", "一下", "我的", "我们", "你的", "什么", "怎么", "可以", "一点",
+})
 
 
 def _phrases(text: str) -> set[str]:
@@ -149,7 +158,7 @@ def _phrases(text: str) -> set[str]:
     phrases |= {w for w in words if w.isascii() and len(w) >= 4 and w not in _EN_STOP}
     for run in re.findall(r"[一-鿿]+", lowered):
         phrases |= {run[i : i + 2] for i in range(len(run) - 1)}
-    return phrases
+    return phrases - _STOP_PHRASES
 
 
 def notes_the_message_changes(message: str | None, notes: Iterable[CoachNote]) -> tuple[CoachNote, ...]:
