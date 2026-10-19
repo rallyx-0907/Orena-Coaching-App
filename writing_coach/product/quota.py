@@ -90,7 +90,10 @@ SETTING_KEY = "product.quota_enforcement"
 # Meters whose routes this build admits through `admit()`. Listing any other meter enforces nothing, so it is
 # refused by the admin setting and ignored (logged) in the environment: a Plan screen must never show a meter as
 # counted while nothing counts it.
-WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import")
+# PR-MON-7B2a: the semantic AI meters `word.assist`, `reading.assist`, `writing.task` (H7-3, one fresh remote AI request =
+# one unit, per day) are admitted at their call sites through `writing_coach.product.assist_meters`.
+WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import",
+                                 "word.assist", "reading.assist", "writing.task")
 # Entitlements this build enforces that are NOT bucket meters: a count cap with no window and no reservation
 # (`languages.target`, D-170 - `writing_coach.product.language_limit`). The same switch lists them, so one setting and
 # one pair of environment variables govern everything the server enforces; they never go through `admit()`.
@@ -102,7 +105,8 @@ ENFORCEABLE: tuple[str, ...] = WIRED_METERS + WIRED_ENTITLEMENTS
 # WIRED_METERS with its approved limits. The unit is the frozen D-MON-023 H-2 unit.
 PENDING_METERS: dict[str, str] = {"speech.transcribe": "second", "speech.evaluate": "second", "audio.tts": "character"}
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
-SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
+SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "word.assist", "reading.assist",
+                                "writing.task")
 # Meters whose work outlives the request in a background job that settles its own reservation by operation id
 # (`settle_operation`, D-168). The reconciler is only their backstop, after ASYNC_RECONCILE_AFTER.
 ASYNC_METERS: tuple[str, ...] = ("media.import",)

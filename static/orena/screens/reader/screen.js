@@ -39,7 +39,7 @@ import { openWordSheet, openSentenceSheet } from '../quick-sheet/sheet.js';
 import { loadNotesAcross, noteKeysFor, noteTypeColorKey } from '../quick-sheet/model.js';
 import { legacyAliases } from './legacy-sentences.js';
 import { t } from './copy.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
 import { mountReaderLexical } from './lexical.js';
 import { loadHighlights, isHighlighted, toggleHighlight } from './highlights.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from './annotations-sync.js';
@@ -296,7 +296,7 @@ export default async function mountReader(element, ctx) {
           if (response?.status !== 'ready') { failed = true; translationPause = translationPause || pausedLineNow('/api/reading/translate'); }
         } catch (error) {
           failed = true;
-          translationPause = translationPause || pausedLineOf(error);
+          translationPause = translationPause || refusalLineOf(error);
         }
         if (!alive) return;
         paintBody();
@@ -701,7 +701,7 @@ export default async function mountReader(element, ctx) {
       if (!bullets.length) summaryPause = pausedLineNow('/api/reading/summary');
     } catch (error) {
       summary = { state: 'failed', bullets: [] };
-      summaryPause = pausedLineOf(error);
+      summaryPause = refusalLineOf(error);
     }
     if (!alive) return;
     paintBody();

@@ -33,7 +33,7 @@ import { createStrokeTiles } from './stroke-tiles.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
 import { wordSeed } from '../../product/word-seed.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
 
 /* A failed read is not "this word is not saved": it reaches the router's load-error card (Back / Retry, retried by
    itself when the connection returns). Only an answered, empty list means the word is not saved. */
@@ -158,7 +158,7 @@ export default async function mountWordDetail(element, ctx) {
     // The lookup runs in the learner's current learning language: the server refuses any other (409,
     // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
     // English IPA labelled pinyin (UI_BACKEND_GAPS VC-15); the card mapper drops a reading of the wrong kind.
-    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch((error) => { wordPause = pausedLineOf(error); lookupFailed = !wordPause; return null; }),
+    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch((error) => { wordPause = refusalLineOf(error); lookupFailed = !wordPause; return null; }),
     api.wordClips(word, 6).catch(() => { clipsFailed = true; return null; }),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);

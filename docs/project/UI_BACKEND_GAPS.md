@@ -5527,6 +5527,26 @@ the meters below.
   four meters; the count is in the comparison table only), so none was added although the commerce read supplies `used` /
   `limit` / `remaining`; decide whether the design should draw one. (b) A Free learner who picked a language and used nothing
   cannot change their mind to another new language (the stored language counts; D-170 point 12c). Owner: BACKEND + UI.
+- **QTA-19 Word, Reading and Writing-task AI - ENFORCED when the switch lists `word.assist`, `reading.assist`,
+  `writing.task`** (PR-MON-7B2a, H7-3; requests per day in the learner's timezone, Free / Plus / Pro 30/300/1500, 10/100/500 and
+  5/30/100 from the Admin-editable catalogue, never at a route). One fresh remote AI call is one request, admitted through the
+  same gate before the provider (`writing_coach/product/assist_meters.py`) and settled 1 only when the learner got an answer;
+  a cached, stored or deterministic answer is never admitted, and a provider failure, an empty answer or the built-in writing
+  task settles 0. `word.assist`: the word sheet's meaning, "Why here?" and the learner's own question
+  (`POST /api/dictionary/word-detail`), `POST /api/dictionary/contextual`, the AI dictionary entry (`GET /api/dictionary`),
+  `POST /api/translate`, the deep word page's explanation, and the tap's last layers (word translation, sense choice - a
+  refusal there is a miss and the tap keeps its deterministic answer; an answer from a model the account gets free settles 0,
+  the word-audio rule). `reading.assist`: `POST /api/reading/translate` (paid engines only; the local engine costs nothing),
+  `POST /api/reading/summary`, `POST /api/dictionary/sentence-sheet`, `POST /api/media-learning/explain`. `writing.task`:
+  `POST /api/tasks/generate` and `POST /api/practice/next`. The word sheet, sentence sheet, Reader and word page show the
+  meter's sentence ("You have used 30 of 30 word explanations today.") in the place they already show a failed request, with
+  no Retry (`refusalLineOf`), EN/VI/ZH; they draw no "See all plans" control there (none is drawn in a sheet; the Plan screen
+  and the other rooms keep theirs). **:8000:** `ORENA_QUOTA_METERS` is an explicit list, so these meters are enforced there only
+  once the operator adds `word.assist,reading.assist,writing.task` to it (a human gate). **Open for Hermes / the owner:**
+  (a) `speech.transcribe` and `audio.tts` have no catalogue meter and no Free/Plus/Pro numbers (pending meters, wired as no-ops,
+  PR-MON-7D2); proposed: their own meters (`speech.transcribe` seconds a day, `audio.tts` characters a day), not folded into
+  `word.assist`; (b) the speaking coach routes (`/api/dictionary/conversation-turn`, `/spoken-response`, `/registers`) are
+  not metered by any plan meter; (c) whether a sheet should draw the plans link. Owner: human + design.
 - **QTA-18 Target-language audit (2026-10-10, `origin/main` 2c04fc1e).** Owner: BACKEND. (1) Mutation paths: only
   `POST /api/platform/language` (`core/platform_api.py`) and `PATCH /api/account-settings` (`account_settings.py`) give an account
   a learning language; session seeding (`auth_support.py`) reads what they stored; the learner-profile PUT/PATCH write the
