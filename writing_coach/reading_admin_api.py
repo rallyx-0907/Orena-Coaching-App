@@ -1702,7 +1702,7 @@ def _apply_pack_thumbnail(admin: Mapping[str, Any], article: Mapping[str, Any], 
     A downloaded picture arrives only if it verifies (allowed host and licence, the manifest's bytes) and never
     replaces a real picture already here. Without one the importer makes the deterministic typographic cover: a
     pack from before this rule imports fine, and no imported article is left without a thumbnail."""
-    article_id = article["id"]
+    article_id = str(article["id"])
     store = _image_store()
     review = _guarded(lambda: _content().image_review(article_id)) or {}
     current_kind = str((review.get("approved") or {}).get("kind") or "")
@@ -1721,6 +1721,11 @@ def _apply_pack_thumbnail(admin: Mapping[str, Any], article: Mapping[str, Any], 
         return "attached"
     if _guarded(lambda: _content().has_thumbnail(article_id)):
         return "kept"
+    if not article.get("title") or not article.get("language"):
+        # The cover is made from the article as it is here; a caller holding only its id reads it first.
+        article = _guarded(lambda: _content().get_article(article_id)) or {}
+        if not article.get("title") or not article.get("language"):
+            return "refused:thumbnail_article_unreadable"
     stored = thumbnails.make_reading_cover(
         store, article_id=article_id, title=article["title"], language=article["language"], topic=article.get("topic") or "")
     _guarded(lambda: _content().approve_image(article_id, stored, actor=_actor(admin), reason="content pack"))

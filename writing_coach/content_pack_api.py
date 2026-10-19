@@ -11,6 +11,7 @@ route is admin-only, same-origin and audited, like the rest of the console.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -32,6 +33,7 @@ from writing_coach.content_packs import (
 from writing_coach.core.errors import orena_http_error
 
 router = APIRouter(prefix="/api/admin/content-packs", tags=["admin-content-packs"])
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -192,12 +194,19 @@ def _media_rows(pack: Any, *, overwrite: bool, dry_run: bool, actor: str) -> lis
                                         dry_run=dry_run, actor=actor, translations=_state.media_translations)
 
 
+# A source the pack creates arrives unapproved (D-105), so the plan predicts what the import will do with its articles.
+ARRIVES_UNAPPROVED = "needs_review"
+
+
 def plan_import(pack: Any, overwrite: bool = False) -> dict[str, Any]:
     rows = []
+    pack_sources = {item.data.get("slug") for item in pack.items if item.kind == "reading_source"}
     for item in pack.items:
         if item.kind == media_pack.KIND:
             continue
         existing, state = _existing(item)
+        if item.kind == "reading_article" and state is None and item.data.get("source_slug") in pack_sources:
+            state = ARRIVES_UNAPPROVED  # not here yet: the import creates it unapproved before it reaches the article
         rows.append(plan_item(item, existing_hash=existing, source_state=state))
     rows += _media_rows(pack, overwrite=overwrite, dry_run=True, actor=media_pack.PACK_ACTOR)
     summary: dict[str, int] = {}
@@ -216,6 +225,26 @@ async def plan_pack(request: Request, file: UploadFile | None = File(default=Non
     reading._same_origin(request)
     pack = _verified(await _read_upload(file))
     return reading._guarded(lambda: plan_import(pack, overwrite))
+
+
+# Built-in errors whose message names the problem in the code's own terms (a key, an index, a type), never a value
+# from a connection or a credential; any other exception is reported by its type alone (the log has the trace).
+_DESCRIBED = (KeyError, IndexError, TypeError, ValueError, AttributeError)
+
+
+def failure_reason(exc: BaseException) -> str:
+    """An item's failure as an administrator can act on it: the engine's own code when it has one, otherwise what was
+    missing or wrong - never a bare exception name such as `KeyError`."""
+
+    code = getattr(exc, "code", None)
+    if isinstance(code, str) and code:
+        return code
+    if isinstance(exc, KeyError):
+        missing = exc.args[0] if exc.args else ""
+        return f"internal_error: missing key {missing!r} (KeyError)"[:200]
+    if isinstance(exc, _DESCRIBED) and str(exc):
+        return f"internal_error: {type(exc).__name__}: {str(exc).splitlines()[0]}"[:200]
+    return f"internal_error: {type(exc).__name__}"
 
 
 def run_import(admin: dict[str, Any], pack: Any, *, overwrite: bool = False) -> dict[str, Any]:
@@ -243,7 +272,8 @@ def run_import(admin: dict[str, Any], pack: Any, *, overwrite: bool = False) -> 
                 result = reading._guarded(lambda item=item: reading.pack_import_reading(
                     item, admin, pack_id=pack_id, assets=pack.assets))
         except Exception as exc:  # noqa: BLE001 - one item never fails the pack; its failure is reported
-            result = {"result": "failed", "category": getattr(exc, "code", type(exc).__name__)}
+            _logger.exception("content pack %s: %s %s failed", pack_id, item.kind, item.natural_key)
+            result = {"result": "failed", "category": failure_reason(exc)}
         results.append({"kind": item.kind, "natural_key": item.natural_key, "outcome": outcome, **result})
     summary: dict[str, int] = {}
     for row in results:

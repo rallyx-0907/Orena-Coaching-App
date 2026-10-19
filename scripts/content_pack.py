@@ -19,8 +19,12 @@ imported Reading text is admitted by this environment's engine, which decides it
 by the pack), and a new source arrives unapproved. `--overwrite` is passed to the shared import exactly as the route
 passes it: it replaces differing media only; Reading and vocabulary already present are always kept. With `--apply` it
 records an `admin.content_pack_import` audit row (actor `cli:<os user>` or `cli:<--actor>`) and appends one line to
-`--log`. Exit status: 0 clean, 1 an item was refused or in conflict (or nothing to export), 2 the pack or the arguments
-were refused.
+`--log` (default `$CONTENT_PACK_LOG`, else beside the environment's `WRITING_DB` when that is outside this checkout,
+else `~/.orena/content-pack-imports.jsonl`; never inside the repository). The work has committed before that line is
+written, so a log that cannot be written is reported on stderr with the full record printed there instead; it never
+undoes or hides the import. A pack is read within the same limits as the Admin route. Exit status: 0 clean, 1 an item
+was refused or in conflict (or nothing to export), 2 the pack or the arguments were refused, 3 the work completed but
+its log line could not be written.
 """
 
 from __future__ import annotations
@@ -33,6 +37,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from collections.abc import Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -42,10 +47,31 @@ from fastapi import HTTPException  # noqa: E402
 
 from writing_coach import content_pack_api as api  # noqa: E402
 from writing_coach import reading_admin_api as reading  # noqa: E402
-from writing_coach.content_packs import IDENTICAL, NEW, SOURCE_NEEDED, PackError, read_pack  # noqa: E402
+from writing_coach.content_packs import (  # noqa: E402
+    IDENTICAL,
+    MAX_PACK_BYTES,
+    NEW,
+    SOURCE_NEEDED,
+    PackError,
+    read_pack,
+)
 
-GIB = 1024**3
-DEFAULT_LOG = ROOT / "data" / "content-pack-imports.jsonl"
+LOG_NAME = "content-pack-imports.jsonl"
+LOG_NOT_WRITTEN = 3
+
+
+def default_log_path(environ: Mapping[str, str] | None = None) -> Path:
+    """Where the evidence line goes when `--log` is not given: never inside the repository checkout."""
+
+    env = os.environ if environ is None else environ
+    if str(env.get("CONTENT_PACK_LOG") or "").strip():
+        return Path(str(env["CONTENT_PACK_LOG"]).strip())
+    writing_db = str(env.get("WRITING_DB") or "").strip()
+    if writing_db:
+        data_root = Path(writing_db).resolve().parent
+        if not data_root.is_relative_to(ROOT.resolve()):
+            return data_root / LOG_NAME
+    return Path.home() / ".orena" / LOG_NAME
 
 
 def _bootstrap() -> None:
@@ -139,10 +165,20 @@ def _summary(rows: list[dict[str, Any]]) -> dict[str, int]:
     return out
 
 
-def _append_log(path: Path, entry: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("a", encoding="utf-8") as handle:
-        handle.write(json.dumps({"at": datetime.now(UTC).isoformat(), **entry}, ensure_ascii=False) + "\n")
+def _append_log(path: Path, entry: dict[str, Any]) -> bool:
+    """Append the evidence line. The work it records has already committed, so a failure here is reported (and the
+    record printed on stderr, where it can be kept) - never raised over a finished import."""
+
+    line = json.dumps({"at": datetime.now(UTC).isoformat(), **entry}, ensure_ascii=False)
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
+        return True
+    except OSError as exc:
+        print(f"Log not written ({path}): {type(exc).__name__}: {exc.strerror or exc}. "
+              f"The work is done and in the audit log; the line was:\n{line}", file=sys.stderr)
+        return False
 
 
 def export_command(args: argparse.Namespace) -> int:
@@ -159,15 +195,19 @@ def export_command(args: argparse.Namespace) -> int:
         out = Path(args.out)
         out.write_bytes(raw)
         report["pack"] = str(out)
-        _append_log(Path(args.log), {"command": "export", "actor": _admin(args)["google_sub"], "counts": counts,
-                                     "pack": str(out), "bytes": len(raw)})
+        logged = _append_log(Path(args.log), {"command": "export", "actor": _admin(args)["google_sub"],
+                                              "counts": counts, "pack": str(out), "bytes": len(raw)})
+        report["log"] = str(args.log) if logged else None
     print(json.dumps(report, ensure_ascii=False, indent=2))
-    return 0
+    return 0 if args.dry_run or report["log"] else LOG_NOT_WRITTEN
 
 
 def import_command(args: argparse.Namespace) -> int:
     try:
-        pack = read_pack(Path(args.pack).read_bytes(), max_pack_bytes=2 * GIB, max_total_bytes=4 * GIB, max_file_bytes=1 * GIB)
+        # The route's limits (`read_pack`'s defaults): a pack the Admin import would refuse is refused here too.
+        if Path(args.pack).stat().st_size > MAX_PACK_BYTES:
+            raise PackError("pack_too_large", "This pack is larger than an import accepts.")
+        pack = read_pack(Path(args.pack).read_bytes())
     except (PackError, OSError) as exc:
         print(f"Pack refused: {getattr(exc, 'code', 'pack_unreadable')}: {exc}", file=sys.stderr)
         return 2
@@ -181,12 +221,17 @@ def import_command(args: argparse.Namespace) -> int:
         print(f"Import stopped: {_http_detail(exc)}", file=sys.stderr)
         return 2
     summary = _summary(rows)
-    print(json.dumps({"dry_run": not args.apply, "pack_id": pack.manifest.get("pack_id"), "summary": summary, "items": rows},
-                     ensure_ascii=False, indent=2))
+    report = {"dry_run": not args.apply, "pack_id": pack.manifest.get("pack_id"), "summary": summary, "items": rows}
+    logged = True
     if args.apply:
-        _append_log(Path(args.log), {"command": "import", "actor": admin["google_sub"], "pack_id": pack.manifest.get("pack_id"),
-                                     "overwrite": args.overwrite, "summary": summary})
-    return 1 if summary.get("refused") or summary.get("conflict") else 0
+        logged = _append_log(Path(args.log), {"command": "import", "actor": admin["google_sub"],
+                                              "pack_id": pack.manifest.get("pack_id"), "overwrite": args.overwrite,
+                                              "summary": summary})
+        report["log"] = str(args.log) if logged else None
+    print(json.dumps(report, ensure_ascii=False, indent=2))
+    if summary.get("refused") or summary.get("conflict"):
+        return 1
+    return 0 if logged else LOG_NOT_WRITTEN
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -195,7 +240,8 @@ def build_parser() -> argparse.ArgumentParser:
     for name in ("export", "import"):
         p = sub.add_parser(name)
         p.add_argument("--actor", default="", help="recorded as cli:<actor>; default the operating-system user")
-        p.add_argument("--log", default=os.getenv("CONTENT_PACK_LOG", str(DEFAULT_LOG)), help="jsonl evidence file appended to")
+        p.add_argument("--log", default=str(default_log_path()),
+                       help="jsonl evidence file appended to (default: $CONTENT_PACK_LOG, else outside the repository)")
     ex, im = sub.choices["export"], sub.choices["import"]
     ex.add_argument("--kinds", default="reading,vocabulary", help="comma list of reading, vocabulary (media: see media_content_pack.py)")
     ex.add_argument("--language", action="append", default=[], choices=["en", "zh"])

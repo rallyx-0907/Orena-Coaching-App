@@ -1922,7 +1922,8 @@ class ReadingContentRepository:
 
         with self.engine.connect() as connection:
             rows = connection.execute(
-                select(ReadingArticle.id, ReadingArticle.status, ReadingArticle.body, ReadingSourceItem.content_hash)
+                select(ReadingArticle.id, ReadingArticle.status, ReadingArticle.body, ReadingArticle.title,
+                       ReadingArticle.language, ReadingArticle.topic, ReadingSourceItem.content_hash)
                 .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
                 .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
                 # Not only current snapshots: texts that share one address (a collection on one page) supersede
@@ -1932,7 +1933,9 @@ class ReadingContentRepository:
             ).all()
         for row in rows:
             if row.content_hash == content_hash or (fingerprint is not None and fingerprint(row.body) == content_hash):
-                return {"id": str(row.id), "status": row.status}
+                # What the importer needs to finish a present article (its typographic cover is made from these).
+                return {"id": str(row.id), "status": row.status, "title": row.title, "language": row.language,
+                        "topic": row.topic or ""}
         return None
 
     def published_for_export(
