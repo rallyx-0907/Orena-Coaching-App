@@ -34,8 +34,8 @@ const walk = (value, visit) => {
   else if (value && typeof value === 'object') Object.values(value).forEach((entry) => walk(entry, visit));
 };
 
-// Served strings: everything in the generated content except the {{date}} token the page fills in or removes.
-const noDate = (text) => text.replace(/\{\{date\}\}/g, '');
+// Served strings: everything in the generated content (the dates line is a structured block the page fills in or removes).
+const noDate = (text) => text;
 for (const [page, doc] of Object.entries(buildContent())) {
   walk(doc, (text) => assert.ok(!BRACKETS.test(noDate(text)), `${page}: no placeholder in "${text.slice(0, 60)}"`));
 }
@@ -67,9 +67,9 @@ for (const page of ['terms', 'privacy']) {
 assert.ok(textOf(String(legalMarkup('terms', 'en'))).includes(`aged ${facts.min_age} and over`), 'terms: the minimum age fact is shown');
 assert.match(textOf(String(legalMarkup('refund', 'en'))), /Payments are not live/, 'refund: states what the public Terms state');
 
-assert.equal(datedText('Last updated: {{date}}. Effective: {{date}}.', '2026-10-05'), 'Last updated: October 5, 2026. Effective: October 5, 2026.');
-assert.equal(datedText('Last updated: {{date}}. Effective: {{date}}.', 'x"><b>'), '', 'a malformed date is left out, never shown');
-assert.equal(datedText('Last updated: {{date}}. Effective: {{date}}.', null), '', 'no date: the line is left out');
+assert.equal(datedText(['Last updated', 'Effective'], '2026-10-05'), 'Last updated: October 5, 2026. Effective: October 5, 2026.');
+assert.equal(datedText(['Last updated', 'Effective'], 'x"><b>'), '', 'a malformed date is left out, never shown');
+assert.equal(datedText(['Last updated', 'Effective'], null), '', 'no date: the line is left out');
 assert.deepEqual(legalAddress('#/legal/privacy?lang=vi'), { page: 'privacy' }, 'a language on the address is ignored');
 assert.deepEqual(legalAddress('#/legal/terms?lang=fr'), { page: 'terms' });
 assert.equal(legalAddress('#/legal/other'), null);

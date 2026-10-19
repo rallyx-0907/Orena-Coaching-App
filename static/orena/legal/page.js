@@ -26,14 +26,13 @@ export function legalAddress(hash = '') {
 
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
-/* The text's dates line ("Last updated: {{date}}. Effective: {{date}}.") is filled with the deploy-stamped effective
-   date (GET /api/platform/languages `legal_effective_date`, the value the public pages show). With no valid date the
+/* The dates block ({ dates: ['Last updated', 'Effective'] }) is filled with the deploy-stamped effective date
+   (GET /api/platform/languages `legal_effective_date`, the value the public pages show). With no valid date the
    whole line is left out: a placeholder never reaches a learner. */
-export function datedText(text, isoDate) {
+export function datedText(labels, isoDate) {
   const found = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(isoDate || ''));
   const label = found && MONTHS[Number(found[2]) - 1] ? `${MONTHS[Number(found[2]) - 1]} ${Number(found[3])}, ${found[1]}` : null;
-  const source = String(text);
-  return label ? source.replace(/\{\{date\}\}/g, label) : source.replace(/(?:Last updated|Effective): \{\{date\}\}\.? ?/g, '');
+  return label ? `${labels.map((name) => `${name}: ${label}`).join('. ')}.` : '';
 }
 
 let effectiveDate = null;
@@ -41,7 +40,6 @@ let effectiveDate = null;
 function segments(list) {
   return list.map((part) => {
     if (part.h) return html`<a href="${part.h}">${part.t}</a>`;
-    if (part.t && !part.b && !part.i && !part.c) return datedText(part.t, effectiveDate);
     if (part.b) return html`<strong>${part.t}</strong>`;
     if (part.i) return html`<em>${part.t}</em>`;
     if (part.c) return html`<code>${part.t}</code>`;
@@ -50,7 +48,10 @@ function segments(list) {
 }
 
 function block(item) {
-  if (item.p && !item.p.some((part) => part.h || part.b || part.i || part.c) && !datedText(item.p.map((part) => part.t).join(''), effectiveDate).trim()) return '';
+  if (item.dates) {
+    const line = datedText(item.dates, effectiveDate);
+    return line ? html`<p class="o-legal__p">${line}</p>` : '';
+  }
   if (item.p) return html`<p class="o-legal__p">${segments(item.p)}</p>`;
   if (item.ul) return html`<ul class="o-legal__list">${item.ul.map((entry) => html`<li>${segments(entry)}</li>`)}</ul>`;
   if (item.table) {

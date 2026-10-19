@@ -6,7 +6,7 @@
      node scripts/build_orena_legal.mjs --check  fails if the file is not what the sources give (the gate)
 
    {{fact:...}} tokens resolve from facts.json here; an unconfirmed (null) fact fails the build rather than render a
-   bracketed mark. {{date}} stays a token: the page fills it with the deploy-stamped effective date, or leaves the
+   bracketed mark. The dates line is a { dates } block: the page fills it with the deploy-stamped effective date, or leaves the
    sentence out. The Refund page has no public source of its own (payments are not live); it shows the public Terms'
    "Plans and payment" section, which states that, and nothing the repository has not published. Inline **bold**
    and [text](/path) become segments, never HTML. */
@@ -55,7 +55,7 @@ function blocks(list, facts) {
 }
 
 export function buildDoc(source, facts, only = null) {
-  const dates = { p: inline('Last updated: {{date}}. Effective: {{date}}.') };
+  const dates = { dates: ['Last updated', 'Effective'] };
   const intro = only ? [dates] : [dates, { p: inline(resolveFacts(source.intro, facts)) }];
   const sections = source.sections
     .filter((s) => !only || only.test(s.h))

@@ -4,10 +4,9 @@ export const LEGAL = Object.freeze({
  "terms": {
   "intro": [
    {
-    "p": [
-     {
-      "t": "Last updated: {{date}}. Effective: {{date}}."
-     }
+    "dates": [
+     "Last updated",
+     "Effective"
     ]
    },
    {
@@ -305,10 +304,9 @@ export const LEGAL = Object.freeze({
  "privacy": {
   "intro": [
    {
-    "p": [
-     {
-      "t": "Last updated: {{date}}. Effective: {{date}}."
-     }
+    "dates": [
+     "Last updated",
+     "Effective"
     ]
    },
    {
@@ -766,10 +764,9 @@ export const LEGAL = Object.freeze({
  "refund": {
   "intro": [
    {
-    "p": [
-     {
-      "t": "Last updated: {{date}}. Effective: {{date}}."
-     }
+    "dates": [
+     "Last updated",
+     "Effective"
     ]
    }
   ],
