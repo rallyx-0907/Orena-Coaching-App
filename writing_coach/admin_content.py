@@ -157,8 +157,9 @@ def media_record(entry: Any) -> dict[str, Any]:
     if entry.status == "unpublished":
         actions.remove("republish")
     if entry.status in {"review", "unpublished"} and entry.source.get("rights") == "cleared":
-        from writing_coach.media_transcript_pipeline import usable_transcript
-        if (entry.processing or {}).get("state", "ready") in {"ready", "held"} and usable_transcript(entry)[0]:
+        from writing_coach.media_transcript_pipeline import caption_timing_gate, usable_transcript
+        if ((entry.processing or {}).get("state", "ready") in {"ready", "held"} and usable_transcript(entry)[0]
+                and caption_timing_gate(entry)[0]):
             actions.append("republish" if entry.status == "unpublished" else "publish")
     return {
         "kind": "media",

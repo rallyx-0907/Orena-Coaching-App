@@ -61,6 +61,17 @@ from writing_coach.media_library_store import MediaLibraryEntry
 from writing_coach.media_asr_filter import screen_segments
 from writing_coach.media_zh_cleanup import clean_asr_cues, normalise_words
 from writing_coach.media_segmentation import Cue, first_failure, primary_language, segment_lines, validate_lines
+from writing_coach.media_caption_timing import (
+    REASON_CAPTION_TIMING,
+    TIMING_KEY,
+    TIMING_NEXT_START,
+    TimingReport,
+    caption_timing_report,
+    classify_caption_kind,
+    clip_to_next_start,
+    lesson_caption_facts,
+    thresholds as timing_thresholds,
+)
 from writing_coach.media_spend import KIND_AI, KIND_ASR, SpendCapReached, SpendLedger
 from writing_coach.speech_asr import (
     SpeechAsrMalformed,
@@ -276,6 +287,7 @@ REASON_MESSAGES: dict[str, str] = {
     "captions_unusable": "The provider's captions were not good enough to use. Speech recognition was not run; any stored captions were kept.",
     "zh_traditional_not_accepted": "The only Chinese captions offered are Traditional; only Simplified is accepted for now. Nothing was translated.",
     "caption_quota": "Today's limit of caption requests to the caption provider was reached; none was sent.",
+    REASON_CAPTION_TIMING: "The caption timing does not follow the speech, so the item is held for timing review and not published.",
     REASON_YOUTUBE_NO_CAPTIONS: "YouTube video without channel captions: Orena does not download YouTube audio (rights decision 2026-10-19).",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
@@ -554,6 +566,23 @@ def usable_transcript(entry: MediaLibraryEntry) -> tuple[bool, str]:
     return (not reason), reason
 
 
+def caption_timing_gate(entry: MediaLibraryEntry, lines: list[Cue] | None = None) -> tuple[bool, str, TimingReport | None]:
+    """The caption-timing gate for a stored entry (P0 2026-10-20): (passes, detail, report).
+
+    Applies to a transcript made from provider captions; any other origin passes (`None` report). Run before anything is
+    published - the pipeline's automatic publication, the operator's Publish, a content-pack import - so a mistimed
+    transcript is held for timing review (`caption_timing`) instead of reaching a learner. A track whose kind the
+    provider did not say is classified from its markers (`>>`, `[music]`)."""
+    applies, kind, retimed = lesson_caption_facts(entry)
+    if not applies:
+        return True, "", None
+    if lines is None:
+        lines = lines_from_payload((entry.lesson or {}).get("payload") if entry.lesson else None)
+    report = caption_timing_report(lines, language=entry.language, caption_kind=classify_caption_kind(kind, lines),
+                                   retimed=retimed, limits=timing_thresholds())
+    return report.passed, ("" if report.passed else report.detail()[:200]), report
+
+
 class MediaPipeline:
     def __init__(
         self,
@@ -674,7 +703,13 @@ class MediaPipeline:
             kept.update(attempts=current.get("attempts", 0), updated_at=_now(), reprocess_reason=reason, reprocess_detail=detail,
                         reprocess_message=reason_message(reason), previous={})
             restored.append(True)
-            return replace(fresh, processing=kept, status=str(snapshot.get("_status") or fresh.status))
+            status = str(snapshot.get("_status") or fresh.status)
+            if status == "published" and fresh.library == "shared" and not caption_timing_gate(fresh)[0]:
+                # Putting a mistimed transcript back is publishing it again: it goes to timing review instead.
+                status = "review"
+                kept.update(state=STATE_HELD, reason=REASON_CAPTION_TIMING, auto_published=False,
+                            message=reason_message(REASON_CAPTION_TIMING), detail=caption_timing_gate(fresh)[1])
+            return replace(fresh, processing=kept, status=status)
         try:
             store.update_if_present(media_id, change)
         except Exception:  # noqa: BLE001
@@ -807,6 +842,12 @@ class MediaPipeline:
                 if rights != RIGHTS_CLEARED:
                     target_status = "review"
                     processing.update(state=STATE_HELD, reason="rights_unknown", auto_published=False)
+            if target_status == "published" and fresh.library == "shared":
+                # The last step before a learner sees it: the caption-timing gate, whatever path got here.
+                timing_ok, timing_detail, _report = caption_timing_gate(fresh)
+                if not timing_ok:
+                    target_status = "review"
+                    processing.update(state=STATE_HELD, reason=REASON_CAPTION_TIMING, detail=timing_detail, auto_published=False)
             if "reason" in fields or processing.get("reason"):
                 # Stored beside the code so the record says it in words; a code without a message keeps none.
                 processing["message"] = reason_message(processing.get("reason", ""))
@@ -896,7 +937,8 @@ class MediaPipeline:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
                                            translation="", translation_counts={}, translation_reason="", translation_retry_after=0, translation_continuation={}, asr_filtered=0, asr_flagged=0,
                                            transcript_correction_state="", transcript_correction_detail="", transcript_corrections=[], transcript_correction_rejected=[],
-                                           caption_kind="", caption_provider="", caption_language="", caption_fallback="", caption_fallback_detail="", reprocess_reason="", reprocess_detail="", reprocess_message="")
+                                           caption_kind="", caption_provider="", caption_language="", caption_fallback="", caption_fallback_detail="", reprocess_reason="", reprocess_detail="", reprocess_message="",
+                                           **{TIMING_KEY: ""})
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
@@ -922,6 +964,20 @@ class MediaPipeline:
             self._clear_correction_admission(store, media_id)
             return
         entry = self._store_lesson(store, entry, lines, origin, duration, status="processing", words=words)
+        if not personal:
+            timing_ok, timing_detail, _report = caption_timing_gate(entry)
+            if not timing_ok:
+                # Caption timing that does not follow the speech is never published (P0 2026-10-20): held for timing review,
+                # before any translation is paid for. The previous transcript is not restored over it - it was cut by the
+                # same rule or an older one, and a person decides from here (reprocess, or correct the cues).
+                self._clear_previous(store, media_id)
+                entry = store.get(media_id) or entry
+                self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_SEGMENT, reason=REASON_CAPTION_TIMING,
+                                       detail=timing_detail, checks=public_checks, origin=origin, cost_usd=round(cost, 6),
+                                       asr_seconds=round(asr_seconds, 1), auto_published=False, previous={},
+                                       status="review", **_screen_fields(screen))
+                self._clear_correction_admission(store, media_id)
+                return
         stop: dict[str, Any] = {}
         translation, translation_counts = self._translate(store, entry, batch_id, personal, stop=stop)
         translation = self._defer_translation(store, entry, translation, stop)
@@ -1015,6 +1071,12 @@ class MediaPipeline:
         # Channel captions, machine captions or Orena's recognition: told apart wherever the origin is (D-244).
         provenance = transcript_provenance(origin, str((entry.processing or {}).get("caption_kind") or ""))
         payload["transcript_provenance"] = provenance
+        if origin == ORIGIN_CAPTION:
+            # The kind and the re-timing travel with the lines (a content pack carries the lesson, not the processing record),
+            # so the caption-timing gate can tell a re-timed automatic track from one cut before the fix.
+            processing_now = entry.processing or {}
+            payload["caption_kind"] = str(processing_now.get("caption_kind") or "")
+            payload[TIMING_KEY] = str(processing_now.get(TIMING_KEY) or "")
         existing = dict(entry.lesson or {})
         lesson = {
             **{key: value for key, value in existing.items() if key != "payload"},
@@ -1059,12 +1121,17 @@ class MediaPipeline:
                     # the importer was refused by the provider and said so (or by the daily caption cap, D-215)
                     captions_error = str(entry.source.get("caption_error") or "") or "provider_failure"
             if cues:
+                # The kind is read from the cues as the provider gave them (a rolling auto track overlaps), then every cue
+                # ends no later than the next one starts: a cue's own end is when it leaves the screen (D-020, P0 2026-10-20).
+                kind = classify_caption_kind(kind, cues)
+                cues, _clipped = clip_to_next_start(cues)
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
                 checks = validate_lines(lines, language=language, duration_ms=duration)
                 if not first_failure(checks):
                     self._write_processing(store, entry, caption_kind=kind, caption_provider=provider,
-                                           caption_language=caption_language, caption_fallback="", caption_fallback_detail="")
+                                           caption_language=caption_language, caption_fallback="", caption_fallback_detail="",
+                                           **{TIMING_KEY: TIMING_NEXT_START})
                     lines, correction = self._correct_transcript(store, entry, batch_id, lines, origin=ORIGIN_CAPTION)
                     return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], correction
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
