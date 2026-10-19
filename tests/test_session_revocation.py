@@ -28,7 +28,7 @@ def _run(coro):
 
 
 def _client():
-    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app_module.app), base_url="http://testserver", headers={"Origin": "http://testserver"})
 
 
 def test_old_cookie_is_refused_after_logout_for_reads_and_writes(monkeypatch):
@@ -99,6 +99,7 @@ def test_fresh_sign_in_after_logout_works_and_other_users_are_unaffected(monkeyp
 
 
 def test_native_exchange_cookie_is_revoked_by_logout(monkeypatch):
+    monkeypatch.setattr(auth_support, "NATIVE_AUTH_ENABLED", True)
     _signed_in(monkeypatch)
     sub = f"native-{time.time_ns()}"
     cookie = auth_support._native_session_cookie(sub)

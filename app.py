@@ -369,6 +369,11 @@ async def bound_writing_request_bodies(request: Request, call_next):
     return await call_next(request)
 
 
+from writing_coach.core.http_security import BodyLimitMiddleware  # noqa: E402
+
+app.add_middleware(BodyLimitMiddleware)
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_error_response(request: Request, exc: RequestValidationError) -> Response:
     """Preserve FastAPI validation bodies while marking mutable dictionary errors.

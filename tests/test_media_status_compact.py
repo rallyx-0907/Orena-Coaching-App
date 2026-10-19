@@ -107,7 +107,7 @@ def test_compact_status_shapes_states_without_transcript_payloads(monkeypatch):
 
     async def exercise():
         transport = httpx.ASGITransport(app=app_module.app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver", headers={"Origin": "http://testserver"}) as client:
             client.cookies.set(
                 "writing_coach_session",
                 _session_cookie(user_sub="learner-a", language="en"),
@@ -174,7 +174,7 @@ def test_compact_status_keeps_owner_and_language_scope_and_expiry_private(monkey
 
     async def request():
         transport = httpx.ASGITransport(app=app_module.app)
-        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver", headers={"Origin": "http://testserver"}) as client:
             client.cookies.set(
                 "writing_coach_session",
                 _session_cookie(user_sub="learner-b", language="en"),

@@ -346,7 +346,7 @@ def test_a_routed_but_unconfigured_evaluator_or_improver_is_503_never_500_or_a_f
         app_module.evaluate(app_module.EssayIn(text="Hello there.", prompt="p"))
     assert refused.value.status_code == 503 and refused.value.detail["category"] == "evaluation_unavailable"
     monkeypatch.setattr(app_module, "improve_with_ai", unconfigured)
-    with TestClient(app_module.app) as http:
+    with TestClient(app_module.app, headers={"Origin": "http://testserver"}) as http:
         answer = http.post("/api/improve", json={"text": "I goes to school every days and I like it very much.",
                                                  "mode": "polish"})
     assert answer.status_code == 503

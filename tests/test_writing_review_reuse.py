@@ -87,7 +87,7 @@ def review(monkeypatch: pytest.MonkeyPatch, tmp_path) -> tuple[TestClient, _Coun
     """
     from writing_coach.persistence.learning_repository import SQLiteLearningRepository
 
-    client = TestClient(app_module.app)
+    client = TestClient(app_module.app, headers={"Origin": "http://testserver"})
     client.__enter__()
 
     repository = SQLiteLearningRepository(lambda: tmp_path / "writing.db")
