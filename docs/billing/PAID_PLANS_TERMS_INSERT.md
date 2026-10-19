@@ -5,18 +5,21 @@
 This file replaces section "3. Plans and payment" of `docs/legal/public/terms.en.json` when gate 7b opens sales.
 The facts behind each sentence, with their sources, are in `PAID_PLANS_TERMS_DRAFT.md`.
 
-Three placeholders wait for the owner, and **no agent fills them**:
+**The owner's answers so far (2026-10-19, relayed by Hermes; D-MON-035):**
+- **A refund ends the plan at once:** filled in below.
+- **A downgrade credits the unused part:** its sentence is added once subscription D shows how Polar applies it.
 
-| Placeholder | The owner's question | Example answers (not chosen) |
+Two placeholders still wait for the owner, and **no agent fills them**:
+
+| Placeholder | The owner's question | State |
 | --- | --- | --- |
-| `[REFUND_RULE]` | When is a payment refunded? | "Payments are not refunded for partial periods, except where the law requires it." / "You can ask for a full refund within 14 days of your first payment." |
-| `[REFUND_PLAN_EFFECT]` | What happens to the plan after a refund? | "A refunded plan ends at once." / "A refunded plan stays active until the end of the period." |
-| `[DATA_RETENTION_AFTER_CANCEL]` | What happens to learning data when a plan ends? | "Your learning data stays in your account on the free plan." |
+| `[REFUND_RULE]` | When, and within how long, is a payment refunded? | not answered |
+| `[OWNER CONFIRM: DATA_RETENTION_AFTER_CANCEL]` | The owner wrote "vẫn giữ có hạn 3 tháng" ("still kept, limited to 3 months"). There are three readings: (a) learning data is kept for at most 3 months after a plan ends or a refund; (b) a refund can be asked for within 3 months; (c) a 3-month billing period. | to be confirmed. Until then, nothing deletes data on a 3-month clock |
 
 ## How to apply it (after the owner answers)
 
-1. The UI lane owns `docs/legal/public/`. It pastes the block below as the `"3. Plans and payment"` section, fills the
-   three placeholders word for word, and sets `effective_date` in `facts.json`.
+1. The UI lane owns `docs/legal/public/`. It pastes the block below as the `"3. Plans and payment"` section, fills
+   the remaining placeholders word for word, and sets `effective_date` in `facts.json`.
 2. Check before merging:
    - `2 days` equals `BILLING_PAST_DUE_GRACE_HOURS` on the host (48 hours, the default). Change both together.
    - The prices equal the Polar products (gate 7b P1) and the catalogue.
@@ -38,13 +41,13 @@ Three placeholders wait for the owner, and **no agent fills them**:
         ["Cancelling", "You can cancel at any time in the app. Your plan stays active until the end of the period you have paid for and is not renewed."],
         ["Changing plan", "An upgrade applies at once, and you are charged the difference for the rest of the current period."],
         ["Failed payment", "If a renewal payment fails, your plan stays active for 2 days after the end of the period you paid for while the payment is retried. After that your account has the free plan's limits until the payment succeeds."],
-        ["Refunds", "[REFUND_RULE] [REFUND_PLAN_EFFECT] To ask for a refund, email orena.support@chillpickle.org from the address of your Google account."],
-        ["When a plan ends", "[DATA_RETENTION_AFTER_CANCEL]"]
+        ["Refunds", "[REFUND_RULE] A refunded plan ends at once, and your account returns to the free plan. To ask for a refund, email orena.support@chillpickle.org from the address of your Google account."],
+        ["When a plan ends", "[OWNER CONFIRM: DATA_RETENTION_AFTER_CANCEL]"]
       ]
     }
   ]
 }
 ```
 
-The downgrade sentence for Polar's portal is left out until subscription D's result (2026-10-19) shows whether
-the unused part is credited. Add it then, worded from the evidence.
+The downgrade sentence is left out until subscription D's result (2026-10-19) shows how Polar credits the unused
+part. The owner's rule is that it is credited (D-MON-035). Add the sentence then, worded from the evidence.

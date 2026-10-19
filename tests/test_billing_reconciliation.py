@@ -90,9 +90,26 @@ def test_an_undecidable_subscription_event_is_kept_for_an_operator():
     assert items.recorded[0]["kind"] == "event_undecided" and items.recorded[0]["incarnation_id"] == "inc-owner"
 
 
-@pytest.mark.parametrize(("mapped", "detail"), [({"incarnation_id": "inc-1"}, "refund_matched"), (None, "refund_unmatched")])
-def test_a_polar_refund_is_recorded_and_changes_no_access(mapped, detail):
-    items, commerce = FakeItems(), FakeCommerce(mapped=mapped)
+class ResolvingItems(FakeItems):
+    def __init__(self):
+        super().__init__()
+        self.resolved: list = []
+
+    def auto_resolve(self, **kwargs):
+        self.resolved.append(kwargs)
+        return True
+
+
+@pytest.mark.parametrize(("mapped", "detail", "resolved"), [
+    ({"incarnation_id": "inc-1", "state": "ended"}, "refund_matched", True),
+    ({"incarnation_id": "inc-1", "state": "active"}, "refund_subscription_live", False),
+    (None, "refund_unmatched", False),
+])  # fmt: skip
+def test_a_polar_refund_is_recorded_and_changes_no_access(mapped, detail, resolved):
+    """Access follows the subscription's own events (H4). A refund ends the plan at once (owner, 2026-10-19,
+    D-MON-035) by the operator revoking the subscription on Polar: while it is still live, the item stays open."""
+
+    items, commerce = ResolvingItems(), FakeCommerce(mapped=mapped)
     headers, body = polar_request({"type": "refund.created", "data": {
         "id": "re_1", "subscription_id": "sub_1", "order_id": "ord_1", "amount": 1999, "currency": "usd",
         "status": "succeeded"}})  # fmt: skip
@@ -101,7 +118,10 @@ def test_a_polar_refund_is_recorded_and_changes_no_access(mapped, detail):
     [item] = items.recorded
     assert item["kind"] == "provider_refund" and item["dedupe_key"] == "re_1"
     assert item["incarnation_id"] == (mapped or {}).get("incarnation_id")
-    assert commerce.events == []  # access follows the subscription's own events (H4)
+    assert bool(items.resolved) is resolved
+    if detail == "refund_subscription_live":
+        assert "revoke" in item["reason"]
+    assert commerce.events == []  # the refund itself never changes access
 
 
 class Unrecordable(FakeItems):

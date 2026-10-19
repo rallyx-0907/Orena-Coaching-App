@@ -49,6 +49,9 @@ usage.
    - customers may update their subscription: `allow_customer_updates` on;
    - plan changes are allowed between the four products: `update_plan` on;
    - proration is **invoice** (`proration_behavior=invoice`): the difference is charged at once.
+   - On a downgrade, the unused part of the higher plan must count against the lower one (owner, D-MON-035).
+     Sandbox subscription D (2026-10-19) shows whether `invoice` credits it. If it does not, this step names the
+     setting that does, before P2 is approved.
 3. **Organization access token** with exactly these scopes (each proved on the sandbox token, 2026-10-18; PR-MON-9
    review P1-4):
    - `checkouts:write`: the embedded and hosted checkout;
@@ -124,7 +127,14 @@ Any blocker names what is missing: fix it and recheck. Never work around a block
    - `GET /api/admin/billing/reconciliation` has no new item.
 3. From Plan & usage, open "manage" (`POST /api/billing/portal`) and cancel at period end. Access must stay until
    the period ends.
-4. Refund from Polar's dashboard if wanted. The refund is recorded, and access follows Polar's subscription events.
+4. Refund from Polar's dashboard if wanted.
+
+**Every refund of a plan payment (D-MON-035).** A refund ends the plan at once. In Polar's dashboard:
+- refund the order;
+- **revoke** the subscription immediately; do not cancel it at the period end.
+
+The revocation ends the plan in Orena and stops renewal. A refund alone does neither. If the subscription is not
+revoked, the refund's reconciliation item stays open with the reason "revoke it on Polar".
 
 ## Moving the production host (for example, from a staging host to the VPS)
 

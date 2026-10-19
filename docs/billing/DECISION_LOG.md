@@ -370,3 +370,16 @@ D-MON-034 | 2026-10-17 | Plan prices are shown in US dollars in every language (
   USD only, so Pricing and the Billing Sheet show the dollar amount the learner is charged, formatted in the interface
   language's own way; dong stay with Credits (SePay). This replaces D-153's dong-for-Vietnamese plan display. | No gap
   between the price shown and the price charged. | `PR-MON-9_DESIGN.md`, `static/orena/screens/plan/model.js`.
+D-MON-035 | 2026-10-19 | A refund ends the plan at once; a downgrade credits the unused part (owner, relayed by Hermes;
+  supersedes H4's "access does not follow a refund"). **Refund:** the paid plan ends when the refund is made and the
+  account returns to Free. Orena keeps following Polar's subscription lifecycle, so the operator **refunds and revokes
+  the subscription at once** in Polar's dashboard (`subscription.revoked` ends it, proven in PR-MON-10 step 4).
+  Revoking also stops Polar from renewing a refunded subscription, which a refund alone does not do. A
+  `provider_refund` on a subscription that is not ended stays open, with "revoke it on Polar"
+  (`service._refund`); it is dismissable, so it closes no sales. **Downgrade:** the unused part of the higher plan
+  counts against the lower one. Polar's behaviour under proration `invoice` is read from sandbox subscription D
+  (2026-10-19); the runbook's portal setting follows it. **Open (owner):** "keep for 3 months" has three readings
+  (data kept 3 months after a plan ends or a refund; a 3-month refund window; a 3-month billing period). Until the
+  owner confirms one, nothing deletes data, and the Terms keep `[OWNER CONFIRM]`. The refund rule (when and for how
+  long) is still open. | A refunded learner neither keeps paid access nor keeps being charged. | `service.py`
+  `_refund`, `tests/test_billing_reconciliation.py`, `RUNBOOK_POLAR_ACTIVATION.md` §5, `PAID_PLANS_TERMS_INSERT.md`.
