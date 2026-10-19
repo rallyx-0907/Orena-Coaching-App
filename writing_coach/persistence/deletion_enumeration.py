@@ -1,7 +1,7 @@
 """What the account-deletion workflow (D-055 precondition b) must remove or reset for the D4 records.
 
-Data only: no runtime deletion path exists and this adds none (D-055). The workflow, when it is built, reads
-this. The `users` row SURVIVES deletion (the incarnation barrier and the journal anchor on it), so its new
+Data, plus the operator tool built on it (PRE-502 R4): `persistence/account_deletion.py` plans from the live
+schema and `scripts/account_deletion.py` runs it (dry run by default). There is still no runtime deletion path (D-055). The `users` row SURVIVES deletion (the incarnation barrier and the journal anchor on it), so its new
 columns are RESET, not deleted; rows keyed by the account are deleted explicitly; rows keyed by the kept
 incarnation are NOT removed by any cascade and are deleted explicitly too (proposal 2.6).
 """
@@ -53,6 +53,22 @@ ACCOUNT_KEYED_TABLES = (
 ACCOUNT_ID_KEYED_TABLES = (
     "ai_cost_records",  # AI cost per account (AC-2): a recreated account must not inherit the deleted one's spend
 )
+
+# Plan and usage rows of the account (PRE-502 R4): deleted. `account-deletion.en.json` promises the plan and usage
+# records go.
+PLAN_AND_USAGE_TABLES = ("subscriptions", "usage_events")
+
+# Audit rows whose `user_id` is the account: its own (`learner.feedback`, `agent.turn`...) are deleted; `admin.*` rows stay
+# as the record of what administrators did (runbook section 7.3, until the reviewer decides otherwise).
+AUDIT_TABLES = {"audit_logs": "rows whose user_id is the account, except actions LIKE 'admin.%'"}
+
+# Money records (billing orders, credits, commerce subscriptions and quota): deleted or kept only on an explicit operator
+# choice (`scripts/account_deletion.py --commerce delete|keep`); the tool refuses while rows exist and none is made.
+COMMERCE_TABLE_PREFIXES = ("commerce_", "credit_", "billing_")
+
+# The surviving `users` row is anonymised (runbook section 0; reviewer): name and picture blanked, the UNIQUE NOT NULL
+# email replaced by a per-account placeholder that names no one (`account_deletion.anonymous_email`).
+USER_COLUMNS_TO_ANONYMISE = ("email", "name", "picture")
 
 # Deleted through their essay's cascade; listed so the enumeration is complete.
 CASCADED_TABLES = {"essay_review_history": "essays"}

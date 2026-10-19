@@ -28,7 +28,6 @@ Not here, and listed by the tool as next steps:
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
@@ -184,6 +183,12 @@ def apply_plan(engine: Any, *, email: str | None = None, user_key: str | None = 
         plan = build_plan(conn, account)
         if plan.commerce_rows and commerce is None:
             raise DeletionRefused(f"{plan.commerce_rows} commerce rows: choose commerce='delete' or 'keep' first")
+        if commerce == "delete" and plan.commerce_rows and plan.blockers:
+            # The credit ledger and quota reservations are append-only money history (RESTRICT): the schema refuses.
+            raise DeletionRefused("commerce rows are append-only money records the schema will not delete "
+                                  f"({'; '.join(plan.blockers)}): choose commerce='keep'")
+        if any(not b.split(" -> ")[0].startswith(COMMERCE_PREFIXES) for b in plan.blockers):
+            raise DeletionRefused(f"a child table would refuse the delete: {'; '.join(plan.blockers)}")
         params = _params(account)
         conn.execute(text("UPDATE account_incarnations SET status = 'deleted', deleted_at = :now"
                           " WHERE user_id::text = :account AND status = 'active'"), {**params, "now": moment})  # fmt: skip
@@ -232,6 +237,3 @@ def next_steps(account_user_key_hint: str = "<user_key>") -> list[str]:
         "Verify (runbook section 5), then close the request",
     ]
 
-
-def _mapping(value: Mapping[str, Any]) -> dict[str, Any]:  # kept small for the tool's JSON output
-    return dict(value)
