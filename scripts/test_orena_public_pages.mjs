@@ -191,4 +191,21 @@ assert.ok(!fs.existsSync('static/orena/public/vendor/babel-not-shipped.js'), 'Ba
 const pinned = fs.readFileSync('docs/design/canonical-ui/screens/support.js');
 assert.ok(pinned.includes('unpkg.com/react@18.3.1'), 'the pinned runtime is untouched');
 
+// Privacy does not say speaking keeps only scores and feedback (answers, written or spoken, are kept as learning
+// activity), and it carries the learning-activity paragraph that says so without "only".
+{
+  const privacy = html('privacy.en.html').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+  assert.ok(!/only your scores and feedback/i.test(privacy), 'privacy: the "only scores and feedback" claim is gone');
+  const m = privacy.match(/Your learning activity\.[^.]*\.[^.]*\.[^.]*\./);
+  assert.ok(m, 'privacy: the learning-activity paragraph is present');
+  assert.ok(/written or spoken/.test(m[0]) && !/\bonly\b/i.test(m[0]), 'privacy: written and spoken answers, no "only"');
+}
+
+// The Settings "Learner audio" line (translated UI copy) makes no "only scores and feedback" claim in any language.
+{
+  const lines = fs.readFileSync('static/orena/screens/settings/copy.js', 'utf8').split('\n').filter((l) => l.includes('learnerAudioSub:'));
+  assert.equal(lines.length, 3, 'settings copy: learnerAudioSub in en, vi and zh');
+  for (const l of lines) assert.ok(!/chỉ giữ|只保留|\bonly your scores/i.test(l), `settings copy: no "only scores" claim: ${l.slice(0, 60)}`);
+}
+
 console.log('public pages gate passed');

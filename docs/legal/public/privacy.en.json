@@ -66,7 +66,7 @@
       "h": "5. Voice and microphone",
       "blocks": [
         { "p": "Orena uses the microphone only when you tap record or start voice, and your browser asks for your permission. Before the first recording, Orena also asks whether it may record your voice and send it to an AI service for feedback; until you say yes, Orena does not accept your recordings. You can change your answer at any time in Settings, Privacy, under Voice recording, and Orena keeps your answer and when you gave it with your account." },
-        { "p": "When you allow it, the recording is sent to the speech provider for transcription, pronunciation scoring and replies, and Orena's servers do not keep the audio; only your scores and feedback are kept. You can stop using voice features at any time." },
+        { "p": "When you allow it, the recording is sent to the speech provider for transcription, pronunciation scoring and replies, and Orena's servers do not keep the audio. What you said is kept as part of your learning activity (section 7). You can stop using voice features at any time." },
         { "p": "Recordings you make for playback stay in your browser tab and are gone when you close it. Where Orena lets you keep recent recordings, up to five per line stay on your own device and are never uploaded to Orena; turning that option off or clearing your browser's site data deletes them." }
       ]
     },
@@ -90,6 +90,7 @@
       "h": "7. Retention and deletion",
       "blocks": [
         { "p": "When you create an account, Orena records which version of the Terms of Service and this Privacy Policy you accepted, when, and in which language you saw them. If you had an account before Orena kept this record, Orena asks you once to agree. These records are kept with your account." },
+        { "p": "**Your learning activity.** To personalise your practice, Orena keeps a record of how you learn: your exercises and answers (written or spoken), your results and the feedback you received. You can have it deleted at any time by asking us to delete your account." },
         { "p": "We keep your account and learning data while your account exists. Orena has no delete-account button yet: to have your account deleted, email [orena.support@chillpickle.org](mailto:orena.support@chillpickle.org) from the email address of your Google account, as described on [Delete account](/account-deletion). We process these requests by hand within 30 days." },
         { "p": "Some records have a fixed lifetime: Orena Intelligence activity records (without your message text) are deleted after {{fact:retention.agent_turn_days}} days, feedback you send is deleted after {{fact:retention.feedback_months}} months, and records of AI use and cost (without your content) after 13 months. Your learning history is kept while your account is active. Data deleted from the live system can remain in backups for up to {{fact:retention.backup_days}} days, until they are overwritten. Recordings you chose to keep stay on your device until you delete them." }
       ]
