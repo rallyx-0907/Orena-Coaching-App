@@ -1128,6 +1128,12 @@ _spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_sy
                               warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
 # Every response a ceiling refusal touched says so: `X-Orena-AI-Paused: <resets_at>` (the client's one signal).
 _spend_gate.install_paused_header(app)
+# PRE-502 R1/R2 (#369): on a public runtime each published promise not in force is an ERROR at start (no ceiling, a
+# retention sweep off), and production refuses to start without a ceiling. Admin's readiness summary shows the same.
+from writing_coach.core.published_promises import enforce_at_start as _enforce_promises  # noqa: E402
+from writing_coach.core.published_promises import unmet_promises as _unmet_promises  # noqa: E402
+
+_enforce_promises(os.environ, _policies.value)
 
 
 def _voice_daily_usage(user_key: str, feature: str) -> int:
@@ -4326,7 +4332,11 @@ def admin_readiness_summary(request: Request) -> dict[str, Any]:
     config = AIControlPlane(_persistence_runtime.platform_repository, provider_factory=_ai_providers_with_store).inspect()
     operations = admin_ai_operations(request, limit=500)
     product_activity = product_activity_response(request, _specialized_learning_repository, require_admin, window_days=7, operations_loader=lambda: operations)
-    return build_readiness_summary(config, operations, product_activity)
+    summary = build_readiness_summary(config, operations, product_activity)
+    # PRE-502 R1/R2: what the published policies promise and this runtime does not keep (names only, no values).
+    summary["unmet_promises"] = [{"code": p.code, "message": p.message}
+                                 for p in _unmet_promises(os.environ, _policies.value)]
+    return summary
 
 
 # === ADMIN VOCABULARY SOURCE IMPORT ROUTES START ===
