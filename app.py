@@ -2440,7 +2440,7 @@ def landing_page() -> HTMLResponse:
     return _page("public", "landing.html")
 
 
-def _legal_page(name: str, request: Request) -> HTMLResponse:
+def _legal_page(name: str) -> HTMLResponse:
     """Terms, Privacy and Delete account are static HTML with the whole text in the response (no script needed to
     read it). Legal documents exist in English only (D-238): every interface language gets the English page, and an
     old `?lang=` on the address is tolerated and ignored."""
@@ -2448,19 +2448,19 @@ def _legal_page(name: str, request: Request) -> HTMLResponse:
 
 
 @app.get("/terms", response_class=HTMLResponse)
-def terms_page(request: Request) -> HTMLResponse:
-    return _legal_page("terms", request)
+def terms_page() -> HTMLResponse:
+    return _legal_page("terms")
 
 
 @app.get("/privacy", response_class=HTMLResponse)
-def privacy_page(request: Request) -> HTMLResponse:
-    return _legal_page("privacy", request)
+def privacy_page() -> HTMLResponse:
+    return _legal_page("privacy")
 
 
 @app.get("/account-deletion", response_class=HTMLResponse)
-def account_deletion_page(request: Request) -> HTMLResponse:
+def account_deletion_page() -> HTMLResponse:
     # Public and signed-out by design: Google Play asks for a deletion page a person can reach without an account.
-    return _legal_page("account-deletion", request)
+    return _legal_page("account-deletion")
 
 
 @app.get("/next")
