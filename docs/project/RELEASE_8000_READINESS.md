@@ -551,3 +551,39 @@ hard delete, and never touches learner data (progress, notes, attempts and saved
    overwrite never puts a locally archived or unpublished item back on the shelf (D-234 item 3). Record the video id so
    it is also left out of any future export from :8021 (`--exclude-prefix` on its id).
 7. **Reply.** Answer the owner from the contact address, state the time it came down, and log it.
+
+## Correct a transcript or translation
+
+A reviewer found a wrong cue, a wrong stored Vietnamese line or a wrong word gloss. All three are fixed by hand, as an
+administrator, at $0: no provider, no AI, no retranslation. Each call is `PATCH` on the admin console, needs an admin
+session cookie and an `Origin` equal to the host (the same check as the other content actions), and writes one audit row.
+Run them in the browser console on the admin page (so the cookie and Origin are the page's own):
+
+```js
+const patch = (path, body) => fetch("/api/admin/console" + path, {
+  method: "PATCH", credentials: "same-origin",
+  headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)}).then(r => r.json());
+// 1. Cue text. `translations` is optional; without it the stored meanings are carried to the corrected text.
+await patch("/content/media/<media_id>/cues/text", {segment_id: "s3", text: "Corrected line.", translations: {vi: "Dòng đã sửa."}});
+// 2. A cue's stored translation (provenance manual_correction, audit action admin.content.cue_translation).
+await patch("/content/media/<media_id>/cues/translation", {segment_id: "s3", language: "vi", text: "Dòng đã sửa."});
+// 3. A word gloss in a collection (entry id from the collection's entries list).
+await patch("/content/vocabulary/<collection_id>/entries/<entry_id>/gloss", {language: "vi", text: "phân bổ"});
+```
+
+- **Cue text** re-keys the cue's stored translations (every support language, the read path's identity, `pack-import`
+  and each `<class>:default`) to the corrected text's fingerprint, so the learner keeps being served them and no
+  provider is called. Word timing is kept (words re-texted) only when the new text has the same number of
+  whitespace-separated tokens as the cue has words; otherwise the cue's word timing is dropped, because it cannot be
+  re-aligned without a recogniser. The cue's start and end time are never changed; the derived readings of that cue
+  are dropped. The response reports `words` (`retexted`, `dropped`, `none`). A correction that would make the
+  transcript fail its publish checks is refused (422).
+- **Revision.** Each correction raises the lesson's `content_revision` and the response carries
+  `ETag: "<media_id>-r<revision>"`.
+- **Export.** `build_media_items` reads the same lesson and cache, so a content pack exported after a correction carries
+  the corrected cue text and translations (provenance `manual_correction`); re-importing it is `unchanged` the second
+  time. To move a correction from :8021 to :8000, export again and import with overwrite.
+- **Gloss.** The vocabulary import with overwrite replaces only an unpublished entry, so it cannot correct a published
+  gloss; use route 3. It edits the shared entry's short meaning in that language (and the collection's frozen content
+  snapshot if it carries one), records who and when in the entry's provenance, and touches no learner-owned record.
+  The entry is shared: the correction shows in every collection holding it.
