@@ -52,7 +52,7 @@ def test_a_plan_that_cannot_be_read_fails_closed(plan):
     with pytest.raises(HTTPException) as refused:
         plan_features.require("u1", plan_features.VOICE)
     assert refused.value.status_code == 503 and refused.value.detail["category"] == "quota_unavailable"
-    assert plan_features.entitled("u1", plan_features.VOICE) is False
+    assert plan_features.entitled("u1", plan_features.VOICE) is None  # unknown, not "no": no upgrade sheet over an outage
 
 
 def test_a_server_without_a_plan_system_lets_voice_through(monkeypatch):

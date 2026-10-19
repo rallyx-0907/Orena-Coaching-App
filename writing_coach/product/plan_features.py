@@ -47,11 +47,14 @@ def require(user_key: str, feature: str) -> None:
                                context={"feature": feature, "plan": plan.id, "upgrade": quota.UPGRADE_HREF})
 
 
-def entitled(user_key: str, feature: str) -> bool:
-    """Whether the account may use `feature` now - False too when its plan cannot be read (as `require` refuses)."""
+def entitled(user_key: str, feature: str) -> bool | None:
+    """Whether the account's plan includes `feature`; None when the plan cannot be read right now - not "no", so a
+    paying learner is never shown an upgrade over a moment's outage (`require` still refuses it with a 503)."""
+
+    from fastapi import HTTPException
 
     try:
         require(user_key, feature)
-    except Exception:  # noqa: BLE001 - 403 and 503 alike: not usable now
-        return False
+    except HTTPException as refused:
+        return None if refused.status_code == 503 else False
     return True
