@@ -39,7 +39,7 @@ import {
 } from '../../product/conversation.js';
 import { t } from './copy.js';
 import { situations, defaultLevel, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 function judgementLabel(judgement) {
   return t.has(`judge_${judgement}`) ? t(`judge_${judgement}`) : '';
@@ -363,10 +363,11 @@ export default async function conversationScreen(element, ctx) {
       draft = text;
       recordedThisTurn = true;
       paint();
-    } catch {
+    } catch (error) {
       if (!alive()) return;
       transcribing = false;
       paint();
+      if (showTranscribeRefusal(error)) return;
       void problem(navigator.onLine === false ? 'offline' : 'provider');
     }
   }

@@ -30,7 +30,7 @@ import { saveResponse } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { openMedia } from '../../product/media-source.js';
 import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, resultTiles, waveBars, promptKey } from './model.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 const STEPS = ['stepListen', 'stepUnderstand', 'stepReveal', 'stepContext', 'stepResult'];
 const WAVE_BARS = 32;
@@ -310,10 +310,11 @@ export default async function reactReuse(element, ctx) {
     try {
       const res = await api.transcribeSpeech(captured.blob, language);
       text = String(res?.text || '').trim();
-    } catch {
+    } catch (error) {
       transcribing = false;
       if (!ctx.isCurrent()) return;
       paintFooter();
+      if (showTranscribeRefusal(error)) return;
       openMicState(ctx, { state: 'provider', onAction: async () => true });
       return;
     }

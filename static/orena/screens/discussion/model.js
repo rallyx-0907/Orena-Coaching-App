@@ -13,6 +13,7 @@
    backend's vocabulary, so an article's discussion is a story about it, the same fallback the old
    mapping used for anything it didn't special-case. Recorded as a mapping decision, not a backend
    gap: docs/project/UI_BACKEND_GAPS.md. */
+import { nextIdempotencyKey } from '../../infrastructure/quota-headers.js';
 
 export function parseContentId(raw) {
   const value = String(raw || '');
@@ -112,10 +113,8 @@ export function optimisticTurn(text) {
    with that fresh id. `operation_in_progress` means the first request is still running: keep its id, so a second
    exchange is never stored or charged. */
 export function retryPlan(error, requestId, makeId = newRequestId) {
-  const answered = Boolean(error?.status);
-  const inProgress = error?.category === 'operation_in_progress';
   return {
-    requestId: answered && !inProgress ? makeId() : requestId,
+    requestId: nextIdempotencyKey(error, requestId, makeId),
     retry: error?.category === 'operation_finished' || error?.retryable !== false,
   };
 }

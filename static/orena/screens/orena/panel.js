@@ -91,7 +91,7 @@ export async function openOrenaPanel(context = {}, carry = null) {
           ${label ? html`<div class="s-orena-panel__ctxwrap"><div class="s-orena-panel__ctx">${raw(icon('quote', { size: 16 }))}<span class="s-orena-panel__ctxlabel">${label}</span></div></div>` : ''}
           <div class="s-orena-panel__thread" data-scroll-region>
             ${state.messages.map((message) => messageMarkup(message, { surface: 'panel', ranActions, supported }))}
-            ${state.thinking ? html`<div class="s-orena-panel__thinking">${intelChip({ size: 30, mark: 24, state: 'thinking' })}${thinkingText(state.tool, t('thinkingLabel'))}</div>` : ''}
+            ${state.thinking ? html`<div class="s-orena-panel__thinking">${intelChip({ size: 30, mark: 24, state: 'thinking' })}${thinkingText(state.tool, t('thinkingLabel'), state.waiting)}</div>` : ''}
           </div>
           ${startersMarkup(state)}
           <div class="s-orena-panel__foot">${voiceMode ? html`<div class="s-orena-panel__voicepill">${voiceRowMarkup(voiceEngine ? voiceEngine.state() : { phase: 'idle', heard: '', speakOn: true }, { fresh: !voiceShown })}</div>` : typingMarkup(state)}</div>`,
@@ -241,6 +241,7 @@ export async function openOrenaPanel(context = {}, carry = null) {
       notes: memory.requestNotes(),
       address,
     });
+    const retryKey = again ? session.retryKey() : '';
     if (again) session.retry();
     else if (trigger === 'open') session.opening();
     else session.learner(message);
@@ -252,7 +253,7 @@ export async function openOrenaPanel(context = {}, carry = null) {
       cancelled = true;
     });
     try {
-      for await (const item of turn(request, { signal: controller.signal })) {
+      for await (const item of turn(request, { signal: controller.signal, idempotencyKey: retryKey })) {
         session.apply(item);
         if (item.event === 'memory_update') memory.applyUpdate(item.data);
         if (item.event === 'language_mismatch') void refreshLearningLanguage();

@@ -145,3 +145,4 @@ scripts/test_orena_offline_not_empty.mjs
 scripts/test_orena_ai_paused.mjs
 scripts/test_orena_media_credit.mjs
 scripts/test_orena_thumbnail_cards.mjs
+scripts/test_orena_limit_ux.mjs

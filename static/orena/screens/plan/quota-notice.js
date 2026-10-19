@@ -18,15 +18,78 @@ export function isQuotaExhausted(error) {
   return Boolean(error) && error.status === 429 && error.category === 'quota_exhausted';
 }
 
-export function quotaMessage(error) {
+/* When the window the server just refused will reset, from its own `context.resets_at` in the learner's local time: a
+   time of day when it is within a day or so ("Resets at 7:00 AM."), a date otherwise ("Resets Nov 1."). '' when the
+   server sent none or it has passed - nothing is promised without a time. */
+export function resetsLine(resetsAt, now = new Date()) {
+  const at = new Date(resetsAt || '');
+  if (!resetsAt || Number.isNaN(at.getTime()) || at.getTime() <= now.getTime()) return '';
+  const ui = languages().ui;
+  if (at.getTime() - now.getTime() <= 36 * 3600 * 1000) return t('resetsAtTime', { time: new Intl.DateTimeFormat(ui, { hour: 'numeric', minute: '2-digit' }).format(at) });
+  return t('resetsOnDate', { date: new Intl.DateTimeFormat(ui, { month: 'short', day: 'numeric' }).format(at) });
+}
+
+function withResets(line, resetsAt) {
+  const reset = resetsLine(resetsAt);
+  if (!reset) return line;
+  return `${line}${languages().ui === 'zh' ? '' : ' '}${reset}`;
+}
+
+/* The daily message meter is spent (`orena.message`, usage known): text chat is refused too, so a voice-cap line must not
+   say the learner can still message Orena. `commerce` is the read of GET /api/product/commerce; without it the clause stays. */
+export function messagesSpent(commerce) {
+  const item = commerce?.features?.['orena.message'];
+  const limit = Number(item?.limit ?? item?.monthly_limit);
+  return Boolean(item) && item.usage_state === 'known' && limit > 0 && Number(item.used) >= limit;
+}
+
+export function quotaMessage(error, commerce = null) {
   const context = error?.context || {};
-  const key = `exhausted_${String(context.feature || '').replace(/\./g, '_')}`;
   const scale = Number(context.scale) > 0 ? Number(context.scale) : 1;
+  // The voice cap says "You can still message Orena" only while messages remain (G9).
+  const key = context.feature === 'orena.voice' && messagesSpent(commerce) ? 'exhausted_orena_voice_only' : `exhausted_${String(context.feature || '').replace(/\./g, '_')}`;
   if (t.has(key) && context.used != null && context.limit != null) {
     const figure = (value) => formatNumber(displayAmount(value, scale), languages().ui);
-    return t(key, { used: figure(context.used), limit: figure(context.limit) });
+    return withResets(t(key, { used: figure(context.used), limit: figure(context.limit) }), context.resets_at);
   }
-  return t('exhausted_generic');
+  return withResets(t('exhausted_generic'), context.resets_at);
+}
+
+/* 429 `rate_limited` (#376, a per-account brake with `Retry-After`): not a plan and not a fault. One short line with the
+   seconds to wait, from the refusal's own Retry-After; never charged and never worth an immediate Retry. */
+export function isRateLimited(error) {
+  if (!error || error.status !== 429) return false;
+  if (error.category === 'rate_limited') return true;
+  return !error.category;
+}
+
+export function rateLimitedMessage(seconds) {
+  const n = Math.ceil(Number(seconds));
+  return Number.isFinite(n) && n > 0 ? t('rateLimited', { n: String(n) }) : t('rateLimitedNoTime');
+}
+
+/* 429 `speech_asr_daily_limit`: an account sends an hour of audio a day to speech recognition. The existing quota line with
+   the reset time the server gives; no plan link (a higher plan does not hold more). */
+export function isAsrDailyLimit(error) {
+  return Boolean(error) && error.status === 429 && error.category === 'speech_asr_daily_limit';
+}
+
+/* 503 `quota_unavailable`: the plan could not be read, so the call failed closed. */
+export function isQuotaUnavailable(error) {
+  return Boolean(error) && error.status === 503 && error.category === 'quota_unavailable';
+}
+
+export function quotaUnavailableMessage() {
+  return t('quotaUnavailable');
+}
+
+/* What a speech-to-text refusal says instead of the generic provider problem (G5): the pause line, or the daily-audio
+   line; '' for every other failure, which the room shows as before. */
+export function transcribeRefusalLine(error) {
+  const pause = aiPauseOf(error);
+  if (pause) return pausedMessage(pause.resetsAt);
+  if (isAsrDailyLimit(error)) return withResets(t('exhausted_generic'), error.context?.resets_at);
+  return '';
 }
 
 /* The line for the day's voice minutes running out inside a chunk (`day_limit_reached`, D-237): no 429 carries the figure, so
@@ -36,7 +99,7 @@ export function voiceDayLimitMessage(commerce) {
   const item = commerce?.features?.['orena.voice'];
   const limit = item?.limit ?? item?.monthly_limit;
   if (limit == null) return quotaMessage(null);
-  return quotaMessage({ context: { feature: 'orena.voice', used: limit, limit, scale: item.scale } });
+  return quotaMessage({ context: { feature: 'orena.voice', used: limit, limit, scale: item.scale } }, commerce);
 }
 
 /* At the daily voice-minute cap (429 `quota_exhausted`, feature `orena.voice`, D-237) a paying learner is told the line and
@@ -70,14 +133,28 @@ export function isAiPaused(error) {
   return Boolean(aiPauseOf(error));
 }
 
+/* The line a refusal that no immediate Retry fixes shows in the place a room already shows a failed request: the AI pause
+   (with its time), or a rate-limit brake (with the seconds to wait, G3), or a plan that could not be read (G8). */
 export function pausedLineOf(error) {
   const pause = aiPauseOf(error);
-  return pause ? pausedMessage(pause.resetsAt) : '';
+  if (pause) return pausedMessage(pause.resetsAt);
+  if (isRateLimited(error)) return rateLimitedMessage(Number(error.retryAfterMs) / 1000);
+  if (isQuotaUnavailable(error)) return quotaUnavailableMessage();
+  return '';
 }
 
 export function pausedLineNow(routes) {
   const pause = recentAiPause(routes);
   return pause ? pausedMessage(pause.resetsAt) : '';
+}
+
+/* A recording room's catch for speech-to-text (G5): a refusal that is the system's or the account's limit is said in a
+   toast and nothing is offered to retry; false for every other failure, which the room shows as its provider/offline sheet. */
+export function showTranscribeRefusal(error) {
+  const line = transcribeRefusalLine(error) || (isRateLimited(error) ? pausedLineOf(error) : '');
+  if (!line) return false;
+  toast(line, { iconName: 'circle-alert' });
+  return true;
 }
 
 /* Voice chat is a Plus and Pro benefit (contract v11, D-235): `voice/session` and `voice/extend` answer a Free learner 403
@@ -121,10 +198,11 @@ export function showRecordAgainNotice() {
 }
 
 /* What a Speaking room does with a take failure of the plan's making: `quota` (the allowance is used up) or
-   `already_assessed` (record again). False for every other failure, which the room handles as before. */
+   `already_assessed` (record again), or `paused` / `rate_limited` (the line, nothing to retry). False for every other failure, which the room handles as before. */
 export function showAssessmentRefusal(ctx, failure) {
   if (failure?.kind === 'quota') showQuotaNotice(ctx, failure.error);
   else if (failure?.kind === 'already_assessed') showRecordAgainNotice();
+  else if (failure?.kind === 'paused' || failure?.kind === 'rate_limited') toast(pausedLineOf(failure.error)); // the line, no Retry
   else return false;
   return true;
 }

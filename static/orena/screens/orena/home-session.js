@@ -87,6 +87,7 @@ async function runTurn(trigger, message, { retry = false } = {}) {
     notes: inst.memory.requestNotes(),
     address,
   });
+  const retryKey = retry ? inst.session.retryKey() : '';
   if (retry) inst.session.retry();
   else if (trigger === 'open') inst.session.opening();
   else inst.session.learner(message);
@@ -98,7 +99,7 @@ async function runTurn(trigger, message, { retry = false } = {}) {
     cancelled = true;
   });
   try {
-    for await (const item of turn(request, { signal: controller.signal })) {
+    for await (const item of turn(request, { signal: controller.signal, idempotencyKey: retryKey })) {
       inst.session.apply(item);
       if (item.event === 'memory_update') inst.memory.applyUpdate(item.data);
       if (item.event === 'language_mismatch') void refreshLearningLanguage();

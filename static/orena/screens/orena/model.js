@@ -6,7 +6,7 @@ import { intentRoute } from '../../agent/intents.js';
 import { ACTIONS } from '../../agent/contract.js';
 import { byId } from '../../shell/routes.js';
 import { shellCopy } from '../../copy/shell.js';
-import { pausedMessage, quotaMessage } from '../plan/quota-notice.js';
+import { pausedMessage, quotaMessage, quotaUnavailableMessage, rateLimitedMessage } from '../plan/quota-notice.js';
 
 /* The route title a §6.1 surface id opens, in the live interface language - the same name
    AGENT_CONTRACT §6.2 publishes (static/orena/copy/surfaces.json), read straight from the shell's
@@ -172,7 +172,9 @@ export function actionFailureKey(result) {
 
 /* §4: "shows `tool_call.label` while a tool runs" - the learner-safe line the server sent, else the
    generic "Orena is thinking…". */
-export function thinkingText(tool, fallback) {
+export function thinkingText(tool, fallback, waiting = null) {
+  // Waiting out the server's rate-limit brake (G2): the short "try again in N s" line instead of a silent thinking state.
+  if (waiting) return rateLimitedMessage(waiting);
   const label = String(tool?.label || '').trim();
   return label || fallback;
 }
@@ -180,10 +182,14 @@ export function thinkingText(tool, fallback) {
 /* §4.1: the client's own `transport` error has no message from a server - the message is the
    client's own copy, in the support language (`fallbackText`); every other class shows the
    server's. */
-export function errorText(error, fallbackText, providerText = '') {
+export function errorText(error, fallbackText, providerText = '', inProgressText = '') {
   // The plan's limit of Orena messages (D-163): the server's own figures, in the interface language.
   if (error?.quota) return quotaMessage({ context: error.quota });
   if (error?.paused) return pausedMessage(error.paused.resets_at);
+  // The brake gave up waiting (G2), the first request is still running (G6), the plan could not be read (G8): each its own line.
+  if (error?.class === 'rate_limited') return rateLimitedMessage(error.retryAfter);
+  if (error?.class === 'operation_in_progress' && inProgressText) return inProgressText;
+  if (error?.class === 'quota_unavailable') return quotaUnavailableMessage();
   return String(error?.message || '').trim() || (error?.class === 'provider_unavailable' && providerText) || fallbackText;
 }
 

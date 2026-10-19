@@ -9,6 +9,7 @@
    (`unsent`), for the panel to return to the composer once the learning language is re-read;
    `absent` means Orena is off (`absent`), which the panel answers by closing, not by an error. */
 import { memoryOn } from './memory-switch.js';
+import { nextIdempotencyKey } from '../infrastructure/quota-headers.js';
 import { CONTRACT_VERSION, EVENTS, CLIENT_EVENTS, fallbackOf, toContractLang, SELECTED_ITEM_TYPES, normalizeAddress } from './contract.js';
 
 const CONTEXT_FIELDS = ['surface', 'activity_type', 'lesson_id', 'content_id', 'attempt_id', 'take_ref', 'essay_id', 'client_evidence'];
@@ -99,6 +100,17 @@ export function createSession({ log = console.warn } = {}) {
       thinking = true;
       unsent = null;
       unsentWhy = '';
+    },
+    /* The idempotency key a manual Retry of the last errored reply sends, or '' for a fresh one. The earlier key is kept when
+       the outcome is unknown (network, timeout, a stream that died: the server may have processed the turn) or the first
+       request is still running; an answered refusal mints a new one (`nextIdempotencyKey`, as the discussion's retryPlan).
+       Read BEFORE `retry()`, which removes the errored reply. */
+    retryKey() {
+      const last = messages[messages.length - 1];
+      const error = last?.role === 'orena' ? last.error : null;
+      if (!error?.key) return '';
+      const next = nextIdempotencyKey(error, error.key, () => '');
+      return next;
     },
     /* §4.1 `retry`: the same turn goes again as a new request. The reply that ended in an error
        goes; the learner's own message stays where it is. */
@@ -192,7 +204,7 @@ export function createSession({ log = console.warn } = {}) {
         if (data.stored === 'server' && data.op === 'upsert' && !messages.some((m) => m.remembered)) reply.remembered = true;
       } else if (event === 'error') {
         // `quota` is the transport's own: the plan-limit refusal's figures (D-163), never a server stream event.
-        reply.error = { class: data.class, message: String(data.message || ''), fallback: fallbackOf(data.fallback), ...(data.quota ? { quota: data.quota } : {}), ...(data.paused ? { paused: data.paused } : {}) };
+        reply.error = { class: data.class, message: String(data.message || ''), fallback: fallbackOf(data.fallback), ...(data.quota ? { quota: data.quota } : {}), ...(data.paused ? { paused: data.paused } : {}), ...(data.key ? { key: String(data.key) } : {}), ...(data.status ? { status: data.status } : {}), ...(data.category ? { category: data.category } : {}), ...(data.retryAfter ? { retryAfter: Number(data.retryAfter) } : {}) };
         reply.done = true;
         tool = null;
       } else if (event === 'done') {

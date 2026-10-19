@@ -161,7 +161,7 @@ const refusal = Object.assign(new Error('You have used 5 of 5'), {
   status: 429, category: 'quota_exhausted', context: { feature: 'pronunciation.audio', used: 300, limit: 300, scale: 60 },
 });
 assert.deepEqual(failureOf(refusal), { kind: 'quota', retry: false, error: refusal }, 'the limit is the server\'s refusal, not a service failure');
-assert.equal(failureOf(Object.assign(new Error('x'), { status: 429, category: 'rate_limited' })).kind, 'service', 'another 429 is not the plan');
+assert.equal(failureOf(Object.assign(new Error('x'), { status: 429, category: 'rate_limited' })).kind, 'rate_limited', 'the brake is told as its own line, not the plan and not a service fault');
 {
   /* A server that answers only what the real one can: a key it has seen is `operation_in_progress` while its first
      request runs and `operation_finished` for ever after - whatever that first request's outcome (the quota core

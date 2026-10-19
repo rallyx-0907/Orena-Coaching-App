@@ -23,7 +23,7 @@ const INTERFACE_KEYS = [
   'voiceStart', 'voiceStopSend', 'closeVoice',
 ];
 const SUPPORT_KEYS = [
-  'emptyTitle', 'emptySub', 'transportError', 'providerError', 'unsentNotice', 'voiceHintIdle', 'voiceHintListening',
+  'emptyTitle', 'emptySub', 'transportError', 'providerError', 'inProgressError', 'unsentNotice', 'voiceHintIdle', 'voiceHintListening',
   'voiceHintThinking', 'voiceHintSpeaking',
   'memoryEmpty', 'memoryAddressHint', 'memoryIntro',
   'actionFailed', 'actionOtherLanguage', 'voiceTranscribeFailed',
@@ -55,6 +55,7 @@ export const t = defineCopy('orena', {
     emptySub: 'I only propose actions Orena actually supports.',
     transportError: 'Orena couldn’t be reached. Check your connection and try again.',
     providerError: 'Orena could not answer just now. Please try again.',
+    inProgressError: 'Orena is still working on your previous message. Try again in a moment.',
     unsentNotice: 'Your learning language changed elsewhere — your message is back in the box.',
     voiceHintIdle: 'Orena answers out loud and adds the exchange to your chat.',
     voiceHintListening: 'Tap stop when you’re done — or just pause.',
@@ -91,6 +92,7 @@ export const t = defineCopy('orena', {
     emptySub: 'Mình chỉ đề xuất những hành động Orena thật sự làm được.',
     transportError: 'Không kết nối được với Orena. Kiểm tra mạng rồi thử lại.',
     providerError: 'Orena chưa thể trả lời lúc này. Vui lòng thử lại.',
+    inProgressError: 'Orena vẫn đang xử lý tin nhắn trước của bạn. Thử lại sau giây lát.',
     unsentNotice: 'Ngôn ngữ học của bạn vừa thay đổi ở nơi khác — tin nhắn của bạn đã được giữ lại trong ô nhập.',
     voiceHintIdle: 'Orena trả lời bằng giọng nói và lưu cả đoạn hội thoại vào khung chat của bạn.',
     voiceHintListening: 'Nhấn dừng khi bạn nói xong — hoặc chỉ cần ngừng lại.',
@@ -127,6 +129,7 @@ export const t = defineCopy('orena', {
     emptySub: '我只会提出 Orena 真正能做到的操作。',
     transportError: '无法连接到 Orena。请检查网络后重试。',
     providerError: 'Orena 暂时无法回答，请再试一次。',
+    inProgressError: 'Orena 仍在处理你上一条消息，请稍后再试。',
     unsentNotice: '你的学习语言在别处发生了变化 —— 你的消息已放回输入框。',
     voiceHintIdle: 'Orena 会用语音回答，并把这段对话记录到你的聊天里。',
     voiceHintListening: '说完后点击停止 —— 或者稍作停顿也可以。',
