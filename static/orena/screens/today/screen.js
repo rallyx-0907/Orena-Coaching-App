@@ -11,6 +11,7 @@ import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
+import { openMedia } from '../../product/media-source.js';
 import { languages } from '../../copy/index.js';
 import { bannerMarkup } from '../../kit/states.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -21,6 +22,8 @@ import {
   usedRecommendationIds,
   buildStreak,
   leadWithContinuation,
+  liveContinuation,
+  continuedMediaIds,
   todayDateLabel,
   buildGreeting,
   buildHeadSubtitle,
@@ -64,7 +67,14 @@ export default async function mountToday(element, ctx) {
   // first_due_word}. A rejected/aborted call is a rule-40 empty queue, never an invented one.
   const review = reviewResult.status === 'fulfilled' ? reviewResult.value : { due_count: 0, first_due_word: '' };
 
-  const continuation = Array.isArray(state.memory?.value?.continuation) ? state.memory.value.continuation : [];
+  const remembered = Array.isArray(state.memory?.value?.continuation) ? state.memory.value.continuation : [];
+  /* A continued lesson is offered only while it still opens (D-245). One the library just listed is live; any other
+     is asked for once through the same persisted read the room opens it with (cached for that open), and a lesson
+     that is gone - or that cannot be read now - is left out rather than drawn as a card that leads nowhere. */
+  const listed = new Set(listeningItems.flatMap((item) => [item?.lesson_id, item?.media_object_id]).filter(Boolean));
+  const checked = new Map(await Promise.all(continuedMediaIds(remembered).filter((id) => !listed.has(id)).map((id) =>
+    openMedia(id, { api, support: supportLang, language }).then(() => [id, true], () => [id, false]))));
+  const continuation = liveContinuation(remembered, (id) => listed.has(id) || checked.get(id) === true);
   const pool = leadWithContinuation(buildRecommendationPool({ reading, listening: listeningItems, speaking: speakingItems, review, language }, t), continuation, t, forYouCover);
   const usedIds = usedRecommendationIds(pool);
   const forYou = buildForYou(
