@@ -31,6 +31,11 @@ function formatDate(iso) {
   return `${MONTHS_EN[mo - 1]} ${d}, ${y}`;
 }
 
+// Where the effective date goes while the repository keeps it null. The runtime replaces this whole element with
+// LEGAL_EFFECTIVE_DATE when it serves the page (app.py `_legal_page`, writing_coach/consent.py); with no valid date
+// it stays, as the visible pending marker. A --release build bakes the date in and leaves no token.
+export const EFFECTIVE_DATE_TOKEN = '<mark data-effective-date style="background:#FFD54A;color:#1A1400;padding:0 4px;border-radius:4px">[pending: effective_date]</mark>';
+
 // Every place where a fact is still unconfirmed is recorded here; --release fails when this is not empty.
 export class Pending {
   constructor() { this.paths = new Set(); }
@@ -144,7 +149,11 @@ function renderPane(pane, page, data, ctx) {
   const dates = must(/(<div style="display:flex;gap:8px 20px;flex-wrap:wrap;font-size:14px;color:var\(--text3\)">)<span>[^<]*<\/span><span>[^<]*<\/span>(<\/div>)/, s, 'dates');
   const dateText = (t) => t.replace(/\{\{date\}\}/g, () => {
     const d = ctx.facts.effective_date;
-    return d === null || d === undefined ? ctx.pending.mark('effective_date') : formatDate(d);
+    if (d === null || d === undefined) {
+      ctx.pending.add('effective_date'); // still blocks --release until the deploy step stamps a date
+      return EFFECTIVE_DATE_TOKEN;
+    }
+    return formatDate(d);
   });
   s = rep(s, dates[0], `${dates[1]}${data.dates.map((d) => `<span>${dateText(d)}</span>`).join('')}${dates[2]}`);
 
