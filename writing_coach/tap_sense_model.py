@@ -29,7 +29,7 @@ from writing_coach import cost_tier
 from writing_coach.ai import platform
 from writing_coach.ai.base import AICapabilityConfigInvalid, AICapabilityError, AIProviderError
 from writing_coach.ai.capabilities import AIOperation
-from writing_coach.ai.pricing import is_free_model, list_rate
+from writing_coach.ai.pricing import is_free_model, list_rate, priced_catalogue_models
 from writing_coach.ai.providers import check_model_allowed, get_provider_definition
 from writing_coach.ai.router import router as router_module
 from writing_coach.ai.router import tap as tap_router
@@ -75,6 +75,11 @@ def _configured_models() -> list[tuple[str, str]]:
                 models = item.list_models()
         except Exception:  # noqa: BLE001 - one provider's model list failing leaves the others usable
             continue
+        if not models:
+            # A keyed provider whose operator named no models (no `<PROVIDER>_MODELS`, and the offline read never asks the
+            # network) has no list: Gemini on a fresh server. Its priced catalogue models stand in, so a paid rung exists
+            # wherever there is a key and a price (issue #312). A model the key lacks fails and hands over to the next.
+            models = priced_catalogue_models(provider_id)
         for model in models:
             name = str(model).strip()
             try:

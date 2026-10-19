@@ -20,7 +20,7 @@ from writing_coach.ai.routing import provider_tier
 from writing_coach.billing import funding_context as fc
 from writing_coach.billing.cost_model import OperationCost, meter_stats
 
-PAID = "llama-3.3-70b-versatile"
+PAID = "openai/gpt-oss-120b"
 CONTEXT = fc.FundingContext(operation_id="q1:evidence", meter="writing.review", admission_digest="a" * 64)
 LAMP = {"text": "lamp", "source_language": "en", "target_language": "vi"}
 
