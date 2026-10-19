@@ -1,0 +1,32 @@
+{
+  "name_guard": true,
+  "function_words": [
+    "a", "an", "the",
+    "of", "in", "on", "at", "by", "for", "with", "without", "from", "to", "into", "onto", "upon",
+    "under", "about", "above", "below", "between", "through", "during", "before", "after", "than",
+    "and", "or", "but", "nor", "if", "because", "although", "though", "unless", "until", "whether",
+    "i", "me", "my", "mine", "myself", "you", "your", "yours", "yourself", "he", "him", "his", "himself",
+    "she", "her", "hers", "herself", "it", "its", "itself", "we", "us", "our", "ours", "ourselves",
+    "they", "them", "their", "theirs", "themselves",
+    "this", "that", "these", "those", "who", "whom", "whose", "which", "what", "there", "not"
+  ],
+  "phrasal_verbs": [
+    "turn off", "turn on", "turn up", "turn down", "turn out", "turn over", "turn around", "turn away", "turn back",
+    "give up", "give in", "give out", "give away", "give back",
+    "look up", "look out", "look after", "look for", "look into", "look forward",
+    "take off", "take out", "take over", "take up", "take in", "take down",
+    "put on", "put off", "put up", "put out", "put down", "put away",
+    "pick up", "set up", "set off", "set out", "get up", "get off", "get along", "get over",
+    "find out", "figure out", "carry on", "carry out", "break down", "break up", "break out",
+    "bring up", "bring back", "bring out", "call off", "check out", "fill in", "fill out",
+    "go on", "go off", "hand in", "hold on", "keep up", "make up", "run out", "show up", "throw away",
+    "wake up", "work out", "write down"
+  ],
+  "fixed_expressions": ["in turn", "by turns", "take turns"],
+  "period_modifiers": ["late", "early", "mid"],
+  "period_words": [
+    "spring", "summer", "autumn", "fall", "winter", "week", "month", "year", "decade", "century", "millennium",
+    "January", "February", "March", "April", "June", "July", "August", "September", "October", "November",
+    "December"
+  ]
+}
