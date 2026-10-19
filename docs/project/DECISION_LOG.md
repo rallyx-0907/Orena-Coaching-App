@@ -7638,3 +7638,37 @@ bạn cũng đã làm rồi mà sao giờ vẫn giữ cái nút import cũ"). Th
 5. **Gate.** `scripts/test_orena_screen_discover.mjs` refuses every old entry, control and string, and asserts Discover is the
    only screen that opens the import flow.
 
+## D-244 - Orena does not download YouTube audio for speech recognition (2026-10-19)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-19, after the PRE-201 rights recheck).
+
+1. **Decision.** From now on Orena never downloads a YouTube video's audio to run speech recognition. A new YouTube video
+   is transcribed only from captions the provider offers through the existing caption path (YouTube's own track, or
+   Supadata in native mode, D-215). A Creative Commons licence does not by itself open the audio route: listening to a CC
+   video would need its licence and the provider's terms to allow the download, and that is a separate owner decision.
+   Nothing in this change downloads audio for a CC video.
+2. **Where it is enforced.** `MediaPipeline._transcript` (`writing_coach/media_transcript_pipeline.py`): for a YouTube
+   item whose captions are absent or unusable, every transcript policy now stops before any audio download, recognition
+   or spend. `captions_or_asr` (D-214) keeps its meaning only for sources with no caption track. Reasons: no track, or a
+   track too poor to use, is `youtube_no_channel_captions` ("YouTube video without channel captions: Orena does not
+   download YouTube audio (rights decision 2026-10-19)"; admin copy en/vi/zh, `impErr_youtube_no_channel_captions`), with
+   the caption cause as its language-neutral detail; a caption fetch the provider refused this time keeps
+   `captions_unavailable`, and the daily caption cap keeps `caption_quota`. A reprocess of an existing YouTube item obeys
+   the same rule and restores the stored transcript. `captions_blocked` is no longer produced.
+3. **Still allowed.** Speech recognition of a file the learner or admin uploaded, and of a non-YouTube source whose rights
+   allow it, is unchanged.
+4. **Provenance.** Every newly stored transcript records `transcript_provenance` beside `transcript_origin` (in the lesson
+   payload and in `processing`, shown as `transcript.provenance` in the admin outcome): `channel_captions` (a track a
+   person made, `caption_kind` manual), `machine_captions` (the provider's generated track, `auto`),
+   `captions_unknown_kind`, or `orena_asr`. For an item stored before this, the admin outcome derives it from the origin
+   and caption kind.
+5. **Existing transcripts.** The 17 Chinese YouTube transcripts made by speech recognition before this decision are
+   accepted for the pilot only. They must be reviewed (kept on a recorded basis, re-sourced from captions, or withdrawn)
+   before G-6.
+
+**Not in this decision (owner decisions left open).** The model-clip cut (D-140, `_prepare_model_clips` and
+`scripts/backfill_model_clips.py`) still downloads a published YouTube item's audio to cut Compare clips; it runs no
+speech recognition. The older learner route `POST /api/media/import` can still start Supadata `mode=generate` (a
+provider-side transcript) where plan limits are not enforced. Both fall outside "audio for speech recognition by Orena"
+as decided here and are reported for a decision rather than changed.
+

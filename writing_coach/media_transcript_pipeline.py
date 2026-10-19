@@ -183,6 +183,34 @@ POLICY_DEFAULT = "captions_or_asr"
 POLICY_CAPTIONS_ONLY = "captions_only"
 TRANSCRIPT_POLICIES = (POLICY_DEFAULT, POLICY_CAPTIONS_ONLY)
 
+# Rights decision 2026-10-19 (D-244): Orena never downloads a YouTube video's audio to run speech recognition. A YouTube
+# item is transcribed from the captions the provider offers or not at all, whatever its transcript policy says, so
+# `captions_or_asr` listens to the audio only for a file the learner or admin uploaded, or another source whose rights
+# allow it. The item stops with this reason, before any download, recognition or spend; the caption cause is the detail.
+REASON_YOUTUBE_NO_CAPTIONS = "youtube_no_channel_captions"
+
+# Where the stored transcript's text came from, kept beside `transcript_origin` (D-244): the channel's own captions (a
+# track a person made), the provider's machine-generated captions, a caption track whose kind the provider did not say,
+# or Orena's speech recognition of audio it was allowed to use.
+PROVENANCE_CHANNEL_CAPTIONS = "channel_captions"
+PROVENANCE_MACHINE_CAPTIONS = "machine_captions"
+PROVENANCE_CAPTIONS_UNKNOWN = "captions_unknown_kind"
+PROVENANCE_ORENA_ASR = "orena_asr"
+
+
+def transcript_provenance(origin: str, caption_kind: str) -> str:
+    """The provenance of a transcript from its origin and, for captions, the track's kind (`manual`, `auto`, other)."""
+    if origin == ORIGIN_ASR:
+        return PROVENANCE_ORENA_ASR
+    if origin != ORIGIN_CAPTION:
+        return ""
+    kind = str(caption_kind or "").casefold()
+    if kind == "manual":
+        return PROVENANCE_CHANNEL_CAPTIONS
+    if kind == "auto":
+        return PROVENANCE_MACHINE_CAPTIONS
+    return PROVENANCE_CAPTIONS_UNKNOWN
+
 CHUNK_SECONDS = 600
 MAX_ATTEMPTS = 3
 AUDIO_FORMAT_TIMEOUT = 600
@@ -248,6 +276,7 @@ REASON_MESSAGES: dict[str, str] = {
     "captions_unusable": "The provider's captions were not good enough to use. Speech recognition was not run; any stored captions were kept.",
     "zh_traditional_not_accepted": "The only Chinese captions offered are Traditional; only Simplified is accepted for now. Nothing was translated.",
     "caption_quota": "Today's limit of caption requests to the caption provider was reached; none was sent.",
+    REASON_YOUTUBE_NO_CAPTIONS: "YouTube video without channel captions: Orena does not download YouTube audio (rights decision 2026-10-19).",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
     "spend_cap_batch_ai": "The AI spend limit for this batch was reached.",
@@ -977,6 +1006,9 @@ class MediaPipeline:
     def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
         payload = lesson_payload(entry, transcript, origin, duration, words=words, english_reading=self._english_reading)
+        # Channel captions, machine captions or Orena's recognition: told apart wherever the origin is (D-244).
+        provenance = transcript_provenance(origin, str((entry.processing or {}).get("caption_kind") or ""))
+        payload["transcript_provenance"] = provenance
         existing = dict(entry.lesson or {})
         lesson = {
             **{key: value for key, value in existing.items() if key != "payload"},
@@ -991,7 +1023,8 @@ class MediaPipeline:
             if fresh.status == "archived" or (fresh.processing or {}).get("state") == "cancelled":
                 raise PipelineStop("cancelled")
             # The origin is recorded with the payload that carries it, in one write, so the two never disagree (D-213).
-            processing = {**dict(fresh.processing or {}), "origin": origin} if fresh.processing is not None else fresh.processing
+            processing = ({**dict(fresh.processing or {}), "origin": origin, "transcript_provenance": provenance}
+                          if fresh.processing is not None else fresh.processing)
             return replace(fresh, lesson=lesson, processing=processing, duration_ms=int(fresh.duration_ms or 0) or duration, status=status)
         updated = store.update_if_present(entry.media_id, change)
         if updated is None:
@@ -1046,17 +1079,18 @@ class MediaPipeline:
                 # The operator asked for captions or nothing (D-214): no audio is downloaded, no recognition runs, nothing
                 # is spent. The item fails with the stable reason and can be re-run once the provider answers.
                 raise PipelineStop(fallback or "captions_unavailable", captions_error)
+            # Rights decision 2026-10-19 (D-244): the audio of a YouTube video is never downloaded for recognition. A caption
+            # fetch the provider refused this time (or the daily caption cap) keeps its own retryable reason; a video with no
+            # caption track, or one too poor to use, stops with the rights reason, the caption cause as its detail.
+            if captions_error and fallback != "captions_unusable":
+                raise PipelineStop(fallback or "captions_unavailable", captions_error)
+            raise PipelineStop(REASON_YOUTUBE_NO_CAPTIONS, captions_error if fallback == "captions_unusable" else "no_caption_track")
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_provider="",
                                caption_language="", caption_fallback=fallback,
                                caption_fallback_detail=captions_error if fallback == "captions_unusable" else "")
-        try:
-            raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
-        except PipelineStop as stop:
-            # Captions were refused by the provider (not merely absent) and the audio route is closed too: that is the
-            # cause an operator can act on, with the audio failure kept in the detail.
-            if stop.code == "audio_unavailable" and captions_error in {"provider_failure", "provider_timeout"}:
-                raise PipelineStop("captions_blocked", "audio_unavailable") from stop
-            raise
+        # Only a source with no caption track reaches here (an upload, or a non-YouTube source whose rights allow listening);
+        # `captions_blocked` (captions refused and the YouTube audio refused too) is no longer produced since D-244.
+        raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
         # Chinese recognition output is repaired (no spaces between Hanzi, sentence marks, no leading silence) before it is cut.
         raw = clean_asr_cues(raw, words, language or detected)
         words = normalise_words(words, language or detected)  # the same script as the lines, so taps stay aligned

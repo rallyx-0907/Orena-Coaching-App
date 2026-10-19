@@ -66,12 +66,14 @@ def test_a_stopped_item_stores_its_reason_code_and_message(tmp_path):
     assert media_outcome(stored)["state"] == "failed"
 
 
-def test_refused_captions_plus_no_audio_is_captions_blocked_but_plain_no_captions_is_not(tmp_path):
+def test_refused_youtube_captions_stop_with_the_caption_reason_and_never_reach_the_audio(tmp_path):
+    # Rights decision 2026-10-19 (D-244): a YouTube video's audio is never downloaded, so a refused caption fetch is
+    # reported as itself (no longer `captions_blocked`, which needed the audio route to have failed too).
     from writing_coach.media_ingestion import MediaImportCategory, MediaImportError
     from writing_coach.media_transcript_pipeline import PipelineStop
 
-    def broken_audio(*_a, **_k):
-        raise RuntimeError("yt-dlp refused")
+    def audio(*_a, **_k):
+        raise AssertionError("the YouTube audio downloader was called")
 
     def refusing(category):
         class Ingestion:
@@ -80,14 +82,13 @@ def test_refused_captions_plus_no_audio_is_captions_blocked_but_plain_no_caption
 
         return Ingestion()
 
-    for category, expected in ((MediaImportCategory.PROVIDER_FAILURE, "captions_blocked"),
-                               (MediaImportCategory.MEDIA_UNAVAILABLE, "audio_unavailable")):
-        store, entry, pipeline = _world(tmp_path / expected, ingestion=refusing(category), youtube_audio=broken_audio, asr=object())
+    for category in (MediaImportCategory.PROVIDER_FAILURE, MediaImportCategory.MEDIA_UNAVAILABLE):
+        store, entry, pipeline = _world(tmp_path / category.value, ingestion=refusing(category), youtube_audio=audio, asr=object())
         youtube = replace(entry, provider="youtube", canonical_url="https://www.youtube.com/watch?v=dQw4w9WgXcQ")
         store.upsert(youtube)
         with pytest.raises(PipelineStop) as stop:
             pipeline._transcript(store, None, youtube, "b1", None)
-        assert stop.value.code == expected
+        assert stop.value.code == "captions_unavailable" and stop.value.detail == category.value
 
 
 def test_rights_unknown_hold_keeps_its_message_and_does_not_publish(tmp_path):
