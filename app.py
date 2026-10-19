@@ -4217,10 +4217,17 @@ def admin_ai_spend(request: Request) -> dict[str, Any]:
 def _data_classes_view() -> dict[str, Any]:
     from writing_coach.ai.providers import provider_definitions
 
-    record, source = _AGENT_DATA_CLASSES.current()
-    stored = _persistence_runtime.platform_repository.get_setting(_DATA_CLASS_SETTING) if source == "admin" else None
+    # One read: the classes shown and the version a save must name come from the same row (#357 review).
+    row: dict[str, Any] | None = None
+
+    def stored() -> dict[str, Any] | None:
+        nonlocal row
+        row = _persistence_runtime.platform_repository.get_setting(_DATA_CLASS_SETTING)
+        return row["value"] if row else None
+
+    record, source = LiveProviderDataClasses(ProviderDataClasses.from_env(os.environ), stored).current()
     return {"source": source, "classes": record.public(), "default": "none",
-            "updated_at": stored["updated_at"] if stored else None,
+            "updated_at": row["updated_at"] if row and source == "admin" else None,
             "providers": sorted(definition.id for definition in provider_definitions()),
             "choices": [{"class": name, "sends": sends} for name, sends in _DATA_CLASS_NOTES.items()]}
 
