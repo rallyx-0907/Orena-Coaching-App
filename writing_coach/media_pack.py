@@ -9,6 +9,13 @@ archived are never read into a pack). Per entry the pack carries every `MediaLib
 (that travels as the envelope's `exported_status`, advice only) and `processing` (reduced to the final state), plus
 the binary assets that belong to it: its stored thumbnail and its prepared model clips, each with sha256 and size.
 
+Translations: a cue's stored meaning lives in the learning cache (`media_translation_cache`, keyed by asset, segment, a
+fingerprint of the cue text, language and the translating provider/model), not on the media record, and that cache is
+what Listening reads (`listening_api.stored_media_payload` -> `media_meaning.resolve_segment_meanings`). Export reads the
+meanings from that same cache for every support language present and carries them with their provenance; import writes
+them into the target's cache under the target's own provider identity, so its read path serves them with no provider
+call. They are additive and idempotent: a meaning already held is kept, and replaced only with `overwrite`.
+
 Import is idempotent by `media_id`: absent -> `new`, identical -> `unchanged`, different -> `conflict` and left
 alone unless `overwrite`. An imported item arrives ready, with its stored transcript and translations, and is
 published only when its rights are complete (cleared, with a permission note) and its transcript passes the
@@ -22,10 +29,13 @@ import hashlib
 import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import fields, replace
+from datetime import UTC, datetime
 from typing import Any
 
 from writing_coach.book_asset_store import AssetNotFound, InvalidAssetKey, _validate_key
 from writing_coach.content_packs import Pack, PackItem, content_hash
+from writing_coach.core.support_languages import all_support_languages
+from writing_coach.media_meaning import cache_key
 from writing_coach.media_library_store import MediaLibraryEntry, validate_entry
 
 KIND = "media_item"
@@ -145,15 +155,122 @@ def export_refusal(entry: MediaLibraryEntry, assets: Any, clip_keys: ClipKeys) -
     return ""
 
 
+# ---- stored translations ---------------------------------------------------------------------------------
+
+MAX_TRANSLATION_CHARS = 4000
+
+
+def _lesson_cues(lesson: Mapping[str, Any] | None, media_id: str) -> tuple[str, list[tuple[str, str]]]:
+    """The asset id and the (segment_id, text) cues Listening resolves meanings for: the same fields, the same order."""
+    payload = lesson.get("payload") if isinstance(lesson, Mapping) else None
+    if not isinstance(payload, Mapping):
+        return media_id, []
+    asset_id = str((payload.get("asset") or {}).get("asset_id") or media_id)
+    segments = (payload.get("transcript") or {}).get("segments") or []
+    cues = [(str(seg["segment_id"]), str(seg["original_text"])) for seg in segments
+            if isinstance(seg, Mapping) and "segment_id" in seg and "original_text" in seg]
+    return asset_id, cues
+
+
+def _support_codes() -> list[str]:
+    return [definition.code for definition in all_support_languages()]
+
+
+def _export_translations(entry: MediaLibraryEntry, cache: Any, provider_models: Sequence[str],
+                         ) -> tuple[list[dict[str, str]], dict[str, dict[str, int]]]:
+    """Every stored meaning of this entry's cues, per target language, read where the learner UI reads it.
+
+    A language appears only when at least one cue has a stored meaning; the summary says how many cues have one."""
+    if cache is None or not provider_models:
+        return [], {}
+    asset_id, cues = _lesson_cues(entry.lesson, entry.media_id)
+    rows: list[dict[str, str]] = []
+    summary: dict[str, dict[str, int]] = {}
+    for code in _support_codes():
+        if code == str(entry.language or "").casefold():
+            continue
+        found = []
+        for segment_id, text in cues:
+            for model in provider_models:
+                hit = cache.get_media_translation(cache_key(asset_id, segment_id, text, code, model))
+                if hit and str(hit.get("translated_text") or "").strip():
+                    found.append({"segment_id": segment_id, "target_language": code,
+                                  "translated_text": str(hit["translated_text"]),
+                                  "provenance": str(hit.get("provenance") or "generated"),
+                                  "created_at": str(hit.get("generated_at") or ""), "provider_model": model})
+                    break
+        if found:
+            rows += found
+            summary[code] = {"have": len(found), "of": len(cues)}
+    return rows, summary
+
+
+def translation_counts(item: PackItem) -> dict[str, int]:
+    """Translations a pack item carries, per target language (an item from an older pack carries none)."""
+    counts: dict[str, int] = {}
+    for row in item.data.get("translations") or []:
+        code = str(row.get("target_language") or "") if isinstance(row, Mapping) else ""
+        counts[code] = counts.get(code, 0) + 1
+    return counts
+
+
+Put = tuple[str, str, str, str]  # cache key, text, provenance, generated_at
+
+
+def _plan_translations(item: PackItem, candidate: MediaLibraryEntry, cache: Any, provider_model: str, *,
+                       overwrite: bool) -> tuple[dict[str, Any], list[Put]]:
+    """What import does with an item's translations: the report block and the cache rows to put. Reads, never writes."""
+    rows = item.data.get("translations") or []
+    block: dict[str, Any] = {"in_pack": len(rows), "languages": translation_counts(item)}
+    if not rows:
+        return block, []
+    if cache is None or not provider_model:
+        return {**block, "skipped": "no_translation_store"}, []
+    asset_id, cues = _lesson_cues(candidate.lesson, candidate.media_id)
+    texts = dict(cues)
+    new = same = differs = invalid = 0
+    puts: list[Put] = []
+    for row in rows:
+        try:
+            segment_id, code = str(row["segment_id"]), str(row["target_language"]).strip().casefold()
+            text = str(row["translated_text"]).strip()
+        except (KeyError, TypeError):
+            invalid += 1
+            continue
+        if segment_id not in texts or not text or len(text) > MAX_TRANSLATION_CHARS or code not in _support_codes():
+            invalid += 1
+            continue
+        key = cache_key(asset_id, segment_id, texts[segment_id], code, provider_model)
+        held_text = str((cache.get_media_translation(key) or {}).get("translated_text") or "").strip()
+        if not held_text:
+            new += 1
+        elif held_text == text:
+            same += 1
+            continue
+        else:
+            differs += 1
+            if not overwrite:
+                continue
+        puts.append((key, text, str(row.get("provenance") or "generated"), str(row.get("created_at") or "")))
+    block.update({"new": new, "unchanged": same, "differs": differs, "invalid": invalid})
+    if differs and not overwrite:
+        block["kept_local"] = differs
+    return block, puts
+
+
 def build_media_items(
     store: Any, assets: Any, *, ids: Iterable[str] = (), languages: Iterable[str] = (),
     exclude_prefixes: Iterable[str] = (), clip_keys: ClipKeys | None = None,
+    translations: Any = None, provider_models: Sequence[str] = (),
 ) -> tuple[list[PackItem], dict[str, bytes], list[dict[str, str]]]:
     """Published shared entries as pack items, their asset bytes by key, and the published entries left out (with why).
 
     `ids` and `languages` narrow what is exported; `exclude_prefixes` leaves out ids an operator knows are not for
     another environment (test or QA fixtures carry no tag in the store, so the id is the only handle). An entry
     whose rights are incomplete still travels: the importing environment holds it unpublished and says so.
+
+    `translations` is the learning cache Listening reads and `provider_models` the identities its meanings may have
+    been stored under (the cache key carries the translating provider/model); without both, none is exported.
     """
     clip_keys = clip_keys or default_clip_keys
     wanted, langs, skip = set(ids), set(languages), tuple(p for p in exclude_prefixes if p)
@@ -172,6 +289,7 @@ def build_media_items(
             continue
         data, entry_blobs = _entry_data(entry, assets, clip_keys)
         blobs.update(entry_blobs)
+        data["translations"], data["translation_summary"] = _export_translations(entry, translations, tuple(provider_models))
         items.append(PackItem(kind=KIND, natural_key=entry.media_id, data=data, exported_status="published"))
     return items, blobs, excluded
 
@@ -286,29 +404,75 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
 
 
 def apply_media_items(pack: Pack, store: Any, assets: Any, *, overwrite: bool = False, dry_run: bool = True,
-                      actor: str = PACK_ACTOR, clip_keys: ClipKeys | None = None) -> list[dict[str, Any]]:
+                      actor: str = PACK_ACTOR, clip_keys: ClipKeys | None = None,
+                      translations: Any = None, provider_model: str | Callable[[], str] = "") -> list[dict[str, Any]]:
     """Judge every `media_item` of a pack, and when `dry_run` is false write what the judgement allows.
 
     The asset bytes are put first and the entry last, so an entry never points at a file that was not written.
     A failure of one item is that item's `refused` row; it never stops the others.
+
+    `translations` is the learning cache this environment's Listening reads and `provider_model` its translating
+    identity (a string or a callable returning it): the pack's meanings are put under that identity, so the read path
+    finds them without a provider call. A held meaning is kept unless `overwrite`. Every row reports its counts, so a
+    dry run says what a real run would write.
     """
     clip_keys = clip_keys or default_clip_keys
     pack_id = str(pack.manifest.get("pack_id") or "")
+    model = provider_model() if callable(provider_model) else str(provider_model or "")
     rows = []
     for item in pack.items:
         if item.kind != KIND:
             continue
         row, final = _decide(item, pack, store, assets, clip_keys, overwrite=overwrite, actor=actor, pack_id=pack_id)
-        if final is not None and not dry_run:
+        puts: list[Put] = []
+        if row["outcome"] != REFUSED:
             try:
-                for asset in item.data["assets"]:
-                    assets.put(asset["key"], pack.assets[f"assets/{asset['key']}"])
-                store.upsert(final)
-                row["written"] = True
+                candidate = _entry_from(item, status="unpublished", processing={}, actor=actor)
+                row["translations"], puts = _plan_translations(item, candidate, translations, model, overwrite=overwrite)
+            except (ValueError, TypeError, KeyError):
+                row["translations"], puts = {"in_pack": 0}, []
+            if row["outcome"] == CONFLICT:
+                puts = []  # a conflicting item is left alone, translations included
+        if not dry_run and (final is not None or puts):
+            try:
+                if final is not None:
+                    for asset in item.data["assets"]:
+                        assets.put(asset["key"], pack.assets[f"assets/{asset['key']}"])
+                    store.upsert(final)
+                    row["written"] = True
+                stamp = datetime.now(UTC).isoformat()
+                for key, text, provenance, created_at in puts:
+                    translations.put_media_translation(key, text, provenance, created_at or stamp)
+                if puts:
+                    row["translations"]["written"] = len(puts)
             except Exception as exc:  # noqa: BLE001 - one item never fails the pack; its failure is reported
                 row = {**row, "outcome": REFUSED, "reason": "write_failed", "detail": type(exc).__name__}
         rows.append(row)
     return rows
+
+
+def translation_totals(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
+    """Pack-wide translation counts of an import report (what a dry run would write, or did)."""
+    totals = {"in_pack": 0, "new": 0, "unchanged": 0, "differs": 0, "invalid": 0, "written": 0}
+    for row in rows:
+        for name, value in (row.get("translations") or {}).items():
+            if name in totals and isinstance(value, int):
+                totals[name] += value
+    return totals
+
+
+def export_preview(items: Iterable[PackItem], blobs: Mapping[str, bytes], excluded: Sequence[Mapping[str, str]]) -> dict[str, Any]:
+    """A read-only summary of what an export would pack, per item and in total. Writes nothing."""
+    rows = []
+    for item in items:
+        counts = translation_counts(item)
+        rows.append({"media_id": item.natural_key, "assets": len(item.data.get("assets") or []),
+                     "translations": counts, "translation_total": sum(counts.values()),
+                     "translation_coverage": item.data.get("translation_summary") or {}})
+    return {"dry_run": True, "items": len(rows), "assets": len(blobs), "asset_bytes": sum(len(b) for b in blobs.values()),
+            "translations": sum(row["translation_total"] for row in rows),
+            "without_translations": [row["media_id"] for row in rows if not row["translation_total"]],
+            "excluded": list(excluded), "per_item": rows}
 
 
 def summarize(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
@@ -318,4 +482,5 @@ def summarize(rows: Iterable[Mapping[str, Any]]) -> dict[str, int]:
     return summary
 
 
-__all__ = ["KIND", "apply_media_items", "build_media_items", "rights_complete", "summarize"]
+__all__ = ["KIND", "apply_media_items", "build_media_items", "export_preview", "rights_complete", "summarize",
+           "translation_counts", "translation_totals"]

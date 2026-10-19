@@ -41,6 +41,8 @@ class _Packs:
     vocabulary_import: Callable[..., dict[str, Any]] | None = None
     media_store: Any = None
     media_assets: Any = None
+    media_translations: Any = None  # the learning cache Listening reads stored cue meanings from
+    media_provider_model: Callable[[], str] | None = None  # this environment's translating identity (cache-key part)
     environment: str = "local"
     app_version: str = ""
 
@@ -71,7 +73,8 @@ def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[Pa
             raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
         media_items, blobs, excluded = media_pack.build_media_items(
             _state.media_store, _state.media_assets, ids=body.media_ids, languages=body.languages,
-            exclude_prefixes=body.exclude_media_id_prefixes)
+            exclude_prefixes=body.exclude_media_id_prefixes, translations=_state.media_translations,
+            provider_models=[_state.media_provider_model()] if _state.media_provider_model else [])
         items += media_items
         if extra is not None:
             extra["assets"], extra["excluded"] = blobs, excluded
@@ -151,7 +154,8 @@ def _media_rows(pack: Any, *, overwrite: bool, dry_run: bool, actor: str) -> lis
     if _state.media_store is None or _state.media_assets is None:
         raise orena_http_error(503, "media_library_unavailable", "The media library is unavailable.")
     return media_pack.apply_media_items(pack, _state.media_store, _state.media_assets, overwrite=overwrite,
-                                        dry_run=dry_run, actor=actor)
+                                        dry_run=dry_run, actor=actor, translations=_state.media_translations,
+                                        provider_model=_state.media_provider_model or "")
 
 
 def _plan(pack: Any, overwrite: bool = False) -> dict[str, Any]:

@@ -485,8 +485,8 @@ source label, `app_version`, `source_commit` and the published entries left out 
 Admin route and CLI share `writing_coach/media_pack.py`; Reading and vocabulary use the existing Admin route.
 
 What travels for media: only shared-library entries with `status` published (never personal, held, unpublished or
-archived). Per item: provider and playback ids, embed data, transcript segments with timing, translations per support
-language, level, rights/provenance/licence note, review state and the stored thumbnail and prepared model clips (each
+archived). Per item: provider and playback ids, embed data, transcript segments with timing, stored cue translations per support
+language (read from the learning cache Listening serves them from, with provenance), level, rights/provenance/licence note, review state and the stored thumbnail and prepared model clips (each
 with sha256). What stays behind: processing attempts and spend, an administrator's address, and a published entry
 whose playback is a local upload (`local_playback_not_packable`) or whose thumbnail file is missing. Test and QA
 fixtures carry no tag in the store, so leave them out by id prefix (`--exclude-prefix`).
@@ -496,6 +496,12 @@ On import an item is `new`, `unchanged` (identical), `conflict` (different; kept
 published only if its rights are cleared with a licence note and its transcript passes the same checks Publish uses;
 otherwise it arrives unpublished and the row says `held`. A second import changes nothing.
 
+0. Preview (reads only): `python scripts/media_content_pack.py export --dry-run --exclude-prefix qa- --exclude-prefix test-`
+   lists per item the assets and translations per language and the items with none. The translations are found in
+   `LEARNING_CACHE_DB` (else `<root>/learning_cache.db`) under the source's translating identity; pass
+   `--provider-model GroqTranslationProvider:<model>` if it is not `$GROQ_TRANSLATION_MODEL` (default `openai/gpt-oss-120b`).
+   On :8000 `import` puts them under :8000's own `--provider-model`, so Listening serves them with no provider call; the
+   dry-run report shows `translations` new/unchanged/differs per item, and a held translation is kept unless `--overwrite`.
 1. On :8021 (the lane runtime; the application image has the dependencies), export:
    `python scripts/media_content_pack.py export --out /tmp/media.orenapack --environment lane-8021 --exclude-prefix qa- --exclude-prefix test-`
    Read the printed `excluded` list. Copy the file out of the container.

@@ -1305,6 +1305,7 @@ app.include_router(agent_router)
 # Content packs (docs/project/proposals/CONTENT_PACKS.md, v1): approved content moved between environments
 # through the same engines and rules as a fresh Admin import. Vocabulary is bound late: its helpers live below.
 from writing_coach.content_pack_api import configure_content_packs, router as content_pack_router  # noqa: E402
+from writing_coach.listening_api import _translation_provider_model as _listening_translation_provider_model  # noqa: E402
 
 configure_content_packs(
     vocabulary_ids=lambda languages, prefix: [
@@ -1317,6 +1318,8 @@ configure_content_packs(
     vocabulary_import=lambda data, **kwargs: _vocabulary_pack_import(data, **kwargs),
     media_store=_media_library_store,
     media_assets=_media_library_assets,
+    media_translations=_learning_cache,
+    media_provider_model=_listening_translation_provider_model,
     environment=os.getenv("ORENA_ENVIRONMENT_LABEL", "local"),
     app_version=(ROOT / "VERSION").read_text(encoding="utf-8").strip() if (ROOT / "VERSION").is_file() else "",
 )

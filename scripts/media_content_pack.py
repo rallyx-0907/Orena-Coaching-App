@@ -3,16 +3,21 @@
 Run it where the application's Python dependencies are (the application image or its virtualenv), against the media
 library roots of the environment (`MEDIA_LIBRARY_ROOT`, `MEDIA_LIBRARY_ASSET_ROOT`, or `--root` / `--asset-root`):
 
+    python scripts/media_content_pack.py export --dry-run [--language en] [--id ID ...]      # summary, writes nothing
     python scripts/media_content_pack.py export --out /tmp/media.orenapack [--language en] [--id ID ...] \
         [--exclude-prefix qa- --exclude-prefix test-] [--environment lane-8021]
     python scripts/media_content_pack.py import --pack /tmp/media.orenapack                  # dry run (the default)
     python scripts/media_content_pack.py import --pack /tmp/media.orenapack --apply          # writes
     python scripts/media_content_pack.py import --pack /tmp/media.orenapack --apply --overwrite
 
-`export` reads only shared entries with status `published`. `import` is a dry run unless `--apply` is given, prints
-one row per item (new / unchanged / conflict / refused, with the reason), and exits 0 when no item was refused or in
-conflict. An import with `--apply` appends one line to `media-pack-imports.jsonl` beside the index. Back up the
-target's media library root before the first `--apply`. The same implementation is the Admin route
+`export` reads only shared entries with status `published`, and each one's stored cue translations from the learning
+cache Listening reads (`LEARNING_CACHE_DB`, else `<root>/learning_cache.db`, or `--learning-cache`) under the translating
+identity named by `--provider-model` (default `GroqTranslationProvider:$GROQ_TRANSLATION_MODEL`). `import` is a dry run
+unless `--apply` is given, prints one row per item (new / unchanged / conflict / refused, with the reason, and the
+translations it would write), and exits 0 when no item was refused or in conflict. With `--apply` it puts the
+translations into the target's learning cache under the target's `--provider-model`, so Listening serves them with no
+provider call, and appends one line to `media-pack-imports.jsonl` beside the index. Back up the target's media library
+root and learning cache before the first `--apply`. The same implementation is the Admin route
 (`/api/admin/content-packs`, kind `media`); this script is for packs too large for an upload.
 """
 
@@ -34,6 +39,10 @@ from writing_coach import media_pack  # noqa: E402
 from writing_coach.book_asset_store import FilesystemBookAssetStore  # noqa: E402
 from writing_coach.content_packs import PackError, build_pack, read_pack  # noqa: E402
 from writing_coach.media_library_store import FileMediaLibraryStore  # noqa: E402
+from writing_coach.persistence.learning_repository import (  # noqa: E402
+    SQLiteLearningCacheRepository,
+    SQLiteLearningRepository,
+)
 
 GIB = 1024**3
 AUDIT_FILE = "media-pack-imports.jsonl"
@@ -43,6 +52,24 @@ def _roots(args: argparse.Namespace) -> tuple[Path, Path]:
     root = Path(args.root or os.getenv("MEDIA_LIBRARY_ROOT") or ROOT / "data" / "media_library")
     assets = Path(args.asset_root or os.getenv("MEDIA_LIBRARY_ASSET_ROOT") or ROOT / "data" / "media_library_assets")
     return root, assets
+
+
+def _cache_path(args: argparse.Namespace, root: Path) -> Path:
+    """The file `app._learning_cache_path` resolves to."""
+    return Path(args.learning_cache or os.getenv("LEARNING_CACHE_DB") or root / "learning_cache.db")
+
+
+def _open_cache(path: Path, *, init: bool = False) -> SQLiteLearningCacheRepository:
+    cache = SQLiteLearningCacheRepository(lambda: SQLiteLearningRepository(lambda: path).connect())
+    if init:
+        cache.initialize()
+    return cache
+
+
+def _provider_models(args: argparse.Namespace) -> list[str]:
+    """The identities a stored meaning's cache key may carry (`listening_api._translation_provider_model`)."""
+    given = [model for model in (args.provider_model or []) if model]
+    return given or [f"GroqTranslationProvider:{os.getenv('GROQ_TRANSLATION_MODEL', 'openai/gpt-oss-120b')}"]
 
 
 def _commit() -> str:
@@ -58,8 +85,15 @@ def _commit() -> str:
 def export_command(args: argparse.Namespace) -> int:
     root, asset_root = _roots(args)
     store, assets = FileMediaLibraryStore(root), FilesystemBookAssetStore(asset_root)
+    cache_file = _cache_path(args, root)
+    # Read-only: a cache file that is absent is not created by an export; no translation is then exported.
+    cache = _open_cache(cache_file) if cache_file.is_file() else None
     items, blobs, excluded = media_pack.build_media_items(
-        store, assets, ids=args.id, languages=args.language, exclude_prefixes=args.exclude_prefix)
+        store, assets, ids=args.id, languages=args.language, exclude_prefixes=args.exclude_prefix,
+        translations=cache, provider_models=_provider_models(args))
+    if args.dry_run:
+        print(json.dumps(media_pack.export_preview(items, blobs, excluded), ensure_ascii=False, indent=2))
+        return 0 if items else 1
     if not items:
         print(json.dumps({"exported": 0, "excluded": excluded}, indent=2))
         print("Nothing published matches; no pack written.", file=sys.stderr)
@@ -74,8 +108,9 @@ def export_command(args: argparse.Namespace) -> int:
     )
     out = Path(args.out)
     out.write_bytes(raw)
-    print(json.dumps({"exported": len(items), "assets": len(blobs), "bytes": len(raw), "excluded": excluded,
-                      "pack": str(out)}, indent=2))
+    translations = sum(sum(media_pack.translation_counts(item).values()) for item in items)
+    print(json.dumps({"exported": len(items), "assets": len(blobs), "translations": translations, "bytes": len(raw),
+                      "excluded": excluded, "pack": str(out)}, indent=2))
     return 0
 
 
@@ -88,18 +123,30 @@ def import_command(args: argparse.Namespace) -> int:
         print(f"Pack refused: {exc.code}: {exc}", file=sys.stderr)
         return 2
     store, assets = FileMediaLibraryStore(root), FilesystemBookAssetStore(asset_root)
+    cache_file = _cache_path(args, root)
+    # A dry run never creates the cache file; it reads one that is there, and counts everything as new otherwise.
+    cache = _open_cache(cache_file, init=args.apply) if args.apply or cache_file.is_file() else _EmptyCache()
     rows = media_pack.apply_media_items(pack, store, assets, overwrite=args.overwrite, dry_run=not args.apply,
-                                        actor="cli")
+                                        actor="cli", translations=cache, provider_model=_provider_models(args)[0])
     summary = media_pack.summarize(rows)
     print(json.dumps({"dry_run": not args.apply, "pack_id": pack.manifest.get("pack_id"),
-                      "pack_version": pack.manifest.get("version"), "summary": summary, "items": rows},
+                      "pack_version": pack.manifest.get("version"), "summary": summary,
+                      "translations": media_pack.translation_totals(rows), "items": rows},
                      ensure_ascii=False, indent=2))
     if args.apply:
         root.mkdir(parents=True, exist_ok=True)
         with (root / AUDIT_FILE).open("a", encoding="utf-8") as handle:
             handle.write(json.dumps({"at": datetime.now(UTC).isoformat(), "pack_id": pack.manifest.get("pack_id"),
-                                     "overwrite": args.overwrite, "summary": summary}, ensure_ascii=False) + "\n")
+                                     "overwrite": args.overwrite, "summary": summary,
+                                     "translations": media_pack.translation_totals(rows)}, ensure_ascii=False) + "\n")
     return 1 if summary.get(media_pack.REFUSED) or summary.get(media_pack.CONFLICT) else 0
+
+
+class _EmptyCache:
+    """Stands in for a cache file that does not exist yet, so a dry run reads it as empty and creates nothing."""
+
+    def get_media_translation(self, key: str) -> None:
+        return None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -109,16 +156,25 @@ def main(argv: list[str] | None = None) -> int:
         p = sub.add_parser(name)
         p.add_argument("--root", default="", help="media library root (index.json); default MEDIA_LIBRARY_ROOT")
         p.add_argument("--asset-root", default="", help="asset root; default MEDIA_LIBRARY_ASSET_ROOT")
+        p.add_argument("--learning-cache", default="", help="learning cache db holding stored cue translations; "
+                       "default LEARNING_CACHE_DB, else <root>/learning_cache.db")
+        p.add_argument("--provider-model", action="append", default=[],
+                       help="translating identity the cache keys carry, e.g. GroqTranslationProvider:<model>; export "
+                       "probes every one given, import uses the first as the target's own (default: from "
+                       "GROQ_TRANSLATION_MODEL)")
     ex, im = sub.choices["export"], sub.choices["import"]
-    ex.add_argument("--out", required=True)
+    ex.add_argument("--out", default="")
+    ex.add_argument("--dry-run", action="store_true", help="print what would be packed (with translation counts); write nothing")
     ex.add_argument("--id", action="append", default=[])
     ex.add_argument("--language", action="append", default=[], choices=["en", "zh"])
     ex.add_argument("--exclude-prefix", action="append", default=[])
     ex.add_argument("--environment", default=os.getenv("ORENA_ENVIRONMENT_LABEL", "local"))
     im.add_argument("--pack", required=True)
     im.add_argument("--apply", action="store_true", help="write; without it the import is a dry run")
-    im.add_argument("--overwrite", action="store_true", help="replace an existing item that differs")
+    im.add_argument("--overwrite", action="store_true", help="replace an existing item or translation that differs")
     args = parser.parse_args(argv)
+    if args.command == "export" and not args.dry_run and not args.out:
+        parser.error("export needs --out (or --dry-run)")
     return export_command(args) if args.command == "export" else import_command(args)
 
 
