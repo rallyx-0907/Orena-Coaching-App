@@ -26,6 +26,7 @@ from typing import Any, Protocol
 
 from writing_coach.core.support_languages import normalize_support_language
 from writing_coach.languages.chinese import lexicon as chinese_lexicon
+from writing_coach.languages.chinese import structural_particle
 from writing_coach.gloss_guard import is_function_word, neighbours, pos_disagrees, withhold_reason
 from writing_coach.languages.english.ipa import ipa_for as _local_english_ipa
 from writing_coach.linguistic_annotation import annotate
@@ -711,6 +712,12 @@ class ReadingLookupService:
         withheld = _gloss_withheld(
             source, context if source == surrounding else selection, selection, part_of_speech, local["lemma"]
         )
+        # PRE-105: 底 read de by the shared tagger is the old written form of the particle 的, not "bottom" (the Chinese
+        # adapter owns the rule and the gloss); it is a function word that is nonetheless glossed, and no pack or
+        # dictionary sense of the lexical 底 may reach it.
+        structural = source == "zh" and structural_particle.is_structural_reading(selection, pronunciation)
+        if structural:
+            withheld = ""
         audio_url = ""
         meanings: list[LookupMeaning] = []
         definitions: list[LookupDefinition] = []
@@ -719,7 +726,7 @@ class ReadingLookupService:
         pack_class_differs = False
         tagged_pos = part_of_speech
         found: list[dict[str, Any]] = []
-        if self._vocabulary_repository is not None:
+        if self._vocabulary_repository is not None and not structural:
             for normalized in _catalog_candidates(selection, local["lemma"]):
                 # Zero-cost sense choice (refs #194): among the word's authored senses, the one with a meaning in the
                 # support language and the class the word has in this sentence; never AI, never the network.
@@ -753,7 +760,13 @@ class ReadingLookupService:
             # own language, so for an English support language the first
             # senses are the meaning; any other language still goes to the
             # translation engine below, with these senses on the sheet.
-            entry_senses = () if withheld else _safe_chinese_senses(selection, pronunciation)
+            if structural:
+                meaning, note = structural_particle.gloss(target)
+                meanings.append(LookupMeaning(meaning, "dictionary"))
+                definitions.append(LookupDefinition("", note))
+                entry_senses: tuple[str, ...] = ()
+            else:
+                entry_senses = () if withheld else _safe_chinese_senses(selection, pronunciation)
             definitions.extend(
                 LookupDefinition("", sense) for sense in entry_senses[:_MAX_DICTIONARY_DEFINITIONS]
             )
