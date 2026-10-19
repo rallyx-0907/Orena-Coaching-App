@@ -38,6 +38,16 @@ from writing_coach.persistence.platform_repository import PostgresPlatformReposi
 ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.fixture()
+def _plan_has_voice(monkeypatch):
+    """A voice test about the policy (switch, cap, chunk), for an account whose plan has voice chat: the plan rule
+    (Plus and Pro only, D-236) is tested in tests/test_agent_voice_plan.py."""
+    from writing_coach.product import plan_features
+
+    monkeypatch.setattr(plan_features, "require", lambda user_key, feature: None)
+    monkeypatch.setattr(plan_features, "entitled", lambda user_key, feature: True)
+
+
 def save(change, store, **kw):
     return policies.save(change, updated_by="admin@x.test", actor="admin-sub", **kw)
 
@@ -473,7 +483,7 @@ def test_voice_is_switched_and_shaped_by_the_policies_at_the_moment_of_use():
         assert (service._session_seconds(), service._chunk_units(), service._resumes()) == (300, 1, False)
 
 
-def test_switching_voice_off_stops_new_sessions_but_not_the_ones_in_flight():
+def test_switching_voice_off_stops_new_sessions_but_not_the_ones_in_flight(_plan_has_voice):
     from test_quota_orena_message import Rig
     from test_agent_voice_session import Post, _body, _service, Clock
 
@@ -512,7 +522,7 @@ def test_an_unmetered_session_is_billed_for_at_most_the_seconds_it_was_minted_fo
         assert service._bill(session) == 900.0 and seen == [900.0], "billed at the old grant, not the new cap"
 
 
-def test_a_metered_voice_session_uses_the_policy_cap_and_chunk_size():
+def test_a_metered_voice_session_uses_the_policy_cap_and_chunk_size(_plan_has_voice):
     import test_quota_voice as voice_suite
 
     voice_suite.enforced_runtime(env=voice_suite.ENV)
