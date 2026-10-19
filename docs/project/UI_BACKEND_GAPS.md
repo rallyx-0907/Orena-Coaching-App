@@ -4866,7 +4866,12 @@ Architecture and proposed schema: `docs/project/proposals/VOCABULARY_LOCALIZATIO
 - **VL-3 Visible CC-CEDICT attribution.** CC BY-SA 4.0 requires credit where its senses are
   shown; the pinned design draws no credit line on cards or Word Detail. Data carries
   `origin: dictionary` and provenance (source, release, licence). Placement is a design decision;
-  required before public release.
+  required before public release. **Update 2026-10-19 (PR AF):** the design still draws no credit line
+  on the collection view, so none is added there. The attribution now lives in the collection's own
+  record (`provenance.licence`: CC BY-SA 4.0, CC-CEDICT attribution; set by
+  `scripts/apply_vocab_attribution.py`, dry run by default) and CC-CEDICT is listed with its licence
+  on the Licences and data sources page (`GET /api/licences`, `writing_coach/licences.py`). Whether a
+  collection-view line is wanted remains a design decision.
 - **VL-4 Unihan `kVietnamese` is not a Hán-Việt field.** It mixes Hán-Việt and Nôm readings in
   no stated order (森 → "chùm" before "sâm"), so it is not shown as Hán-Việt. A curated Hán-Việt
   source would be needed for that feature.
