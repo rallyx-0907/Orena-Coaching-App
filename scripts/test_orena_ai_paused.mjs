@@ -230,13 +230,27 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(plansPayload([draft]).plans[0].entitlements[0].limit, 450);
   voice.enabled = false;
   assert.equal(plansPayload([draft]).plans[0].entitlements[0].enabled, false, 'the toggle still saves');
-  // No stored limit (or the old on/off 1, or under a minute): the editor shows the server's 15-minute default.
-  for (const stored of [null, undefined, 1, 59]) {
-    const bare = draftOf({ id: 'plus', prices: {}, entitlements: [{ key: 'orena.voice', enabled: true, ...(stored === undefined ? {} : { limit: stored }), params: {} }] }).entitlements[0];
+  // A stored voice limit under one minute (the old on/off 1) is read by the server as the 15-minute default: the editor shows 15 and saves 900.
+  const voiceOf = (entitlement) => draftOf({ id: 'plus', prices: {}, entitlements: [{ key: 'orena.voice', params: {}, ...entitlement }] }).entitlements[0];
+  const savedLimit = (entry) => plansPayload([{ id: 'plus', prices: {}, entitlements: [entry] }]).plans[0].entitlements[0].limit;
+  for (const stored of [1, 59]) {
+    const bare = voiceOf({ enabled: true, limit: stored });
     assert.equal(bare.metered, true, `limit ${stored}: a minutes field`);
-    assert.equal(bare.limit, '15', `limit ${stored}: defaults to 15 min`);
-    assert.equal(plansPayload([{ id: 'plus', prices: {}, entitlements: [bare] }]).plans[0].entitlements[0].limit, 900);
+    assert.equal(bare.limit, '15', `limit ${stored}: shown as 15 min`);
+    assert.equal(savedLimit(bare), 900, `limit ${stored}: saved as 900`);
   }
+  // No stored limit is UNCAPPED on the server: it stays null, shown as an unlimited meter, and a plain save writes no cap.
+  for (const stored of [null, undefined]) {
+    const open = voiceOf({ enabled: true, ...(stored === undefined ? {} : { limit: stored }) });
+    assert.equal(open.metered, false, 'unlimited: no minutes field');
+    assert.equal(open.limit, null);
+    assert.equal(savedLimit(open), null, 'null stays null on save');
+  }
+  // A plan without voice (Free) is left exactly as stored.
+  const off = voiceOf({ enabled: false, limit: 1, scale: 60 });
+  assert.equal(savedLimit(off), 1, 'a disabled plan keeps its stored value');
+  assert.equal(savedLimit(voiceOf({ enabled: false })), null);
+  assert.equal(savedLimit(voiceOf({ enabled: true, limit: 900, scale: 60 })), 900);
   // Plan & usage: no voice row while the commerce read does not report orena.voice.
   const model = await import('../static/orena/screens/plan/model.js');
   assert.equal(model.usageRows({ features: { 'orena.message': { limit: 20, used: 1, usage_state: 'known', entitlement_state: 'known' } } }).some((row) => row.key === 'orena.voice'), false);
