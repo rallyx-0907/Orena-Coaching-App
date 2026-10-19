@@ -175,7 +175,7 @@ renewal, a code fix lands first, with independent review. `:8000` runs a build f
 | `ORENA_ACCOUNT_BACKBONE` | `on` |
 
 **Verified with no money taken** (sales paused):
-- readiness shows `capabilities.plans` ready, except for the `new_sales_paused` blocker;
+- readiness shows `capabilities.plans` ready with no blockers, and the top level blocked only by `new_sales_paused`;
 - `provider_prices: match` against the P1 products;
 - an unsigned POST to the webhook answers 401.
 
