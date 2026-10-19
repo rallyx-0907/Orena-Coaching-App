@@ -46,12 +46,14 @@ class FeedbackRetentionSchedule:
     def __init__(self, delete_before: Callable[[datetime, int], int], *,
                  interval: float = SWEEP_INTERVAL_SECONDS,
                  enabled: Callable[[], bool] | None = None,
-                 days: int | Callable[[], int] = FEEDBACK_RETENTION_DAYS) -> None:
+                 days: int | Callable[[], int] = FEEDBACK_RETENTION_DAYS,
+                 label: str = "learner feedback") -> None:
         """`enabled` and `days` may be callables (Platform Admin, D-172: the switch and the period are an
         administrator's). With `enabled` the thread wakes at least hourly, asks, and sweeps only when the switch is on
         and the last sweep began `interval` ago - so turning it on needs no restart, and off nothing is deleted. Without
         it every tick sweeps, as before."""
         self._delete_before = delete_before
+        self._label = label  # what the logs and the thread name say (other retention sweeps reuse this schedule)
         self._interval = interval
         self._enabled = enabled
         self._days = days
@@ -66,7 +68,7 @@ class FeedbackRetentionSchedule:
                 if not self._enabled():
                     return None
             except Exception:
-                _log.warning("learner feedback retention switch unreadable; not sweeping", exc_info=True)
+                _log.warning("%s retention switch unreadable; not sweeping", self._label, exc_info=True)
                 return None
             now = datetime.now(UTC)
             if self._last is not None and (now - self._last).total_seconds() < self._interval:
@@ -76,12 +78,12 @@ class FeedbackRetentionSchedule:
         try:
             removed = sweep_once(self._delete_before, days=days)
         except Exception:
-            _log.warning("learner feedback retention sweep failed; retried at the next tick", exc_info=True)
+            _log.warning("%s retention sweep failed; retried at the next tick", self._label, exc_info=True)
             return None
         finally:
             self.sweeps += 1
         if removed:
-            _log.info("learner feedback: %d reviews past %d days removed", removed, days)
+            _log.info("%s: %d rows past %d days removed", self._label, removed, days)
         return removed
 
     def _loop(self) -> None:
@@ -93,7 +95,7 @@ class FeedbackRetentionSchedule:
     def start(self) -> None:
         if self._thread is None or not self._thread.is_alive():
             self._stop.clear()
-            self._thread = threading.Thread(target=self._loop, name="feedback-retention", daemon=True)
+            self._thread = threading.Thread(target=self._loop, name=f"{self._label.replace(' ', '-')}-retention", daemon=True)
             self._thread.start()
 
     def stop(self, timeout: float = 5.0) -> None:
