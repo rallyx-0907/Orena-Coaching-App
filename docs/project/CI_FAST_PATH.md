@@ -43,3 +43,15 @@ several things locally, run the relevant checks above once, then push once.
 Running only the tests a diff "affects" would be faster again, but a selection that misses a dependency (dynamic
 imports, JSON/data files, templates, fixtures, cross-module contracts) lets a regression reach `main` unseen. It
 would only be acceptable beside a full run that still gates the merge. That is a policy change for the human.
+
+## Pinned dependencies (D-242)
+
+`constraints.txt` holds the exact `name==version` of the full resolved set of `requirements.txt` (transitive
+dependencies included), resolved on the Dockerfile's base image (`python:3.12-slim`). The Dockerfile and the
+`python-gates` and `pytest` CI jobs install with `-c constraints.txt`, so CI tests what ships and the image is rebuilt
+identically. `python scripts/validate_constraints.py` (a `python-gates` step) fails if a `requirements.txt` package is
+missing from it or a line is not an exact pin.
+
+Update it only deliberately, in a reviewed PR that changes nothing else: in a throwaway `python:3.12-slim` container run
+`pip install -r requirements.txt && pip freeze`, drop `pip`, `setuptools` and `wheel`, replace the pins, and let the
+full CI run. A new package in `requirements.txt` needs its pin (and its dependencies') in the same PR.

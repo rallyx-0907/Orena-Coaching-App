@@ -9,9 +9,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-COPY requirements.txt ./
+COPY requirements.txt constraints.txt ./
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt -c constraints.txt
 RUN python -m nltk.downloader -d /usr/local/share/nltk_data averaged_perceptron_tagger_eng
 
 COPY app.py ./
