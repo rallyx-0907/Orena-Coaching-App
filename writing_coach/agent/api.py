@@ -275,7 +275,8 @@ async def _voice_entitled() -> None:
     `feature_not_in_plan` (context.feature "orena.voice") before any limit or token. The plan is a database read."""
 
     user_key = LearnerScope.from_request_context().user_key
-    await run_in_threadpool(plan_features.require, user_key, plan_features.VOICE)
+    # The plan has voice, and today's voice minutes are not used up (429 quota_exhausted, feature orena.voice).
+    await run_in_threadpool(plan_features.require_voice_time, user_key)
 
 
 async def _voice_session_allowed(request: Request, runtime: AgentRuntime = Depends(_voice_present)) -> VoiceService:

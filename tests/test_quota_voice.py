@@ -46,6 +46,7 @@ def _plan_has_voice(monkeypatch):
 
     monkeypatch.setattr(plan_features, "require", lambda user_key, feature: None)
     monkeypatch.setattr(plan_features, "entitled", lambda user_key, feature: True)
+    monkeypatch.setattr(plan_features, "require_voice_time", lambda user_key: None)
 
 
 def session_body(**extra):
