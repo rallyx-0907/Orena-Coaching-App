@@ -522,3 +522,32 @@ it) and approved comprehension sets; import submits the text through the Reading
 reading worker must run on the target and the source must be approved there (the row says `waiting_for_source_approval`).
 Vocabulary arrives `pending_review` with `publication_attested` false by design (D-111): an administrator attests and
 publishes each collection on the target. Neither skips the target's rules.
+
+## Taking one video down: unpublish with its transcript and translations (D-239)
+
+A content owner can ask for removal (Terms section 7 gives the contact). One request is handled as a state change, never a
+hard delete, and never touches learner data (progress, notes, attempts and saved words that point at the item stay).
+
+1. **Find the item.** Admin, Content, Media, or `GET /api/admin/console/content` and match the YouTube video id or the
+   channel in `source.creator` / `source.provenance_url`. Note the `media_id`. Write the request (who, when, which URL) in
+   the operator log.
+2. **Dry run.** Read the record first: `GET /api/admin/console/content/media/<media_id>` (kind `media`). Check `library` is `shared`
+   and `status` is `published`. Nothing has changed yet. (A curated lesson is hidden by the same route; its answer
+   carries `"origin": "curated"`.)
+3. **Unpublish.** `POST /api/admin/console/content/media/<media_id>/status` with `{"status": "unpublished"}` (same
+   origin, admin session). Use `archived` when the owner wants it gone for good. This is a state: the stored bytes,
+   transcript, provenance and audit line (`admin.content.status`) survive, so it can be put back.
+4. **The transcript and the translations go with it.** Both are served only through that item: the transcript lives on
+   the media record, and the translations in `media_translation_cache` are looked up by the item's asset id. Once the
+   item is not published the learner routes (Listening, Content detail, search, Discover) no longer return it, so
+   neither is shown. Verify as a learner session: `GET /api/listening/library/<media_id>` answers 404 and the item is
+   absent from search.
+5. **Cache rows.** The cache key is a hash of asset, segment, text fingerprint, language and model, so the rows of one
+   item cannot be listed or selected by item and there is no per-item purge tool. They are derived, regenerable data
+   with no learner content and are unreachable while the item is unpublished. A physical purge of the derived text is
+   a code change (key the purge by recomputing `media_meaning.cache_key` over the item's cues) and an owner decision;
+   it is not part of this procedure. Do not delete rows from the table by hand.
+6. **Pack safety.** A later content-pack import cannot bring it back: export reads `published` entries only, and an
+   overwrite never puts a locally archived or unpublished item back on the shelf (D-234 item 3). Record the video id so
+   it is also left out of any future export from :8021 (`--exclude-prefix` on its id).
+7. **Reply.** Answer the owner from the contact address, state the time it came down, and log it.

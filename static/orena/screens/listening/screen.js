@@ -238,7 +238,7 @@ export default async function listening(element, ctx) {
       <button type="button" class="o-iconbtn o-iconbtn--back" data-back aria-label="${s('back')}">${raw(icon('arrow-left', { size: 21 }))}</button>
       <div class="s-listening__titles">
         <div class="s-listening__title" lang="${langAttr(language)}">${lesson.title}</div>
-        <div class="s-listening__meta">${metaLine([kindLabel, payload.transcript_origin === 'generated_asr' ? t('generatedTranscript') : '', (lesson.levelText ? levelWithQualifier(lesson.levelText, lesson.levelEstimated) : '') || (lesson.sourceLevel ? t('sourceLevel', {level: lesson.sourceLevel}) : t('levelUnknown')), durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}</div>
+        <div class="s-listening__meta">${metaLine([kindLabel, payload.transcript_origin === 'generated_asr' ? t('generatedTranscript') : '', (lesson.levelText ? levelWithQualifier(lesson.levelText, lesson.levelEstimated) : '') || (lesson.sourceLevel ? t('sourceLevel', {level: lesson.sourceLevel}) : t('levelUnknown')), durationMinutes != null ? `${durationMinutes} ${t.plural('minutesLabel', durationMinutes)}` : ''])}${lesson.credit?.channel ? ` · ${lesson.credit.channel}` : ''}${lesson.credit?.url ? html` · <a class="s-listening__origin" href="${lesson.credit.url}" target="_blank" rel="noopener noreferrer">${t('watchOriginal')}</a>` : ''}</div>
       </div>
       <div class="s-listening__modes" data-modes role="group"></div>
     </div>

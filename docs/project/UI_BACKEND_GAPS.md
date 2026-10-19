@@ -4868,7 +4868,7 @@ Architecture and proposed schema: `docs/project/proposals/VOCABULARY_LOCALIZATIO
   `origin: dictionary` and provenance (source, release, licence). Placement is a design decision;
   required before public release. **Update 2026-10-19 (PR AF):** the design still draws no credit line
   on the collection view, so none is added there. The attribution now lives in the collection's own
-  record (`provenance.licence`: CC BY-SA 4.0, CC-CEDICT attribution; set by
+  record (`provenance.licences`: CC BY-SA 4.0, CC-CEDICT attribution; set by
   `scripts/apply_vocab_attribution.py`, dry run by default) and CC-CEDICT is listed with its licence
   on the Licences and data sources page (`GET /api/licences`, `writing_coach/licences.py`). Whether a
   collection-view line is wanted remains a design decision.
