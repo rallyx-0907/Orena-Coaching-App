@@ -70,7 +70,7 @@ The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`,
 | --- | --- | --- | --- |
 | 19 | Plan & usage and Pricing with billing **on** | proven | PR-MON-9 §2 (desktop, phone, EN/VI/ZH, light and dark) |
 | 20 | Plan & usage and Pricing with billing **off** (offers empty, `billing_ready: false`) | tested; browser **open** | `scripts/test_orena_screen_plan.mjs`. Browser check on the pilot build (`:8000`) by the UI lane. |
-| 21 | Prices and limits shown = the approved catalogue (PRE-401) | checked on `main`; **`:8000` needs the next deploy** | see below |
+| 21 | Prices and limits shown = the approved catalogue (PRE-401) | **checked on `:8000`** (2026-10-19, image `orena:main-9952152a`) | see below |
 
 **PRE-401, read 2026-10-19 (read only, no sign-in).** The approved catalogue is
 `writing_coach/product/catalog.py`:
@@ -90,6 +90,16 @@ The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`,
 Billing is off on `:8000`, so nobody is charged there. Even so, gate 7b must run on a build from `main`. On the
 current `:8000` build, a Vietnamese learner would see a dong price and be charged dollars by Polar. The next `:8000`
 deploy fixes both. Re-read the table after that deploy.
+
+**Re-read after the deploy (2026-10-19; `:8000` on `orena:main-9952152a`, schema `20261018_0035`; read only).**
+- No `product.plan_catalog` row is stored, so the code's catalogue applies. Its prices and every limit above match
+  `main`, including the assist limits.
+- `orena.voice` is 900 s (15 min) a day for Plus and Pro, and off for Free (D-235 to D-237).
+- `PLAN_CURRENCY` is USD in every language.
+- `BILLING_ENABLED` is unset.
+- `ORENA_QUOTA_ENFORCEMENT=on`, with the same five meters as before; the assist meters are not in the list (gate 7b C6).
+
+PRE-401 is closed.
 
 The owner decided on 2026-10-19 that voice chat with Orena is for Plus and Pro only, not Free. The Intelligence lane
 is adding the voice entitlement to the catalogue, and its row joins this table once it is merged.
