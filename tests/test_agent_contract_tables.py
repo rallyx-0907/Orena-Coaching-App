@@ -243,3 +243,15 @@ def test_v7_the_plan_limit_statuses_headers_and_voice_refusal_are_in_the_contrac
         assert category in voice, f"section 9 does not name {category}"
     for path in ("writing_coach/agent/api.py", "writing_coach/product/quota.py", "writing_coach/agent/voice_session.py"):
         assert "quota_voice_not_metered" not in (ROOT / path).read_text(encoding="utf-8"), path
+
+
+def test_v11_voice_is_a_plus_and_pro_benefit_and_the_pause_header_is_named():
+    """D-235: `feature_not_in_plan` names `orena.voice` on the voice routes, the voices list says `entitled`, the renewal
+    names the refusal, and the cross-surface `X-Orena-AI-Paused` header is in section 2.1."""
+
+    table = _section("### 2.1")
+    assert "`orena.voice`" in table and "voice upsell" in table
+    assert "`X-Orena-AI-Paused: <resets_at>`" in table and "carries no header" in table
+    voice = _section("## 9.")
+    assert "`entitled` (v11)" in voice and "`feature_not_in_plan`" in voice and "`orena.voice`" in voice
+    assert contract.CONTRACT_VERSION >= 11

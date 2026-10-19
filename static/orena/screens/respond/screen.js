@@ -29,7 +29,7 @@ import { toast } from '../../kit/toast.js';
 import { shellCopy as s } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api, newIdempotencyKey } from '../../infrastructure/api.js';
-import { isQuotaExhausted, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
+import { isQuotaExhausted, pausedLineOf, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { sentenceSpans } from '../../product/reader-text.js';
 import { measureWriting, measureMinimum } from '../../capabilities/writing-limits.js';
@@ -260,7 +260,7 @@ export default async function respondToContent(element, ctx) {
       if (!ctx.isCurrent()) return;
       // The plan's limit (D-161): the server's figures, with the way to the plans as the toast's action.
       if (isQuotaExhausted(error)) toast(quotaMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
-      else toast(t('feedbackError'));
+      else toast(pausedLineOf(error) || t('feedbackError'));
     } finally {
       checking = false;
       if (ctx.isCurrent()) paint();

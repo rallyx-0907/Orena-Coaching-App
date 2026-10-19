@@ -60,6 +60,7 @@ import {
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/annotations-sync.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { createStrokeTiles } from '../word/stroke-tiles.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
 
 let audio = null;
@@ -153,6 +154,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let keptNow = false; // whether the word is kept, as the learner's own save/unsave last left it
   let contextualPending = false; // true only while the learner's own "Why here?" is being answered (never on open)
   let contextualFailed = false; // the provider failed (contextStatus provider_error): offer Retry
+  let aiPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure, with no Retry
 
   function posMarkup() {
     const label = posLabel(card.pos, t);
@@ -237,7 +239,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       </div>
       ${strokeMarkup()}
       ${sentence ? html`<div class="s-qs__source"><div class="s-qs__eyebrow">${sourceLabel()}</div><div class="s-qs__source-text" lang="${langAttr(lang)}">${sentence}</div></div>` : ''}
-      ${contextualPending ? '' : html`<div class="s-qs__notice">${t('noGlossNotice')}</div>`}
+      ${contextualPending ? '' : html`<div class="s-qs__notice"${aiPause ? raw(' role="status"') : ''}>${aiPause || t('noGlossNotice')}</div>`}
     `;
   }
 
@@ -259,6 +261,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     if (card.whyHere && readOnly) return html`<div class="s-qs__why">${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere}</span></div>`;
     if (card.whyHere) return html`<button type="button" class="s-qs__why" data-why>${t('whyHere')} — <span class="s-qs__why-text">${card.whyHere}</span></button>`;
     if (contextualPending && !loading) return html`<div class="s-qs__why" role="status">${t('whyHere')} — <span class="s-qs__why-text"><span class="o-spinner"></span> ${t('whyHereLoading')}</span></div>`;
+    if (contextualFailed && aiPause) return html`<div class="s-qs__why" role="status">${t('whyHere')} — <span class="s-qs__why-text">${aiPause}</span></div>`;
     if (contextualFailed) return html`<div class="s-qs__why">${t('whyHere')} — <span class="s-qs__why-text">${t('translationFailed')} <button type="button" class="s-qs__retry" data-why-retry>${t('retry')}</button></span></div>`;
     // Frame 53 always draws the row. Pressing it is the learner's explicit request for the contextual meaning.
     return html`<button type="button" class="s-qs__why" data-why-ask>${t('whyHere')}</button>`;
@@ -440,8 +443,10 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           const ctxText = contextFor(target, context || sentence);
           try {
             detail = await api.wordDetail(wordDetailRequest({ contextual: false, target, context: ctxText, lang, support, source }));
-          } catch {
+            if (!detail?.available) aiPause = pausedLineNow('/api/dictionary/word-detail');
+          } catch (error) {
             detail = null;
+            aiPause = pausedLineOf(error);
           }
           if (!alive) return;
           loading = false;
@@ -451,15 +456,18 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           askContextual = () => {
             contextualPending = true;
             contextualFailed = false;
+            aiPause = '';
             paint();
             withinTime(api.wordDetail(wordDetailRequest({ contextual: true, target, context: ctxText, lang, support, source })), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
+              if (contextualFailed || enriched?.available === false) aiPause = pausedLineNow('/api/dictionary/word-detail');
+              if (aiPause) contextualFailed = true;
               // Whether it is kept is the learner's own last save/unsave, not what the answer says.
               const answer = enriched ? { ...enriched, saved: keptNow } : enriched;
               const next = mapWordCard(target, {detail: answer, item});
               if (next.hasContent) { detail = answer; card = next; void keepContextualMeaning(); }
-            }).catch(() => { contextualFailed = true; }).finally(() => {
+            }).catch((error) => { contextualFailed = true; aiPause = pausedLineOf(error); }).finally(() => {
               contextualPending = false;
               if (alive) paint();
             });
@@ -507,7 +515,9 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   let alive = true;
   let sheetEl = null;
   let sheetData = { available: false, translation: '', structure: [], vocabulary: [] };
+  let sheetPause = ''; // the daily AI pause on the structure / vocabulary call (same line, no Retry)
   let translation = { state: 'loading', text: '' }; // the sentence's meaning, from the Reader's own shared source
+  let aiPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure, with no Retry
   let tab = 'Translation';
   const canHighlight = Boolean(storage && source?.content_id && source?.segment);
   const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, subject, legacy);
@@ -541,11 +551,13 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   function translationMarkup() {
     if (translation.text) return html`<div class="s-qs__panel" lang="${langAttr(support)}">${translation.text}</div>`;
     if (translation.state === 'loading') return html`<div class="s-qs__panel" role="status"><span class="o-spinner"></span></div>`;
+    if (aiPause) return html`<div class="s-qs__panel" role="status">${aiPause}</div>`;
     return html`<div class="s-qs__panel">${t('translationFailed')} <button type="button" class="s-qs__retry" data-translate-retry>${t('retry')}</button></div>`;
   }
 
   async function loadTranslation() {
     translation = { state: 'loading', text: '' };
+    aiPause = '';
     paint();
     if (!support || support === lang) {
       translation = { state: 'none', text: sheetData.translation || '' };
@@ -556,8 +568,10 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
       const response = await api.readingTranslate({ source_language: lang, target_language: support, content_id: source?.content_id || undefined, segments: [{ segment_id: 's0', text: subject }] });
       const meaning = response?.status === 'ready' ? String(response.translations?.[0]?.translated_meaning || '').trim() : '';
       translation = meaning ? { state: 'ready', text: meaning } : { state: 'failed', text: '' };
-    } catch {
+      if (!meaning) aiPause = pausedLineNow('/api/reading/translate');
+    } catch (error) {
       translation = { state: 'failed', text: '' };
+      aiPause = pausedLineOf(error);
     }
     if (alive) paint();
   }
@@ -571,6 +585,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   }
 
   function structureMarkup() {
+    if (sheetPause && !sheetData.structure.length) return html`<div class="s-qs__panel" role="status">${sheetPause}</div>`;
     if (!sheetData.available || !sheetData.structure.length) return html`<div class="s-qs__panel">${t('structureNotPrepared')}</div>`;
     return html`<div class="s-qs__panel">${sheetData.structure.map((s2) => html`<div class="s-qs__structure-row"><b>${s2.chunk}</b>${s2.role ? html` — ${s2.role}` : ''}</div>`)}</div>`;
   }
@@ -583,6 +598,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   }
 
   function vocabularyMarkup() {
+    if (sheetPause && !sheetData.vocabulary.length) return html`<div class="s-qs__empty" role="status">${sheetPause}</div>`;
     if (!sheetData.available || !sheetData.vocabulary.length) return html`<div class="s-qs__empty">${t('vocabEmpty')}</div>`;
     return html`<div class="s-qs__vocab-list">${sheetData.vocabulary.map((v, i) => vocabRow(v, i))}</div>`;
   }
@@ -726,11 +742,13 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
           let response = null;
           try {
             response = await api.sentenceSheet({ text: target, context: ctxText, source_language: lang, target_language: support, content_id: source?.content_id || undefined });
-          } catch {
+          } catch (error) {
             response = null;
+            sheetPause = pausedLineOf(error);
           }
           if (!alive) return;
           sheetData = mapSentenceSheet(response || {});
+          if (!sheetData.available && !sheetPause) sheetPause = pausedLineNow('/api/dictionary/sentence-sheet');
           paint();
         })();
         return () => {

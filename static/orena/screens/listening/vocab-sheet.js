@@ -20,15 +20,20 @@ import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { lookupContext } from './model.js';
 import { wordDetailRequest } from '../quick-sheet/model.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 
 async function resolveTerm(term, { lang, support, context, source }) {
   let detail = null;
+  let paused = '';
   try {
     detail = await api.wordDetail(wordDetailRequest({ contextual: false, target: term, context: lookupContext(term, context), lang, support, source }));
-  } catch {
+    if (!detail?.available) paused = pausedLineNow('/api/dictionary/word-detail');
+  } catch (error) {
     detail = null;
+    paused = pausedLineOf(error);
   }
   return {
+    paused,
     word: term,
     reading: detail?.pinyin || detail?.ipa || '',
     meaning: detail?.available ? (detail.contextMeaning || '') : '',
@@ -43,6 +48,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
   let rows = words.map((word) => ({ word, reading: '', meaning: '', saved: false }));
   let alive = true;
   let sheetEl = null;
+  let pauseLine = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said once above the terms, no retry
 
   function rowMarkup(row, index) {
     return html`<div class="s-vocab__row">
@@ -64,6 +70,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
         <button type="button" class="o-iconbtn o-iconbtn--close" data-sheet-close aria-label="${s('close')}">${raw(icon('x', { size: 17 }))}</button>
       </div>
       <div class="s-vocab__body" data-scroll-region>
+        ${pauseLine ? html`<div class="s-vocab__empty" role="status">${pauseLine}</div>` : ''}
         ${rows.length ? rows.map(rowMarkup) : html`<div class="s-vocab__empty">${t('noFocusTerms')}</div>`}
       </div>`,
     );
@@ -116,6 +123,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
       (async () => {
         const resolved = await Promise.all(rows.map((row) => resolveTerm(row.word, { lang, support, context, source })));
         if (!alive) return;
+        pauseLine = resolved.map((row) => row.paused).find(Boolean) || '';
         rows = resolved;
         paint();
       })();

@@ -34,6 +34,7 @@ import { t } from './copy.js';
 import {
   READABLE_KINDS, COACH_LIMITS, MODES, paragraphsOf, workableSentences, nextIndex, canMoveOn, canCheck, coachRequest, mapCoaching,
 } from './model.js';
+import { pausedLineOf } from '../plan/quota-notice.js';
 
 const MODE_COPY = {
   paraphrase: { chip: () => t('modeParaphrase'), prompt: () => t('promptParaphrase') },
@@ -355,7 +356,7 @@ export default async function mountReadingTransfer(element, ctx) {
       if (!ctx.isCurrent() || mine !== attempt || error?.name === 'AbortError') return;
       checking = false;
       paintFoot();
-      toast(t('coachingError'), { iconName: 'circle-alert' });
+      toast(pausedLineOf(error) || t('coachingError'), { iconName: 'circle-alert' });
     }
   }
 

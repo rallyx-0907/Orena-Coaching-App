@@ -18,16 +18,17 @@ import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { INTEL_STATES, intelChip } from '../../kit/brand.js';
 import { langAttr } from '../../kit/lang.js';
-import { fromContractLang } from '../../agent/contract.js';
+import { fromContractLang, toContractLang } from '../../agent/contract.js';
 import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { micUnavailableReason } from '../mic/model.js';
-import { openVoiceSession, connectLiveVoice } from '../../agent/live-voice.js';
+import { openVoiceSession, connectLiveVoice, listVoices, voiceEntitled, noteVoiceEntitled, stillNotEntitled } from '../../agent/live-voice.js';
 import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
-import { isDailyAiLimit, isQuotaExhausted, pausedMessage, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
+import { isDailyAiLimit, isQuotaExhausted, isVoiceNotInPlan, pausedMessage, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
+import { openVoiceUpsell } from '../plan/voice-upsell.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { href } from '../../shell/routes.js';
@@ -47,6 +48,19 @@ function showAiPaused(error) {
    Respond room's toast, with the server's own figures and the way to the plans. */
 function showPlanLimit(error) {
   toast(quotaMessage(error), { undo: () => { location.hash = href('pricing'); }, undoLabel: seePlansLabel() });
+}
+
+/* Voice chat is Plus and Pro only (contract v11, D-235). A Free learner who taps any voice entry, or whose session or renewal the
+   server refuses (403 `feature_not_in_plan`, feature `orena.voice`), meets the upsell sheet instead; text chat is unchanged.
+   The entitlement is read once ahead (`GET /api/agent/voice/voices`) so the tap itself waits for nothing, which mobile Safari's
+   gesture rule needs; until it is known the tap goes on and the server's 403 decides. */
+export function refreshVoiceEntitlement() {
+  return listVoices(toContractLang(languages().ui)).then((voices) => { if (!voices) noteVoiceEntitled(null); return voiceEntitled(); }).catch(() => null);
+}
+
+function showVoiceUpsell() {
+  noteVoiceEntitled(false);
+  void openVoiceUpsell();
 }
 
 /* Mobile Safari speaks only from inside a tap: an utterance started later (after the reply arrives) is dropped in
@@ -143,6 +157,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
   let audio = null;
   let stopView = () => {};
   let liveOff = !liveVoice;
+  if (voiceEntitled() === null) void refreshVoiceEntitlement();
 
   function closeAudio() {
     for (const context of [audio?.input, audio?.output]) context?.close?.().catch?.(() => {});
@@ -197,6 +212,11 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       // Only the plain `target_language_mismatch` 409 is a change of learning language; the envelope's
       // `operation_*` 409s (§2.1) are never one.
       if (error?.status === 409 && error.category === 'target_language_mismatch') void refreshLearningLanguage();
+      if (isVoiceNotInPlan(error)) {
+        setPhase('idle');
+        showVoiceUpsell(); // not in the plan: the sheet, not the device cascade (its turns are voice chat too)
+        return;
+      }
       if (isDailyAiLimit(error)) {
         setPhase('idle');
         showAiPaused(error); // paused for everyone: told once, no device cascade
@@ -232,7 +252,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       audio,
       // The next part of the conversation was refused for want of a message: told once, and the session ends when the
       // token it holds does.
-      onLimit: (error) => { if (isQuotaExhausted(error)) showPlanLimit(error); else if (isDailyAiLimit(error)) showAiPaused(error); },
+      onLimit: (error) => { if (isQuotaExhausted(error)) showPlanLimit(error); else if (isDailyAiLimit(error)) showAiPaused(error); else if (isVoiceNotInPlan(error)) showVoiceUpsell(); },
       onState: (next) => {
         if (!disposed && link) setPhase(next);
       },
@@ -418,7 +438,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
     }
   }
 
-  return {
+  const self = {
     /* The main button: start listening, send what was said, or stop whatever Orena is doing. */
     main() {
       unlockSpeech(); // inside the learner's tap, so the spoken answer can play later
@@ -428,6 +448,11 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         return;
       }
       if (phase === 'idle') {
+        if (voiceEntitled() === false) {
+          // Cached "not in the plan": confirm it with a fresh read (the learner may have just upgraded), then go on or say so.
+          void stillNotEntitled(toContractLang(languages().ui)).then((still) => { if (still) showVoiceUpsell(); else if (!disposed) self.main(); });
+          return;
+        }
         if (!liveOff && startLive()) return;
         live = true;
         void begin();
@@ -480,6 +505,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       stopSpeaking();
     },
   };
+  return self;
 }
 
 /* ------------------------------------------------------------------- Inline voice row --- */
@@ -564,6 +590,11 @@ function fullMarkup({ phase, heard, reply, speakOn, session = false }, suggestio
    in the shell's overlay layer, under sheets: the mic sheet a first recording needs opens above it. */
 export async function openVoiceFull() {
   if (fullHandle) return fullHandle;
+  // The rail's mic for a learner whose plan has no voice chat: the sheet, and no full-screen mode behind it.
+  if ((voiceEntitled() === true ? false : await refreshVoiceEntitlement() === false)) {
+    showVoiceUpsell();
+    return null;
+  }
   await useStyles('screens/orena/orena.css');
   const layer = document.querySelector('[data-part="layer"]');
   if (!layer) return null;

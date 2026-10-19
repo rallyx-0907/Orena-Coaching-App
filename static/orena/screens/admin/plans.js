@@ -17,7 +17,7 @@ import { languages } from '../../copy/index.js';
 import { planName, planDescription } from '../../copy/shell.js';
 import { adminApi } from '../../capabilities/admin-api.js';
 import { t as planCopy } from '../plan/copy.js';
-import { FEATURE_ORDER, featureCopyKey } from '../plan/model.js';
+import { BOOLEAN_FEATURES, FEATURE_ORDER, featureCopyKey } from '../plan/model.js';
 import { t } from './copy.js';
 import { block, pageHead, skeleton } from './blocks.js';
 import { createHost } from './host.js';
@@ -45,7 +45,9 @@ export function draftOf(plan) {
       const scale = scaleOf(item);
       const limit = item.limit ?? item.monthly_limit;
       return {
-        key: item.key, enabled: item.enabled === true, metered: limit != null, limit: limit == null ? null : shown(limit, scale),
+        key: item.key, enabled: item.enabled === true,
+        // An on/off entitlement (`orena.voice`, allowlist in plan/model.js) is toggle-only: its stored limit of 1 is kept as it came and never edited.
+        metered: limit != null && !BOOLEAN_FEATURES.includes(item.key), heldLimit: BOOLEAN_FEATURES.includes(item.key) ? limit : null, limit: limit == null ? null : shown(limit, scale),
         scale, window: item.window || null, unit: item.display_unit || '',
         params: Object.fromEntries(Object.entries(item.params || {}).map(([name, value]) => [name, text(value)])),
       };
@@ -76,7 +78,7 @@ export function plansPayload(drafts) {
       id: draft.id,
       prices: Object.fromEntries(PERIODS.map((period) => [period, Object.fromEntries(CURRENCIES.map((currency) => [currency, draft.id === 'free' ? 0 : numeric(draft.prices?.[period]?.[currency])]))])),
       entitlements: draft.entitlements.map((item) => ({
-        key: item.key, enabled: item.enabled === true, limit: item.metered ? stored(item.limit, item.scale || 1) : null,
+        key: item.key, enabled: item.enabled === true, limit: item.metered ? stored(item.limit, item.scale || 1) : (item.heldLimit ?? null),
         params: Object.fromEntries(Object.entries(item.params || {}).map(([name, value]) => [name, numeric(value)])),
       })),
     })),

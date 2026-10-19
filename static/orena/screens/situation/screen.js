@@ -27,6 +27,7 @@ import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
 import { scenarios, progressLabel, naturalAlternative, situationJudgements } from './model.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 
 export default async function situation(element, ctx) {
   await useStyles('screens/situation/situation.css');
@@ -204,11 +205,11 @@ export default async function situation(element, ctx) {
       });
       if (!alive()) return;
       coaching = result?.available ? result : null;
-      errorText = result?.available ? '' : t('serviceError');
-    } catch {
+      errorText = result?.available ? '' : (pausedLineNow('/api/dictionary/spoken-response') || t('serviceError'));
+    } catch (error) {
       if (!alive()) return;
       coaching = null;
-      errorText = t('serviceError');
+      errorText = pausedLineOf(error) || t('serviceError');
     }
     state = 'result';
     // The answer is the learner's own work, kept with the account when it keeps work (D4 I8).

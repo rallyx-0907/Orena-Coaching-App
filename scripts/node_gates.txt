@@ -142,3 +142,4 @@ scripts/test_orena_screen_credits.mjs
 scripts/test_orena_preview_readonly.mjs
 scripts/test_orena_consent.mjs
 scripts/test_orena_offline_not_empty.mjs
+scripts/test_orena_ai_paused.mjs

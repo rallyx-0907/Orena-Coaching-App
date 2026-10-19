@@ -39,6 +39,7 @@ import { enterPreview } from '../../infrastructure/preview-mode.js';
 import { processingProgressMarkup } from '../../kit/states.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
+import { pausedLineNow } from '../plan/quota-notice.js';
 import { topicLabel } from '../discover/model.js';
 import { t as discoverT } from '../discover/copy.js';
 import { levelWithQualifier } from '../../kit/level-label.js';
@@ -74,6 +75,8 @@ export default async function listening(element, ctx) {
   });
   if (!ctx.isCurrent()) return undefined;
   if (!payload?.asset || !payload.playback) throw new Error('This media is unavailable.');
+  // The lesson answered 200 with its meaning unavailable because the system's daily AI pause is on (X-Orena-AI-Paused, D-235).
+  const meaningPause = pausedLineNow(['/api/media/', '/api/listening']);
   if (preview) leavePreview = enterPreview();
 
   const lesson = mapLesson(payload, { fallbackLanguage: c.language });
@@ -522,7 +525,7 @@ export default async function listening(element, ctx) {
     if (action === 'trans') {
       showTrans = !showTrans;
       saveStage();
-      if (showTrans && !hasMeanings()) toast(t('meaningUnavailable'));
+      if (showTrans && !hasMeanings()) toast(meaningPause || t('meaningUnavailable'));
       paintControls();
       paintRows();
       paintNowPlaying();

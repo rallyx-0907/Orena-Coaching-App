@@ -30,6 +30,7 @@ import { saveResponse } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { openMedia } from '../../product/media-source.js';
 import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, resultTiles, waveBars, promptKey } from './model.js';
+import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
 
 const STEPS = ['stepListen', 'stepUnderstand', 'stepReveal', 'stepContext', 'stepResult'];
 const WAVE_BARS = 32;
@@ -70,6 +71,7 @@ export default async function reactReuse(element, ctx) {
   let checking = false;
   let result = null;
   let resultError = false;
+  let resultPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure
   let playing = false;
   let recorder = null;
   let stopTimer = 0;
@@ -225,7 +227,7 @@ export default async function reactReuse(element, ctx) {
           ? html`<div class="s-react__tile${tile.verdict === 'yes' ? ' is-good' : ''}"><div class="s-react__tile-label">${t('intentAchieved')}</div><div class="s-react__tile-value${tile.verdict === 'yes' ? ' is-good' : ''}">${t(`intent_${tile.verdict}`)}</div></div>`
           : html`<div class="s-react__tile${tile.good ? ' is-good' : ''}"><div class="s-react__tile-label">${t('phraseReused')}</div><div class="s-react__tile-value${tile.good ? ' is-good' : ' is-warn'}">${t(tile.valueKey)}</div></div>`)}
       </div>` : ''}
-      ${resultError ? html`<div class="s-react__empty">${t('coachingError')}</div>`
+      ${resultError ? html`<div class="s-react__empty">${resultPause || t('coachingError')}</div>`
         : !result?.available ? html`<div class="s-react__empty">${t('notPrepared')}</div>`
         : html`
           ${alternative ? html`<div class="s-react__callout"><b>${t('anotherWayLabel')}</b> · <span lang="${langAttr(language)}">${alternative}</span></div>` : ''}
@@ -340,6 +342,7 @@ export default async function reactReuse(element, ctx) {
     if (!text || checking) return;
     checking = true;
     resultError = false;
+    resultPause = '';
     paintFooter();
     try {
       const res = await api.spokenResponseCoaching({ transcript: text, source_language: language, target_language: support, situation: promptText() });
@@ -347,10 +350,11 @@ export default async function reactReuse(element, ctx) {
       result = mapCoaching(res);
       // The answer is the learner's own work, kept with the account when it keeps work (D4 I8).
       void saveResponse({ kind: 'react', source: { kind: 'media', id: lessonId }, mode: 'react', answer: text, coaching: res, sentenceRef: seg.segment_id });
-    } catch {
+    } catch (error) {
       if (!ctx.isCurrent()) return;
       result = null;
       resultError = true;
+      resultPause = pausedLineOf(error);
     }
     checking = false;
     step = 4;
