@@ -12,6 +12,8 @@ Checks (each one a PASS or FAIL line):
                     (ai-writing-coach-writing-coach-1, ai-writing-coach-reading-worker-1)
   backup-age        the newest orena-8000-*.dump in %USERPROFILE%\.orena\backups is younger than -MaxBackupAgeHours (26)
   backup-log        the last "exit N:" line of backup.log has N = 0
+  ai-spend          (notice only, never a failure) today's container log holds the daily AI spend warning or cap-reached line;
+                    raises the alert once per UTC day and level
 
 Writes %USERPROFILE%\.orena\health\health.log (one line per check, UTC) and health.state.json (the consecutive
 failure count and the restart counts). After -AlertAfter (2) consecutive failing runs it raises a Windows toast
@@ -47,6 +49,20 @@ function Check([string]$name, [bool]$ok, [string]$detail) {
     if ($ok) { Log "PASS $name $detail" } else { Log "FAIL $name $detail"; [void]$failures.Add($name) }
 }
 
+# One notification path for every alert: BurntToast when installed, else msg.exe.
+function Raise-Alert([string]$message) {
+    $raised = $false
+    try {
+        if (Get-Module -ListAvailable -Name BurntToast) {
+            Import-Module BurntToast -ErrorAction Stop
+            New-BurntToastNotification -Text 'Orena :8000', $message
+            $raised = $true
+        }
+    } catch { }
+    if (-not $raised) { try { & msg.exe * /TIME:600 $message 2>$null; $raised = ($LASTEXITCODE -eq 0) } catch { } }
+    return $raised
+}
+
 # Keep the log from growing without bound: past 1 MB the older half is dropped.
 try {
     if ((Test-Path -LiteralPath $LogFile) -and (Get-Item -LiteralPath $LogFile).Length -gt 1MB) {
@@ -55,11 +71,12 @@ try {
     }
 } catch { }
 
-$state = @{ failures = 0; restarts = @{} }
+$state = @{ failures = 0; restarts = @{}; spendDay = ''; spendLevel = '' }
 try {
     if (Test-Path -LiteralPath $StateFile) {
         $saved = Get-Content -LiteralPath $StateFile -Raw | ConvertFrom-Json
         if ($saved.failures) { $state.failures = [int]$saved.failures }
+        if ($saved.spendDay) { $state.spendDay = [string]$saved.spendDay; $state.spendLevel = [string]$saved.spendLevel }
         if ($saved.restarts) { $saved.restarts.PSObject.Properties | ForEach-Object { $state.restarts[$_.Name] = [int]$_.Value } }
     }
 } catch { }
@@ -110,6 +127,34 @@ if (Test-Path -LiteralPath $backupLog) {
 if ($null -eq $last) { Check 'backup-log' $false 'no exit line in backup.log' }
 else { Check 'backup-log' ($last -match '^\S+ exit 0: ') ("last=" + ($last -replace '^\S+\s', '')) }
 
+# 6. The daily AI spend ceiling (Intelligence #298/#312). The app logs one line a day when the guard crosses its warning
+# ratio ("system daily spend near cap: ...") and one when the cap is reached ("... daily spend cap reached: ..."); the
+# admin endpoint needs a sign-in, so the container log is read instead (read-only, today's UTC lines only). Not a health
+# failure and not in the exit code: it raises the same notification once per UTC day and level, so the owner sees it
+# even without opening the Admin overview.
+$spendContainer = $Containers[0]
+$spendLevel = ''
+try {
+    $sinceUtc = (Get-Date).ToUniversalTime().Date.ToString('yyyy-MM-ddTHH:mm:ssZ')
+    $logText = (& docker.exe logs $spendContainer --since $sinceUtc --tail 5000 2>&1 | Out-String)
+    if ($logText -match 'daily spend cap reached:') { $spendLevel = 'reached' }
+    elseif ($logText -match 'daily spend near cap:') { $spendLevel = 'near' }
+} catch { }
+$today = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+if ($spendLevel) {
+    $already = ($state.spendDay -eq $today) -and (($state.spendLevel -eq $spendLevel) -or ($state.spendLevel -eq 'reached'))
+    Log ("WARN ai-spend level={0} (container log, UTC day {1})" -f $spendLevel, $today)
+    if (-not $already) {
+        $spendMessage = if ($spendLevel -eq 'reached') { 'Orena :8000 AI daily budget reached: paid AI is paused until the next UTC midnight' } else { 'Orena :8000 AI spend is at its warning level for today' }
+        $spendRaised = Raise-Alert $spendMessage
+        Log ("ALERT ai-spend {0}" -f $(if ($spendRaised) { 'raised' } else { 'could not be shown (no BurntToast, msg.exe failed); see this log' }))
+        $state.spendDay = $today
+        $state.spendLevel = $spendLevel
+    }
+} else {
+    Log "PASS ai-spend no ceiling warning in today's container log"
+}
+
 # Alerting: after $AlertAfter consecutive failing runs, then hourly while it persists.
 $code = 0
 if ($failures.Count -eq 0) {
@@ -121,15 +166,7 @@ if ($failures.Count -eq 0) {
     Log ("UNHEALTHY run {0} failing: {1}" -f $state.failures, ($failures -join ','))
     if (($state.failures -eq $AlertAfter) -or (($state.failures -gt $AlertAfter) -and ((($state.failures - $AlertAfter) % 12) -eq 0))) {
         $message = 'Orena :8000 health check failing: ' + ($failures -join ', ')
-        $raised = $false
-        try {
-            if (Get-Module -ListAvailable -Name BurntToast) {
-                Import-Module BurntToast -ErrorAction Stop
-                New-BurntToastNotification -Text 'Orena :8000', $message
-                $raised = $true
-            }
-        } catch { }
-        if (-not $raised) { try { & msg.exe * /TIME:600 $message 2>$null; $raised = ($LASTEXITCODE -eq 0) } catch { } }
+        $raised = Raise-Alert $message
         Log ("ALERT {0}" -f $(if ($raised) { 'raised' } else { 'could not be shown (no BurntToast, msg.exe failed); see this log' }))
         $code = 2
     }

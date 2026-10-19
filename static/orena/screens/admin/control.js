@@ -65,7 +65,10 @@ export async function mountControl(shell, ctx) {
     failed = false;
     host.paint();
     try {
-      if (route === 'adminOverview') data = { overview: await adminApi.overview() };
+      if (route === 'adminOverview') {
+        const [overview, spend] = await Promise.all([adminApi.overview(), adminApi.aiSpend().catch(() => null)]);
+        data = { overview, spend };
+      }
       else if (route === 'adminUser') {
         const [detail, membership] = await Promise.all([adminApi.user(ctx.params.id), adminApi.membership(ctx.params.id).catch(() => null)]);
         if (request !== generation) return;
