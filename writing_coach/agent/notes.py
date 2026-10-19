@@ -81,11 +81,21 @@ def _without_forgetting(text: str) -> str:
     return _FORGETTING.sub(" ", text)
 
 
-def _asks_about_a_note_by_forgetting_only(text: str) -> bool:
+_ANNOTATION_SURFACES = ("reading.", "listening.")
+
+
+def annotation_in_view(surface: str | None, selection_type: str | None) -> bool:
+    """A Reader annotation can be what "ghi chú" / "note" / 笔记 means here (#351): a sentence is selected, or a reading
+    or listening surface is open, where sentence notes are written and deleted ("Xoá ghi chú", 删除笔记)."""
+
+    return selection_type == "sentence" or str(surface or "").startswith(_ANNOTATION_SURFACES)
+
+
+def _asks_about_a_note_by_forgetting_only(text: str, *, annotation_in_view: bool = False) -> bool:
     """The only change word is a forgetting verb, used as "I forget", not "forget it"."""
 
     return (bool(_FORGETTING.search(text)) and not _CHANGE.search(_without_forgetting(text))
-            and not _asks_to_forget(text) and not _NOTE_WORD.search(text))  # fmt: skip
+            and not _asks_to_forget(text) and not (_NOTE_WORD.search(text) and not annotation_in_view))  # fmt: skip
 
 
 def note_intent(message: str | None) -> str:
@@ -214,24 +224,29 @@ def _phrases(text: str) -> set[str]:
     return phrases - _STOP_PHRASES
 
 
-def notes_the_message_changes(message: str | None, notes: Iterable[CoachNote]) -> tuple[CoachNote, ...]:
+def notes_the_message_changes(message: str | None, notes: Iterable[CoachNote], *,
+                               annotation_in_view: bool = False) -> tuple[CoachNote, ...]:  # fmt: skip
     """The learner's coach notes (never the address note) this message changes or cancels, by rule."""
 
     text = unicodedata.normalize("NFC", message or "")
-    if not message or not _CHANGE.search(text) or _asks_about_a_note_by_forgetting_only(text):
+    if not message or not _CHANGE.search(text) or _asks_about_a_note_by_forgetting_only(
+            text, annotation_in_view=annotation_in_view):  # fmt: skip
         return ()
     own = tuple(note for note in notes if not note.id.startswith("address-"))
     if not own:
         return ()
-    if _NOTE_WORD.search(text):
+    if _NOTE_WORD.search(text) and not annotation_in_view:  # in the Reader the word may be a sentence note (#351)
         return own
     said = _phrases(message)
     return tuple(note for note in own if _phrases(note.text) & said)
 
 
-def names_a_note(message: str | None) -> bool:
-    """The message names a note outright ("ghi chú", "note", "笔记"): only then may the server order a change."""
+def names_a_note(message: str | None, *, annotation_in_view: bool = False) -> bool:
+    """The message names a note outright ("ghi chú", "note", "笔记"): only then may the server order a change. Not
+    where a Reader annotation can be meant (#351, `annotation_in_view`)."""
 
+    if annotation_in_view:
+        return False
     return bool(message) and bool(_NOTE_WORD.search(unicodedata.normalize("NFC", message)))
 
 

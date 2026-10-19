@@ -79,6 +79,7 @@ from writing_coach.agent.notes import (
     CORRECT,
     FORGET,
     asks_to_remember_unaccented,
+    annotation_in_view,
     confirmed_note,
     names_a_note,
     note_intent,
@@ -598,7 +599,8 @@ class _Turn:
             self.needs_evidence = True
             self.evidence_nudge = FEEDBACK_NUDGE.format(essay_id=json.dumps(context.essay_id))
         if not self.opening:
-            self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes)
+            self.notes_asked = notes_the_message_changes(turn.message, tier1.coach_notes,
+                                                         annotation_in_view=self._annotation_in_view())
             self.notes_intent = note_intent(turn.message) if self.notes_asked else None
             self.note_confirmed = confirmed_note(turn.message)
             self.unaccented_keep = to_internal(self.locale.support) == "vi" and asks_to_remember_unaccented(turn.message)
@@ -649,7 +651,7 @@ class _Turn:
             stored=STORED_DEVICE if self.stream.version >= MEMORY_STORED_VERSION else None,
             note_texts={note.id: note.text for note in tier1.coach_notes},
             correcting=tuple(n.id for n in self.notes_asked) if self.notes_intent == CORRECT else (),
-            notes_named=names_a_note(self.request.message),
+            notes_named=names_a_note(self.request.message, annotation_in_view=self._annotation_in_view()),
             asked=tuple(n.id for n in self.notes_asked),
             notes_intent=self.notes_intent,
             learner_words=turn.message or "",
@@ -703,7 +705,8 @@ class _Turn:
         if level < NOTES_CLASS:
             self.notes_available = False
             # A learner asking to change or forget a note is told it cannot be done here; no existing note changes.
-            self.notes_blocked = not self.opening and bool(notes_the_message_changes(turn.message, tier1.coach_notes))
+            self.notes_blocked = not self.opening and bool(notes_the_message_changes(
+                turn.message, tier1.coach_notes, annotation_in_view=self._annotation_in_view()))
             if tier1.coach_notes:
                 self.timeline.facts["coach_notes"] = {"withheld": "provider_not_cleared", "provider_class": level.label,
                                                       "count": len(tier1.coach_notes)}  # fmt: skip
@@ -1061,11 +1064,19 @@ class _Turn:
         outputs.suggestions.clear()
         return learner_copy.text("notes.retype", interface=interface, support=support, address=self.address)[1]
 
+    def _annotation_in_view(self) -> bool:
+        """A Reader sentence note can be what "ghi chú" / "note" / 笔记 means in this turn (agent/notes.py, #351)."""
+
+        context = self.request.context
+        selected = context.selected_item.type if context.selected_item is not None else None
+        return annotation_in_view(context.surface, selected)
+
     def _note_nudge(self) -> str:
         if self.note_confirmed is not None and not self.notes_asked:
             return (f"The learner tapped to keep this note: {self.note_confirmed!r}. Call remember_note with exactly "
                     "these words as text now, then answer in one sentence.")  # fmt: skip
-        return note_nudge(self.notes_asked, self.notes_intent or CORRECT, explicit=names_a_note(self.request.message))
+        return note_nudge(self.notes_asked, self.notes_intent or CORRECT,
+                          explicit=names_a_note(self.request.message, annotation_in_view=self._annotation_in_view()))
 
     def _ask_again(self, messages: list[ProviderMessage], round_text: str | list[str], ask: str, *,
                    why: str | None = None) -> None:
@@ -1237,7 +1248,8 @@ class _Turn:
             # forget one. A correction matched by rule alone keeps the model's answer (#346): it was told to change
             # nothing unless asked, and the honesty gate strips any claim of a change.
             if self._note_unchanged(outputs) and (self.note_confirmed is not None or self.notes_intent == FORGET
-                                                  or names_a_note(self.request.message)):  # fmt: skip
+                                                  or names_a_note(self.request.message,
+                                                                  annotation_in_view=self._annotation_in_view())):  # fmt: skip
                 if self.note_confirmed is not None and not self.notes_asked:
                     key = "notes.not_kept"
                 else:  # a forget never claimed: the server's own words (owner via Hermes, 2026-10-19)

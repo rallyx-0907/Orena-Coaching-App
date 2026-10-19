@@ -29,7 +29,7 @@ from dataclasses import dataclass
 from writing_coach.agent.capability_registry import CapabilityEntry
 from writing_coach.agent.context import Tier1Context, TurnInput
 from writing_coach.agent.locale import to_internal
-from writing_coach.agent.notes import notes_the_message_changes
+from writing_coach.agent.notes import annotation_in_view, notes_the_message_changes
 from writing_coach.agent import surfaces
 from writing_coach.agent.address import Address, capitalised
 from writing_coach.agent.tokens import RESERVE_TOKENS, estimate_tokens, fit_chars, messages_tokens
@@ -561,7 +561,9 @@ def _tail_messages(turn: TurnInput, tier1: Tier1Context, session: AgentSessionSt
     # Not on a turn that changes or cancels a note: there the model finds the note by its id in the context, and the
     # restated line (no ids) made it ask "which note?" in the live run of 2026-10-18.
     notes = (notes_line(tier1) if turn.message is not None and not opening and not screen_help
-             and not notes_the_message_changes(turn.message, tier1.coach_notes) else None)  # fmt: skip
+             and not notes_the_message_changes(turn.message, tier1.coach_notes, annotation_in_view=annotation_in_view(
+                 turn.context.surface, turn.context.selected_item.type if turn.context.selected_item else None))
+             else None)  # fmt: skip
     if notes:
         messages.append(ProviderMessage(role="system", content=notes))
     if turn.message is not None:
