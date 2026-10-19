@@ -35,6 +35,8 @@ from writing_coach.agent.contract import (
 from writing_coach.agent.memory_keys import MemoryKeys
 from writing_coach.agent.memory_store import (
     EXPLICIT,
+    EXPLICIT_TTL,
+    RENEW_EVERY,
     MemoryItem,
     MemoryRepository,
     MemoryScope,
@@ -232,12 +234,14 @@ class MemoryRuntime:
 
         if not turn.on:
             return ()
+        now = self.clock()
         try:
-            items = self.store.items(turn.scope, language, self.clock())
+            items = self.store.items(turn.scope, language, now)
         except Exception:  # noqa: BLE001 - the turn goes on without the notes, never fails on them
             _log.warning("orena memory notes not read", exc_info=True)
             return ()
         chosen: list[CoachNote] = []
+        due: list[str] = []
         for item in sorted(items, key=lambda i: (i.created_at, i.id), reverse=True):
             if item.cls != EXPLICIT or item.kind not in COACH_NOTE_KINDS:
                 continue
@@ -245,7 +249,18 @@ class MemoryRuntime:
             if len(chosen) >= MAX_COACH_NOTES or coach_notes_bytes([*chosen, note]) > MAX_COACH_NOTES_BYTES:
                 break
             chosen.append(note)
+            due.extend([item.id] if self._due(item, now) else [])
+        if due and turn.server:  # server mode only: then these notes are the model's coach notes
+            try:  # they go into the model's context: each is kept 6 months from this use (owner, 2026-10-19)
+                self.store.renew(turn.scope, due, now)
+            except Exception:  # noqa: BLE001 - a renewal never costs the turn; the next day's use tries again
+                _log.warning("orena memory notes not renewed", exc_info=True)
         return tuple(chosen)
+
+    @staticmethod
+    def _due(item: MemoryItem, now: datetime) -> bool:
+        """Renewed at most once a day: only when its date is a day or more behind a use now (RENEW_EVERY)."""
+        return item.expires_at is not None and item.expires_at <= now + EXPLICIT_TTL - RENEW_EVERY
 
     def pack_reader(self) -> Callable[[str, datetime], MemorySection | None]:
         """For `PackBuilder.memory`: the current learner's memory section (read inside their request context)."""

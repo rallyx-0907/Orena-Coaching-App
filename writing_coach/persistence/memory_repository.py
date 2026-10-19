@@ -255,6 +255,22 @@ class PostgresMemoryRepository:
             self._bump(conn, scope, now)
             return _item(row)
 
+    def renew(self, scope: MemoryScope, item_ids: list[str], now: datetime) -> int:
+        """As the in-memory store: live explicit notes of this scope, read into a turn, kept EXPLICIT_TTL from `now` -
+        only while memory is ON (checked under the scope's lock), never an expired row, and no version bump."""
+        idents = [ident for ident in dict.fromkeys(_uuid(i) for i in item_ids) if ident is not None]
+        if not idents:
+            return 0
+        with self._write() as conn:
+            if not self._lock(conn, scope, now).enabled:
+                return 0
+            result = conn.execute(sql(
+                f"UPDATE learner_memories SET expires_at = :until, updated_at = :now WHERE {_SCOPE}"
+                " AND class = 'explicit' AND id = ANY(:ids) AND expires_at IS NOT NULL AND expires_at > :now"
+                " AND expires_at < :until"),
+                _params(scope, ids=idents, until=now + EXPLICIT_TTL, now=now))  # fmt: skip
+            return int(result.rowcount or 0)
+
     def delete_item(self, scope: MemoryScope, item_id: str, now: datetime) -> bool:
         ident = _uuid(item_id)
         if ident is None:

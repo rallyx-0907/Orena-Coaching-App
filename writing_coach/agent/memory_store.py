@@ -46,6 +46,8 @@ ANY_LANGUAGE = "*"
 # A kept note lives 180 days from when the learner last asked for it: the pilot keeps learner data up to 6 months
 # (owner, PRE-005, 2026-10-18). 180 days is within 6 calendar months from any start date.
 EXPLICIT_TTL = timedelta(days=180)
+# A note read into a turn is kept EXPLICIT_TTL from that use (owner via Hermes, 2026-10-19), written at most once a day.
+RENEW_EVERY = timedelta(days=1)
 CONTINUITY_TTL = timedelta(days=14)  # G10
 INFERRED_SUPPRESSION = timedelta(days=30)
 SUMMARY_TTL = timedelta(days=60)
@@ -149,6 +151,8 @@ class MemoryRepository(Protocol):
                      source: str, now: datetime) -> MemoryItem: ...  # fmt: skip
 
     def delete_item(self, scope: MemoryScope, item_id: str, now: datetime) -> bool: ...
+
+    def renew(self, scope: MemoryScope, item_ids: list[str], now: datetime) -> int: ...
 
     def probe(self, scope: MemoryScope, now: datetime) -> MemoryState: ...
 
@@ -349,6 +353,24 @@ class InMemoryMemoryStore:
             learner.items[item.id] = item
             self._bump(learner)
             return item
+
+    def renew(self, scope: MemoryScope, item_ids: list[str], now: datetime) -> int:
+        """Keep these live explicit notes EXPLICIT_TTL from `now`: they were read into a turn. Nothing while memory is
+        OFF, nothing expired, nothing of another scope; the memory version does not move (nothing a read shows
+        changed but the date). How many."""
+        with self._lock:
+            learner = self._learner(scope)
+            if not learner.state.enabled:
+                return 0
+            renewed = 0
+            for item_id in dict.fromkeys(item_ids):
+                item = learner.items.get(item_id)
+                if item is None or item.cls != EXPLICIT or item.expires_at is None or not _live(item.expires_at, now):
+                    continue
+                if item.expires_at < now + EXPLICIT_TTL:
+                    learner.items[item_id] = replace(item, expires_at=now + EXPLICIT_TTL)
+                    renewed += 1
+            return renewed
 
     def delete_item(self, scope: MemoryScope, item_id: str, now: datetime) -> bool:
         with self._lock:  # allowed while memory is OFF (§6)
