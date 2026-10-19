@@ -53,5 +53,16 @@ No placeholder is left. The block stays unpublished until sales open.
 }
 ```
 
-The downgrade sentence is left out until subscription D's result (2026-10-19) shows how Polar credits the unused
-part. The owner's rule is that it is credited (D-MON-035). Add the sentence then, worded from the evidence.
+## Proposed downgrade sentence (awaits the owner's approval; not in the block yet)
+
+Sandbox subscription D (2026-10-19, `PR-MON-9_E2E_EVIDENCE.md` §3) showed what happens to a Pro → Plus downgrade in
+Polar's portal with proration `invoice`:
+- the downgrade applied at once;
+- the unused part of Pro was credited;
+- the next renewal was charged $0.11 instead of $9.99.
+
+In the app, a downgrade is a cancel at the period end, so there is nothing to credit. The proposed text, to be
+appended to the "Changing plan" card once approved:
+
+> "A downgrade made in the billing portal applies at once: the unused part of your current plan is credited
+> against your next payments."

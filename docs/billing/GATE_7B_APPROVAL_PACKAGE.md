@@ -11,8 +11,8 @@ rollback, and no step is started before the previous one's check passes.
 
 | # | Precondition | Owner of it | How it is checked |
 | --- | --- | --- | --- |
-| C1 | R1 resolved (renewal is not dropped as `stale`) | Billing lane | B and D renewals on 2026-10-19 (`BILLING_ACTIVATION_READINESS.md` §2-§3); a reviewed fix first if they fail |
-| C2 | `:8000` runs a build from `main` | UI lane, deploy is an owner gate | PRE-401 re-read: USD in every language, the assist and `orena.voice` limits present |
+| C1 | R1 resolved (renewal is not dropped as `stale`) | Billing lane | **done 2026-10-19**: B and D renewed, and Orena applied D's renewal (`PR-MON-9_E2E_EVIDENCE.md` §3); no code change |
+| C2 | `:8000` runs a build from `main` (**done**: `9952152a`, PRE-401 closed) | UI lane, deploy is an owner gate | PRE-401 re-read: USD in every language, the assist and `orena.voice` limits present |
 | C3 | Migrations `0027` → `0033` applied after a verified backup | owner (`RUNBOOK_MIGRATION_0027_0033.md`) | readiness has no `*_schema_absent` blocker |
 | C4 | The paid-plan Terms published in English | owner answers 3 questions; UI lane applies `PAID_PLANS_TERMS_INSERT.md` | `/terms` shows section 3 with no `[` placeholder |
 | C5 | Final prices confirmed | owner | the same numbers in the catalogue, the products (P1) and the Terms |

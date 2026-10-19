@@ -49,9 +49,10 @@ usage.
    - customers may update their subscription: `allow_customer_updates` on;
    - plan changes are allowed between the four products: `update_plan` on;
    - proration is **invoice** (`proration_behavior=invoice`): the difference is charged at once.
-   - On a downgrade, the unused part of the higher plan must count against the lower one (owner, D-MON-035).
-     Sandbox subscription D (2026-10-19) shows whether `invoice` credits it. If it does not, this step names the
-     setting that does, before P2 is approved.
+   - On a downgrade, the unused part of the higher plan counts against the lower one (owner, D-MON-035). With
+     `invoice`, Polar applies a portal downgrade at once and credits the unused part to the next invoice. This was
+     proven on sandbox subscription D (2026-10-19): Pro to Plus, and the renewal charged $0.11 instead of $9.99. Keep
+     `invoice`.
 3. **Organization access token** with exactly these scopes (each proved on the sandbox token, 2026-10-18; PR-MON-9
    review P1-4):
    - `checkouts:write`: the embedded and hosted checkout;
