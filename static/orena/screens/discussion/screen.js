@@ -29,7 +29,7 @@ import { isQuotaExhausted, pausedLineOf, quotaMessage, seePlansLabel } from '../
 import { loadReadable } from '../reader/source.js';
 import {
   parseContentId, discussionSourceFor, newRequestId, mapTurns, canSend, isSendKey, optimisticTurn, MAX_BODY_CHARACTERS,
-  passageFor,
+  passageFor, retryPlan,
 } from './model.js';
 
 async function loadTitle(kind, id, chapterId, ctx) {
@@ -63,8 +63,13 @@ function bubbleMarkup(turn, learnerLang) {
   </div>`;
 }
 
-function threadMarkup(turns, thinking, learnerLang, intro = '') {
+function failedMarkup(failed) {
+  return html`<div class="s-discussion__failed" role="alert"><span>${failed.text}</span>${failed.retry ? html`<button type="button" class="s-discussion__retry" data-retry>${shellCopy('retry')}</button>` : ''}</div>`;
+}
+
+function threadMarkup(turns, thinking, learnerLang, intro = '', failed = null) {
   return html`${intro ? bubbleMarkup({ isAssistant: true, body: intro }, learnerLang) : ''}${turns.map((turn) => bubbleMarkup(turn, learnerLang))}${
+    failed ? failedMarkup(failed) : ''}${
     thinking
       ? html`<div class="s-discussion__thinking">${intelChip({ size: 30, mark: 24, state: 'thinking' })}${t('thinking')}</div>`
       : ''
@@ -90,6 +95,8 @@ export default async function mountDiscussion(element, ctx) {
   let turns = mapTurns(initial.turns);
   let maxTurns = initial.max_turns;
   let pending = false;
+  // A question the tutor could not answer stays in the thread with the line and Retry; Retry resends the same request id.
+  let failed = null;
   const supportLang = supportLanguage(ctx.context?.profile);
 
   const starters = [
@@ -119,21 +126,26 @@ export default async function mountDiscussion(element, ctx) {
   const field = element.querySelector('[data-input]');
 
   function paintThread(thinking) {
-    mount(thread, threadMarkup(turns, thinking, supportLang, title ? t('intro', { title }) : ''));
+    mount(thread, threadMarkup(turns, thinking, supportLang, title ? t('intro', { title }) : '', failed));
+    thread.querySelector('[data-retry]')?.addEventListener('click', () => {
+      if (failed) send(failed.question, failed);
+    });
     thread.scrollTop = thread.scrollHeight;
   }
 
-  async function send(text) {
+  async function send(text, again = null) {
     const question = String(text || '').trim();
     if (pending || !canSend(question)) return;
-    const before = turns;
+    const before = again ? again.before : failed ? failed.before : turns;
+    const requestId = again ? again.requestId : newRequestId();
+    failed = null;
     const hadFocus = document.activeElement === field;
     pending = true;
-    turns = [...turns, optimisticTurn(question)];
+    turns = [...before, optimisticTurn(question)];
     field.value = '';
     paintThread(true);
     try {
-      const response = await api.sendDiscussionTurn({ ...source, body: question, context: passage, request_id: newRequestId() });
+      const response = await api.sendDiscussionTurn({ ...source, body: question, context: passage, request_id: requestId });
       if (!ctx.isCurrent()) return;
       const fresh = await api.textDiscussion(source.source_kind, source.source_id).catch(() => null);
       if (!ctx.isCurrent()) return;
@@ -141,6 +153,17 @@ export default async function mountDiscussion(element, ctx) {
       if (fresh?.max_turns) maxTurns = fresh.max_turns;
     } catch (error) {
       if (!ctx.isCurrent()) return;
+      const plain = !isQuotaExhausted(error) && !(error?.status === 409 && !error.category);
+      if (plain) {
+        // The learner's message stays; the line says the tutor did not answer, with Retry unless the AI is paused (D-235).
+        const paused = pausedLineOf(error);
+        // An answered refusal (a status) settled or released the metered operation under this id and stored nothing, so Retry
+        // is a new submission with a fresh id (resending the id answers 409 operation_finished). Only an unanswered request
+        // (network, timeout) may have been stored, and keeps its id so the server returns the stored exchange.
+        const plan = retryPlan(error, requestId);
+        failed = { question, requestId: plan.requestId, before, text: paused || t('unavailable'), retry: !paused && plan.retry };
+        return;
+      }
       turns = before;
       field.value = question;
       if (isQuotaExhausted(error)) {

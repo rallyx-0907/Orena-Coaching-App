@@ -557,7 +557,7 @@ let fullHandle = null;
 
 function replyMarkup(reply) {
   if (!reply) return '';
-  if (reply.error) return html`<div class="s-orena-voicefull__reply">${errorText(reply.error, t('transportError'))}</div>`;
+  if (reply.error) return html`<div class="s-orena-voicefull__reply">${errorText(reply.error, t('transportError'), t('providerError'))}</div>`;
   const segments = reply.segments || [];
   if (!segments.length) return '';
   return html`<div class="s-orena-voicefull__reply">${segments.map((segment) => html`<span lang="${langAttr(fromContractLang(segment.lang))}">${segment.text}</span>`)}</div>${replyReport(reply, 'orena.voice')}`;

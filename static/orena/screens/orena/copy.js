@@ -23,7 +23,7 @@ const INTERFACE_KEYS = [
   'voiceStart', 'voiceStopSend', 'closeVoice',
 ];
 const SUPPORT_KEYS = [
-  'emptyTitle', 'emptySub', 'transportError', 'unsentNotice', 'voiceHintIdle', 'voiceHintListening',
+  'emptyTitle', 'emptySub', 'transportError', 'providerError', 'unsentNotice', 'voiceHintIdle', 'voiceHintListening',
   'voiceHintThinking', 'voiceHintSpeaking',
   'memoryEmpty', 'memoryAddressHint', 'memoryIntro',
   'actionFailed', 'actionOtherLanguage', 'voiceTranscribeFailed',
@@ -54,6 +54,7 @@ export const t = defineCopy('orena', {
     emptyTitle: 'Ask me anything about your learning. I can explain, find content, or take you straight to a practice.',
     emptySub: 'I only propose actions Orena actually supports.',
     transportError: 'Orena couldn’t be reached. Check your connection and try again.',
+    providerError: 'Orena could not answer just now. Please try again.',
     unsentNotice: 'Your learning language changed elsewhere — your message is back in the box.',
     voiceHintIdle: 'Orena answers out loud and adds the exchange to your chat.',
     voiceHintListening: 'Tap stop when you’re done — or just pause.',
@@ -89,6 +90,7 @@ export const t = defineCopy('orena', {
     emptyTitle: 'Hỏi mình bất cứ điều gì về việc học của bạn. Mình có thể giải thích, tìm nội dung, hoặc đưa bạn thẳng tới một bài luyện tập.',
     emptySub: 'Mình chỉ đề xuất những hành động Orena thật sự làm được.',
     transportError: 'Không kết nối được với Orena. Kiểm tra mạng rồi thử lại.',
+    providerError: 'Orena chưa thể trả lời lúc này. Vui lòng thử lại.',
     unsentNotice: 'Ngôn ngữ học của bạn vừa thay đổi ở nơi khác — tin nhắn của bạn đã được giữ lại trong ô nhập.',
     voiceHintIdle: 'Orena trả lời bằng giọng nói và lưu cả đoạn hội thoại vào khung chat của bạn.',
     voiceHintListening: 'Nhấn dừng khi bạn nói xong — hoặc chỉ cần ngừng lại.',
@@ -124,6 +126,7 @@ export const t = defineCopy('orena', {
     emptyTitle: '关于你的学习，随便问我什么都可以。我可以解释、找内容，或者直接带你去练习。',
     emptySub: '我只会提出 Orena 真正能做到的操作。',
     transportError: '无法连接到 Orena。请检查网络后重试。',
+    providerError: 'Orena 暂时无法回答，请再试一次。',
     unsentNotice: '你的学习语言在别处发生了变化 —— 你的消息已放回输入框。',
     voiceHintIdle: 'Orena 会用语音回答，并把这段对话记录到你的聊天里。',
     voiceHintListening: '说完后点击停止 —— 或者稍作停顿也可以。',

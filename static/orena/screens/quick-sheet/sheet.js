@@ -153,6 +153,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let audioMissing = false; // asked, and no recording exists for this word (LEX-010)
   let keptNow = false; // whether the word is kept, as the learner's own save/unsave last left it
   let contextualPending = false; // true only while the learner's own "Why here?" is being answered (never on open)
+  let lookupFailed = false; // the first lookup was refused or unreachable (not an AI pause): said as a failure with Retry, never as "no gloss prepared"
   let contextualFailed = false; // the provider failed (contextStatus provider_error): offer Retry
   let aiPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure, with no Retry
 
@@ -235,11 +236,11 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
       </div>
       <div class="s-qs__card">
         <div class="s-qs__eyebrow">${t('meaningHere')}</div>
-        <div class="s-qs__meaning"${contextualPending ? raw(' role="status"') : ''}>${contextualPending ? html`<span class="o-spinner"></span>` : t('meaningNotPrepared')}</div>
+        <div class="s-qs__meaning"${contextualPending || lookupFailed ? raw(' role="status"') : ''}>${contextualPending ? html`<span class="o-spinner"></span>` : lookupFailed ? html`${t('translationFailed')} <button type="button" class="s-qs__retry" data-lookup-retry>${t('retry')}</button>` : t('meaningNotPrepared')}</div>
       </div>
       ${strokeMarkup()}
       ${sentence ? html`<div class="s-qs__source"><div class="s-qs__eyebrow">${sourceLabel()}</div><div class="s-qs__source-text" lang="${langAttr(lang)}">${sentence}</div></div>` : ''}
-      ${contextualPending ? '' : html`<div class="s-qs__notice"${aiPause ? raw(' role="status"') : ''}>${aiPause || t('noGlossNotice')}</div>`}
+      ${contextualPending || lookupFailed ? '' : html`<div class="s-qs__notice"${aiPause ? raw(' role="status"') : ''}>${aiPause || t('noGlossNotice')}</div>`}
     `;
   }
 
@@ -348,6 +349,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     sheetEl.querySelector('[data-practise-strokes]')?.addEventListener('click', openStroke);
     sheetEl.querySelector('[data-why-ask]')?.addEventListener('click', () => askContextual());
     sheetEl.querySelector('[data-why-retry]')?.addEventListener('click', () => askContextual());
+    sheetEl.querySelector('[data-lookup-retry]')?.addEventListener('click', () => retryLookup());
   }
 
   /* A word saved from this sheet before "Why here?" answered holds the basic meaning. When the contextual
@@ -421,6 +423,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   }
 
   let askContextual = () => {};
+  let retryLookup = () => {};
   let handle = null;
   if (!ctx.isCurrent || ctx.isCurrent()) {
     handle = openSheet({
@@ -439,7 +442,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             strokeTiles.start(sheetEl);
           }).catch(() => {});
         }
-        (async () => {
+        const lookup = async () => {
           const ctxText = contextFor(target, context || sentence);
           try {
             detail = await api.wordDetail(wordDetailRequest({ contextual: false, target, context: ctxText, lang, support, source }));
@@ -447,6 +450,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           } catch (error) {
             detail = null;
             aiPause = pausedLineOf(error);
+            lookupFailed = !aiPause;
           }
           if (!alive) return;
           loading = false;
@@ -479,7 +483,15 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             card = mapWordCard(target, { detail, item });
             paint();
           }
-        })();
+        };
+        retryLookup = () => {
+          lookupFailed = false;
+          aiPause = '';
+          loading = true;
+          paint();
+          lookup();
+        };
+        lookup();
         return () => {
           alive = false;
           strokeTiles.stop();

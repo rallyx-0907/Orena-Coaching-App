@@ -105,3 +105,17 @@ export function isSendKey({ key, isComposing = false, keyCode = 0 } = {}) {
 export function optimisticTurn(text) {
   return { role: 'learner', isAssistant: false, body: String(text || '').trim() };
 }
+
+/* What a failed send does next. An unanswered request (network, timeout) may have been stored, so Retry keeps its id and
+   the server returns the stored exchange. An answered refusal settled or released the metered operation and stored
+   nothing, so Retry is a new submission with a fresh id; `operation_finished` (a resend of a released id) is retryable
+   with that fresh id. `operation_in_progress` means the first request is still running: keep its id, so a second
+   exchange is never stored or charged. */
+export function retryPlan(error, requestId, makeId = newRequestId) {
+  const answered = Boolean(error?.status);
+  const inProgress = error?.category === 'operation_in_progress';
+  return {
+    requestId: answered && !inProgress ? makeId() : requestId,
+    retry: error?.category === 'operation_finished' || error?.retryable !== false,
+  };
+}

@@ -253,6 +253,7 @@
   .s-dict__livechip--wrong,
   .s-dict__navbtn,
   .s-dict__navbtn:hover:not(:disabled),
+  .s-discussion__failed,
   .s-discussion__row[data-role='learner'] .s-discussion__bubble,
   .s-discussion__starter,
   .s-discussion__thinking,

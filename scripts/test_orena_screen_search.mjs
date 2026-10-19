@@ -219,4 +219,15 @@ assert.equal(totalItems([{ items: [1, 2] }, { items: [] }, { items: [3] }]), 3);
   assert.match(src, /if \(initial\) setQuery\(initial, \{ immediate: true \}\)/);
 }
 
+import { readFileSync as __read } from 'node:fs';
+const __src = (p) => __read(new URL(p, import.meta.url), 'utf8');
+
+// A failed source with nothing found is a failure (load-error card + Retry); an answered empty search keeps the designed copy.
+{
+  const src = __src('../static/orena/screens/search/screen.js');
+  assert.match(src, /failures\.count \+= 1/);
+  assert.match(src, /searchFailed = failures\.count > 0/);
+  assert.match(src, /if \(searchFailed && !totalItems\(groups\)\) \{[\s\S]*?failedMarkup\(\)[\s\S]*?return;\s*\}\s*mount\(body, totalItems\(groups\) \? resultsMarkup\(\) : noneMarkup\(\)\)/, 'failure before the genuine-empty branch');
+  assert.match(src, /if \(startedFor === q\) startedFor = ''/, 'a superseded run does not block the same query later');
+}
 console.log('Orena search screen: recent searches, real-source mapping, rule-40 fallbacks: PASS');

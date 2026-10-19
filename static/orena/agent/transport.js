@@ -182,6 +182,11 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
     }
     if (status.kind === 'error') {
       if (response.status === 422) log('[Orena agent] the server refused the request as malformed (422)');
+      // The provider behind Orena answered 503 `provider_unavailable`: that is not the learner's network, and the room says so.
+      if (response.status === 503 && (await readRefusal(response))?.category === 'provider_unavailable') {
+        yield { event: 'error', data: { class: 'provider_unavailable', message: '', fallback: status.fallback } };
+        return;
+      }
       yield transportError(status.fallback);
       return;
     }
