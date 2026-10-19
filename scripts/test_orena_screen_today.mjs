@@ -25,6 +25,8 @@ const {
   buildSkillRings,
   buildStreak,
   leadWithContinuation,
+  liveContinuation,
+  continuedMediaIds,
   buildLevel,
   todayDateLabel,
   greetingPeriod,
@@ -362,4 +364,28 @@ console.log('Orena Today: recommendation pool, continuation mapping, For-you rai
   assert.deepEqual(rail.map((item) => item.title), ['Make room for someone', 'Order coffee'], 'the same title is one card');
   const used = usedRecommendationIds([{ id: 'x', title: 'Order coffee', routeParams: { id: 's3' } }]);
   assert.deepEqual(buildForYou({ continuation: [], listening: [], speaking: speakingItems, feed: [], usedIds: used }, t).map((item) => item.title), ['Make room for someone'], 'a title the hero already shows is not repeated below');
+}
+
+// D-245: a continued lesson whose content is gone (a retired built-in lesson) has no card - the design draws no
+// state for it. The next live entry leads, or the normal composition shows; other kinds of entry are untouched.
+{
+  const pool = [{ source: 'reading', id: 'art1', routeParams: { id: 'art1' }, kind: 'Read' }];
+  const remembered = [
+    { id: 'media:en-daily-pen-in-my-bag', title: 'A pen in my bag', context: 'Continue listening', intent: 'listening' },
+    { id: 'media:upload:abc', title: 'My clip', context: 'Continue listening', intent: 'listening' },
+    { id: 'grammar:g1', title: 'Grammar', context: '' },
+  ];
+  assert.deepEqual(continuedMediaIds(remembered), ['en-daily-pen-in-my-bag', 'upload:abc'], 'only media entries are checked');
+  assert.deepEqual(continuedMediaIds(remembered, 1), ['en-daily-pen-in-my-bag'], 'checks are bounded, most recent first');
+  const alive = (id) => id === 'upload:abc';
+  const live = liveContinuation(remembered, alive);
+  assert.deepEqual(live.map((entry) => entry.id), ['media:upload:abc', 'grammar:g1'], 'the gone lesson is left out, nothing else');
+  const led = leadWithContinuation(pool, live, t, () => ({}));
+  assert.equal(led[0].id, 'media:upload:abc', 'the next live continuation leads');
+  assert.ok(!led.some((item) => item.id === 'media:en-daily-pen-in-my-bag'), 'no card for a lesson that is gone');
+  const rail = buildForYou({ continuation: live, listening: [], speaking: [], feed: [], usedIds: usedRecommendationIds(led) }, t);
+  assert.ok(!rail.some((item) => item.id === 'media:en-daily-pen-in-my-bag'), 'For you draws no card for it either');
+  const onlyGone = liveContinuation([remembered[0]], alive);
+  assert.deepEqual(leadWithContinuation(pool, onlyGone, t, () => null), pool, 'nothing live: the normal composition shows');
+  assert.equal(remembered.length, 3, 'the learner record itself is not changed');
 }

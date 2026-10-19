@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import pytest
 
-from writing_coach import listening_api
+from writing_coach import listening_api, listening_catalog
 from writing_coach.listening_api import listening_library, open_listening_library_lesson
-from writing_coach.listening_catalog import CATALOG, CATALOG_SOURCES, catalog_lesson, catalog_lessons, lesson_metadata
+from writing_coach.listening_catalog import catalog_lesson, catalog_lessons, lesson_metadata
 from writing_coach.media_library_store import FileMediaLibraryStore
+
+# The shipped built-in catalogue is empty since D-245; these tests exercise the catalogue contract on a fixture-local
+# copy of the retired manifest (conftest.fixture_listening_catalog). The empty shipped catalogue has its own tests in
+# tests/test_listening_catalog_empty.py.
+pytestmark = pytest.mark.usefixtures("fixture_listening_catalog")
 
 
 @pytest.fixture(autouse=True)
@@ -28,7 +33,7 @@ def _curated_catalog_only(tmp_path):
 
 
 def test_library_lists_lightweight_en_and_zh_curated_lessons() -> None:
-    assert {lesson.media_object.asset.source_language for lesson in CATALOG} == {"en", "zh"}
+    assert {lesson.media_object.asset.source_language for lesson in listening_catalog.CATALOG} == {"en", "zh"}
     en = listening_library(language="en", level=None, topic=None, tag=None)
     zh = listening_library(language="zh", level=None, topic=None, tag=None)
 
@@ -101,8 +106,8 @@ def test_one_source_can_publish_multiple_natural_excerpts_without_copying_transc
 
 
 def test_catalog_exposes_reviewed_level_evidence_and_verified_rights() -> None:
-    assert len(CATALOG_SOURCES) == 5
-    assert len(CATALOG) == 6
+    assert len(listening_catalog.CATALOG_SOURCES) == 5
+    assert len(listening_catalog.CATALOG) == 6
     metadata = listening_library(language="en", level="A1", topic=None, tag=None)["items"][0]
 
     assert metadata["level"] == metadata["reviewed_level"] == "A1"
@@ -256,14 +261,14 @@ def test_every_lesson_carries_a_type_the_baseline_names_or_none() -> None:
     """ContentCard.type (D-066): derived from playback, topic and tags, never guessed."""
     from writing_coach.listening_catalog import CONTENT_TYPES, content_type
 
-    kinds = {lesson.lesson_id: content_type(lesson) for lesson in CATALOG}
+    kinds = {lesson.lesson_id: content_type(lesson) for lesson in listening_catalog.CATALOG}
     assert set(kinds.values()) <= {*CONTENT_TYPES, None}
     assert kinds["en-daily-pen-in-my-bag"] == "dialogue"
     assert kinds["zh-culture-nationalities"] == "culture"
     # Real playable video is a video whatever else its tags say.
     assert kinds["en-science-cosmic-calendar"] == "video"
     assert kinds["zh-technology-search-wikipedia"] == "video"
-    for lesson in CATALOG:
+    for lesson in listening_catalog.CATALOG:
         assert lesson_metadata(lesson)["content_type"] == kinds[lesson.lesson_id]
     # The documented set is the baseline's: nothing here is a type the chips do not name.
     assert set(CONTENT_TYPES) == {"video", "interview", "podcast", "speech", "culture", "dialogue", "story", "situation"}

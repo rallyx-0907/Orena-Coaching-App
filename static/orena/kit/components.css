@@ -525,12 +525,13 @@
   aspect-ratio: 1;
   background: var(--deco-soft);
 }
+/* Placed as the stored cover places it (thumbnails.py GLYPH_BASELINE/GLYPH_SIZE: 140 of 640 units, its 1em box
+   from 10% to about 45% of the height), so it stays clear of the type pill and the duration pill on a phone card. */
 .c-poster__glyph {
   position: absolute;
-  right: 9%;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: clamp(48px, 30cqi, 92px);
+  right: 8.4%;
+  top: 10%;
+  font-size: 21.9cqi;
   line-height: 1;
   font-weight: 700;
   letter-spacing: -0.04em;

@@ -224,6 +224,177 @@ def _add_cover(sources: Sources, kind: str, row: dict[str, Any]) -> None:
         raise ValueError(kind)
 
 
+# -- regenerating typographic covers ----------------------------------------------------------------------------------
+
+
+def _reading_rows(sources: Sources, include_unpublished: bool, ids: tuple[str, ...]) -> list[dict[str, Any]]:
+    """Every published Reading article (and, with `include_unpublished`, every one in review), or the named ones."""
+    from writing_coach.persistence.reading_content_repository import MAX_ARTICLE_PAGE, QUEUE_STATUSES
+
+    rows: list[dict[str, Any]] = []
+    if ids:
+        for article_id in dict.fromkeys(ids):
+            article = sources.reading.get_article(article_id)
+            rows.append(_reading_row(article) if article is not None else {"kind": "reading", "id": article_id, "missing": True})
+        return rows
+    for language in LANGUAGES:
+        cursor = None
+        while True:
+            page = sources.reading.list_published(language=language, cursor=cursor, limit=MAX_ARTICLE_PAGE)
+            rows.extend({"kind": "reading", "id": row["id"], "title": row["title"], "language": row["language"],
+                         "topic": row.get("topic") or ""} for row in page["items"])
+            cursor = page.get("next_cursor")
+            if not cursor:
+                break
+    if include_unpublished:
+        cursor = None
+        while True:
+            page = sources.reading.list_queue(statuses=QUEUE_STATUSES, cursor=cursor, limit=MAX_ARTICLE_PAGE)
+            rows.extend(_reading_row(row) for row in page["items"])
+            cursor = page.get("next_cursor")
+            if not cursor:
+                break
+    return rows
+
+
+def _book_cover(store: Any, row: dict[str, Any]) -> tuple[str | None, str]:
+    """(provenance kind or None, sha256 of the stored bytes) of a book's cover. A book's provenance sits beside its
+    cover (`cover.provenance.json`); a cover the backfill made before that record existed is recognised as Orena's
+    own by its key and its generator's opening bytes. Anything else is a real picture."""
+    import hashlib
+    import json
+
+    key = row["key"]
+    if not key:
+        return None, ""
+    kind = ""
+    record_key = f"books/{row['id']}/cover.provenance.json"
+    try:
+        if store.exists(record_key):
+            kind = str(json.loads(store.get(record_key)).get("kind") or "")
+    except (ValueError, OSError, AttributeError):
+        kind = ""
+    if not kind:
+        own = (key == f"books/{row['id']}/cover.svg" and store.exists(key)
+               and store.get(key).startswith(thumbnails._OWN_COVER_HEAD))
+        kind = thumbnails.KIND_TYPOGRAPHIC if own else thumbnails.KIND_SOURCE_IMAGE
+    if kind != thumbnails.KIND_TYPOGRAPHIC:
+        return kind, ""
+    return kind, hashlib.sha256(store.get(key)).hexdigest() if store.exists(key) else ""
+
+
+def _typographic_targets(sources: Sources, include_unpublished: bool, ids: tuple[str, ...]):
+    """(row, current sha256, reason) for every item a learner may be shown; `reason` is '' for a typographic cover.
+
+    Only a cover whose recorded provenance kind is typographic is a target. A real picture (a source or library image,
+    an EPUB's own cover, a provider-hosted thumbnail) is reported as kept; an item with no thumbnail is `backfill`'s."""
+    def classify(row: dict[str, Any], stored: Any) -> tuple[dict[str, Any], str, str]:
+        if not stored:
+            return row, "", "no_thumbnail"
+        if stored.get("kind") != thumbnails.KIND_TYPOGRAPHIC:
+            return row, "", "kept_real_image"
+        return row, str(stored.get("sha256") or ""), ""
+
+    if sources.reading is not None:
+        for row in _reading_rows(sources, include_unpublished, ids):
+            if row.get("missing"):
+                yield {"kind": "reading", "id": row["id"], "title": ""}, "", "not_found"
+            else:
+                yield classify(row, sources.reading.published_thumbnail(row["id"]))
+    if ids:
+        return  # `--id` names Reading articles only
+    if sources.vocabulary is not None and sources.vocabulary.available():
+        for language in LANGUAGES:
+            for collection in sources.vocabulary.list_collections(language) or []:
+                row = {"kind": "vocabulary", "id": collection["id"], "title": collection.get("title", ""),
+                       "language": collection.get("language_code", language),
+                       "topic": collection.get("topic") or collection.get("framework") or ""}
+                yield classify(row, thumbnails.stored_thumbnail(collection.get("provenance")))
+    if sources.books is not None:
+        for language in LANGUAGES:
+            cursor = None
+            while True:
+                page = sources.books.list_books(learning_language=language, cursor=cursor, limit=50)
+                for book in page["items"]:
+                    row = {"kind": "book", "id": book["id"], "title": book["title"], "language": book["learning_language"],
+                           "topic": book.get("author") or "", "key": book.get("cover_asset_key") or ""}
+                    kind, digest = _book_cover(sources.reading_assets, row)
+                    yield classify(row, {"kind": kind, "sha256": digest} if kind else None)
+                cursor = page.get("next_cursor")
+                if not cursor:
+                    break
+    if sources.media is not None:
+        for entry in sources.media.list(library="shared", status=None):
+            if entry.status != "published" and not include_unpublished:
+                continue
+            row = {"kind": "media", "id": entry.media_id, "title": entry.title, "language": entry.language,
+                   "topic": str((entry.lesson or {}).get("topic") or "") if isinstance(entry.lesson, dict) else ""}
+            if not thumbnails.has_media_thumbnail(entry.thumbnail):
+                yield row, "", "no_thumbnail"
+                continue
+            provenance = thumbnails.media_thumbnail_provenance(entry.source) or {}
+            if entry.thumbnail.get("kind") != "asset" or provenance.get("kind") != thumbnails.KIND_TYPOGRAPHIC:
+                yield row, "", "kept_real_image"
+                continue
+            # A media cover's key carries the first 24 hex digits of its hash (`media_cover_key`).
+            yield row, str(entry.thumbnail.get("ref") or "").rsplit("thumb-", 1)[-1].split(".", 1)[0], ""
+
+
+def regenerate(sources: Sources, *, apply: bool = False, include_unpublished: bool = False,
+               ids: tuple[str, ...] = ()) -> dict[str, Any]:
+    """Remake every typographic cover with the current generator. Dry run unless `apply`.
+
+    Only a cover whose provenance kind is typographic is replaced: a real picture is never touched, and an item with
+    no thumbnail is left to `backfill`. A cover the current generator draws identically is left as it is, so a second
+    run changes nothing. The new cover is stored under its own content-addressed key (a book's in place, with its
+    provenance record) and recorded as the backfill records one; the old file stays in the asset store."""
+    done: list[dict[str, Any]] = []
+    failed: list[dict[str, Any]] = []
+    skipped = [kind for kind, store in (("reading", sources.reading), ("vocabulary", sources.vocabulary),
+                                         ("book", sources.books), ("media", sources.media)) if store is None]
+    for row, current, reason in _typographic_targets(sources, include_unpublished, tuple(ids)):
+        outcome = {"kind": row["kind"], "id": row["id"], "title": row.get("title", "")}
+        if reason == "not_found":
+            failed.append({**outcome, "error": "not_found"})
+            continue
+        if reason:
+            done.append({**outcome, "action": reason})
+            continue
+        fresh = thumbnails.typographic_record(row["title"], language=row.get("language", ""), topic=row.get("topic", ""),
+                                              kind=row["kind"])["sha256"]
+        if current and fresh.startswith(current):
+            done.append({**outcome, "action": "typographic_cover_current"})
+        elif not apply:
+            done.append({**outcome, "action": "would_regenerate_typographic_cover"})
+        else:
+            try:
+                _replace_cover(sources, row)
+                done.append({**outcome, "action": "typographic_cover_regenerated"})
+            except Exception as exc:  # noqa: BLE001 - one item never stops the others; its failure is reported
+                failed.append({**outcome, "error": type(exc).__name__})
+    return {"dry_run": not apply, "skipped": skipped, "items": done, "failed": failed}
+
+
+def _replace_cover(sources: Sources, row: dict[str, Any]) -> None:
+    import json
+
+    kind = row["kind"]
+    if kind == "book":
+        record = thumbnails.typographic_record(row["title"], language=row["language"], topic=row["topic"], kind="book")
+        provenance = {**thumbnails.normalize_provenance({}, kind=thumbnails.KIND_TYPOGRAPHIC), "sha256": record["sha256"]}
+        sources.reading_assets.put(row["key"], record["data"])
+        sources.reading_assets.put(f"books/{row['id']}/cover.provenance.json", json.dumps(provenance).encode("utf-8"))
+    elif kind == "reading":
+        article = sources.reading.get_article(row["id"])
+        stored = thumbnails.make_reading_cover(sources.reading_assets, article_id=row["id"], title=article["title"],
+                                               language=article["language"], topic=article.get("topic") or "")
+        if not sources.reading.approve_image(row["id"], stored, actor=BACKFILL_ACTOR,
+                                             reason="D-240 typographic cover regenerated"):
+            raise LookupError(row["id"])
+    else:
+        _add_cover(sources, kind, row)  # vocabulary and media: the same cover maker, which replaces what is recorded
+
+
 def sources_from_environment(root: Any, url: str = "") -> Sources:
     """The stores the running product uses, found the way `app.py` finds them: `POSTGRES_RUNTIME_URL` (or `url`) for
     Reading, vocabulary and books, and the library/asset roots for media and every asset. A kind whose store cannot

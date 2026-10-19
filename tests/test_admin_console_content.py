@@ -1,3 +1,4 @@
+import pytest
 """One admin content library over three existing catalogs, and one import history.
 
 Records keep each domain's own identity (a book id, a media id, a collection id)
@@ -5,8 +6,12 @@ and only project the fields an operator scans; nothing is copied into a new
 store. Actions are offered only where a backend contract exists.
 """
 from writing_coach import admin_content as content
-from writing_coach.listening_catalog import CATALOG
+from writing_coach import listening_catalog
 from writing_coach.media_library_store import MediaLibraryEntry
+
+# The shipped built-in Listening catalogue is empty since D-245; this module exercises catalogue lessons on the
+# fixture-local copy of the retired manifest (conftest.fixture_listening_catalog).
+pytestmark = pytest.mark.usefixtures("fixture_listening_catalog")
 
 
 def _book(**overrides):
@@ -96,7 +101,7 @@ def test_only_actionable_missing_transcripts_need_attention():
 
 
 def test_curated_media_comes_from_the_code_owned_catalog_and_can_only_be_hidden():
-    lesson = CATALOG[0]
+    lesson = listening_catalog.CATALOG[0]
     record = content.curated_media_record(lesson)
     assert record["id"] == lesson.lesson_id
     assert record["origin"] == "curated"

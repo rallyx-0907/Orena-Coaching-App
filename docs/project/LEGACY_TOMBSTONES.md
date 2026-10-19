@@ -291,3 +291,18 @@ removed merely because current code conflicts with them.
   `assets/brand/orena/references/00_MASTER_REFERENCE_APPROVED.png`, which is unchanged).
 - **What must not happen:** a script or gate that reads a deleted legacy path; a second copy of brand
   artwork under `static/`.
+
+## The built-in sample Listening lessons (D-245)
+
+- **Status:** RETIRED (owner instruction 2026-10-20)
+- **Ids:** `en-daily-pen-in-my-bag` ("A pen in my bag"), `zh-daily-what-is-this` (这是什么？),
+  `zh-culture-nationalities` (他们是谁？), `zh-culture-where-are-you-from` (你是哪国人？),
+  `en-science-cosmic-calendar` ("The cosmic calendar"), `zh-technology-search-wikipedia` (怎么搜索维基百科).
+- **Why retired:** short sample clips with no real learning value.
+- **Current replacement:** none built in; `listening_catalog.v1.json` ships empty and the Listening shelf is filled by
+  reviewed imported media.
+- **What may remain:** learner rows that name these ids (they resolve as an absent lesson); the fixture-local copy of
+  the retired manifest at `tests/fixtures/listening_catalog.fixture.v1.json` and the captured API payloads in
+  `scripts/fixtures/api/` (test inputs only); historical references in reviews and archived evidence.
+- **What must not happen:** re-adding these lessons or sources to the shipped catalogue, a learner surface or default
+  that points at them, or deleting the learner rows that name them.

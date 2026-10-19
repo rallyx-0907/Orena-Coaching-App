@@ -21,6 +21,10 @@ from writing_coach.media_library_store import FileMediaLibraryStore, MediaLibrar
 from writing_coach.persistence.admin_repository import AdminConsoleRepository
 from writing_coach.persistence.models import AuditLog, Base, Essay, User, UserLanguageProfile, VocabularyCollection
 
+# The shipped built-in Listening catalogue is empty since D-245; this module exercises catalogue lessons on the
+# fixture-local copy of the retired manifest (conftest.fixture_listening_catalog).
+pytestmark = pytest.mark.usefixtures("fixture_listening_catalog")
+
 NOW = datetime.now(UTC)
 ADMIN = {"google_sub": "sub-admin", "email": "admin@example.com", "role": "admin"}
 

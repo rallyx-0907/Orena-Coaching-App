@@ -7581,6 +7581,8 @@ Supersedes the "pending" state of D-234 item 7: the switch stays default-off in 
 
 **Not in this decision.** No schema change, no provider, no AI image, no network call at publish time, and no unpublishing of existing items. Real pictures for the existing articles (NASA, Wikimedia and the like) are attached later with the route above.
 
+**Amendment 2026-10-20 (owner report relayed by Hermes: every fable card showed a "T", the title was cut by the duration pill and "EN" hidden by the type pill).** Point 3 is narrowed to what the pinned Discover card draws over a picture (the type and duration pills only): the typographic cover prints no title and no topic/language label (the title stays its accessible name), its glyph is the first letter of the first meaningful word (a leading English article and quotes skipped; Chinese skips punctuation only), placed clear of both pills, and its second hue is chosen by the topic from the same token list (by the title when there is none). Existing covers are remade with `scripts/backfill_typographic_covers.py --regenerate-typographic` (dry run unless `--apply`; only a cover whose provenance kind is typographic; a real picture is never touched). Gap recorded in `UI_BACKEND_GAPS.md` ("Discover: the cover of a text-only item").
+
 ## D-241 - Account deletion: the D-054 gate is lifted for the reviewed operator tool (2026-10-19)
 
 **Status:** ACCEPTED (owner, 2026-10-19 16:26, relayed by Hermes: "tôi thấy cứ làm theo đề xuất" - approving the
@@ -7689,3 +7691,28 @@ two items left open above are decided.
    that reason as `import_job.failure_kind` too, so the Import sheet says it in its existing error slot
    (`error_youtube_no_channel_captions`, en/vi/zh) on either route. A non-YouTube source keeps its fallback.
 
+## D-245 - The six built-in sample Listening lessons are retired; the built-in catalogue is empty (2026-10-20)
+
+**Status:** ACCEPTED (explicit owner instruction, typed 2026-10-20: remove the original sample lessons like "A pen in my
+bag" and the similar Chinese ones, they have no real learning value; extended the same day to "The cosmic calendar" and
+怎么搜索维基百科). The number is assigned at merge.
+
+1. **Retired.** `en-daily-pen-in-my-bag`, `zh-daily-what-is-this`, `zh-culture-nationalities`,
+   `zh-culture-where-are-you-from`, `en-science-cosmic-calendar` and `zh-technology-search-wikipedia` leave
+   `writing_coach/content/listening_catalog.v1.json`, with their five Wikimedia Commons sources. The manifest keeps
+   `schema_version` 1 with empty `sources` and `lessons`, which the loader already accepts. No media or illustration
+   file was bundled for them (playback streams from Commons), so no asset is deleted.
+2. **Learner data stays.** No row is deleted and no migration runs. A progress row, saved place, take, annotation or
+   content-visibility row that names a retired id stays in place and resolves as a lesson that is not on the shelf
+   already does (D-203): absent from every list, `404` when opened (`/api/listening/library/{id}`,
+   `/api/speaking/model-audio/{id}/...`), nothing resolved by the progress and collection resolvers, never a 500. A
+   saved Continue entry that names one opens the router's existing "gone" page.
+3. **Zero built-in lessons is a valid state.** Listening, Discover and Today show no catalogue section (or their existing
+   empty state); the Speaking library carries only its authored items; word clips, the model-clip backfill
+   (`include_catalog`), agent suggestions and the licences page read an empty list. Media an administrator imports
+   still fills the same library.
+4. **Tests.** Tests that exercised catalogue lessons run on a fixture-local copy of the retired manifest
+   (`tests/fixtures/listening_catalog.fixture.v1.json`, loaded by the `fixture_listening_catalog` fixture in
+   `conftest.py`) with their assertions unchanged; `tests/test_listening_catalog_empty.py` pins the empty shipped
+   catalogue and the graceful lookups. The catalogue-reading Node gates check the fixture beside the shipped manifest.
+   Tombstone: `LEGACY_TOMBSTONES.md`, "The built-in sample Listening lessons".
