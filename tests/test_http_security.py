@@ -62,6 +62,10 @@ def test_paid_and_upload_routes_are_in_a_rate_group_and_polls_are_not():
     ("POST", "/api/reading/lookup", "reading_lookup"),
     ("POST", "/api/media-learning/explain", "media_explain"),
     ("POST", "/api/texts/discussion/turns", "discussion_ai"),
+    ("GET", "/api/dictionary/", "dictionary_lookup"),
+    ("GET", "/api/library/vocabulary/serendipity/audio", "word_audio"),
+    ("GET", "/api/library/vocabulary/%E4%BD%A0%E5%A5%BD/deep", "word_deep"),
+    ("POST", "/api/speaking/model-reference/lesson-1/3", "speaking_reference"),
 ])  # fmt: skip
 def test_every_ai_backed_route_is_limited_per_account(method, path, group):
     """PRE-502 R3: no AI-backed route is outside a per-account group, reads that can reach a paid provider included."""
@@ -73,6 +77,8 @@ def test_other_reads_stay_unlimited():
                  "/api/reading/articles", "/api/health"):
         assert rate_group("GET", path) is None
     assert rate_group("POST", "/api/texts/discussion/turns/extra") is None  # exact paths only
+    assert rate_group("GET", "/api/library/vocabulary/audio") is None  # a word is needed between prefix and suffix
+    assert rate_group("GET", "/api/library/vocabulary/word") is None
 
 
 def test_one_account_at_its_limit_never_limits_another():
