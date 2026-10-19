@@ -230,6 +230,20 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(plansPayload([draft]).plans[0].entitlements[0].limit, 450);
   voice.enabled = false;
   assert.equal(plansPayload([draft]).plans[0].entitlements[0].enabled, false, 'the toggle still saves');
+  // No stored limit (or the old on/off 1, or under a minute): the editor shows the server's 15-minute default.
+  for (const stored of [null, undefined, 1, 59]) {
+    const bare = draftOf({ id: 'plus', prices: {}, entitlements: [{ key: 'orena.voice', enabled: true, ...(stored === undefined ? {} : { limit: stored }), params: {} }] }).entitlements[0];
+    assert.equal(bare.metered, true, `limit ${stored}: a minutes field`);
+    assert.equal(bare.limit, '15', `limit ${stored}: defaults to 15 min`);
+    assert.equal(plansPayload([{ id: 'plus', prices: {}, entitlements: [bare] }]).plans[0].entitlements[0].limit, 900);
+  }
+  // Plan & usage: no voice row while the commerce read does not report orena.voice.
+  const model = await import('../static/orena/screens/plan/model.js');
+  assert.equal(model.usageRows({ features: { 'orena.message': { limit: 20, used: 1, usage_state: 'known', entitlement_state: 'known' } } }).some((row) => row.key === 'orena.voice'), false);
+  assert.equal(model.usageRows({ features: {} }).length, 0);
+  // The voice 429 carries no `upgrade` and no `options`: no way to the plans.
+  const { quotaOffersPlans } = await import('../static/orena/screens/plan/quota-notice.js');
+  assert.equal(quotaOffersPlans({ status: 429, category: 'quota_exhausted', context: { feature: 'orena.voice', used: 900, limit: 900, scale: 60 } }), false, 'no options, no link');
 }
 
 // D-237: at the daily voice-minute cap (429 quota_exhausted, orena.voice) a line, text chat stays, no upsell for a paid learner.

@@ -42,8 +42,11 @@ export function draftOf(plan) {
     id: plan.id,
     prices: Object.fromEntries(PERIODS.map((period) => [period, Object.fromEntries(CURRENCIES.map((currency) => [currency, text(plan.prices?.[period]?.[currency] ?? 0)]))])),
     entitlements: (plan.entitlements || []).map((item) => {
-      const scale = scaleOf(item);
-      const limit = item.limit ?? item.monthly_limit;
+      const voice = item.key === 'orena.voice';
+      const scale = voice && !(Number(item.scale) > 0) ? 60 : scaleOf(item);
+      const held = item.limit ?? item.monthly_limit;
+      // The server reads a stored voice limit under one minute (none, or the old on/off 1) as its 15-minute default (D-237): the editor shows that.
+      const limit = voice && (held == null || Number(held) < 60) ? 900 : held;
       return {
         key: item.key, enabled: item.enabled === true,
         metered: limit != null, limit: limit == null ? null : shown(limit, scale),
