@@ -54,15 +54,18 @@ _SELF_FORGETS = re.compile(
 _PRONOUN_FORGETS = re.compile(
     r"(?i)\b(?:mình|tôi|em|tớ|anh|chị)\s+quên\b|(?<!们)我(?!们)[^，。！？,.!?;]{0,12}忘"
 )
-_CLOSING_REQUEST = re.compile(r"(?i)\b(?:đi|nhé|nha)\s*[.!?]*\s*$|吧\s*[。！？!?.]*\s*$")
+# The request closes the very clause the verb is in ("Chị quên vụ đó đi"), not a later one ("Mình quên từ này rồi,
+# nhắc lại giúp mình nhé" is "I forgot; remind me").
+_CLOSING_REQUEST = re.compile(
+    r"(?i)\bquên\b[^,;.?!\n]*\b(?:đi|nhé|nha)\s*[.!?]*\s*$|忘[^，。！？,.!?;]*吧\s*[。！？!?.]*\s*$")
 _FORGET_IMPERATIVE = re.compile(
     r"(?i)(?:^|[.!?;:\n]\s*)(?:(?:thôi|à|ừ|vậy|ok|okay|please)[,\s]+)?(?:quên|forget)\b"
     r"|\bquên\s+(?:giùm|giúp|hộ)\b"
-    r"|\bquên\b[^.?!\n]*\b(?:đi|nhé|nha)\s*[.!?]*\s*$"
+    r"|\bquên\b[^,;.?!\n]*\b(?:đi|nhé|nha)\s*[.!?]*\s*$"
     r"|\bđừng nhớ\b|\bkhông cần nhớ\b|\bstop remembering\b"
     r"|\bforget (?:it|that|about (?:it|that)|the note|my note)\b"
     # not a bare 忘了 at the start ("(I) forgot..."), and 把...忘了 only with 吧 after it
-    r"|(?:^|[，。！？,.!?;]\s*)请?忘掉|忘了吧|忘了它|别记|不要记|忘记.{0,12}吧|把.{1,12}忘了吧"
+    r"|(?:^|[，。！？,.!?;]\s*)请?忘掉|忘了吧|忘了它|别记|不要记|忘记[^，。！？,.!?;]{0,12}吧|把[^，。！？,.!?;]{1,12}忘[了掉]吧"
 )
 
 

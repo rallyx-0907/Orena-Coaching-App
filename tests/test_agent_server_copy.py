@@ -468,3 +468,16 @@ def test_a_new_note_on_a_match_that_names_no_note_stays_new():
                             request("Sửa lỗi ngữ pháp trong câu này. Từ giờ nhớ là mình đang ôn HSK4.", notes=(GRAMMAR,)))
     [update] = [e for e in events if e.name == "memory_update"]
     assert update.op == "upsert" and update.note["id"] != GRAMMAR.id and update.note["text"] == "Mình đang ôn HSK4"
+
+
+def test_i_forgot_with_a_polite_ending_keeps_the_answer():
+    """Re-review 4 of #347: "Mình quên từ này rồi, nhắc lại giúp mình nhé" is a learning question; it is not read as a
+    forget, so the learner gets the model's answer, not "please ask me once more"."""
+    remind = CoachNote.model_validate(
+        {"id": "n-remind1234", "kind": "preference", "text": "Nhắc lại từ mới mỗi buổi", "weight": 0.6,
+         "last_reinforced": "2026-09-28T06:14:30+00:00", "expires_at": None}  # fmt: skip
+    )
+    events, provider = run([reply("从 nghĩa là từ, kể từ.")],
+                           request("Mình quên từ này rồi, nhắc lại giúp mình nhé", notes=(remind,)))
+    assert len(provider.requests) == 1 and not [e for e in events if e.name == "memory_update"]
+    assert segments(events)[0][1] == "从 nghĩa là từ, kể từ."

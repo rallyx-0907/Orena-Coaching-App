@@ -36,6 +36,10 @@ def note(text, id_="n-1"):
     ("我又把单词忘了", "多讲单词"),
     ("忘了这个词是什么意思", "讲词的意思时多举例"),
     ("Quên mất từ này rồi, nghĩa là gì?", "Khi mình hỏi nghĩa là gì, cho ví dụ"),
+    # a polite closing particle in a LATER clause is not "forget it" (re-review 4 of #347)
+    ("Mình quên từ này rồi, nhắc lại giúp mình nhé", "Nhắc lại từ mới mỗi buổi"),
+    ("Mình quên nghĩa từ này, nói lại nhé", "Nói lại nghĩa từ khi mình hỏi"),
+    ("我忘了，再说一遍吧", "再说一遍时说慢一点"),
 ])
 def test_an_ordinary_learning_message_changes_no_note(message, kept):
     assert notes_the_message_changes(message, [note(kept)]) == ()
@@ -56,6 +60,10 @@ def test_an_ordinary_learning_message_changes_no_note(message, kept):
     ("Forget the short examples", "Give me short examples", FORGET),
     ("忘记那个例子吧", "多举例子", FORGET),
     ("把那个例子忘了吧", "多举例子", FORGET),
+    # a pronoun before the verb, with the request closing the same clause
+    ("Chị quên vụ ví dụ ngắn đi", "Cho mình ví dụ ngắn", FORGET),
+    ("我们把那个例子忘了吧", "多举例子", FORGET),
+    ("还是把例子忘掉吧", "多举例子", FORGET),
 ])
 def test_a_real_note_request_still_matches(message, kept, intent):
     assert notes_the_message_changes(message, [note(kept)])
