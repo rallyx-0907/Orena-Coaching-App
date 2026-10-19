@@ -534,7 +534,7 @@ export function sourcePage({ source, view, t, ui, href }) {
         })}
         ${block({
           title: t('srcAuto'), sub: t('srcAutoSub'),
-          pills: [source.auto_publish?.enabled ? { label: t('srcImagesOn'), tone: 'ok' } : { label: t('srcImagesOff'), tone: 'mute' }],
+          pills: [source.auto_publish?.enabled ? { label: t('srcAutoPillOn'), tone: 'ok' } : { label: t('srcAutoPillOff'), tone: 'mute' }],
           actions: [{ label: t(source.auto_publish?.enabled ? 'srcAutoStop' : 'srcAutoAllow'), size: 'sm', kind: source.auto_publish?.enabled ? '' : 'primary', a: 'source-auto-publish', data: { id: source.id, enabled: source.auto_publish?.enabled ? '0' : '1' } }],
         })}
         ${block({ title: t('srcPolling'), pills: [{ label: t('pillFuture'), tone: 'fut' }], body: html`<div class="a-hint">${t('srcPollingText')}</div>` })}
