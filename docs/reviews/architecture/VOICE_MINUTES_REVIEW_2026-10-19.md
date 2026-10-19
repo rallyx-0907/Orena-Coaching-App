@@ -21,3 +21,9 @@ There is no P0 or P1. Follow-ups made with this record:
 - The D-237 field list no longer names `upgrade`.
 
 Left as is: a released ticket after a 0-seconds race relies on `require_voice_time` raising. If it ever returned, the worst case is a one-second, uncharged token.
+
+## PR #328 (`day_limit_reached`): reviewed commit `1b06f419`, outcome **CHANGES REQUIRED**, now resolved
+
+- **P1, fixed.** The field was in no contract version. The UI lane landed Agent Contract v13 (#330, `5acfb9d9`), which names it in §9.1 and in the §9 extend answer. #328 merged that main and now cites v13.
+- **P2, fixed.** The exact boundary (left == seconds) is pinned by a test.
+- **P2, open.** No metered extend-clamp test, and no test of a replayed extend.
