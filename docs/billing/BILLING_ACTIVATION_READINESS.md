@@ -97,12 +97,12 @@ deploy fixes both. Re-read the table after that deploy.
 - `orena.voice` is 900 s (15 min) a day for Plus and Pro, and off for Free (D-235 to D-237).
 - `PLAN_CURRENCY` is USD in every language.
 - `BILLING_ENABLED` is unset.
-- `ORENA_QUOTA_ENFORCEMENT=on`, with the same five meters as before; the assist meters are not in the list (gate 7b C6).
+- `ORENA_QUOTA_ENFORCEMENT=on`, with `ORENA_QUOTA_METERS` = `writing.review`, `orena.message`, `pronunciation.audio`, `media.import`, `languages.target`, the same list as gate 7b C6; the assist meters are not in the list (gate 7b C6).
 
 PRE-401 is closed.
 
-The owner decided on 2026-10-19 that voice chat with Orena is for Plus and Pro only, not Free. The Intelligence lane
-is adding the voice entitlement to the catalogue, and its row joins this table once it is merged.
+The owner decided on 2026-10-19 that voice chat with Orena is for Plus and Pro only, not Free (D-235 to D-237).
+The re-read above checks it on `:8000`.
 
 ## 5. Configuration for the pilot host (names only)
 
