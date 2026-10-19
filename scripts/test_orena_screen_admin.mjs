@@ -503,6 +503,12 @@ fixtureFor = (method, url) => {
     assert.ok(tab.includes('data-field="dc:openai:gpt-x" data-value="full_memory" aria-pressed="true"'), `${ui}: the model row shows its saved class`);
     assert.ok(tab.includes('data-field="dc:groq" data-value="none" aria-pressed="true"'), `${ui}: an unset provider is none`);
     assert.ok(tab.includes('data-a="dc-save"'), `${ui}: Save is drawn`);
+    assert.ok(tab.includes(packs[ui].dcOverride), `${ui}: a provider:model row is said to override its provider`);
+    assert.doesNotMatch(packs.en.dcSub, /receives none/, "en: an unset provider is not said to receive none");
+    assert.match(packs.en.dcSends_none, /own messages/, 'none does not claim the learner’s own messages stay home');
+    assert.match(packs.vi.dcSends_none, /Tin nhắn của chính người học/);
+    assert.match(packs.zh.dcSends_none, /学习者自己的消息/);
+    assert.doesNotMatch(packs[ui].dcSaved + packs[ui].dcUnavailText, /only what|chỉ nhận những gì|只会收到其级别/, `${ui}: no claim that nothing else is sent`);
     assert.ok(!tab.includes('SERVER-ENGLISH-TEXT'), `${ui}: the server's English text is not shown`);
     const env = String(pages.listPage({ ...common, state: { ...common.state, dataClasses: { doc: { ...doc, source: 'environment' }, state: 'ready' } }, view: { tab: 'data', query: '', dataDraft: draftOf } }).markup);
     assert.ok(env.includes(packs[ui].dcEnvLine) && !env.includes('data-a="dc-save"'), `${ui}: an environment record is read-only with its explanation`);

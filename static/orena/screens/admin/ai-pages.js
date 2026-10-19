@@ -187,7 +187,7 @@ function dataClassesTab({ state, view, t }) {
     ${locked ? banner({ tone: 'warn', title: t('dcSourceEnvironment'), text: t('dcEnvLine') }) : ''}
     ${formBlock({
       title: t('dcTitle'),
-      sub: t('dcSub'),
+      sub: `${t('dcSub')} ${t('dcOverride')}`,
       span: true,
       fields,
       error: view.dataError || '',
