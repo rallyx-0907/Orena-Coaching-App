@@ -48,10 +48,12 @@ export default async function mountReaderComplete(element, ctx) {
 
   const doc = await loadReadable(parsed, memory);
   const contentId = doc.isBook ? contentIdFor('book', `${doc.bookId}:${doc.chapterId}`) : contentIdFor(doc.kind, doc.id);
+  // An article with no language of its own is the learner's target language; with neither, no request (the server answers 422 to an empty one).
+  const articleLanguage = doc.kind === 'article' ? doc.language || ctx.context.language || '' : '';
   const [savedFrom, evidence, articles] = await Promise.all([
     loadSavedFromText(doc),
     doc.kind === 'article' ? request('/api/reading/practice/evidence?limit=50').then((r) => r?.items).catch(() => []) : [],
-    doc.kind === 'article' ? api.readingArticles(doc.language).then((r) => r?.items).catch(() => []) : [],
+    articleLanguage ? api.readingArticles(articleLanguage).then((r) => r?.items).catch(() => []) : [],
   ]);
   if (!ctx.isCurrent()) return undefined;
 

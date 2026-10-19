@@ -64,3 +64,10 @@ const css = fs.readFileSync('static/orena/legal/legal.css', 'utf8');
 assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(/i.test(css), 'the legal column uses colour tokens only');
 
 console.log(`Orena legal pages: ${LEGAL_PAGES.length} pages, English only, content is the drafts', nothing to strip leaks, placeholders kept: PASS`);
+
+// Settings, Privacy: the three legal rows get the same "(English)" note through the same helper (D-238).
+{
+  const { readFileSync } = await import('node:fs');
+  const settings = readFileSync(new URL('../static/orena/screens/settings/screen.js', import.meta.url), 'utf8');
+  assert.match(settings, /legalLabel\(rowLabel\(row\), copyLanguages\(\)\.ui\)/, 'Settings legal rows use legalLabel');
+}
