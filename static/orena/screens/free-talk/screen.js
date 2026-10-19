@@ -30,7 +30,7 @@ import { t } from './copy.js';
 import {
   DURATIONS_MS, topics, formatClock, waveBars, resultStats, ledgerFacts, fixesOf, strengthsOf, phrasesFor, headlineKind,
 } from './model.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 const MIN_TAKE_MS = 600;
 
@@ -291,10 +291,11 @@ export default async function freeTalk(element, ctx) {
       errorText = '';
       state = 'review';
       paint();
-    } catch {
+    } catch (error) {
       if (!alive()) return;
       state = 'setup';
       paint();
+      if (showTranscribeRefusal(error)) return;
       void problem(navigator.onLine === false ? 'offline' : 'provider');
     }
   }

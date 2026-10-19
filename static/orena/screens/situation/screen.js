@@ -27,7 +27,7 @@ import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
 import { scenarios, progressLabel, naturalAlternative, situationJudgements } from './model.js';
-import { pausedLineNow, pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 export default async function situation(element, ctx) {
   await useStyles('screens/situation/situation.css');
@@ -166,10 +166,11 @@ export default async function situation(element, ctx) {
       if (!text) return void problem('notheard');
       answer = text;
       paint();
-    } catch {
+    } catch (error) {
       if (!alive()) return;
       state = 'input';
       paint();
+      if (showTranscribeRefusal(error)) return;
       void problem(navigator.onLine === false ? 'offline' : 'provider');
     }
   }

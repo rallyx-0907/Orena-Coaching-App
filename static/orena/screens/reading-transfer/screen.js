@@ -34,7 +34,7 @@ import { t } from './copy.js';
 import {
   READABLE_KINDS, COACH_LIMITS, MODES, paragraphsOf, workableSentences, nextIndex, canMoveOn, canCheck, coachRequest, mapCoaching,
 } from './model.js';
-import { pausedLineOf } from '../plan/quota-notice.js';
+import { pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 const MODE_COPY = {
   paraphrase: { chip: () => t('modeParaphrase'), prompt: () => t('promptParaphrase') },
@@ -306,10 +306,11 @@ export default async function mountReadingTransfer(element, ctx) {
     try {
       const res = await api.transcribeSpeech(captured.blob, language);
       text = String(res?.text || '').trim();
-    } catch {
+    } catch (error) {
       if (!ctx.isCurrent() || mine !== attempt) return;
       transcribing = false;
       paintFoot();
+      if (showTranscribeRefusal(error)) return;
       openMicState(ctx, {
         state: navigator.onLine === false ? 'offline' : 'provider',
         onAction: (key) => {

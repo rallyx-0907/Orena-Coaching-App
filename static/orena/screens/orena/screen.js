@@ -85,7 +85,7 @@ export default async function mountOrena(element, ctx) {
               ? html`<div class="s-orena-home__empty">${intelChip({ size: 32, mark: 26 })}<div class="s-orena-home__empty-body"><div class="s-orena-home__empty-title">${t('emptyTitle')}</div><div class="s-orena-home__empty-sub">${t('emptySub')}</div></div></div>`
               : ''}
             ${state.messages.map((message) => messageMarkup(message, { surface: 'home', ranActions, supported }))}
-            ${state.thinking ? html`<div class="s-orena-home__thinking">${intelChip({ size: 30, mark: 24, state: 'thinking' })}${thinkingText(state.tool, t('thinkingLabel'))}</div>` : ''}
+            ${state.thinking ? html`<div class="s-orena-home__thinking">${intelChip({ size: 30, mark: 24, state: 'thinking' })}${thinkingText(state.tool, t('thinkingLabel'), state.waiting)}</div>` : ''}
           </div>
           <div class="s-orena-home__composer">
             <div class="s-orena-home__card">

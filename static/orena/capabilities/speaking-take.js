@@ -13,6 +13,7 @@
      (retry the same take without recording again). A service failure is never the learner's. */
 
 import { newIdempotencyKey } from '../infrastructure/quota-headers.js';
+import { aiPauseOf } from '../infrastructure/ai-paused.js';
 
 export const TAKE = Object.freeze({
   IDLE: 'idle',
@@ -36,6 +37,11 @@ export function failureOf(error) {
   if ((error?.name === 'TypeError' && !error?.status) || globalThis.navigator?.onLine === false) return { kind: 'offline', retry: true };
   const category = String(error?.category || '');
   if (error?.status === 429 && category === 'quota_exhausted') return { kind: 'quota', retry: false, error };
+  // The system's daily AI ceiling (429 `daily_ai_limit`, or the pause header on any answer): told as the paused line, never
+  // retried - it would be refused again - and never as a fault of the service (#316 pattern).
+  if (aiPauseOf(error)) return { kind: 'paused', retry: false, error };
+  // The per-account brake (429 `rate_limited`, Retry-After): the same, with the seconds to wait.
+  if (error?.status === 429 && (category === 'rate_limited' || !category)) return { kind: 'rate_limited', retry: false, error };
   // The server already has this take under this key (an answer that was lost on the way back): sending it again can
   // only be answered the same way for ever. Nothing is retried; the learner records again - a new take, a new key,
   // a new real assessment. (No stored result is replayed: that would be new persistence.)

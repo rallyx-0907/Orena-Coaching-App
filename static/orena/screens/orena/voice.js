@@ -27,7 +27,7 @@ import { micUnavailableReason } from '../mic/model.js';
 import { openVoiceSession, connectLiveVoice, listVoices, voiceEntitled, noteVoiceEntitled, stillNotEntitled } from '../../agent/live-voice.js';
 import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
-import { isDailyAiLimit, isQuotaExhausted, isVoiceNotInPlan, pausedMessage, quotaMessage, quotaOffersPlans, seePlansLabel, voiceDayLimitMessage } from '../plan/quota-notice.js';
+import { isDailyAiLimit, isQuotaExhausted, isVoiceNotInPlan, pausedMessage, quotaMessage, quotaOffersPlans, seePlansLabel, showTranscribeRefusal, voiceDayLimitMessage } from '../plan/quota-notice.js';
 import { openVoiceUpsell } from '../plan/voice-upsell.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
@@ -49,8 +49,13 @@ function showAiPaused(error) {
 /* The server's plan-limit refusal (429 `quota_exhausted`, §2.1) in the place a failed request already shows one: the
    Respond room's toast, with the server's own figures and the way to the plans. */
 function showPlanLimit(error) {
-  if (!quotaOffersPlans(error)) { toast(quotaMessage(error)); return; } // the voice cap of a learner with no higher plan: the line only
-  toast(quotaMessage(error), { undo: () => { location.hash = href('pricing'); }, undoLabel: seePlansLabel() });
+  const say = (commerce) => {
+    if (!quotaOffersPlans(error)) { toast(quotaMessage(error, commerce)); return; } // the voice cap of a learner with no higher plan: the line only
+    toast(quotaMessage(error, commerce), { undo: () => { location.hash = href('pricing'); }, undoLabel: seePlansLabel() });
+  };
+  // The voice cap says "You can still message Orena" only while messages remain: ask the plan before saying it.
+  if (error?.context?.feature === 'orena.voice') void api.productCommerce().catch(() => null).then(say);
+  else say(null);
 }
 
 /* Voice chat is Plus and Pro only (contract v11, D-235). A Free learner who taps any voice entry, or whose session or renewal the
@@ -391,7 +396,7 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
       setPhase('idle');
       if (isDailyAiLimit(error)) showAiPaused(error);
       else if (isQuotaExhausted(error)) showPlanLimit(error); // no Orena message is left today: told, not retried
-      else toast(t('voiceTranscribeFailed'), { iconName: 'circle-alert' });
+      else if (!showTranscribeRefusal(error)) toast(t('voiceTranscribeFailed'), { iconName: 'circle-alert' }); // the hour of audio a day, or the brake: their own line
       return;
     }
     if (disposed) return;
@@ -557,7 +562,7 @@ let fullHandle = null;
 
 function replyMarkup(reply) {
   if (!reply) return '';
-  if (reply.error) return html`<div class="s-orena-voicefull__reply">${errorText(reply.error, t('transportError'), t('providerError'))}</div>`;
+  if (reply.error) return html`<div class="s-orena-voicefull__reply">${errorText(reply.error, t('transportError'), t('providerError'), t('inProgressError'))}</div>`;
   const segments = reply.segments || [];
   if (!segments.length) return '';
   return html`<div class="s-orena-voicefull__reply">${segments.map((segment) => html`<span lang="${langAttr(fromContractLang(segment.lang))}">${segment.text}</span>`)}</div>${replyReport(reply, 'orena.voice')}`;

@@ -56,7 +56,8 @@ import assert from 'node:assert/strict';
   const neverAnswers = (url, init) => new Promise((resolve, reject) => init.signal.addEventListener('abort', () => reject(new Error('aborted'))));
   const items = [];
   for await (const item of liveTurn({}, { fetchImpl: neverAnswers, idleMs: 20, log: () => {} })) items.push(item);
-  assert.deepEqual(items, [{ event: 'error', data: { class: 'transport', message: '', fallback: 'retry' } }], 'a server that never answers ends in a retry');
+  assert.deepEqual(items.map((i) => [i.event, i.data.class, i.data.fallback, i.data.status ?? null]), [['error', 'transport', 'retry', null]], 'a server that never answers ends in a retry (outcome unknown: no status)');
+  assert.ok(items[0].data.key, 'with the key it was sent under, so a manual Retry can reuse it');
 
   const enc = new TextEncoder();
   let stall;
@@ -495,7 +496,7 @@ assert.deepEqual([run.events, run.sent.length], [['language_mismatch'], 1], '409
   run = await drive([answer(403, envelope('account_deleted'), { 'Content-Type': 'application/json' })]);
   assert.deepEqual(run.events, ['error:transport:none'], '403: nothing to retry');
   run = await drive([answer(503, envelope('quota_unavailable'), { 'Content-Type': 'application/json' })]);
-  assert.deepEqual(run.events, ['error:transport:retry'], '503 quota_unavailable: a retry');
+  assert.deepEqual(run.events, ['error:quota_unavailable:retry'], '503 quota_unavailable: its own line, a retry');
   run = await drive([answer(429, '{"detail":"rate_limited"}', { 'Retry-After': '1' }), answer(200, SSE_OK)]);
   assert.ok(run.heads[0]['Idempotency-Key'] && run.heads[0]['Idempotency-Key'] === run.heads[1]['Idempotency-Key'], 'one key per message, kept through a rate-limit resend');
   assert.ok(run.heads[0]['X-Orena-Timezone'], 'the device timezone says when the learner\'s day ends');

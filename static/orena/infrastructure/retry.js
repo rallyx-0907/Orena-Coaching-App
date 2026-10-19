@@ -16,6 +16,9 @@ export async function retryOnce(task, shouldRetry = isTransientRequestError) {
     return await task();
   } catch (error) {
     if (!shouldRetry(error)) throw error;
+    // A 429 is the server's brake and names its own wait (Retry-After): an immediate second request would only spend the
+    // same window twice, so it is never re-sent here. The caller shows the slow-down line instead.
+    if (Number(error?.status) === 429) throw error;
     return task();
   }
 }

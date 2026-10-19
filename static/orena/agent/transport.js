@@ -52,14 +52,14 @@ export function resetProbe() {
 }
 
 /* One turn → an async iterable of { event, data } (AGENT_CONTRACT §4, §2.1). */
-export async function* turn(request, { signal, fetchImpl = globalThis.fetch } = {}) {
+export async function* turn(request, { signal, fetchImpl = globalThis.fetch, idempotencyKey = '' } = {}) {
   const forced = forcedStream();
   let source;
   if (forced) {
     source = mockTurn(request, { signal, forced });
   } else {
     const present = await probe({ interfaceLang: request?.context?.locale?.interface, fetchImpl });
-    source = present ? liveTurn(request, { signal, fetchImpl }) : (async function* absent() { yield { event: 'absent', data: {} }; })();
+    source = present ? liveTurn(request, { signal, fetchImpl, idempotencyKey }) : (async function* absent() { yield { event: 'absent', data: {} }; })();
   }
   for await (const item of source) {
     if (item.event === 'absent') markOrenaAbsent();
@@ -67,7 +67,15 @@ export async function* turn(request, { signal, fetchImpl = globalThis.fetch } = 
   }
 }
 
-const transportError = (fallback = 'retry') => ({ event: 'error', data: { class: 'transport', message: '', fallback } });
+/* `key` is the idempotency key the turn was sent under; `status` / `category` are present only when the server ANSWERED
+   (a refusal). The session keeps them so a manual Retry can tell an unknown outcome (reuse the key, #338) from an answered
+   refusal (a new key): infrastructure/quota-headers.js `nextIdempotencyKey`. */
+const transportError = (fallback = 'retry', extra = {}) => ({ event: 'error', data: { class: 'transport', message: '', fallback, ...extra } });
+
+/* A 429 `rate_limited` is waited out a bounded number of times, and never for longer than this per wait: past either, the
+   learner is told (class `rate_limited`, with Retry) instead of an endless silent loop. */
+export const MAX_RATE_WAITS = 3;
+export const MAX_RATE_WAIT_SECONDS = 30;
 
 /* The plan-limit refusals (D-163) answer 429 / 409 with the canonical envelope - `detail` an object with a
    `category` - where the contract's own 429 (`rate_limited`) and 409 (`target_language_mismatch`) carry a plain
@@ -110,9 +118,12 @@ function idleAfter(ms) {
 
 /* The live path. Exported with its fetch and clock injectable so the gate can drive every §2.1
    status. */
-export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/#/welcome'), log = console.error, idleMs = TURN_IDLE_MS } = {}) {
-  // One key for this learner message, kept through a rate-limit resend: the server never counts it twice (D-163).
-  const idempotencyKey = newIdempotencyKey();
+export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch, sleep = pause, signedOut = () => location.assign('/#/welcome'), log = console.error, idleMs = TURN_IDLE_MS, idempotencyKey: reuseKey = '' } = {}) {
+  // One key for this learner message, kept through a rate-limit resend: the server never counts it twice (D-163). A manual
+  // Retry after an unknown outcome hands the earlier key back in (`reuseKey`), so a turn the server did process is not counted twice.
+  const idempotencyKey = reuseKey || newIdempotencyKey();
+  const unanswered = { key: idempotencyKey };
+  let waits = 0;
   for (;;) {
     let response;
     // The request is the client's own to stop: the caller's stop, or a server that goes quiet (LEX-028).
@@ -135,13 +146,13 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
       idle.clear();
       if (response === IDLE) {
         local.abort();
-        if (!signal?.aborted) yield transportError();
+        if (!signal?.aborted) yield transportError('retry', unanswered);
         return;
       }
     } catch {
       // A request that failed outright leaves the idle timer running; clear it so nothing waits for it.
       idle?.clear();
-      if (!signal?.aborted) yield transportError();
+      if (!signal?.aborted) yield transportError('retry', unanswered);
       return;
     }
     if (response.status === 429 || response.status === 409) {
@@ -161,12 +172,23 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
       if (response.status === 409 && refusal) {
         // operation_* (this message is being processed, or was: a new send is a new key) or account_not_ready: the
         // envelope's 409s are never a change of learning language, which is the plain string.
-        yield transportError('retry');
+        // An answered refusal. `operation_in_progress` is the first request still running: the room says so (not "check your
+        // connection"), and Retry keeps the key.
+        const answered = { key: idempotencyKey, status: response.status, category: refusal.category };
+        if (refusal.category === 'operation_in_progress') yield { event: 'error', data: { class: 'operation_in_progress', message: '', fallback: 'retry', ...answered } };
+        else yield transportError('retry', answered);
         return;
       }
     }
     const status = readStatus(response.status, response.headers?.get?.('Retry-After'));
     if (status.kind === 'wait') {
+      // Bounded: a few short waits, then the learner is told (never an endless silent loop). The refusal is answered,
+      // nothing was processed, so Retry mints a new key.
+      if (waits >= MAX_RATE_WAITS || status.seconds > MAX_RATE_WAIT_SECONDS) {
+        yield { event: 'error', data: { class: 'rate_limited', message: '', fallback: 'retry', retryAfter: status.seconds, key: idempotencyKey, status: 429, category: 'rate_limited' } };
+        return;
+      }
+      waits += 1;
       yield { event: 'wait', data: { seconds: status.seconds } };
       await sleep(status.seconds * 1000, signal);
       if (signal?.aborted) return;
@@ -183,15 +205,22 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
     if (status.kind === 'error') {
       if (response.status === 422) log('[Orena agent] the server refused the request as malformed (422)');
       // The provider behind Orena answered 503 `provider_unavailable`: that is not the learner's network, and the room says so.
-      if (response.status === 503 && (await readRefusal(response))?.category === 'provider_unavailable') {
-        yield { event: 'error', data: { class: 'provider_unavailable', message: '', fallback: status.fallback } };
+      const refused = response.status === 503 ? await readRefusal(response) : null;
+      const answered = { key: idempotencyKey, status: response.status, ...(refused ? { category: refused.category } : {}) };
+      if (refused?.category === 'provider_unavailable') {
+        yield { event: 'error', data: { class: 'provider_unavailable', message: '', fallback: status.fallback, ...answered } };
         return;
       }
-      yield transportError(status.fallback);
+      // The plan could not be read, so the turn failed closed (503 `quota_unavailable`): the room says so.
+      if (refused?.category === 'quota_unavailable') {
+        yield { event: 'error', data: { class: 'quota_unavailable', message: '', fallback: status.fallback, ...answered } };
+        return;
+      }
+      yield transportError(status.fallback, answered);
       return;
     }
     if (!response.body) {
-      yield transportError();
+      yield transportError('retry', unanswered);
       return;
     }
     let ended = false;
@@ -213,7 +242,7 @@ export async function* liveTurn(request, { signal, fetchImpl = globalThis.fetch,
         break;
       }
     }
-    if (!ended && !signal?.aborted) yield transportError();
+    if (!ended && !signal?.aborted) yield transportError('retry', unanswered);
     return;
   }
 }

@@ -25,3 +25,14 @@ export function newIdempotencyKey() {
 export function quotaHeaders(base, idempotencyKey) {
   return { ...base, 'X-Orena-Timezone': deviceTimezone(), ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}) };
 }
+
+/* The key a manual Retry sends (the discussion's `retryPlan`, #338, and Orena's turn follow this one rule). An
+   unanswered request (network, timeout, a stream that died) may have been processed, so the same key goes again and
+   the server answers from what it stored. An answered refusal settled or released the operation, so Retry is a new
+   action with a new key. `operation_in_progress` means the first request is still running: its key is kept, so
+   nothing is stored or charged twice. */
+export function nextIdempotencyKey(error, key, makeId = newIdempotencyKey) {
+  const answered = Boolean(error?.status);
+  const inProgress = error?.category === 'operation_in_progress';
+  return answered && !inProgress ? makeId() : key;
+}
