@@ -350,7 +350,7 @@ export function learnerMemory(storage, owner, language) {
         },
         ...value.continuation.filter((x) => x.id !== id),
       ].slice(0, 20);
-      placeSink?.enter(value.continuation[0]);
+      placeSink?.enter(entry.settle ? { ...value.continuation[0], settle: true } : value.continuation[0]);
       return save();
     },
     /* The server's places merged with the device's own (product/continue-sync.js). This is a cache

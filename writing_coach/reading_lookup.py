@@ -748,6 +748,12 @@ class ReadingLookupService:
                 # Catalogue, then the online dictionary, then local CMUdict (D-202): a free, offline reading
                 # that is there when the dictionary timed out or has no phonetic for the word.
                 pronunciation = _local_english_ipa(selection)
+            if payload is not None and entry is None and not definitions and not pronunciation and part_of_speech != "proper_noun":
+                # Nothing knows this word - no catalogue sense, a dictionary that answered with no entry, no pronunciation.
+                # A dictionary that timed out or was offline says nothing about the word, so its tagger class stays. The
+                # tagger still returns a class for any string (its fallback for an unseen word is a noun), but
+                # that is a guess about spelling, not a fact about the word: show no class (PRE D6).
+                part_of_speech = ""
 
         if not meanings and target != source:
             wait = None

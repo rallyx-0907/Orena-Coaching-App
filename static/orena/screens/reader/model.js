@@ -324,6 +324,13 @@ export function percentFromScroll(scrollTop, scrollHeight, clientHeight) {
   return Math.max(0, Math.min(100, Math.round((scrollTop / max) * 100)));
 }
 
+/* The percent the learner has really read by scrolling, or null when there is nothing to scroll (a short
+   text, or one not laid out yet). Opening a text is not reading it: such a text records no progress until
+   the learner says they finished it (D11 - the Library showed 100% for a text only opened). */
+export function readPercent(scrollTop, scrollHeight, clientHeight) {
+  return scrollHeight - clientHeight > 0 ? percentFromScroll(scrollTop, scrollHeight, clientHeight) : null;
+}
+
 /* The scroll offset for a stored percent (the inverse of percentFromScroll). */
 export function scrollTopFor(percent, scrollHeight, clientHeight) {
   const max = Math.max(0, scrollHeight - clientHeight);

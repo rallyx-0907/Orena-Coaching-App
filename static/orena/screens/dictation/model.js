@@ -185,10 +185,14 @@ export function checkAnswer({ expected, answer, language }) {
 }
 
 /* The frame's score (`dScore`: "matched/total") and its three-tier note (`dScoreNote`): every word,
-   close (0.7 or better), or replay. `correct` counts the units the comparison matched. */
+   close (0.7 or better), or replay. The figure is drawn from the evaluator's own accuracy - the number the
+   server stores and the learner summary reports as `dictation_best_match` - so the card and the summary
+   share one basis. An answer longer than the line (extra words, speaker names) lowers that accuracy; counting
+   matched marks alone showed 15/30 where the stored match was 23%. With no extras both are the same. */
 export function scoreOf(result) {
   const total = Number(result.totalCount) || 0;
-  const correct = result.marks.filter((mark) => mark.kind === 'correct').length;
+  const percent = Number.isFinite(Number(result.score)) ? Number(result.score) : 0;
+  const correct = result.exact ? total : Math.max(0, Math.min(total, Math.round((percent / 100) * total)));
   const tier = result.exact ? 'exact' : total > 0 && correct / total >= 0.7 ? 'close' : 'again';
   return { correct, total, tier };
 }

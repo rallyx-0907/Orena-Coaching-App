@@ -286,7 +286,9 @@ class LibraryRepository:
             "place_at": _iso(_aware(item.place_at)),
         }
 
-    def set_place(self, *, kind: str, source_id: str, place: dict[str, Any] | None) -> dict[str, Any]:
+    def set_place(
+        self, *, kind: str, source_id: str, place: dict[str, Any] | None, settle: bool = False
+    ) -> dict[str, Any]:
         """Record where the learner is in one piece of content, in place, newest write wins.
 
         One row per (learner, language, kind, content id) on the `started` relationship, created on
@@ -328,6 +330,7 @@ class LibraryRepository:
                 stored_at = _aware(item.place_at)
                 if (
                     place is not None
+                    and not settle
                     and item.place
                     and stored_at is not None
                     and (moment - stored_at).total_seconds() < PLACE_COALESCE_SECONDS

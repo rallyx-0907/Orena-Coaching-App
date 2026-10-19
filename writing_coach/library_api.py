@@ -215,6 +215,8 @@ class PlaceIn(BaseModel):
     total: int | None = Field(default=None, ge=1, le=100000)
     within: float | None = Field(default=None, ge=0, le=100)
     finished: bool = False
+    # The reader paused or left: write this position now instead of coalescing it (not stored).
+    settle: bool = False
     cleared: bool = False
     title: str = Field(default="", max_length=240)
     intent: str | None = Field(default=None, max_length=40)
@@ -259,7 +261,7 @@ def continue_put(content_id: str, payload: ContinueIn) -> dict[str, Any]:
     _require_state_writable(source_id)
     place = _clean_place(payload.place) if payload.place is not None else None
     try:
-        return _library().set_place(kind=payload.kind, source_id=source_id, place=place)
+        return _library().set_place(kind=payload.kind, source_id=source_id, place=place, settle=bool(payload.place and payload.place.settle))
     except LibraryConflict as error:
         raise _refuse(error) from error
 

@@ -16,6 +16,26 @@ const titleKey = {
   adminOperations: 'navOperations', adminWorkers: 'opWorkers', adminPolling: 'opPolling', adminErrors: 'opErrors',
 };
 
+/* The system AI ceiling (GET /api/admin/ai-spend, `system`): nothing below the warning, the warning strip once the server
+   says `warned`, and "AI paused until ..." once `reached`. The design draws no system-ceiling notice, so this is the
+   existing banner (UI_BACKEND_GAPS.md, "AI spend ceiling notice"). */
+export function spendBanner(spend, href) {
+  const system = spend?.system;
+  if (!system || !system.ceiling_usd || !(system.reached || system.warned)) return '';
+  const ui = languages().ui;
+  const money = (n) => new Intl.NumberFormat(ui, { style: 'currency', currency: 'USD', minimumFractionDigits: n < 100 ? 2 : 0, maximumFractionDigits: n < 100 ? 2 : 0 }).format(n);
+  const spent = money(Number(system.spent_usd) || 0);
+  const cap = money(Number(system.ceiling_usd));
+  const actions = [{ label: t('navAi'), a: 'go', data: { to: href('adminAi') } }];
+  if (system.reached) {
+    const at = system.resets_at ? new Date(system.resets_at) : null;
+    const when = at && !Number.isNaN(at.getTime()) ? new Intl.DateTimeFormat(ui, { dateStyle: 'medium', timeStyle: 'short' }).format(at) : t('opUnavailable');
+    return banner({ tone: 'err', title: t('spPausedTitle', { when }), text: t('spPausedText', { spent, cap }), actions });
+  }
+  const pct = Math.round((Number(system.ratio) || 0) * 100);
+  return banner({ tone: 'warn', title: t('spWarnTitle', { spent, cap, pct }), text: t('spWarnText'), actions });
+}
+
 export function issueHref(item, href) {
   if (item.kind === 'transcript_missing') return href('adminMedia');
   if (item.kind === 'content_waiting') return href('adminVocab');
@@ -80,7 +100,7 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
   if (route === 'adminOverview') {
     sub = t('opOverviewSub');
     const d = data.overview || {};
-    body = html`<div class="a-overview-metrics">${metrics([
+    body = html`${spendBanner(data.spend, href)}<div class="a-overview-metrics">${metrics([
       { label: t('opActive'), value: d.activity?.available ? value(d.activity.active_7d) : t('opUnavailable') },
       { label: t('opNew'), value: d.accounts?.available ? value(d.accounts.new_7d) : t('opUnavailable') },
       // Every kind, Reading included (content.states); the older count left Reading out.

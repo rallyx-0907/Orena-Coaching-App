@@ -34,6 +34,7 @@ const {
   roleToast,
   endOfContent,
   percentFromScroll,
+  readPercent,
   scrollTopFor,
   placeFor2,
   furthest,
@@ -202,6 +203,9 @@ assert.equal(percentFromScroll(0, 1000, 500), 0);
 assert.equal(percentFromScroll(250, 1000, 500), 50);
 assert.equal(percentFromScroll(500, 1000, 500), 100);
 assert.equal(percentFromScroll(0, 400, 500), 100);
+assert.equal(readPercent(0, 400, 500), null, 'a text with nothing to scroll has not been read by scrolling');
+assert.equal(readPercent(500, 1000, 500), 100);
+assert.equal(readPercent(0, 1000, 500), 0);
 assert.equal(scrollTopFor(50, 1000, 500), 250);
 assert.equal(scrollTopFor(100, 1000, 500), 500);
 assert.equal(scrollTopFor(50, 400, 500), 0);
@@ -371,3 +375,13 @@ assert.equal(contentIdFor('article', 'x'), 'article:x');
 }
 
 console.log('Orena Reader model: shaping, word roles and pieces (real tagger payloads), end-of-content, position, size, translation turns, words kept from here, highlights: PASS');
+
+/* D11: a text with nothing to scroll records no progress on open, and reaching the end button (to the quiz
+   or to "mark as finished") records 100%. The screen is not run here; the wiring is read from its source. */
+{
+  const { readFileSync } = await import('node:fs');
+  const source = readFileSync(new URL('../static/orena/screens/reader/screen.js', import.meta.url), 'utf8');
+  const quizBranch = source.slice(source.indexOf("act === 'end-primary'"), source.indexOf("act === 'end-secondary'"));
+  assert.match(quizBranch, /recordVisit\(100\)[\s\S]*checku/, 'the quiz path records the end before leaving');
+  assert.match(source, /scrolled == null \? furthestPercent/, 'nothing to scroll records nothing on open');
+}

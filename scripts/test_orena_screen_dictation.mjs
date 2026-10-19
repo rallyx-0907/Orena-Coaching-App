@@ -196,11 +196,24 @@ assert.deepEqual(previousEvidence({ checked_attempt_count: 3, best_accuracy_perc
   assert.equal(scoreNoteKey('bogus'), 'scoreNoteAgain');
 }
 {
-  // An extra word makes the check inexact even when every transcript word matched.
+  // An extra word is a mistake: the card's figure follows the stored accuracy, so it never reads 2/2 beside a
+  // non-exact verdict (PRE D22).
   const result = checkAnswer({ expected: 'good morning', answer: 'good good morning', language: 'en' });
   const score = scoreOf(result);
-  assert.equal(score.correct, score.total);
   assert.notEqual(score.tier, 'exact', 'an extra word is not "every word matched"');
+  assert.equal(score.correct, Math.round((result.score / 100) * score.total));
+  assert.ok(score.correct < score.total);
+}
+{
+  // The card and the learner summary share a basis: an answer much longer than the line (speaker names and
+  // all) is the stored accuracy, not the count of units that happened to match.
+  const expected = '这是一支钢笔我很喜欢它';
+  const answer = '甲：这是一支钢笔我很喜欢它乙：你从哪里买的这支钢笔我也想要一支';
+  const result = checkAnswer({ expected, answer, language: 'zh' });
+  const score = scoreOf(result);
+  assert.ok(result.score < 60);
+  assert.equal(score.correct, Math.round((result.score / 100) * score.total), 'matched/total is the stored accuracy');
+  assert.equal(score.tier, 'again');
 }
 {
   const result = checkAnswer({ expected: 'the quick brown fox', answer: '', language: 'en' });

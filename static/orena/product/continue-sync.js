@@ -49,6 +49,7 @@ export function placeBody(entry) {
   }
   if (within !== undefined) body.within = within;
   body.finished = within !== undefined && within >= 100;
+  if (entry.settle) body.settle = true;
   return { kind, place: body };
 }
 
@@ -66,7 +67,7 @@ export function sendPlace(entry, now = Date.now()) {
   const body = placeBody(entry);
   if (!body) return Promise.resolve(null);
   const previous = sent.get(entry.id);
-  if (previous && now - previous.at < THROTTLE_MS && !crosses(previous, body)) return Promise.resolve(null);
+  if (previous && !entry.settle && now - previous.at < THROTTLE_MS && !crosses(previous, body)) return Promise.resolve(null);
   sent.set(entry.id, { at: now, place: body.place });
   return request(`/api/continue/${encodeURIComponent(entry.id)}`, { method: 'PUT', headers: JSON_HEADERS, body: JSON.stringify(body) }).catch(() => null);
 }
