@@ -245,46 +245,95 @@ def create_engine_for_url(url: str):
     return create_engine(url, future=True)
 
 
-def suppress(url: str, into: str, journals: list[Path], check: bool = False) -> int:
-    """Reapply deletions to a restored database before it serves."""
+def suppress(url: str, into: str, journals: list[Path], check: bool = False, logs: list[Path] | None = None,
+             accept_unsettled: bool = False) -> int:
+    """Reapply deletions to a restored database before it serves.
+
+    `journals` are point-in-time exports (`deletions`); `logs` the continuous deletion log (D-054 a, ORENA_DELETION_LOG):
+    its confirmed deletions add their incarnations to the barrier reapplication, and their owner rows are deleted again,
+    bounded to each deletion (D-054 b). An unsettled intent refuses unless `accept_unsettled` (after a database loss, the
+    operator applies it). `check` also reports owner rows a logged deletion removed that are back."""
     from writing_coach.persistence.deletion_journal import (
         JournalInvalid, merge, read_journal, reapply_deletions, verify_suppressed,
     )
+    from writing_coach.persistence.deletion_log import (
+        DeletionLogInvalid, confirmed_journal, confirmed_operations, torn_records,
+    )
 
-    if not journals:
-        print("suppress needs at least one --deletions journal", file=sys.stderr)
+    logs = logs or []
+    if not journals and not logs:
+        print("suppress needs at least one --deletions journal or --log", file=sys.stderr)
         return 1
     try:
-        body = merge(*(read_journal(path) for path in journals))
-    except JournalInvalid as error:
+        body = merge(*(read_journal(path) for path in journals),
+                     *(confirmed_journal(path, accept_unsettled=accept_unsettled) for path in logs))  # fmt: skip
+        operations = [op for path in logs for op in confirmed_operations(path, accept_unsettled=accept_unsettled)]
+    except (JournalInvalid, DeletionLogInvalid) as error:
         print(f"refusing: {error}", file=sys.stderr)
         return 1
+    for path in logs:
+        dropped = torn_records(path)
+        if dropped:
+            print(f"note: {path}: {len(dropped)} torn record(s) from an interrupted write dropped (line {dropped})")
+    from writing_coach.persistence.account_deletion import DeletionRefused, owner_rows_left, reapply_owner_deletions
+
     engine = _engine_for(url, into)
     if check:
         try:
-            problems = verify_suppressed(engine, body)
+            problems = verify_suppressed(engine, body) + (owner_rows_left(engine, operations) if operations else [])
         finally:
             engine.dispose()
         for problem in problems:
             print(f"not suppressed: {problem}", file=sys.stderr)
-        print(f"{into}: {len(body['records'])} journal record(s), {len(problems)} not holding")
+        print(f"{into}: {len(body['records'])} journal record(s), {len(operations)} logged deletion(s), "
+              f"{len(problems)} not holding")
         return 1 if problems else 0
     try:
         summary = reapply_deletions(engine, body)
-    except JournalInvalid as error:
-        print(f"refusing: {error}; nothing was changed", file=sys.stderr)
+        owners = reapply_owner_deletions(engine, operations) if operations else {"replayed": 0, "absent": 0,
+                                                                                  "returned": [], "unbounded": {}}
+    except (JournalInvalid, DeletionRefused) as error:
+        print(f"refusing: {error}. NOT SAFE TO SERVE: fix it and run suppress again (each step is idempotent), then "
+              "suppress --check", file=sys.stderr)  # fmt: skip
         return 1
     finally:
         engine.dispose()
     print(
         f"deletions reapplied to {into}: {summary['reapplied']} reapplied, "
         f"{summary['barrier_restored']} barrier(s) restored, {summary['already_deleted']} already deleted, "
-        f"{summary['absent']} absent (account not in this database)"
+        f"{summary['absent']} absent (account not in this database); "
+        f"owner rows deleted again for {owners['replayed']} account(s), {owners['absent']} absent"
     )
+    for account in owners["returned"]:
+        print(f"note: account {account} signed in again after its deletion: only rows from before it were deleted, "
+              "and its account row was left")  # fmt: skip
+    for account, tables in owners["unbounded"].items():
+        print(f"operator decides: account {account} has rows with no timestamp in {', '.join(tables)}", file=sys.stderr)
     return 0
 
 
-def rehearse(url: str, dump: Path, into: str, journals: list[Path] | None = None) -> int:
+def reconcile_log(url: str, logs: list[Path], live: bool) -> int:
+    """Settle unsettled intents against THE LIVE database (D-054 a). Refused without --live: a restored database
+    would show a committed deletion as never made."""
+    from writing_coach.persistence.deletion_log import DeletionLogInvalid, reconcile
+
+    if not logs:
+        print("reconcile-log needs --log", file=sys.stderr)
+        return 1
+    engine = create_engine_for_url(url)
+    try:
+        for path in logs:
+            summary = reconcile(engine, path, live=live)
+            print(f"{path}: {summary['done']} confirmed, {summary['abandoned']} abandoned")
+    except DeletionLogInvalid as error:
+        print(f"refusing: {error}", file=sys.stderr)
+        return 1
+    finally:
+        engine.dispose()
+    return 0
+
+
+def rehearse(url: str, dump: Path, into: str, journals: list[Path] | None = None, logs: list[Path] | None = None) -> int:
     """Restore into a separate database and compare it with the source.
 
     The target is created and dropped here. It is never the runtime database:
@@ -315,7 +364,7 @@ def rehearse(url: str, dump: Path, into: str, journals: list[Path] | None = None
         print(result.stderr, file=sys.stderr)
         return 1
 
-    if journals and suppress(url, into, journals) != 0:
+    if (journals or logs) and suppress(url, into, journals or [], logs=logs) != 0:
         _run(["psql", "-v", "ON_ERROR_STOP=1", "-c", f'DROP DATABASE IF EXISTS "{into}"', admin])
         return 1
 
@@ -425,7 +474,8 @@ def rotate(directory: Path, days: int, apply: bool = False, now: datetime | None
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=("capture", "verify", "rehearse", "deletions", "suppress", "rotate"))
+    parser.add_argument("mode", choices=("capture", "verify", "rehearse", "deletions", "suppress", "rotate",
+                                         "reconcile-log"))
     parser.add_argument("--url", default="", help="defaults to POSTGRES_RUNTIME_URL")
     parser.add_argument("--out", type=Path,
                         help="capture: where to write the dump (default: backups/)")
@@ -433,6 +483,12 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--into", default="", help="rehearse/suppress: the restored database")
     parser.add_argument("--deletions", type=Path, action="append", default=[],
                         help="suppress/rehearse: a deletion journal (repeatable)")
+    parser.add_argument("--log", type=Path, action="append", default=[],
+                        help="suppress: the continuous deletion log, ORENA_DELETION_LOG (repeatable; D-054)")
+    parser.add_argument("--accept-unsettled", action="store_true",
+                        help="suppress: after a database loss, apply unsettled deletion intents as confirmed")
+    parser.add_argument("--live", action="store_true",
+                        help="reconcile-log: the operator states this is the live database the log was written for")
     parser.add_argument("--check", action="store_true",
                         help="suppress: write nothing; exit non-zero while any record does not hold")
     parser.add_argument("--allow-ephemeral", action="store_true",
@@ -478,15 +534,17 @@ def main(argv: list[str] | None = None) -> int:
             print("deletions needs --out", file=sys.stderr)
             return 1
         return export_journal(url, args.out)
+    if args.mode == "reconcile-log":
+        return reconcile_log(url, args.log, args.live)
     if args.mode == "suppress":
         if not args.into:
             print("suppress needs --into", file=sys.stderr)
             return 1
-        return suppress(url, args.into, args.deletions, args.check)
+        return suppress(url, args.into, args.deletions, args.check, args.log, args.accept_unsettled)
     if not args.dump or not args.into:
         print("rehearse needs --dump and --into", file=sys.stderr)
         return 1
-    return rehearse(url, args.dump, args.into, args.deletions)
+    return rehearse(url, args.dump, args.into, args.deletions, args.log)
 
 
 if __name__ == "__main__":
