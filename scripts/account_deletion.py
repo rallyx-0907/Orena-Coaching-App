@@ -29,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--commerce", choices=("keep",), default=None,
                         help="required with --apply when the account has money records: they are kept (append-only)")
     parser.add_argument("--url", default=None, help="database URL; default POSTGRES_RUNTIME_URL")
+    parser.add_argument("--log", default=None,
+                        help="the continuous deletion journal outside the database (default ORENA_DELETION_LOG); "
+                             "required with --apply (D-054)")
     args = parser.parse_args(argv)
     url = args.url or os.environ.get("POSTGRES_RUNTIME_URL", "")
     if not url:
@@ -51,8 +54,16 @@ def main(argv: list[str] | None = None) -> int:
                 return 2
             print(json.dumps({"dry_run": True, "plan": summary}, ensure_ascii=False, indent=2))
             return 0
+        from pathlib import Path
+
+        from writing_coach.persistence.deletion_log import log_path
+
+        log = Path(args.log) if args.log else log_path()
+        if log is None:
+            print("--apply needs the deletion journal: --log PATH or ORENA_DELETION_LOG (D-054)", file=sys.stderr)
+            return 2
         try:
-            plan = apply_plan(engine, email=args.email, user_key=args.user_key, commerce=args.commerce)
+            plan = apply_plan(engine, log=log, email=args.email, user_key=args.user_key, commerce=args.commerce)
         except DeletionRefused as refused:
             print(f"refused, nothing changed: {refused}", file=sys.stderr)
             return 1 if str(refused) != "no such account" else 2

@@ -245,32 +245,41 @@ def create_engine_for_url(url: str):
     return create_engine(url, future=True)
 
 
-def suppress(url: str, into: str, journals: list[Path], check: bool = False) -> int:
-    """Reapply deletions to a restored database before it serves."""
+def suppress(url: str, into: str, journals: list[Path], check: bool = False, logs: list[Path] | None = None) -> int:
+    """Reapply deletions to a restored database before it serves.
+
+    `journals` are point-in-time exports (`deletions`); `logs` are the continuous deletion log (D-054 a,
+    ORENA_DELETION_LOG). The log's confirmed operations add their incarnations to the barrier reapplication, and their
+    accounts' owner-table rows are deleted again (D-054 b). `check` also reports owner rows a confirmed deletion left."""
     from writing_coach.persistence.deletion_journal import (
         JournalInvalid, merge, read_journal, reapply_deletions, verify_suppressed,
     )
+    from writing_coach.persistence.deletion_log import DeletionLogInvalid, confirmed_accounts, confirmed_journal
 
-    if not journals:
-        print("suppress needs at least one --deletions journal", file=sys.stderr)
+    logs = logs or []
+    if not journals and not logs:
+        print("suppress needs at least one --deletions journal or --log", file=sys.stderr)
         return 1
     try:
-        body = merge(*(read_journal(path) for path in journals))
-    except JournalInvalid as error:
+        body = merge(*(read_journal(path) for path in journals), *(confirmed_journal(path) for path in logs))
+        accounts = list(dict.fromkeys(a for path in logs for a in confirmed_accounts(path)))
+    except (JournalInvalid, DeletionLogInvalid) as error:
         print(f"refusing: {error}", file=sys.stderr)
         return 1
     engine = _engine_for(url, into)
     if check:
         try:
-            problems = verify_suppressed(engine, body)
+            problems = verify_suppressed(engine, body) + _owner_rows_left(engine, accounts)
         finally:
             engine.dispose()
         for problem in problems:
             print(f"not suppressed: {problem}", file=sys.stderr)
-        print(f"{into}: {len(body['records'])} journal record(s), {len(problems)} not holding")
+        print(f"{into}: {len(body['records'])} journal record(s), {len(accounts)} logged account(s), "
+              f"{len(problems)} not holding")
         return 1 if problems else 0
     try:
         summary = reapply_deletions(engine, body)
+        owners = _replay_owner_deletions(engine, accounts)
     except JournalInvalid as error:
         print(f"refusing: {error}; nothing was changed", file=sys.stderr)
         return 1
@@ -279,9 +288,39 @@ def suppress(url: str, into: str, journals: list[Path], check: bool = False) -> 
     print(
         f"deletions reapplied to {into}: {summary['reapplied']} reapplied, "
         f"{summary['barrier_restored']} barrier(s) restored, {summary['already_deleted']} already deleted, "
-        f"{summary['absent']} absent (account not in this database)"
+        f"{summary['absent']} absent (account not in this database); "
+        f"owner rows deleted again for {owners['replayed']} account(s), {owners['absent']} absent"
     )
     return 0
+
+
+def _replay_owner_deletions(engine, accounts: list[str]) -> dict[str, int]:
+    if not accounts:
+        return {"replayed": 0, "absent": 0}
+    from writing_coach.persistence.account_deletion import reapply_owner_deletions
+
+    return reapply_owner_deletions(engine, accounts)
+
+
+def _owner_rows_left(engine, accounts: list[str]) -> list[str]:
+    """Each logged account that still holds rows a deletion removes (read-only)."""
+    if not accounts:
+        return []
+    from sqlalchemy import text
+
+    from writing_coach.persistence.account_deletion import Account, _incarnations, build_plan
+
+    problems: list[str] = []
+    with engine.connect() as conn:
+        for account_id in accounts:
+            row = conn.execute(text("SELECT user_key FROM users WHERE id = CAST(:a AS uuid)"), {"a": account_id}).first()
+            if row is None:
+                continue
+            plan = build_plan(conn, Account(account_id, row[0], _incarnations(conn, account_id)))
+            left = sum(t.rows for t in plan.targets if t.group != "commerce")
+            if left:
+                problems.append(f"account {account_id} still holds {left} row(s) its deletion removed")
+    return problems
 
 
 def rehearse(url: str, dump: Path, into: str, journals: list[Path] | None = None) -> int:
@@ -433,6 +472,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--into", default="", help="rehearse/suppress: the restored database")
     parser.add_argument("--deletions", type=Path, action="append", default=[],
                         help="suppress/rehearse: a deletion journal (repeatable)")
+    parser.add_argument("--log", type=Path, action="append", default=[],
+                        help="suppress: the continuous deletion log, ORENA_DELETION_LOG (repeatable; D-054)")
     parser.add_argument("--check", action="store_true",
                         help="suppress: write nothing; exit non-zero while any record does not hold")
     parser.add_argument("--allow-ephemeral", action="store_true",
@@ -482,7 +523,7 @@ def main(argv: list[str] | None = None) -> int:
         if not args.into:
             print("suppress needs --into", file=sys.stderr)
             return 1
-        return suppress(url, args.into, args.deletions, args.check)
+        return suppress(url, args.into, args.deletions, args.check, args.log)
     if not args.dump or not args.into:
         print("rehearse needs --dump and --into", file=sys.stderr)
         return 1

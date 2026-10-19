@@ -24,8 +24,13 @@ the public promise it serves is `/account-deletion` (D-162): a learner emails
      the human-gated deploy.
    - **Whether `ai_cost_records` exists** on the public database (migration 0026-0028 are absent from
      `migrations/versions`; `ai/account_costs.py` pauses if the table is missing).
-3. Keep the **deletion journal** outside any database (`scripts/runtime_backup.py deletions`), and after any restore run
-   `suppress` before serving (`deletion_journal.py:40-48`): a restore must not undo a deletion.
+3. Set **`ORENA_DELETION_LOG`** to a file outside the database, beside the backups and under the same access control.
+   `--apply` refuses without it. Each deletion appends an intent before its commit and a done after
+   (`persistence/deletion_log.py`, D-054 a). After any restore, run `python scripts/runtime_backup.py suppress --into
+   <restored db> --log <ORENA_DELETION_LOG> [--deletions <exports>]` before serving. It puts every barrier back and
+   deletes every logged account's owner rows again (D-054 b). `--check` then must answer 0 not holding. If the tool
+   crashed between intent and done, settle the log against the live database first:
+   `deletion_log.reconcile(engine, path)`, which reads only.
 4. Nobody else operates the shared Docker runtime and volumes meanwhile (AGENTS.md section 10). Never
    `docker compose down -v`.
 

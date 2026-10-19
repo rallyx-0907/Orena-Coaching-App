@@ -208,12 +208,19 @@ def build_plan(conn: Any, account: Account) -> Plan:
     return plan
 
 
-def apply_plan(engine: Any, *, email: str | None = None, user_key: str | None = None, commerce: str | None = None,
-               now: datetime | None = None) -> Plan:  # fmt: skip
+def apply_plan(engine: Any, *, log: Any, email: str | None = None, user_key: str | None = None,
+               commerce: str | None = None, now: datetime | None = None) -> Plan:  # fmt: skip
     """Delete the account's data in ONE transaction. The account row is locked first, and the incarnations and the
     plan are read under that lock. Refused, with nothing changed: an unknown or ambiguous account; commerce rows with
-    no `commerce="keep"`; a child table that would refuse the delete."""
+    no `commerce="keep"`; a child table that would refuse the delete.
 
+    `log` is the continuous deletion journal (`deletion_log`, D-054 a), and it is required. The intent is fsynced to it
+    before the commit, and the done record after."""
+
+    from writing_coach.persistence import deletion_log
+
+    if log is None:
+        raise ValueError(f"a deletion log is required (D-054): pass log= or set {deletion_log.LOG_ENV}")
     if commerce not in (None, "keep"):
         raise ValueError('commerce must be "keep": money records are append-only and stay')
     moment = now or datetime.now(UTC)
@@ -228,29 +235,64 @@ def apply_plan(engine: Any, *, email: str | None = None, user_key: str | None = 
             raise DeletionRefused(f"{plan.commerce_rows} commerce rows: they are kept; say so with commerce='keep'")
         if plan.blockers:
             raise DeletionRefused(f"a child table would refuse the delete: {'; '.join(plan.blockers)}")
-        _mark_incarnations_deleted(conn, account, moment)
-        params = {**_params(account), **_learner_params()}
-        for target in plan.targets:
-            if target.group == "commerce":
-                continue
-            where = _where(conn, target.column, target.uuid_column)
-            name = _quote(conn, target.table)
-            extra = f" AND {_learner_actions()}" if target.group == "audit" else ""
-            conn.execute(text(f"DELETE FROM {name} WHERE {where}{extra}"), params)
+        barrier = _mark_incarnations_deleted(conn, account, moment)
+        _delete_owned(conn, account, plan)
         _reset_user(conn, account)
         _revoke_sessions(conn, account, moment)
+        # D-054 a: on disk outside the database before the commit. A failure here rolls the whole deletion back.
+        op = deletion_log.write_intent(log, account_id=account.id, incarnations=barrier, at=moment)
+    deletion_log.write_done(log, op, deleted_at=moment)  # committed: confirmed (`reconcile` settles a crash between)
     return plan
 
 
-def _mark_incarnations_deleted(conn: Any, account: Account, moment: datetime) -> None:
-    if account.incarnations:
+def _delete_owned(conn: Any, account: Account, plan: Plan) -> None:
+    params = {**_params(account), **_learner_params()}
+    for target in plan.targets:
+        if target.group == "commerce":
+            continue
+        where = _where(conn, target.column, target.uuid_column)
+        extra = f" AND {_learner_actions()}" if target.group == "audit" else ""
+        conn.execute(text(f"DELETE FROM {_quote(conn, target.table)} WHERE {where}{extra}"), params)
+
+
+def reapply_owner_deletions(engine: Any, account_ids: list[str], *, now: datetime | None = None) -> dict[str, int]:
+    """After a restore (D-054 b): each confirmed deletion's owner-table rows are deleted again, and the users row is
+    reset, anonymised and its sessions revoked. Incarnation barriers are `deletion_journal.reapply_deletions`. One
+    transaction for all; an account the restore does not hold is `absent`."""
+
+    moment = now or datetime.now(UTC)
+    summary = {"replayed": 0, "absent": 0}
+    with engine.begin() as conn:
+        for account_id in account_ids:
+            row = conn.execute(text("SELECT user_key FROM users WHERE id = CAST(:a AS uuid) FOR UPDATE"),
+                               {"a": account_id}).first()  # fmt: skip
+            if row is None:
+                summary["absent"] += 1
+                continue
+            account = Account(account_id, row[0], _incarnations(conn, account_id))
+            plan = build_plan(conn, account)
+            if plan.blockers:
+                raise DeletionRefused(f"a child table would refuse the replay: {'; '.join(plan.blockers)}")
+            _delete_owned(conn, account, plan)
+            _reset_user(conn, account)
+            _revoke_sessions(conn, account, moment)
+            summary["replayed"] += 1
+    return summary
+
+
+def _mark_incarnations_deleted(conn: Any, account: Account, moment: datetime) -> list[dict[str, Any]]:
+    """Every incarnation deleted; returns them (id, epoch, created_at) for the journal."""
+    if not account.incarnations:
+        # Never registered on the backbone: a deleted epoch-1 row, so the next sign-in meets the barrier (D-054).
+        conn.execute(text("INSERT INTO account_incarnations (id, user_id, epoch, status, created_at, deleted_at)"
+                          " VALUES (CAST(:id AS uuid), CAST(:a AS uuid), 1, 'deleted', :now, :now)"),
+                     {"id": str(uuid.uuid4()), "a": account.id, "now": moment})  # fmt: skip
+    else:
         conn.execute(text("UPDATE account_incarnations SET status = 'deleted', deleted_at = :now"
                           " WHERE user_id = CAST(:a AS uuid) AND status = 'active'"), {"a": account.id, "now": moment})
-        return
-    # Never registered on the backbone: a deleted epoch-1 row, so the next sign-in meets the barrier (D-054).
-    conn.execute(text("INSERT INTO account_incarnations (id, user_id, epoch, status, created_at, deleted_at)"
-                      " VALUES (CAST(:id AS uuid), CAST(:a AS uuid), 1, 'deleted', :now, :now)"),
-                 {"id": str(uuid.uuid4()), "a": account.id, "now": moment})  # fmt: skip
+    return [{"id": str(r[0]), "epoch": int(r[1]), "created_at": r[2]} for r in conn.execute(text(
+        "SELECT id, epoch, created_at FROM account_incarnations WHERE user_id = CAST(:a AS uuid) ORDER BY epoch"),
+        {"a": account.id})]  # fmt: skip
 
 
 def _reset_user(conn: Any, account: Account) -> None:
