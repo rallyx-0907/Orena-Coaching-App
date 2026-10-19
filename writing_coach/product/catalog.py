@@ -80,9 +80,10 @@ METERS: dict[str, Meter] = {
         Meter("word.assist", "day", "request", "request"),
         Meter("reading.assist", "day", "request", "request"),
         Meter("writing.task", "day", "request", "request"),
-        # Owner 2026-10-19: voice chat with Orena, on or off by plan (product/plan_features.py); not counted - its time
-        # is charged as Orena messages (`voice_seconds_per_message`).
-        Meter("orena.voice", None, "access", "access"),
+        # Owner 2026-10-19: voice chat with Orena, on or off by plan, and a daily cap on each learner's voice seconds
+        # (Hermes for the owner: 15 minutes by default) - product/plan_features.py. Its time is still charged as Orena
+        # messages (`voice_seconds_per_message`); this cap protects the system's AI budget from one learner.
+        Meter("orena.voice", "day", "second", "minute", scale=60),
     )
 }
 
@@ -157,6 +158,8 @@ def _prices(monthly_usd: float, monthly_vnd: float, yearly_usd: float, yearly_vn
 
 
 VOICE_SECONDS_PER_MESSAGE = 60
+# Hermes for the owner, 2026-10-19: each Plus/Pro learner's voice chat with Orena per UTC day (an administrator edits it).
+VOICE_MINUTES_PER_DAY = 15
 
 
 # H7-3 (D-MON-025) bootstrap product limits, requests per day: (word.assist, reading.assist, writing.task).
@@ -176,7 +179,7 @@ def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, impor
         Entitlement("word.assist", limit=word_assist),
         Entitlement("reading.assist", limit=reading_assist),
         Entitlement("writing.task", limit=writing_task),
-        Entitlement("orena.voice", enabled=voice, limit=1),
+        Entitlement("orena.voice", enabled=voice, limit=VOICE_MINUTES_PER_DAY * 60),
     )
 
 
