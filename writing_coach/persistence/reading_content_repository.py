@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import uuid
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -67,6 +68,8 @@ from writing_coach.persistence.models import (
     ReadingSource,
     ReadingSourceItem,
 )
+
+_logger = logging.getLogger(__name__)
 
 DEFAULT_ARTICLE_PAGE = 24
 MAX_ARTICLE_PAGE = 60
@@ -520,11 +523,22 @@ class ReadingContentRepository:
     # repository (a script, a unit test) stays permissive so it can set up content without art.
     require_thumbnail = False
     # Set at wiring: makes and stores a typographic cover for {article_id, title, language, topic} and returns the
-    # stored-image dict an `image_set` event carries, or None. Used only where the engine admits an article by itself.
+    # stored-image dict an `image_set` event carries, or None. Every article the engine creates gets one (D-240).
     cover_factory: Callable[[dict[str, Any]], dict[str, Any] | None] | None = None
 
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
+
+    def _make_cover(self, article_id: str, *, title: str, language: str, topic: str) -> dict[str, Any] | None:
+        """The typographic cover `cover_factory` makes for a new article, or None (no factory, or it failed: the
+        article is still created, and waits for review without a thumbnail rather than being lost)."""
+        if self.cover_factory is None:
+            return None
+        try:
+            return self.cover_factory({"article_id": article_id, "title": title, "language": language, "topic": topic})
+        except Exception:  # noqa: BLE001 - a cover that cannot be stored never loses the article
+            _logger.exception("reading: typographic cover could not be made for a new article")
+            return None
 
     # ---- sources ---------------------------------------------------------
     def ensure_built_in_sources(self, *, now: datetime | None = None) -> None:
@@ -987,15 +1001,15 @@ class ReadingContentRepository:
                     min_targets=MIN_TARGETS, max_targets=MAX_TARGETS)
                 prepared_analysis["admission"] = decision
                 admitted = decision["decision"] == "published" and status == "needs_review"
-                if admitted and self.require_thumbnail:
-                    # An automatic admission publishes with nobody looking, so it makes the cover itself (D-240);
-                    # without one it waits for review instead.
-                    cover = self.cover_factory({"article_id": str(article_id), "title": title, "language": language,
-                                                "topic": topic}) if self.cover_factory else None
-                    if cover is None:
-                        admitted = False
-                if admitted:
-                    status = LEARNER_VISIBLE_STATUS
+            if self.require_thumbnail:
+                # D-240: every admitted article gets its typographic cover here, whether the engine publishes it or
+                # it waits for review - a held article must not reach the publish gate without one. An automatic
+                # admission publishes with nobody looking; without a cover it waits for review instead.
+                cover = self._make_cover(str(article_id), title=title, language=language, topic=topic)
+                if cover is None:
+                    admitted = False
+            if admitted:
+                status = LEARNER_VISIBLE_STATUS
             connection.execute(
                 insert(ReadingArticle).values(
                     id=article_id,
@@ -1050,7 +1064,7 @@ class ReadingContentRepository:
                          **({"admission": decision} if automatic_admission else {})},
                 now=moment,
             )
-            if admitted and cover is not None:
+            if cover is not None:
                 self._record_event(connection, article_id=article_id, actor=actor, action=IMAGE_SET_EVENT, reason="",
                     changes={"from": None, "to": {"image": dict(cover)}}, now=moment)
             if admitted:
