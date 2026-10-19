@@ -439,3 +439,18 @@ def test_the_instruction_forbids_button_syntax_and_unsourced_attribution():
 
     assert "never write tags, square brackets or any button syntax" in INSTRUCTION
     assert "words due come from the\n  review schedule, not the evaluator" in INSTRUCTION
+
+
+def test_a_turn_that_changes_a_note_is_offered_no_read_tools():
+    """Live measurement 2026-10-19 (10 runs): every missed forget started by reading records instead of forgetting. A
+    turn whose message changes or forgets a note is offered the reply tools only, so the note is its first move."""
+    events, provider = run([reply("Mình đã quên rồi."), reply("Mình đã quên rồi.")],
+                           request("Quên ghi chú về ví dụ đó đi.", notes=(SHORT,)))
+    offered = {spec.name for spec in provider.requests[0].tools}
+    assert FORGET_NOTE in offered
+    assert not offered & {"get_recommended_next_activities", "build_learning_snapshot", "get_due_review_summary"}
+
+
+def test_an_ordinary_turn_still_reads():
+    events, provider = run([reply("Ok.")], request("abate nghĩa là gì?", notes=(SHORT,)))
+    assert any(spec.name.startswith("get_") or spec.name.startswith("build_") for spec in provider.requests[0].tools)

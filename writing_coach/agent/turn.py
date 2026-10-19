@@ -905,7 +905,9 @@ class _Turn:
         # An opening turn reads nothing itself: the server gave it the snapshot (S13 has no tool_call).
         # A screen-help turn (F-13) is answered from the screen's context: the server offers it no read tool, so
         # no learner data is read to explain a screen, and no action or note: nothing that was not asked for.
-        read_specs = () if self.opening or self.screen_help else tuple(
+        # A turn whose message changes or forgets a coach note reads nothing either: in the live measurement of
+        # 2026-10-19 every missed forget began by reading records instead of the note (PRE-503 §11).
+        read_specs = () if self.opening or self.screen_help or self.notes_asked else tuple(
             ProviderToolSpec.from_tool(tool)
             for tool in self.rt.tools.tools()
             if self.learner.contract_language in tool.languages
