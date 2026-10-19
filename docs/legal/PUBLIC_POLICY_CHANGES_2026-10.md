@@ -76,6 +76,13 @@ overwritten, operational logs, data already with service providers, device-local
   (evidence: no birth/age/parental code; `auth_support.py:164-175`).
 - Backups: "up to 30 days" now has a mechanism (`scripts/runtime_backup.py rotate`).
 
+## Learning activity (2026-10-19, owner decision, PRE-502 R6)
+
+- Privacy 5 no longer says speaking keeps "only your scores and feedback": transcripts of spoken answers are stored.
+  Privacy 7 gains one short paragraph, "Your learning activity": exercises and answers (written or spoken), results and
+  feedback are kept to personalise practice, and are deleted by asking us to delete the account (manual, 30 days, as
+  the existing text states). The matching Settings line (learner audio) was reworded the same way. Code unchanged.
+
 ## Facts the text states and who must confirm them
 
 `docs/legal/public/facts.json`: publish date (null in the repository; stamped at deploy with `--release

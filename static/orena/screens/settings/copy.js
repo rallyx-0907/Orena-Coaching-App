@@ -55,7 +55,7 @@ export const t = defineCopy('settings', {
     micLabel: 'Microphone access', micSub: 'Needed for Speaking and Shadowing',
     micDeniedToast: "Blocked — allow it in your browser's site settings",
     learnerAudioLabel: 'Learner audio',
-    learnerAudioSub: "Speaking recordings aren't kept — only your scores and feedback. Imported audio and video stay for now.",
+    learnerAudioSub: "Speaking recordings aren't kept. Your answers and feedback stay as part of your learning activity. Imported audio and video stay for now.",
     historyLabel: 'History', historySub: 'Everything Orena recorded, by day',
     privacyPolicyLabel: 'Privacy Policy', termsOfServiceLabel: 'Terms of Service', deleteAccountLabel: 'Delete account',
     licencesLabel: 'Licences and data sources', licencesSub: 'Dictionaries, recordings and texts Orena uses, and who made them',
