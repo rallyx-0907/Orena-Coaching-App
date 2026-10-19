@@ -120,6 +120,17 @@ assert.deepEqual(reading.publicationBlockers(article({ source: { rights_state: {
 assert.deepEqual(reading.publicationBlockers(article({ source: { rights_state: {} }, is_adapted: true })).map((w) => w.code), ['rights_unknown', 'adaptation_unknown'], 'an unanswered right refuses as a denial does');
 assert.deepEqual(reading.publicationBlockers(article({ source: { rights_state: { can_republish: 'allowed', can_adapt: 'allowed' } }, is_adapted: true })), []);
 assert.deepEqual(reading.publicationAdvice(article({ source: { rights_state: { can_republish: 'denied' } } })).map((w) => `${w.code}:${w.level}`), ['attribution_unknown:warning'], 'attribution is advice, never a block');
+/* The publish confirmation reads the article's own snapshot (publication_rights) over anything the source says. */
+{
+  const own = (state, basis = 'snapshot') => article({ source: { rights_state: { can_republish: 'denied' }, publication_rights: { basis, state } } });
+  assert.deepEqual(reading.publicationBlockers(own({ can_republish: 'allowed', attribution_required: 'not_required' })), [], 'a public-domain snapshot under the Direct URL path publishes with no confirmation');
+  assert.deepEqual(reading.publicationAdvice(own({ can_republish: 'allowed', attribution_required: 'not_required' })), []);
+  assert.deepEqual(reading.publicationBlockers(own({ can_republish: 'denied' })).map((w) => w.code), ['rights_not_cleared'], 'a snapshot that says no still asks');
+  assert.deepEqual(reading.publicationBlockers(own({})).map((w) => w.code), ['rights_unknown'], 'an unanswered snapshot still asks');
+  assert.deepEqual(reading.publicationBlockers(own({ can_republish: 'allowed' }, 'source')), [], 'no snapshot: the source policy decides');
+  assert.equal(reading.publicationRights(own({}, 'source')).basis, 'source');
+  assert.equal(reading.publicationRights(article()).basis, 'snapshot', 'an older payload reads rights_state');
+}
 /* The request body for answering rights: only what changed; unanswered is null. */
 assert.deepEqual(reading.rightsChanges({ can_republish: 'unknown', attribution_required: 'required' }, { can_republish: 'allowed', attribution_required: 'required' }), { can_republish: true });
 assert.deepEqual(reading.rightsChanges({ can_republish: 'allowed' }, { can_republish: '' }), { can_republish: null });

@@ -208,6 +208,23 @@ def _category(exc: HTTPException) -> str:
     return str(detail.get("category") or "")
 
 
+def _publication_rights(article: Mapping[str, Any]) -> Mapping[str, Any]:
+    source = article.get("source") or {}
+    found = source.get("publication_rights")
+    if isinstance(found, Mapping):
+        return found
+    return {"basis": "snapshot", "state": source.get("rights_state") or {}}
+
+
+def _publication_state(article: Mapping[str, Any]) -> Mapping[str, Any]:
+    return _publication_rights(article).get("state") or {}
+
+
+def publication_rights_basis(article: Mapping[str, Any]) -> str:
+    """Where the publish confirmation's rights came from: `snapshot`, `source` or `none`."""
+    return str(_publication_rights(article).get("basis") or "snapshot")
+
+
 def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
     """What is unclear about publishing an article, from its effective rights.
 
@@ -217,12 +234,13 @@ def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
     right (and, for an adapted text, the adapt right) being denied or never
     answered, and an incomplete credit, each appear here.
 
-    Read from the source snapshot with the administrator's recorded answers
-    folded over it (`rights_state`), so answering the questions on the review
-    page is what clears the gate.
+    Read from the article's own rights snapshot with the administrator's
+    recorded answers folded over it, so answering the questions on the review
+    page is what clears the gate. The snapshot is authoritative for the
+    article; only an article with no rights of its own reads its source's
+    policy (`publication_rights`, whose `basis` says which).
     """
-    source = article.get("source") or {}
-    state = source.get("rights_state") or {}
+    state = _publication_state(article)
     blockers: list[dict[str, str]] = []
     republish = state.get("can_republish", "unknown")
     if republish == "denied":
@@ -257,8 +275,7 @@ def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
 
     Like `publication_blockers`, publishing over it needs the explicit override.
     """
-    source = article.get("source") or {}
-    state = source.get("rights_state") or {}
+    state = _publication_state(article)
     if state.get("attribution_required", "unknown") == "unknown":
         return [{"code": "attribution_unknown", "level": "warning"}]
     return []
@@ -1231,7 +1248,7 @@ def set_article_status(
                 "admin.reading_article_publish_refused",
                 entity_type="reading_article",
                 entity_id=article_id,
-                payload={"blockers": everything},
+                payload={"blockers": everything, "rights_basis": publication_rights_basis(current)},
             )
             fields = [
                 *(["quality_override"] if quality_open else []),
@@ -1297,6 +1314,8 @@ def set_article_status(
         audit_payload |= {
             "warnings": warnings,
             "acknowledged_warnings": bool(warnings),
+            # Whose rights the confirmation read: the article's own snapshot, its source's policy, or none.
+            "rights_basis": publication_rights_basis(current),
             # Publish records the article's effective automation permission -
             # the override when present, else its source's default.
             "automation": (current.get("automation") or {}),

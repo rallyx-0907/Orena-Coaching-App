@@ -222,6 +222,76 @@ def test_an_article_with_no_rights_answers_publishes_only_over_an_explicit_overr
     assert {w["code"] for w in overridden.json()["publication_warnings"]} == {"rights_unknown", "attribution_unknown"}
 
 
+# ---- whose rights the confirmation reads: the article's own snapshot first ---------------
+
+def _article_under(setup, source_id, rights, content_hash):
+    snapshot = setup.content.record_source_item(
+        source_id=source_id, source_native_id="", canonical_url="https://www.gutenberg.org/ebooks/1",
+        title="Train", author="Anon", published_at=None, language="en", body=BODIES["en"],
+        content_hash=content_hash, metadata={}, rights=rights,
+    )
+    article = setup.content.create_article(
+        source_item_id=snapshot["id"], title="The late train", body=BODIES["en"], excerpt="",
+        language="en", topic="travel", estimated_level="B1", estimated_confidence=0.7,
+        word_count=30, reading_time_seconds=60, analysis={}, targets=[],
+    )
+    return article["id"]
+
+
+def _registered(setup, slug, *, can_republish):
+    return setup.content.create_source(
+        slug=slug, name=slug, source_type="rss", base_url="https://example.org", languages=["en"],
+        rights={"can_republish": can_republish, "can_adapt": False, "attribution_required": False},
+        created_by="admin",
+    )["id"]
+
+
+def _audit_of(setup, action):
+    return next(item for item in reversed(setup.audited) if item["action"] == action)
+
+
+def test_a_public_domain_snapshot_under_the_direct_url_path_publishes_without_a_confirmation(setup):
+    """The Direct URL input path says no to republishing by default, but each text carries its own
+    public-domain snapshot from import, and that snapshot is what the publish confirmation reads."""
+    direct_url = setup.content.built_in_source_id("direct_url")
+    assert setup.content.get_source(direct_url)["rights"]["can_republish"] is False
+    article_id = _article_under(setup, direct_url, {
+        "can_republish": True, "can_adapt": True, "attribution_required": False, "license_note": "Public domain",
+    }, "1" * 64)
+    assert setup.content.get_article(article_id)["source"]["publication_rights"]["basis"] == "snapshot"
+    published = _publish(setup, article_id)
+    assert published["status"] == "published" and published["publication_warnings"] == []
+    record = _audit_of(setup, "admin.reading_article_published")
+    assert record["payload"]["rights_basis"] == "snapshot"
+    assert record["payload"]["acknowledged_warnings"] is False
+
+
+def test_a_snapshot_that_says_no_still_asks_even_when_the_source_says_yes(setup):
+    source_id = _registered(setup, "open-press", can_republish=True)
+    article_id = _article_under(setup, source_id, {"can_republish": False, "attribution_required": False}, "2" * 64)
+    detail = _refused(setup, article_id)
+    assert [item["code"] for item in detail["context"]["blockers"]] == ["rights_not_cleared"]
+    assert _audit_of(setup, "admin.reading_article_publish_refused")["payload"]["rights_basis"] == "snapshot"
+    assert _visible(setup, article_id) != "published"
+    unanswered = _article_under(setup, source_id, {"attribution_required": False}, "3" * 64)
+    assert [item["code"] for item in _refused(setup, unanswered)["context"]["blockers"]] == ["rights_unknown"]
+
+
+def test_an_article_without_a_snapshot_reads_its_source_policy(setup):
+    cleared = _article_under(setup, _registered(setup, "cleared-press", can_republish=True), {}, "4" * 64)
+    assert setup.content.get_article(cleared)["source"]["publication_rights"]["basis"] == "source"
+    assert _publish(setup, cleared)["publication_warnings"] == []
+    assert _audit_of(setup, "admin.reading_article_published")["payload"]["rights_basis"] == "source"
+    refused = _article_under(setup, _registered(setup, "closed-press", can_republish=False), {}, "5" * 64)
+    assert [item["code"] for item in _refused(setup, refused)["context"]["blockers"]] == ["rights_not_cleared"]
+    assert _audit_of(setup, "admin.reading_article_publish_refused")["payload"]["rights_basis"] == "source"
+    # A built-in input path has no reviewed policy: with no snapshot its answers stay unknown.
+    bare = _article_under(setup, setup.content.built_in_source_id("direct_url"), {}, "6" * 64)
+    assert setup.content.get_article(bare)["source"]["publication_rights"]["basis"] == "none"
+    assert [item["code"] for item in _refused(setup, bare)["context"]["blockers"]] == [
+        "rights_unknown", "attribution_unknown"]
+
+
 def test_a_refused_permission_asks_for_the_override(setup):
     article_id = _article(setup, rights={"can_republish": False, "attribution_required": True})
     detail = _refused(setup, article_id)
