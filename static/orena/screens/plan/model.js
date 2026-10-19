@@ -16,9 +16,8 @@
 export const FEATURE_ORDER = Object.freeze([
   'orena.message', 'orena.voice', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target',
 ]);
-/* Included or not, never a count: the catalogue stores `orena.voice` as on/off with a limit of 1, which is not a figure to show. */
-export const BOOLEAN_FEATURES = Object.freeze(['orena.voice']);
-export const USAGE_ORDER = Object.freeze(['orena.message', 'writing.review', 'pronunciation.audio', 'media.import']);
+/* `orena.voice` is a daily meter in seconds shown in minutes (D-237): a usage row like the others. */
+export const USAGE_ORDER = Object.freeze(['orena.message', 'orena.voice', 'writing.review', 'pronunciation.audio', 'media.import']);
 
 /* An entitlement's limit (catalogue v2 `limit`, in its stored unit; v1 answers carried `monthly_limit`). */
 function limitOf(item) {
@@ -129,7 +128,7 @@ export function pricingPlans({ plans, commerce } = {}) {
       /* What the plan includes: every enabled meter with its limit, in the unit a learner reads. */
       features: FEATURE_ORDER.filter((key) => byKey[key] && byKey[key].enabled).map((key) => ({
         key,
-        limit: limitOf(byKey[key]) == null || BOOLEAN_FEATURES.includes(key) ? null : displayAmount(limitOf(byKey[key]), scaleOf(byKey[key])),
+        limit: limitOf(byKey[key]) == null ? null : displayAmount(limitOf(byKey[key]), scaleOf(byKey[key])),
       })),
       byKey,
     };
@@ -170,7 +169,7 @@ export function compareRows(plans) {
     cells: plans.map((plan) => {
       const item = plan.byKey[key];
       if (!item || !item.enabled) return { kind: 'no' };
-      if (limitOf(item) == null || BOOLEAN_FEATURES.includes(key)) return { kind: 'yes' };
+      if (limitOf(item) == null) return { kind: 'yes' };
       return { kind: 'limit', value: displayAmount(limitOf(item), scaleOf(item)), unit: String(item.display_unit || '') };
     }),
   }));
