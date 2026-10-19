@@ -198,6 +198,7 @@ export function createSession({ log = console.warn } = {}) {
       } else if (event === 'done') {
         reply.done = true;
         if (data.trace_id) reply.traceId = String(data.trace_id); // the reference of a "Report a problem" link (AGENT_CONTRACT §4)
+        if (data.trace_id && data.report_surface) reply.reportSurface = String(data.report_surface); // a live voice line: surface orena.voice
         tool = null;
         // A turn that ended with nothing to show - no words, no action, no suggestion - is not an answer: the
         // learner gets the client's own retry instead of silence (LEX-028).

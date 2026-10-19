@@ -271,9 +271,9 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         const action = events.find((item) => item?.event === 'action' && (item.data?.open === true || (openId && item.data?.id === openId)))?.data || null;
         if (action && typeof open === 'function') void open(action);
       },
-      onTurnComplete: ({ heard: said, said: answer }) => {
+      onTurnComplete: ({ heard: said, said: answer, usageId }) => {
         thread.text(said || turnHeard, answer);
-        thread.done();
+        thread.done(usageId);
         turnHeard = '';
       },
       onClosed: (reason) => {

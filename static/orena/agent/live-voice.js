@@ -157,6 +157,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   let pending = null; // the next chunk's socket, until its setup completes and it takes over
   let incoming = null; // the newest answer of /voice/extend, until its socket takes over
   let chunk = Number(session.chunk) || 0; // the index of the newest token this client holds
+  let socketChunk = chunk; // the token the socket carrying the conversation now was minted for
   let resumeHandle = ''; // the vendor's latest handle to carry the conversation onto the next socket
   let renewing = false;
   let ready = false;
@@ -372,7 +373,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
       if (part.inlineData?.data) play(part.inlineData.data);
     }
     if (content.turnComplete) {
-      onTurnComplete({ heard: heard.trim(), said: said.trim(), interrupted: Boolean(content.interrupted) });
+      onTurnComplete({ heard: heard.trim(), said: said.trim(), interrupted: Boolean(content.interrupted), usageId: id ? `${id}:voice:${socketChunk}` : '' });
       const spoke = tracker.close({ heard: heard.trim(), said: said.trim() });
       if (spoke) {
         post('/api/agent/voice/turn', { voice_session_id: id, utterance: spoke, ...(heard.trim() ? { heard: heard.trim() } : {}) }, fetchImpl).catch(() => {});
@@ -388,6 +389,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     if (closed || sock !== pending || !incoming) return;
     const old = socket;
     socket = sock;
+    socketChunk = chunk;
     pending = null;
     try { old?.close(); } catch { /* closed */ }
     clearTimeout(capTimer);
@@ -538,10 +540,12 @@ export function voiceThread({ session, memory = null, notify = () => {}, persist
       session.apply({ event: 'segment_end', data: { index: 0, lang: lang(), text: String(said).trim(), voice_style: 'neutral_explain' } });
       notify();
     },
-    done() {
+    /* `usageId` is the voice usage record's request id ("vs-…:voice:N"): the reference of a "Report a problem" link on
+       this turn's finished line. Without it the line has no link. */
+    done(usageId = '') {
       if (!open) return;
       open = false;
-      session.apply({ event: 'done', data: {} });
+      session.apply({ event: 'done', data: usageId ? { trace_id: usageId, report_surface: 'orena.voice' } : {} });
       persist();
       notify();
     },
