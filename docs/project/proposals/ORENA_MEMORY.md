@@ -240,8 +240,15 @@ keeps them out:
   sees and deletes every explicit item.
 
 **Retention of explicit memory (owner, PRE-005, 2026-10-18).** The pilot keeps learner data for up to 6 months.
-A kept note therefore expires `EXPLICIT_TTL` (180 days, which is within 6 calendar months) after the learner last
-asked for it. Asking again for the same words renews it. An expired note is invisible to every read at once.
+A kept note therefore expires `EXPLICIT_TTL` (180 days, which is within 6 calendar months) after it was last used,
+whichever came later (PRE-005 v2, "6 months ... if not used"; the owner, 2026-10-18 21:44; the public Privacy Policy
+says the same):
+- the learner asked for it, or asked again for the same words;
+- it was read into the model's context in a real turn: chat or voice, server mode, so memory ON and the provider
+  cleared for `full_memory` (`MemoryRuntime.notes` -> `renew`). That write happens at most once a day per note
+  (`RENEW_EVERY`) and does not move the memory version.
+
+Memory OFF reads nothing, so it renews nothing. An expired note is invisible to every read at once.
 Its row is deleted when the learner next keeps a note in that language, since the write clears their own expired notes
 first, and by the daily sweep (`ExpiredMemorySweep`, started by agent turns, in bounded batches). That sweep is
 off until the owner switches on `AGENT_MEMORY_RETENTION_SWEEP`, because it is automatic deletion. Until then, an

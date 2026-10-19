@@ -35,6 +35,8 @@ from writing_coach.agent.contract import (
 from writing_coach.agent.memory_keys import MemoryKeys
 from writing_coach.agent.memory_store import (
     EXPLICIT,
+    EXPLICIT_TTL,
+    RENEW_EVERY,
     MemoryItem,
     MemoryRepository,
     MemoryScope,
@@ -130,7 +132,7 @@ MEMORY_SWEEP_SWITCH = "AGENT_MEMORY_RETENTION_SWEEP"
 class ExpiredMemorySweep:
     """Expired memory rows are deleted at most once a day per process, off the request thread, in bounded batches
     (`sweep_expired`: expired rows only, `SKIP LOCKED`). The pilot keeps learner data up to 6 months (owner, PRE-005,
-    2026-10-18); a kept note expires `EXPLICIT_TTL` after it was last asked for. Off unless
+    2026-10-18); a kept note expires `EXPLICIT_TTL` after it was last used (kept or read into a turn). Off unless
     AGENT_MEMORY_RETENTION_SWEEP is on: automatic deletion is a destructive lifecycle change, switched on by the
     owner, as the agent.turn sweep (agent/retention.py). A failing sweep is logged and tried the next day."""
 
@@ -228,16 +230,27 @@ class MemoryRuntime:
 
     def notes(self, turn: MemoryTurn, language: str) -> tuple[CoachNote, ...]:
         """The account's explicit notes for the language, as the model's coach notes (server mode): newest first,
-        within the caps a request's `coach_notes` has (§3). A store that cannot be read gives none."""
+        within the caps a request's `coach_notes` has (§3). A store that cannot be read gives none. They go into the
+        model's context now, so each is renewed (`renew`): kept 6 months from this use. A caller that sends them only
+        later (a voice open, after its admission) takes `notes_and_due` and renews once they are sent."""
+
+        notes, due = self.notes_and_due(turn, language)
+        self.renew(turn, due)
+        return notes
+
+    def notes_and_due(self, turn: MemoryTurn, language: str) -> tuple[tuple[CoachNote, ...], tuple[str, ...]]:
+        """`notes`, and the ids of those due for renewal (at most once a day each, `RENEW_EVERY`), renewed by no one."""
 
         if not turn.on:
-            return ()
+            return (), ()
+        now = self.clock()
         try:
-            items = self.store.items(turn.scope, language, self.clock())
+            items = self.store.items(turn.scope, language, now)
         except Exception:  # noqa: BLE001 - the turn goes on without the notes, never fails on them
             _log.warning("orena memory notes not read", exc_info=True)
-            return ()
+            return (), ()
         chosen: list[CoachNote] = []
+        due: list[str] = []
         for item in sorted(items, key=lambda i: (i.created_at, i.id), reverse=True):
             if item.cls != EXPLICIT or item.kind not in COACH_NOTE_KINDS:
                 continue
@@ -245,7 +258,24 @@ class MemoryRuntime:
             if len(chosen) >= MAX_COACH_NOTES or coach_notes_bytes([*chosen, note]) > MAX_COACH_NOTES_BYTES:
                 break
             chosen.append(note)
-        return tuple(chosen)
+            due.extend([item.id] if self._due(item, now) else [])
+        return tuple(chosen), tuple(due)
+
+    def renew(self, turn: MemoryTurn, due: tuple[str, ...]) -> None:
+        """These notes went into the model's context: each is kept 6 months from this use (PRE-005 v2; the owner,
+        2026-10-18 21:44). Server mode only - then they are the model's coach notes; memory OFF renews nothing."""
+
+        if not due or not turn.server:
+            return
+        try:
+            self.store.renew(turn.scope, list(due), self.clock())
+        except Exception:  # noqa: BLE001 - a renewal never costs the turn; the next day's use tries again
+            _log.warning("orena memory notes not renewed", exc_info=True)
+
+    @staticmethod
+    def _due(item: MemoryItem, now: datetime) -> bool:
+        """Renewed at most once a day: only when its date is a day or more behind a use now (RENEW_EVERY)."""
+        return item.expires_at is not None and item.expires_at <= now + EXPLICIT_TTL - RENEW_EVERY
 
     def pack_reader(self) -> Callable[[str, datetime], MemorySection | None]:
         """For `PackBuilder.memory`: the current learner's memory section (read inside their request context)."""

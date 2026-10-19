@@ -235,6 +235,32 @@ def test_asking_to_keep_the_same_words_again_renews_the_retention(mem):
     assert [i.id for i in s.items(a, "zh", T0 + EXPLICIT_TTL + timedelta(days=1))] == [first.id]
 
 
+def test_a_note_used_in_a_turn_is_kept_six_months_from_that_use(mem):
+    """Owner (Privacy Policy, via Hermes 2026-10-19): a note expires 6 months after it was last used - kept again by
+    the learner, or read into the model's context in a real turn, whichever is later. `renew` moves only live explicit
+    notes of this scope, while memory is ON, and says how many."""
+    s, a = mem.store, mem.a
+    item = add(s, a, "Phỏng vấn xin việc")
+    used = T0 + timedelta(days=170)
+    assert s.renew(a, [item.id], used) == 1
+    assert [i.expires_at for i in s.items(a, "zh", used)] == [used + EXPLICIT_TTL]
+    assert [i.id for i in s.items(a, "zh", T0 + EXPLICIT_TTL + timedelta(days=30))] == [item.id]
+    assert s.renew(a, [str(uuid.uuid4()), "not-an-id"], used) == 0
+    lapsed = add(s, a, "Luyện HSK4", kind="plan")
+    late = T0 + EXPLICIT_TTL + timedelta(days=1)
+    assert s.renew(a, [lapsed.id], late) == 0 and [i.id for i in s.items(a, "zh", late)] == [item.id]  # gone stays gone
+
+
+def test_renewing_moves_nothing_while_memory_is_off_or_in_another_scope(mem):
+    s, a = mem.store, mem.a
+    item = add(s, a, "Phỏng vấn xin việc")
+    assert s.renew(mem.b, [item.id], T0 + timedelta(days=10)) == 0
+    s.set_enabled(a, False)
+    assert s.renew(a, [item.id], T0 + timedelta(days=10)) == 0
+    s.set_enabled(a, True)
+    assert [i.expires_at for i in s.items(a, "zh", T0)] == [T0 + EXPLICIT_TTL]
+
+
 def test_after_expiry_the_same_words_and_a_new_slot_value_can_be_kept(mem):
     """Review of #292 P1-1: an expired row still holds the unique (value_key) and single-slot indexes until it is
     deleted, so keeping again after expiry clears the learner's own expired notes first."""

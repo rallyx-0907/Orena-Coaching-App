@@ -507,7 +507,7 @@ class VoiceService:
         tier1, session_state, notes_available = self._gate_data_classes(
             turn, build_tier1(turn, session_state.for_target(request.context.locale.target)), session_state,
             classes, memory_on=getattr(self.runtime, "memory", None) is not None)  # fmt: skip
-        tier1, device_notes = self._with_memory(tier1, memory, request)
+        tier1, device_notes, renew_due = self._with_memory(tier1, memory, request)
         here = [c for c in (self.runtime.capabilities.get(i) for i in self._capability_ids(tier1)) if c]
         pack, pack_memory = self._learner_pack(session_state, learner, request, classes, memory)
         instruction = self._instruction(turn, tier1, here, session_state, pack=pack)
@@ -535,6 +535,8 @@ class VoiceService:
         opened = self.sessions.clock()
         minted = self._mint_chunk(setup, session_id=voice_session_id, user_key=learner.user_key, index=0, minted=0,
                                   digest=quota.request_digest(dict(body)), key=None, resumption=None)
+        if memory is not None:  # the notes reach the vendor now that the session is admitted: kept from this use
+            self.runtime.memory.renew(memory, renew_due)
         session = VoiceSession(
             voice_session_id=voice_session_id, user_key=learner.user_key, learner=learner,
             request=request, model=self.model, opened=opened, outputs=outputs,
@@ -743,17 +745,19 @@ class VoiceService:
 
     def _with_memory(self, tier1, memory: MemoryTurn | None, request: TurnRequest):
         """Memory OFF: no device note reaches the vendor (§6). Server notes: the account's notes, then the device notes
-        not placed yet (agent/memory_runtime.py `with_device_notes`). Returns tier1 and the ids that are the device's."""
+        not placed yet (agent/memory_runtime.py `with_device_notes`). Returns tier1, the ids that are the device's, and
+        the account notes due for renewal - renewed by `open()` only once the session is admitted (nothing is sent to
+        the vendor before)."""
 
         if memory is None:
-            return tier1, frozenset()
+            return tier1, frozenset(), ()
         if memory.off:
-            return replace(tier1, coach_notes=()), frozenset()
+            return replace(tier1, coach_notes=()), frozenset(), ()
         if memory.server:
-            account = self.runtime.memory.notes(memory, to_internal(request.context.locale.target))
+            account, due = self.runtime.memory.notes_and_due(memory, to_internal(request.context.locale.target))
             notes, device = with_device_notes(account, tier1.coach_notes)
-            return replace(tier1, coach_notes=notes), device
-        return tier1, frozenset()
+            return replace(tier1, coach_notes=notes), device, due
+        return tier1, frozenset(), ()
 
     def _server_notes(self, memory: MemoryTurn | None, learner: LearnerScope, request: TurnRequest):
         if memory is None or not memory.server:
