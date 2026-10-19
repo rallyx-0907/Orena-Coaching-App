@@ -686,11 +686,13 @@ if _persistence_runtime.backend == "postgresql" and _persistence_runtime.engine 
             lambda before, limit: _retention_sweeps.delete_usage_before(_persistence_runtime.engine, before, limit),
             enabled=lambda: _retention_switch(os.environ, _retention_sweeps.USAGE_SWEEP_SWITCH),
             days=_retention_sweeps.USAGE_RETENTION_DAYS,
+            label="usage counts",
         ),
         FeedbackRetentionSchedule(
             lambda before, limit: _retention_sweeps.delete_admin_audit_before(_persistence_runtime.engine, before, limit),
             enabled=lambda: _retention_switch(os.environ, _retention_sweeps.ADMIN_AUDIT_SWEEP_SWITCH),
             days=_retention_sweeps.ADMIN_AUDIT_RETENTION_DAYS,
+            label="admin audit records",
         ),
     ]
 

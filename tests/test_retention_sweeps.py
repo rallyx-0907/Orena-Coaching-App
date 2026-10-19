@@ -118,3 +118,45 @@ def test_admin_records_older_than_24_months_go_and_nothing_else(engine):
     left = _count(engine, "SELECT string_agg(action, ',' ORDER BY action) FROM audit_logs WHERE user_id = :u", u=user)
     # the recent platform record stays; the learner's own feedback has its own sweep (24 months, feedback.retention)
     assert left == "learner.feedback,platform.policies.update"
+
+
+def test_open_buckets_in_flight_reservations_and_content_records_are_never_swept(engine):
+    """Review of #392: a bucket is judged by the END of its window (a long promotional grant still open stays); a
+    reservation still in flight stays; records about content (rights, the import receipt) are kept with the content."""
+    from sqlalchemy import text
+
+    user, _ = _seed(engine)
+    inc = _count(engine, "SELECT id FROM account_incarnations WHERE user_id = :u", u=user)
+    long_grant, very_old = uuid.uuid4(), NOW - timedelta(days=800)
+    with engine.begin() as conn:
+        conn.execute(text(
+            "INSERT INTO commerce_quota_buckets (id, incarnation_id, meter, window_id, window_start, window_end,"
+            " policy_version, consumed, reserved, created_at, updated_at) VALUES (:b, :i, 'orena.promo', :w, :s, :e,"
+            " 'v1', 0, 0, :s, :s)"),
+            {"b": long_grant, "i": inc, "w": f"promo-{long_grant}", "s": very_old, "e": NOW + timedelta(days=30)})
+        conn.execute(text(
+            "INSERT INTO commerce_quota_reservations (id, bucket_id, operation_id, admitted_units, state,"
+            " policy_version, created_at, updated_at) VALUES (:r, :b, :o, 1, 'reserved', 'v1', :t, :t)"),
+            {"r": uuid.uuid4(), "b": long_grant, "o": f"op-{uuid.uuid4()}", "t": very_old})
+        for action in ("admin.import", "admin.reading_rights_set", "admin.grammar_rights_attested"):
+            conn.execute(text("INSERT INTO audit_logs (id, user_id, action, entity_type, entity_id, payload, created_at)"
+                              " VALUES (:a, :u, :act, 'x', '', '{}', :t)"),
+                         {"a": uuid.uuid4(), "u": user, "act": action, "t": very_old})  # fmt: skip
+    sum(iter(lambda: sweeps.delete_usage_before(engine, NOW - timedelta(days=365), 500), 0))
+    sum(iter(lambda: sweeps.delete_admin_audit_before(engine, NOW - timedelta(days=730), 500), 0))
+    assert _count(engine, "SELECT count(*) FROM commerce_quota_buckets WHERE id = :b", b=long_grant) == 1
+    assert _count(engine, "SELECT count(*) FROM commerce_quota_reservations WHERE bucket_id = :b", b=long_grant) == 1
+    kept = _count(engine, "SELECT string_agg(action, ',' ORDER BY action) FROM audit_logs WHERE user_id = :u"
+                  " AND action IN ('admin.import', 'admin.reading_rights_set', 'admin.grammar_rights_attested')", u=user)
+    assert kept == "admin.grammar_rights_attested,admin.import,admin.reading_rights_set"
+
+
+def test_the_schedule_names_its_sweep_in_logs_and_thread(caplog):
+    import logging
+
+    from writing_coach.feedback_retention import FeedbackRetentionSchedule
+
+    schedule = FeedbackRetentionSchedule(lambda before, limit: 3 if limit else 0, label="usage counts")
+    with caplog.at_level(logging.INFO):
+        schedule.tick()
+    assert "usage counts: 3 rows past" in caplog.text

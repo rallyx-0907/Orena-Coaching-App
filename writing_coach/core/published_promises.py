@@ -19,7 +19,7 @@ requested; a backbone that then fails to start makes the item an over-report, ne
 - On a public runtime (staging, production), it logs each unmet promise as an ERROR.
 - Production also refuses to start without a ceiling.
 
-The sweeps are Admin-tunable at runtime, so they are logged rather than refused. Admin's readiness summary shows the
+The sweeps are logged rather than refused (two are Admin-tunable at runtime, D-172; the others are env-only). Admin's readiness summary shows the
 same list (`unmet_promises`). Development says nothing. No value is printed, only the names.
 """
 
