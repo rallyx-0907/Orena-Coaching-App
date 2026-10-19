@@ -42,13 +42,19 @@ CORRECT, FORGET = "correct", "forget"
 # grammar rule"). They ask something of a note only as an imperative - at the start of a sentence, "quên giùm/giúp",
 # "quên ... đi" closing the message, 忘记...吧, 把...忘了 - or beside a note noun; never after a subject or a habit word.
 _FORGETTING = re.compile(r"(?i)\bquên\b|\bforget\b|忘")
+# "I forget" for certain: a habit word, "quên mất/rồi", "I/always forget", 总是/又 ... 忘 in the same clause.
 _SELF_FORGETS = re.compile(
-    r"(?i)\b(?:mình|tôi|em|tớ|anh|chị|hay|thường|cứ|dễ|bị|vẫn|lại)\s+quên\b"
-    r"|\bquên\s+(?:mất|rồi|béng|tiệt)\b"  # "quên mất", "quên rồi": I forgot, never "forget it"
-    r"|\b(?:i|we|always|often|keep|usually|sometimes|never|tend to)\s+(?:\w+\s+)?forget"
-    # a subject or habit word anywhere earlier in the clause: 我把这个语法忘了, 我又把单词忘了
-    r"|(?:我|总是|老是|经常|容易|常常|又|还是)[^，。！？,.!?;]{0,12}忘"
+    r"(?i)\b(?:hay|thường|cứ|dễ|bị|vẫn)\s+quên\b"
+    r"|\bquên\s+(?:mất|rồi|béng|tiệt)\b"
+    r"|\b(?:i|always|often|keep|usually|sometimes|never|tend to)\s+(?:\w+\s+)?forget"
+    r"|(?:总是|老是|经常|容易|常常|又)[^，。！？,.!?;]{0,12}忘"
 )
+# A pronoun before the verb: the learner speaking of themself ("mình quên", 我把这个语法忘了) - or addressing Orena
+# ("Chị quên vụ đó đi") or "us" (我们把那个忘了吧). A closing đi/nhé/nha/吧 makes it a request.
+_PRONOUN_FORGETS = re.compile(
+    r"(?i)\b(?:mình|tôi|em|tớ|anh|chị)\s+quên\b|(?<!们)我(?!们)[^，。！？,.!?;]{0,12}忘"
+)
+_CLOSING_REQUEST = re.compile(r"(?i)\b(?:đi|nhé|nha)\s*[.!?]*\s*$|吧\s*[。！？!?.]*\s*$")
 _FORGET_IMPERATIVE = re.compile(
     r"(?i)(?:^|[.!?;:\n]\s*)(?:(?:thôi|à|ừ|vậy|ok|okay|please)[,\s]+)?(?:quên|forget)\b"
     r"|\bquên\s+(?:giùm|giúp|hộ)\b"
@@ -63,7 +69,9 @@ _FORGET_IMPERATIVE = re.compile(
 def _asks_to_forget(text: str) -> bool:
     """A forgetting verb used as "forget it", not "I forget"."""
 
-    return bool(_FORGET_IMPERATIVE.search(text)) and not _SELF_FORGETS.search(text)
+    if not _FORGET_IMPERATIVE.search(text) or _SELF_FORGETS.search(text):
+        return False
+    return not _PRONOUN_FORGETS.search(text) or bool(_CLOSING_REQUEST.search(text))
 
 
 def _without_forgetting(text: str) -> str:
@@ -178,7 +186,7 @@ def unaccented_wish(message: str) -> str | None:
 
 
 # An explicit note noun (#346: not "lưu ý" or 记录 - an everyday "note that" and "records" named every note at once).
-_NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|note|notes)\b|笔记|备注|那条")
+_NOTE_WORD = re.compile(r"(?i)\b(?:ghi chú|note|notes)\b|笔记|备注")
 _EN_STOP = frozenset({"that", "this", "with", "have", "from", "they", "them", "more", "less", "like", "want", "what",
                       "does", "word", "mean", "please", "help", "about", "just"})
 # Phrases every learner says - who is asked, which thing is meant - name no note (#346): a request to fix a sentence
