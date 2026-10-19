@@ -236,10 +236,55 @@ const { createSession } = await import('../static/orena/agent/session.js');
       { audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl: async () => ({ ok: true, json: async () => ({}) }), WebSocketCtor: socket },
     );
     assert.deepEqual(timers.map((timer) => timer.ms), [900000], 'one timer: the end of the only token');
+    // D-237: the chunk clamped to today's voice minutes is also `last: true` - played out, ended by its timer, never extended into a refusal.
+    // `last` also ends a normal 900 s session, so it says nothing by itself: only `day_limit_reached` (below) tells the day's end.
+    const liveSource = readFileSync('static/orena/agent/live-voice.js', 'utf8');
+    assert.ok(!/\.last\b/.test(liveSource), 'the client does not read `last`: renew_in null is the whole signal');
     link.end('learner');
   } finally {
     globalThis.setTimeout = realSetTimeout;
   }
+}
+
+// D-237 / #328: `day_limit_reached` true on a chunk -> that chunk plays out as always and its end closes the session with
+// `day_limit` (the screen then tells the line once); false or missing (an older server) -> the plain `cap`.
+{
+  const { connectLiveVoice } = await import('../static/orena/agent/live-voice.js');
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
+  globalThis.window ??= { addEventListener() {}, removeEventListener() {} };
+  async function endOf(extra, learnerEnd = false) {
+    const timers = [];
+    globalThis.setTimeout = (fn, ms) => { const timer = { fn, ms }; timers.push(timer); return timer; };
+    const reasons = [];
+    try {
+      const socket = function FakeSocket() { this.readyState = 0; this.close = () => {}; this.send = () => {}; };
+      const link = connectLiveVoice(
+        { voice_session_id: 'vs-d', chunk: 0, max_seconds: 240, renew_in: null, last: true, ...extra, connect: { url: 'wss://x', ephemeral_token: 't', setup: {} } },
+        { audio: { input: {}, output: {} }, mediaDevices: {}, fetchImpl: async () => ({ ok: true, json: async () => ({}) }), WebSocketCtor: socket, onClosed: (r) => reasons.push(r) },
+      );
+      assert.deepEqual(reasons, [], 'the chunk plays out: nothing closes before its timer');
+      if (learnerEnd) link.end('learner'); else timers.find((timer) => timer.ms === 240000).fn();
+      return reasons;
+    } finally {
+      globalThis.setTimeout = realSetTimeout;
+    }
+  }
+  assert.deepEqual(await endOf({ day_limit_reached: true }), ['day_limit'], 'clamped to today: its end says so');
+  assert.deepEqual(await endOf({ day_limit_reached: false }), ['cap'], 'a normal last: no line');
+  assert.deepEqual(await endOf({}), ['cap'], 'a missing field is false');
+  assert.deepEqual(await endOf({ day_limit_reached: 'yes' }), ['cap'], 'only true counts');
+  assert.deepEqual(await endOf({ day_limit_reached: true }, true), ['learner'], 'the learner ending it earlier is not the day ending');
+
+  // the figure: the plan's own orena.voice limit and scale, never a fixed 15; without it the generic line
+  const { voiceDayLimitMessage } = await import('../static/orena/screens/plan/quota-notice.js');
+  const line = voiceDayLimitMessage({ features: { 'orena.voice': { limit: 900, scale: 60 } } });
+  assert.ok(line.includes('15'), 'n is read from the plan: ' + line);
+  assert.ok(voiceDayLimitMessage({ features: { 'orena.voice': { limit: 1200, scale: 60 } } }).includes('20'), 'follows the plan, not a constant');
+  assert.equal(voiceDayLimitMessage(null), voiceDayLimitMessage({ features: {} }), 'no figure: the generic line');
+  const screenSource = readFileSync('static/orena/screens/orena/voice.js', 'utf8');
+  assert.ok(/reason === 'day_limit'[\s\S]{0,200}voiceDayLimitMessage/.test(screenSource), 'the screen tells the line when the session closes with day_limit');
+  assert.equal((screenSource.match(/voiceDayLimitMessage\(/g) || []).length, 1, 'told once, in one place');
 }
 
 // R29: the learner's voice rides in the session body; with none chosen, no field (the server's default).

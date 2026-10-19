@@ -181,6 +181,10 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     renewTimer = setTimeout(() => void extend(0), Math.max(0, Number(renewIn) * 1000 - (Date.now() - mintedAt)));
   };
   scheduleRenew(session.renew_in, Date.now());
+  // `day_limit_reached` (contract v13, D-237, #328): the held token was clamped to what is left of today's voice minutes, so
+  // the day ends inside it. Only `=== true` counts: a missing field (an older server) is false. The chunk plays out as
+  // always; when it ends the session closes with the reason `day_limit` instead of `cap`.
+  let dayLimit = session.day_limit_reached === true;
 
   function send(message) {
     if (socket.readyState === 1) socket.send(JSON.stringify(message));
@@ -388,6 +392,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     try { old?.close(); } catch { /* closed */ }
     clearTimeout(capTimer);
     capTimer = setTimeout(() => end('cap'), Math.max(1, incoming.maxMs - (Date.now() - incoming.mintedAt)));
+    dayLimit = incoming.dayLimit;
     scheduleRenew(incoming.renewIn, incoming.mintedAt);
     incoming = null;
   }
@@ -417,6 +422,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     incoming = {
       maxMs: Math.max(1, Number(answer?.max_seconds) || 1) * 1000,
       renewIn: answer?.renew_in ?? null,
+      dayLimit: answer?.day_limit_reached === true,
       mintedAt: Date.now(),
     };
     pending = wire(new WebSocketCtor(socketUrl(answer.connect || {})), answer.connect || {});
@@ -434,6 +440,7 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
   function end(reason = 'learner') {
     if (closed) return;
     closed = true;
+    if (reason === 'cap' && dayLimit) reason = 'day_limit'; // the token that held the day's last minutes ran out
     clearTimeout(capTimer);
     clearTimeout(renewTimer);
     window.removeEventListener('pagehide', beacon);

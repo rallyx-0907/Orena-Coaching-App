@@ -67,7 +67,7 @@
     {
       "h": "5. Contact",
       "blocks": [
-        { "p": "Orena is operated by {{fact:operator.name}}, {{fact:operator.country}}. For deletion requests and support, write to us. For privacy questions, see the [Privacy Policy](/privacy?lang=en)." },
+        { "p": "Orena is operated by {{fact:operator.name}}, {{fact:operator.country}}. For deletion requests and support, write to us. For privacy questions, see the [Privacy Policy](/privacy)." },
         { "contact": [["Deletion requests and support", "orena.support@chillpickle.org"], ["Privacy", "orena.legal@chillpickle.org"]] }
       ]
     }

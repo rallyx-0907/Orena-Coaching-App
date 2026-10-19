@@ -18,7 +18,7 @@
     {
       "h": "1. Accepting these terms",
       "blocks": [
-        { "p": "By creating an account or using Orena, you agree to these Terms and our [Privacy Policy](/privacy?lang=en). If you do not agree, please stop using the service. Orena records which version of these Terms you accepted and when. Orena is for people aged {{fact:min_age}} and over: you must be at least {{fact:min_age}} years old to use it. Orena does not collect your date of birth and has no technical age check; if we learn that an account belongs to someone under {{fact:min_age}}, we will delete it." }
+        { "p": "By creating an account or using Orena, you agree to these Terms and our [Privacy Policy](/privacy). If you do not agree, please stop using the service. Orena records which version of these Terms you accepted and when. Orena is for people aged {{fact:min_age}} and over: you must be at least {{fact:min_age}} years old to use it. Orena does not collect your date of birth and has no technical age check; if we learn that an account belongs to someone under {{fact:min_age}}, we will delete it." }
       ]
     },
     {
@@ -29,7 +29,7 @@
             "You sign in with a Google account. Keep it secure: you are responsible for all activity on your Orena account.",
             "Each account is for one person. Do not share, sell or transfer your account.",
             "Tell us right away if you suspect unauthorised access.",
-            "You can ask us to delete your account at any time; see [Delete account](/account-deletion?lang=en)."
+            "You can ask us to delete your account at any time; see [Delete account](/account-deletion)."
           ]
         }
       ]
@@ -37,7 +37,7 @@
     {
       "h": "3. Plans and payment",
       "blocks": [
-        { "p": "Orena has a free plan. Paid plans are not available yet: Orena does not take payments, and nothing in Orena is a charge. Usage limits depend on your plan and are shown in the app. An administrator may change the plan or limits of an account by hand." },
+        { "p": "Orena has a free plan. Paid plans are not available yet: Orena does not take payments, and nothing in Orena is a charge. Usage limits depend on your plan and are shown in the app. An administrator may change the plan or limits of an account by hand. Voice chat with Orena is a feature of the Plus and Pro plans, with a daily limit on voice minutes shown in the app; the free plan chats with Orena in text. Speaking practice does not depend on that limit." },
         {
           "cards": [
             ["Payments", "Payments are not live. Orena does not collect payment details today."],
@@ -89,7 +89,7 @@
     {
       "h": "9. Suspension and termination",
       "blocks": [
-        { "p": "You can ask us to delete your account at any time by email, as described on [Delete account](/account-deletion?lang=en); we process requests by hand within 30 days. We may suspend or terminate accounts that breach these Terms after notifying you and giving you a chance to respond, except for serious violations or where the law requires." }
+        { "p": "You can ask us to delete your account at any time by email, as described on [Delete account](/account-deletion); we process requests by hand within 30 days. We may suspend or terminate accounts that breach these Terms after notifying you and giving you a chance to respond, except for serious violations or where the law requires." }
       ]
     },
     {

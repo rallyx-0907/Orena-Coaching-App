@@ -27,7 +27,7 @@ import { micUnavailableReason } from '../mic/model.js';
 import { openVoiceSession, connectLiveVoice, listVoices, voiceEntitled, noteVoiceEntitled, stillNotEntitled } from '../../agent/live-voice.js';
 import { onViewContext } from '../../shell/view-context.js';
 import { refreshLearningLanguage } from './language-sync.js';
-import { isDailyAiLimit, isQuotaExhausted, isVoiceNotInPlan, pausedMessage, quotaMessage, seePlansLabel } from '../plan/quota-notice.js';
+import { isDailyAiLimit, isQuotaExhausted, isVoiceNotInPlan, pausedMessage, quotaMessage, quotaOffersPlans, seePlansLabel, voiceDayLimitMessage } from '../plan/quota-notice.js';
 import { openVoiceUpsell } from '../plan/voice-upsell.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
@@ -49,6 +49,7 @@ function showAiPaused(error) {
 /* The server's plan-limit refusal (429 `quota_exhausted`, §2.1) in the place a failed request already shows one: the
    Respond room's toast, with the server's own figures and the way to the plans. */
 function showPlanLimit(error) {
+  if (!quotaOffersPlans(error)) { toast(quotaMessage(error)); return; } // the voice cap of a learner with no higher plan: the line only
   toast(quotaMessage(error), { undo: () => { location.hash = href('pricing'); }, undoLabel: seePlansLabel() });
 }
 
@@ -283,6 +284,9 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         if (disposed) return;
         setPhase('idle');
         if (reason === 'mic') void openMicState(ctx, { state: 'blocked' });
+        // The day's voice minutes ended inside the chunk that just played out (`day_limit_reached`): the line once, and no
+        // offer to start again.
+        if (reason === 'day_limit') void api.productCommerce().catch(() => null).then((commerce) => { if (!disposed) toast(voiceDayLimitMessage(commerce)); });
       },
     });
   }

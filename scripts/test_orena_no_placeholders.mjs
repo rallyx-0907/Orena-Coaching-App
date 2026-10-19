@@ -39,7 +39,7 @@ function liveMarkup(html) {
 
 // 1. Served templates.
 const templates = walk('templates', ['.html']);
-assert.ok(templates.length >= 7, 'the served templates are found');
+assert.ok(templates.length >= 5, 'the served templates are found (the shell, the Landing and three English-only legal pages, D-238)');
 let inertSeen = 0;
 for (const file of templates) {
   const html = fs.readFileSync(file, 'utf8');

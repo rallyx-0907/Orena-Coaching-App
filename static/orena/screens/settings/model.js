@@ -7,6 +7,7 @@
    effect for is never wired to pretend, and never removed either (rule 43) - it is drawn, with its
    control inert. Every disabled row here is named in the report and in
    docs/project/UI_BACKEND_GAPS.md, not silently decided. */
+import { legalHref } from '../../legal/links.js';
 import { INTERFACE_ENDONYMS, INTERFACE_LOCALES, interfaceLanguageOptions as sharedInterfaceLanguageOptions } from '../../kit/lang.js';
 
 /* Appearance and Accent are how Orena looks on this device, not how a learner studies, so they have their own
@@ -138,11 +139,8 @@ export function notificationRows() {
   return ['dueReview', 'writingReview', 'mediaReady', 'system'].map((id) => ({ id, kind: 'toggle', value: false, disabled: true }));
 }
 
-/* The public legal pages (D-162). They know the languages en and vi; a Chinese interface reads them in English,
-   which is what the page itself does for `?lang=zh`, so the address says so. */
-export function legalHref(path, lang) {
-  return `${path}?lang=${lang === 'vi' ? 'vi' : lang === 'zh' ? 'zh' : 'en'}`;
-}
+/* The public legal pages are English only (D-238): one address for every interface language (legal/links.js). */
+export { legalHref };
 
 export function privacyRows({ micOn, micState, lang, memoryOn, voiceOn } = {}) {
   return [
@@ -159,9 +157,9 @@ export function privacyRows({ micOn, micState, lang, memoryOn, voiceOn } = {}) {
     { id: 'licences', kind: 'action', disabled: false },
     // Pointers to the public pages, in the Licences link's own pattern: the privacy policy, the terms, and the
     // way to ask for the account to be deleted (there is no in-app deletion yet, so a link to the request page).
-    { id: 'privacyPolicy', kind: 'link', href: legalHref('/privacy', lang) },
-    { id: 'termsOfService', kind: 'link', href: legalHref('/terms', lang) },
-    { id: 'deleteAccount', kind: 'link', href: legalHref('/account-deletion', lang) },
+    { id: 'privacyPolicy', kind: 'link', href: legalHref('/privacy') },
+    { id: 'termsOfService', kind: 'link', href: legalHref('/terms') },
+    { id: 'deleteAccount', kind: 'link', href: legalHref('/account-deletion') },
   ];
 }
 

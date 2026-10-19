@@ -37,6 +37,7 @@ import { MIC_STATES, watchMicrophone } from '../../capabilities/mic-readiness.js
 import { appearance, setAppearance, palette, setPalette } from '../../kit/device.js';
 import { appendNativeName, supportLanguageLabel } from '../../kit/lang.js';
 import { t } from './copy.js';
+import { legalLabel } from '../../legal/links.js';
 import { TABS, tabFromQuery, rowsForTab, usesPicker } from './model.js';
 import { listVoices, chosenVoice, chooseVoice } from '../../agent/live-voice.js';
 import { toContractLang } from '../../agent/contract.js';
@@ -134,7 +135,7 @@ function licencesLink(row) {
 /* The public Privacy Policy, Terms and Delete account pages: the same quiet link, opened in a new tab so the
    learner keeps their place. */
 function legalLink(row) {
-  return html`<a class="s-settings-link" href="${row.href}" target="_blank" rel="noopener">${rowLabel(row)}</a>`;
+  return html`<a class="s-settings-link" href="${row.href}" target="_blank" rel="noopener">${legalLabel(rowLabel(row), copyLanguages().ui)}</a>`;
 }
 
 function rowMarkup(row) {

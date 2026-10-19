@@ -2,7 +2,6 @@
 
 # Orena — Terms of Use (DRAFT)
 
-Chinese (中文) version: [DECISION: Chinese version waits for approval of the English and Vietnamese text.]
 Last updated: [DATE]. Version: draft 0.1 (2026-10-04).
 
 ---
@@ -80,70 +79,6 @@ These Terms are governed by the laws of [DECISION: Socialist Republic of Vietnam
 [OPERATOR], [ADDRESS], [EMAIL].
 
 ---
-
-# Tiếng Việt
-
-*Bản dịch dự thảo. Bản tiếng Trung chờ phê duyệt.*
-
-## 1. Chúng tôi là ai
-Orena ("Orena", "chúng tôi") là dịch vụ học ngôn ngữ do [OPERATOR] vận hành, địa chỉ [ADDRESS]. Liên hệ: [EMAIL].
-
-## 2. Đồng ý với điều khoản
-Khi đăng nhập hoặc dùng Orena, bạn đồng ý với Điều khoản này, Chính sách quyền riêng tư và Chính sách hoàn tiền. Nếu không đồng ý, vui lòng không dùng Orena.
-[DECISION: độ tuổi tối thiểu và quy định cho người chưa thành niên.]
-
-## 3. Tài khoản của bạn
-- Bạn đăng nhập bằng tài khoản Google. Chúng tôi không yêu cầu mật khẩu riêng.
-- Hãy giữ an toàn cho tài khoản Google. Bạn chịu trách nhiệm về mọi hoạt động dưới tài khoản của mình.
-- Cung cấp thông tin chính xác và mỗi người dùng một tài khoản.
-
-## 4. Orena cung cấp gì
-Orena giúp bạn học ngôn ngữ qua viết, đọc, nghe, nói, từ vựng, ngữ pháp và một huấn luyện viên AI. Tính năng có thể thay đổi, thêm hoặc bỏ. Một số tính năng phụ thuộc vào gói của bạn.
-
-## 5. Tính năng AI: vui lòng đọc
-- Một số tính năng dùng AI. AI có thể sai. Sửa lỗi, điểm số, bản dịch, phản hồi phát âm và lời của huấn luyện viên chỉ là công cụ hỗ trợ học, không phải đánh giá chuyên môn, học thuật hay chính thức.
-- Đừng dựa vào Orena cho kỳ thi, nhập cư, pháp lý, y tế hoặc các quyết định quan trọng khác.
-- Để tạo kết quả AI, văn bản hoặc âm thanh của bạn được gửi tới nhà cung cấp bên thứ ba. Xem Chính sách quyền riêng tư.
-
-## 6. Nội dung của bạn
-- Bạn giữ quyền sở hữu những gì bạn viết, ghi âm, nhập hoặc lưu ("Nội dung của bạn").
-- Bạn cho phép chúng tôi lưu, xử lý và hiển thị lại cho bạn, và gửi tới nhà cung cấp AI, chỉ để vận hành Orena cho bạn.
-- Chỉ thêm nội dung bạn có quyền sử dụng. Nội dung riêng bạn nhập vẫn là của bạn; đừng nhập tài liệu bạn không được phép sao chép.
-- Chúng tôi không dùng Nội dung của bạn để huấn luyện mô hình của riêng mình. [DECISION: xác nhận câu này trước khi công bố.]
-
-## 7. Nội dung và giấy phép của chúng tôi
-- Phần mềm, thiết kế, tên, logo và linh vật Orena thuộc về [OPERATOR] hoặc bên cấp phép.
-- Orena có từ điển, dữ liệu, phông chữ và phần mềm của bên thứ ba theo giấy phép mở (ví dụ CC-CEDICT, dữ liệu từ Wiktionary, Unicode Unihan, biểu tượng Lucide). Ghi công nằm trong ứng dụng: Cài đặt, Gói & quyền riêng tư, Giấy phép và nguồn dữ liệu. Giấy phép riêng của chúng, kể cả điều khoản chia sẻ tương tự, vẫn áp dụng.
-- Bài đọc và bài nghe đến từ các nguồn chúng tôi đã chấp nhận, hoặc từ bạn. Mỗi văn bản giữ nguồn và quyền riêng.
-
-## 8. Sử dụng được phép
-Không được: vi phạm pháp luật; cố phá hoại, làm quá tải hoặc dò quét Orena; chia sẻ tài khoản; sao chép nội dung hàng loạt; tải lên nội dung xâm phạm quyền người khác hoặc có hại; quấy rối người khác; lạm dụng tính năng AI.
-
-## 9. Gói, thanh toán và dùng miễn phí
-- Orena có mức miễn phí. Có thể bổ sung gói trả phí. Thanh toán chưa hoạt động.
-- Khi hoạt động, giá, quyền lợi từng gói, gia hạn và huỷ sẽ được nêu khi mua và trong Chính sách hoàn tiền.
-- Dự kiến thanh toán qua cổng trong nước ([GATEWAY NAME]; chuyển khoản QR hoặc ví điện tử) và, với thẻ quốc tế, một đơn vị bán hàng chính thức ([MERCHANT OF RECORD]) có thể là bên bán cho các giao dịch đó.
-- [DECISION: gói, giá, tiền tệ, thuế, dùng thử và hạn mức.]
-
-## 10. Chấm dứt sử dụng
-- Bạn có thể ngừng dùng Orena bất cứ lúc nào.
-- Xoá tài khoản: [DECISION: cách học viên yêu cầu xoá hiện nay; hiện chưa có tính năng tự xoá.]
-- Chúng tôi có thể tạm ngừng hoặc đóng tài khoản vi phạm Điều khoản hoặc pháp luật, hoặc để bảo vệ Orena và người học khác. [DECISION: thời hạn thông báo và cách khiếu nại.]
-
-## 11. Tính sẵn sàng
-Orena được cung cấp "nguyên trạng" và "khi có". Chúng tôi cố giữ dịch vụ chạy ổn định nhưng không cam kết không gián đoạn hay không lỗi. Tính năng phụ thuộc bên thứ ba có thể tạm thời không dùng được.
-
-## 12. Giới hạn trách nhiệm
-Trong phạm vi pháp luật cho phép, [OPERATOR] không chịu trách nhiệm về thiệt hại gián tiếp, hệ quả, hoặc thiệt hại do kết quả AI, dịch vụ bên thứ ba hay mất dữ liệu; tổng trách nhiệm cho một khiếu nại giới hạn ở [DECISION: mức trần]. Không điều gì ở đây hạn chế quyền bắt buộc của bạn theo pháp luật bảo vệ người tiêu dùng, hoặc trách nhiệm mà pháp luật không cho phép hạn chế.
-
-## 13. Thay đổi
-Chúng tôi có thể cập nhật Điều khoản. Chúng tôi sẽ báo trong ứng dụng hoặc qua email [DECISION: thời hạn báo trước] trước khi thay đổi quan trọng có hiệu lực. Tiếp tục dùng nghĩa là bạn chấp nhận.
-
-## 14. Luật áp dụng và tranh chấp
-Điều khoản chịu sự điều chỉnh của pháp luật [DECISION: Việt Nam, cần xác nhận với luật sư]. Tranh chấp giải quyết tại [DECISION: toà án hoặc trung tâm trọng tài, địa điểm]. Vui lòng liên hệ [EMAIL] trước để cùng tìm cách giải quyết.
-
-## 15. Liên hệ
-[OPERATOR], [ADDRESS], [EMAIL].
 
 ---
 

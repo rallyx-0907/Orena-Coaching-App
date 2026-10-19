@@ -180,20 +180,29 @@ const answer = (status, body, headers = {}) => ({
 
 // 4. Pricing: the benefit follows the catalogue's `orena.voice` entitlement (data, not a hard-coded plan list).
 {
-  const { pricingPlans, compareRows, FEATURE_ORDER } = await import('../static/orena/screens/plan/model.js');
+  const model = await import('../static/orena/screens/plan/model.js');
+  const { pricingPlans, compareRows, FEATURE_ORDER } = model;
   assert.ok(FEATURE_ORDER.includes('orena.voice'));
   const entitlement = (key, extra = {}) => ({ key, enabled: true, limit: null, ...extra });
   const plans = [
     { id: 'free', rank: 0, entitlements: [entitlement('orena.message', { limit: 20 }), entitlement('orena.voice', { enabled: false })] },
-    { id: 'plus', rank: 1, entitlements: [entitlement('orena.message', { limit: 200 }), entitlement('orena.voice', { limit: 1 })] },
-    { id: 'pro', rank: 2, entitlements: [entitlement('orena.message', { limit: 1000 }), entitlement('orena.voice')] },
+    { id: 'plus', rank: 1, entitlements: [entitlement('orena.message', { limit: 200 }), entitlement('orena.voice', { limit: 900, unit: 'second', display_unit: 'minute', scale: 60, window: 'day' })] },
+    { id: 'pro', rank: 2, entitlements: [entitlement('orena.message', { limit: 1000 }), entitlement('orena.voice', { limit: 900, unit: 'second', display_unit: 'minute', scale: 60, window: 'day' })] },
   ];
   const list = pricingPlans({ plans });
   const has = (id) => list.find((plan) => plan.id === id).features.some((feature) => feature.key === 'orena.voice');
   assert.deepEqual([has('free'), has('plus'), has('pro')], [false, true, true], 'listed for Plus and Pro, not Free');
-  assert.equal(list[1].features.find((feature) => feature.key === 'orena.voice').limit, null, 'on/off with a stored limit of 1 is never drawn as a count');
+  assert.equal(list[1].features.find((feature) => feature.key === 'orena.voice').limit, 15, 'D-237: a metered benefit, 900 stored seconds shown as 15 minutes');
   const row = compareRows(list).find((item) => item.key === 'orena.voice');
-  assert.deepEqual(row.cells.map((cell) => cell.kind), ['no', 'yes', 'yes']);
+  assert.deepEqual(row.cells.map((cell) => cell.kind), ['no', 'limit', 'limit'], 'a figure, not a tick');
+  assert.deepEqual([row.cells[1].value, row.cells[1].unit], [15, 'minute']);
+  assert.equal(model.BOOLEAN_FEATURES, undefined, 'no on/off allowlist is left');
+  // The plan line, in the three languages.
+  const copy4 = src('static/orena/screens/plan/copy.js');
+  for (const line of ["line_orena_voice: '{n} min a day of voice chat with Orena'", "line_orena_voice: '{n} phút/ngày trò chuyện bằng giọng nói với Orena'", "line_orena_voice: '每天 {n} 分钟与 Orena 语音聊天'"]) assert.ok(copy4.includes(line), line);
+  // Plan & usage draws a voice meter in minutes when the commerce read reports it.
+  const usage = model.usageRows({ features: { 'orena.voice': { limit: 900, used: 300, scale: 60, display_unit: 'minute', window: 'day', usage_state: 'known', entitlement_state: 'known', resets_at: '2026-10-20T00:00:00Z' } } });
+  assert.deepEqual([usage[0].key, usage[0].used, usage[0].limit, usage[0].unit], ['orena.voice', 5, 15, 'minute']);
   // A catalogue that does not carry it draws nothing extra.
   const bare = pricingPlans({ plans: plans.map((plan) => ({ ...plan, entitlements: plan.entitlements.filter((item) => item.key !== 'orena.voice') })) });
   assert.ok(bare.every((plan) => !plan.features.some((feature) => feature.key === 'orena.voice')));
@@ -202,29 +211,89 @@ const answer = (status, body, headers = {}) => ({
   for (const line of ["compare_orena_voice: 'Voice chat with Orena'", "compare_orena_voice: 'Trò chuyện bằng giọng nói với Orena'", "compare_orena_voice: '与 Orena 语音聊天'"]) assert.ok(copy.includes(line), line);
 }
 
-// 4b. Admin plan editor: orena.voice is toggle-only; its stored limit of 1 is kept, never edited.
+// 4b. Admin plan editor: orena.voice is a normal metered row in minutes; the stored seconds round-trip.
 {
   const { draftOf, plansPayload } = await import('../static/orena/screens/admin/plans.js');
   const plan = { id: 'plus', prices: {}, entitlements: [
-    { key: 'orena.voice', enabled: true, limit: 1, params: {} },
+    { key: 'orena.voice', enabled: true, limit: 900, window: 'day', unit: 'second', display_unit: 'minute', scale: 60, params: {} },
     { key: 'orena.message', enabled: true, limit: 200, params: {} },
   ] };
   const draft = draftOf(plan);
   const [voice, message] = draft.entitlements;
-  assert.equal(voice.metered, false, 'no limit field for an on/off entitlement');
-  assert.equal(message.metered, true);
+  assert.equal(voice.metered, true, 'a limit field like any metered row');
+  assert.equal(voice.limit, '15', 'shown in minutes');
+  assert.equal(message.limit, '200');
+  assert.equal(plansPayload([draft]).plans[0].entitlements[0].limit, 900, 'unedited: the stored seconds come back');
+  voice.limit = '20';
+  assert.equal(plansPayload([draft]).plans[0].entitlements[0].limit, 1200, 'typed minutes are stored as seconds');
+  voice.limit = '7.5';
+  assert.equal(plansPayload([draft]).plans[0].entitlements[0].limit, 450);
   voice.enabled = false;
-  const sent = plansPayload([draft]).plans[0].entitlements;
-  assert.deepEqual([sent[0].enabled, sent[0].limit], [false, 1], 'the toggle is saved with its limit as the catalogue held it');
-  assert.equal(sent[1].limit, 200);
+  assert.equal(plansPayload([draft]).plans[0].entitlements[0].enabled, false, 'the toggle still saves');
+  // A stored voice limit under one minute (the old on/off 1) is read by the server as the 15-minute default: the editor shows 15 and saves 900.
+  const voiceOf = (entitlement) => draftOf({ id: 'plus', prices: {}, entitlements: [{ key: 'orena.voice', params: {}, ...entitlement }] }).entitlements[0];
+  const savedLimit = (entry) => plansPayload([{ id: 'plus', prices: {}, entitlements: [entry] }]).plans[0].entitlements[0].limit;
+  for (const stored of [1, 59]) {
+    const bare = voiceOf({ enabled: true, limit: stored });
+    assert.equal(bare.metered, true, `limit ${stored}: a minutes field`);
+    assert.equal(bare.limit, '15', `limit ${stored}: shown as 15 min`);
+    assert.equal(savedLimit(bare), 900, `limit ${stored}: saved as 900`);
+  }
+  // No stored limit is UNCAPPED on the server: it stays null, shown as an unlimited meter, and a plain save writes no cap.
+  for (const stored of [null, undefined]) {
+    const open = voiceOf({ enabled: true, ...(stored === undefined ? {} : { limit: stored }) });
+    assert.equal(open.metered, false, 'unlimited: no minutes field');
+    assert.equal(open.limit, null);
+    assert.equal(savedLimit(open), null, 'null stays null on save');
+  }
+  // A plan without voice (Free) is left exactly as stored.
+  const off = voiceOf({ enabled: false, limit: 1, scale: 60 });
+  assert.equal(savedLimit(off), 1, 'a disabled plan keeps its stored value');
+  assert.equal(savedLimit(voiceOf({ enabled: false })), null);
+  assert.equal(savedLimit(voiceOf({ enabled: true, limit: 900, scale: 60 })), 900);
+  // Plan & usage: no voice row while the commerce read does not report orena.voice.
+  const model = await import('../static/orena/screens/plan/model.js');
+  assert.equal(model.usageRows({ features: { 'orena.message': { limit: 20, used: 1, usage_state: 'known', entitlement_state: 'known' } } }).some((row) => row.key === 'orena.voice'), false);
+  assert.equal(model.usageRows({ features: {} }).length, 0);
+  // The voice 429 carries no `upgrade` and no `options`: no way to the plans.
+  const { quotaOffersPlans } = await import('../static/orena/screens/plan/quota-notice.js');
+  assert.equal(quotaOffersPlans({ status: 429, category: 'quota_exhausted', context: { feature: 'orena.voice', used: 900, limit: 900, scale: 60 } }), false, 'no options, no link');
 }
 
-// 5. The contract text and the code constant agree on v11.
+// D-237: at the daily voice-minute cap (429 quota_exhausted, orena.voice) a line, text chat stays, no upsell for a paid learner.
+{
+  const { isQuotaExhausted, quotaMessage, quotaOffersPlans, isVoiceNotInPlan } = await import('../static/orena/screens/plan/quota-notice.js');
+  const cap = (extra = {}) => Object.assign(new Error('x'), { status: 429, category: 'quota_exhausted', context: { feature: 'orena.voice', used: 900, limit: 900, unit: 'second', display_unit: 'minute', scale: 60, window: 'day', plan: 'plus', upgrade: '/pricing', ...extra } });
+  assert.equal(isQuotaExhausted(cap()), true);
+  assert.equal(isVoiceNotInPlan(cap()), false, 'a 429 cap is not the 403 Free upsell');
+  assert.equal(isVoiceNotInPlan(Object.assign(new Error('x'), { status: 403, category: 'feature_not_in_plan', context: { feature: 'orena.voice' } })), true, '403 is unchanged');
+  assert.equal(quotaOffersPlans(cap()), false, 'a paid learner at the cap is offered no plans');
+  assert.equal(quotaOffersPlans(cap({ options: [] })), false);
+  assert.equal(quotaOffersPlans(cap({ options: ['upgrade'] })), true, 'only when the server says a higher plan holds more');
+  assert.equal(quotaOffersPlans(Object.assign(new Error('x'), { status: 429, category: 'quota_exhausted', context: { feature: 'orena.message' } })), true, 'other meters keep their link');
+  const sentence = quotaMessage(cap());
+  assert.ok(/15/.test(sentence) && !/900/.test(sentence), 'n = limit / scale');
+  const copy = src('static/orena/screens/plan/copy.js');
+  for (const line of [
+    "exhausted_orena_voice: 'You have used all {limit} minutes of voice chat today. You can still message Orena.'",
+    "exhausted_orena_voice: 'Hôm nay bạn đã dùng hết {limit} phút trò chuyện bằng giọng nói. Bạn vẫn có thể nhắn tin với Orena.'",
+    "exhausted_orena_voice: '今天的 {limit} 分钟语音聊天已用完。你仍可以给 Orena 发消息。'",
+  ]) assert.ok(copy.includes(line), line);
+  const voice = src('static/orena/screens/orena/voice.js');
+  assert.ok(/if \(isQuotaExhausted\(error\)\) \{[^}]*setPhase\('idle'\);\s+showPlanLimit\(error\);\s+return;/.test(voice), 'session 429: the line, no device cascade, no retry; text chat is a different surface and stays');
+  assert.ok(/if \(isQuotaExhausted\(error\)\) showPlanLimit\(error\)/.test(voice), 'extend 429: told once, the held token plays out');
+  assert.ok(/if \(!quotaOffersPlans\(error\)\)/.test(voice));
+  // The extend 429 does not end the held session: only the learner's end, a 404 or the token's death does.
+  const live = src('static/orena/agent/live-voice.js');
+  assert.ok(/onLimit\(error\);\s+return;/.test(live) && !/onLimit\(error\);\s+return end/.test(live));
+}
+
+// 5. The contract text and the code constant agree on v13.
 {
   const { CONTRACT_VERSION } = await import('../static/orena/agent/contract.js');
   const text = src('docs/project/AGENT_CONTRACT.md');
-  assert.equal(CONTRACT_VERSION, 11);
-  assert.ok(text.includes('`contract_version: 11`'));
+  assert.equal(CONTRACT_VERSION, 13);
+  assert.ok(text.includes('`contract_version: 13`'));
   assert.ok(text.includes('X-Orena-AI-Paused') && text.includes('`orena.voice`') && text.includes('"entitled": false'));
 }
 

@@ -17,7 +17,7 @@ import { languages } from '../../copy/index.js';
 import { planName, planDescription } from '../../copy/shell.js';
 import { adminApi } from '../../capabilities/admin-api.js';
 import { t as planCopy } from '../plan/copy.js';
-import { BOOLEAN_FEATURES, FEATURE_ORDER, featureCopyKey } from '../plan/model.js';
+import { FEATURE_ORDER, featureCopyKey } from '../plan/model.js';
 import { t } from './copy.js';
 import { block, pageHead, skeleton } from './blocks.js';
 import { createHost } from './host.js';
@@ -42,12 +42,17 @@ export function draftOf(plan) {
     id: plan.id,
     prices: Object.fromEntries(PERIODS.map((period) => [period, Object.fromEntries(CURRENCIES.map((currency) => [currency, text(plan.prices?.[period]?.[currency] ?? 0)]))])),
     entitlements: (plan.entitlements || []).map((item) => {
-      const scale = scaleOf(item);
-      const limit = item.limit ?? item.monthly_limit;
+      const voice = item.key === 'orena.voice';
+      const scale = voice && !(Number(item.scale) > 0) ? 60 : scaleOf(item);
+      const held = item.limit ?? item.monthly_limit;
+      // The server reads a stored voice limit under one minute (the old on/off 1) as its 15-minute default; none is uncapped
+      // (D-237, _voice_limit). The editor shows that, and only for a plan that has voice: a disabled one is left as stored.
+      const limit = voice && item.enabled === true && held != null && Number(held) < 60 ? 900 : held;
+      const field = limit == null ? null : shown(limit, scale);
       return {
         key: item.key, enabled: item.enabled === true,
-        // An on/off entitlement (`orena.voice`, allowlist in plan/model.js) is toggle-only: its stored limit of 1 is kept as it came and never edited.
-        metered: limit != null && !BOOLEAN_FEATURES.includes(item.key), heldLimit: BOOLEAN_FEATURES.includes(item.key) ? limit : null, limit: limit == null ? null : shown(limit, scale),
+        // `heldLimit`: the stored seconds an untouched field sends back, so a round trip never rounds them.
+        metered: limit != null, limit: field, heldLimit: limit, heldField: field,
         scale, window: item.window || null, unit: item.display_unit || '',
         params: Object.fromEntries(Object.entries(item.params || {}).map(([name, value]) => [name, text(value)])),
       };
@@ -78,7 +83,7 @@ export function plansPayload(drafts) {
       id: draft.id,
       prices: Object.fromEntries(PERIODS.map((period) => [period, Object.fromEntries(CURRENCIES.map((currency) => [currency, draft.id === 'free' ? 0 : numeric(draft.prices?.[period]?.[currency])]))])),
       entitlements: draft.entitlements.map((item) => ({
-        key: item.key, enabled: item.enabled === true, limit: item.metered ? stored(item.limit, item.scale || 1) : (item.heldLimit ?? null),
+        key: item.key, enabled: item.enabled === true, limit: item.metered ? (item.heldLimit != null && item.limit === item.heldField ? item.heldLimit : stored(item.limit, item.scale || 1)) : null,
         params: Object.fromEntries(Object.entries(item.params || {}).map(([name, value]) => [name, numeric(value)])),
       })),
     })),

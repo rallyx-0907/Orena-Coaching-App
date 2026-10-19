@@ -150,8 +150,8 @@ import { sizeBucketOf, READER_SIZE, READER_DEFAULTS } from '../static/orena/prod
   const rows = privacyRows({ micOn: true, micState: 'granted', lang: 'vi' });
   const byId = Object.fromEntries(rows.map((r) => [r.id, r]));
   assert.deepEqual(rows.map((r) => r.id), ['mic', 'learnerAudio', 'history', 'licences', 'privacyPolicy', 'termsOfService', 'deleteAccount'], 'the design\'s three rows, then the licences link (D-124) and the legal links (D-162)');
-  assert.deepEqual(['privacyPolicy', 'termsOfService', 'deleteAccount'].map((id) => byId[id].href), ['/privacy?lang=vi', '/terms?lang=vi', '/account-deletion?lang=vi'], 'the legal links open the public pages in the interface language');
-  assert.equal(privacyRows({ lang: 'zh' }).find((r) => r.id === 'deleteAccount').href, '/account-deletion?lang=zh', 'Chinese is passed on; the public pages show English for it');
+  assert.deepEqual(['privacyPolicy', 'termsOfService', 'deleteAccount'].map((id) => byId[id].href), ['/privacy', '/terms', '/account-deletion'], 'the legal links open the English public pages whatever the interface language (D-238)');
+  assert.equal(privacyRows({ lang: 'zh' }).find((r) => r.id === 'deleteAccount').href, '/account-deletion', 'no language is passed on: the public pages are English only');
   assert.equal(byId.mic.value, true);
   assert.equal(byId.mic.disabled, false, 'requesting the permission is a real effect even when it cannot be revoked from script');
   assert.equal(byId.learnerAudio.disabled, true, 'no delete-audio route exists');

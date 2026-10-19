@@ -17,6 +17,7 @@ import { createTargetFirst } from './target-first.js';
 import { selectLearningLanguage } from '../../product/account-settings.js';
 import { isLanguageLimit, showLanguageLimitNotice } from '../plan/quota-notice.js';
 import { accountStepSignInHref } from '../../shell/session.js';
+import { legalHref, legalLabel } from '../../legal/links.js';
 import { t } from './copy.js';
 import {
   STEP_COUNT, STEPS, clampStep, stepDots,
@@ -187,7 +188,7 @@ export default async function onboardingScreen(element, ctx) {
      {privacy} where they go, so each language orders it its own way. */
   function termsLine() {
     const lang = copyLanguages().ui;
-    const link = (path, key) => html`<a class="s-onboarding__terms-link" href="${path}?lang=${lang}" target="_blank" rel="noopener">${t(key)}</a>`;
+    const link = (path, key) => html`<a class="s-onboarding__terms-link" href="${legalHref(path)}" target="_blank" rel="noopener">${legalLabel(t(key), lang)}</a>`;
     return t('terms').split(/(\{terms\}|\{privacy\})/).map((piece) => {
       if (piece === '{terms}') return link('/terms', 'termsLink');
       if (piece === '{privacy}') return link('/privacy', 'privacyLink');

@@ -71,21 +71,24 @@ def test_public_pages_need_no_session(monkeypatch):
 
     async def go():
         async with _client() as c:
-            return {p: await c.get(p) for p in ("/landing", "/terms", "/privacy", "/account-deletion", "/terms?lang=en", "/privacy?lang=zh", "/account-deletion?lang=en")}
+            return {p: await c.get(p) for p in ("/landing", "/terms", "/privacy", "/account-deletion", "/terms?lang=en", "/privacy?lang=zh", "/privacy?lang=vi", "/account-deletion?lang=en")}
 
     r = _run(go())
     for path, res in r.items():
         assert res.status_code == 200, path
         assert "text/html" in res.headers["content-type"], path
     assert LANDING_MARKER in r["/landing"].text
-    # Vietnamese by default, English for ?lang=en, and English for ?lang=zh (there is no Chinese text).
-    assert '<html lang="vi">' in r["/terms"].text and "Điều khoản dịch vụ" in r["/terms"].text
-    assert '<html lang="en">' in r["/terms?lang=en"].text and "Terms of Service" in r["/terms?lang=en"].text
-    assert "Chính sách quyền riêng tư" in r["/privacy"].text
-    assert '<html lang="en">' in r["/privacy?lang=zh"].text and "Privacy Policy" in r["/privacy?lang=zh"].text
-    assert "本页面目前仅提供英文版本。" in r["/privacy?lang=zh"].text, "a Chinese reader is told the page is English only"
-    assert "本页面目前仅提供英文版本。" not in r["/terms?lang=en"].text and "本页面" not in r["/terms"].text
-    assert "Xoá tài khoản" in r["/account-deletion"].text and "Delete account" in r["/account-deletion?lang=en"].text
+    # Legal documents exist in English only (D-238): every request, whatever `?lang=` says, gets the English page.
+    assert r["/terms"].text == r["/terms?lang=en"].text
+    assert r["/privacy"].text == r["/privacy?lang=zh"].text == r["/privacy?lang=vi"].text
+    assert r["/account-deletion"].text == r["/account-deletion?lang=en"].text
+    for path in ("/terms", "/privacy", "/account-deletion"):
+        text = r[path].text
+        assert '<html lang="en">' in text, path
+        assert "Điều khoản" not in text and "Chính sách" not in text and "Xoá tài khoản" not in text, path
+        assert "本页面" not in text, "no per-language note: the page is English for everyone"
+        assert 'hreflang="vi"' not in text and ">VI</a>" not in text, "no language switch"
+    assert "Terms of Service" in r["/terms"].text and "Privacy Policy" in r["/privacy"].text and "Delete account" in r["/account-deletion"].text
     for path, res in r.items():
         if path != "/landing":
             # The legal pages are static: the text is in the response and no runtime or script file is loaded.
@@ -166,9 +169,9 @@ def test_account_deletion_page_is_public_uncached_and_says_how(monkeypatch):
     assert res.status_code == 200 and "text/html" in res.headers["content-type"]
     assert res.headers["cache-control"] == "no-store, max-age=0"
     assert "orena.support@chillpickle.org" in res.text
-    assert "30 ngày" in res.text
-    en = _run(_get("/account-deletion?lang=en"))
-    assert "30 days" in en.text and "orena.support@chillpickle.org" in en.text
+    assert "30 days" in res.text
+    vi = _run(_get("/account-deletion?lang=vi"))
+    assert vi.text == res.text, "a Vietnamese request gets the English page (D-238)"
     assert "/account-deletion" in auth_support.PUBLIC_PAGE_PATHS
 
 
