@@ -26,6 +26,7 @@ from typing import Any, Protocol
 
 from writing_coach.core.support_languages import normalize_support_language
 from writing_coach.languages.chinese import lexicon as chinese_lexicon
+from writing_coach.gloss_guard import is_function_word, neighbours, pos_disagrees, withhold_reason
 from writing_coach.languages.english.ipa import ipa_for as _local_english_ipa
 from writing_coach.linguistic_annotation import annotate
 from writing_coach.media_ingestion import primary_language
@@ -37,6 +38,7 @@ from writing_coach.reading_translation import (
     TextSegment,
 )
 from writing_coach.tap_sense import (
+    canonical_pos,
     catalogue_tie_texts,
     catalogue_ties,
     definition_ties,
@@ -189,6 +191,16 @@ class LookupResult:
         }
 
 
+def _find_selection(context: str, selection: str) -> re.Match[str] | None:
+    """Where the tapped word stands in its sentence. A Latin word is matched on word boundaries, never inside a longer
+    word ("the" in "other"); Chinese has no word boundary to respect."""
+
+    pattern = re.escape(selection)
+    if selection[:1].isalnum() and not _HAN.search(selection):
+        pattern = rf"(?<!\w){pattern}(?!\w)"
+    return re.search(pattern, context, flags=re.IGNORECASE)
+
+
 def _local_token_facts(language: str, context: str, selection: str) -> dict[str, str]:
     """What the shared tagger knows about the selection where it stands.
 
@@ -198,7 +210,7 @@ def _local_token_facts(language: str, context: str, selection: str) -> dict[str,
     ever surfaced from the tagger for Chinese (`ARCHITECTURE_INVARIANTS.md`).
     """
 
-    found = re.search(re.escape(selection), context, flags=re.IGNORECASE)
+    found = _find_selection(context, selection)
     if found is None:
         return {"part_of_speech": "", "pronunciation": "", "base_form": "", "lemma": ""}
     start, end = found.span()
@@ -219,6 +231,26 @@ def _local_token_facts(language: str, context: str, selection: str) -> dict[str,
         "base_form": lemma if single and language == "zh" else "",
         "lemma": lemma,
     }
+
+
+def _gloss_withheld(language: str, context: str, selection: str, tagged_pos: str, lemma: str = "") -> str:
+    """Why the headword gloss of `selection` must not be shown where it stands (`gloss_guard`), or ``""``.
+
+    The function-word list needs no tagging; the neighbours (a phrasal verb's particle, a name's other words, a period
+    word) come from the shared tagger on the sentence. A tagger that fails leaves only the list and the tagged class."""
+
+    if not selection or len(selection.split()) != 1:
+        return ""
+    if is_function_word(language, selection):
+        return "function_word"
+    previous = following = None
+    found = _find_selection(context, selection)
+    if found is not None:
+        try:
+            previous, following = neighbours(annotate(language, context), found.start(), found.end())
+        except Exception as exc:  # noqa: BLE001 - the guard is an aid; its absence never fails the tap
+            _log_layer("tagger", "failed", language=language, error=exc)
+    return withhold_reason(language, selection, tagged_pos, previous, following, lemma)
 
 
 def _selected_reading(token: Mapping[str, Any], start: int, end: int) -> str:
@@ -569,8 +601,11 @@ class ReadingLookupService:
     def has_local_meaning(self, selection: str, source: str, target: str) -> bool:
         """Whether a deterministic layer already gives `selection` a meaning in `target` - the catalogue, CC-CEDICT
         for an English support language, or a translation already held. Never the network, never a new translation,
-        never AI: it decides whether a word is worth translating ahead (D-199)."""
+        never AI: it decides whether a word is worth translating ahead (D-199). A function word has no headword gloss
+        to show (`gloss_guard`) and is never worth a translation: it counts as answered."""
 
+        if is_function_word(source, selection):
+            return True
         if self._vocabulary_repository is not None:
             for normalized in _catalog_candidates(selection, ""):
                 entry = _safe_find_entry(self._vocabulary_repository, source, normalized)
@@ -670,11 +705,19 @@ class ReadingLookupService:
         part_of_speech = local["part_of_speech"]
         pronunciation = local["pronunciation"]
         base_form = local["base_form"]
+        # PRE-202: a gloss of the headword is shown only where the headword's sense is the sentence's. For a function
+        # word, a proper name or part of a phrasal verb / fixed phrase / period it cannot be confirmed: no layer below
+        # offers a word-alone meaning, and the tap keeps its non-committal state (the learner can ask Orena).
+        withheld = _gloss_withheld(
+            source, context if source == surrounding else selection, selection, part_of_speech, local["lemma"]
+        )
         audio_url = ""
         meanings: list[LookupMeaning] = []
         definitions: list[LookupDefinition] = []
 
         entry = None
+        pack_class_differs = False
+        tagged_pos = part_of_speech
         found: list[dict[str, Any]] = []
         if self._vocabulary_repository is not None:
             for normalized in _catalog_candidates(selection, local["lemma"]):
@@ -685,7 +728,10 @@ class ReadingLookupService:
                 if entry is not None:
                     break
         if entry is not None:
-            for item in entry.get("short_meanings") or []:
+            # A pack sense of another lexical class than the word has here is dropped later, once the dictionary has
+            # confirmed a sense of the in-context class (a tagger error on a one-sense word must not empty the sheet).
+            pack_class_differs = pos_disagrees(str(entry.get("part_of_speech") or ""), part_of_speech)
+            for item in [] if withheld else entry.get("short_meanings") or []:
                 if not isinstance(item, dict):
                     continue
                 if str(item.get("language") or "").strip().casefold() != target:
@@ -707,7 +753,7 @@ class ReadingLookupService:
             # own language, so for an English support language the first
             # senses are the meaning; any other language still goes to the
             # translation engine below, with these senses on the sheet.
-            entry_senses = _safe_chinese_senses(selection, pronunciation)
+            entry_senses = () if withheld else _safe_chinese_senses(selection, pronunciation)
             definitions.extend(
                 LookupDefinition("", sense) for sense in entry_senses[:_MAX_DICTIONARY_DEFINITIONS]
             )
@@ -727,7 +773,7 @@ class ReadingLookupService:
                 ask = self._english_dictionary_cached
             payload = _safe_english_dictionary(ask, selection)
             if payload is not None:
-                for item in (payload.get("definitions") or [])[:_MAX_DICTIONARY_DEFINITIONS]:
+                for item in [] if withheld else (payload.get("definitions") or [])[:_MAX_DICTIONARY_DEFINITIONS]:
                     if not isinstance(item, dict):
                         continue
                     definition_text = str(item.get("definition") or "").strip()
@@ -740,6 +786,12 @@ class ReadingLookupService:
                     pronunciation = str(payload.get("phonetic") or "").strip()
                 if not audio_url:
                     audio_url = str(payload.get("audio") or "").strip()
+                if pack_class_differs and meanings and meanings[0].source == "collection":
+                    # The pack's only sense is of another class and the dictionary confirms a sense of the class the
+                    # word has here: the pack gloss is not the sentence's, the dictionary's sense is shown instead.
+                    wanted = canonical_pos(tagged_pos)
+                    if any(canonical_pos(item.part_of_speech) == wanted for item in definitions):
+                        meanings = []
                 part_of_speech = _reconciled_part_of_speech(part_of_speech, definitions)
                 # The dictionary's sense for the class the word has here comes first, so a plain "plan" in "we plan
                 # to leave" is not shown as the architectural drawing (refs #194).
@@ -755,7 +807,7 @@ class ReadingLookupService:
                 # that is a guess about spelling, not a fact about the word: show no class (PRE D6).
                 part_of_speech = ""
 
-        if not meanings and target != source:
+        if not meanings and target != source and not withheld:
             wait = None
             if self._budget is not None:
                 wait = max(_MIN_TRANSLATION_WAIT, self._budget - (time.monotonic() - started))
@@ -763,7 +815,7 @@ class ReadingLookupService:
             if translated:
                 meanings.append(LookupMeaning(translated, "machine_translation"))
 
-        if not meanings and target != source and self._word_translation is not None:
+        if not meanings and target != source and not withheld and self._word_translation is not None:
             # The `word_translation` seam (D-195, the AI Cost Router): last, after every deterministic layer missed.
             # `context` and `definitions` are offered to any implementation; the router's adapter sends the word only.
             remaining = max(
@@ -778,7 +830,8 @@ class ReadingLookupService:
             if seamed and str(seamed).strip():
                 meanings.append(LookupMeaning(str(seamed).strip(), "word_translation"))
 
-        if self._sense_choice is not None and source == surrounding:
+        if self._sense_choice is not None and source == surrounding and not withheld:
+            # A withheld gloss has nothing to choose among: the (paid) sense-choice seam is never reached (D-228).
             meanings, definitions = self._choose_among_ties(
                 selection, context, source, target, part_of_speech, found, meanings, definitions, content_id, started,
             )
