@@ -58,7 +58,7 @@ function screenMarkup(model) {
   const meta = [t.plural('collectionWordCount', model.wordCount), model.metInSources ? t('collectionMetInSources', { n: model.metInSources }) : ''].filter(Boolean).join(' · ');
   const hero = heroMedia({
     cover: COVER_VISUALS.collection,
-    image: '', // rule 40: VocabularyCollection carries no cover-image field (backend gap)
+    image: model.image ? `url("${model.image}")` : '', // D-240: the collection's thumbnail
     height: 'auto',
     titleSize: 26,
     pill,

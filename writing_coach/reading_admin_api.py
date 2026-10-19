@@ -49,6 +49,7 @@ from writing_coach.reading_images import (
     clean_text,
     fetch_image,
 )
+from writing_coach import thumbnails
 from writing_coach.reading_processing import EN_LEVEL_BANDS, ZH_LEVEL_BANDS
 from writing_coach.reading_page_quality import QualityRefused, hard_issues
 from writing_coach.persistence.reading_content_repository import (
@@ -420,6 +421,20 @@ class ImageApproveBody(BaseModel):
 
     # The credit a learner reads; empty means the candidate's own credit, else the source's publisher.
     credit: str = Field(default="", max_length=MAX_CREDIT)
+    alt: str = Field(default="", max_length=MAX_ALT)
+    reason: str = Field(default="", max_length=2000)
+
+
+class ThumbnailUrlBody(BaseModel):
+    """Attach a licensed picture by address (D-240): every licence field is required and checked."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    url: str = Field(min_length=1, max_length=1000)
+    author: str = Field(default="", max_length=300)
+    licence: str = Field(default="", max_length=60)
+    licence_url: str = Field(default="", max_length=1000)
+    kind: str = Field(default="library_image", max_length=30)
     alt: str = Field(default="", max_length=MAX_ALT)
     reason: str = Field(default="", max_length=2000)
 
@@ -1062,6 +1077,69 @@ def clear_article_image(
     return _guarded(lambda: _content().image_review(article_id))
 
 
+def _record_thumbnail(admin: Mapping[str, Any], article_id: str, stored: dict[str, Any], reason: str, created_key: str | None) -> dict[str, Any]:
+    store = _image_store()
+    try:
+        recorded = _guarded(lambda: _content().approve_image(article_id, stored, actor=_actor(admin), reason=reason.strip()))
+    except Exception:
+        if created_key:
+            store.delete(created_key)
+        raise
+    if not recorded:
+        if created_key:
+            store.delete(created_key)
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    return _guarded(lambda: _content().image_review(article_id))
+
+
+@router.post("/articles/{article_id}/thumbnail/typographic")
+def set_typographic_thumbnail(request: Request, response: Response, article_id: str, payload: ImageRejectBody) -> dict[str, Any]:
+    """Give the article Orena's own typographic cover (D-240, source 3): deterministic, from its title, language and topic."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    article = _guarded(lambda: _content().get_article(article_id))
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    store = _image_store()
+    stored = thumbnails.make_reading_cover(
+        store, article_id=article_id, title=article["title"], language=article["language"], topic=article.get("topic") or "",
+    )
+    review = _record_thumbnail(admin, article_id, stored, payload.reason, None)
+    _audit(admin, "admin.reading_thumbnail_typographic", entity_type="reading_article", entity_id=article_id,
+           payload={"sha256": stored["sha256"]})
+    return review
+
+
+@router.post("/articles/{article_id}/thumbnail/from-url")
+def set_thumbnail_from_url(request: Request, response: Response, article_id: str, payload: ThumbnailUrlBody) -> dict[str, Any]:
+    """Attach a picture from an allow-listed host with its licence (D-240, sources 1 and 2). The server downloads it
+    into our own store; the learner is only ever served that copy."""
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    article = _guarded(lambda: _content().get_article(article_id))
+    if article is None:
+        raise orena_http_error(404, "reading_article_not_found", "That article is not in the catalog.")
+    store = _image_store()
+    try:
+        fetched, provenance = thumbnails.fetch_licensed_image(
+            payload.url, {"author": payload.author, "licence": payload.licence, "licence_url": payload.licence_url,
+                          "kind": payload.kind}, fetcher=_state.image_fetcher)
+        key = asset_key(article_id, fetched["sha256"], fetched["ext"])
+    except (thumbnails.ThumbnailRefused, ImageRefused) as exc:
+        raise orena_http_error(422, getattr(exc, "code", "thumbnail_refused"), str(exc)) from exc
+    created = not store.exists(key)
+    if created:
+        store.put(key, fetched["data"])
+    stored = thumbnails.stored_dict({**fetched, "alt": clean_text(payload.alt, MAX_ALT) or article["title"]}, key, provenance)
+    review = _record_thumbnail(admin, article_id, stored, payload.reason, key if created else None)
+    _audit(admin, "admin.reading_thumbnail_attached", entity_type="reading_article", entity_id=article_id,
+           payload={"kind": provenance["kind"], "licence": provenance["licence"], "sha256": fetched["sha256"],
+                    "host": (urlsplit(provenance["source_url"]).hostname or "")[:200]})
+    return review
+
+
 @router.post("/articles/{article_id}/status")
 def set_article_status(
     request: Request, response: Response, article_id: str, payload: ArticleStatusBody
@@ -1151,6 +1229,13 @@ def set_article_status(
                 quality_override=overriding,
             )
         )
+    except thumbnails.ThumbnailRequired as exc:  # D-240: no thumbnail, no publication; there is no override
+        _audit(admin, "admin.reading_article_publish_refused", entity_type="reading_article", entity_id=article_id,
+               payload={"blockers": [{"code": "thumbnail_required", "gate": "thumbnail"}]})
+        raise orena_http_error(
+            409, "thumbnail_required", thumbnails.required_message("Reading article"),
+            context={"blockers": [{"code": "thumbnail_required", "gate": "thumbnail"}]},
+        ) from exc
     except QualityRefused as exc:  # the repository is the last gate; the route only translates it
         if exc.reason_missing:
             raise orena_http_error(
@@ -1513,7 +1598,8 @@ def _pack_set(found: Mapping[str, Any]) -> dict[str, Any]:
         "support_language", "generator_version", "model", "article_body_sha256", "questions")})}
 
 
-def pack_reading_items(*, source_slug_prefix: str = "", languages: tuple[str, ...] = ()) -> list[Any]:
+def pack_reading_items(*, source_slug_prefix: str = "", languages: tuple[str, ...] = (),
+                       assets_out: dict[str, bytes] | None = None) -> list[Any]:
     from writing_coach.content_packs import PackItem
 
     articles = _content().published_for_export(source_slug_prefix=source_slug_prefix, languages=languages)
@@ -1535,6 +1621,14 @@ def pack_reading_items(*, source_slug_prefix: str = "", languages: tuple[str, ..
                     continue
                 sets.append(_pack_set(found))
         data = {**article, "comprehension_sets": sets}
+        # D-240: the thumbnail travels with the article - its provenance in the item, a downloaded picture's bytes in
+        # the pack (a typographic cover is regenerated by the importer, so it carries no bytes).
+        stored = _content().published_thumbnail(article["origin_id"])
+        meta = thumbnails.pack_meta(stored)
+        if meta is not None:
+            data["thumbnail"] = meta
+            if meta["kind"] != thumbnails.KIND_TYPOGRAPHIC and assets_out is not None and _state.asset_store is not None:
+                assets_out[meta["asset_key"]] = _state.asset_store.get(meta["asset_key"])
         key = f"{article['source_slug']}:{content_fingerprint(article['body'])[:32]}"
         items.append(PackItem(kind="reading_article", natural_key=key, data=data))
     return items
@@ -1557,7 +1651,40 @@ def pack_reading_existing(item: Any) -> tuple[str | None, str | None]:
     return (item.content_hash if found else None), (source or {}).get("state")
 
 
-def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str) -> dict[str, Any]:
+def _apply_pack_thumbnail(admin: Mapping[str, Any], article: Mapping[str, Any], data: Mapping[str, Any],
+                          assets: Mapping[str, bytes]) -> str:
+    """Give an imported, present article the thumbnail its pack carries, or a typographic cover (D-240).
+
+    A downloaded picture arrives only if it verifies (allowed host and licence, the manifest's bytes) and never
+    replaces a real picture already here. Without one the importer makes the deterministic typographic cover: a
+    pack from before this rule imports fine, and no imported article is left without a thumbnail."""
+    article_id = article["id"]
+    store = _image_store()
+    review = _guarded(lambda: _content().image_review(article_id)) or {}
+    current_kind = str((review.get("approved") or {}).get("kind") or "")
+    try:
+        parsed = thumbnails.read_pack_thumbnail(data.get("thumbnail"), assets)
+    except thumbnails.ThumbnailRefused as exc:
+        return f"refused:{exc.code}"
+    if parsed is not None:
+        if current_kind in thumbnails.EXTERNAL_KINDS:
+            return "kept"
+        record, provenance = parsed
+        key = asset_key(article_id, record["sha256"], record["ext"])
+        thumbnails.store_record(store, key, record)
+        stored = thumbnails.stored_dict(record, key, provenance)
+        _guarded(lambda: _content().approve_image(article_id, stored, actor=_actor(admin), reason="content pack"))
+        return "attached"
+    if _guarded(lambda: _content().has_thumbnail(article_id)):
+        return "kept"
+    stored = thumbnails.make_reading_cover(
+        store, article_id=article_id, title=article["title"], language=article["language"], topic=article.get("topic") or "")
+    _guarded(lambda: _content().approve_image(article_id, stored, actor=_actor(admin), reason="content pack"))
+    return "typographic"
+
+
+def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str,
+                        assets: Mapping[str, bytes] | None = None) -> dict[str, Any]:
     """One Reading item, committed through the registry, the engine and the set rules."""
 
     data = item.data
@@ -1596,6 +1723,7 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str) ->
         ), actor=actor)  # fmt: skip
         return {"result": "submitted", "job_id": job["id"], "note": "sets attach when the article is published; import again"}
     attached = []
+    thumbnail = _apply_pack_thumbnail(admin, found, data, assets or {}) if _state.asset_store is not None else "unavailable"
     if found["status"] == "published" and _state.evidence is not None:
         have = {s.get("support_language") for s in _evidence().list_sets(found["id"]) if s.get("status") == "approved"}
         for pack_set in data.get("comprehension_sets") or []:
@@ -1603,7 +1731,8 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str) ->
             if not support or support in have or not pack_set.get("questions"):
                 continue
             attached.append(_attach_pack_set(admin, found["id"], support, pack_set, pack_id=pack_id))
-    return {"result": "present", "article_id": found["id"], "status": found["status"], "sets": attached}
+    return {"result": "present", "article_id": found["id"], "status": found["status"], "sets": attached,
+            "thumbnail": thumbnail}
 
 
 def _attach_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pack_set: Mapping[str, Any], *,

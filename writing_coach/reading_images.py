@@ -222,7 +222,9 @@ def sniff_image(data: bytes) -> tuple[str, int, int] | None:
     return None
 
 
-def fetch_image(url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = None) -> dict[str, Any]:
+def fetch_image(
+    url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = None, allowed_hosts: frozenset[str] | None = None
+) -> dict[str, Any]:
     """Fetch one candidate under the existing SSRF guard and prove it is a usable picture.
 
     Returns {"data", "content_type", "ext", "width", "height", "sha256"}; raises ImageRefused otherwise.
@@ -240,6 +242,7 @@ def fetch_image(url: str, *, fetcher: Callable[..., tuple[bytes, str]] | None = 
             timeout=FETCH_TIMEOUT_SECONDS,
             total_timeout=TOTAL_FETCH_SECONDS,
             content_types=frozenset(ALLOWED_TYPES),
+            **({"allowed_hosts": allowed_hosts} if allowed_hosts is not None else {}),
         )
     except UnsafeMediaFetch as exc:
         message = str(exc)
@@ -298,13 +301,28 @@ def learner_image(
 
     Never carries the candidate's address: only the same-origin route, a credit and alt text.
     """
-    if not policy_allowed or not approved or not approved.get("asset_key"):
+    if not approved or not approved.get("asset_key"):
+        return None
+    kind = str(approved.get("kind") or "")
+    url = f"/api/reading/articles/{article_id}/image?v={int(revision)}"
+    if kind == "typographic":
+        # Orena's own cover: no source policy applies and there is nothing to credit (D-240).
+        return {"url": url, "credit": "", "typographic": True, "alt": clean_text(approved.get("alt"), MAX_ALT)}
+    if kind in ("source_image", "library_image"):
+        # A picture attached with its own licence needs no source policy; its credit is its author and licence.
+        from writing_coach.thumbnails import credit_line
+
+        licensed = clean_text(credit_line(approved), MAX_CREDIT)
+        if not licensed:
+            return None
+        return {"url": url, "credit": licensed, "alt": clean_text(approved.get("alt"), MAX_ALT)}
+    if not policy_allowed:
         return None
     credit = clean_text(approved.get("credit"), MAX_CREDIT) or clean_text(publisher, MAX_CREDIT)
     if not credit:
         return None
     return {
-        "url": f"/api/reading/articles/{article_id}/image?v={int(revision)}",
+        "url": url,
         "credit": credit,
         "alt": clean_text(approved.get("alt"), MAX_ALT),
     }

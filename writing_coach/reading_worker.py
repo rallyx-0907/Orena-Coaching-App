@@ -140,12 +140,14 @@ def main() -> int:  # pragma: no cover - process entry point
         _logger.exception("reading worker: no runtime database is configured")
         return 1
     jobs = ReadingJobRepository(database)
+    asset_store = FilesystemBookAssetStore(Path(os.getenv("READING_LIBRARY_ASSET_ROOT", "data/reading_library_assets")))
+    from writing_coach.thumbnails import require_reading_thumbnails
+
+    # D-240: an automatic admission publishes with a typographic cover of its own, or waits for review.
     engine = ReadingContentEngine(
-        content=ReadingContentRepository(database),
+        content=require_reading_thumbnails(ReadingContentRepository(database), asset_store),
         jobs=jobs,
-        asset_store=FilesystemBookAssetStore(
-            Path(os.getenv("READING_LIBRARY_ASSET_ROOT", "data/reading_library_assets"))
-        ),
+        asset_store=asset_store,
     )
     workers = [
         ReadingWorker(engine=engine, jobs=jobs, worker_id=f"{os.getpid()}-{index}")

@@ -39,6 +39,7 @@ from writing_coach.media_library_store import OWNER_FIELD, MediaIndexUnavailable
 from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.media_source_import import MediaSourceImporter, UnsafeMediaFetch, UnsupportedMediaAddress, failure_reason
 from writing_coach.media_thumbnail import MAX_UPLOAD_BYTES, TempMediaFile
+from writing_coach.thumbnails import is_own_cover
 
 router = APIRouter(prefix="/api/media", tags=["media-library"])
 media_learning_router = APIRouter(prefix="/api/media-learning", tags=["media-learning"])
@@ -294,6 +295,11 @@ def stored_media_file(request: Request, key: str, variant: str = "") -> Any:
     # anything else is served as opaque bytes, sandboxed, so a file can never run as a page on this origin.
     suffix = Path(key).suffix.casefold()
     content_type = "image/jpeg" if variant == "thumb" else _SERVED_TYPES.get(suffix, "application/octet-stream")
+    served_suffix = suffix
+    if is_own_cover(key, payload):
+        # Orena's own typographic cover (D-240) is the one SVG ever served, recognised by its key and by its bytes - a
+        # stored SVG of any other origin stays opaque - and the response below is sandboxed with `default-src 'none'`.
+        content_type, served_suffix = "image/svg+xml", ".svg"
     return Response(
         content=payload,
         media_type=content_type,
@@ -301,7 +307,7 @@ def stored_media_file(request: Request, key: str, variant: str = "") -> Any:
             "Cache-Control": "private, no-store" if private else "public, max-age=31536000, immutable",
             "X-Content-Type-Options": "nosniff",
             "Content-Security-Policy": "default-src 'none'; sandbox",
-            "Content-Disposition": "inline; filename=media" + (suffix if suffix in _SERVED_TYPES else ".bin"),
+            "Content-Disposition": "inline; filename=media" + (served_suffix if served_suffix in _SERVED_TYPES or served_suffix == ".svg" else ".bin"),
         },
     )
 

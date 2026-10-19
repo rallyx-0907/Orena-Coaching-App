@@ -24,6 +24,12 @@
   background-size: cover;
   background-position: center;
 }
+/* The picture's accessible name (its alt, the title): it paints nothing and takes no pointer (D-240). */
+.c-media__alt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
 .c-media__badge--tl {
   top: 10px;
   left: 10px;

@@ -23,7 +23,8 @@ export function imageOf(article) {
   const image = article?.image;
   const url = typeof image?.url === 'string' ? image.url : '';
   const credit = String(image?.credit || '').trim();
-  if (!OWN_IMAGE.test(url) || !credit) return null;
+  // A typographic cover is Orena's own work (D-240): it is flagged by the backend and carries no credit.
+  if (!OWN_IMAGE.test(url) || (!credit && image?.typographic !== true)) return null;
   return { url, cssUrl: `url("${url}")`, credit, alt: String(image?.alt || '').trim() };
 }
 

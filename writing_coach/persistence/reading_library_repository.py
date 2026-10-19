@@ -182,6 +182,22 @@ class PostgresReadingLibraryRepository:
                 )
         return {"duplicate": False, "id": str(book_id), "title": title, "chapter_count": len(chapters)}
 
+    def set_cover_key(self, book_id: str, cover_asset_key: str) -> bool:
+        """Point a ready book at a stored cover (D-240: a book on the shelf always has one). The column already
+        exists; the bytes and their provenance are in the asset store. Returns whether a ready book was found."""
+        identity = _as_uuid(book_id)
+        if identity is None:
+            return False
+        with self._engine.begin() as connection:
+            updated_id = connection.execute(
+                text(
+                    "UPDATE reading_books SET cover_asset_key = :key, "
+                    "updated_at = :now WHERE id = :id AND status = 'ready' RETURNING id"
+                ),
+                {"id": identity, "key": cover_asset_key, "now": datetime.now(UTC)},
+            ).scalar_one_or_none()
+        return updated_id is not None
+
     def archive_book(self, book_id: str) -> bool:
         """Admin recovery path for a wrong/duplicate import, without raw SQL.
         Sets `status='archived'` so it stops appearing in `list_books()`/
