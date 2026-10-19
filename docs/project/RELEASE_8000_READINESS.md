@@ -25,7 +25,7 @@ ACL to the operator. Flags: `APP_ENV=staging`, `ORENA_ACCOUNT_BACKBONE=on`, `ORE
 `PRONUNCIATION_PROVIDER` empty (Azure when configured). Provider credentials: Gemini and Azure Speech in the env file; a
 :8000-own `AI_PROVIDER_SECRETS_KEY`. AI routing rows (`ai.active_selection`, eight `ai.capability.*`) mirror :8021
 (gemini-3.5-flash-lite). Content: the S1 reading pack (4 sources, 30 EN + 22 ZH texts) promoted by content pack, sources
-approved in Admin, 52 jobs consumed by the worker, all published. Media has no content-pack path yet.
+approved in Admin, 52 jobs consumed by the worker, all published. Media has a content-pack path since D-234 (see "Moving published content :8021 to :8000" below).
 
 ## Decided 2026-10-08 (D-143) - read this first
 
@@ -457,3 +457,41 @@ What the code and scripts now do. None of it was run against :8000; the human de
   https://*.polar.sh`; `object-src 'none'`; `base-uri 'self'`; `form-action 'self'`; `frame-ancestors 'none'`. Google
   sign-in is a top-level redirect and needs no directive. Open before enforcing: drop `'unsafe-eval'` (Landing) and
   `'unsafe-inline'` styles (design) only with a design change; confirm the Polar frame hosts against a live checkout.
+
+## Moving published content :8021 to :8000 (D-234, PROPOSED)
+
+One official tool moves approved content between environments at no provider cost: no provider call, no processing job, no schema
+change. The pack is an `.orenapack` zip (`format` `orena-content-pack`, `version` 2 once it carries media; a pack of
+Reading or vocabulary only stays `version` 1). `manifest.json` lists every file with sha256 and size and records the
+source label, `app_version`, `source_commit` and the published entries left out (`media_excluded`, each with a reason).
+Admin route and CLI share `writing_coach/media_pack.py`; Reading and vocabulary use the existing Admin route.
+
+What travels for media: only shared-library entries with `status` published (never personal, held, unpublished or
+archived). Per item: provider and playback ids, embed data, transcript segments with timing, translations per support
+language, level, rights/provenance/licence note, review state and the stored thumbnail and prepared model clips (each
+with sha256). What stays behind: processing attempts and spend, an administrator's address, and a published entry
+whose playback is a local upload (`local_playback_not_packable`) or whose thumbnail file is missing. Test and QA
+fixtures carry no tag in the store, so leave them out by id prefix (`--exclude-prefix`).
+
+On import an item is `new`, `unchanged` (identical), `conflict` (different; kept, never overwritten) or `refused`
+(with a reason). `--overwrite` replaces a conflicting item. An item arrives ready with its stored transcript and is
+published only if its rights are cleared with a licence note and its transcript passes the same checks Publish uses;
+otherwise it arrives unpublished and the row says `held`. A second import changes nothing.
+
+1. On :8021 (the lane runtime; the application image has the dependencies), export:
+   `python scripts/media_content_pack.py export --out /tmp/media.orenapack --environment lane-8021 --exclude-prefix qa- --exclude-prefix test-`
+   Read the printed `excluded` list. Copy the file out of the container.
+2. On :8000, first take the human's backup of the media library root and asset root, then dry-run (the default):
+   `python scripts/media_content_pack.py import --pack /tmp/media.orenapack`
+   Review every row. Nothing is written without `--apply`.
+3. Apply: `python scripts/media_content_pack.py import --pack /tmp/media.orenapack --apply` (add `--overwrite` only for
+   a conflict you decided to replace; an overwrite never puts a locally archived or unpublished item back on the shelf). Run `--apply` with :8000's transcript worker idle (the index is also guarded by a cross-process file lock, `index.json.lock`, but an idle worker is the belt-and-braces step). Writes are per item, not atomic across the pack: a failure leaves earlier items written and is reported on its row; re-running is safe. The whole pack is held in memory (budget twice the file size in RAM); split a large export with `--language` or `--id`. One line per import is appended to `media-pack-imports.jsonl` beside the index.
+4. Admin alternative for a pack under 50 MB: Content packs, kind `media` (`POST /api/admin/content-packs/export` with
+   `{"kinds": ["media"]}`, then `/plan`, then `/import`, optional `?overwrite=true`); the import is audited.
+
+Reading and the six vocabulary packs use the same route with kinds `reading` and `vocabulary`; `plan` first. Verified
+by reading the code: the Reading export carries the effective rights (snapshot with the per-article answers laid over
+it) and approved comprehension sets; import submits the text through the Reading engine with those rights, so the
+reading worker must run on the target and the source must be approved there (the row says `waiting_for_source_approval`).
+Vocabulary arrives `pending_review` with `publication_attested` false by design (D-111): an administrator attests and
+publishes each collection on the target. Neither skips the target's rules.
