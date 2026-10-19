@@ -23,6 +23,7 @@ from youtube_transcript_api._errors import (
 )
 
 from writing_coach.media_providers.supadata import (
+    NATIVE_MODE,
     SupadataTranscriptClient,
     SupadataTranscriptMalformed,
     SupadataTranscriptRequestFailed,
@@ -521,10 +522,11 @@ class YouTubeMediaProviderAdapter:
                 native_malformed = True
 
         if transcript is None and not isinstance(native_caption_error, TraditionalChineseNotAccepted):
+            # Native captions only: `auto`/`generate` could have the provider transcribe the audio (D-244, 2026-10-20).
             fallback_track = self._fallback_track(
                 canonical_url,
                 source_language,
-                mode="generate" if native_malformed else "auto",
+                mode=NATIVE_MODE,
             )
             if fallback_track is not None:
                 transcript = normalize_youtube_transcript(asset_id, fallback_track)

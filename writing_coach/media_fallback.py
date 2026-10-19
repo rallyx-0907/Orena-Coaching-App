@@ -24,12 +24,16 @@ from writing_coach.media_learning import (
     TranscriptSegment,
 )
 from writing_coach.media_providers.supadata import (
+    NATIVE_MODE,
     SupadataTranscript,
     SupadataTranscriptClient,
     SupadataTranscriptJob,
     SupadataTranscriptMalformed,
+    SupadataTranscriptNotFound,
     SupadataTranscriptRequestFailed,
     SupadataTranscriptTimedOut,
+    SupadataYouTubeGenerationRefused,
+    is_youtube_url,
 )
 
 
@@ -48,6 +52,9 @@ class MediaFallbackResult:
 # Job states. `provider_starting` is the one the learner sees first: the Orena
 # job exists and playback already works, while the provider has not yet answered.
 PROVIDER_STARTING = "provider_starting"
+# A YouTube video with no captions from its channel: Orena neither downloads its audio nor has the provider transcribe
+# it (D-244). The same stable reason the admin pipeline reports; the learner sees `error_youtube_no_channel_captions`.
+YOUTUBE_NO_CHANNEL_CAPTIONS = "youtube_no_channel_captions"
 QUEUED = "queued"
 PROCESSING = "processing"
 COMPLETED = "completed"
@@ -434,7 +441,9 @@ class SupadataMediaFallbackService:
         """Create the Orena job first, then start the provider in the background.
 
         The provider was measured answering `mode=generate` with HTTP 202 and a
-        job id after roughly 93 seconds. Starting it inline meant the learner's
+        job id after roughly 93 seconds. (A YouTube source is only ever asked in
+        `mode=native` since D-244's amendment of 2026-10-20; `generate` remains
+        only for a non-YouTube source.) Starting it inline meant the learner's
         request timed out before Orena ever received that id, so the poll path
         that already existed never got a chance to run.
 
@@ -478,17 +487,25 @@ class SupadataMediaFallbackService:
         truthful state rather than a job stuck in `provider_starting` forever.
         """
 
+        asset = acquisition.media_object.asset
+        # D-244 (amended 2026-10-20): a YouTube video is never transcribed by the provider (`generate`); only the
+        # captions its channel already provides are asked for, and their absence is the learner-facing refusal.
+        youtube = asset.source_provider == "youtube" or is_youtube_url(asset.source_url)
         try:
             result = self._client.start(
-                acquisition.media_object.asset.source_url,
+                asset.source_url,
                 learning_language,
-                mode="generate",
+                mode=NATIVE_MODE if youtube else "generate",
             )
         except SupadataTranscriptTimedOut:
             self._registry.mark_failed(public_job_id, "provider_timeout")
             return
         except SupadataTranscriptMalformed:
             self._registry.mark_failed(public_job_id, "malformed_transcript")
+            return
+        except (SupadataTranscriptNotFound, SupadataYouTubeGenerationRefused):
+            # The provider has no captions for this video (206/404/422): for YouTube that is the refusal itself.
+            self._registry.mark_failed(public_job_id, YOUTUBE_NO_CHANNEL_CAPTIONS if youtube else "provider_failure")
             return
         except SupadataTranscriptRequestFailed:
             self._registry.mark_failed(public_job_id, "provider_failure")
@@ -499,7 +516,7 @@ class SupadataMediaFallbackService:
             return
 
         if result is None:
-            self._registry.mark_failed(public_job_id, "transcript_unavailable")
+            self._registry.mark_failed(public_job_id, YOUTUBE_NO_CHANNEL_CAPTIONS if youtube else "transcript_unavailable")
             return
         if isinstance(result, SupadataTranscript):
             # The provider answered with the transcript directly; no job to poll.

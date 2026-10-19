@@ -134,6 +134,8 @@ def media_outcome(entry: Any) -> dict[str, Any]:
         "message": str(processing.get("message") or "") or reason_message(reason),
         # The failing check and its counts for a reason that has one (`captions_unusable`), ids and numbers only (D-218).
         "detail": str(processing.get("detail") or "") if reason in {"captions_unusable", REASON_YOUTUBE_NO_CAPTIONS} else "",
+        # Model clips not cut, and why: a YouTube item never is (`youtube_no_audio_download`, D-244). A skip, not an error.
+        "model_clips_skipped": str(processing.get("model_clips_skipped") or ""),
         "translation": {
             "state": translation, "reason": str(processing.get("translation_reason") or ""),
             "counts": {str(key): dict(value) for key, value in counts.items() if isinstance(value, Mapping)},

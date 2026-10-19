@@ -946,7 +946,8 @@ class MediaPipeline:
                 entry = media_entry_with_cover(entry, assets)
         if personal or (rights == RIGHTS_CLEARED and not correction_incomplete):
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
-            self._prepare_model_clips(assets, entry)
+            # A skip (a YouTube item, D-244) is recorded for the admin outcome; it is not an error and moves no state.
+            common["model_clips_skipped"] = self._prepare_model_clips(assets, entry) or ""
         if personal:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=False, **common, status="published")
         elif rights == RIGHTS_CLEARED and correction_incomplete:
@@ -958,25 +959,29 @@ class MediaPipeline:
             self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_READY, reason="rights_unknown", detail="", auto_published=False, **common, status="review")
         self._clear_correction_admission(store, media_id)
 
-    def _prepare_model_clips(self, assets: BookAssetStore, entry: MediaLibraryEntry) -> None:
+    def _prepare_model_clips(self, assets: BookAssetStore, entry: MediaLibraryEntry) -> str | None:
         """Cut each speakable line's model clip once, from the source this item was admitted from.
 
         Idempotent (a stored clip is never cut again), bounded, provider-free, and never able to fail
         readiness: a lesson without clips is complete, and Compare says its model plot is unavailable.
+        A YouTube item is never cut, because Orena does not download YouTube audio (D-244, amended
+        2026-10-20): the skip reason is returned (and logged), and nothing is downloaded.
         """
-        from writing_coach import policies
+        from writing_coach import model_clips, policies
 
         if not policies.value("media.model_clips_enabled"):
-            return
+            return None
+        if model_clips.is_youtube_provider(getattr(entry, "provider", "")):
+            _logger.info("model clips for %s: skipped, %s", entry.media_id, model_clips.SKIP_YOUTUBE_NOTE)
+            return model_clips.SKIP_YOUTUBE_NO_AUDIO_DOWNLOAD
         try:
-            from writing_coach import model_clips
             from writing_coach.speaking_library import entry_clip_lines
 
             lesson = dict(entry.lesson or {})
             admitted = replace(entry, status="published", lesson={**lesson, "status": "PUBLISHED"})
             pending = model_clips.missing_lines(assets, entry_clip_lines(admitted))
             if not pending:
-                return
+                return None
             max_seconds = max_asr_seconds()
             with tempfile.TemporaryDirectory(prefix="orena-clips-") as directory:
                 source = self._audio_source(assets, entry, Path(directory), max_seconds)
@@ -988,6 +993,7 @@ class MediaPipeline:
             _logger.info("model clips for %s: %s", entry.media_id, result.as_dict())
         except Exception:  # noqa: BLE001 - optional artifact; readiness stands without it
             _logger.warning("model clips could not be prepared for %s", entry.media_id, exc_info=True)
+        return None
 
     def _hold_failed(self, store: Any, media_id: str, stop: PipelineStop) -> None:
         entry = store.get(media_id)

@@ -292,6 +292,11 @@ def stored_media_payload(media_id: str, target_language: str = "", *, allow_unpu
     }
     response["catalog"] = stored_media_metadata(entry)
     response["processing"] = processing
+    if processing.get("state") == "failed" and processing.get("reason"):
+        # The failure kind the Import sheet already maps to its error copy (the field the older import route answers
+        # with), e.g. `youtube_no_channel_captions` (D-244); a reason it does not know reads as its generic error.
+        response["import_job"] = {"job_id": None, "state": "failed", "source": "pipeline",
+                                  "failure_kind": str(processing["reason"]), "resumable": False}
     return response
 
 

@@ -7672,3 +7672,20 @@ speech recognition. The older learner route `POST /api/media/import` can still s
 provider-side transcript) where plan limits are not enforced. Both fall outside "audio for speech recognition by Orena"
 as decided here and are reported for a decision rather than changed.
 
+**Amendment 2026-10-20 (Hermes for the owner; #418): for YouTube, only the captions the channel already provides.** The
+two items left open above are decided.
+1. **Model clips.** A YouTube item gets no model clips, and its audio is never downloaded for them. Readiness
+   (`MediaPipeline._prepare_model_clips`) and the backfill (`writing_coach/model_clip_backfill.py`,
+   `scripts/backfill_model_clips.py`) skip it with the reason `youtube_no_audio_download (D-244)`: a skip, never an
+   error. The backfill report counts it under `skipped` with the reason on the item; the admin outcome carries it as
+   `model_clips_skipped`. Uploads and other allowed sources are cut as before. Compare reads a missing clip as it
+   always has (its model plot is unavailable); no learner UI changes.
+2. **Supadata.** `mode=generate`, and `auto` (which may generate), are never requested for a YouTube URL, under any
+   plan or policy. `SupadataTranscriptClient` refuses them before any request (`SupadataYouTubeGenerationRefused`) and
+   defaults to `native`; the YouTube adapter's inline fallback and the older learner route's fallback service
+   (`POST /api/media-learning/import`) ask in native mode only. A YouTube video with no channel captions there ends
+   as `youtube_no_channel_captions` (the admin reason D-244 already defines). The live learner route
+   (`POST /api/media-learning/source`, and `GET /api/media/my/{id}` while it is polled) now answers a failed item with
+   that reason as `import_job.failure_kind` too, so the Import sheet says it in its existing error slot
+   (`error_youtube_no_channel_captions`, en/vi/zh) on either route. A non-YouTube source keeps its fallback.
+
