@@ -46,7 +46,7 @@ function rememberedMarkup(prefix) {
 export function replyReport(message, surface = 'orena.chat') {
   if (!message?.done || message.error || !message.traceId) return '';
   if (!(message.segments || []).some((segment) => String(segment.text || '').trim())) return '';
-  return reportLink({ area: 'orena', surface, id: message.traceId });
+  return reportLink({ area: 'orena', surface: message.reportSurface || surface, id: message.traceId });
 }
 
 export function messageMarkup(message, { surface, ranActions, supported }) {

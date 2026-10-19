@@ -363,3 +363,30 @@ const { createSession } = await import('../static/orena/agent/session.js');
 }
 
 console.log('Orena live voice (§9 mode A): session body, PCM16 codecs, thread writing, server refusals: PASS');
+
+// "Report a problem" on a finished live line (D-231): the voice usage record's id, never the words.
+{
+  const { messageMarkup } = await import('../static/orena/screens/orena/thread.js');
+  const where = { surface: 'home', ranActions: new Set(), supported: new Set() };
+  const refOf = (markup) => {
+    const found = /data-report-href="([^"]+)"/.exec(String(markup));
+    return found ? new URLSearchParams(found[1].replaceAll('&amp;', '&').split('?')[1]) : null;
+  };
+  const run = (usageId, { finish = true } = {}) => {
+    const session = createSession({ log: () => {} });
+    const thread = voiceThread({ session, lang: () => 'en' });
+    thread.text('xin chào', 'Hello there');
+    const partial = session.state().messages.at(-1);
+    if (finish) thread.done(usageId);
+    return { messages: session.state().messages, partial };
+  };
+  const finished = run('vs-abc:voice:2');
+  const [learner, reply] = finished.messages;
+  const query = refOf(messageMarkup(reply, where));
+  assert.equal(query.get('ref'), 'orena.voice | vs-abc:voice:2', 'a finished live line links to the voice usage id');
+  assert.doesNotMatch(String(messageMarkup(reply, where)), /Hello%20there|xin%20ch/, 'no transcript or speech in the link');
+  assert.equal(refOf(messageMarkup(learner, where)), null, 'not on the learner line');
+  assert.equal(refOf(messageMarkup(run('vs-abc:voice:2', { finish: false }).partial, where)), null, 'not on a partial line');
+  assert.equal(refOf(messageMarkup(run('').messages[1], where)), null, 'no voice session id, no link');
+  assert.equal(refOf(messageMarkup(run(undefined).messages[1], where)), null);
+}
