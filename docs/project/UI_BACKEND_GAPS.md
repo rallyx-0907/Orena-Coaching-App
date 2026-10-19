@@ -6411,7 +6411,7 @@ The "Consent evidence is not stored" gap above is resolved by D-233 once its mig
 
 ## My Library: an empty Content tab draws nothing (2026-10-19)
 
-The pinned "My Library" frame (`Orena.dc.html`, ~535) draws one empty state, the Language tab's "Nothing saved yet" (`libLangEmpty`), which the app already renders. It draws none for the Content, Collections, Active or Due tabs, and it has no "saved" tab (`#/library?tab=saved` falls back to Content). With nothing to show, Content renders no rows. Nothing was added; whether the design should draw an empty Content tab is open for the owner.
+The pinned "My Library" frame (`Orena.dc.html`, ~535) draws one empty state, the Language tab's "Nothing saved yet" (`libLangEmpty`), which the app already renders. It draws none for the Content, Collections, Active or Due tabs, and it has no "saved" tab (`#/library?tab=saved` falls back to Content). With nothing to show, Content renders no rows. Nothing was added; whether the design should draw an empty Content tab is open for the owner. A failed read of the saved content is not an empty tab: it throws to the router's load-error card (Back / Retry, retried on reconnect), as Discover and Review do.
 
 ## Chinese legal text is pending (2026-10-19) - RESOLVED by D-238
 
