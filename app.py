@@ -1115,6 +1115,18 @@ _spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_sy
 _spend_gate.install_paused_header(app)
 
 
+def _voice_daily_usage(user_key: str, feature: str) -> int:
+    """Today's (UTC) total of one usage feature: the voice seconds each voice chunk records (product/plan_features.py)."""
+    return int(_persistence_runtime.product_repository.daily_usage(user_key=user_key, feature=feature))
+
+
+# Each learner's daily voice minutes against the plan's `orena.voice` limit (Hermes for the owner, 2026-10-19).
+from writing_coach.product import plan_features as _plan_features  # noqa: E402
+
+_plan_features.configure(daily_usage=_voice_daily_usage
+                         if callable(getattr(_persistence_runtime.product_repository, "daily_usage", None)) else None)
+
+
 def _agent_spend_guard():
     """The staging daily cap on the shared AI ledger (agent/budget.py); None when AGENT_DAILY_SPEND_CAP_USD is unset."""
 
