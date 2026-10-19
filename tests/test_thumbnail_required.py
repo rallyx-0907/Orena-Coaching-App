@@ -173,9 +173,18 @@ def gated(tmp_path):
     return repository, store
 
 
+def _bare_article(repository, **kwargs):
+    """An article made the way it was before admission gave every article its cover (the :8000 held articles)."""
+    factory, repository.cover_factory = repository.cover_factory, None
+    try:
+        return _article(repository, **kwargs)
+    finally:
+        repository.cover_factory = factory
+
+
 def test_an_article_without_a_thumbnail_cannot_be_published(gated):
     repository, store = gated
-    article = _article(repository)
+    article = _bare_article(repository)
     assert repository.has_thumbnail(article["id"]) is False
     with pytest.raises(ThumbnailRequired):
         repository.set_status(article["id"], LEARNER_VISIBLE_STATUS, actor="admin")
@@ -235,6 +244,39 @@ def test_automatic_admission_makes_its_own_cover_or_waits_for_review(gated, monk
     assert len(published) == 1 and published[0]["image"]["typographic"] is True
     repository.cover_factory = None  # no way to make a cover: the engine must not publish a bare article
     assert admit("two")["status"] == "needs_review"
+
+
+def test_every_admitted_article_gets_its_cover_even_when_it_waits_for_review(gated, monkeypatch):
+    """The :8000 gap (2026-10-19): articles held for review were created bare, and publishing them failed with
+    ThumbnailRequired. Admission now gives every new article its typographic cover, published or held."""
+    repository, store = gated
+    held = _article(repository)  # the direct submit path: no automatic admission, it waits for review
+    assert held["status"] == "needs_review" and repository.has_thumbnail(held["id"])
+    assert repository.image_review(held["id"])["approved"]["kind"] == "typographic"
+    monkeypatch.setattr("writing_coach.reading_admission.automatic_admission",
+                        lambda **kwargs: {"decision": "needs_review", "reasons": ["held"]})
+    snapshot = repository.record_source_item(
+        source_id=repository.built_in_source_id("manual"), source_native_id="held-2", canonical_url="", title="T",
+        author="A", published_at=None, language="zh", body="雨回来了", content_hash="b" * 64, metadata={},
+        rights={"can_republish": True})
+    automatic = repository.create_article(
+        source_item_id=snapshot["id"], title="雨回来了", body="雨回来了", excerpt="", language="zh", topic="",
+        estimated_level="HSK2", estimated_confidence=0.5, word_count=4, reading_time_seconds=5, analysis={},
+        targets=[], automatic_admission=True)
+    assert automatic["status"] == "needs_review" and repository.has_thumbnail(automatic["id"])
+    assert repository.set_status(automatic["id"], LEARNER_VISIBLE_STATUS, actor="admin")["status"] == LEARNER_VISIBLE_STATUS
+    assert repository.published_thumbnail(automatic["id"])["kind"] == "typographic"
+
+
+def test_a_cover_that_cannot_be_made_never_loses_the_article(gated):
+    repository, _ = gated
+
+    def broken(_item):
+        raise OSError("disk full")
+
+    repository.cover_factory = broken
+    article = _article(repository)
+    assert article["status"] == "needs_review" and repository.has_thumbnail(article["id"]) is False
 
 
 # ---- Reading: the admin routes -----------------------------------------------------------------------------
@@ -495,7 +537,7 @@ class _FakeMedia:
 
 def test_the_audit_lists_published_items_without_a_thumbnail_and_the_backfill_covers_them(gated, vocabulary):
     repository, store = gated
-    article = _article(repository)
+    article = _bare_article(repository)
     repository.require_thumbnail = False  # before the rule: published bare
     repository.set_status(article["id"], LEARNER_VISIBLE_STATUS, actor="admin")
     collection_id = _collection(vocabulary)
@@ -526,6 +568,41 @@ def test_the_audit_lists_published_items_without_a_thumbnail_and_the_backfill_co
     assert thumbnail_audit.audit(sources)["total_missing"] == 0
 
 
+def test_the_backfill_covers_named_review_articles_once_and_keeps_what_is_there(gated):
+    repository, store = gated
+    held = _bare_article(repository)
+    other = _bare_article(repository, body="Another text about the harbour and its boats, long enough to read.")
+    covered = _article(repository, body="A third text that was given its own cover when it was admitted here.")
+    before = repository.image_review(covered["id"])["approved"]
+    sources = thumbnail_audit.Sources(reading=repository, reading_assets=store)
+
+    assert thumbnail_audit.audit(sources)["missing"]["reading"] == [], "the default sweep is published items only"
+    in_review = thumbnail_audit.audit(sources, include_unpublished=True)["missing"]["reading"]
+    assert sorted(row["id"] for row in in_review) == sorted([held["id"], other["id"]])
+    assert {row["status"] for row in in_review} == {"needs_review"}
+
+    files = dict(store.files)
+    dry = thumbnail_audit.backfill(sources, ids=(held["id"], covered["id"], "missing-id"))
+    assert dry["dry_run"] is True and store.files == files and repository.has_thumbnail(held["id"]) is False
+    assert {(i["id"], i["action"]) for i in dry["items"]} == {
+        (held["id"], "would_add_typographic_cover"), (covered["id"], "kept_existing_thumbnail")}
+    assert dry["failed"] == [{"kind": "reading", "id": "missing-id", "title": "", "error": "not_found"}]
+
+    applied = thumbnail_audit.backfill(sources, apply=True, ids=(held["id"], held["id"]))
+    assert applied["failed"] == [] and [i["action"] for i in applied["items"]] == ["typographic_cover_added"]
+    approved = repository.published_thumbnail(held["id"])
+    assert approved["kind"] == "typographic" and store.get(approved["asset_key"]).startswith(b"<svg")
+    assert repository.has_thumbnail(other["id"]) is False, "--id covers only the named articles"
+    assert repository.image_review(covered["id"])["approved"] == before, "an existing thumbnail is never replaced"
+    assert repository.set_status(held["id"], LEARNER_VISIBLE_STATUS, actor="admin")["status"] == LEARNER_VISIBLE_STATUS
+
+    again = thumbnail_audit.backfill(sources, apply=True, ids=(held["id"],))
+    assert [i["action"] for i in again["items"]] == ["kept_existing_thumbnail"], "idempotent"
+    swept = thumbnail_audit.backfill(sources, apply=True, include_unpublished=True)
+    assert [i["id"] for i in swept["items"]] == [other["id"]] and swept["failed"] == []
+    assert thumbnail_audit.audit(sources, include_unpublished=True)["missing"]["reading"] == []
+
+
 class _FakeBooks:
     def __init__(self):
         self.covers = {}
@@ -553,6 +630,7 @@ def test_the_scripts_are_dry_run_by_default_and_never_print_a_url():
     backfill_source = (ROOT / "scripts" / "backfill_typographic_covers.py").read_text(encoding="utf-8")
     assert 'add_argument("--apply", action="store_true"' in backfill_source
     assert "apply=args.apply" in backfill_source
+    assert '"--include-unpublished"' in backfill_source and 'action="append"' in backfill_source
     assert "print(args.url" not in audit_source + backfill_source
     assert "backfill" not in audit_source.split("def main", 1)[1], "the audit never writes"
 

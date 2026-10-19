@@ -1,4 +1,4 @@
-"""Which published items have no thumbnail, and giving each a typographic cover (D-240).
+"""Which items have no thumbnail, and giving each a typographic cover (D-240).
 
 The logic behind `scripts/audit_thumbnails.py` (read-only) and `scripts/backfill_typographic_covers.py` (dry run by
 default). Kept here, with its stores passed in, so the same code is tested without a database or a container.
@@ -37,7 +37,7 @@ class Sources:
     media_assets: Any = None  # BookAssetStore under MEDIA_LIBRARY_ASSET_ROOT
 
 
-def _reading_missing(sources: Sources) -> list[dict[str, Any]]:
+def _reading_missing(sources: Sources, include_unpublished: bool = False) -> list[dict[str, Any]]:
     from writing_coach.persistence.reading_content_repository import MAX_ARTICLE_PAGE
 
     found: list[dict[str, Any]] = []
@@ -52,7 +52,33 @@ def _reading_missing(sources: Sources) -> list[dict[str, Any]]:
             cursor = page.get("next_cursor")
             if not cursor:
                 break
+    if include_unpublished:
+        found.extend(_reading_unpublished_missing(sources))
     return found
+
+
+def _reading_unpublished_missing(sources: Sources) -> list[dict[str, Any]]:
+    """Articles still in review (draft, processing, needs_review, ready) with no thumbnail: the publish gate would
+    refuse them with ThumbnailRequired (D-240)."""
+    from writing_coach.persistence.reading_content_repository import MAX_ARTICLE_PAGE, QUEUE_STATUSES
+
+    found: list[dict[str, Any]] = []
+    cursor = None
+    while True:
+        page = sources.reading.list_queue(statuses=QUEUE_STATUSES, cursor=cursor, limit=MAX_ARTICLE_PAGE)
+        for row in page["items"]:
+            if not sources.reading.has_thumbnail(row["id"]):
+                found.append(_reading_row(row))
+        cursor = page.get("next_cursor")
+        if not cursor:
+            break
+    return found
+
+
+def _reading_row(row: dict[str, Any]) -> dict[str, Any]:
+    status = str(row.get("status") or "")
+    return {"kind": "reading", "id": str(row["id"]), "title": row.get("title") or "", "language": row.get("language") or "",
+            "topic": row.get("topic") or "", "published": status == "published", "status": status}
 
 
 def _vocabulary_missing(sources: Sources) -> tuple[list[dict[str, Any]], int]:
@@ -105,7 +131,7 @@ def audit(sources: Sources, *, include_unpublished: bool = False) -> dict[str, A
     for kind in KINDS:
         try:
             if kind == "reading" and sources.reading is not None:
-                report["missing"]["reading"] = _reading_missing(sources)
+                report["missing"]["reading"] = _reading_missing(sources, include_unpublished)
             elif kind == "vocabulary" and sources.vocabulary is not None:
                 rows, on_demand = _vocabulary_missing(sources)
                 report["missing"]["vocabulary"], report["static_vocabulary_served_on_demand"] = rows, on_demand
@@ -121,11 +147,43 @@ def audit(sources: Sources, *, include_unpublished: bool = False) -> dict[str, A
     return report
 
 
-def backfill(sources: Sources, *, apply: bool = False, include_unpublished: bool = False) -> dict[str, Any]:
-    """Give every published item without a thumbnail a typographic cover. Dry run unless `apply`."""
-    found = audit(sources, include_unpublished=include_unpublished)
+def _named_articles(sources: Sources, ids: tuple[str, ...]) -> tuple[list[dict[str, Any]], list[dict[str, Any]],
+                                                                         list[dict[str, Any]]]:
+    """(missing, already covered, not found) among the named Reading articles, whatever their status."""
+    missing: list[dict[str, Any]] = []
+    kept: list[dict[str, Any]] = []
+    unknown: list[dict[str, Any]] = []
+    for article_id in dict.fromkeys(ids):
+        article = sources.reading.get_article(article_id)
+        if article is None:
+            unknown.append({"kind": "reading", "id": article_id, "title": "", "error": "not_found"})
+        elif sources.reading.has_thumbnail(article_id):
+            kept.append({"kind": "reading", "id": article_id, "title": article.get("title") or "",
+                         "action": "kept_existing_thumbnail"})
+        else:
+            missing.append(_reading_row(article))
+    return missing, kept, unknown
+
+
+def backfill(sources: Sources, *, apply: bool = False, include_unpublished: bool = False,
+             ids: tuple[str, ...] = ()) -> dict[str, Any]:
+    """Give every published item without a thumbnail a typographic cover. Dry run unless `apply`.
+
+    `include_unpublished` also covers items still in review (Reading articles and media). `ids` names Reading
+    articles instead of sweeping: only those, whatever their status. An item that has any thumbnail is never touched,
+    so running it twice adds nothing the second time."""
     done: list[dict[str, Any]] = []
     failed: list[dict[str, Any]] = []
+    if ids:
+        if sources.reading is None:
+            return {"dry_run": not apply, "skipped": ["reading"], "items": [],
+                    "failed": [{"kind": "reading", "id": i, "title": "", "error": "no_store"} for i in ids]}
+        missing, kept, unknown = _named_articles(sources, tuple(ids))
+        found = {"missing": {"reading": missing}, "skipped": []}
+        done.extend(kept)
+        failed.extend(unknown)
+    else:
+        found = audit(sources, include_unpublished=include_unpublished)
     for kind, rows in found["missing"].items():
         for row in rows:
             outcome = {"kind": kind, "id": row["id"], "title": row["title"]}
