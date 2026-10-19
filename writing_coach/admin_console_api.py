@@ -1689,6 +1689,8 @@ class VocabularyExampleIn(BaseModel):
     reason: str = Field(min_length=1, max_length=500)
     language: str | None = Field(default=None, min_length=2, max_length=20)
     reading: str | None = Field(default=None, max_length=1000)
+    explanations: dict[str, str] = Field(default_factory=dict)
+    clear_explanation: bool = False
 
 
 @router.patch("/content/vocabulary/{collection_id}/entries/{entry_id}/examples/{index}")
@@ -1708,24 +1710,35 @@ def correct_vocabulary_example(collection_id: str, entry_id: str, index: int, pa
     if not _vocabulary_available() or not hasattr(repository, "correct_entry_example"):
         raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
     supported = set(media_corrections.support_codes())
-    translations = {str(code).strip().casefold(): text for code, text in payload.translations.items()}
-    if any(code not in supported for code in translations) or len(translations) != len(payload.translations):
-        raise orena_http_error(422, "vocabulary_example_invalid", "Choose a support language for each translation.")
-    if any(len(text) > 1000 for text in translations.values()):
-        raise orena_http_error(422, "vocabulary_example_invalid", "A translation is too long.")
+
+    def by_language(values: dict[str, str], what: str) -> dict[str, str]:
+        out = {str(code).strip().casefold(): text for code, text in values.items()}
+        if any(code not in supported for code in out) or len(out) != len(values):
+            raise orena_http_error(422, "vocabulary_example_invalid", f"Choose a support language for each {what}.")
+        if any(len(text) > 1000 for text in out.values()):
+            raise orena_http_error(422, "vocabulary_example_invalid", f"A {what} is too long.")
+        return out
+
+    translations = by_language(payload.translations, "translation")
+    explanations = by_language(payload.explanations, "explanation")
     try:
         result = repository.correct_entry_example(
             collection_id, entry_id, index, text=payload.text, translations=translations, actor=_actor(admin),
-            reason=payload.reason, language=payload.language, reading=payload.reading)
+            reason=payload.reason, language=payload.language, reading=payload.reading,
+            explanations=explanations, clear_explanation=payload.clear_explanation)
     except LookupError:
         raise orena_http_error(404, "content_not_found", "This collection has no such entry.") from None
     except ValueError as exc:
         raise orena_http_error(422, "vocabulary_example_invalid", str(exc)) from exc
-    _audit(admin, "admin.content.vocabulary_example", entity_type="vocabulary_entry", entity_id=entry_id,
-           payload={"collection_id": collection_id, "index": index, "from": result["from"][:300],
-                    "to": result["to"][:300], "translation_languages": sorted(translations),
-                    "reason": payload.reason.strip()[:300], "outcome": "ok" if result["changed"] else "unchanged"})
-    return {"changed": result["changed"], "entry": result["entry"]}
+    if result["changed"]:  # an identical repeat changes nothing, so it records nothing
+        _audit(admin, "admin.content.vocabulary_example", entity_type="vocabulary_entry", entity_id=entry_id,
+               payload={"collection_id": collection_id, "index": index, "from": result["from"][:300],
+                        "to": result["to"][:300], "translation_languages": sorted(translations),
+                        "explanation": "cleared" if payload.clear_explanation else sorted(explanations),
+                        "snapshots_unmatched": result["snapshots_unmatched"],
+                        "reason": payload.reason.strip()[:300], "outcome": "ok"})
+    return {"changed": result["changed"], "snapshots_unmatched": result["snapshots_unmatched"],
+            "entry": result["entry"]}
 
 
 # -- imports ---------------------------------------------------------------------------

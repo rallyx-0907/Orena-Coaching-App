@@ -1301,17 +1301,23 @@ class SQLAlchemyVocabularyRepository:
         reason: str,
         language: str | None = None,
         reading: str | None = None,
+        explanations: Mapping[str, str] | None = None,
+        clear_explanation: bool = False,
     ) -> dict[str, Any]:
         """Replace one example sentence of an entry (its `examples[index]`) by hand.
 
         The sibling of `correct_entry_gloss`: an authored import overwrites only an unpublished entry, so this is the
         way to replace a published example (for instance one quoted from a source without credit). The item keeps its
-        shape: the sentence, its reading (pinyin) when it has one, and its language-tagged `translation`; any other
-        keys (highlight, label, origin) stay. Every support language the old item was translated into must be given
-        again, and a reading is required when the old item had one, so no stale gloss or pinyin is left beside the
-        new sentence. A collection-scoped content snapshot is corrected with the entry. Who, when, why, and the text
-        before and after are kept in `provenance.example_corrections`. No schema change; nothing learner-owned is
-        read or written.
+        shape (sentence, reading, language-tagged `translation` and `explanation`, label, origin), and nothing stale
+        is left beside the new sentence: every support language the old item was translated into must be given again;
+        a reading is required when the old item had one; an old explanation is either given again in each of its
+        languages or removed with `clear_explanation`; `highlight` / `reading_highlight` are recomputed from the
+        headword (and its reading) when the new sentence still contains it, and dropped otherwise.
+
+        Every membership content snapshot of this entry, in any collection, is corrected too, by matching the old
+        sentence; a snapshot without it is left alone and named in `snapshots_unmatched`. A call that changes nothing
+        writes nothing (no provenance row) and returns `changed: False`. Who, when, why, and the text before and after
+        are kept in `provenance.example_corrections`. No schema change; nothing learner-owned is read or written.
         """
         self._require_available()
         clean_text, clean_reason = _text(text), _text(reason)
@@ -1321,17 +1327,31 @@ class SQLAlchemyVocabularyRepository:
             raise ValueError("Give the reason for the correction.")
         if isinstance(index, bool) or not isinstance(index, int) or index < 0:
             raise ValueError("The example index is out of range.")
-        clean_translations: dict[str, str] = {}
-        for code, value in (translations or {}).items():
-            clean_code, clean_value = _text(code).casefold(), _text(value)
-            if not clean_code or not clean_value:
-                raise ValueError("Each translation needs a language and text.")
-            clean_translations[clean_code] = clean_value
+
+        def localized(values: Mapping[str, str] | None, what: str) -> dict[str, str]:
+            out: dict[str, str] = {}
+            for code, value in (values or {}).items():
+                clean_code, clean_value = _text(code).casefold(), _text(value)
+                if not clean_code or not clean_value:
+                    raise ValueError(f"Each {what} needs a language and text.")
+                out[clean_code] = clean_value
+            return out
+
+        clean_translations = localized(translations, "translation")
+        clean_explanations = localized(explanations, "explanation")
+        if clean_explanations and clear_explanation:
+            raise ValueError("Give new explanations or clear the explanation, not both.")
         clean_reading = _text(reading)
         try:
             wanted = uuid.UUID(_text(entry_id))
         except ValueError:
             raise LookupError(entry_id) from None
+
+        def codes(value: Any) -> set[str]:
+            if isinstance(value, Mapping):
+                return {_text(code).casefold() for code, text in value.items() if _text(text)}
+            return {"vi"} if _text(value) else set()
+
         now = _now()
         with Session(self.engine) as session, session.begin():
             membership = session.scalar(
@@ -1346,8 +1366,8 @@ class SQLAlchemyVocabularyRepository:
             entry_language = _text(entry.language_code).casefold()
             if language is not None and _text(language).casefold() != entry_language:
                 raise ValueError("The example's language must be the entry's language.")
-            if entry_language in clean_translations:
-                raise ValueError("A translation must be in a support language, not the entry's language.")
+            if entry_language in clean_translations or entry_language in clean_explanations:
+                raise ValueError("A translation or explanation must be in a support language, not the entry's.")
             examples = _copy_json(entry.examples, []) or []
             if not isinstance(examples, list) or index >= len(examples):
                 raise ValueError("The example index is out of range.")
@@ -1357,17 +1377,25 @@ class SQLAlchemyVocabularyRepository:
             if old_language and old_language != entry_language:
                 raise ValueError("The example's language must be the entry's language.")
             before = _text(old_item.get("text"))
-            old_translation = old_item.get("translation")
-            old_codes = (
-                {_text(code).casefold() for code, value in old_translation.items() if _text(value)}
-                if isinstance(old_translation, Mapping)
-                else set()
-            )
-            missing = sorted(old_codes - set(clean_translations))
+            missing = sorted(codes(old_item.get("translation")) - set(clean_translations))
             if missing:
                 raise ValueError("Give the new translation in " + ", ".join(missing) + ".")
             if _text(old_item.get("reading")) and not clean_reading:
                 raise ValueError("This example has a reading; give the new sentence's reading.")
+            old_explanation = codes(old_item.get("explanation"))
+            if old_explanation and not clear_explanation:
+                missing = sorted(old_explanation - set(clean_explanations))
+                if missing:
+                    raise ValueError(
+                        "This example has an explanation: give it again in " + ", ".join(missing)
+                        + ", or clear it."
+                    )
+
+            term = _text(entry.term)
+            term_readings = [
+                _text(item.get("text")) if isinstance(item, Mapping) else _text(item)
+                for item in (_copy_json(entry.readings, []) or [])
+            ]
 
             def corrected(item: Any) -> dict[str, Any]:
                 base = dict(item) if isinstance(item, Mapping) else {"language": entry_language, "text": _text(item)}
@@ -1377,34 +1405,67 @@ class SQLAlchemyVocabularyRepository:
                     base["reading"] = clean_reading
                 if clean_translations:
                     base["translation"] = dict(clean_translations)
+                if clear_explanation:
+                    base.pop("explanation", None)
+                elif clean_explanations:
+                    base["explanation"] = dict(clean_explanations)
+                base.pop("highlight", None)
+                base.pop("reading_highlight", None)
+                if term and term in clean_text:
+                    base["highlight"] = {"match": term}
+                    sentence_reading = _text(base.get("reading"))
+                    match = next((r for r in term_readings if r and r in sentence_reading), "")
+                    if match:
+                        base["reading_highlight"] = {"match": match}
                 return base
 
-            examples[index] = corrected(old)
-            entry.examples = examples
-            metadata = _copy_json(membership.membership_metadata, {}) or {}
-            snapshot = metadata.get("content_snapshot")
-            if isinstance(snapshot, Mapping) and isinstance(snapshot.get("examples"), list):
+            new_item = corrected(old)
+            entry_changed = new_item != old_item
+            snapshot_updates: list[tuple[VocabularyCollectionMembership, dict[str, Any]]] = []
+            unmatched: list[str] = []
+            for other in session.scalars(
+                select(VocabularyCollectionMembership).where(VocabularyCollectionMembership.entry_id == wanted)
+            ):
+                metadata = _copy_json(other.membership_metadata, {}) or {}
+                snapshot = metadata.get("content_snapshot")
+                if not isinstance(snapshot, Mapping) or not isinstance(snapshot.get("examples"), list):
+                    continue
                 copied = list(snapshot["examples"])
                 texts = [_text(item.get("text")) if isinstance(item, Mapping) else _text(item) for item in copied]
-                position = texts.index(before) if before and before in texts else index
-                if position < len(copied):
-                    copied[position] = corrected(copied[position])
+                if not before or before not in texts:
+                    unmatched.append(other.collection_id)
+                    continue
+                position = texts.index(before)
+                patched = corrected(copied[position])
+                if patched != copied[position]:
+                    copied[position] = patched
                     metadata["content_snapshot"] = {**snapshot, "examples": copied}
-                    membership.membership_metadata = metadata
-            provenance = _copy_json(entry.provenance, {}) or {}
-            history = list(provenance.get("example_corrections") or [])
-            history.append({
-                "index": index, "actor": actor, "at": now.isoformat(), "collection_id": _text(collection_id),
-                "reason": clean_reason, "from": before, "to": clean_text,
-                "translation_languages": sorted(clean_translations),
-            })
-            entry.provenance = {**provenance, "example_corrections": history[-50:]}
-            collection = session.get(VocabularyCollection, _text(collection_id))
-            if collection is not None:
-                collection.updated_at = now
-            session.flush()
+                    snapshot_updates.append((other, metadata))
+            changed = entry_changed or bool(snapshot_updates)
+            if changed:
+                examples[index] = new_item
+                entry.examples = examples
+                for other, metadata in snapshot_updates:
+                    other.membership_metadata = metadata
+                provenance = _copy_json(entry.provenance, {}) or {}
+                history = list(provenance.get("example_corrections") or [])
+                history.append({
+                    "index": index, "actor": actor, "at": now.isoformat(), "collection_id": _text(collection_id),
+                    "reason": clean_reason, "from": before, "to": clean_text,
+                    "translation_languages": sorted(clean_translations),
+                    "explanation": "cleared" if clear_explanation and old_explanation else (
+                        "replaced" if clean_explanations else "none"),
+                    "snapshots": sorted(other.collection_id for other, _ in snapshot_updates),
+                })
+                entry.provenance = {**provenance, "example_corrections": history[-50:]}
+                for touched in {_text(collection_id), *(other.collection_id for other, _ in snapshot_updates)}:
+                    collection = session.get(VocabularyCollection, touched)
+                    if collection is not None:
+                        collection.updated_at = now
+                session.flush()
             result = _entry_dict(entry)
-        return {"from": before, "to": clean_text, "changed": examples[index] != old_item, "entry": result}
+        return {"from": before, "to": clean_text, "changed": changed, "snapshots_unmatched": sorted(unmatched),
+                "entry": result}
 
     def finalize_collection_publication(
         self, collection_id: str, *, admission: Mapping[str, Any]
