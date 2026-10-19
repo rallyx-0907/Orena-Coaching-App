@@ -118,6 +118,16 @@
   color: var(--text);
 }
 
+.s-content__origin {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.s-content__origin a {
+  color: inherit;
+  text-decoration: underline;
+}
+
 .s-content__transcript {
   padding: 20px;
 }

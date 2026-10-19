@@ -4,7 +4,7 @@
 import { defineCopy } from '../../copy/index.js';
 
 const KEYS = [
-  'back',
+  'back', 'watchOriginal',
   'typeArticle', 'typeBook', 'typeText', 'typeVideo', 'typeAudio',
   'scriptTraditional',
   'startReading', 'continueReading', 'listen', 'continueListening', 'continueWatching',
@@ -17,7 +17,7 @@ const KEYS = [
 export const t = defineCopy('content', {
   layers: Object.fromEntries(KEYS.map((key) => [key, 'interface'])),
   en: {
-    back: '← Back',
+    back: '← Back', watchOriginal: 'Watch the original',
     typeArticle: 'Article', typeBook: 'Book', typeText: 'My text', typeVideo: 'Video', typeAudio: 'Audio',
     startReading: 'Start reading', continueReading: 'Continue reading',
     listen: 'Start listening', continueListening: 'Continue listening', continueWatching: 'Continue watching',
@@ -30,7 +30,7 @@ export const t = defineCopy('content', {
     scriptTraditional: 'Traditional',
   },
   vi: {
-    back: '← Quay lại',
+    back: '← Quay lại', watchOriginal: 'Xem video gốc',
     typeArticle: 'Bài đọc', typeBook: 'Sách', typeText: 'Văn bản của tôi', typeVideo: 'Video', typeAudio: 'Âm thanh',
     startReading: 'Bắt đầu đọc', continueReading: 'Tiếp tục đọc',
     listen: 'Bắt đầu nghe', continueListening: 'Tiếp tục nghe', continueWatching: 'Tiếp tục xem',
@@ -43,7 +43,7 @@ export const t = defineCopy('content', {
     scriptTraditional: 'Phồn thể',
   },
   zh: {
-    back: '← 返回',
+    back: '← 返回', watchOriginal: '观看原视频',
     typeArticle: '文章', typeBook: '书籍', typeText: '我的文本', typeVideo: '视频', typeAudio: '音频',
     startReading: '开始阅读', continueReading: '继续阅读',
     listen: '开始收听', continueListening: '继续收听', continueWatching: '继续观看',

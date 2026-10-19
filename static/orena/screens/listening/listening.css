@@ -56,6 +56,10 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.s-listening__origin {
+  color: inherit;
+  text-decoration: underline;
+}
 .s-listening__modes {
   display: flex;
   border: 1px solid transparent;

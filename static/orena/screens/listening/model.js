@@ -15,6 +15,7 @@ import { primaryLanguage } from '../../kit/lang.js';
 import { wordSpanAt } from '../../product/word-span.js';
 import { playbackAvailable } from '../../capabilities/media-player.js';
 import { annotateAllowed } from '../../infrastructure/annotate-policy.js';
+import { mediaCredit } from '../../product/media-credit.js';
 export { primaryLanguage } from '../../kit/lang.js';
 
 export function transcriptState(payload) {
@@ -117,6 +118,7 @@ export function mapLesson(payload, { levelLabel = (lv) => lv, fallbackLanguage =
     },
     rights: catalog.source || null,
     attributionUrl: catalog.source?.provenance_url || catalog.source?.source_url || '',
+    credit: mediaCredit(payload),
   };
 }
 

@@ -1,10 +1,11 @@
-"""Set the CC-CEDICT licence and attribution on vocabulary collections built with it.
+"""Set the dataset licences and attribution (CC-CEDICT, CEFR-J, CMUdict) on the vocabulary collections built with them.
 
 Dry run by default: lists the collections and whether each would change. `--apply` writes
-only `provenance.licence`, idempotently, and never changes status or any other key.
+only `provenance.licences` (one object per dataset named in `provenance.data_sources`),
+idempotently, and never changes status or any other key.
 
-    python scripts/apply_vocab_attribution.py                       # dry run, collections naming CC-CEDICT
-    python scripts/apply_vocab_attribution.py --id pilot-zh-idioms  # explicit ids (repeatable)
+    python scripts/apply_vocab_attribution.py                       # dry run, collections whose data_sources name a known dataset
+    python scripts/apply_vocab_attribution.py --id pilot-zh-idioms  # explicit ids (repeatable); an id with no matching source is skipped with a warning
     python scripts/apply_vocab_attribution.py --apply
 
 Run inside the application container against POSTGRES_RUNTIME_URL (or `--url`; never printed).
@@ -45,7 +46,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     verb = "updated" if args.apply else "would update"
     for row in rows:
-        print(f"- {row['id']}  status={row['status']}  {verb if row['change'] else 'already set'}")
+        note = f"  WARNING: {row['warning']}" if row.get("warning") else ""
+        print(f"- {row['id']}  status={row['status']}  {verb if row['change'] else 'unchanged'}{note}")
     print(f"{sum(r['change'] for r in rows)} of {len(rows)} collection(s) {verb}." + ("" if args.apply else " (dry run)"))
     return 0
 
