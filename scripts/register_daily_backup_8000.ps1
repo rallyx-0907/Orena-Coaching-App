@@ -13,7 +13,8 @@ param(
     [switch]$Apply,
     [string]$Time = '03:30',
     [string]$TaskName = 'OrenaDailyBackup8000',
-    [string]$BackupScript = (Join-Path $PSScriptRoot 'daily_backup_8000.ps1')
+    [string]$BackupScript = (Join-Path $PSScriptRoot 'daily_backup_8000.ps1'),
+    [int]$BuildNumber = [Environment]::OSVersion.Version.Build
 )
 
 $ErrorActionPreference = 'Stop'
@@ -21,20 +22,18 @@ $ErrorActionPreference = 'Stop'
 if (-not (Test-Path -LiteralPath $BackupScript)) { Write-Host "  $BackupScript not found." -ForegroundColor Red; exit 1 }
 $BackupScript = (Resolve-Path -LiteralPath $BackupScript).Path
 
-# Quiet by default: no console window (conhost --headless where available).
-function Test-HeadlessConhost {
-    try {
-        if ([Environment]::OSVersion.Version.Build -lt 22000) { return $false }
-        & conhost.exe --headless cmd /c exit 2>$null
-        return ($LASTEXITCODE -eq 0)
-    } catch { return $false }
-}
+# Quiet by default: Windows 11 (build 22000 and later) has conhost --headless, which starts the task with no console
+# window at all. Decided by the OS build alone; no probe is run, so registering flashes nothing. Older builds keep the
+# hidden-window action.
+$headless = ($BuildNumber -ge 22000)
 $psArgs = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $BackupScript
-if (Test-HeadlessConhost) { $execute = 'conhost.exe'; $arguments = '--headless powershell.exe ' + $psArgs }
+if ($headless) { $execute = 'conhost.exe'; $arguments = '--headless powershell.exe ' + $psArgs }
 else { $execute = 'powershell.exe'; $arguments = '-WindowStyle Hidden ' + $psArgs }
 
+$action = New-ScheduledTaskAction -Execute $execute -Argument $arguments
+
 Write-Host "The task would be registered with:`n"
-Write-Host "`$action   = New-ScheduledTaskAction -Execute '$execute' -Argument '$arguments'"
+Write-Host "`$action   = New-ScheduledTaskAction -Execute '$($action.Execute)' -Argument '$($action.Arguments)'"
 Write-Host "`$trigger  = New-ScheduledTaskTrigger -Daily -At '$Time'"
 Write-Host "`$settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew"
 Write-Host "Register-ScheduledTask -TaskName '$TaskName' -Action `$action -Trigger `$trigger -Settings `$settings -Description 'Orena :8000 daily backup' -Force"
@@ -44,7 +43,6 @@ if (-not $Apply) {
     exit 0
 }
 
-$action = New-ScheduledTaskAction -Execute '$execute' -Argument $arguments
 $trigger = New-ScheduledTaskTrigger -Daily -At $Time
 $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit (New-TimeSpan -Hours 2) -MultipleInstances IgnoreNew
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Description 'Orena :8000 daily backup' -Force | Out-Null

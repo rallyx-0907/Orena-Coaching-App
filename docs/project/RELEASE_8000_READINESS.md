@@ -446,8 +446,8 @@ What the code and scripts now do. None of it was run against :8000; the human de
   `msg.exe`. `scripts\register_health_check_8000.ps1` prints the `Register-ScheduledTask` command (every 5 minutes, task
   `OrenaHealthCheck8000`); `-Apply` registers it. The task runs only while the user is logged on.
   **Quiet mode (PR AX).** Both registrations (`register_health_check_8000.ps1`, `register_daily_backup_8000.ps1`) run
-  `conhost.exe --headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>` when OS build >= 22000 and
-  `conhost.exe --headless cmd /c exit` exits 0 at registration time, else the previous `powershell.exe -WindowStyle
+  `conhost.exe --headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>` when the OS build is >= 22000
+  (decided by the build alone; no probe runs, so registering flashes nothing), else the previous `powershell.exe -WindowStyle
   Hidden` action. The health task passes `-NoToast` by default (`-Toast` at registration opts in to BurntToast);
   `msg.exe` is gone. Alerts are read by Hermes from `health.state.json` (`failures >= 2`), which keeps its keys and adds
   `paused` and `last_status` (`ok`, `unhealthy`, `paused`). `backup-age` and `backup-log` are skipped (`no_backup_yet`,

@@ -178,8 +178,9 @@ def test_both_registrations_run_headless_with_a_fallback_and_stay_under_the_user
     for name in ("register_health_check_8000.ps1", "register_daily_backup_8000.ps1"):
         text = _ops(name)
         assert "conhost.exe" in text and "--headless powershell.exe" in text
-        assert "Version.Build -lt 22000" in text
-        assert "conhost.exe --headless cmd /c exit" in text
+        assert "Test-HeadlessConhost" not in text and "$headless = ($BuildNumber -ge 22000)" in text  # build only, no probe
+        code = " ".join(line for line in text.splitlines() if not line.lstrip().startswith("Write-Host"))
+        assert not re.search(r"-(Execute|Argument)\s+'\$", code), "single-quoted variable in the action"
         assert "-WindowStyle Hidden" in text  # the fallback
         assert "SYSTEM" not in text and "-Password" not in text and "-RunLevel" not in text
 
@@ -227,6 +228,7 @@ def test_powershell_scripts_parse_when_powershell_is_available():
         done = subprocess.run([exe, "-NoProfile", "-Command", command], capture_output=True, text=True)
         assert done.returncode == 0, done.stdout + done.stderr
 
+
 def test_the_deploy_script_validates_the_runtime_keys_with_the_apps_own_rules():
     root = Path(__file__).resolve().parents[1]
     script = (root / "scripts" / "staging_8000_deploy.ps1").read_text(encoding="utf-8")
@@ -250,3 +252,46 @@ def test_pronunciation_body_cap_follows_an_operator_raised_provider_limit(monkey
     assert body_limit("POST", "/api/speech/pronunciation") == 25 * 1024 * 1024
     monkeypatch.setenv("AZURE_PRONUNCIATION_MAX_BYTES", "not-a-number")
     assert body_limit("POST", "/api/speech/pronunciation") == 16 * 1024 * 1024
+
+
+def _run_registration(script, build, *extra):
+    """Runs a register script with -Apply under PowerShell, with the ScheduledTasks cmdlets replaced by recorders."""
+    import json
+    import shutil
+    import subprocess
+
+    exe = shutil.which("powershell") or shutil.which("pwsh")
+    if not exe:
+        pytest.skip("no PowerShell on this host")
+    path = Path(__file__).resolve().parents[1] / "scripts" / script
+    mocks = (
+        "function New-ScheduledTaskAction { param($Execute, $Argument) [pscustomobject]@{ Execute = $Execute; Arguments = $Argument } };"
+        "function New-ScheduledTaskTrigger { param([switch]$Once, [switch]$Daily, $At, $RepetitionInterval, $RepetitionDuration) 'trigger' };"
+        "function New-ScheduledTaskSettingsSet { param([switch]$StartWhenAvailable, [switch]$AllowStartIfOnBatteries, "
+        "[switch]$DontStopIfGoingOnBatteries, $ExecutionTimeLimit, $MultipleInstances) 'settings' };"
+        "function Register-ScheduledTask { param($TaskName, $Action, $Trigger, $Settings, $Description, [switch]$Force) "
+        "$global:reg = [pscustomobject]@{ Task = $TaskName; Execute = $Action.Execute; Arguments = $Action.Arguments } };"
+    )
+    command = mocks + f"& '{path}' -Apply -BuildNumber {build} {' '.join(extra)} | Out-Null; $global:reg | ConvertTo-Json -Compress"
+    done = subprocess.run([exe, "-NoProfile", "-Command", command], capture_output=True, text=True)
+    assert done.returncode == 0, done.stdout + done.stderr
+    return json.loads(done.stdout.strip().splitlines()[-1])
+
+
+@pytest.mark.parametrize("script,task,quiet_flag", [
+    ("register_health_check_8000.ps1", "OrenaHealthCheck8000", " -NoToast"),
+    ("register_daily_backup_8000.ps1", "OrenaDailyBackup8000", ""),
+])
+def test_apply_registers_the_real_action_not_a_literal_variable_name(script, task, quiet_flag):
+    modern = _run_registration(script, 26200)
+    assert modern["Task"] == task and modern["Execute"] == "conhost.exe"
+    assert modern["Arguments"].startswith("--headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File ")
+    assert modern["Arguments"].endswith(quiet_flag) or quiet_flag == ""
+    older = _run_registration(script, 19045)
+    assert older["Execute"] == "powershell.exe" and older["Arguments"].startswith("-WindowStyle Hidden -NoProfile")
+    for registered in (modern, older):
+        assert "$" not in registered["Execute"] and "$" not in registered["Arguments"]
+
+
+def test_health_registration_opts_in_to_toast_only_when_asked():
+    assert "-NoToast" not in _run_registration("register_health_check_8000.ps1", 26200, "-Toast")["Arguments"]
