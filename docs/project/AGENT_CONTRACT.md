@@ -6,7 +6,9 @@ Purpose: the single interface between the Orena Intelligence backend (lane `feat
 Authority: D-085, D-086, D-092, D-094, D-095, D-096, D-222, D-223. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit only through a reviewed pull request to `main` from the UI lane that bumps `contract_version` and records the change in DECISION_LOG.md (D-223 point 9; the practice since v7, D-164; `codex/work` has been dormant since 2026-10-08 - D-223); the intelligence lane receives it by merging `main` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 12`
+`contract_version: 13`
+
+v13 (D-237, 2026-10-19): every voice chunk answer - `POST /api/agent/voice/session` and `POST /api/agent/voice/extend` (§9, §9.1) - gains `day_limit_reached: bool`. It is true only when this token was clamped to the seconds left of today's voice minutes, so the day's voice minutes end with this token; it describes this token only (if a few seconds remain afterwards, a later short chunk may carry it instead). It is false on a normal `last`, on an uncapped server and for an unmetered token that is not clamped, because `last: true` alone cannot tell these apart. The client lets the chunk play out and, when it ends, tells the learner once that today's voice minutes are used up; a missing field is false, so a client reads an older server correctly (server: #328).
 
 v12 (D-237, 2026-10-19): each learner's live voice chat with Orena has a daily cap, the `orena.voice` meter of the plan catalogue (window `day`, unit `second`, `display_unit` `minute`, `scale` 60; Plus and Pro 15 minutes by default, edited in Platform Admin). At the cap `POST /api/agent/voice/session` (and `POST /api/agent/voice/extend`, as a guard) answers `429 quota_exhausted` with `context.feature` `orena.voice` (§2.1, §9.1), and the final chunk of the day carries `last: true` (§9.1). No event, field, action or intent changed; like v11 it is the plan's entitlement, not a feature of the version a client declares.
 
@@ -86,7 +88,7 @@ A `409` or `422` counts toward the learner's limit; only a refused `rate_limited
 
 ```json
 {
-  "contract_version": 10,
+  "contract_version": 13,
   "session_id": "optional, from a previous session event",
   "trigger": "message",
   "message": "Tại sao tôi cứ sai từ này?",
@@ -438,13 +440,14 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - Request: `POST /api/agent/voice/session` with a turn body without `message`:
      `{ contract_version, session_id?, client, context, coach_notes? }` (`coach_notes` is optional from v9, §3).
    - 200 response:
-     `{ voice_session_id, mode: "s2s", transport: "websocket", connect: { url, ephemeral_token, expires_at, setup }, max_seconds, chunk, session_max_seconds, renew_in, last }`.
+     `{ voice_session_id, mode: "s2s", transport: "websocket", connect: { url, ephemeral_token, expires_at, setup }, max_seconds, chunk, session_max_seconds, renew_in, last, day_limit_reached }`.
    - The session is a chain of chunks (v8). Each answer (this one and `extend`'s) carries the token of one chunk:
      `max_seconds` is that token's life in whole seconds (`connect.expires_at`); `chunk` is its index (0 for the first);
      `session_max_seconds` is the whole session's ceiling, 900; `renew_in` is how many seconds after receiving it the
      client asks for the next chunk, or `null` when there is none; `last` is true for the chunk that reaches the 900 s
      ceiling, for the chunk clamped to what is left of today's voice minutes (D-237: no `extend` is then asked into a refusal; the next `voice/session` is answered `429 quota_exhausted`, `orena.voice`) and for a session that is not metered (one token for what is left of the 900 s, no `extend`, and the setup
      sent to the vendor is exactly what it was before the plan limit: no session resumption).
+   - `day_limit_reached` (v13, D-237, #328): true only when this token was clamped to the seconds left of today's voice minutes, so the day's voice minutes end with this token; false on a normal `last`, on an uncapped server and for an unmetered token that is not clamped. It describes this token only (a later short chunk may carry it if a few seconds remain). A missing field is false. The client lets the chunk play out and, when it ends, tells the learner once, with the plan's `orena.voice` limit from `GET /api/product/commerce`, and does not offer to start voice again.
    - What a chunk costs: `2 x voice_seconds_per_message` seconds (never under 60 s, never past the session's 900 s) is
      `ceil(seconds / voice_seconds_per_message)` messages, reserved and charged whole when its token is minted - the
      learner is charged for a chunk the moment it exists, so the first chunk of any session costs at least one
@@ -542,7 +545,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - 429 `quota_exhausted` (D-237, `context.feature` `orena.voice`): as for `voice/session` above; a guard, since the final chunk of the day carries `last: true`. Nothing is minted; the client lets the token it holds play out, tells the learner once and ends the session when the token dies.
    - 403 `feature_not_in_plan` (v11, `context.feature` `orena.voice`): the plan no longer has live voice chat (it changed mid-session). Nothing is minted; the client lets the token it holds play out, opens the voice upsell sheet once, and ends the session when the token dies.
    - 200: `{ voice_session_id, chunk, connect: { url, ephemeral_token, expires_at, setup }, max_seconds,
-     session_max_seconds, renew_in, last }`, as in §9.1. A repeat of the last request (its answer was lost) returns the
+     session_max_seconds, renew_in, last, day_limit_reached }`, as in §9.1. A repeat of the last request (its answer was lost) returns the
      same token and charges nothing.
    - The client sends the renewal `renew_in` seconds after it received the token it holds (the server allows twelve
      seconds before that token dies), also at once on the vendor's `goAway`. It opens the new socket beside the old one,
