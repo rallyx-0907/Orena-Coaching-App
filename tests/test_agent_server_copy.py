@@ -481,3 +481,20 @@ def test_i_forgot_with_a_polite_ending_keeps_the_answer():
                            request("Mình quên từ này rồi, nhắc lại giúp mình nhé", notes=(remind,)))
     assert len(provider.requests) == 1 and not [e for e in events if e.name == "memory_update"]
     assert segments(events)[0][1] == "从 nghĩa là từ, kể từ."
+
+
+def test_in_the_reader_a_sentence_note_request_keeps_the_answer():
+    """#351 (review P2-1): "Xoá ghi chú tiếng Việt ở câu này" on a reading surface, with a coach note that happens to
+    say "tiếng Việt": the model answers about the sentence note and changes nothing - the learner gets that answer."""
+    vietnamese = CoachNote.model_validate(
+        {"id": "n-viet123456", "kind": "preference", "text": "Giải thích bằng tiếng Việt", "weight": 0.6,
+         "last_reinforced": "2026-09-28T06:14:30+00:00", "expires_at": None}  # fmt: skip
+    )
+    body = request("Xoá ghi chú tiếng Việt ở câu này", notes=(vietnamese,)).model_dump(mode="json", by_alias=True,
+                                                                                      exclude_none=True)  # fmt: skip
+    body["context"]["surface"] = "reading.workspace"
+    body["context"]["selected_item"] = {"type": "sentence", "text": "我是学生。", "lang": "zh-CN"}
+    events, _provider = run([reply("Bạn xoá ghi chú của câu bằng nút Xoá trong bảng câu."),
+                             reply("Bạn xoá ghi chú của câu bằng nút Xoá trong bảng câu.")], TurnRequest.model_validate(body))
+    assert not [e for e in events if e.name == "memory_update"]
+    assert segments(events)[0][1] == "Bạn xoá ghi chú của câu bằng nút Xoá trong bảng câu."

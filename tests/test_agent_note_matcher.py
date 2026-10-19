@@ -93,3 +93,26 @@ def test_the_nudge_orders_a_change_only_when_a_note_is_named():
     soft = nudge(kept, FORGET, explicit=False)
     assert "now" not in soft.split(":")[-1].split(",")[0] and "only if" in soft and "change no note" in soft
     assert "only if" in nudge(kept, "correct", explicit=False)
+
+
+def test_a_reader_annotation_is_not_a_coach_note():
+    """#351: "ghi chú" / "note" / 笔记 are also the Reader's sentence annotations ("Xoá ghi chú", 删除笔记). With a
+    sentence selected or a reading/listening surface in view, the bare word names no coach note - the message matches
+    only by real overlap, and the server never orders a change."""
+    from writing_coach.agent.notes import names_a_note
+
+    kept = [note("Cho mình ví dụ ngắn")]
+    for message in ("Xoá ghi chú ở câu này giúp mình", "Delete the note on this sentence", "删除这句的笔记"):
+        assert notes_the_message_changes(message, kept, annotation_in_view=True) == ()
+        assert names_a_note(message, annotation_in_view=True) is False
+        assert names_a_note(message) is True  # elsewhere it still names a coach note
+    # real overlap still matches in the Reader, with the conditional nudge
+    assert notes_the_message_changes("Thôi, đừng cho mình ví dụ ngắn nữa", kept, annotation_in_view=True)
+
+
+def test_where_a_reader_annotation_can_be_in_view():
+    from writing_coach.agent.notes import annotation_in_view
+
+    assert annotation_in_view("reading.passage", None) and annotation_in_view("listening.workspace", None)
+    assert annotation_in_view("vocabulary.my_language", "sentence")
+    assert not annotation_in_view("vocabulary.my_language", "word") and not annotation_in_view(None, None)
