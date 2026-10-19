@@ -51,8 +51,25 @@ $num = [double]0
 $ci = [Globalization.CultureInfo]::InvariantCulture
 if (-not [double]::TryParse("$($names['AI_DAILY_SPEND_CEILING_USD'])".Trim(), 'Float', $ci, [ref]$num) -or $num -le 0) { Fail 'AI_DAILY_SPEND_CEILING_USD must be a number above 0' }
 if (-not [double]::TryParse("$($names['AI_DAILY_SPEND_WARN_RATIO'])".Trim(), 'Float', $ci, [ref]$num) -or $num -le 0 -or $num -gt 1) { Fail 'AI_DAILY_SPEND_WARN_RATIO must be a number above 0 and at most 1' }
-if ("$($names['LEGAL_EFFECTIVE_DATE'])".Trim() -notmatch '^\d{4}-\d{2}-\d{2}$') { Fail 'LEGAL_EFFECTIVE_DATE must be YYYY-MM-DD' }
-if ("$($names['AGENT_MEMORY_HMAC_KEYS'])".Trim() -notmatch '^v\d+:[^,\s]{32,}(,v\d+:[^,\s]{32,})*$') { Fail 'AGENT_MEMORY_HMAC_KEYS must list v<version>:<secret> entries (secrets of 32+ characters)' }
+# A real calendar date, read the way the app reads it (consent.legal_effective_date): 2026-02-30 is refused.
+$legalDay = [datetime]::MinValue
+if ("$($names['LEGAL_EFFECTIVE_DATE'])".Trim() -notmatch '^\d{4}-\d{2}-\d{2}$' -or -not [datetime]::TryParseExact("$($names['LEGAL_EFFECTIVE_DATE'])".Trim(), 'yyyy-MM-dd', $ci, [Globalization.DateTimeStyles]::None, [ref]$legalDay)) { Fail 'LEGAL_EFFECTIVE_DATE must be a real calendar date, YYYY-MM-DD' }
+# The app's own rules (writing_coach/agent/memory_keys.py): v<1-9999>:<secret without whitespace, 32+ characters>, each version once.
+$seenVersions = @{}
+foreach ($entry in ("$($names['AGENT_MEMORY_HMAC_KEYS'])" -split ',')) {
+    $entry = $entry.Trim()
+    if (-not $entry) { continue }
+    if ($entry -notmatch '^v(?<version>[1-9][0-9]{0,3}):(?<secret>\S+)$') { Fail 'AGENT_MEMORY_HMAC_KEYS entries are v<version>:<secret>' }
+    if ($seenVersions.ContainsKey($Matches['version'])) { Fail "AGENT_MEMORY_HMAC_KEYS names v$($Matches['version']) twice" }
+    if ($Matches['secret'].Length -lt 32) { Fail "AGENT_MEMORY_HMAC_KEYS v$($Matches['version']) is shorter than 32 characters" }
+    $seenVersions[$Matches['version']] = $true
+}
+if ($seenVersions.Count -eq 0) { Fail 'AGENT_MEMORY_HMAC_KEYS lists no key' }
+if ("$($names['AGENT_MEMORY_RETENTION_SWEEP'])".Trim() -cnotmatch '^(on|off)$') { Fail 'AGENT_MEMORY_RETENTION_SWEEP must be exactly on or off' }
+# Deletion sweeps are off until switched on; say so, never fail on it.
+foreach ($sweep in 'FEEDBACK_RETENTION_SWEEP', 'AGENT_TURN_RETENTION_SWEEP') {
+    if ("$($names[$sweep])".Trim() -notin 'true', 'on') { Write-Warning "$sweep is not switched on: that data is kept until the sweep is enabled" }
+}
 if ($names['APP_ENV'] -ne 'staging') { Fail 'APP_ENV must be staging for :8000 (D-146)' }
 if ($names['PRONUNCIATION_PROVIDER'] -match '^(demo|synthetic)') { Fail 'PRONUNCIATION_PROVIDER must not be a synthetic provider' }
 $flags = 'APP_ENV', 'ORENA_ACCOUNT_BACKBONE', 'ORENA_PRACTICE_SESSION', 'AGENT_ENABLED', 'AGENT_VOICE_ENABLED',

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import ipaddress
 import os
-import re
 from dataclasses import dataclass
 from typing import Mapping
 from urllib.parse import urlsplit
@@ -31,6 +30,13 @@ def environment_name(value: object) -> str:
 def is_public_environment(value: object) -> bool:
     """Whether an APP_ENV value names a public deployment (staging or production)."""
     return environment_name(value) in PUBLIC_ENVIRONMENTS
+
+
+def _legal_effective_date(values: Mapping[str, str]):
+    """The date the app itself reads (`consent.legal_effective_date`), so the guard and the pages cannot disagree."""
+    from writing_coach.consent import legal_effective_date
+
+    return legal_effective_date(values)
 
 
 @dataclass(frozen=True)
@@ -186,10 +192,10 @@ def resolve_deployment_config(env: Mapping[str, str] | None = None) -> Deploymen
         if len(str(values.get("SESSION_SECRET", "")).strip()) < 32:
             # A short secret lets anyone forge a session cookie, an administrator's included.
             raise RuntimeError(f"SESSION_SECRET must be at least 32 characters when APP_ENV={app_env}.")
-        if app_env == "production" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(values.get("LEGAL_EFFECTIVE_DATE", "")).strip()):
+        if app_env == "production" and _legal_effective_date(values) is None:
             # D-233: a consent record names the Terms/Privacy version accepted. Production never records "unstamped";
             # the deploy states the date it passed to build_public_pages.mjs --effective-date.
-            raise RuntimeError("LEGAL_EFFECTIVE_DATE (YYYY-MM-DD) is required when APP_ENV=production.")
+            raise RuntimeError("LEGAL_EFFECTIVE_DATE (a real calendar date, YYYY-MM-DD) is required when APP_ENV=production.")
     elif auth_enabled and not str(values.get("SESSION_SECRET", "")).strip():
         raise RuntimeError("SESSION_SECRET is required when Google authentication is enabled.")
 
