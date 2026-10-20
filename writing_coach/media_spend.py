@@ -84,7 +84,7 @@ def _now() -> datetime:
 
 
 def _system_ceiling() -> None:
-    """Tick the system's daily AI spend monitor before a paid media step (ai/spend_gate.py). Since D-250 it alerts and
+    """Tick the system's daily AI spend monitor before a paid media step (ai/spend_gate.py). Since D-251 it alerts and
     never refuses; the media caps below decide."""
     from writing_coach.ai import spend_gate
 

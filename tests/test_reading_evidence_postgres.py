@@ -119,7 +119,7 @@ def _approved(engine):
     snapshot = content.record_source_item(
         source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="", title="T",
         author="", published_at=None, language="en", body=BODY, content_hash=uuid.uuid4().hex * 2,
-        metadata={}, rights={"can_republish": True},
+        metadata={}, rights={"can_republish": True, "attribution_required": False},
     )
     article = content.create_article(
         source_item_id=snapshot["id"], title="T", body=BODY, excerpt="", language="en", topic="travel",

@@ -193,7 +193,7 @@ def test_duplicate_import_cannot_silently_ignore_an_explicit_rights_denial(engin
     assert job["attempt"] == 1
     assert content.get_article(first["article_id"])["status"] == "published"
     engine.submit(SubmittedInput(kind="text", text=ARTICLE, language="en", source_id=source["id"],
-                                rights={"can_republish": True}), actor="admin")
+                                rights={"can_republish": True, "attribution_required": False}), actor="admin")
     assert engine.process(jobs.claim("worker"))["result_kind"] == "duplicate"
 
 
@@ -225,7 +225,7 @@ def _fetcher(body: str, content_type: str = "text/html"):
 def test_a_submission_returns_a_job_and_does_no_work_in_the_request(engine_parts):
     engine, content, jobs = engine_parts
     submitted = SubmittedInput(kind="text", text=ARTICLE, title="Rain returns", language="en",
-                               rights={"can_republish": True})
+                               rights={"can_republish": True, "attribution_required": False})
     accepted = engine.submit(submitted, actor="admin@example.com")
     assert accepted["status"] == "queued" and accepted["duplicate"] is False
     assert content.list_queue()["items"] == []
@@ -286,6 +286,7 @@ def test_a_chinese_candidate_stores_its_script_and_the_learner_payload_carries_i
         content, article = _paste(engine_parts, body, "zh")
         assert article["analysis"]["script"] == script
         assert "script_mixed" not in article["analysis"]["quality_issues"]
+        content.set_rights(article["id"], {"can_republish": True, "attribution_required": False}, actor="admin")  # D-250: clear rights
         content.set_status(article["id"], "published", actor="admin@example.com")
         assert content.get_published_article(article["id"])["script"] == script
         assert [i["script"] for i in content.list_published(language="zh")["items"] if i["id"] == article["id"]] == [script]
@@ -300,6 +301,7 @@ def test_mixed_scripts_are_stored_and_flagged_soft(engine_parts):
 def test_an_english_article_has_no_script(engine_parts):
     content, article = _paste(engine_parts, ARTICLE, "en")
     assert "script" not in article["analysis"]
+    content.set_rights(article["id"], {"can_republish": True, "attribution_required": False}, actor="admin")  # D-250: clear rights
     content.set_status(article["id"], "published", actor="admin@example.com")
     assert "script" not in content.get_published_article(article["id"])
     assert all("script" not in item for item in content.list_published(language="en")["items"])

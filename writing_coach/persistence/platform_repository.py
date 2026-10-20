@@ -731,7 +731,7 @@ class PostgresPlatformRepository:
                                    provider: str | None = None, model: str | None = None,
                                    exclude_providers: tuple[str, ...] = ()) -> tuple[float, int]:
         """One learner's AI cost since `since` from `ai_cost_records` (AC-2; indexed by account and time): the
-        estimated USD, and how many of the account's calls have no price (D-250, the per-learner caps). Optionally
+        estimated USD, and how many of the account's calls have no price (D-251, the per-learner caps). Optionally
         one capability (`feature`), one rung (provider and model), and without the providers named in
         `exclude_providers` (a free-tier provider costs Orena nothing)."""
 

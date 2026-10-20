@@ -210,7 +210,7 @@ def test_the_spend_ceiling_is_charged_at_deepseeks_rate(world):
 
 
 def test_the_monitor_alerts_but_never_stops_the_paid_backup(world, monkeypatch):
-    """D-250: the system total past its threshold is an alert, not a lock: the next learner is still answered."""
+    """D-251: the system total past its threshold is an alert, not a lock: the next learner is still answered."""
     import writing_coach.agent.budget as budget
 
     monkeypatch.setattr(budget, "CACHE_SECONDS", 0.0)   # read the ledger at each check, not the 5-second verdict
@@ -265,7 +265,7 @@ def test_the_retry_passes_the_spend_gate_again(world, monkeypatch):
     world.transport.deepseek = ['{"ok": tr', '{"ok": true}']
     monkeypatch.setattr(budget, "CACHE_SECONDS", 0.0)   # read the ledger at each check, not the 5-second verdict
     # The monitor's threshold is reached by the first (malformed) answer's own cost: the retry is admitted again through
-    # the gate (never assumed), and D-250's monitor does not refuse it.
+    # the gate (never assumed), and D-251's monitor does not refuse it.
     one_call = (PROMPT_TOKENS * 0.30 + COMPLETION_TOKENS * 1.20) / 1_000_000
     spend_gate.configure_ceiling(one_call * 0.99, read=world.repo.ai_spend_since)
     assert ask("learner_dictionary").data == {"ok": True}
@@ -279,7 +279,7 @@ def test_the_streaming_agent_turn_has_no_json_retry():
     assert "MALFORMED_JSON_RETRIES" not in inspect.getsource(platform.stream_agent_turn)
 
 
-# ===================================================================== D-250: the learner's own daily cost cap ==
+# ===================================================================== D-251: the learner's own daily cost cap ==
 
 def _learner(state, economy=None):
     from writing_coach.ai import learner_cost

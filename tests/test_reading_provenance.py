@@ -163,29 +163,28 @@ def test_a_recorded_licence_answer_reaches_the_learner_and_moves_the_cache_revis
 # -- the gate on every publish path ------------------------------------------------------------
 
 
-def test_the_repository_never_refuses_publishing_for_an_incomplete_credit_or_unclear_rights(setup):  # noqa: F811
-    # D-189 amends D-105: the admin can always publish; the route asks for the override, not the repository.
+def test_the_repository_refuses_an_incomplete_credit_or_unclear_rights(setup):  # noqa: F811
+    # D-250 (amends D-190): no override - the repository refuses too, so a direct publish is stopped.
+    from writing_coach.reading_rights_gate import RightsRefused
+
     content = setup["content"]
     source = _source(content, slug="gv", automation=False)
     article_id = _submit(setup, source)
     assert provenance_blockers(content.get_article(article_id)["provenance"]) != []
-    published = content.set_status(
-        article_id, "published", actor="admin", reason="owner confirmed",
-        warnings=[{"code": "provenance_missing", "level": "warning"}])
-    assert published["status"] == "published"
-    event = next(e for e in content.list_review_events(article_id) if e["action"] == "published")
-    assert event["changes"]["published_over_warnings"] is True and event["reason"] == "owner confirmed"
-    # Even denied or unanswered republish rights do not stop the repository.
-    other = _submit(setup, _source(content, slug="gv2", automation=False), title="Other", body=ARTICLE + "More. ")
+    with pytest.raises(RightsRefused):
+        content.set_status(article_id, "published", actor="admin", reason="owner confirmed")
+    other = _submit(setup, _source(content, slug="gv2", automation=False, license_note="CC BY 3.0"), title="Other",
+                    body=ARTICLE + "More. ")
     content.set_rights(other, {"can_republish": False}, actor="admin")
-    assert content.set_status(other, "published", actor="admin")["status"] == "published"
+    with pytest.raises(RightsRefused):
+        content.set_status(other, "published", actor="admin")
 
 
 def _publish_body(**extra):
     return {"status": "published", **extra}
 
 
-def test_the_admin_route_asks_for_an_override_over_an_incomplete_credit(setup):  # noqa: F811
+def test_the_admin_route_refuses_an_incomplete_credit_with_no_override(setup):  # noqa: F811
     content = setup["content"]
     source = _source(content, slug="gv", automation=False)
     article_id = _submit(setup, source)
@@ -195,19 +194,12 @@ def test_the_admin_route_asks_for_an_override_over_an_incomplete_credit(setup): 
     context = refused.json()["detail"]["context"]
     assert {"code": "provenance_missing", "question": "attribution_required", "field": "license",
             "level": "warning"} in context["blockers"]
-    assert context["override_field"] == "acknowledge_warnings"
+    assert context["override_fields"] == [] and "override_field" not in context
+    # D-250: the old override and a reason change nothing
+    again = call(setup["admin"], "POST", url, json=_publish_body(acknowledge_warnings=True, reason="licence on file"))
+    assert again.status_code == 409
     assert content.get_article(article_id)["status"] != "published"
-    no_reason = call(setup["admin"], "POST", url, json=_publish_body(acknowledge_warnings=True))
-    assert no_reason.status_code == 422
-    assert no_reason.json()["detail"]["category"] == "reading_reason_required"
-    assert content.get_article(article_id)["status"] != "published"
-    allowed = call(setup["admin"], "POST", url, json=_publish_body(acknowledge_warnings=True, reason="licence on file"))
-    assert allowed.status_code == 200 and allowed.json()["status"] == "published"
-    assert any(w["code"] == "provenance_missing" for w in allowed.json()["publication_warnings"])
-    event = next(e for e in content.list_review_events(article_id) if e["action"] == "published")
-    assert event["reason"] == "licence on file" and event["actor"]
-    assert any(w["code"] == "provenance_missing" for w in event["changes"]["warnings"])
-    assert any(r["action"] == "admin.reading_article_published" for r in setup["audit"])
+    assert any(r["action"] == "admin.reading_article_publish_refused" for r in setup["audit"])
 
 
 def test_recording_the_credit_publishes_without_an_override(setup):  # noqa: F811
@@ -304,8 +296,10 @@ def test_the_learner_payload_carries_no_rights_or_review_keys(setup):  # noqa: F
     assert "reviewer@example.com" not in json.dumps(listed) + json.dumps(detail)
 
 
-def test_an_unanswered_attribution_question_still_publishes_by_an_administrator(setup):  # noqa: F811
-    # The repository never refuses (D-189 amends D-105); the admin route asks for the override (below).
+def test_an_unanswered_attribution_question_refuses_until_it_is_answered(setup):  # noqa: F811
+    # D-250 (amends D-190): the repository refuses too; answering the question clears it.
+    from writing_coach.reading_rights_gate import RightsRefused
+
     content = setup["content"]
     snapshot = content.record_source_item(
         source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="", title="T",
@@ -316,6 +310,9 @@ def test_an_unanswered_attribution_question_still_publishes_by_an_administrator(
         estimated_level="B1", estimated_confidence=0.5, word_count=60, reading_time_seconds=60,
         analysis={}, targets=[])["id"]
     assert content.get_article(article_id)["provenance"]["attribution_required"] == "unknown"
+    with pytest.raises(RightsRefused):
+        content.set_status(article_id, "published", actor="admin")
+    content.set_rights(article_id, {"attribution_required": False}, actor="admin")
     assert content.set_status(article_id, "published", actor="admin")["status"] == "published"
 
 
@@ -329,7 +326,7 @@ def test_a_note_that_is_only_an_address_and_a_later_answer_both_satisfy_the_gate
     assert content.get_article(second)["provenance"]["license"]["url"].endswith("/by/4.0/")
 
 
-def test_republishing_after_the_credit_was_removed_asks_for_the_override_again(setup):  # noqa: F811
+def test_republishing_after_the_credit_was_removed_is_refused(setup):  # noqa: F811
     content = setup["content"]
     article_id = _submit(setup, _source(content, slug="gv", automation=False, license_note="CC BY 3.0"))
     content.set_status(article_id, "published", actor="admin")
@@ -339,7 +336,7 @@ def test_republishing_after_the_credit_was_removed_asks_for_the_override_again(s
     assert call(setup["admin"], "POST", url, json=_publish_body()).status_code == 409
     assert content.get_article(article_id)["status"] == "unpublished"
     again = call(setup["admin"], "POST", url, json=_publish_body(acknowledge_warnings=True, reason="kept"))
-    assert again.status_code == 200
+    assert again.status_code == 409  # D-250: record the credit again instead
 
 
 def test_a_rights_answer_on_an_unpublished_article_does_not_move_the_cache_revision(setup):  # noqa: F811
@@ -382,19 +379,14 @@ def _manual_article(setup, rights):  # noqa: F811
     ({"can_republish": False, "attribution_required": False}, "rights_not_cleared"),
     ({"attribution_required": False}, "rights_unknown"),
 ])
-def test_unclear_rights_or_attribution_need_the_explicit_override_and_reason(setup, rights, code):  # noqa: F811
+def test_unclear_rights_or_attribution_are_refused_with_or_without_the_old_override(setup, rights, code):  # noqa: F811
     article_id = _manual_article(setup, rights)
     url = f"/api/admin/reading/articles/{article_id}/status"
-    refused = call(setup["admin"], "POST", url, json=_publish_body())
-    assert refused.status_code == 409
-    assert code in {item["code"] for item in refused.json()["detail"]["context"]["blockers"]}
+    for body in (_publish_body(), _publish_body(acknowledge_warnings=True, reason="reviewed by owner")):
+        refused = call(setup["admin"], "POST", url, json=body)
+        assert refused.status_code == 409
+        assert code in {item["code"] for item in refused.json()["detail"]["context"]["blockers"]}
     assert setup["content"].get_article(article_id)["status"] != "published"
-    assert call(setup["admin"], "POST", url, json=_publish_body(acknowledge_warnings=True, reason="  ")).status_code == 422
-    done = call(setup["admin"], "POST", url, json=_publish_body(acknowledge_warnings=True, reason="reviewed by owner"))
-    assert done.status_code == 200 and code in {w["code"] for w in done.json()["publication_warnings"]}
-    event = next(e for e in setup["content"].list_review_events(article_id) if e["action"] == "published")
-    assert event["reason"] == "reviewed by owner"
-    assert code in {w["code"] for w in event["changes"]["warnings"]}
 
 
 def test_a_cleared_internal_text_publishes_without_an_override(setup):  # noqa: F811
@@ -425,8 +417,16 @@ def test_automatic_admission_still_refuses_unclear_attribution_and_rights():
 def test_the_checker_reports_whether_an_incomplete_credit_was_published_over_a_recorded_override(setup, capsys):  # noqa: F811
     content = setup["content"]
     overridden = _submit(setup, _source(content, slug="gv-o", automation=False), title="Overridden")
-    call(setup["admin"], "POST", f"/api/admin/reading/articles/{overridden}/status",
-         json=_publish_body(acknowledge_warnings=True, reason="licence on file"))
+    # published over D-190's warnings before D-250 removed the override: its status and recorded event, as then
+    from datetime import UTC, datetime
+
+    with content.engine.begin() as connection:
+        connection.execute(update(ReadingArticle).where(ReadingArticle.id == uuid.UUID(overridden))
+                           .values(status=LEARNER_VISIBLE_STATUS))
+        content._record_event(connection, article_id=uuid.UUID(overridden), actor="admin",
+                              action=LEARNER_VISIBLE_STATUS, reason="licence on file",
+                              changes={"warnings": [{"code": "provenance_missing"}], "published_over_warnings": True},
+                              now=datetime.now(UTC))  # fmt: skip
     legacy = _submit(setup, _source(content, slug="gv-l", automation=False), title="Legacy",
                      body=ARTICLE + "Another line. ")
     with content.engine.begin() as connection:

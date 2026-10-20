@@ -368,7 +368,7 @@ class AzureSpeechPronunciationProvider:
 
         from writing_coach.ai.spend_gate import observe
 
-        observe()  # the system's daily AI spend monitor (D-250): it alerts, it never refuses
+        observe()  # the system's daily AI spend monitor (D-251): it alerts, it never refuses
         require_paid(capability="pronunciation_evaluator", provider=str(getattr(self, "provider_id", "") or "azure"),
                      timeout_seconds=self._timeout_seconds)   # the timeout of the Azure request below
 

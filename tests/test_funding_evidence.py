@@ -65,7 +65,7 @@ def paid_world(env, monkeypatch):
     monkeypatch.setattr("writing_coach.core.request_context.current_user_key", lambda: "learner-1")
     monkeypatch.setattr(policies, "value_strict", lambda key, **_: 5.0)   # the word_translation paid cap: open
     monkeypatch.setattr(env.repo, "ai_spend_since_for_capability", lambda capability, since: (0.0, 0), raising=False)
-    # D-250: inside a learner's request the capability cap reads that learner's own spend (`ai_cost_records`).
+    # D-251: inside a learner's request the capability cap reads that learner's own spend (`ai_cost_records`).
     monkeypatch.setattr(env.repo, "ai_spend_since_for_account", lambda *args, **kwargs: (0.0, 0), raising=False)
     spend_gate.reset()
     tap.reset_state()

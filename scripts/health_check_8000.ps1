@@ -13,7 +13,7 @@ Checks (each one a PASS or FAIL line):
   backup-age        the newest orena-8000-*.dump in %USERPROFILE%\.orena\backups is younger than -MaxBackupAgeHours (26)
   backup-log        the last "exit N:" line of backup.log has N = 0
   ai-spend          (notice only, never a failure) today's container log holds the daily AI spend warning or threshold
-                    line; raises the alert once per UTC day and level. Since D-250 the system figure is a monitor: AI
+                    line; raises the alert once per UTC day and level. Since D-251 the system figure is a monitor: AI
                     keeps running for every learner, and each learner has a per-plan cap instead
   providers         (PR BZ) provider health from the recorded AI operations: `docker exec` runs
                     `python -m writing_coach.ai.health_signal` in the app container (one read-only SELECT on audit_logs;
@@ -181,7 +181,7 @@ if ($spendLevel) {
     $already = ($state.spendDay -eq $today) -and (($state.spendLevel -eq $spendLevel) -or ($state.spendLevel -eq 'reached'))
     Log ("WARN ai-spend level={0} (container log, UTC day {1})" -f $spendLevel, $today)
     if (-not $already) {
-        $spendMessage = if ($spendLevel -eq 'reached') { 'Orena :8000 AI daily spend reached its alert threshold (monitor only, D-250: AI keeps running; per-learner caps apply)' } else { 'Orena :8000 AI spend is at its warning level for today' }
+        $spendMessage = if ($spendLevel -eq 'reached') { 'Orena :8000 AI daily spend reached its alert threshold (monitor only, D-251: AI keeps running; per-learner caps apply)' } else { 'Orena :8000 AI spend is at its warning level for today' }
         $spendRaised = Raise-Alert $spendMessage
         Log ("ALERT ai-spend {0}" -f $(if ($spendRaised) { 'raised' } else { 'not shown (-NoToast or no BurntToast); see the state file' }))
         $state.spendDay = $today
@@ -216,7 +216,7 @@ if ($null -ne $providersReport) {
 # A spending cap or a rejected key does not wait for -AlertAfter: it is raised at once, and again when it changes.
 $providersKey = ''
 if ($providersHigh) { $providersKey = ((@($providersReport.alerts) | Where-Object { $_.severity -eq 'high' } | ForEach-Object { '{0}:{1}' -f $_.provider, $_.failure_class }) -join ',') }
-# D-250: the system's daily spend at its alert threshold is a high-severity alert too (a monitor: nothing is refused).
+# D-251: the system's daily spend at its alert threshold is a high-severity alert too (a monitor: nothing is refused).
 if ($providersHigh -and $providersReport.spend -and ($providersReport.spend.severity -eq 'high')) { $providersKey = (@($providersKey, 'system:spend_threshold') | Where-Object { $_ }) -join ',' }
 if ($providersHigh -and ($state.providersAlert -ne $providersKey)) {
     $providersRaised = Raise-Alert ('Orena :8000 AI provider down: ' + $providersKey)

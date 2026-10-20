@@ -1,4 +1,4 @@
-"""D-250 (owner, 2026-10-21): the system's daily spend never locks anything. With the whole ledger past the monitor's
+"""D-251 (owner, 2026-10-21): the system's daily spend never locks anything. With the whole ledger past the monitor's
 threshold - and with a ledger that cannot be read - every path the old ceiling stopped still runs:
 - every paid rung of the router (a routed primary, a backup, a rung of an uncapped capability);
 - a single paid request (legacy selection, an agent round);

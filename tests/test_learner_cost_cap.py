@@ -1,4 +1,4 @@
-"""Each learner's own daily AI cost cap, by plan (D-250; owner 2026-10-21: "không có trần chung cho app, chỉ có trần cho
+"""Each learner's own daily AI cost cap, by plan (D-251; owner 2026-10-21: "không có trần chung cho app, chỉ có trần cho
 từng người dùng theo gói ... pilot là pilot bản product"). One heavy learner never blocks another; at the cap a learner's
 paid calls go to the economy model, at the hard ceiling only zero-cost rungs run and a paid-only request is the existing
 429 `quota_exhausted`. Per-capability daily caps measure the request's own learner, never everyone."""

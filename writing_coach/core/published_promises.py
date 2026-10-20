@@ -1,6 +1,6 @@
 """What the published policies promise must be in force on a public runtime (PRE-502 R1/R2, #369).
 
-- **Bounded AI spend** (PRE-502 R2 as restated by D-250, owner 2026-10-21: no app-wide cap, only a cap per learner by
+- **Bounded AI spend** (PRE-502 R2 as restated by D-251, owner 2026-10-21: no app-wide cap, only a cap per learner by
   plan). Two things must be in force: every plan's per-learner daily AI cost cap (ai/learner_cost.py, policies
   `ai.learner_cost.*`) and the system monitor's alert threshold (`AI_DAILY_SPEND_CEILING_USD`, ai/spend_gate.py), which
   alerts and never refuses. Neither is a published legal promise; this is the operating rule that no public runtime
@@ -88,7 +88,7 @@ def _ceiling_in_force(values: Mapping[str, str], policy: Callable[[str], Any]) -
 
 
 def _learner_caps_missing(policy: Callable[[str], Any]) -> list[str]:
-    """The plans (or the hard ratio) without a usable per-learner daily AI cost cap (D-250)."""
+    """The plans (or the hard ratio) without a usable per-learner daily AI cost cap (D-251)."""
     from writing_coach.ai.learner_cost import configured_problems
 
     try:
@@ -143,7 +143,7 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
 
 def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
     """At start. A public runtime logs each unmet promise as an ERROR and refuses to start without the per-learner AI
-    cost caps and the environment's monitor threshold (production and staging alike, D-250). Development returns nothing
+    cost caps and the environment's monitor threshold (production and staging alike, D-251). Development returns nothing
     and logs nothing."""
 
     app_env = environment_name(values.get("APP_ENV", "development"))
@@ -153,10 +153,10 @@ def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) ->
     for problem in problems:
         _log.error("published promise not in force (%s): %s", problem.code, problem.message)
     missing = _learner_caps_missing(policy)
-    if missing:  # D-250: never a public runtime with paid AI unbounded per learner
+    if missing:  # D-251: never a public runtime with paid AI unbounded per learner
         raise RuntimeError(f"A per-learner daily AI cost cap is required for every plan when APP_ENV={app_env} "
-                           f"(D-250, PRE-502 R2); missing: {', '.join(missing)}.")
+                           f"(D-251, PRE-502 R2); missing: {', '.join(missing)}.")
     if not _ceiling_set(values):  # the monitor's threshold, whatever Admin holds; staging runs like production
         raise RuntimeError(f"AI_DAILY_SPEND_CEILING_USD (the spend monitor's alert threshold) is required when "
-                           f"APP_ENV={app_env} (D-250, PRE-502 R2).")
+                           f"APP_ENV={app_env} (D-251, PRE-502 R2).")
     return problems

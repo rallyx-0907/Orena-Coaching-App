@@ -1,10 +1,10 @@
 """The daily spend gate of a capability's paid pool entries (AI Cost Router, D-195 amendment 2026-10-14), per learner since
-D-250, and the system's daily AI spend MONITOR.
+D-251, and the system's daily AI spend MONITOR.
 
     paid_refused(capability, cap_policy) -> bool
 
 True means "do not ask a paid model now". It is True when the cap policy is unreadable, zero or empty, when today's
-(UTC) spend of this one capability has reached the cap, and when the ledger cannot be read: it fails closed. Since D-250
+(UTC) spend of this one capability has reached the cap, and when the ledger cannot be read: it fails closed. Since D-251
 (owner, 2026-10-21: no app-wide cap, only a cap per learner by plan) the spend counted is the REQUEST'S OWN LEARNER's,
 from the per-account ledger (`ai_cost_records`), so one learner reaching a capability's cap never stops another. Work
 with no signed-in account (a background job) is measured over the whole capability, as before - it is not a learner.
@@ -14,7 +14,7 @@ calls in flight.
 The system monitor (`AI_DAILY_SPEND_CEILING_USD`, Admin's `ai.daily_spend_ceiling_usd`, warning at
 `ai.daily_spend_warn_ratio`) adds up today's spend across the whole shared AI ledger, exactly as the old ceiling did, and
 ALERTS: a warning line at the ratio, a high-severity line at the threshold, the provider health signal
-(ai/health_signal.py, the :8000 health.log) and Admin's overview banner. It NEVER refuses a request (D-250 supersedes
+(ai/health_signal.py, the :8000 health.log) and Admin's overview banner. It NEVER refuses a request (D-251 supersedes
 PRE-502 R2's fail-closed ceiling). `observe()` is the tick every paid path calls; it cannot raise.
 """
 
@@ -46,7 +46,7 @@ CEILING_REASON = "system_ceiling"
 
 
 class SpendCeilingReached(AIProviderUnavailable):
-    """Never raised since D-250 (the system figure is a monitor). Kept only because agent/api.py still names it; the
+    """Never raised since D-251 (the system figure is a monitor). Kept only because agent/api.py still names it; the
     Intelligence lane removes that handler."""
 
     code = CEILING_REASON
@@ -163,14 +163,14 @@ def observe() -> None:
         if day and day != _alerted_day:
             _alerted_day = day
             _log.error("ALERT system daily AI spend reached the alert threshold: %.4f of %.2f USD (monitor only; no "
-                       "learner is refused, per-learner caps apply, D-250)", float(status.get("spent_usd") or 0.0),
+                       "learner is refused, per-learner caps apply, D-251)", float(status.get("spent_usd") or 0.0),
                        float(status.get("cap_usd") or 0.0))
     except Exception:  # noqa: BLE001 - a monitor never costs a learner a request
         _log.warning("system spend monitor failed", exc_info=True)
 
 
 def ceiling_check() -> None:
-    """The agent guard's former `ceiling=` hook: monitor-only since D-250 (ticks, never refuses)."""
+    """The agent guard's former `ceiling=` hook: monitor-only since D-251 (ticks, never refuses)."""
     observe()
     return None
 
@@ -201,7 +201,7 @@ def _reader(capability: str, provider: str | None = None, model: str | None = No
 
         repository = _installed_platform_repository()
         if account is not None:
-            # D-250: this learner's own spend of this capability (and of one rung, when given) from `ai_cost_records`.
+            # D-251: this learner's own spend of this capability (and of one rung, when given) from `ai_cost_records`.
             return repository.ai_spend_since_for_account(account, since, capability=capability, provider=provider,
                                                          model=model)
         if provider is None:
@@ -215,7 +215,7 @@ def _reader(capability: str, provider: str | None = None, model: str | None = No
 def paid_refused(capability: str, cap_policy: str, *, provider: str | None = None, model: str | None = None) -> bool:
     """`provider`/`model` given: the cap measures that one (provider, model)'s spend for this capability (a routed
     capability's reviewed backup, PR-MON-7); otherwise the capability's whole paid spend (word translation). Inside a
-    learner's request it is that learner's own spend (D-250); the system monitor never refuses here."""
+    learner's request it is that learner's own spend (D-251); the system monitor never refuses here."""
     from writing_coach.ai.learner_cost import current_account
 
     observe()

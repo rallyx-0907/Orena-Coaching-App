@@ -1,4 +1,4 @@
-"""The system's daily AI spend MONITOR (D-250, owner 2026-10-21: "không có trần chung cho app, chỉ có trần cho từng người
+"""The system's daily AI spend MONITOR (D-251, owner 2026-10-21: "không có trần chung cho app, chỉ có trần cho từng người
 dùng theo gói"). It still reads the whole shared AI ledger, warns at the ratio and raises a high-severity alert at the
 threshold - in the log, the provider health signal and Admin - but it never refuses a learner's request. It replaced the
 2026-10-18 ceiling that paused paid AI for every learner until UTC midnight."""
@@ -74,7 +74,7 @@ def test_below_the_warning_nothing_happens_and_at_80_percent_it_warns_once_a_day
 
 
 def test_the_monitor_alerts_at_the_threshold_without_refusing_anything(caplog):
-    """D-250: at the threshold a high-severity alert, once a UTC day; no paid call, agent turn or capability is refused."""
+    """D-251: at the threshold a high-severity alert, once a UTC day; no paid call, agent turn or capability is refused."""
     monitor(5.0, Ledger(usd=5.0))
     with caplog.at_level(logging.WARNING):
         spend_gate.observe()

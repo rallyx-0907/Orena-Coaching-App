@@ -24,7 +24,7 @@ const titleKey = {
   adminOperations: 'navOperations', adminWorkers: 'opWorkers', adminPolling: 'opPolling', adminErrors: 'opErrors',
 };
 
-/* The system AI spend monitor (GET /api/admin/ai-spend, `system`; D-250: it alerts, it never pauses AI): nothing below the
+/* The system AI spend monitor (GET /api/admin/ai-spend, `system`; D-251: it alerts, it never pauses AI): nothing below the
    warning, the warning strip once the server says `warned`, and the high-severity alert once `reached`. The design draws
    no system-spend notice, so this is the existing banner (UI_BACKEND_GAPS.md, "AI spend ceiling notice"). */
 export function spendBanner(spend, href) {

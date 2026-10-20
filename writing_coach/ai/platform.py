@@ -442,7 +442,7 @@ def _funded_gate(capability_key: str, budget: Callable[[ProviderTarget], str | N
     from writing_coach.billing import funding_context
 
     def admit(target: ProviderTarget) -> str | None:
-        # The system's daily spend is a monitor since D-250 (ai/spend_gate.py): ticked for every paid rung, never a refusal.
+        # The system's daily spend is a monitor since D-251 (ai/spend_gate.py): ticked for every paid rung, never a refusal.
         if provider_tier(target.provider, target.model) == "paid":
             spend_gate.observe()
         refused = budget(target) if budget is not None else None
@@ -478,7 +478,7 @@ def _require_paid_funding(capability: str, provider: str | None, model: str | No
     from writing_coach.billing import funding_context
 
     if provider and provider_tier(provider, model or "") == "paid":
-        spend_gate.observe()  # the system's daily spend monitor (ai/spend_gate.py, D-250): it alerts, it never refuses
+        spend_gate.observe()  # the system's daily spend monitor (ai/spend_gate.py, D-251): it alerts, it never refuses
         funding_context.require_paid(capability=capability, provider=provider, timeout_seconds=timeout or 0.0)
 
 
@@ -995,7 +995,7 @@ def generate_structured(
                 raise AIProviderUnavailable(f"{item.name} is not configured.")
             _legacy_privacy_guard(capability_key, item, model)
             if provider_tier(provider_id or "", model or "") == "paid":
-                # D-250: one selected model has no economy rung to give way to; at the hard ceiling it is refused.
+                # D-251: one selected model has no economy rung to give way to; at the hard ceiling it is refused.
                 learner = _learner_cost.learner_cost_state()
                 if learner.state == _learner_cost.REFUSE:
                     raise _learner_cost.LearnerCostCapReached(learner)
@@ -1080,7 +1080,7 @@ def generate_structured(
                                                   model=target.model)
                 return "budget" if refused else None
 
-        # D-250: the learner's own daily cost cap, by plan. At the cap the paid rungs give way to the economy model; at
+        # D-251: the learner's own daily cost cap, by plan. At the cap the paid rungs give way to the economy model; at
         # the hard ceiling only free and local rungs run, and a chain of paid rungs alone is refused (429 quota_exhausted).
         learner = _learner_cost.learner_cost_state()
         if learner.state != _learner_cost.OK:

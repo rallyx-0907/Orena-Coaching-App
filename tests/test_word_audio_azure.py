@@ -150,7 +150,7 @@ def test_the_route_says_synthesis_unavailable_when_azure_failed(monkeypatch, tmp
 
 
 def test_past_the_system_spend_monitor_azure_is_still_asked():
-    """D-250: the system's daily AI spend is a monitor, so it no longer turns Azure into a failed voice."""
+    """D-251: the system's daily AI spend is a monitor, so it no longer turns Azure into a failed voice."""
     import inspect
 
     from writing_coach import word_audio_azure

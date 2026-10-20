@@ -311,7 +311,7 @@ class GroqSpeechAsrProvider:
 
         from writing_coach.ai.spend_gate import observe
 
-        observe()  # the system's daily AI spend monitor (D-250): it alerts, it never refuses
+        observe()  # the system's daily AI spend monitor (D-251): it alerts, it never refuses
         require_paid(capability="speech_asr", provider=str(getattr(self, "provider_id", "") or "groq"),
                      timeout_seconds=self._timeout_seconds)   # the timeout every Groq request uses
 

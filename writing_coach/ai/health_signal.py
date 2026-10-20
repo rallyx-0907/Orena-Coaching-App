@@ -27,7 +27,7 @@ a learner who left mid-stream and a chain's summary row (each rung is recorded o
 are not counted. Operator tests and configuration checks (origin `operator_test`, `configuration`) are not counted
 either: an administrator trying a bad key is not an outage.
 
-The system's daily AI spend (D-250: a monitor, never a refusal) is in the same report as `spend`: today's (UTC) total of
+The system's daily AI spend (D-251: a monitor, never a refusal) is in the same report as `spend`: today's (UTC) total of
 the whole AI ledger against the alert threshold (`ai.daily_spend_ceiling_usd`, at most AI_DAILY_SPEND_CEILING_USD). At
 the warning ratio it is severity medium; at the threshold severity high, which makes the whole report an alert, so the
 health check raises it at once. No learner is refused because of it.

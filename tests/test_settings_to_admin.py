@@ -200,7 +200,7 @@ def test_the_ceiling_gate_applies_an_admin_change_without_a_restart():
                                          warn_ratio=spend_gate.live_warn_ratio)
             assert spend_gate.ceiling_usd() == 5.0 and not spend_gate.ceiling_status()["reached"]
             save({"set": {key: 1.0, "ai.daily_spend_warn_ratio": 0.5}})
-            assert spend_gate.ceiling_usd() == 1.0 and spend_gate.ceiling_status()["reached"]  # an alert (D-250)
+            assert spend_gate.ceiling_usd() == 1.0 and spend_gate.ceiling_status()["reached"]  # an alert (D-251)
             assert spend_gate.ceiling_status()["ceiling_usd"] == 1.0
     finally:
         spend_gate.configure_ceiling(None, read=None)

@@ -1,4 +1,4 @@
-"""PRE-502 R1/R2 (#369), R2 as restated by D-250: what must be in force on a public runtime. Bounded AI spend - every
+"""PRE-502 R1/R2 (#369), R2 as restated by D-251: what must be in force on a public runtime. Bounded AI spend - every
 plan's per-learner daily AI cost cap and the system spend monitor's alert threshold (AI_DAILY_SPEND_CEILING_USD, which
 alerts and never refuses); the retention sweeps behind the periods the policy states (Orena Memory 180 days, agent
 activity 90 days, feedback 24 months). A public runtime refuses to start without either half of the first; every public
@@ -27,7 +27,7 @@ def test_everything_in_force_means_no_unmet_promise():
 
 
 def test_a_zero_ceiling_is_a_ceiling():
-    """$0 alerts from the first paid call: stricter, not missing (D-250: it never refuses one)."""
+    """$0 alerts from the first paid call: stricter, not missing (D-251: it never refuses one)."""
     assert unmet_promises({**KEPT, "AI_DAILY_SPEND_CEILING_USD": "0"}, policy(ON)) == []
 
 
@@ -110,7 +110,7 @@ def test_admin_readiness_lists_the_unmet_promises_by_name(monkeypatch):
     assert all(set(p) == {"code", "message"} for p in summary["unmet_promises"])
 
 
-# ============================================================================== D-250: per-learner caps at start ==
+# ============================================================================== D-251: per-learner caps at start ==
 
 @pytest.mark.parametrize("missing", ["ai.learner_cost.daily_usd_free", "ai.learner_cost.daily_usd_plus",
                                      "ai.learner_cost.daily_usd_pro"])

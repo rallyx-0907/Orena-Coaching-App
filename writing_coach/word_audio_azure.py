@@ -184,7 +184,7 @@ class AzureVoice:
             return None
         from writing_coach.ai import spend_gate
 
-        spend_gate.observe()  # the system's daily AI spend monitor (D-250): it alerts, it never refuses
+        spend_gate.observe()  # the system's daily AI spend monitor (D-251): it alerts, it never refuses
         # PR-MON-7D2: a fresh synthesis is `audio.tts` (characters), admitted only here - after the cache and the free
         # voices missed - so cached, stored and catalogue audio is never charged. Pending: the no-op until its limits.
         from writing_coach.billing.funding_context import require_paid

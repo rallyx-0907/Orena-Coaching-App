@@ -1,4 +1,4 @@
-"""Each learner's own daily AI cost cap, by plan (D-250; D-248 point 2's hidden per-learner ceiling).
+"""Each learner's own daily AI cost cap, by plan (D-251; D-248 point 2's hidden per-learner ceiling).
 
 Owner, 2026-10-21: "không có trần chung cho app, chỉ có trần cho từng người dùng theo gói". There is no app-wide cap that
 pauses AI for every learner; a limit applies to one learner, by the learner's plan. One heavy learner never slows or

@@ -55,7 +55,7 @@ A policy resolves in this order, highest first:
 
 **Safety fuses** work differently (BQ, owner 2026-10-20: Admin may tighten, never loosen):
 
-- **`ai.daily_spend_ceiling_usd`.** Since D-250 this is the system spend **monitor's alert threshold**, never a block.
+- **`ai.daily_spend_ceiling_usd`.** Since D-251 this is the system spend **monitor's alert threshold**, never a block.
   `AI_DAILY_SPEND_CEILING_USD` is its hard maximum, not a lock. The threshold in force is the lower of the two. Admin
   refuses a value above the environment. With no Admin value, the environment's threshold applies. Every public runtime
   (staging and production) refuses to start without the environment value, and an Admin value alone never counts.
@@ -101,7 +101,7 @@ These refuse to start:
   `SESSION_SECRET` must be at least 32 characters, and `GOOGLE_REDIRECT_URI` must share the origin.
 - **In staging and production:** every plan's per-learner daily AI cost cap must resolve to more than 0
   (`ai.learner_cost.daily_usd_free`, `_plus`, `_pro`, and `ai.learner_cost.hard_ratio` at least 1), and
-  `AI_DAILY_SPEND_CEILING_USD` (the monitor's alert threshold) must be set (D-250, PRE-502 R2).
+  `AI_DAILY_SPEND_CEILING_USD` (the monitor's alert threshold) must be set (D-251, PRE-502 R2).
 - **In production only:** `LEGAL_EFFECTIVE_DATE` must be set.
 - **Everywhere:** an unclear value is refused rather than guessed for the retention sweep variables,
   `AI_DAILY_SPEND_CEILING_USD`, `AI_DAILY_SPEND_WARN_RATIO`, `AGENT_LEARNER_PACK`, `AGENT_PROMPT_LAYOUT`,
@@ -123,7 +123,7 @@ else the Admin policy.
 
 ## 2. Spend caps and AI budget
 
-**D-250 (owner, 2026-10-21): no app-wide cap, only a cap per learner by plan.** Nothing below pauses AI for every
+**D-251 (owner, 2026-10-21): no app-wide cap, only a cap per learner by plan.** Nothing below pauses AI for every
 learner because of the whole system's spend. Each learner has a daily AI cost cap by plan, counted from the per-account
 ledger (`ai_cost_records`): at the cap their paid calls go to the economy model, at the cap x the hard ratio only free
 and local models answer them, and a request with nothing else is 429 `quota_exhausted` (feature `ai.daily_cost`, no
@@ -136,12 +136,12 @@ are counted separately.
 
 | Name | Set in | Type / range | Default | Meaning | Raise / lower | Pilot | Production | Risk if wrong | Related | Applies |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `AI_DAILY_SPEND_CEILING_USD` | env, **(c)** | USD ≥ 0; unset = no monitor (development only) | unset | The system spend **monitor's alert threshold** on the whole AI ledger per UTC day (D-250). At it: a high-severity alert in the log, the provider health signal and Admin. It never refuses or pauses AI. | Raise: a later alert. Lower: an earlier one. | **2** (owner, 2026-10-20); required at start | Required at start. Size it from the cost model. | Unset: no alert. Too low: alerts every day. | `ai.daily_spend_ceiling_usd`, `ai.learner_cost.*` | restart |
+| `AI_DAILY_SPEND_CEILING_USD` | env, **(c)** | USD ≥ 0; unset = no monitor (development only) | unset | The system spend **monitor's alert threshold** on the whole AI ledger per UTC day (D-251). At it: a high-severity alert in the log, the provider health signal and Admin. It never refuses or pauses AI. | Raise: a later alert. Lower: an earlier one. | **2** (owner, 2026-10-20); required at start | Required at start. Size it from the cost model. | Unset: no alert. Too low: alerts every day. | `ai.daily_spend_ceiling_usd`, `ai.learner_cost.*` | restart |
 | `ai.daily_spend_ceiling_usd` | Admin › Policies › Spend caps, **(c)** lower-only | USD 0–10 000, or empty; never above the env value; confirm above 50 or empty | empty (the env threshold) | Lowers the monitor's alert threshold without a restart. The threshold in force is the lower of this and the env value. | Lower: an earlier alert. Raising past the env value is refused. | empty | empty | 0 alerts from the first paid call. | env threshold | live |
 | `ai.daily_spend_warn_ratio` | Admin › Spend caps; pin `AI_DAILY_SPEND_WARN_RATIO` | 0.05–1 | 0.8 | The share of the threshold at which a warning is logged and shown in Admin. | Raise: a later warning. Lower: an earlier one. | 0.8, in Admin (unpinned) | 0.7–0.8 | Too high leaves no time to react. | threshold | live (Admin); restart (pin) |
-| `ai.learner_cost.daily_usd_free` | Admin › Spend caps | USD 0.001–10; confirm above 1 | 0.02 | One Free learner's AI cost per UTC day (D-250, D-248 §2). At it their paid calls go to the economy model. Hidden from learners. | Raise: more paid AI per Free learner. | 0.02 | 0.02 | Too high: Free costs more than planned. | `hard_ratio`, `economy_model` | live |
+| `ai.learner_cost.daily_usd_free` | Admin › Spend caps | USD 0.001–10; confirm above 1 | 0.02 | One Free learner's AI cost per UTC day (D-251, D-248 §2). At it their paid calls go to the economy model. Hidden from learners. | Raise: more paid AI per Free learner. | 0.02 | 0.02 | Too high: Free costs more than planned. | `hard_ratio`, `economy_model` | live |
 | `ai.learner_cost.daily_usd_plus`, `_pro` | Admin › Spend caps | USD 0.001–10; confirm above 1 | Plus ≈0.0608, Pro ≈0.1223: 60% of 79.000 / 159.000 VND over 30 days at `vnd_per_usd` | One Plus / Pro learner's AI cost per UTC day. Until Admin stores a value it follows the formula at the current rate and share. | Raise: more AI per paying learner. | the formula | the formula, revisited with real costs | Too high: a plan costs more than it earns. | `vnd_per_usd`, `revenue_share` | live |
-| `ai.learner_cost.vnd_per_usd` | Admin › Spend caps | 10 000–50 000 | 26 000 | The VND→USD rate the Plus and Pro defaults are derived with (an assumption, D-250). | Raise: lower USD caps. | 26 000 | the current rate | Wrong: caps drift from 60% of revenue. | plan caps | live |
+| `ai.learner_cost.vnd_per_usd` | Admin › Spend caps | 10 000–50 000 | 26 000 | The VND→USD rate the Plus and Pro defaults are derived with (an assumption, D-251). | Raise: lower USD caps. | 26 000 | the current rate | Wrong: caps drift from 60% of revenue. | plan caps | live |
 | `ai.learner_cost.revenue_share` | Admin › Spend caps | 0.05–1; confirm above 0.8 | 0.6 | The share of a plan's monthly price its learner's AI may cost (D-248: 60% of net revenue; gross list price used until net is known). | Raise: more AI per learner. | 0.6 | owner | Above 1 is a loss per learner. | plan caps | live |
 | `ai.learner_cost.hard_ratio` | Admin › Spend caps | 1–5; confirm above 3 | 1.5 | The hard ceiling as a multiple of the learner's cap: at it only free and local models answer that learner until UTC midnight. | Raise: the economy model answers longer. | 1.5 | 1.5 | Below 1 is refused at start. | plan caps | live |
 | `ai.learner_cost.economy_model` | Admin › Spend caps | `gemini/gemini-3.1-flash-lite`, `gemini/gemini-3.5-flash-lite`, `none` | `gemini/gemini-3.1-flash-lite` | The paid model a learner's calls use between the cap and the hard ceiling. `none`: only free and local models. | — | default | default | A model the provider does not offer leaves only free rungs. | plan caps | live |
@@ -153,9 +153,9 @@ are counted separately.
 | `media.ai_usd_per_million_tokens` | Admin; pin `MEDIA_AI_USD_PER_MILLION_TOKENS` | 0.001–1 000 | 1.0 | Price estimate for media AI tokens of an unpriced model. | As above. | 1.0 | the real blended price | As above. | media caps | live |
 | `media.supadata_daily_requests` | Admin; pin `MEDIA_SUPADATA_DAILY_REQUESTS` | 0–1 000 (0 = off) | 20 | Most Supadata caption requests per UTC day (credits). | Raise: more fallback captions. | 20 | per plan credits | Too high: credits run out. | `media.caption_source` | live |
 | `word_tts.spend_cap_usd` | Admin; pin `WORD_TTS_SPEND_CAP_USD` | USD 0–1 000; confirm above 50 | 5 | Lifetime cap on Azure word-audio synthesis. | Lower: the local or device voice answers sooner. | 1 | 5 | Low; a fallback voice is used. | `KOKORO_TTS_URL` | live |
-| `word_translation.daily_spend_cap_usd` | Admin; pin `WORD_TRANSLATION_DAILY_SPEND_CAP_USD` | 0–100; confirm above 5 | 0.5 | Daily cap on the paid standby of word translation, **per learner** (D-250; background work with no account: the capability's total). At the cap only the free pool answers. | Raise: more paid fallback. | **0.25**, capability on (owner) | 0.25–2 | 0: a tap can fail while the free pool is busy. | `word_translation` capability | live |
-| `word_sense_choice.daily_spend_cap_usd` | Admin; pin `WORD_SENSE_CHOICE_DAILY_SPEND_CAP_USD` | 0–100; confirm above 5 | 0.25 | Daily cap on the paid rungs of choosing a word's sense in context, per learner (D-250). | As above. | **0.25**, capability on (owner) | 0.25–1 | 0: the neutral sense is shown. | `word_sense_choice` capability | live |
-| `writing_evaluator.`, `writing_improver.`, `text_discussion.daily_spend_cap_usd` | Admin; pins `WRITING_EVALUATOR_…`, `WRITING_IMPROVER_…`, `TEXT_DISCUSSION_DAILY_SPEND_CAP_USD` | 0–100; confirm above 5 | 0 (no paid backup) | Daily cap of a routed capability's reviewed paid backup, per learner (D-250). Applies only while the capability is in `ORENA_CAPABILITY_ROUTING`. | Raise: a paid backup may answer. | 0 (owner, H7-8) | owner | Above 0 with an unreviewed backup costs money. | `ORENA_CAPABILITY_ROUTING` | live |
+| `word_translation.daily_spend_cap_usd` | Admin; pin `WORD_TRANSLATION_DAILY_SPEND_CAP_USD` | 0–100; confirm above 5 | 0.5 | Daily cap on the paid standby of word translation, **per learner** (D-251; background work with no account: the capability's total). At the cap only the free pool answers. | Raise: more paid fallback. | **0.25**, capability on (owner) | 0.25–2 | 0: a tap can fail while the free pool is busy. | `word_translation` capability | live |
+| `word_sense_choice.daily_spend_cap_usd` | Admin; pin `WORD_SENSE_CHOICE_DAILY_SPEND_CAP_USD` | 0–100; confirm above 5 | 0.25 | Daily cap on the paid rungs of choosing a word's sense in context, per learner (D-251). | As above. | **0.25**, capability on (owner) | 0.25–1 | 0: the neutral sense is shown. | `word_sense_choice` capability | live |
+| `writing_evaluator.`, `writing_improver.`, `text_discussion.daily_spend_cap_usd` | Admin; pins `WRITING_EVALUATOR_…`, `WRITING_IMPROVER_…`, `TEXT_DISCUSSION_DAILY_SPEND_CAP_USD` | 0–100; confirm above 5 | 0 (no paid backup) | Daily cap of a routed capability's reviewed paid backup, per learner (D-251). Applies only while the capability is in `ORENA_CAPABILITY_ROUTING`. | Raise: a paid backup may answer. | 0 (owner, H7-8) | owner | Above 0 with an unreviewed backup costs money. | `ORENA_CAPABILITY_ROUTING` | live |
 | `cost.free_tier.groq`, `.supadata`, `.gemini` | Admin › Spend caps | bool | on / on / off | Marks a provider account as on a free plan. Cost events are stamped and reported apart from real spend. It never zeroes a cap. | Switch when the account plan changes. | match the real accounts | off for every paid account | Wrong: the cost report mislabels spend. | Admin › AI › Costs | live |
 | `FUNDING_ENFORCEMENT` | env, **(c)** | off / log / enforce | off | Paid-provider backstop: no funded admission means no paid call (PR-MON-6). | Stricter: log, then enforce. | off | enforce once billing is live | Enforce before admissions exist refuses paid AI. | `ORENA_FUNDING_ADMISSIONS` | restart |
 
@@ -328,7 +328,7 @@ Do these in order on the runtime being promoted. Each step names where the value
 
 1. `APP_ENV=production`, with an HTTPS `PUBLIC_BASE_URL`, complete Google OAuth, a 32+ character `SESSION_SECRET` and
    `LEGAL_EFFECTIVE_DATE`. The app refuses to start without them.
-2. `AI_DAILY_SPEND_CEILING_USD` (the spend monitor's alert threshold, D-250) set from the cost model. Staging and
+2. `AI_DAILY_SPEND_CEILING_USD` (the spend monitor's alert threshold, D-251) set from the cost model. Staging and
    production refuse to start without it and without the per-learner caps. (Pilot: 2; it now alerts, never pauses AI.)
 3. `ORENA_QUOTA_ENFORCEMENT=on` and `ORENA_QUOTA_METERS` listing every wired meter.
 4. Secrets present for the providers in use, `AI_PROVIDER_SECRETS_KEY` and `AGENT_MEMORY_HMAC_KEYS`.

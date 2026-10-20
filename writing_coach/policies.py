@@ -184,13 +184,13 @@ POLICIES: tuple[Policy, ...] = (
     _p("admin_audit.retention_sweep", "feedback", "bool", False, env="ADMIN_AUDIT_RETENTION_SWEEP", danger="delete",
        promise=True),
     # --- spend caps
-    # The system daily AI spend MONITOR's alert threshold (ai/spend_gate.py, D-250: it alerts, it never refuses).
+    # The system daily AI spend MONITOR's alert threshold (ai/spend_gate.py, D-251: it alerts, it never refuses).
     # AI_DAILY_SPEND_CEILING_USD is its maximum: the threshold in force is the lower of it and this value, so Admin can
     # only lower it; production still requires the environment value at start (core/published_promises.py). Empty: the
     # environment's threshold.
     _p("ai.daily_spend_ceiling_usd", "spend", "float", None, unit="usd", low=0, high=10_000, nullable=True,
        env_max="AI_DAILY_SPEND_CEILING_USD", confirm_above=50),
-    # Each learner's own daily AI cost cap, by plan (D-250; D-248 point 2, ai/learner_cost.py), counted from the
+    # Each learner's own daily AI cost cap, by plan (D-251; D-248 point 2, ai/learner_cost.py), counted from the
     # per-account ledger. At the cap a paid call goes to the economy model; at the cap x the hard ratio only free and
     # local models answer. Plus and Pro default to D-248's 60% of the monthly price (79.000 / 159.000 VND) over 30 days
     # at `ai.learner_cost.vnd_per_usd`; a value stored here replaces that formula. Hidden from learners.
@@ -224,16 +224,16 @@ POLICIES: tuple[Policy, ...] = (
     _p("word_tts.spend_cap_usd", "spend", "float", 5.0, unit="usd", low=0, high=1000, env="WORD_TTS_SPEND_CAP_USD",
        env_min=0, confirm_above=50),
     # The paid standby of `word_translation` (D-195 amendment 2026-10-14): the most it may spend in a UTC day FOR ONE
-    # LEARNER (D-250; background work with no account is measured over the capability). At the cap, or at 0, the
+    # LEARNER (D-251; background work with no account is measured over the capability). At the cap, or at 0, the
     # capability falls back to its free pool only; an unreadable ledger counts as the cap reached.
     _p("word_translation.daily_spend_cap_usd", "spend", "float", 0.5, unit="usd", low=0, high=100,
        env="WORD_TRANSLATION_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
     # D-228 (PROPOSED): the paid rungs of `word_sense_choice` (the sentence-aware choice among a word's stored senses): the
-    # most they may spend in a UTC day for one learner (D-250), counted at list price. At the cap, or at 0, only the
+    # most they may spend in a UTC day for one learner (D-251), counted at list price. At the cap, or at 0, only the
     # free-tier rungs are asked; with none, the tap keeps its neutral sense.
     _p("word_sense_choice.daily_spend_cap_usd", "spend", "float", 0.25, unit="usd", low=0, high=100,
        env="WORD_SENSE_CHOICE_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),
-    # PR-MON-7A-first: the daily cap of each routed capability's reviewed paid backup, per learner since D-250. 0 (the
+    # PR-MON-7A-first: the daily cap of each routed capability's reviewed paid backup, per learner since D-251. 0 (the
     # default) = no paid backup: the chain stops at its reviewed primary. The numbers are the owner's (H7-8).
     _p("writing_evaluator.daily_spend_cap_usd", "spend", "float", 0.0, unit="usd", low=0, high=100,
        env="WRITING_EVALUATOR_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=5),

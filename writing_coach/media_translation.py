@@ -398,7 +398,7 @@ class TranslationProviderError(RuntimeError):
 
 
 def _below_ceiling() -> None:
-    """Tick the system's daily AI spend monitor before a paid Groq request (ai/spend_gate.py). Since D-250 it alerts and
+    """Tick the system's daily AI spend monitor before a paid Groq request (ai/spend_gate.py). Since D-251 it alerts and
     never refuses: no app-wide cap stops a learner's translation."""
     from writing_coach.ai import spend_gate
 
