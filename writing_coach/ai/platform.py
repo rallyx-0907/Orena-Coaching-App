@@ -735,6 +735,8 @@ def _with_fallback(first: tuple[str, str] | None, first_id: tuple[str, str] | No
     except (AICapabilityError, AIProviderError) as exc:
         if isinstance(exc, AICapabilityError) and not isinstance(exc, AIProviderUnavailable):
             raise  # a configuration refusal is not fixed by asking someone else
+        if isinstance(exc, spend_gate.SpendCeilingReached):
+            raise  # the system's own daily ceiling: every paid rung is refused alike
         _logger.warning("agent first rung failed before answering (%s); falling back to %s", type(exc).__name__,
                      fallback[0])  # fmt: skip
         switch = {"from": first_id[0] if first_id else None, "to": fallback[0],
@@ -742,8 +744,11 @@ def _with_fallback(first: tuple[str, str] | None, first_id: tuple[str, str] | No
         return _agent_round(route=fallback, switch=switch, **kwargs)
 
     def chained() -> Iterator[ChatStreamEvent]:
-        yield head
-        yield from events
+        try:
+            yield head
+            yield from events
+        finally:
+            events.close()
 
     return chained()
 
@@ -804,7 +809,8 @@ def _agent_round(
         if provider_id:
             if outcome == "success":
                 _routing.provider_health.record_success(provider_id, model)
-            elif error is not None and _routing.classify(error) == "availability":
+            elif (error is not None and _routing.classify(error) == "availability"
+                  and not isinstance(error, spend_gate.SpendCeilingReached)):  # our ceiling, not the provider's fault
                 _routing.provider_health.record_failure(provider_id, failure_class_of(error), model)
 
     try:

@@ -56,6 +56,44 @@ def test_a_spend_capped_first_rung_falls_back_and_the_switch_is_recorded(rig):
     assert telemetry[-1]["provider_switch"]["trigger"] == "down"
 
 
+def test_both_rungs_failing_fail_the_round_and_both_are_recorded(rig):
+    telemetry, items = rig
+    items["gemini"] = Selected(fail=spend_cap(), provider_id="gemini")
+    second = AIProviderError("DeepSeek API returned HTTP 503.")
+    second.status_code = 503
+    items["deepseek"] = Selected(fail=second, provider_id="deepseek")
+    with pytest.raises(AIProviderError):
+        list(turn())
+    assert [(r["provider"], r["outcome"]) for r in telemetry] == [("gemini", "failure"), ("deepseek", "failure")]
+
+
+def test_our_own_daily_ceiling_is_no_provider_failure_and_no_fallback(rig, monkeypatch):
+    from writing_coach.ai import spend_gate
+
+    _telemetry, items = rig
+
+    def ceiling(*args, **kwargs):
+        raise spend_gate.SpendCeilingReached()
+
+    monkeypatch.setattr(platform, "_require_paid_funding", ceiling)
+    items["gemini"] = Selected(events=ANSWER, provider_id="gemini")
+    items["deepseek"] = Selected(events=ANSWER, provider_id="deepseek")
+    with pytest.raises(spend_gate.SpendCeilingReached):
+        list(turn())
+    assert items["deepseek"].calls == []  # not tried: the ceiling refuses every paid rung alike
+    assert routing.provider_health.is_available("gemini", FIRST[1])  # and Gemini is not blamed
+
+
+def test_a_free_model_is_never_the_agents_fallback(rig, monkeypatch):
+    """D-104 in `agent_fallback_route` itself: a provider that takes agent turns, but a zero-rated (free-tier) model."""
+    _telemetry, items = rig
+    monkeypatch.setattr(platform, "_platform_repository", None)
+    items["groq"] = Selected(provider_id="groq")
+    monkeypatch.setattr(platform, "check_model_allowed", lambda *a: None)
+    monkeypatch.setenv(platform.AGENT_FALLBACK_ENV, "groq:llama-3.1-8b-instant")
+    assert platform.agent_fallback_route() is None
+
+
 def test_no_fallback_once_the_first_rung_has_answered_anything(rig):
     telemetry, items = rig
 
