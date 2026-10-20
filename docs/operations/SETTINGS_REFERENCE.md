@@ -277,6 +277,7 @@ live.
 | `ORENA_ACCOUNT_BACKBONE`, `ORENA_PRACTICE_SESSION`, `ORENA_READING_PRACTICE_SUBMIT` | (b) gates tied to migrations | off | On for :8000 (backbone and practice session). |
 | `ORENA_LIMIT_IMPORT_TOMBSTONES` | (b) | 360 (floor 52) | A learner-record bound. |
 | `HF_HOME`, `TRANSFORMERS_OFFLINE`, `BASE_IMAGE`, `APP_VERSION`, `ORENA_BACKUP_DIR`, `CONTENT_PACK_LOG` | (b) container, build and scripts | — | Not read by the application. |
+| `daily_backup_8000.ps1` parameters (not environment): `-MinFreeRamGBDump`, `-MinFreeRamGB`, `-MinFreeDiskGB`, `-RetryUntil`, `-RetryEveryMinutes`, `-OffsiteDir`, `-OffsiteKeyFile`, `-OffsiteKeepCount`, `-VerifyOffsite`, `-NoOffsite`, `-DryRun` | (b) the :8000 backup task, set at registration | 0.8 GB; 2 GB; 5 GB; 06:00; 30 min; `%USERPROFILE%\OneDrive\Orena-Backups`; `%LOCALAPPDATA%\orena-product\offsite-backup.key` (path only, its content is (a)); 14 sets; off; off; off | Not read by the application. Meaning, exit codes and the re-registration command: `docs/project/RELEASE_8000_READINESS.md` section 12. |
 
 ## 9. Open decisions
 
