@@ -9,10 +9,9 @@ have no approved policy (ORENA_COMMERCE_ARCHITECTURE.md §3: missing policy bloc
 
 The resolver (`writing_coach.product.entitlement.resolve`) takes a `GracePolicy` as an input and knows no number;
 this module is where the number lives. The environment pins it (`BILLING_PAST_DUE_GRACE_HOURS`, 0..336); otherwise
-the human's 48 hours apply. A value that is not a whole number in range is ignored and logged, and the approved
-default applies - a typo never removes or extends a paying learner's grace silently past the human's value.
-Making it an Admin-edited policy (`writing_coach/policies.py`, D-172) needs the Admin page's EN/VI/ZH copy, owned by
-the UI lane; it is a recorded follow-up, not part of PR-MON-1.
+Admin's `billing.past_due_grace_hours` policy applies (BQ, D-172), and without one the human's 48 hours. A variable
+that is not a whole number in range is ignored and logged, and the approved default applies - a typo never removes or
+extends a paying learner's grace silently past the human's value.
 """
 from __future__ import annotations
 
@@ -45,10 +44,18 @@ class GracePolicy:
 NO_GRACE = GracePolicy()
 
 
+POLICY = "billing.past_due_grace_hours"
+
+
 def past_due_hours(env: Mapping[str, str] | None = None) -> int:
+    """`env` given (tests): that environment only. None: the process environment's pin, else the Admin policy."""
     raw = (env if env is not None else os.environ).get(ENV)
     if raw is None or not str(raw).strip():
-        return DEFAULT_PAST_DUE_HOURS
+        if env is not None:
+            return DEFAULT_PAST_DUE_HOURS
+        from writing_coach import policies
+
+        return int(policies.value(POLICY))  # validated 0..336 by the registry; the default is the human's 48
     try:
         hours = int(str(raw).strip())
     except ValueError:
@@ -61,6 +68,7 @@ def past_due_hours(env: Mapping[str, str] | None = None) -> int:
 
 
 def current(env: Mapping[str, str] | None = None) -> GracePolicy:
-    """The grace policy in force now (read when a plan is resolved, so an environment change applies on restart)."""
+    """The grace policy in force now, read when a plan is resolved: an Admin change applies within seconds, an
+    environment change on restart."""
     window = timedelta(hours=past_due_hours(env))
     return GracePolicy({provider: {"past_due": window} for provider in GRACE_PROVIDERS})

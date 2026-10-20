@@ -17,10 +17,13 @@ requested; a backbone that then fails to start makes the item an over-report, ne
 
 `enforce_at_start`:
 - On a public runtime (staging, production), it logs each unmet promise as an ERROR.
-- Production also refuses to start without a ceiling.
+- Every public runtime refuses to start without a ceiling in the environment (review of #428: the pilot runs like
+  production). An Admin ceiling (`ai.daily_spend_ceiling_usd`) can only lower it and never counts as the promise.
 
-The sweeps are logged rather than refused (two are Admin-tunable at runtime, D-172; the others are env-only). Admin's readiness summary shows the
-same list (`unmet_promises`). Development says nothing. No value is printed, only the names.
+The sweeps are logged rather than refused. Each is an Admin policy its variable can pin (D-172, BQ), so this reads the
+variable when it is set and the policy otherwise. On a public runtime a promised sweep is ON by default and Admin can
+never turn it off (policies.py `promise`, `default_for`), so only an explicit `off` pin leaves one off - an environment
+decision, logged here as an ERROR. Admin's readiness summary shows the same list (`unmet_promises`). Development says nothing. No value is printed, only the names.
 """
 
 from __future__ import annotations
@@ -66,6 +69,20 @@ def _policy_on(policy: Callable[[str], Any], key: str) -> bool:
         return False
 
 
+def _sweep_on(values: Mapping[str, str], policy: Callable[[str], Any], name: str, key: str) -> bool:
+    """A sweep that is a policy its variable pins (BQ): the variable when it is set, else the policy's value - the
+    precedence `policies.value` applies, read from the environment this check was given."""
+    if str(values.get(name, "")).strip():
+        return _switch_on(values, name)
+    return _policy_on(policy, key)
+
+
+def _ceiling_in_force(values: Mapping[str, str], policy: Callable[[str], Any]) -> bool:
+    """The promise is the environment's ceiling (review of #428): Admin's `ai.daily_spend_ceiling_usd` can only lower
+    it and can be cleared at any time, so an Admin ceiling alone never counts as the promise kept."""
+    return _ceiling_set(values)
+
+
 def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
     """The published promises not in force with this environment and these policy values (`policy(key)`)."""
 
@@ -73,14 +90,14 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
     from writing_coach.agent.memory_runtime import MEMORY_SWEEP_SWITCH
 
     problems: list[UnmetPromise] = []
-    if not _ceiling_set(values):
+    if not _ceiling_in_force(values, policy):
         problems.append(UnmetPromise("spend_ceiling_unset",
                                      "AI_DAILY_SPEND_CEILING_USD is not set: there is no system daily AI spend ceiling"))
     from writing_coach.account_backbone import requested as backbone_requested
 
     # Orena Memory exists only with its keys and the account backbone (MemoryRuntime.from_env); not otherwise.
     memory = bool(str(values.get("AGENT_MEMORY_HMAC_KEYS", "")).strip()) and backbone_requested(values)
-    if memory and not _switch_on(values, MEMORY_SWEEP_SWITCH):
+    if memory and not _sweep_on(values, policy, MEMORY_SWEEP_SWITCH, "agent.memory_retention_sweep"):
         problems.append(UnmetPromise("memory_retention_sweep_off",
                                      f"{MEMORY_SWEEP_SWITCH} is off: unused Orena Memory notes are hidden after 180 days"
                                      " but not deleted, as the Privacy Policy states"))
@@ -90,11 +107,11 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
                                      " Privacy Policy states"))
     from writing_coach.persistence.retention_sweeps import ADMIN_AUDIT_SWEEP_SWITCH, USAGE_SWEEP_SWITCH
 
-    if not _switch_on(values, USAGE_SWEEP_SWITCH):
+    if not _sweep_on(values, policy, USAGE_SWEEP_SWITCH, "usage.retention_sweep"):
         problems.append(UnmetPromise("usage_retention_sweep_off",
                                      f"{USAGE_SWEEP_SWITCH} is off: usage counts are kept past the 12 months the Privacy"
                                      " Policy states"))
-    if not _switch_on(values, ADMIN_AUDIT_SWEEP_SWITCH):
+    if not _sweep_on(values, policy, ADMIN_AUDIT_SWEEP_SWITCH, "admin_audit.retention_sweep"):
         problems.append(UnmetPromise("admin_audit_retention_sweep_off",
                                      f"{ADMIN_AUDIT_SWEEP_SWITCH} is off: records of administrative actions are kept past"
                                      " the 24 months the Privacy Policy states"))
@@ -106,8 +123,8 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
 
 
 def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
-    """At start. A public runtime logs each unmet promise as an ERROR, and production refuses to start without a
-    ceiling. Development returns nothing and logs nothing."""
+    """At start. A public runtime logs each unmet promise as an ERROR and refuses to start without the environment's
+    ceiling (production and staging alike). Development returns nothing and logs nothing."""
 
     app_env = environment_name(values.get("APP_ENV", "development"))
     if not is_public_environment(app_env):
@@ -115,6 +132,6 @@ def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) ->
     problems = unmet_promises(values, policy)
     for problem in problems:
         _log.error("published promise not in force (%s): %s", problem.code, problem.message)
-    if app_env == "production" and any(p.code == "spend_ceiling_unset" for p in problems):
-        raise RuntimeError("AI_DAILY_SPEND_CEILING_USD is required when APP_ENV=production (PRE-502 R2).")
+    if not _ceiling_set(values):  # the environment's fuse, whatever Admin holds; staging runs like production
+        raise RuntimeError(f"AI_DAILY_SPEND_CEILING_USD is required when APP_ENV={app_env} (PRE-502 R2).")
     return problems

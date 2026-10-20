@@ -76,17 +76,69 @@ def warn_ratio_from_env(environ: Mapping[str, str]) -> float:
     return value
 
 
-def configure_ceiling(cap_usd: float | None, *, read: Callable[[datetime], tuple[float, int]] | None,
-                      warn_ratio: float = DEFAULT_WARN_RATIO, **guard: Any) -> None:  # fmt: skip
-    """Install the system ceiling (`read`: the whole ledger's spend since a moment). A ceiling with nothing to read
-    refuses every paid call: it fails closed."""
+CEILING_POLICY = "ai.daily_spend_ceiling_usd"
+WARN_POLICY = "ai.daily_spend_warn_ratio"
+_ceiling_lock = threading.Lock()
+# (cap now, warn ratio now, ledger reader, guard options); None: no ceiling was installed.
+_ceiling_source: tuple[Callable[[], float | None], Callable[[], float], Callable[[datetime], tuple[float, int]],
+                       dict[str, Any]] | None = None
+_ceiling_key: tuple[float, float] | None = None
 
-    global _ceiling
-    if cap_usd is None:
-        _ceiling = None
-        return
-    reader = read if read is not None else _unreadable
-    _ceiling = DailySpendGuard(cap_usd=cap_usd, read=reader, warn_ratio=warn_ratio, label="system", **guard)
+
+def live_ceiling() -> float | None:
+    """The ceiling in force now (BQ): the lower of AI_DAILY_SPEND_CEILING_USD and Admin's `ai.daily_spend_ceiling_usd`
+    (policies.py reads both; Admin can only lower the environment's number). None: no ceiling."""
+    return policies.value(CEILING_POLICY)
+
+
+def live_warn_ratio() -> float:
+    return float(policies.value(WARN_POLICY))
+
+
+def configure_ceiling(cap_usd: float | None | Callable[[], float | None], *,
+                      read: Callable[[datetime], tuple[float, int]] | None,
+                      warn_ratio: float | Callable[[], float] = DEFAULT_WARN_RATIO, **guard: Any) -> None:  # fmt: skip
+    """Install the system ceiling (`read`: the whole ledger's spend since a moment). `cap_usd` and `warn_ratio` are a
+    number, or a callable read at each check (app.py: `live_ceiling`, `live_warn_ratio`, so an Admin change applies
+    without a restart). A ceiling with nothing to read refuses every paid call: it fails closed."""
+
+    global _ceiling, _ceiling_source, _ceiling_key
+    cap = cap_usd if callable(cap_usd) else (lambda fixed=cap_usd: fixed)
+    warn = warn_ratio if callable(warn_ratio) else (lambda fixed=warn_ratio: fixed)
+    with _ceiling_lock:
+        _ceiling_source = (cap, warn, read if read is not None else _unreadable, dict(guard))
+        _ceiling, _ceiling_key = None, None
+    _current_ceiling()
+
+
+def _current_ceiling() -> DailySpendGuard | None:
+    """The guard for the ceiling in force now; a changed number starts a fresh guard, so the 5-second verdict cache
+    never answers for the old one."""
+
+    global _ceiling, _ceiling_key
+    source = _ceiling_source
+    if source is None:
+        return None
+    cap_now, warn_now, reader, options = source
+    try:
+        cap = cap_now()
+    except Exception:  # noqa: BLE001 - keep the guard in force rather than drop the ceiling
+        _log.warning("system ceiling unreadable; keeping the last one", exc_info=True)
+        return _ceiling
+    if cap is None:
+        with _ceiling_lock:
+            _ceiling, _ceiling_key = None, None
+        return None
+    try:
+        ratio = float(warn_now())
+    except Exception:  # noqa: BLE001
+        ratio = DEFAULT_WARN_RATIO
+    key = (float(cap), ratio)
+    with _ceiling_lock:
+        if _ceiling is None or _ceiling_key != key:
+            _ceiling = DailySpendGuard(cap_usd=key[0], read=reader, warn_ratio=key[1], label="system", **options)
+            _ceiling_key = key
+        return _ceiling
 
 
 def _unreadable(since: datetime) -> tuple[float, int]:
@@ -94,7 +146,8 @@ def _unreadable(since: datetime) -> tuple[float, int]:
 
 
 def ceiling_usd() -> float | None:
-    return _ceiling.cap_usd if _ceiling is not None else None
+    guard = _current_ceiling()
+    return guard.cap_usd if guard is not None else None
 
 
 PAUSED_HEADER = "X-Orena-AI-Paused"
@@ -107,13 +160,14 @@ def _refusal(*, mark: bool = True) -> tuple[float, bool] | None:
     """The ceiling's verdict, marking the request as AI-paused when the limit is really reached (a fault is not).
     `mark=False`: a caller that answers anyway (a fallback that works) leaves the response unmarked."""
 
-    if _ceiling is None:
+    guard = _current_ceiling()
+    if guard is None:
         return None
-    refused = _ceiling.refusal()
+    refused = guard.refusal()
     if mark and refused is not None and not refused[1]:
         held = _request_mark.get()
         if held is not None:
-            status = _ceiling.status()  # the guard's own midnight, as the 429 body says it
+            status = guard.status()  # the guard's own midnight, as the 429 body says it
             resets = status.get("resets_at")
             if not resets:
                 moment = datetime.now(UTC) + timedelta(seconds=max(1, math.ceil(refused[0])))
@@ -167,9 +221,10 @@ def ceiling_reached(*, mark: bool = True) -> bool:
 
 
 def ceiling_status() -> dict[str, Any]:
-    if _ceiling is None:
+    guard = _current_ceiling()
+    if guard is None:
         return {"ceiling_usd": None}
-    status = _ceiling.status()
+    status = guard.status()
     return {"ceiling_usd": status.pop("cap_usd"), **status}
 
 

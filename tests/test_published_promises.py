@@ -72,13 +72,21 @@ def test_production_refuses_to_start_without_a_ceiling_and_logs_every_unmet_prom
 
 
 def test_staging_starts_but_logs_each_unmet_promise_as_an_error(caplog):
-    values = {**KEPT, "APP_ENV": "staging", "AI_DAILY_SPEND_CEILING_USD": ""}
+    values = {**KEPT, "APP_ENV": "staging", "USAGE_RETENTION_SWEEP": "off"}
     with caplog.at_level(logging.ERROR):
         problems = enforce_at_start(values, policy({**ON, "feedback.retention_sweep": False}))
-    assert {p.code for p in problems} == {"spend_ceiling_unset", "feedback_retention_sweep_off"}
+    assert {p.code for p in problems} == {"usage_retention_sweep_off", "feedback_retention_sweep_off"}
     errors = [r.getMessage() for r in caplog.records if r.levelno == logging.ERROR]
-    assert len(errors) == 2 and any("spend_ceiling_unset" in e for e in errors)
+    assert len(errors) == 2 and any("usage_retention_sweep_off" in e for e in errors)
     assert any("feedback_retention_sweep_off" in e for e in errors)
+
+
+@pytest.mark.parametrize("app_env", ["staging", "stage", "prod", "public", "Production"])
+def test_every_public_runtime_refuses_to_start_without_the_environment_ceiling(app_env):
+    """Review of #428: the pilot runs like production. An Admin ceiling can only lower the env's and can be cleared."""
+    values = {**KEPT, "APP_ENV": app_env, "AI_DAILY_SPEND_CEILING_USD": ""}
+    with pytest.raises(RuntimeError, match="AI_DAILY_SPEND_CEILING_USD"):
+        enforce_at_start(values, policy({**ON, "ai.daily_spend_ceiling_usd": 1.0}))
 
 
 def test_development_says_nothing(caplog):

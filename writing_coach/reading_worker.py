@@ -162,17 +162,22 @@ def main() -> int:  # pragma: no cover - process entry point
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
     threads = [threading.Thread(target=worker.run_forever, daemon=False) for worker in workers]
-    # Source polling shares the worker process: one thread, off when the
-    # interval is 0. It only queues jobs; the workers above process them.
+    # Source polling shares the worker process: one thread that only queues
+    # jobs; the workers above process them. BQ: the interval is the Admin
+    # policy `reading.source_poll_interval_seconds` (the variable pins it),
+    # read from the same platform settings the application writes, at every
+    # tick; 0 leaves the thread idle until it is raised again.
+    from writing_coach import policies
+    from writing_coach.persistence.platform_repository import PostgresPlatformRepository
     from writing_coach.reading_source_poller import ReadingSourcePoller, configured_interval
 
-    if configured_interval() > 0:
-        poller = ReadingSourcePoller(
-            content=ReadingContentRepository(database), jobs=jobs, engine=engine,
-            interval_seconds=configured_interval(),
-        )
-        threads.append(threading.Thread(
-            target=poller.run_forever, kwargs={"should_run": lambda: workers[0]._running}, daemon=True))
+    policies.configure(PostgresPlatformRepository(database))
+    poller = ReadingSourcePoller(
+        content=ReadingContentRepository(database), jobs=jobs, engine=engine,
+        interval_seconds=configured_interval,
+    )
+    threads.append(threading.Thread(
+        target=poller.run_forever, kwargs={"should_run": lambda: workers[0]._running}, daemon=True))
     for thread in threads:
         thread.start()
     for thread in threads:
