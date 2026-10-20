@@ -77,12 +77,27 @@ assert.deepEqual(legalAddress('#/legal/terms?lang=fr'), { page: 'terms' });
 assert.equal(legalAddress('#/legal/other'), null);
 assert.equal(legalAddress('#/today'), null);
 
-// The links to the public pages (D-238): one address for every language; "(English)" after the label outside English.
-const { legalHref, legalLabel } = await import('../static/orena/legal/links.js');
-for (const ui of ['en', 'vi', 'zh']) assert.equal(legalHref('/privacy', ui), '/privacy', 'the address carries no language');
-assert.equal(legalLabel('Privacy Policy', 'en'), 'Privacy Policy', 'no note in English');
-assert.equal(legalLabel('Chính sách quyền riêng tư', 'vi'), 'Chính sách quyền riêng tư (English)');
-assert.equal(legalLabel('隐私政策', 'zh'), '隐私政策 (English)');
+// The links to the public pages (D-238): one address for every language, and the label is only its own name -
+// no "(English)" note anywhere a legal link or page renders (#437).
+const links = await import('../static/orena/legal/links.js');
+for (const ui of ['en', 'vi', 'zh']) assert.equal(links.legalHref('/privacy', ui), '/privacy', 'the address carries no language');
+assert.deepEqual(Object.keys(links).sort(), ['legalHref'], 'no label helper adds a language note');
+{
+  const NOTE = /\(English\)|\(tiếng Anh\)|（英文）|\(英文\)/i;
+  const rendering = [
+    'static/orena/legal/links.js', 'static/orena/legal/page.js', 'static/orena/screens/consent/sheet.js',
+    'static/orena/screens/consent/copy.js', 'static/orena/screens/onboarding/screen.js', 'static/orena/screens/onboarding/copy.js',
+    'static/orena/screens/settings/screen.js', 'static/orena/screens/settings/copy.js', 'static/orena/screens/settings/model.js',
+    'scripts/build_orena_legal.mjs', 'scripts/build_public_pages.mjs', 'scripts/public_legal_static.mjs', 'scripts/public_legal_text.mjs',
+  ];
+  for (const file of rendering) assert.ok(!NOTE.test(fs.readFileSync(file, 'utf8')), `${file}: no "(English)" note`);
+  for (const dir of ['templates/orena', 'templates/orena/public']) {
+    if (!fs.existsSync(dir)) continue;
+    for (const name of fs.readdirSync(dir).filter((n) => n.endsWith('.html'))) {
+      assert.ok(!NOTE.test(fs.readFileSync(`${dir}/${name}`, 'utf8')), `${dir}/${name}: no "(English)" note`);
+    }
+  }
+}
 
 // The consent sheet and its copy carry no placeholder either (PRE-005 v2 fields are filled by the server, never shown as marks).
 for (const file of ['static/orena/screens/consent/copy.js', 'static/orena/screens/consent/sheet.js']) {
@@ -100,9 +115,13 @@ assert.ok(!/#[0-9a-f]{3,8}\b|rgba?\(/i.test(css), 'the legal column uses colour 
 
 console.log(`Orena legal pages: ${LEGAL_PAGES.length} pages, English only, content is the public text, no placeholder reaches a learner: PASS`);
 
-// Settings, Privacy: the three legal rows get the same "(English)" note through the same helper (D-238).
+// Settings, Privacy, the consent sheet and the sign-in line: the legal links show their translated name only (#437).
 {
   const { readFileSync } = await import('node:fs');
   const settings = readFileSync(new URL('../static/orena/screens/settings/screen.js', import.meta.url), 'utf8');
-  assert.match(settings, /legalLabel\(rowLabel\(row\), copyLanguages\(\)\.ui\)/, 'Settings legal rows use legalLabel');
+  assert.match(settings, /rel="noopener">\$\{rowLabel\(row\)\}<\/a>/, 'Settings legal rows show the row label only');
+  for (const file of ['settings/screen.js', 'consent/sheet.js', 'onboarding/screen.js']) {
+    const text = readFileSync(new URL(`../static/orena/screens/${file}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(text, /legalLabel|LEGAL_LANGUAGE_NOTE/, `${file}: no language note helper`);
+  }
 }

@@ -134,8 +134,8 @@ answer.calls = [];
   assert.match(sheet, /onClose: \(\) => settle\(false\)/, 'the scrim or Escape never allows recording');
   assert.match(sheet, /legalHref\('\/terms'\)/);
   assert.match(sheet, /legalHref\('\/privacy'\)/);
-  assert.match(sheet, /legalLabel\(t\('consentTerms'\), ui\)/, 'the Terms link says "(English)" outside an English interface');
-  assert.match(sheet, /legalLabel\(t\('consentPrivacy'\), ui\)/);
+  assert.match(sheet, /label: t\('consentTerms'\) \}/, 'the Terms link is its translated name, no "(English)" note (#437)');
+  assert.match(sheet, /label: t\('consentPrivacy'\) \}/);
   assert.doesNotMatch(sheet, /localStorage/, 'the answer lives on the server, not the device');
 }
 

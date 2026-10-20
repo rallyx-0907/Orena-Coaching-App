@@ -361,9 +361,11 @@ class ErrorEvent(Event):
         return self
 
 
-def error_event(error_class: str, *, interface: str, support: str, address: object = None) -> ErrorEvent:
+def error_event(
+    error_class: str, *, interface: str, support: str, address: object = None, copy_key: str | None = None
+) -> ErrorEvent:
     kind = ERROR_KINDS[error_class]
-    _, message = learner_copy.text(kind.copy_key, interface=interface, support=support, address=address)
+    _, message = learner_copy.text(copy_key or kind.copy_key, interface=interface, support=support, address=address)
     return ErrorEvent(error_class=kind.error_class, message=message, fallback=kind.fallback)
 
 
