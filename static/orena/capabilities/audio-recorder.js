@@ -4,6 +4,8 @@
    starts, so it is loaded then: {loadRnnoise,RnnoiseWorkletNode} arrive from
    the same module, just later. */
 
+import {sharedAudioContext} from './audio-context.js';
+
 const SPEECH_AUDIO_CONSTRAINTS={
   echoCancellation:{ideal:true},
   noiseSuppression:{ideal:false},
@@ -46,24 +48,31 @@ function stopTracks(stream){
 
 async function buildRnnoisePipeline(stream,{
   AudioContextCtor=globalThis.AudioContext||globalThis.webkitAudioContext,
+  sharedContext=null,
 }={}){
-  if(typeof AudioContextCtor!=='function')return null;
+  /* The context the learner's tap started (capabilities/audio-context.js) is used when there is one: on iOS Safari
+     only a context started in the tap runs. It belongs to the page and is never closed here; one made here is. */
+  const owned=!sharedContext;
+  if(owned&&typeof AudioContextCtor!=='function')return null;
 
-  let context;
-  try{
-    context=new AudioContextCtor({sampleRate:48000});
-  }catch{
-    context=new AudioContextCtor();
+  let context=sharedContext;
+  if(owned){
+    try{
+      context=new AudioContextCtor({sampleRate:48000});
+    }catch{
+      context=new AudioContextCtor();
+    }
   }
+  const release=async()=>{if(owned){try{await settle(context.close(),CLOSE_WAIT_MS);}catch{}}};
 
   if(context.sampleRate!==48000){
-    try{await context.close();}catch{}
+    await release();
     return null;
   }
   // Checked before anything is loaded, and again once the graph is built (below).
   if(context.state==='suspended')await settle(context.resume(),RESUME_WAIT_MS);
   if(context.state!=='running'){
-    try{await settle(context.close(),CLOSE_WAIT_MS);}catch{}
+    await release();
     console.warn('[Orena Speaking] audio context not running; using native microphone processing.',context.state);
     return null;
   }
@@ -129,9 +138,10 @@ async function buildRnnoisePipeline(stream,{
       compressor,
       destination,
       mode:'rnnoise-enhanced',
+      owned,
     };
   }catch(error){
-    try{await context.close();}catch{}
+    await release();
     console.warn('[Orena Speaking] RNNoise unavailable; using native microphone processing.',error);
     return null;
   }
@@ -150,6 +160,8 @@ export function createLocalAudioRecorder({
   URLApi=globalThis.URL,
   BlobCtor=globalThis.Blob,
   AudioContextCtor=globalThis.AudioContext||globalThis.webkitAudioContext,
+  sharedContext=sharedAudioContext,
+  stopWaitMs=STOP_WAIT_MS,
 }={}){
   let rawStream=null;
   let recordingStream=null;
@@ -185,8 +197,10 @@ export function createLocalAudioRecorder({
       try{processingPipeline.lowpass?.disconnect?.();}catch{}
       try{processingPipeline.gain?.disconnect?.();}catch{}
       try{processingPipeline.compressor?.disconnect?.();}catch{}
+      try{processingPipeline.destination?.disconnect?.();}catch{}
       try{processingPipeline.denoiser?.destroy?.();}catch{}
-      try{await settle(processingPipeline.context?.close?.(),CLOSE_WAIT_MS);}catch{}
+      // The page's shared context outlives the take; only a context this recorder made is closed.
+      if(processingPipeline.owned)try{await settle(processingPipeline.context?.close?.(),CLOSE_WAIT_MS);}catch{}
     }
     processingPipeline=null;
   };
@@ -231,7 +245,7 @@ export function createLocalAudioRecorder({
       const audioTrack=rawStream.getAudioTracks?.()[0];
       inputSettings=audioTrack?.getSettings?.()||null;
 
-      processingPipeline=await buildRnnoisePipeline(rawStream,{AudioContextCtor});
+      processingPipeline=await buildRnnoisePipeline(rawStream,{AudioContextCtor,sharedContext:sharedContext?.()||null});
       if(disposed){await shutdownCapture();return false;}
       if(processingPipeline){
         recordingStream=processingPipeline.stream;
@@ -285,7 +299,7 @@ export function createLocalAudioRecorder({
           error='recording_failed';
           finish(null);
         });
-      },STOP_WAIT_MS);
+      },stopWaitMs);
 
       activeRecorder.addEventListener('stop',async()=>{
         if(settled)return;

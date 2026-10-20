@@ -107,9 +107,43 @@ assert.deepEqual(revoked,['blob:local-speaking-take']);
 {
   const { STOP_WAIT_MS }=await import('../static/orena/capabilities/audio-recorder.js');
   assert.ok(STOP_WAIT_MS>=2000&&STOP_WAIT_MS<=6000,'a bounded wait, long enough for a real recorder');
-  const src=(await import('node:fs')).readFileSync(new URL('../static/orena/capabilities/audio-recorder.js',import.meta.url),'utf8');
-  assert.match(src,/watchdog=setTimeout\(/,'stop() is bounded by a watchdog');
-  assert.match(src,/error='recording_failed';\n\s+finish\(null\);/,'a recorder that never ends is reported as a failed take');
+  let tracksStopped=0;
+  const stream={getTracks:()=>[{stop(){tracksStopped+=1;}}]};
+  class SilentRecorder{
+    constructor(){this.state='inactive';this.mimeType='audio/mp4';}
+    addEventListener(){}
+    start(){this.state='recording';}
+    stop(){} // never fires 'stop', as seen on iOS Safari
+  }
+  const hung=createLocalAudioRecorder({mediaDevices:{async getUserMedia(){return stream;}},Recorder:SilentRecorder,URLApi,AudioContextCtor:null,sharedContext:()=>null,stopWaitMs:30});
+  assert.equal(await hung.start(),true);
+  assert.equal(await hung.stop(),null,'stop() returns instead of waiting for ever');
+  assert.equal(hung.snapshot().error,'recording_failed','reported as a failed recording, not as silence');
+  assert.equal(hung.snapshot().status,'error');
+  assert.equal(tracksStopped,1,'and the microphone is released');
+}
+
+/* The context the learner's tap started is used for the processing graph and never closed by the recorder. */
+{
+  let closed=0;
+  const shared={sampleRate:48000,state:'running',close(){closed+=1;return Promise.resolve();},resume(){return Promise.resolve();},
+    audioWorklet:{addModule:async()=>{throw new Error('no worklet in node');}}};
+  const devices={async getUserMedia(){return fakeStream;}};
+  const rec=createLocalAudioRecorder({mediaDevices:devices,Recorder:FakeRecorder,URLApi,AudioContextCtor:null,sharedContext:()=>shared});
+  assert.equal(await rec.start(),true);
+  assert.equal(closed,0,'the shared context is not closed when the noise suppressor cannot load');
+  await rec.stop();
+  assert.equal(closed,0,'nor when the take ends');
+  const { tapAudioContext, sharedAudioContext, resetSharedAudioContext }=await import('../static/orena/capabilities/audio-context.js');
+  resetSharedAudioContext();
+  let resumed=0;
+  class TapContext{constructor(options){this.sampleRate=options?.sampleRate||44100;this.state='suspended';}resume(){resumed+=1;this.state='running';return Promise.resolve();}}
+  const made=tapAudioContext({Ctor:TapContext});
+  assert.equal(made.sampleRate,48000);
+  assert.equal(resumed,1,'resumed inside the tap, without waiting');
+  assert.equal(tapAudioContext({Ctor:TapContext}),made,'one context for the page');
+  assert.equal(sharedAudioContext(),made);
+  resetSharedAudioContext();
 }
 
 const unsupported=createLocalAudioRecorder({mediaDevices:null,Recorder:null,URLApi});

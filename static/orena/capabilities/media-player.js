@@ -174,15 +174,31 @@ function destroyController(root){
    look-ahead: the next clock tick comes back before then. The delay is in wall time, so a faster rate
    reaches the boundary sooner. */
 export const SEGMENT_END_LOOKAHEAD_MS=300;
+// A line stops at, or just before, its end - never after it (#440).
+export const SEGMENT_END_EARLY_MS=30;
 const SEEK_SETTLE_MS=400;
 export function segmentEndDelay({holdEndMs=null,segmentEndMs=null}={},timeMs,rate=1,playing=true){
   const at=Number(timeMs),speed=Number(rate)>0?Number(rate):1;
   if(!playing||!Number.isFinite(at))return null;
-  const ends=[holdEndMs,segmentEndMs].map(Number).filter(end=>Number.isFinite(end)&&end>at);
+  const ends=[holdEndMs,segmentEndMs].map(Number).filter(end=>Number.isFinite(end)&&end-SEGMENT_END_EARLY_MS>at);
   if(!ends.length)return null;
-  const wait=(Math.min(...ends)-at)/speed;
+  const wait=(Math.min(...ends)-SEGMENT_END_EARLY_MS-at)/speed;
   return wait<=SEGMENT_END_LOOKAHEAD_MS?Math.max(0,Math.round(wait)):null;
 }
+
+/* Where playback really is. The YouTube embed reports its time in steps, so between two reports the same,
+   already-old position is read again and again: a pause planned from it lands late (#440). While playing,
+   the position is the last reported one plus the wall time since it was reported (performance.now), at the
+   playback rate, never less than what is reported and never extrapolated past MAX_EXTRAPOLATE_MS (a stall).
+   Pure: `clock` is the last report ({ms, at}); the result carries the clock to keep. */
+export const MAX_EXTRAPOLATE_MS=1000;
+export function playbackEstimate(clock,reportedMs,{playing=true,rate=1,nowMs=0}={}){
+  const reported=Number(reportedMs),now=Number(nowMs),speed=Number(rate)>0?Number(rate):1;
+  if(!playing||!clock||clock.ms!==reported||!Number.isFinite(clock.at))return {ms:reported,clock:{ms:reported,at:now}};
+  const elapsed=Math.min(MAX_EXTRAPOLATE_MS,Math.max(0,now-clock.at));
+  return {ms:Math.max(reported,clock.ms+elapsed*speed),clock};
+}
+const perfNow=()=>globalThis.performance?.now?.()??Date.now();
 
 /* The clock polls every 125 ms, so a line used to stop up to a tick (plus the embed's own clock lag) after its
    end - the next line's first words under this line's text (#440). Near the end, the pause is scheduled for the
@@ -194,6 +210,7 @@ function armSegmentEnd(root,controller,timeMs,playing){
   const rate=Number(controller.player?.getPlaybackRate?.())||1;
   const wait=segmentEndDelay(controller,timeMs,rate,playing);
   if(wait===null)return;
+  const boundary=Math.min(...[controller.holdEndMs,controller.segmentEndMs].map(Number).filter(Number.isFinite));
   controller.endTimer=setTimeout(()=>{
     controller.endTimer=null;
     if(controllers.get(root)!==controller)return;
@@ -202,8 +219,15 @@ function armSegmentEnd(root,controller,timeMs,playing){
       controller.player.pauseVideo?.();
       controller.segmentEndMs=null;
     }catch{return;}
+    segmentEnded(root,boundary);
     emitClock(root,controller);
   },wait);
+}
+
+/* Playback was paused because a line reached its end. Said once, as an event, because the embed's reported time can
+   still read short of the end after the pause (original-segment-player.js finishes its line on it). */
+function segmentEnded(root,endMs){
+  root.dispatchEvent?.(new CustomEvent('orena:segment-end',{detail:{end_ms:Number.isFinite(endMs)?endMs:null}}));
 }
 
 function emitClock(root,controller){
@@ -215,6 +239,12 @@ function emitClock(root,controller){
     let currentTime=Number(controller.player.getCurrentTime?.());
     if(!Number.isFinite(currentTime))return;
     let state=Number(controller.player.getPlayerState?.());
+    const settling=Date.now()-(controller.seekAt||0)<SEEK_SETTLE_MS;
+    const estimate=playbackEstimate(settling?null:controller.clock,currentTime*1000,{
+      playing:state===1,rate:Number(controller.player.getPlaybackRate?.())||1,nowMs:perfNow(),
+    });
+    controller.clock=estimate.clock;
+    const atMs=estimate.ms;
     /* A held segment is the whole of what may be played.
 
        Dictation is the reason this exists: a learner writing down line 3 must
@@ -230,20 +260,21 @@ function emitClock(root,controller){
        a few milliseconds early from re-seeking on its own. */
     const holding=segmentHoldAction(
       {start_ms:controller.holdStartMs,end_ms:controller.holdEndMs},
-      currentTime*1000,
+      atMs+SEGMENT_END_EARLY_MS,
       state===1,
     );
-    if(holding==='pause'){controller.player.pauseVideo?.();state=2;}
+    if(holding==='pause'){controller.player.pauseVideo?.();state=2;segmentEnded(root,controller.holdEndMs);}
     else if(holding==='seek'){controller.player.seekTo?.(controller.holdStartMs/1000,true);controller.seekAt=Date.now();}
-    if(Number.isFinite(controller.segmentEndMs)&&currentTime*1000>=controller.segmentEndMs&&state===1){
-      controller.player.pauseVideo?.();controller.segmentEndMs=null;state=2;
+    if(Number.isFinite(controller.segmentEndMs)&&atMs+SEGMENT_END_EARLY_MS>=controller.segmentEndMs&&state===1){
+      const end=controller.segmentEndMs;
+      controller.player.pauseVideo?.();controller.segmentEndMs=null;state=2;segmentEnded(root,end);
     }
     if(Number.isFinite(controller.endMs)&&currentTime*1000>=controller.endMs&&state===1){
       controller.player.pauseVideo?.();
 
       state=2;
     }
-    armSegmentEnd(root,controller,currentTime*1000,state===1);
+    armSegmentEnd(root,controller,atMs,state===1);
     root.dataset.mediaClock='ready';
     root.dispatchEvent(new CustomEvent('orena:media-time',{
       bubbles:true,

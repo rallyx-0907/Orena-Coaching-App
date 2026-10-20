@@ -144,13 +144,23 @@ export function headlineKind(fixCount) {
   return 'many';
 }
 
+/* What a finished take becomes (#439): transcribed; "not heard" (nothing usable was recorded); or a recording
+   that never finished (the recorder's watchdog, `recording_failed`), which is a failure of the recording and is
+   said as one - never as the learner not speaking. */
+export function takeOutcome({ blob = null, ms = 0, error = '' } = {}, minMs = 600) {
+  if (blob && blob.size !== 0 && ms >= minMs) return 'transcribe';
+  if (error === 'recording_failed') return 'failed';
+  return 'notheard';
+}
+
 /* Auto-stop on silence (#439). The take ends by itself once the learner has spoken and then stayed quiet this
    long; the duration pill stays the hard cap. Levels are the microphone's own 0-1 peaks
    (`capabilities/mic-readiness.js`). Nothing is decided before speech is heard: a learner who is still thinking
    is never cut off at the start. Pure, so the timing is checked with numbers. */
 export const SPEECH_PEAK = 0.06;
-export const SILENCE_STOP_MS = 5000;
-export const MIN_SPEECH_MS = 600;
+// Tunables (UI_BACKEND_GAPS, "Free talk: silence auto-stop"); the design gives no value.
+export const SILENCE_STOP_MS = 8000;
+export const MIN_SPEECH_MS = 1500;
 export function silenceWatch({ speechPeak = SPEECH_PEAK, silenceMs = SILENCE_STOP_MS, minSpeechMs = MIN_SPEECH_MS } = {}) {
   let speechMs = 0;
   let lastAt = null;

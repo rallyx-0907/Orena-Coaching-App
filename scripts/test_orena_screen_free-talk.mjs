@@ -13,7 +13,15 @@ const {
 
 // 0. #439: the take ends by itself after speech and then silence; never before anything was said.
 {
-  const { silenceWatch, SILENCE_STOP_MS } = await import('../static/orena/screens/free-talk/model.js');
+  const { silenceWatch, SILENCE_STOP_MS, MIN_SPEECH_MS, takeOutcome } = await import('../static/orena/screens/free-talk/model.js');
+  assert.ok(SILENCE_STOP_MS >= 6000 && SILENCE_STOP_MS <= 10000, 'a pause to think is not the end of the take');
+  assert.ok(MIN_SPEECH_MS >= 1000, 'never an auto-stop before some speaking time');
+  {
+    const short = silenceWatch();
+    let s = 0;
+    for (let i = 0; i < 5; i += 1) short.feed(0.3, s += 100); // 0.4 s of speech, under the minimum
+    for (let i = 0; i < 150; i += 1) assert.equal(short.feed(0.01, s += 100), false, 'too little speech: silence never ends the take');
+  }
   const quiet = silenceWatch();
   let at = 0;
   const tick = (peak) => { at += 100; return quiet.feed(peak, at); };
@@ -21,16 +29,20 @@ const {
   for (let i = 0; i < 20; i += 1) assert.equal(tick(0.3), false, 'speaking');
   assert.equal(quiet.heardSpeech, true);
   let stoppedAfter = null;
-  for (let i = 1; i <= 80 && stoppedAfter == null; i += 1) if (tick(0.01)) stoppedAfter = i * 100;
+  for (let i = 1; i <= 150 && stoppedAfter == null; i += 1) if (tick(0.01)) stoppedAfter = i * 100;
   assert.ok(stoppedAfter != null && stoppedAfter >= SILENCE_STOP_MS && stoppedAfter <= SILENCE_STOP_MS + 200, `stops ${SILENCE_STOP_MS} ms after the speech ended (${stoppedAfter})`);
   const pauses = silenceWatch();
   let t = 0;
   for (let i = 0; i < 10; i += 1) pauses.feed(0.3, t += 100);
   for (let i = 0; i < 30; i += 1) assert.equal(pauses.feed(0.01, t += 100), false, 'a three-second pause between sentences does not end the take');
   assert.equal(pauses.feed(0.3, t += 100), false);
-  const src = fs.readFileSync(new URL('../static/orena/screens/free-talk/screen.js', import.meta.url), 'utf8');
-  assert.match(src, /return void problem\('notheard'\)/, 'an empty or failed take opens the Mic state sheet, never a silent reset');
-  assert.doesNotMatch(src, /if \(!take\?\.blob \|\| ms < MIN_TAKE_MS\) \{ state = 'setup'; paint\(\); return; \}/);
+  // Every take ends somewhere: transcribed, "not heard", or a recording that never finished (the watchdog).
+  const blob = { size: 4000 };
+  assert.equal(takeOutcome({ blob, ms: 5000 }), 'transcribe');
+  assert.equal(takeOutcome({ blob, ms: 300 }), 'notheard', 'too short to say anything');
+  assert.equal(takeOutcome({ blob: { size: 0 }, ms: 5000 }), 'notheard');
+  assert.equal(takeOutcome({ blob: null, ms: 22000, error: 'recording_empty' }), 'notheard');
+  assert.equal(takeOutcome({ blob: null, ms: 22000, error: 'recording_failed' }), 'failed', 'the watchdog is a recording failure, not "not heard"');
 }
 
 // 1. Duration caps: exactly the frame's own three pills, in milliseconds.

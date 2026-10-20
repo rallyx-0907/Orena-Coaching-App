@@ -27,9 +27,10 @@ import { comparisonReference, decorateComparison, pairWord, pairedTiming, readin
 import { matchOf } from '../../product/pitch-match.js';
 import { toneOf } from '../../capabilities/pronunciation-result.js';
 import { decodeAudio, analyse } from '../../capabilities/audio-analysis.js';
+import { tapAudioContext } from '../../capabilities/audio-context.js';
 import { createSpeakingRecorder, TAKE } from '../../product/speaking-recorder.js';
 import { lineKey, listTakes, viewOfTake, attemptIdOf } from '../../product/take-store.js';
-import { loadLineAttempts, reviewableAttempts } from '../../product/speaking-history.js';
+import { loadLineAttempts, reviewableAttempts, roomKey, noteRoomBelow, clearRoomBelow, takeReturnedAttempt } from '../../product/speaking-history.js';
 import { openSheet, sheetHead, fillSheet } from '../../kit/overlay.js';
 import { micStateFor } from '../speak/model.js';
 import { openMicState, micGate } from '../mic/sheet.js';
@@ -47,7 +48,7 @@ const KIND_INK = { ok: 'var(--green)', bad: 'var(--red)', clock: 'var(--amber)',
 const MODE_KEY = { model_then_you: 'modeModelYou', word_by_word: 'modeWord', model_only: 'modeModel', you_only: 'modeYou' };
 const ERROR_KEY = {
   no_speech: 'errNotHeard', too_short: 'errNotHeard', offline: 'errOffline', unavailable: 'errService', service: 'errService',
-  microphone: 'errMic', unsupported: 'errMic', recording_failed: 'errMic', too_long: 'errTooLong', audio_unsupported: 'errAudio', line_invalid: 'errLine',
+  microphone: 'errMic', unsupported: 'errMic', recording_failed: 'errRecording', too_long: 'errTooLong', audio_unsupported: 'errAudio', line_invalid: 'errLine',
 };
 const seconds = (ms) => (ms / 1000).toFixed(2);
 
@@ -93,7 +94,10 @@ export default async function mountCompareWithModel(element, ctx) {
   renderRoot.className='s-compare-body';
   element.append(renderRoot);
 
-  const requested = ctx.query.get('attempt');
+  const room = roomKey(ctx.params.id, source.line.lineId);
+  clearRoomBelow();
+  // An attempt named in the address, or the one the attempt list just chose before stepping back here (#444).
+  const requested = takeReturnedAttempt(room) || ctx.query.get('attempt');
   /* A named attempt opens as asked (Attempt History); otherwise this tab's newest take (its audio and word timing
      draw the full comparison), else the account's newest attempt - the room never hides a result it has. */
   let selectedId = takes.some((item) => item.id === requested) ? requested : tabList[0]?.id || takes[0]?.id || '';
@@ -242,6 +246,7 @@ export default async function mountCompareWithModel(element, ctx) {
 
   function record() {
     if (recorder.busy) return;
+    tapAudioContext(); // in the tap, before any await: iOS runs only a context started here
     stopPlay();
     /* The analysis stays where the learner left it while the consent sheet is open (LEX-053); it moves to the top
        only once recording really starts and the record card takes its place. */
@@ -961,8 +966,11 @@ export default async function mountCompareWithModel(element, ctx) {
       void playFile(url, playToken);
     }));
     q('[data-back]').addEventListener('click', () => ctx.back());
-    // The attempt list stands in for this room in history (#444): Back from either leaves the source.
-    q('[data-attempts]').addEventListener('click', () => ctx.replace(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
+    // The attempt list opens on top of this room: Back from it returns here (#444, the previous screen).
+    q('[data-attempts]').addEventListener('click', () => {
+      noteRoomBelow(room);
+      ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId }));
+    });
     element.querySelectorAll('[data-select]').forEach((button) => button.addEventListener('click', () => select(button.dataset.select)));
     element.querySelectorAll('[data-word]').forEach((button) => {
       button.addEventListener('click', () => {

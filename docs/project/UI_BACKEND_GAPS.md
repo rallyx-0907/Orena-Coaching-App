@@ -6486,3 +6486,15 @@ The built-in Listening catalogue ships empty since D-245, so a learner on a runt
 - **Hear model for one word.** The design's `hearWord` says the word (device voice). With no model word interval the app now plays the dictionary's audio of the word (`/api/library/vocabulary/{word}/audio`), else the device voice, and only then says there is nothing to hear.
 - **Word score.** The design draws the score ring (a 0-100 arc) with the number, the status pill under the word and a tip; it draws no "/100" on the word ring. The app keeps that; the ring's accessible name carries the scale ("Word score 5/100"). Open for the owner: whether the word ring should print its scale like the overall ring.
 
+## Free talk: silence auto-stop (#439, 2026-10-20)
+
+The design draws only "Tap to finish" and the duration pills, and gives no silence rule. Owner and coordinator asked for an auto-stop on silence, so a take ends by itself after the learner has spoken and gone quiet. There is no new visual for it. These values are tunable in `static/orena/screens/free-talk/model.js`:
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `SILENCE_STOP_MS` | 8000 | Quiet time that ends the take |
+| `MIN_SPEECH_MS` | 1500 | Speaking time required before silence can end the take |
+| `SPEECH_PEAK` | 0.06 | Microphone peak treated as speech |
+
+The duration pill stays the hard cap. Open for the owner: these values after the first iPhone sessions.
+

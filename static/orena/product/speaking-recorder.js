@@ -12,6 +12,7 @@
 import { createSpeakingTake, TAKE, MAX_TAKE_MS } from '../capabilities/speaking-take.js';
 import { createLocalAudioRecorder } from '../capabilities/audio-recorder.js';
 import { watchMicrophone } from '../capabilities/mic-readiness.js';
+import { sharedAudioContext } from '../capabilities/audio-context.js';
 import { pronunciationView } from '../capabilities/pronunciation-result.js';
 import { recordTake, noteAttemptId } from './take-store.js';
 import { logSpeakingTask, noteSpeakingTaskAttempt } from './speaking-session.js';
@@ -74,6 +75,7 @@ export function createSpeakingRecorder({
     const own = typeof live?.clone === 'function' ? { getUserMedia: async () => live.clone() } : undefined;
     mic = watchMic({
       ...(own ? { mediaDevices: own } : {}),
+      context: sharedAudioContext(), // the context the tap started; one made now would stay suspended on iOS
       onLevel: (peak) => {
         if (disposed || state.phase !== TAKE.RECORDING) return;
         levels.shift();
