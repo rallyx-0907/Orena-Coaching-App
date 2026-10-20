@@ -118,10 +118,17 @@ def parse_feed(payload: bytes, *, base_url: str = "") -> list[dict[str, str]]:
     return entries
 
 
+INTERVAL_POLICY = "reading.source_poll_interval_seconds"
+
+
 def configured_interval() -> int:
+    """The polling interval now: READING_SOURCE_POLL_INTERVAL_SECONDS when it is set, else Admin's
+    `reading.source_poll_interval_seconds` (BQ, D-172), else 900. 0 means polling is off. Read at every tick."""
+    from writing_coach import policies
+
     try:
-        return max(0, int(os.getenv("READING_SOURCE_POLL_INTERVAL_SECONDS", "")))
-    except ValueError:
+        return max(0, int(policies.value(INTERVAL_POLICY)))
+    except (TypeError, ValueError):
         return DEFAULT_INTERVAL_SECONDS
 
 
@@ -129,11 +136,27 @@ class ReadingSourcePoller:
     def __init__(
         self, *, content: Any, jobs: Any, engine: Any,
         fetcher: Callable[..., tuple[bytes, str]] = fetch_bounded,
-        interval_seconds: int | None = None, max_entries: int = MAX_ENTRIES,
+        interval_seconds: int | Callable[[], int] | None = None, max_entries: int = MAX_ENTRIES,
     ) -> None:
+        """`interval_seconds`: a number, or a callable read at every tick (`configured_interval`, so an Admin change
+        applies without restarting the worker); None: the default."""
         self.content, self.jobs, self.engine, self._fetch = content, jobs, engine, fetcher
-        self.interval = timedelta(seconds=DEFAULT_INTERVAL_SECONDS if interval_seconds is None else interval_seconds)
+        self._interval = DEFAULT_INTERVAL_SECONDS if interval_seconds is None else interval_seconds
         self.max_entries = max_entries
+
+    def interval_seconds(self) -> int:
+        source = self._interval
+        if not callable(source):
+            return int(source)
+        try:
+            return max(0, int(source()))
+        except Exception:  # noqa: BLE001 - an unreadable setting keeps the default cadence
+            _logger.warning("reading poller: interval unreadable; using the default", exc_info=True)
+            return DEFAULT_INTERVAL_SECONDS
+
+    @property
+    def interval(self) -> timedelta:
+        return timedelta(seconds=self.interval_seconds())
 
     @staticmethod
     def eligible(source: dict[str, Any]) -> bool:
@@ -213,7 +236,8 @@ class ReadingSourcePoller:
     def run_forever(self, should_run: Callable[[], bool] = lambda: True, tick: float = 30.0) -> None:
         while should_run():
             try:
-                self.poll_due()
+                if self.interval_seconds() > 0:  # 0: polling is switched off for now; asked again next tick
+                    self.poll_due()
             except Exception:  # noqa: BLE001
                 _logger.exception("reading poller: iteration failed")
             time.sleep(tick)
@@ -234,7 +258,7 @@ def build_poller() -> ReadingSourcePoller:  # pragma: no cover - process wiring
     store = FilesystemBookAssetStore(Path(os.getenv("READING_LIBRARY_ASSET_ROOT", "data/reading_library_assets")))
     content, jobs = require_reading_thumbnails(ReadingContentRepository(database), store), ReadingJobRepository(database)
     engine = ReadingContentEngine(content=content, jobs=jobs, asset_store=store)
-    return ReadingSourcePoller(content=content, jobs=jobs, engine=engine, interval_seconds=configured_interval())
+    return ReadingSourcePoller(content=content, jobs=jobs, engine=engine, interval_seconds=configured_interval)
 
 
 def main() -> int:  # pragma: no cover - one-shot: poll every eligible source now

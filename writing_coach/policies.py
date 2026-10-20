@@ -11,6 +11,11 @@ Precedence for every policy, highest first:
   2. the administrator's stored value;
   3. the default, which is the value the code carried as a constant before this module existed.
 
+Safety fuses are the exception (BQ, owner 2026-10-20: Admin may tighten, never loosen). A fuse's environment variable
+(`env_max`) is its hard maximum, not a lock: the value in force is the lower of the two. A deletion switch a published
+promise requires (`promise`) is on by default on a public runtime, and Admin can never turn it off there. The whole list of settings,
+where each is set and whether it needs a restart, is docs/operations/SETTINGS_REFERENCE.md.
+
 Consumers call `value(key)` at the moment they act, never at import, so a saved change applies within
 `CACHE_SECONDS` in every worker (at once in the worker that saved it). The read never raises: a store that cannot
 be read keeps the last value read in this process (the defaults if none was ever read) and is logged - except the
@@ -79,6 +84,13 @@ class Policy:
     danger: str = ""                # "delete": can delete learner data; "charging": changes what a learner is charged.
                                     # Any change to a policy with a danger is confirmed.
     confirm_above: float | int | None = None  # a value above this (or null) is confirmed
+    # A safety fuse (BQ, owner 2026-10-20: "Admin may only tighten, never loosen"). `env_max` names the environment
+    # variable that is this policy's hard maximum: the value in force is the lower of the two, a value above it is
+    # refused, and the variable never locks the field. `promise`: a deletion switch a published promise requires (the
+    # Privacy Policy's retention periods, core/published_promises.py); on a public runtime (staging, production) Admin
+    # may turn it on, never off.
+    env_max: str = ""
+    promise: bool = False
 
 
 def _p(key: str, group: str, kind: str, default: Any, **extra: Any) -> Policy:
@@ -120,6 +132,10 @@ POLICIES: tuple[Policy, ...] = (
     _p("media.model_clip_max_lines", "media", "int", 500, unit="count", low=10, high=5000,
        env="MEDIA_MODEL_CLIP_MAX_LINES", env_min=1),
     _p("rate.media_learning_per_hour", "media", "int", 30, unit="count", low=1, high=1000),
+    # How often the Reading worker polls the approved RSS/Atom sources (reading_source_poller.py), re-read every tick.
+    # 0 turns polling off. READING_SOURCE_POLL_INTERVAL_SECONDS pins it.
+    _p("reading.source_poll_interval_seconds", "media", "int", 900, unit="seconds", low=0, high=86_400,
+       env="READING_SOURCE_POLL_INTERVAL_SECONDS", env_min=0),
     # Where a YouTube item's captions come from (D-215): YouTube itself (the default), Supadata in its native mode only,
     # or YouTube first and Supadata native when YouTube gives none. Supadata is never asked to generate or translate.
     _p("media.caption_source", "media", "enum", "youtube", env="MEDIA_CAPTION_SOURCE",
@@ -150,14 +166,32 @@ POLICIES: tuple[Policy, ...] = (
     _p("rate.signin_exchange_per_10min", "rates", "int", 200, unit="count", low=1, high=5000),
     # --- feedback and retention
     _p("feedback.daily_limit", "feedback", "int", 10, unit="count", low=1, high=100),
-    _p("feedback.retention_sweep", "feedback", "bool", False, env="FEEDBACK_RETENTION_SWEEP", danger="delete"),
+    _p("feedback.retention_sweep", "feedback", "bool", False, env="FEEDBACK_RETENTION_SWEEP", danger="delete",
+       promise=True),
     # A retention period can only be shortened: the published legal text (docs/legal/public/facts.json, privacy) states
     # 24 months, 90 days and 13 months, so each maximum is that published value.
     _p("feedback.retention_days", "feedback", "int", 730, unit="days", low=30, high=730, danger="delete"),
-    _p("agent.turn_retention_sweep", "feedback", "bool", False, env="AGENT_TURN_RETENTION_SWEEP", danger="delete"),
+    _p("agent.turn_retention_sweep", "feedback", "bool", False, env="AGENT_TURN_RETENTION_SWEEP", danger="delete",
+       promise=True),
     _p("agent.turn_retention_days", "feedback", "int", 90, unit="days", low=7, high=90, danger="delete"),
     _p("ai_costs.retention_days", "feedback", "int", 396, unit="days", low=90, high=396, danger="delete"),
+    # The three sweeps that were environment-only (BQ): Orena Memory notes unused for 180 days, usage counts past 12
+    # months, administrators' audit records past 24 months (PRE-502 R8). Each variable still pins its sweep, and an
+    # unclear value there still refuses to start.
+    _p("agent.memory_retention_sweep", "feedback", "bool", False, env="AGENT_MEMORY_RETENTION_SWEEP", danger="delete",
+       promise=True),
+    _p("usage.retention_sweep", "feedback", "bool", False, env="USAGE_RETENTION_SWEEP", danger="delete", promise=True),
+    _p("admin_audit.retention_sweep", "feedback", "bool", False, env="ADMIN_AUDIT_RETENTION_SWEEP", danger="delete",
+       promise=True),
     # --- spend caps
+    # The system daily AI spend ceiling (ai/spend_gate.py). AI_DAILY_SPEND_CEILING_USD is a fuse, not a pin: the ceiling
+    # in force is the lower of it and this value, so Admin can only lower it; production still requires the
+    # environment value at start (core/published_promises.py). Empty: the environment's ceiling (none without one).
+    _p("ai.daily_spend_ceiling_usd", "spend", "float", None, unit="usd", low=0, high=10_000, nullable=True,
+       env_max="AI_DAILY_SPEND_CEILING_USD", confirm_above=50),
+    # The share of the ceiling at which the warning is logged and shown in Admin (owner, 2026-10-18: 80%).
+    _p("ai.daily_spend_warn_ratio", "spend", "float", 0.8, low=0.05, high=1, env="AI_DAILY_SPEND_WARN_RATIO",
+       env_min=0),
     _p("agent.daily_spend_cap_usd", "spend", "float", None, unit="usd", low=0.01, high=10_000, nullable=True,
        env="AGENT_DAILY_SPEND_CAP_USD", env_min=0, confirm_above=50),
     _p("media.batch_cap_asr_usd", "spend", "float", 5.0, unit="usd", low=0, high=1000, env="MEDIA_ASR_BATCH_CAP_USD",
@@ -203,6 +237,11 @@ POLICIES: tuple[Policy, ...] = (
     # checkout is not ready and every SePay payment fails closed (no grant) until an operator sets a value >= 1.
     _p("billing.domestic_late_payment_grace_hours", "billing", "int", 0, unit="hours", low=0, high=168,
        danger="charging"),
+    # How long a Polar subscription in `past_due` keeps its paid plan (product/billing_grace.py; owner 2026-10-13: 48).
+    _p("billing.past_due_grace_hours", "billing", "int", 48, unit="hours", low=0, high=336,
+       env="BILLING_PAST_DUE_GRACE_HOURS", env_min=0, danger="charging"),
+    # PR-MON-10: off pauses new checkouts only; webhooks, the portal and the reconciler keep running (billing/readiness).
+    _p("billing.new_sales", "billing", "bool", True, env="BILLING_NEW_SALES", danger="charging"),
 )
 
 
@@ -285,6 +324,51 @@ def _env_value(policy: Policy, env: Mapping[str, str] | None) -> Any:
     if not math.isfinite(number) or (policy.env_min is not None and number < policy.env_min):
         return policy.default
     return int(number) if policy.kind == "int" else number
+
+
+def env_maximum(policy: Policy, env: Mapping[str, str] | None = None) -> float | None:
+    """The environment's hard maximum of a fuse policy (`env_max`), or None when it sets none. A value that cannot be
+    read is no maximum here: the consumer that installs the fuse refuses it at start (ai/spend_gate.py)."""
+    if not policy.env_max:
+        return None
+    text = str(_env_mapping(env if env is not None else _env).get(policy.env_max, "") or "").strip()
+    if not text:
+        return None
+    try:
+        number = float(text)
+    except ValueError:
+        return None
+    return number if math.isfinite(number) and number >= 0 else None
+
+
+def _lower_of(maximum: float | None, chosen: Any) -> Any:
+    if maximum is None:
+        return chosen
+    return maximum if chosen is None else min(maximum, chosen)
+
+
+def public_runtime(env: Mapping[str, str] | None = None) -> bool:
+    """Whether this runtime is staging or production (`APP_ENV`, with every alias the deployment guard accepts), where
+    a published promise must be kept."""
+    from writing_coach.core.deployment import is_public_environment
+
+    return is_public_environment(_env_mapping(env if env is not None else _env).get("APP_ENV", ""))
+
+
+def default_for(policy: Policy, env: Mapping[str, str] | None = None) -> Any:
+    """The default that applies here: a promised sweep is ON by default on a public runtime (review of #428), so
+    removing its pin, or never saving it, keeps the Privacy Policy's promise; elsewhere the registry's default."""
+    if policy.promise and public_runtime(env):
+        return True
+    return policy.default
+
+
+def _kept(policy: Policy, chosen: Any, env: Mapping[str, str] | None = None) -> Any:
+    """A promised sweep on a public runtime is on whatever Admin stored (an older `false` saved before the rule, or one
+    copied from another runtime, never switches it off); only an environment pin can. Anything else: `chosen`."""
+    if policy.promise and public_runtime(env):
+        return True
+    return chosen
 
 
 # --- the stored document ---------------------------------------------------------------------------------------
@@ -387,15 +471,16 @@ def value(key: str, *, env: Mapping[str, str] | None = None) -> Any:
     """The effective value of one policy now: environment pin, else the administrator's value, else the default.
     Never raises for a known key; an unknown key is a programming error."""
     policy = BY_KEY[key]
+    maximum = env_maximum(policy, env)  # a fuse's environment maximum holds even when the store cannot be read
     try:
         pinned = _env_value(policy, env if env is not None else _env)
         if pinned is not _INVALID:
             return pinned
         stored = _loaded().values
-        return stored[key] if key in stored else policy.default
+        return _kept(policy, _lower_of(maximum, stored[key] if key in stored else default_for(policy, env)), env)
     except Exception:  # noqa: BLE001 - a policy read never costs a learner a request
         _log.warning("platform.policies: reading %s failed; using its default", key, exc_info=True)
-        return policy.default
+        return _lower_of(maximum, default_for(policy, env))
 
 
 def value_strict(key: str, *, env: Mapping[str, str] | None = None) -> Any:
@@ -412,7 +497,7 @@ def value_strict(key: str, *, env: Mapping[str, str] | None = None) -> Any:
         raise PolicyUnavailable(f"{key}: the settings store has never been read in this process")
     if key in loaded.rejected:
         raise PolicyUnavailable(f"{key}: the stored value is not valid")
-    return loaded.values[key] if key in loaded.values else policy.default
+    return _kept(policy, loaded.values[key] if key in loaded.values else default_for(policy, env), env)
 
 
 AGENT_LIMIT_FIELDS: tuple[str, ...] = (
@@ -439,13 +524,17 @@ def snapshot() -> dict[str, Any]:
         pinned = _env_value(item, env)
         locked = pinned is not _INVALID
         has_admin = item.key in loaded.values
+        maximum = env_maximum(item, env)
+        high = item.high if maximum is None or item.high is None else min(item.high, maximum)
+        fallback = default_for(item, env)
+        chosen = loaded.values[item.key] if has_admin else fallback
         rows.append({
-            "key": item.key, "group": item.group, "kind": item.kind, "unit": item.unit, "default": item.default,
-            "low": item.low, "high": item.high, "nullable": item.nullable, "choices": list(item.choices),
+            "key": item.key, "group": item.group, "kind": item.kind, "unit": item.unit, "default": fallback,
+            "low": item.low, "high": high, "nullable": item.nullable, "choices": list(item.choices),
             "danger": item.danger, "confirm_above": item.confirm_above,
-            "env": item.env, "locked": locked,
+            "env": item.env, "locked": locked, "env_max": item.env_max, "promise": item.promise,
             "source": "env" if locked else "admin" if has_admin else "default",
-            "value": pinned if locked else loaded.values[item.key] if has_admin else item.default,
+            "value": pinned if locked else _kept(item, _lower_of(maximum, chosen), env),
             "admin": loaded.values.get(item.key), "has_admin": has_admin,
         })
     return {
@@ -501,6 +590,10 @@ def save(change: object, *, updated_by: str = "", actor: str = "", expected_upda
         if _env_value(policy, _env) is not _INVALID:
             raise PolicyInvalid(f"{policy.key} is locked by the environment ({policy.env}); change it there.")
         clean[policy.key] = check(policy, raw)
+        maximum = env_maximum(policy, _env)
+        if maximum is not None and clean[policy.key] is not None and clean[policy.key] > maximum:
+            raise PolicyInvalid(f"{policy.key} can only be lowered: the environment's maximum ({policy.env_max}) is "
+                                f"{maximum:g}; raise it there.")
     resets = [str(key) for key in to_reset]
     try:
         base = _store.get_setting(SETTING_KEY)
@@ -518,10 +611,13 @@ def save(change: object, *, updated_by: str = "", actor: str = "", expected_upda
     needing: list[str] = []
     for key in sorted(set(clean) | set(resets)):
         policy = BY_KEY[key]
-        before = base_values.get(key, policy.default)
-        after = new_values.get(key, policy.default)
+        before = base_values.get(key, default_for(policy, _env))
+        after = new_values.get(key, default_for(policy, _env))
         if before == after and (key in base_values) == (key in new_values):
             continue
+        if policy.promise and before is True and after is not True and public_runtime():
+            raise PolicyInvalid(f"{policy.key} keeps a published promise (the Privacy Policy's retention period): on "
+                                "this runtime it can be turned on, never off.")
         changes[key] = {"from": before, "to": after, "reset": key not in new_values}
         if _needs_confirmation(policy, before, after):
             needing.append(key)
