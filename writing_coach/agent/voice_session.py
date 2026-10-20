@@ -568,7 +568,8 @@ class VoiceService:
         )
         # Messages not enforced: one token for what is left of the session, exactly as before the plan limit.
         seconds = int(ticket.max_seconds) if ticket.max_seconds else cap - minted
-        # The learner's daily voice minutes (D-237): never a token past what is left today.
+        # The learner's voice minutes for the window (D-237; a day, or a month from MV2-6a): never a token past what
+        # is left.
         try:
             left = plan_features.voice_seconds_left(user_key)
         except BaseException:
@@ -600,9 +601,9 @@ class VoiceService:
             self._record_chunk(session_id, user_key, index, seconds)
         else:
             # Unmetered: the learner's voice seconds are counted when the token exists, as a metered chunk's are, so
-            # the daily cap sees an open session (D-237); the AI ledger still gets the wall-clock time at the end.
+            # the voice-minute cap sees an open session (D-237); the AI ledger still gets the wall-clock time at the end.
             self._meter_voice(user_key, seconds, f"{session_id}:voice:{index}")
-        # The last chunk too when today's voice minutes end with it (D-237): the client is not sent to a refused renewal.
+        # The last chunk too when the window's voice minutes end with it (D-237): no refused renewal for the client.
         last = minted + seconds >= cap or not ticket.enforced or clamped
         return {"token": token, "expires": expires, "seconds": seconds, "last": last, "metered": ticket.enforced,
                 "day_limit_reached": clamped}
@@ -624,9 +625,10 @@ class VoiceService:
             "session_max_seconds": self._session_seconds(),
             "renew_in": None if minted["last"] else max(1, seconds - RENEW_LEAD_SECONDS),
             "last": minted["last"],
-            # Today's voice minutes end with this token (D-237): `last` alone is also a session's normal end, so the
-            # client tells the learner the day's minutes are used up only when this is true. It describes this token only
-            # (a few seconds may remain for one more short chunk). Agent Contract v13 §9.1.
+            # The window's voice minutes end with this token (D-237; the meter's window: a day, or a month from
+            # MV2-6a - the name stays the contract's): `last` alone is also a session's normal end, so the client says the
+            # minutes are used up only when this is true. It describes this token only (a few seconds may remain for one
+            # more short chunk). Agent Contract §9.1.
             "day_limit_reached": bool(minted.get("day_limit_reached")),
         }
 
@@ -683,14 +685,14 @@ class VoiceService:
         self._meter_voice(user_key, seconds, f"{session_id}:voice:{index}")
 
     def _meter_voice(self, user_key: str, seconds: int, request_id: str) -> None:
-        """The learner's voice seconds, counted against the daily cap (product/plan_features.py)."""
+        """The learner's voice seconds, counted against the voice-minute cap (product/plan_features.py)."""
 
         meter = getattr(self.runtime, "meter", None)
         if meter is not None:
             try:
                 meter(user_key, "agent.voice_seconds", int(seconds), request_id)
             except Exception:  # noqa: BLE001 - never fails the learner's request, but the cap now undercounts
-                _log.error("voice metering failed: the daily voice cap undercounts", exc_info=True)
+                _log.error("voice metering failed: the voice-minute cap undercounts", exc_info=True)
 
 
 
