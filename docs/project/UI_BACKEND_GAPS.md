@@ -6542,3 +6542,10 @@ The pinned `Orena.dc.html` (2026-10-08 export, D-088) draws plans only in Pricin
 - **G12 Profile's plan pill ("Lên Pro", GAP in §Hồ sơ).** That gap closes when commerce opens; the pill follows the effective plan, including a trial. Decided by owner via Hermes 2026-10-20: Monetisation v2.
 
 Still open, outside the UI: the Supadata caption source and the 30-day storage rule (YouTube API Services Developer Policies III.E.6, III.E.4.c) are an owner/counsel gate before paid launch (D-248 §8). The once-per-account trial needs proposed migration 0034 (`promotional_grants`), a human schema gate.
+
+## Public legal pages: the three-tab row on a phone (PR CB, 2026-10-20)
+
+The pinned `Orena-Terms.dc.html` and `Orena-Privacy.dc.html` draw a two-pill tab row (Privacy, Terms of Service) that scrolls (`overflow-x:auto`) when it does not fit. The build adds a third pill, Delete account, in the same style; the three pills measure 367px of content against a 358px column at 390px and clip "Delete account" behind a scrollbar at 360px (Intelligence lane mobile QA). The design draws no narrow variant. Smallest consistent fix (`scripts/public_legal_static.mjs`, `.lg-nav`): below 480px the row spans the column, the pills share its width with 8px side padding in place of 16px (type, height, radius and colours unchanged), and a column too narrow for all three wraps to a second row instead of scrolling. The pages are English at every interface language (D-238), so EN, VI and ZH read the same labels.
+
+Open for the owner: whether the design should draw the narrow tab row.
+

@@ -22,6 +22,7 @@ import { activateRemovedScope } from '../product/import-removed.js';
 import { setSpeakingSessionScope } from '../product/speaking-session.js';
 import { setTakeStoreScope } from '../product/take-store.js';
 import { flushPendingDelete, pendingImportIds } from '../product/import-undo.js';
+import { gatedBootReads } from './session.js';
 
 const listeners = new Set();
 const control = new AbortController();
@@ -67,8 +68,8 @@ function deviceTimezone() {
 }
 
 export async function loadContext(storage = window.localStorage) {
-  const [user, bootstrap, profile, vocabulary, account, activity] = await Promise.all([
-    read('/api/me'),
+  // The learner's reads wait for the session unless this device knows a signed-in learner (shell/session.js).
+  const [user, bootstrap, profile, vocabulary, account, activity] = await gatedBootReads(storage, () => read('/api/me'), () => [
     read('/api/session/bootstrap'),
     read('/api/learner-profile').catch(() => null),
     read('/api/library/vocabulary/summary').catch(() => null),

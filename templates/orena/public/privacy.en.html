@@ -17,6 +17,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
 .lg-toc{width:100%;position:static}
 @media (min-width:900px){.lg-layout{flex-direction:row}.lg-toc{width:240px;position:sticky}}
 .lg-toc a.on{color:var(--text)!important;background:var(--surface)!important}
+@media (max-width:479px){.lg-nav{align-self:stretch!important;flex-wrap:wrap}.lg-nav>a{flex:1 1 auto!important;justify-content:center;padding:0 8px!important}}
 [data-h="0"]:hover{background:var(--surface2)}
 [data-h="1"]:hover{color:var(--text)}
 </style>
@@ -36,7 +37,7 @@ a{color:#A9A5FF;text-decoration:none}a:hover{color:#C9C6FF}
   </header>
 
   <div style="max-width:1120px;margin:0 auto;padding:clamp(36px,7vh,72px) clamp(16px,4vw,48px) 0;display:flex;flex-direction:column;gap:24px">
-    <nav style="display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface);align-self:flex-start;max-width:100%;overflow-x:auto">
+    <nav class="lg-nav" style="display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface);align-self:flex-start;max-width:100%;overflow-x:auto">
       <a href="/privacy" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;background:var(--accent-soft);color:var(--text);font-size:14.5px;font-weight:600;display:flex;align-items:center">Privacy</a>
       <a href="/terms" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" data-h="1">Terms of Service</a>
       <a href="/account-deletion" style="height:38px;padding:0 16px;border-radius:11px;white-space:nowrap;flex:none;color:var(--muted);font-size:14.5px;font-weight:600;display:flex;align-items:center" data-h="1">Delete account</a>

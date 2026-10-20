@@ -13,6 +13,7 @@ const STATIC_CSS = `
 .lg-toc{width:100%;position:static}
 @media (min-width:900px){.lg-layout{flex-direction:row}.lg-toc{width:240px;position:sticky}}
 .lg-toc a.on{color:var(--text)!important;background:var(--surface)!important}
+@media (max-width:479px){.lg-nav{align-self:stretch!important;flex-wrap:wrap}.lg-nav>a{flex:1 1 auto!important;justify-content:center;padding:0 8px!important}}
 `;
 
 // Optional: highlight the contents entry of the section being read. Nothing depends on it.
@@ -51,6 +52,11 @@ export function staticPage(filled, page, lang, texts) {
   pane = rep(pane, '<aside style="flex:0 0 240px;width:{{ tocWidth }};position:{{ tocPos }};top:96px;', '<aside class="lg-toc" style="flex:0 0 240px;top:96px;');
   pane = pane.replace(/color:\{\{ a\.s\d+ \}\};background:\{\{ b\.s\d+ \}\}">/g, 'color:var(--muted);background:transparent">');
   pane = rep(pane, '<a href="#s1" style=', '<a href="#s1" class="on" style=');
+  // The tab row: the design draws two pills and scrolls when they do not fit; with the third (Delete account) a
+  // phone would scroll or clip it, so below 480px the row spans the column, the pills share it with a narrower
+  // side padding, and a row too narrow for all three wraps instead of scrolling (UI_BACKEND_GAPS, CB).
+  const navOpen = must(/<nav style="display:flex;gap:4px;padding:4px;border-radius:14px;[^"]*">/, pane, 'tab row')[0];
+  pane = rep(pane, navOpen, navOpen.replace('<nav ', '<nav class="lg-nav" '));
   pane = toHover(pane);
 
   // The logo symbol only: the design's animated Orena Intelligence mark is not drawn on these pages.

@@ -34,7 +34,7 @@
    weekly-goal bar always draws, not a claimed measurement), so the value line reads the same
    honest "not tracked yet" text Today already uses for its own goal ring, rather than fabricating
    a "0 / 15 min" figure against a target that does not really exist (N-25). */
-import { SIGN_OUT_NEXT, signedOutDestination } from '../../shell/session.js';
+import { SIGN_OUT_NEXT, rememberSignedIn, signedOutDestination } from '../../shell/session.js';
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { listRow } from '../../kit/components.js';
@@ -212,6 +212,7 @@ async function signOut() {
   let destination = SIGN_OUT_NEXT;
   clearMemoryState();
   clearConsentState();
+  rememberSignedIn(window.localStorage, false);
   try {
     destination = signedOutDestination(await api.logout(SIGN_OUT_NEXT));
   } catch (error) {
