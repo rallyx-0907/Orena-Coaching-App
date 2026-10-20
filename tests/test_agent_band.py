@@ -137,6 +137,10 @@ def admin_route(monkeypatch):
         return {"role": "admin"}
 
     monkeypatch.setattr(agent_api, "_band_admin", guard)
+    from writing_coach.agent.tools import LearnerScope
+
+    # an English learner: IELTS is their exam (the request context's default language is not assumed)
+    monkeypatch.setattr(agent_api.LearnerScope, "from_request_context", classmethod(lambda cls: LearnerScope("u1", "en")))
     monkeypatch.setattr(band, "_generate", seen["generate"])
     monkeypatch.delenv(band.MODE_ENV, raising=False)
     return seen
