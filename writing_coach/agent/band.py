@@ -85,10 +85,11 @@ class BandRequest(BaseModel):
     support: Literal["vi", "en", "zh-CN"] = "vi"
 
 
-def exam_for_language(language: str) -> str:
-    """The exam a learner's target language is measured against: English is IELTS, Chinese is HSK."""
+def exam_for_language(language: str) -> str | None:
+    """The exam a learner's target language is measured against: English is IELTS, Chinese is HSK; None for any other
+    (the route answers 409, never a 500)."""
 
-    return {"en": "ielts", "zh": "hsk"}[language]
+    return {"en": "ielts", "zh": "hsk"}.get(language)
 
 
 def ielts_overall(scores: Sequence[int]) -> float:

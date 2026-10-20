@@ -108,6 +108,7 @@ def test_hsk_counts_characters_and_labels_the_level():
 
 def test_the_exam_must_match_the_language_learned():
     assert band.exam_for_language("en") == "ielts" and band.exam_for_language("zh") == "hsk"
+    assert band.exam_for_language("ja") is None  # no exam: the route refuses with 409, never a 500
 
 
 def test_calibration_agreement_reports_the_pilot_measures():
