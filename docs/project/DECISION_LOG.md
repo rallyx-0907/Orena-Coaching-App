@@ -7621,6 +7621,12 @@ recommendation to lift the gate as the architecture reviewer proposed).
 
 **Not in this decision.** No hashes, no change to the application code or the Python version.
 
+**Exception (2026-10-20, PR #448 "BW", #446; independent review and coordinator):** the new `tzdata==2026.5` pin lands
+with its root-cause fix rather than in a pins-only PR. `GET /api/learner-activity` refused the `Asia/Saigon` that iOS
+reports (422), because python:3.12-slim (Debian bookworm) ships the legacy zone names only in `tzdata-legacy`; the
+`tzdata` package, added to `requirements.txt` in the same PR, is that fix. No existing pin changed. Point 3 stands for
+every other pin change.
+
 ## D-243 - Import has one way in: the design's Create lesson card (2026-10-19)
 
 **Status:** ACCEPTED (explicit owner instruction, 2026-10-19: "phần import trong learner app — tôi đã đưa thiết kế và

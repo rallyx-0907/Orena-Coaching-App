@@ -41,7 +41,7 @@ _log = logging.getLogger(__name__)
 _FINISH = {"stop": "stop", "tool_calls": "tool_calls", "length": "length"}
 # A provider's own words for "the money or the quota is spent", which a short wait does not cure (#438). A per-minute
 # rate limit ("rate limit", "too many requests") is not among them: that one passes.
-_SPENT = ("spending cap", "spend cap", "billing", "insufficient_quota", "insufficient credit", "credit balance",
+_SPENT = ("spending cap", "spend cap", "insufficient_quota", "insufficient credit", "credit balance",
           "payment required", "out of credits")
 
 

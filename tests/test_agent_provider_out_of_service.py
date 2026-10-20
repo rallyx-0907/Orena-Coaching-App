@@ -74,6 +74,10 @@ def test_a_provider_a_wait_cannot_cure_is_out_of_service(exc):
     "exc",
     [
         provider_error("Groq returned HTTP 429. Rate limit reached for model qwen in tokens per minute", 429),
+        # Gemini's ordinary per-minute 429 names billing too; it is still a short wait (review P2 of #448).
+        provider_error("Gemini API returned HTTP 429. You exceeded your current quota, please check your plan and "
+                       "billing details. Quota exceeded for metric: generate_content_free_tier_requests, limit: 15, "
+                       "model: gemini-flash. Please retry in 21s.", 429),
         provider_error("Gemini API returned HTTP 503. The model is overloaded.", 503),
         AIProviderTimeout("timed out"),
     ],
@@ -117,6 +121,14 @@ def test_the_spent_cap_ends_the_stream_with_the_true_sentence_in_the_contract_sh
     assert "bận" not in last.message and "busy" not in last.message and "Gemini" not in last.message
 
 
-def test_a_passing_failure_still_says_busy():
-    last = run(refusing(provider_error("Groq returned HTTP 429. Rate limit reached", 429)), "vi")[-1]
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Groq returned HTTP 429. Rate limit reached",
+        "Gemini API returned HTTP 429. You exceeded your current quota, please check your plan and billing details. "
+        "Please retry in 21s.",
+    ],
+)
+def test_a_passing_failure_still_says_busy(text):
+    last = run(refusing(provider_error(text, 429)), "vi")[-1]
     assert (last.error_class, last.fallback, last.message) == ("provider_unavailable", "retry", "Orena đang bận, thử lại sau nhé.")
