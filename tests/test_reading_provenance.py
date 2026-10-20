@@ -296,8 +296,10 @@ def test_the_learner_payload_carries_no_rights_or_review_keys(setup):  # noqa: F
     assert "reviewer@example.com" not in json.dumps(listed) + json.dumps(detail)
 
 
-def test_an_unanswered_attribution_question_still_publishes_by_an_administrator(setup):  # noqa: F811
-    # The repository never refuses (D-189 amends D-105); the admin route asks for the override (below).
+def test_an_unanswered_attribution_question_refuses_until_it_is_answered(setup):  # noqa: F811
+    # D-250 (amends D-190): the repository refuses too; answering the question clears it.
+    from writing_coach.reading_rights_gate import RightsRefused
+
     content = setup["content"]
     snapshot = content.record_source_item(
         source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="", title="T",
@@ -308,6 +310,9 @@ def test_an_unanswered_attribution_question_still_publishes_by_an_administrator(
         estimated_level="B1", estimated_confidence=0.5, word_count=60, reading_time_seconds=60,
         analysis={}, targets=[])["id"]
     assert content.get_article(article_id)["provenance"]["attribution_required"] == "unknown"
+    with pytest.raises(RightsRefused):
+        content.set_status(article_id, "published", actor="admin")
+    content.set_rights(article_id, {"attribution_required": False}, actor="admin")
     assert content.set_status(article_id, "published", actor="admin")["status"] == "published"
 
 

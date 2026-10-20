@@ -92,7 +92,7 @@ def _article(content, *, language="en", level="B1", body=None, publish=True):
     snapshot = content.record_source_item(
         source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="",
         title="Train", author="", published_at=None, language=language, body=body,
-        content_hash=uuid.uuid4().hex * 2, metadata={}, rights={"can_republish": True},
+        content_hash=uuid.uuid4().hex * 2, metadata={}, rights={"can_republish": True, "attribution_required": False},
     )
     article = content.create_article(
         source_item_id=snapshot["id"], title=f"Train {uuid.uuid4().hex[:6]}", body=body, excerpt=body[:60],

@@ -58,7 +58,7 @@ def _snapshot(repository, *, body=BODY, native_id="", url="", title="Rain return
         body=body,
         content_hash=f"{abs(hash(body)):064x}"[:64],
         metadata={"input_kind": "text"},
-        rights={"can_republish": True},
+        rights={"can_republish": True, "attribution_required": False},
     )
 
 
