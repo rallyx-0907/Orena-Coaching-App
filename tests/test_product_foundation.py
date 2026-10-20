@@ -227,7 +227,9 @@ def test_a_voice_limit_saved_per_month_is_honoured_and_a_save_stamps_the_window(
     save_catalog(edited, updated_by="admin")
     saved = store.get_setting(catalog.PLAN_SETTING_KEY)["value"]
     voice = [item for row in saved["plans"] for item in row["entitlements"] if row["id"] == "plus" and item["key"] == "orena.voice"]
-    assert voice == [{"key": "orena.voice", "enabled": True, "limit": 3000, "params": {}, "window": "month"}]
+    # the daily sub-cap (2026-10-21) is the meter's parameter: a save without it keeps the code's (Plus 20 minutes)
+    assert voice == [{"key": "orena.voice", "enabled": True, "limit": 3000, "params": {"daily_seconds": 1200},
+                      "window": "month"}]
     assert plan_by_id("plus").entitlement_map()["orena.voice"].limit == 3000
 
 
