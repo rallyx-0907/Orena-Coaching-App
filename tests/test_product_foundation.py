@@ -188,6 +188,69 @@ def test_a_stored_voice_placeholder_reads_as_the_plans_default_everywhere():
     assert [plan_by_id(plan).entitlement_map()["orena.voice"].limit for plan in ("plus", "pro")] == [6000, 18000]
 
 
+def _stored_voice(store, limit, **window):
+    """A saved catalogue whose voice limits are `limit`, saved under `window` (none: a document from before D-248)."""
+    stored = document()
+    for row in stored["plans"]:
+        for item in row["entitlements"]:
+            item.pop("window", None)
+            if item["key"] == "orena.voice":
+                item.update({"limit": limit, **window})
+    store.rows[catalog.PLAN_SETTING_KEY] = {"value": stored, "updated_at": "2026-10-19T10:00:00+00:00", "updated_by": "a"}
+    configure_plan_store(store)
+
+
+def test_a_voice_limit_saved_per_day_is_not_read_as_a_month():
+    """Review of #477, P1: a catalogue saved before D-248 holds `orena.voice` 900 (15 minutes a DAY). Once the meter is
+    monthly it must not become 15 minutes a month: the built-in value applies and the Admin view names the stale limit.
+    The stored document is not changed."""
+    for window in ({"window": "day"}, {}):  # saved under "day", or with no window (a document from before this build)
+        store = MemoryStore()
+        _stored_voice(store, 900, **window)
+        plans = current_plans(strict=True)
+        assert [plans[plan].entitlement_map()["orena.voice"].limit for plan in ("plus", "pro")] == [6000, 18000]
+        record = store.get_setting(catalog.PLAN_SETTING_KEY)
+        assert catalog.stale_limits(record) == [  # Free's voice is off: nothing it limits, nothing to report
+            {"plan": plan, "key": "orena.voice", "limit": 900, "saved_window": "day", "window": "month"}
+            for plan in ("plus", "pro")]
+        assert [item for row in record["value"]["plans"] for item in row["entitlements"]
+                if row["id"] == "plus" and item["key"] == "orena.voice"][0]["limit"] == 900, "stored data untouched"
+
+
+def test_a_voice_limit_saved_per_month_is_honoured_and_a_save_stamps_the_window():
+    store = MemoryStore()
+    _stored_voice(store, 4500, window="month")
+    assert plan_by_id("plus", strict=True).entitlement_map()["orena.voice"].limit == 4500
+    assert catalog.stale_limits(store.get_setting(catalog.PLAN_SETTING_KEY)) == []
+    # An administrator's save records the window each limit was set for, so a later window change is detected.
+    edited = document(plus={"entitlements": [{"key": "orena.voice", "enabled": True, "limit": 3000}]})
+    save_catalog(edited, updated_by="admin")
+    saved = store.get_setting(catalog.PLAN_SETTING_KEY)["value"]
+    voice = [item for row in saved["plans"] for item in row["entitlements"] if row["id"] == "plus" and item["key"] == "orena.voice"]
+    assert voice == [{"key": "orena.voice", "enabled": True, "limit": 3000, "params": {}, "window": "month"}]
+    assert plan_by_id("plus").entitlement_map()["orena.voice"].limit == 3000
+
+
+def test_other_meters_saved_without_a_window_keep_their_limits():
+    """Only a meter whose window changed is affected: a pre-D-248 document's other limits still apply."""
+    store = MemoryStore()
+    _stored_voice(store, 900)
+    for row in store.rows[catalog.PLAN_SETTING_KEY]["value"]["plans"]:
+        for item in row["entitlements"]:
+            if row["id"] == "plus" and item["key"] == "writing.review":
+                item["limit"] = 12
+    assert plan_by_id("plus", strict=True).entitlement_map()["writing.review"].limit == 12
+
+
+def test_the_admin_view_reports_a_stale_limit(monkeypatch):
+    import writing_coach.product.api as product_api
+
+    store = MemoryStore()
+    _stored_voice(store, 900, window="day")
+    assert product_api._admin_catalog()["stale_limits"] == [
+        {"plan": plan, "key": "orena.voice", "limit": 900, "saved_window": "day", "window": "month"} for plan in ("plus", "pro")]
+
+
 def test_a_stored_catalogue_without_the_new_meters_reads_their_defaults():
     """A catalogue saved before PR-MON-7B1 (version 2, no new keys) still reads: the new meters take the code
     defaults, the stored limits stay."""

@@ -10,6 +10,7 @@ is minted, metered or not, so an open session is seen by the next check."""
 
 from __future__ import annotations
 
+import inspect
 from datetime import UTC, datetime
 
 import pytest
@@ -17,20 +18,30 @@ from fastapi import HTTPException
 
 from tests.test_agent_api import client  # noqa: F401 - the agent router's test client fixture
 from writing_coach.product import plan_features, quota
-from writing_coach.product.catalog import FREE, PLUS, PRO
+from writing_coach.product.catalog import FREE, METERS, PLUS, PRO, Meter
 
 NOW = datetime(2026, 10, 19, 9, 0, tzinfo=UTC)
 LIMIT = PLUS.entitlement_map()["orena.voice"].limit  # 6000 s by the code's defaults (D-248)
+# The Intelligence lane's #478 counts voice seconds per the meter's window (a monthly reader beside the daily one). Until it
+# is on this branch, the monthly reset cannot be asserted: that test is pending (strict xfail, so it flips when #478 lands).
+MONTHLY = "monthly_usage" in inspect.signature(plan_features.configure).parameters
+
+
+def configure(usage, clock=lambda: NOW):
+    """Both readers, so the meter's window (day or month) is counted whichever it is."""
+    if MONTHLY:
+        plan_features.configure(daily_usage=usage, monthly_usage=usage, clock=clock)
+    else:
+        plan_features.configure(daily_usage=usage, clock=clock)
 
 
 @pytest.fixture()
 def voice_day(monkeypatch):
     state = {"plan": PLUS, "used": 0}
     monkeypatch.setattr(quota.runtime(), "plan_for", lambda user_key, strict=True: state["plan"])
-    plan_features.configure(daily_usage=lambda user_key, feature: state["used"] if feature == plan_features.VOICE_USAGE
-                            else 0, clock=lambda: NOW)  # fmt: skip
+    configure(lambda user_key, feature: state["used"] if feature == plan_features.VOICE_USAGE else 0)
     yield state
-    plan_features.configure(daily_usage=None)
+    configure(None)
 
 
 def test_the_catalogue_gives_plus_100_and_pro_300_minutes_a_month():
@@ -49,14 +60,42 @@ def test_under_the_cap_voice_opens_and_at_the_cap_this_learner_is_told(voice_day
     voice_day["used"] = LIMIT
     with pytest.raises(HTTPException) as refused:
         plan_features.require_voice_time("u1")
-    assert refused.value.status_code == 429 and refused.value.headers["Retry-After"]
+    assert refused.value.status_code == 429
     detail = refused.value.detail
     assert detail["category"] == "quota_exhausted" and detail["retryable"] is False
     context = detail["context"]
-    # The window is the catalogue's (month since D-248), never a fixed day.
+    # The window is the catalogue's (month since D-248), never a fixed day; its reset is asserted per window below.
     assert (context["feature"], context["used"], context["limit"], context["window"]) == ("orena.voice", LIMIT, LIMIT, "month")
-    assert context["display_unit"] == "minute" and context["scale"] == 60 and context["resets_at"]
-    assert "upgrade" not in context  # Plus and Pro have the same minutes: no plans offer here
+    assert context["display_unit"] == "minute" and context["scale"] == 60
+    assert "upgrade" not in context  # no plans offer here (D-237)
+
+
+def _refused_at_the_cap(voice_day):
+    voice_day["used"] = LIMIT
+    with pytest.raises(HTTPException) as refused:
+        plan_features.require_voice_time("u1")
+    return refused.value
+
+
+def test_a_daily_voice_window_resets_at_the_next_utc_midnight(voice_day, monkeypatch):
+    """The day case, exactly: a voice meter with window `day` resets at the next UTC midnight (15 h after NOW)."""
+    monkeypatch.setitem(METERS, "orena.voice", Meter("orena.voice", "day", "second", "minute", scale=60))
+    refused = _refused_at_the_cap(voice_day)
+    assert refused.headers["Retry-After"] == str(15 * 3600)
+    assert (refused.detail["context"]["window"], refused.detail["context"]["resets_at"]) == ("day", "2026-10-20T00:00:00Z")
+    voice_day["used"] = 660
+    assert plan_features.voice_allowance("u1")["resets_at"] == "2026-10-20T00:00:00Z"
+
+
+@pytest.mark.xfail(not MONTHLY, strict=True, reason="pending #478: voice seconds counted per month (Intelligence lane)")
+def test_the_monthly_voice_window_resets_on_the_first_of_next_month(voice_day):
+    """The month case, exactly: D-248's monthly meter resets at 00:00 UTC on the 1st of the next month."""
+    refused = _refused_at_the_cap(voice_day)
+    first = datetime(2026, 11, 1, tzinfo=UTC)
+    assert refused.headers["Retry-After"] == str(int((first - NOW).total_seconds()))
+    assert (refused.detail["context"]["window"], refused.detail["context"]["resets_at"]) == ("month", "2026-11-01T00:00:00Z")
+    voice_day["used"] = 660
+    assert plan_features.voice_allowance("u1")["resets_at"] == "2026-11-01T00:00:00Z"
 
 
 def test_a_plan_without_voice_is_still_403_first(voice_day):
@@ -70,14 +109,14 @@ def test_usage_that_cannot_be_read_fails_closed(voice_day, monkeypatch):
     def broken(user_key, feature):
         raise RuntimeError("store down")
 
-    plan_features.configure(daily_usage=broken, clock=lambda: NOW)
+    configure(broken)
     with pytest.raises(HTTPException) as refused:
         plan_features.require_voice_time("u1")
     assert refused.value.status_code == 503
 
 
 def test_without_a_usage_store_the_minutes_are_not_capped(voice_day):
-    plan_features.configure(daily_usage=None)
+    configure(None)
     plan_features.require_voice_time("u1")  # a bare server: the plan rule still holds, minutes are not counted
 
 
@@ -152,7 +191,7 @@ def test_a_token_that_uses_exactly_the_seconds_left_ends_the_day(voice_day, monk
 def test_the_allowance_reports_todays_minutes_used_and_left(voice_day):
     voice_day["used"] = 660
     allowance = plan_features.voice_allowance("u1")
-    assert allowance.pop("resets_at")  # when the window resets is the Intelligence lane's (plan_features), not fixed here
+    del allowance["resets_at"]  # asserted exactly per window above (day now; month pending #478)
     assert allowance == {
         "feature": "orena.voice", "entitled": True, "limit": LIMIT, "used": 660, "left": LIMIT - 660, "unit": "second",
         "display_unit": "minute", "scale": 60, "window": "month", "plan": "plus"}
@@ -171,7 +210,7 @@ def test_a_plan_without_voice_has_no_minutes_and_is_not_a_refusal(voice_day):
 
 
 def test_uncapped_voice_says_so_with_no_numbers(voice_day):
-    plan_features.configure(daily_usage=None)
+    configure(None)
     allowance = plan_features.voice_allowance("u1")
     assert allowance["entitled"] is True and allowance["limit"] is None and allowance["left"] is None
 
@@ -180,7 +219,7 @@ def test_an_unreadable_allowance_fails_closed(voice_day):
     def broken(user_key, feature):
         raise RuntimeError("store down")
 
-    plan_features.configure(daily_usage=broken, clock=lambda: NOW)
+    configure(broken)
     with pytest.raises(HTTPException) as refused:
         plan_features.voice_allowance("u1")
     assert refused.value.status_code == 503

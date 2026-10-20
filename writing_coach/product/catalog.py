@@ -317,7 +317,13 @@ def _validated_prices(plan_id: str, raw_prices: object) -> dict[str, dict[str, f
     return prices
 
 
-def _validated_entitlement(plan_id: str, item: object) -> dict[str, Any]:
+# The window a stored entitlement was saved under, when the stored document does not say: the meter's window before it
+# changed. `orena.voice` was a daily meter (D-237) until D-248 made it monthly; a document saved before this build names
+# no window, so its voice limit was a day's seconds. Every other meter has kept its window.
+LEGACY_WINDOWS: dict[str, str | None] = {"orena.voice": "day"}
+
+
+def _validated_entitlement(plan_id: str, item: object, *, stored: bool = False) -> dict[str, Any]:
     if not isinstance(item, Mapping):
         raise PlanCatalogInvalid(f"{plan_id}: each entitlement must be an object.")
     key = str(item.get("key") or "")
@@ -350,10 +356,13 @@ def _validated_entitlement(plan_id: str, item: object) -> dict[str, Any]:
         if value < low:
             raise PlanCatalogInvalid(f"{plan_id} {key} {name} must be between {low} and {high}.")
         params[name] = value
-    return {"key": key, "enabled": enabled, "limit": limit, "params": params}
+    # The window the limit was set for. A save stamps the code's current window (what the editor showed); a stored
+    # document keeps what it was saved under, so a limit set for another window is never read as this one's.
+    window = item.get("window", LEGACY_WINDOWS.get(key, meter.window)) if stored else meter.window
+    return {"key": key, "enabled": enabled, "limit": limit, "params": params, "window": window}
 
 
-def validate_catalog(document: object, *, accept_v1: bool = False) -> dict[str, Any]:
+def validate_catalog(document: object, *, accept_v1: bool = False, stored: bool = False) -> dict[str, Any]:
     """The administrator's document, normalized: prices and limits for exactly the three plans.
 
     Version 2: `{"version": 2, "plans": [{"id", "prices": {period: {currency: amount}}, "entitlements": [{key,
@@ -363,6 +372,9 @@ def validate_catalog(document: object, *, accept_v1: bool = False) -> dict[str, 
     `accept_v1` is for READING a stored document: a version-1 document (no `version`, or 1) keeps its prices and
     drops its limits, whose features no longer exist. A save is always version 2 - an editor still showing the
     old features is refused rather than silently losing what it sent.
+
+    Each normalized entitlement carries the `window` its limit was set for: the meter's current window on a save;
+    with `stored` (reading the saved document) the window it was saved under, `LEGACY_WINDOWS` when it names none.
     """
     if not isinstance(document, Mapping):
         raise PlanCatalogInvalid("The catalogue must be an object.")
@@ -391,7 +403,7 @@ def validate_catalog(document: object, *, accept_v1: bool = False) -> dict[str, 
             if not isinstance(raw_entitlements, list):
                 raise PlanCatalogInvalid(f"{plan_id}: entitlements must be a list.")
             for item in raw_entitlements:
-                normalized = _validated_entitlement(plan_id, item)
+                normalized = _validated_entitlement(plan_id, item, stored=stored)
                 entitlements[normalized["key"]] = normalized
         seen[plan_id] = {"id": plan_id, "prices": prices, "entitlements": list(entitlements.values())}
     if set(seen) != set(PLANS):
@@ -408,13 +420,45 @@ def _stored_limit(default: Entitlement, limit: int | None) -> int | None:
     return limit
 
 
+def _window_matches(item: Entitlement, stored: Mapping[str, Any]) -> bool:
+    """Whether a stored limit was set for the meter's current window (a document without one: `LEGACY_WINDOWS`)."""
+    return stored.get("window", LEGACY_WINDOWS.get(item.key, item.window)) == item.window
+
+
+def stale_limits(record: Mapping[str, Any] | None) -> list[dict[str, Any]]:
+    """The saved limits that do not apply because they were set under another window than the meter's current one, for
+    the Admin view: `[{plan, key, limit, saved_window, window}]`. The built-in value applies to each until an
+    administrator saves the plans again. Empty when nothing is stored or the stored document cannot be read."""
+    if not record:
+        return []
+    try:
+        document = validate_catalog(record.get("value"), accept_v1=True, stored=True)
+    except PlanCatalogInvalid:
+        return []
+    out = []
+    for row in document["plans"]:
+        defaults = PLANS[row["id"]].entitlement_map()
+        for item in row["entitlements"]:
+            default = defaults[item["key"]]
+            # A disabled entitlement's limit counts nothing, so it is not reported (a save still stamps it).
+            if item["enabled"] and item["limit"] is not None and not _window_matches(default, item):
+                out.append({"plan": row["id"], "key": item["key"], "limit": item["limit"],
+                            "saved_window": item.get("window"), "window": default.window})
+    return out
+
+
 def _overlay(plan: Plan, row: Mapping[str, Any]) -> Plan:
+    """The defaults with the stored values on top. A stored limit set under another window than the meter's current
+    one (D-248: `orena.voice` day -> month) does not apply - 900 seconds a day is not 900 seconds a month: the code's
+    default does until an administrator saves again (`stale_limits` tells the Admin view). Its on/off and parameters
+    still apply. No stored data is changed."""
     stored = {item["key"]: item for item in row.get("entitlements", [])}
     entitlements = tuple(
         Entitlement(
             item.key,
             enabled=bool(stored[item.key]["enabled"]),
-            limit=_stored_limit(item, stored[item.key]["limit"]),
+            limit=(_stored_limit(item, stored[item.key]["limit"]) if _window_matches(item, stored[item.key])
+                   else item.limit),
             params=dict(stored[item.key].get("params") or item.params),
         ) if item.key in stored else item
         for item in plan.entitlements
@@ -454,7 +498,7 @@ def _fetch() -> tuple[dict[str, Plan], str]:
     if not record:
         return dict(PLANS), "default"
     try:
-        document = validate_catalog(record.get("value"), accept_v1=True)
+        document = validate_catalog(record.get("value"), accept_v1=True, stored=True)
     except PlanCatalogInvalid as error:
         raise CatalogUnavailable(f"The stored plan catalogue cannot be read: {error}") from error
     rows = {row["id"]: row for row in document["plans"]}

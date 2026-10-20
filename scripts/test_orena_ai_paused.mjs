@@ -260,6 +260,14 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(sent.limit, '100', 'the server figure in minutes');
   assert.equal(savedLimit(sent), 6000, 'and saved back unchanged');
   assert.ok(!/\b900\b/.test(src('static/orena/screens/admin/plans.js')), 'no hard-coded voice default in the editor');
+  // Review of #477, P1: a voice limit saved per day is not applied once the meter is monthly; the page says so.
+  const { staleLine } = await import('../static/orena/screens/admin/plans.js');
+  assert.equal(staleLine({ stale_limits: [] }), '');
+  const stale = staleLine({ stale_limits: [
+    { plan: 'plus', key: 'orena.voice', limit: 900, saved_window: 'day', window: 'month' },
+    { plan: 'pro', key: 'orena.voice', limit: 900, saved_window: 'day', window: 'month' }] });
+  assert.ok(stale.includes('Voice chat with Orena') && stale.includes('per day') && stale.includes('per month') && stale.includes('until you save'), stale);
+  assert.ok(/plansStale/.test(src('static/orena/screens/admin/copy-plans.js')) && (src('static/orena/screens/admin/copy-plans.js').match(/plansStale:/g) || []).length === 3, 'EN/VI/ZH');
   // No stored limit is UNCAPPED on the server: it stays null, shown as an unlimited meter, and a plain save writes no cap.
   for (const stored of [null, undefined]) {
     const open = voiceOf({ enabled: true, ...(stored === undefined ? {} : { limit: stored }) });

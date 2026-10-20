@@ -769,8 +769,11 @@ An estimated IELTS Writing band, or for Chinese the HSK level, for a piece of wr
 **always an estimate, never an exam result**, and stays **administrators-only and experimental** until a pilot
 calibration agrees with real scores. No learner UI calls it yet.
 
-- **Switch:** `BAND_ESTIMATOR=off` removes the route (404 `{"detail": "Not Found"}`, before any other check); anything
-  else (the default) is administrators-only. No setting opens it to learners.
+- **Switch:** `BAND_ESTIMATOR=off` removes the route (404 `{"detail": "Not Found"}`); anything else (the default) is
+  administrators-only. No setting opens it to learners.
+- **Order of checks**, as implemented: the agent is on (404 while off, §2.1) and the learner's read window admits the
+  request (429 `rate_limited`); the body matches (422); then the switch (404 when `off`); then the administrator check
+  (403); then the exam against the learning language (409); only then the estimate (no model call for a short text).
 - **Body** (no other field; 422 for one that does not match):
   `{ exam: "ielts" | "hsk", task?: "task1" | "task2" | "free" (default "task2"), prompt?: string (≤ 2,000, default ""), text: string (1-8,000), support?: "vi" | "en" | "zh-CN" (default "vi") }`.
   `support` is the language of every reason and fix.

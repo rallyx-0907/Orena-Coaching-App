@@ -7865,7 +7865,10 @@ every schema step named below stays a human gate.
 9. **Voice minutes, the weekly report and contract v14 (MV2-6a, UI lane, 2026-10-21).** The plan catalogue's
    `orena.voice` meter is **monthly** (it was daily under D-237): Plus 6000 s (about 100 minutes) and Pro 18000 s a month
    by the code's defaults, Free off; an administrator still edits them. A stored limit under a minute (the D-236
-   placeholder) now reads as the plan's default in the catalogue itself, so Admin's editor has no constant of its own. A new
+   placeholder) now reads as the plan's default in the catalogue itself, so Admin's editor has no constant of its own. A
+   save records the window each limit was set for; a stored limit set under another window than the meter's current one
+   (a document without one counts as `day` for voice) does not apply - the code's default does, the Admin view names it, and
+   an operator re-saves. Stored data is never migrated (review of #477, P1). A new
    on/off plan feature, **`progress.weekly_report`**, is off for Free and on for Plus and Pro. Every client line about
    voice minutes reads the window from the data ("this month" / "today", EN/VI/ZH). Agent Contract **v14** records, as
    implemented on `main`, `GET /api/agent/voice/allowance` (#469), `GET /api/agent/progress/weekly` (#471, #476) and the

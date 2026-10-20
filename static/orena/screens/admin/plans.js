@@ -183,6 +183,24 @@ function appliesLine(doc, ui) {
   return [t('plansFrom', { when }), doc.updated_by ? t('plansBy', { name: doc.updated_by }) : ''].filter(Boolean).join(' · ');
 }
 
+/* Saved limits the server does not apply because they were set under another window than the meter's current one (D-248:
+   voice day -> month; `stale_limits` of GET /api/product/admin/plans). One line per window change, naming the features and
+   plans; the built-in value applies until the operator saves again. '' when there is none. */
+export function staleLine(doc) {
+  const rows = Array.isArray(doc?.stale_limits) ? doc.stale_limits : [];
+  const groups = new Map();
+  for (const row of rows) {
+    const id = `${row.key}|${row.saved_window}|${row.window}`;
+    if (!groups.has(id)) groups.set(id, { ...row, plans: [] });
+    groups.get(id).plans.push(row.plan);
+  }
+  const period = (window) => (window && t.has(`plansWindow_${window}`) ? t(`plansWindow_${window}`) : String(window || ''));
+  return [...groups.values()].map((group) => t('plansStale', {
+    features: `${featureLabel(group.key)} (${group.plans.map((id) => planName({ id })).join(', ')})`,
+    saved: period(group.saved_window), window: period(group.window),
+  })).join(' ');
+}
+
 export function plansPage({ doc, drafts, editing = {}, busy = false, error = null, failed = false, ui = 'en', href }) {
   const back = { href: href('adminUsers'), label: t('navUsers') };
   const label = 'data-screen-label="Plans & pricing"';
@@ -190,6 +208,7 @@ export function plansPage({ doc, drafts, editing = {}, busy = false, error = nul
   if (!doc) return html`<section class="a-page" ${raw(label)}>${pageHead({ back, title: t('plansTitle'), sub: t('plansSub') })}${skeleton(t('loading'))}</section>`;
   return html`<section class="a-page" ${raw(label)}>
     ${pageHead({ back, title: t('plansTitle'), sub: appliesLine(doc, ui) })}
+    ${staleLine(doc) ? html`<p class="a-plans__note">${staleLine(doc)}</p>` : ''}
     <div class="a-plans">${doc.plans.map((plan) => planCard(plan, drafts[plan.id], { flipped: editing[plan.id] === true, busy, error: error && error.plan === plan.id ? error.message : '', ui }))}</div>
     <p class="a-plans__note">${t('plansBilling')}</p>
   </section>`;
