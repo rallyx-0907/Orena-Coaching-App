@@ -301,7 +301,7 @@ def test_automatic_admission_makes_its_own_cover_or_waits_for_review(gated, monk
         snapshot = repository.record_source_item(
             source_id=repository.built_in_source_id("manual"), source_native_id=native, canonical_url="", title="T",
             author="A", published_at=None, language="en", body="Words " + native, content_hash=f"{abs(hash(native)):064x}"[:64],
-            metadata={}, rights={"can_republish": True})
+            metadata={}, rights={"can_republish": True, "attribution_required": False})
         return repository.create_article(
             source_item_id=snapshot["id"], title="Rain returns", body="Words " + native, excerpt="", language="en",
             topic="environment", estimated_level="B1", estimated_confidence=0.6, word_count=2, reading_time_seconds=5,
@@ -326,7 +326,7 @@ def test_every_admitted_article_gets_its_cover_even_when_it_waits_for_review(gat
     snapshot = repository.record_source_item(
         source_id=repository.built_in_source_id("manual"), source_native_id="held-2", canonical_url="", title="T",
         author="A", published_at=None, language="zh", body="雨回来了", content_hash="b" * 64, metadata={},
-        rights={"can_republish": True})
+        rights={"can_republish": True, "attribution_required": False})
     automatic = repository.create_article(
         source_item_id=snapshot["id"], title="雨回来了", body="雨回来了", excerpt="", language="zh", topic="",
         estimated_level="HSK2", estimated_confidence=0.5, word_count=4, reading_time_seconds=5, analysis={},

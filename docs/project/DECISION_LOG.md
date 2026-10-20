@@ -7910,3 +7910,32 @@ learner until UTC midnight.
    - `catalog.METERS["orena.voice"].params["daily_seconds"]`: the bounds, 60 to 86400.
    - `plan_features.DAILY`: the parameter's name.
    - The daily total is read from `product_repository.daily_usage` (UTC day); the month from `monthly_usage`.
+
+## D-250 - Reading publishes only clear rights; the D-190 override is withdrawn (2026-10-21)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-21 05:40: PRE-203 "SIẾT" - Reading is not published while its
+rights are not cleared, with no override). Amends **D-190** (and D-189's "the admin can always publish"); restores
+D-105's hard gate for articles.
+
+1. **No override.** An article is published only when `reading_rights_gate.rights_blockers` is empty:
+   - republish `allowed`;
+   - for an adapted text, adapt `allowed`;
+   - where attribution is required, a complete credit;
+   - the attribution question answered.
+
+   `acknowledge_warnings` no longer overrides anything. The route still accepts the field, ignored, so a client that
+   sends it is not refused 422 before the UI lane removes it.
+2. **Refusal.**
+   - The admin route answers 409 `reading_rights_not_cleared` with `context.blockers`; `override_fields` lists only
+     `quality_override`.
+   - The repository refuses too (`RightsRefused`), so a script or harness that publishes directly is stopped.
+   - Order: thumbnail (D-240), then quality (D-191, which keeps its own reasoned override), then rights.
+3. **Records.**
+   - Nothing is recorded as "published over warnings" any more.
+   - The publish audit keeps `rights_basis` and drops `warnings` and `acknowledged_warnings`.
+   - `publication_warnings` in the response is always `[]`.
+4. **Nothing published is taken down by this gate.** `scripts/check_published_reading_rights_gate.py` (read-only) lists
+   every published article the gate would refuse now, and whether it went out over D-190's warnings. What to do with
+   each is a human decision.
+5. **Books are not covered here.** Their rights fields and publish gate need a schema change, proposed separately (a
+   human gate).
