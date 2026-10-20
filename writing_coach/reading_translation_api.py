@@ -223,6 +223,10 @@ def _summary_source(payload: ReadingSummaryIn) -> tuple[str, bool]:
         article = reading_articles_api._guarded(lambda: repository.get_published_article(payload.article_id))
         if article is None:
             raise orena_http_error(404, "reading_article_not_found", "That article is not available.")
+        # A summary of a Plus body is part of that body (D-248 §6): the same 403 `plan_required` as the article read.
+        from writing_coach.product import content_access
+
+        content_access.require_reading(article)
         return str(article.get("body") or ""), True
     if payload.book_id:
         chapter = reading_library_api.get_chapter(payload.book_id, payload.chapter_id)

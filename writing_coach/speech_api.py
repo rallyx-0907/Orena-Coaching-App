@@ -731,8 +731,16 @@ async def assess_pronunciation(
     language: str = Form(default=""),
     reference_text: str = Form(default=""),
     mode: str = Form(default="scripted"),
+    # The video a shadowing take is scored against, when it is one (D-248 §4): scored shadowing is a Plus tool around a
+    # video. Speaking practice sends none and is not gated.
+    media_id: str = Form(default="", max_length=255),
 ) -> dict[str, Any]:
     await anyio.to_thread.run_sync(consent.require_voice_consent)  # D-233: 403 voice_consent_required when refused
+    if media_id.strip():
+        from writing_coach.product import content_access
+
+        await anyio.to_thread.run_sync(
+            lambda: content_access.require_media_tool("shadowing_score", media_id.strip()))
     normalized_language = language.strip().casefold()
     if normalized_language not in {"en", "zh"}:
         raise orena_http_error(

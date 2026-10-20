@@ -543,6 +543,15 @@ configure_plan_store(_persistence_runtime.platform_repository)
 from writing_coach import policies as _policies  # noqa: E402
 
 _policies.configure(_persistence_runtime.platform_repository)
+# D-248 §4-§6 (MV2-1): content access - the tiers, the admin overrides (platform_settings `product.content_access`),
+# and the access events in the usage counter. The Reading pool is installed with the Reading engine below; Billing's
+# trial read is its seam (`content_access.configure_trial`), absent until Billing installs it.
+from writing_coach.product import content_access as _content_access  # noqa: E402
+
+_content_access.configure(
+    store=_persistence_runtime.platform_repository,
+    record_usage=getattr(_persistence_runtime.product_repository, "record_usage", None),
+)
 # D-203: which code-owned built-in lessons an administrator has hidden from learners lives in platform_settings too
 # (`content.visibility`); the Listening catalogue filters on it at the one place every learner path resolves a lesson.
 from writing_coach import content_visibility as _content_visibility  # noqa: E402
@@ -1959,6 +1968,12 @@ def configure_reading_engine_from_runtime() -> None:
     configure_reading_articles(
         content, language_supported=is_enabled, asset_store=FilesystemBookAssetStore(_reading_library_asset_root),
         on_open=_translate_ahead_on_open,
+    )
+    # D-248 §4 (MV2-1): content access tiers each Reading article inside its (language, level) pool.
+    _content_access.configure(
+        store=_persistence_runtime.platform_repository,
+        reading_pool=lambda language, level: content.published_pool(language=language, level=level or None),
+        record_usage=getattr(_persistence_runtime.product_repository, "record_usage", None),
     )
     # Learner practice on the published corpus. Submit stays off until the
     # live end-to-end run passes (D-076): ORENA_READING_PRACTICE_SUBMIT=on.
@@ -5303,6 +5318,9 @@ def becoming_library_vocabulary_summary() -> dict[str, Any]:
 
 @app.post("/api/library/vocabulary", name="becoming_library_vocabulary_save")
 def becoming_library_vocabulary_save(payload: LibraryVocabularyIn) -> dict[str, Any]:
+    if payload.source_kind == "listening":
+        # Saving a word from a video to review is one of Orena's Plus tools around it (D-248 §4); the video is not gated.
+        _content_access.require_media_tool("save_to_review", payload.source_media_id)
     try:
         return save_library_vocabulary(payload)
     except ValueError as exc:

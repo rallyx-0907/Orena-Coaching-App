@@ -84,6 +84,10 @@ METERS: dict[str, Meter] = {
         # (Hermes for the owner: 15 minutes by default) - product/plan_features.py. Its time is still charged as Orena
         # messages (`voice_seconds_per_message`); this cap protects the system's AI budget from one learner.
         Meter("orena.voice", "day", "second", "minute", scale=60),
+        # MV2-1 (D-248 §4): the videos a week on which Orena's tap-to-look-up works for a learner whose plan does not
+        # include the full media tools. One video counts once per ISO week (`writing_coach.product.content_access`).
+        # Watching a video is never metered (YouTube API Services Developer Policies III.F.3.a).
+        Meter("media.tools_weekly", "week", "video", "video"),
     )
 }
 
@@ -166,9 +170,14 @@ VOICE_MINUTES_PER_DAY = 15
 # Defaults only - an administrator edits them in the plan catalogue like every other limit.
 ASSIST_LIMITS: dict[str, tuple[int, int, int]] = {"free": (30, 10, 5), "plus": (300, 100, 30), "pro": (1500, 500, 100)}
 
+# D-248 §4 (MV2-1): Free looks words up on 3 videos a week. Plus and Pro have the full media tools, so the content-access
+# module never meters them; their number is only a ceiling an editor can see (a stored entitlement needs a limit).
+MEDIA_TOOL_VIDEOS: dict[str, int] = {"free": 3, "plus": 10_000, "pro": 10_000}
+
 
 def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, import_minutes: int,
-                  languages: int, assist: tuple[int, int, int], *, voice: bool = True) -> tuple[Entitlement, ...]:
+                  languages: int, assist: tuple[int, int, int], *, voice: bool = True,
+                  media_tool_videos: int = MEDIA_TOOL_VIDEOS["free"]) -> tuple[Entitlement, ...]:
     word_assist, reading_assist, writing_task = assist
     return (
         Entitlement("orena.message", limit=messages, params={"voice_seconds_per_message": VOICE_SECONDS_PER_MESSAGE}),
@@ -180,6 +189,7 @@ def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, impor
         Entitlement("reading.assist", limit=reading_assist),
         Entitlement("writing.task", limit=writing_task),
         Entitlement("orena.voice", enabled=voice, limit=VOICE_MINUTES_PER_DAY * 60),
+        Entitlement("media.tools_weekly", limit=media_tool_videos),
     )
 
 
@@ -200,7 +210,7 @@ PLUS = Plan(
     price_label="Plus",
     rank=1,
     prices=_prices(9.99, 199000, 79.99, 1590000),
-    entitlements=_entitlements(200, 10, 30, 120, 2, ASSIST_LIMITS["plus"]),
+    entitlements=_entitlements(200, 10, 30, 120, 2, ASSIST_LIMITS["plus"], media_tool_videos=MEDIA_TOOL_VIDEOS["plus"]),
 )
 
 PRO = Plan(
@@ -210,7 +220,7 @@ PRO = Plan(
     price_label="Pro",
     rank=2,
     prices=_prices(19.99, 399000, 159.99, 3190000),
-    entitlements=_entitlements(1000, 50, 120, 600, 2, ASSIST_LIMITS["pro"]),
+    entitlements=_entitlements(1000, 50, 120, 600, 2, ASSIST_LIMITS["pro"], media_tool_videos=MEDIA_TOOL_VIDEOS["pro"]),
 )
 
 # The default catalogue, in rank order. `PLANS` keeps its name: the persistence importer seeds the `plans`

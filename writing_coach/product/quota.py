@@ -92,8 +92,10 @@ SETTING_KEY = "product.quota_enforcement"
 # counted while nothing counts it.
 # PR-MON-7B2a: the semantic AI meters `word.assist`, `reading.assist`, `writing.task` (H7-3, one fresh remote AI request =
 # one unit, per day) are admitted at their call sites through `writing_coach.product.assist_meters`.
+# MV2-1 (D-248 §4): `media.tools_weekly`, the videos a week on which a Free learner may use Orena's tap-to-look-up
+# (`writing_coach.product.content_access`). One video counts once a week; the player itself is never metered.
 WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import",
-                                 "word.assist", "reading.assist", "writing.task")
+                                 "word.assist", "reading.assist", "writing.task", "media.tools_weekly")
 # Entitlements this build enforces that are NOT bucket meters: a count cap with no window and no reservation
 # (`languages.target`, D-170 - `writing_coach.product.language_limit`). The same switch lists them, so one setting and
 # one pair of environment variables govern everything the server enforces; they never go through `admit()`.
@@ -106,7 +108,7 @@ ENFORCEABLE: tuple[str, ...] = WIRED_METERS + WIRED_ENTITLEMENTS
 PENDING_METERS: dict[str, str] = {"speech.transcribe": "second", "speech.evaluate": "second", "audio.tts": "character"}
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
 SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "word.assist", "reading.assist",
-                                "writing.task")
+                                "writing.task", "media.tools_weekly")
 # Meters whose work outlives the request in a background job that settles its own reservation by operation id
 # (`settle_operation`, D-168). The reconciler is only their backstop, after ASYNC_RECONCILE_AFTER.
 ASYNC_METERS: tuple[str, ...] = ("media.import",)
@@ -130,7 +132,7 @@ RECONCILE_INTERVAL_SECONDS = 600
 WINDOW_RETRIES = 4
 
 # A window never shrinks below this when a timezone change moves its boundary (anti-abuse, D-160).
-MIN_WINDOW = {"day": timedelta(hours=23), "month": timedelta(days=27)}
+MIN_WINDOW = {"day": timedelta(hours=23), "week": timedelta(days=6), "month": timedelta(days=27)}
 DEFAULT_ZONE = "UTC"
 UPGRADE_HREF = "#/plan/pricing"
 
@@ -433,9 +435,26 @@ def _first_of_next_month(day: date) -> date:
     return date(day.year + (day.month == 12), day.month % 12 + 1, 1)
 
 
+def _monday(day: date) -> date:
+    return day - timedelta(days=day.weekday())
+
+
+def _label(kind: str, local_day: date) -> str:
+    """The local date a window starts on, as its id names it: the day, the Monday of its ISO week, or the month."""
+    if kind == "day":
+        return local_day.isoformat()
+    if kind == "week":
+        return _monday(local_day).isoformat()
+    return local_day.strftime("%Y-%m")
+
+
 def _period(kind: str, local_day: date, zone: ZoneInfo) -> tuple[datetime, datetime, str]:
     if kind == "day":
         return _midnight(local_day, zone), _midnight(local_day + timedelta(days=1), zone), local_day.isoformat()
+    if kind == "week":
+        # Monday 00:00 to the next Monday 00:00, local: an ISO week (MV2-1).
+        monday = _monday(local_day)
+        return _midnight(monday, zone), _midnight(monday + timedelta(days=7), zone), monday.isoformat()
     first = local_day.replace(day=1)
     return _midnight(first, zone), _midnight(_first_of_next_month(first), zone), first.strftime("%Y-%m")
 
@@ -446,7 +465,7 @@ def zone_of(window_id: str) -> str:
 
 
 def window_for(kind: str, *, now: datetime, zone_name: str, previous: dict | None) -> Window:
-    """The current window of a `day` or `month` meter, in the learner's timezone, never reopened by a change.
+    """The current window of a `day`, `week` or `month` meter, in the learner's timezone, never reopened by a change.
 
     * The latest bucket, if it is open now, IS the window - whatever zone the request names. A timezone change
       therefore never resets or reopens the window it happens in; it applies from the next one.
@@ -454,7 +473,8 @@ def window_for(kind: str, *, now: datetime, zone_name: str, previous: dict | Non
       month), cut in `zone_name`. If that period would start before the previous window ended (the zone moved
       west, so the new local day began earlier), it starts where the previous window ended instead, and ends at
       the first local boundary at least `MIN_WINDOW` later - a learner hopping zones never gets a short window.
-    * window_id = `D:<local date>@<zone>` or `M:<local yyyy-mm>@<zone>`, the local date/month of its start; the
+    * window_id = `D:<local date>@<zone>`, `W:<local Monday>@<zone>` or `M:<local yyyy-mm>@<zone>`, the local
+      date / week / month of its start; the
       bucket stores the true UTC start and end, and `resets_at` is that end.
     """
     if previous is not None and previous["window_start"] <= now < previous["window_end"]:
@@ -465,13 +485,17 @@ def window_for(kind: str, *, now: datetime, zone_name: str, previous: dict | Non
     start, end, label = _period(kind, local_day, zone)
     if previous is not None and start < previous["window_end"]:
         start = previous["window_end"]
-        label_day = start.astimezone(zone).date()
-        label = label_day.isoformat() if kind == "day" else label_day.strftime("%Y-%m")
+        label = _label(kind, start.astimezone(zone).date())
         while end < start + MIN_WINDOW[kind]:
             boundary = end.astimezone(zone).date()  # the local date the current end falls on
-            nxt = boundary + timedelta(days=1) if kind == "day" else _first_of_next_month(boundary)
+            if kind == "day":
+                nxt = boundary + timedelta(days=1)
+            elif kind == "week":
+                nxt = _monday(boundary) + timedelta(days=7)
+            else:
+                nxt = _first_of_next_month(boundary)
             end = _midnight(nxt, zone)
-    prefix = "D" if kind == "day" else "M"
+    prefix = {"day": "D", "week": "W"}.get(kind, "M")
     return Window(f"{prefix}:{label}@{zone_name}", start, end, zone_name)
 
 

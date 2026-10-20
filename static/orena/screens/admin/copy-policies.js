@@ -224,6 +224,16 @@ export const en = {
   polHelp_ai_breaker_rate_limit_failures: 'This many rate-limited calls in a row stand the provider down for the shorter pause below.',
   pol_ai_breaker_rate_limit_cooldown_seconds: 'Stand-down after rate limits',
   polHelp_ai_breaker_rate_limit_cooldown_seconds: 'How long a rate-limited provider is skipped before one request tries it again.',
+  polGroup_access: 'Content access',
+  polGroupSub_access: 'Which content is Free and which needs Plus. Videos always play for everyone; only Orena’s tools around them are tiered.',
+  pol_access_enforced: 'Refuse paid content to Free',
+  polHelp_access_enforced: 'On: a Free learner opening a Plus article or a Plus video tool is shown the upgrade instead of the content. Off: the tiers are computed but nothing is refused.',
+  pol_access_reading_free_percent: 'Free share of Reading (%)',
+  polHelp_access_reading_free_percent: 'About this share of the articles at each level is Free, chosen by a stable rule, so an article never changes tier when others are published.',
+  pol_access_reading_rotation_per_week: 'Extra free articles a week',
+  polHelp_access_reading_rotation_per_week: 'This many more articles at each level are Free each week, on a rotation that changes every Monday.',
+  pol_access_set_free_items: 'Free items in each set',
+  polHelp_access_set_free_items: 'The first items of each vocabulary set, grammar group or mock test that are Free; the rest need Plus.',
 };
 
 export const vi = {
@@ -444,6 +454,16 @@ export const vi = {
   polHelp_ai_breaker_rate_limit_failures: 'Chừng này lượt gọi bị giới hạn tốc độ liên tiếp sẽ tạm ngừng nhà cung cấp trong khoảng ngắn bên dưới.',
   pol_ai_breaker_rate_limit_cooldown_seconds: 'Tạm ngừng sau giới hạn tốc độ',
   polHelp_ai_breaker_rate_limit_cooldown_seconds: 'Nhà cung cấp bị giới hạn tốc độ được bỏ qua bao lâu trước khi một yêu cầu thử lại.',
+  polGroup_access: 'Quyền truy cập nội dung',
+  polGroupSub_access: 'Nội dung nào Miễn phí, nội dung nào cần Plus. Video luôn phát cho mọi người; chỉ các công cụ của Orena quanh video được phân gói.',
+  pol_access_enforced: 'Chặn nội dung trả phí với gói Miễn phí',
+  polHelp_access_enforced: 'Bật: người học gói Miễn phí mở bài đọc Plus hoặc công cụ video Plus sẽ thấy lời mời nâng cấp thay cho nội dung. Tắt: vẫn tính gói nhưng không chặn gì.',
+  pol_access_reading_free_percent: 'Tỉ lệ bài đọc miễn phí (%)',
+  polHelp_access_reading_free_percent: 'Khoảng chừng này phần trăm bài đọc ở mỗi trình độ là Miễn phí, chọn theo một quy tắc cố định, nên một bài không đổi gói khi có bài mới đăng.',
+  pol_access_reading_rotation_per_week: 'Số bài miễn phí thêm mỗi tuần',
+  polHelp_access_reading_rotation_per_week: 'Thêm chừng này bài ở mỗi trình độ được Miễn phí mỗi tuần, luân phiên và đổi vào mỗi thứ Hai.',
+  pol_access_set_free_items: 'Số mục miễn phí trong mỗi bộ',
+  polHelp_access_set_free_items: 'Các mục đầu tiên của mỗi bộ từ vựng, nhóm ngữ pháp hoặc bài thi thử là Miễn phí; phần còn lại cần Plus.',
 };
 
 export const zh = {
@@ -664,4 +684,14 @@ export const zh = {
   polHelp_ai_breaker_rate_limit_failures: '连续这么多次被限流后，服务商按下方较短的时间暂停。',
   pol_ai_breaker_rate_limit_cooldown_seconds: '限流后的暂停',
   polHelp_ai_breaker_rate_limit_cooldown_seconds: '被限流的服务商被跳过多久后，由一个请求重试。',
+  polGroup_access: '内容访问',
+  polGroupSub_access: '哪些内容免费，哪些需要 Plus。视频始终对所有人播放；只有视频周围的 Orena 工具分套餐。',
+  pol_access_enforced: '对免费用户拦截付费内容',
+  polHelp_access_enforced: '开启：免费学习者打开 Plus 文章或 Plus 视频工具时，看到的是升级提示而不是内容。关闭：照常计算套餐，但不拦截任何内容。',
+  pol_access_reading_free_percent: '免费阅读比例（%）',
+  polHelp_access_reading_free_percent: '每个级别大约这个比例的文章免费，按固定规则选出，因此发布新文章时已有文章不会改变套餐。',
+  pol_access_reading_rotation_per_week: '每周额外免费文章',
+  polHelp_access_reading_rotation_per_week: '每个级别每周再有这么多篇文章免费，每周一轮换。',
+  pol_access_set_free_items: '每组免费条目数',
+  polHelp_access_set_free_items: '每个词汇组、语法组或模拟测试的前几项免费；其余需要 Plus。',
 };

@@ -47,6 +47,8 @@ class LibraryVocabularyIn(BaseModel):
     # or a catalogue card does, a tap on a passage does not. It is only ever
     # accepted if the catalogue entry actually has it.
     reading: str = Field(default="", max_length=240)
+    # The video a `listening` save comes from, when the client names it (D-248 §4: content access). Not stored.
+    source_media_id: str = Field(default="", max_length=255)
 
 
 class VocabularyReviewIn(BaseModel):

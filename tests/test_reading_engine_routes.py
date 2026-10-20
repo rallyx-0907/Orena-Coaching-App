@@ -389,7 +389,10 @@ def test_the_learner_list_is_lightweight_and_cacheable(setup):
     assert set(item) == {
         "id", "title", "language", "level", "level_source", "topic", "reading_time_seconds",
         "excerpt", "word_count", "published_at", "content_revision", "provenance", "image",
+        # D-248 (MV2-1): the card's tier, the same for every learner - never a body.
+        "access",
     }
+    assert set(item["access"]) == {"tier", "rotation"}
     assert "max-age" in response.headers["cache-control"]
 
 

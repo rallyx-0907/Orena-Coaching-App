@@ -29,7 +29,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from writing_coach import media_interaction
 from writing_coach.core.errors import orena_http_error
-from writing_coach.product import assist_meters
+from writing_coach.product import assist_meters, content_access
 from writing_coach.reading_lookup import lexical_language
 from writing_coach.reading_cache_scope import scope_for
 from writing_coach.reading_derived import (
@@ -451,6 +451,11 @@ def _saved(candidates: object = ()) -> set[str]:
 def word_detail_route(payload: WordDetailIn, request: Request) -> dict[str, Any]:
     # A plain tap is deterministic and is not AI usage; a contextual ask or the learner's question is counted
     # against the same per-account dictionary AI brake the rest of /api/dictionary/ uses.
+    media_id = content_access.media_id_of(payload.content_id)
+    if media_id:
+        # Tap-to-look-up on a video (D-248 §4): Free on the plan's videos a week (`media.tools_weekly`, one video counts
+        # once a week), unlimited with the full media tools. Watching the video is never metered.
+        content_access.require_media_tool("lookup", media_id)
     if payload.uses_ai and _admit_ai is not None:
         _admit_ai(request)
     return word_detail(payload)
