@@ -102,6 +102,8 @@ class ProviderTurnRequest:
     tool_choice: Literal["none"] | None = None
     # The conversation's pinned model; None is the legacy active selection, read each round.
     route: ModelRoute | None = None
+    # The second rung (D-247): taken only when `route` fails before answering, chosen by the turn after G8.
+    fallback: ModelRoute | None = None
 
 
 def tools_digest(tools: Sequence[ProviderToolSpec]) -> str | None:

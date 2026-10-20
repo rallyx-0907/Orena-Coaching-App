@@ -4332,6 +4332,62 @@ class _DataClassesIn(BaseModel):
     expected_updated_at: str | None = None
 
 
+@app.get("/api/admin/agent/fallback-route", name="admin_agent_fallback_route")
+def admin_agent_fallback_route(request: Request) -> dict[str, Any]:
+    """The agent's second rung (D-247): what is recorded, and the route actually in force (None when the recorded one
+    cannot take agent turns or may not receive learner text, D-104)."""
+    require_admin(request)
+    from writing_coach.ai import platform as _ai_platform
+
+    row = _persistence_runtime.platform_repository.get_setting(_ai_platform.AGENT_FALLBACK_SETTING)
+    effective = _ai_platform.agent_fallback_route()
+    return {"recorded": (row or {}).get("value"), "updated_at": (row or {}).get("updated_at"),
+            "env": os.environ.get(_ai_platform.AGENT_FALLBACK_ENV, "") or None,
+            "effective": {"provider": effective[0], "model": effective[1]} if effective else None}
+
+
+class _FallbackRouteIn(BaseModel):
+    model_config = {"extra": "forbid"}
+
+    provider: str = Field(min_length=1, max_length=64)
+    model: str = Field(min_length=1, max_length=200)
+    expected_updated_at: str | None = None
+
+
+@app.put("/api/admin/agent/fallback-route", name="admin_agent_fallback_route_save")
+def admin_agent_fallback_route_save(payload: _FallbackRouteIn, request: Request) -> dict[str, Any]:
+    """Set the agent's second rung (D-247). Refused unless it can take agent turns here (configured, streams them) and
+    may receive learner text (D-104). Audited with the change, only over the version read (409)."""
+    admin = require_admin(request)
+    from writing_coach import admin_console_api
+    from writing_coach.ai import platform as _ai_platform
+    from writing_coach.ai.base import AIProviderUnavailable
+    from writing_coach.persistence.platform_repository import SettingConflict
+
+    admin_console_api._same_origin(request)
+    route = (payload.provider.strip(), payload.model.strip())
+    if not _ai_platform.agent_route_usable(route):
+        raise orena_http_error(422, "fallback_route_unusable",
+                               "That provider and model cannot take agent turns on this server.")
+    try:
+        _ai_platform._legacy_privacy_guard(None, _ai_platform._route_item(route), route[1])
+    except AIProviderUnavailable:
+        raise orena_http_error(422, "fallback_route_learner_text",
+                               "That provider may not receive learner text (a free tier or one that may log prompts).") from None
+    actor = str(admin.get("email") or admin.get("google_sub") or "")
+    row = _persistence_runtime.platform_repository.get_setting(_ai_platform.AGENT_FALLBACK_SETTING)
+    audit = {"action": "admin.agent_fallback_route", "actor": actor, "entity_type": "platform_setting",
+             "entity_id": _ai_platform.AGENT_FALLBACK_SETTING,
+             "payload": {"from": (row or {}).get("value"), "to": {"provider": route[0], "model": route[1]}}}
+    try:
+        _persistence_runtime.platform_repository.set_setting(
+            _ai_platform.AGENT_FALLBACK_SETTING, {"provider": route[0], "model": route[1]}, updated_by=actor,
+            expected_updated_at=payload.expected_updated_at, audit=audit)
+    except SettingConflict:
+        raise orena_http_error(409, "fallback_route_conflict", "The setting changed since it was read.") from None
+    return admin_agent_fallback_route(request)
+
+
 @app.put("/api/admin/agent/data-classes", name="admin_agent_data_classes_save")
 def admin_agent_data_classes_save(payload: _DataClassesIn, request: Request) -> dict[str, Any]:
     """The owner records each provider's class after reading its retention and training terms (#264). The whole

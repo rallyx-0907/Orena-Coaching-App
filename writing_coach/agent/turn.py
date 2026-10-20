@@ -686,6 +686,27 @@ class _Turn:
             raise ProviderUnavailable("the provider answered with nothing")
         yield from self._finish(outputs)
 
+    def _fallback_route(self) -> ModelRoute | None:
+        """The second rung for this turn (D-247), or None. Read once per turn. Under G8 it is offered only when it is
+        cleared for at least what the first rung is: it would receive the same request, pack and notes included."""
+
+        if hasattr(self, "_fallback_choice"):
+            return self._fallback_choice
+        choice = None
+        read = getattr(self.rt.router, "fallback", None)
+        route = read() if callable(read) else None
+        if route is not None and route != self.route:
+            classes = self._data_classes()
+            primary = (self.route.provider, self.route.model) if self.route is not None else (None, None)
+            if gating_on(self.rt.pack, classes, memory_on=self.rt.memory is not None) and (
+                    classes.of(route.provider, route.model) < classes.of(*primary)):  # fmt: skip
+                self.timeline.facts["fallback"] = {"withheld": "data_class", "provider": route.provider}
+            else:
+                choice = route
+                self.timeline.facts["fallback"] = {"offered": route.provider}
+        self._fallback_choice = choice
+        return choice
+
     def _data_classes(self):
         """The provider data-class record for this turn: one snapshot of the owner's record (#264), so every check in
         the turn sees the same one. None: the runtime is not gated."""
@@ -955,6 +976,7 @@ class _Turn:
                 timeout_seconds=remaining,
                 tool_choice="none" if listed is not None and not allowed else None,
                 route=self.route,
+                fallback=self._fallback_route(),
             )
             if round_index == 0:
                 self.timeline.facts["tools_digest"] = tools_digest(request.tools)
