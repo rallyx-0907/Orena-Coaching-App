@@ -772,7 +772,7 @@ export default async function listening(element, ctx) {
   });
   viewport?.addEventListener('resize', () => { if (element.classList.contains('is-typing')) fitVisible(); });
 
-  /* After Check the result is what the learner looks at (#445): typing ends at once rather than after the focusout
+  /* After Check the result is what the learner looks at (issue 445): typing ends at once rather than after the focusout
      delay, the room is the full visible area again, and the result's stage starts at its score. iOS Safari can leave
      the window scrolled by the height it moved to show the field, and the keyboard closes over a few frames, so the
      same settling is repeated when the visible viewport grows back. Nothing here scrolls the page: the room is the

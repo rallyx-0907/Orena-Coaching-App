@@ -74,7 +74,7 @@ assert.match(practiceSrc, /labelControl\(button, t\(view\.key, view\.values\)\)/
 assert.match(practiceSrc, /labelControl\(toggle, t\(hintHidden \? 'hintShow' : 'hintHide'\)\)/, 'the toggle is named by its action');
 assert.match(practiceSrc, /icon\(hintHidden \? 'chevron-down' : 'chevron-up'/, 'the toggle draws a chevron, not a second eye');
 // Every one of those names exists, and differs, in the three interface languages.
-const names = ['hintGive', 'hintMore', 'hintMaxed', 'hintHide', 'hintShow', 'hintNoteStart', 'hintNoteStartHan'];
+const names = ['hintGive', 'hintMore', 'hintMaxed', 'hintHide', 'hintShow', 'hintNoteStart', 'hintNoteStartHan', 'showAnswer', 'answerShownBadge'];
 const byLang = {};
 for (const ui of ['en', 'vi', 'zh']) {
   setLanguages({ ui });
@@ -133,5 +133,27 @@ assert.match(reveal, /removeProperty\('--ls-visible-h'\)/, 'the room is the full
 assert.match(reveal, /viewport\.addEventListener\('resize'/, 'and settles again while the keyboard closes');
 assert.match(reveal, /stage\.scrollTop = 0/, "the stage, the result's own region, starts at the score");
 assert.doesNotMatch(reveal.slice(0, reveal.indexOf('setTimeout(')), /scrollIntoView/, 'nothing scrolls the page itself');
+
+/* --- #445, owner decision 2026-10-20: matched words are green, and the answer can be shown -------------------
+   Green is the semantic success pair the Live check strip already uses, with no edge (D-147). "Show answer" is a
+   control of the hint row's own style (a glyph on the phone, its words on the desk), reveals the line as a check does,
+   and records it through the attempt model's `revealed` - never a score. */
+for (const side of ['.s-dict__chip--mine-correct', '.s-dict__chip--src-correct']) {
+  const rule = rulesFor(dictCss, side);
+  assert.ok(rule.some((r) => /background:\s*var\(--green-soft\)/.test(r.body) && /color:\s*var\(--green\)/.test(r.body)), `${side} is the success pair`);
+  assert.ok(rule.every((r) => !/border|outline|box-shadow/.test(r.body)), `${side} draws no edge`);
+}
+const revealButton = practiceSrc.match(/<button[^>]*data-reveal[^>]*>.*?<\/button>/s)?.[0] || '';
+assert.match(revealButton, /class="s-dict__hint s-dict__reveal"/, "Show answer takes the hint row's button style");
+assert.match(revealButton, /aria-label="\$\{t\('showAnswer'\)\}"/, 'and is named by its words');
+assert.match(revealButton, /icon\('book-open'/, 'a Lucide glyph on the phone');
+assert.ok(practiceSrc.indexOf('data-reveal') < practiceSrc.indexOf('data-check'), 'it sits before Check, not after it');
+const revealFn = practiceSrc.slice(practiceSrc.indexOf('async function reveal()'), practiceSrc.indexOf('async function check()'));
+assert.match(revealFn, /evidence\.reveal\(\)/, "the reveal is the attempt model's own record");
+assert.doesNotMatch(revealFn, /evidence\.compare|checkAnswer/, 'showing the answer scores nothing');
+assert.match(revealFn, /revealedIds\.add\(line\.id\)/, 'the line is revealed as a check reveals it');
+assert.match(revealFn, /onCheck\(line\)/, 'and the room settles it in view as after a check');
+assert.match(revealFn, /if \(readOnly\) return;/, "an administrator's preview stores nothing");
+assert.match(practiceSrc, /answerChips\(seg\.text, lesson\.language\)/, 'the shown line is drawn in its own spelling');
 
 console.log('Dictation workspace: a held line is the whole of what may be played; the phone keeps the Transcript while typing and draws the hint as an eye: PASS');

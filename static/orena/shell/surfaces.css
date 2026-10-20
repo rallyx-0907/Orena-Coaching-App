@@ -241,6 +241,8 @@
   .s-cr-summary,
   .s-dict__ai,
   .s-dict__chip--mine-bad,
+  .s-dict__chip--mine-correct,
+  .s-dict__chip--src-correct,
   .s-dict__chip--src-fix,
   .s-dict__hint,
   .s-dict__hint:hover:not(:disabled),

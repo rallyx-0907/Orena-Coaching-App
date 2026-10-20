@@ -22,6 +22,7 @@ import {
   previousEvidence,
   checkAnswer,
   chipsFor,
+  answerChips,
   scoreOf,
   scoreNoteKey,
   verdictOf,
@@ -269,6 +270,21 @@ assert.deepEqual(previousEvidence({ checked_attempt_count: 3, best_accuracy_perc
   const gap = chipsFor(checkAnswer(missing), missing);
   assert.deepEqual(gap.src.map((chip) => chip.kind), ['correct', 'fix', 'correct', 'correct'], 'a missing character is marked on the transcript');
   assert.ok(gap.mine.every((chip) => chip.kind === 'correct'));
+}
+
+/* --- #445 "Show answer" (owner decision 2026-10-20): the whole line in its own spelling, unmarked, in both languages;
+   the record says it was revealed and carries no score. --- */
+{
+  assert.deepEqual(answerChips("I don't think it's raining.", 'en').map((chip) => chip.text), ['I', "don't", 'think', "it's", 'raining']);
+  assert.ok(answerChips('Take the train home', 'en').every((chip) => chip.kind === 'shown'), 'nothing was compared, so nothing is right or wrong');
+  assert.deepEqual(answerChips('我们一起练习听力。', 'zh').map((chip) => chip.text), ['我', '们', '一', '起', '练', '习', '听', '力']);
+  const { dictationEvidence } = await import('../static/orena/product/evidence.js');
+  const evidence = dictationEvidence({ asset: 'a', segment: { segment_id: 's1', spoken_text: 'Take the train home' }, language: 'en' });
+  const revealed = evidence.reveal();
+  assert.equal(revealed.presentation, 'revealed');
+  assert.equal(revealed.revealed, true);
+  assert.equal(revealed.checked_attempt_count, 0, 'showing the answer is not a checked attempt');
+  assert.equal(revealed.best_accuracy_percent, null, 'and moves no score');
 }
 
 /* --- hint: the button's label ladder and the fixed category note beside it --- */
