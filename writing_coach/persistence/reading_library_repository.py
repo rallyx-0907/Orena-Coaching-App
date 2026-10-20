@@ -26,12 +26,15 @@ from __future__ import annotations
 
 import base64
 import json
+import time
 import uuid
+import weakref
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import inspect, text
+from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.engine import Engine
 
 DEFAULT_PAGE_LIMIT = 24
@@ -41,7 +44,9 @@ MAX_PAGE_LIMIT = 60
 # migration 20261021_0037; until a runtime applies it, the gate is dormant and books show as before.
 RIGHTS_STATUSES = ("unknown", "cleared", "denied", "grandfathered")
 LEARNER_RIGHTS = ("cleared", "grandfathered")  # attested, or on the shelf before 0037 (kept until a person decides)
-_RIGHTS_COLUMNS: dict[int, bool] = {}
+_RIGHTS_COLUMNS: weakref.WeakKeyDictionary[Engine, float] = weakref.WeakKeyDictionary()  # engine -> when "absent"
+_RECHECK_SECONDS = 30.0  # a "not yet" is looked at again: the migration may be applied while a worker runs
+_PRESENT = float("inf")
 
 
 class BookRightsUnavailable(RuntimeError):
@@ -49,16 +54,23 @@ class BookRightsUnavailable(RuntimeError):
 
 
 def has_rights_columns(engine: Engine) -> bool:
-    """Whether `reading_books` carries the rights columns. Read once per engine: applying the migration is an operator
-    step followed by a restart."""
-    key = id(engine)
-    if key not in _RIGHTS_COLUMNS:
-        try:
-            columns = {column["name"] for column in inspect(engine).get_columns("reading_books")}
-        except Exception:  # noqa: BLE001 - no table, no columns: the gate stays dormant
-            columns = set()
-        _RIGHTS_COLUMNS[key] = "rights_status" in columns
-    return _RIGHTS_COLUMNS[key]
+    """Whether `reading_books` carries the rights columns. "Yes" is remembered for the engine's life; "no" is looked at
+    again after 30 s (the migration may be applied while a worker runs); a failed look is not remembered at all (a
+    passing database error must not leave the gate dormant until a restart)."""
+    seen = _RIGHTS_COLUMNS.get(engine)
+    if seen == _PRESENT:
+        return True
+    if seen is not None and time.monotonic() - seen < _RECHECK_SECONDS:
+        return False
+    try:
+        columns = {column["name"] for column in inspect(engine).get_columns("reading_books")}
+    except NoSuchTableError:
+        columns = set()  # no table yet: dormant, like no columns
+    except Exception:  # noqa: BLE001 - the database could not be read: say "no" now, ask again next time
+        return False
+    present = "rights_status" in columns
+    _RIGHTS_COLUMNS[engine] = _PRESENT if present else time.monotonic()
+    return present
 
 
 def _learner_rights(engine: Engine, alias: str = "") -> str:
@@ -368,7 +380,8 @@ class PostgresReadingLibraryRepository:
             "next_cursor": next_cursor,
         }
 
-    def get_book(self, book_id: str) -> dict[str, Any] | None:
+    def get_book(self, book_id: str, *, learner: bool = True) -> dict[str, Any] | None:
+        """A ready book. `learner=False` (administration: its cover) reads it whatever its rights (D-251)."""
         identity = _as_uuid(book_id)
         if identity is None:
             return None
@@ -377,7 +390,7 @@ class PostgresReadingLibraryRepository:
                 text(
                     "SELECT id, title, author, description, learning_language, cover_asset_key, "
                     "chapter_count, word_count, content_revision, created_at "
-                    "FROM reading_books WHERE id = :id AND status = 'ready'" + _learner_rights(self._engine)
+                    "FROM reading_books WHERE id = :id AND status = 'ready'" + (_learner_rights(self._engine) if learner else "")
                 ),
                 {"id": identity},
             ).mappings().first()

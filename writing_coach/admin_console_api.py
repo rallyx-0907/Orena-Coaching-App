@@ -1433,7 +1433,7 @@ def _thumbnail_target(kind: str, item_id: str):
         return entry.title, entry.language, topic, save_media
     if kind == "book":
         repository, asset_store = reading_library_api._require_backend()
-        book = repository.get_book(item_id)
+        book = repository.get_book(item_id, learner=False)  # a draft book's cover is an administrator's too (D-251)
         if book is None:
             raise orena_http_error(404, "content_not_found", "This book is not in the catalog.")
 

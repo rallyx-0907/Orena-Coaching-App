@@ -10,8 +10,9 @@ Books had no rights field at all, and an imported book was on the learner shelf 
 - `source_url` (varchar 1000 NOT NULL DEFAULT ''): where the text came from.
 - `rights_attested_by` (varchar 255, NULL), `rights_attested_at` (timestamptz, NULL): who attested, and when.
 
-**Backfill, the one data decision:** every book that exists when this runs (ready or archived) becomes `grandfathered`,
-so nothing already on the shelf disappears (Hermes for the owner: re-check, never take down on its own).
+**Backfill, the one data decision:** every book on the shelf (`ready`) when this runs becomes `grandfathered`, so nothing
+already on the shelf disappears (Hermes for the owner: re-check, never take down on its own). An archived book stays
+`unknown`: restoring it needs an attestation, so archiving (the only take-down there was) is no way round the gate.
 `scripts/check_books_rights.py` lists them for a human decision; an administrator moves each to `cleared` or
 `denied`. A book imported after this revision starts `unknown` and is not shown until attested.
 
@@ -55,8 +56,9 @@ def upgrade() -> None:
     op.add_column("reading_books", sa.Column("source_url", sa.String(1000), nullable=False, server_default=""))
     op.add_column("reading_books", sa.Column("rights_attested_by", sa.String(255), nullable=True))
     op.add_column("reading_books", sa.Column("rights_attested_at", sa.DateTime(timezone=True), nullable=True))
-    # Everything on (or archived from) the shelf before this revision stays readable until a person decides.
-    op.execute("UPDATE reading_books SET rights_status = 'grandfathered'")
+    # What is on the shelf stays readable until a person decides; an archived book stays `unknown`, so restoring it
+    # needs an attestation (archiving was the only take-down there was - it must not become a way round the gate).
+    op.execute("UPDATE reading_books SET rights_status = 'grandfathered' WHERE status = 'ready'")
     allowed = ", ".join(f"'{value}'" for value in RIGHTS_STATUSES)
     op.create_check_constraint("ck_reading_book_rights_status", "reading_books", f"rights_status IN ({allowed})")
 

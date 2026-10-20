@@ -7955,9 +7955,11 @@ it are human gates, after an independent architecture review.
    `cleared` or `grandfathered`.
    - A book imported after 0037 starts `unknown` and is not shown.
    - `denied` takes a book off the shelf.
-   - Archiving and restoring are unchanged; visibility always follows the rights.
-3. **No take-down on its own.** The migration marks every existing book `grandfathered`, so the shelf is unchanged on
-   the day it is applied. `scripts/check_books_rights.py` (read-only) lists every book not `cleared`, for a person to
+   - Archiving and restoring are unchanged; visibility always follows the rights. A book archived before 0037 stays
+     `unknown`, so restoring it needs an attestation: archiving, the only take-down there was, is no way round the
+     gate.
+3. **No take-down on its own.** The migration marks every book on the shelf (`ready`) `grandfathered`, so the shelf is
+   unchanged on the day it is applied. `scripts/check_books_rights.py` (read-only) lists every book not `cleared`, for a person to
    attest or deny.
 4. **Like Media.** `POST /api/admin/console/content/book/{id}/rights` sets `unknown`, `cleared` or `denied`. `cleared`
    needs `attested` and a licence note (422 otherwise). The change is audited (`admin.content.rights`).

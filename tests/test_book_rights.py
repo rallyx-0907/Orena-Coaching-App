@@ -16,7 +16,7 @@ import uuid
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 
 from tests.test_admin_console_routes import ReadingRepo, call, setup  # noqa: F401 - the console fixture
 from writing_coach.admin_content import book_status
@@ -106,6 +106,73 @@ def test_the_gate_is_dormant_on_a_database_without_the_columns():
     assert library.PostgresReadingLibraryRepository(engine).rights_review() == []
 
 
+def test_a_failed_look_at_the_columns_is_not_remembered(monkeypatch):
+    """Review of #486, P1-A: a passing database error must not leave the gate dormant until a restart."""
+    engine = create_engine("sqlite://")
+    calls = []
+
+    class Broken:
+        def get_columns(self, table):
+            calls.append(table)
+            raise RuntimeError("database down")
+
+    class Migrated:
+        def get_columns(self, table):
+            return [{"name": "id"}, {"name": "rights_status"}]
+
+    monkeypatch.setattr(library, "inspect", lambda e: Broken())
+    assert library.has_rights_columns(engine) is False
+    monkeypatch.setattr(library, "inspect", lambda e: Migrated())
+    assert library.has_rights_columns(engine) is True  # asked again at once: the failure was not cached
+    monkeypatch.setattr(library, "inspect", lambda e: Broken())
+    assert library.has_rights_columns(engine) is True  # "yes" is kept for the engine's life
+
+
+def test_a_not_yet_is_looked_at_again_after_thirty_seconds(monkeypatch):
+    engine = create_engine("sqlite://")
+    now = [1000.0]
+    monkeypatch.setattr(library.time, "monotonic", lambda: now[0])
+    columns = [[{"name": "id"}]]
+    monkeypatch.setattr(library, "inspect", lambda e: type("I", (), {"get_columns": lambda self, t: columns[0]})())
+    assert library.has_rights_columns(engine) is False
+    columns[0] = [{"name": "id"}, {"name": "rights_status"}]  # the migration is applied while the worker runs
+    now[0] += 10
+    assert library.has_rights_columns(engine) is False  # within 30 s: the "not yet" stands
+    now[0] += 25
+    assert library.has_rights_columns(engine) is True
+
+
+def test_the_admin_detail_reads_the_rights_like_the_list():
+    """Review of #486, P1-D: the detail view said `published` for a draft book."""
+    from sqlalchemy import Uuid, bindparam
+
+    from writing_coach.persistence.admin_repository import AdminConsoleRepository
+
+    engine = create_engine("sqlite://")
+    with engine.begin() as connection:
+        connection.execute(text(
+            "CREATE TABLE reading_books (id CHAR(32) PRIMARY KEY, title TEXT, author TEXT, description TEXT, "
+            "learning_language TEXT, status TEXT, chapter_count INT, word_count INT, cover_asset_key TEXT, "
+            "source_kind TEXT, imported_by TEXT, created_at TEXT, updated_at TEXT, rights_status TEXT)"))
+        connection.execute(text("CREATE TABLE reading_book_chapters (id CHAR(32), book_id CHAR(32), position INT, "
+                                "title TEXT, word_count INT)"))  # fmt: skip
+        connection.execute(text(
+            "INSERT INTO reading_books VALUES (:id, 'Draft', '', '', 'en', 'ready', 0, 0, 'k', 'epub', '', "
+            "'2026-10-21', '2026-10-21', 'unknown')").bindparams(bindparam("id", type_=Uuid(as_uuid=True))),
+            {"id": uuid.UUID(BOOK)})  # fmt: skip
+    repository = AdminConsoleRepository(engine)
+    detail, listed = repository.get_book(BOOK), repository.list_books()
+    assert detail["rights_status"] == listed[0]["rights_status"] == "unknown"
+    assert book_status(detail) == book_status(listed[0]) == "draft"
+
+
+def test_the_admin_cover_path_reads_a_draft_book():
+    """Review of #486, P1-B: regenerating a cover goes through the unfiltered read."""
+    from writing_coach import admin_console_api
+
+    assert "repository.get_book(item_id, learner=False)" in Path(admin_console_api.__file__).read_text(encoding="utf-8")
+
+
 def test_the_migration_is_proposed_not_in_versions():
     assert (ROOT / "migrations" / "proposed" / "20261021_0037_reading_book_rights.py").exists()
     assert not list((ROOT / "migrations" / "versions").glob("*_0037_*")), "promotion is the owner's (human gate)"
@@ -138,6 +205,8 @@ def pg():
     command.upgrade(base, "head")
     engine = create_engine(PG_URL, future=True)
     old = _book(engine, "before-0037")  # on the shelf before the revision
+    archived = _book(engine, "archived-before-0037")
+    library.PostgresReadingLibraryRepository(engine).archive_book(archived)
     proposed = _runtime_alembic_config()
     proposed.set_main_option("sqlalchemy.url", PG_URL.replace("%", "%%"))
     locations = proposed.get_main_option("version_locations") or str(ROOT / "migrations" / "versions")
@@ -145,9 +214,11 @@ def pg():
     proposed.set_main_option("path_separator", "space")
     command.upgrade(proposed, "20261021_0037")
     library._RIGHTS_COLUMNS.clear()
-    yield engine, old
+    yield engine, old, archived
     command.downgrade(proposed, "20261019_0036")  # leave the shared test database at the versions/ head
     library._RIGHTS_COLUMNS.clear()
+    columns = {c["name"] for c in inspect(engine).get_columns("reading_books")}
+    assert not columns & {"rights_status", "license_note", "source_url", "rights_attested_by", "rights_attested_at"}
     engine.dispose()
 
 
@@ -165,15 +236,24 @@ def _book(engine, label):
 
 
 def test_pg_a_book_on_the_shelf_before_0037_stays_and_is_listed_for_review(pg):
-    engine, old = pg
+    engine, old, _archived = pg
     repository = library.PostgresReadingLibraryRepository(engine)
     assert repository.get_book(old) is not None  # grandfathered: not taken down
     review = {item["id"]: item for item in repository.rights_review()}
     assert review[old]["rights_status"] == "grandfathered" and review[old]["learner_visible"] is True
 
 
+def test_pg_an_archived_book_needs_an_attestation_to_come_back(pg):
+    engine, _old, archived = pg
+    repository = library.PostgresReadingLibraryRepository(engine)
+    assert {item["id"]: item for item in repository.rights_review()}[archived]["rights_status"] == "unknown"
+    assert repository.restore_book(archived) is True
+    assert repository.get_book(archived) is None  # restored, but not on the learner shelf until attested
+    assert repository.get_book(archived, learner=False) is not None  # an administrator still reaches its cover
+
+
 def test_pg_a_new_import_waits_for_cleared_rights_and_denial_takes_it_down(pg):
-    engine, _old = pg
+    engine, _old, _archived = pg
     repository = library.PostgresReadingLibraryRepository(engine)
     new = _book(engine, "after-0037")
     assert repository.get_book(new) is None  # unknown: not on the learner shelf
@@ -187,7 +267,7 @@ def test_pg_a_new_import_waits_for_cleared_rights_and_denial_takes_it_down(pg):
 
 
 def test_pg_the_check_constraint_refuses_an_unknown_status(pg):
-    engine, old = pg
+    engine, old, _archived = pg
     from sqlalchemy.exc import IntegrityError
 
     with pytest.raises(IntegrityError), engine.begin() as connection:
