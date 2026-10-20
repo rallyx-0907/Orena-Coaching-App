@@ -145,6 +145,14 @@ POLICIES: tuple[Policy, ...] = (
     # zh-MO with the stable reason `zh_traditional_not_accepted`; `any` takes the provider's track as it is. Speech
     # recognition output is not affected: it is converted to Simplified (D-208).
     _p("media.zh_scripts_accepted", "media", "enum", "simplified", choices=("simplified", "any")),
+    # The caption-timing gate (P0 2026-10-20, `media_caption_timing`): a provider-caption line read faster than this many
+    # characters a second (Han characters for Chinese) is a timing defect; more defective lines than the share below hold
+    # the item for timing review, never published. A silence longer than the gap after a line that stops mid-sentence is
+    # a defect too.
+    _p("media.caption_max_cps", "media", "float", 25.0, low=12, high=60),
+    _p("media.caption_max_cps_zh", "media", "float", 10.0, low=4, high=30),
+    _p("media.caption_timing_max_defect_share", "media", "float", 0.02, low=0, high=0.5),
+    _p("media.caption_max_gap_seconds", "media", "int", 12, unit="seconds", low=3, high=120),
     # --- vocabulary (D-188): the operator's switch for the derived General catalogue; on by default
     _p("vocabulary.general_catalogue_enabled", "vocabulary", "bool", True),
     # --- request rates on the other paid routes (per account, per 10 minutes)

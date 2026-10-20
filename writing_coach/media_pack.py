@@ -417,11 +417,21 @@ def _decide(item: PackItem, pack: Pack, store: Any, assets: Any, clip_keys: Clip
     if not rights_complete(candidate.source):
         hold = "rights_incomplete"
     else:
-        from writing_coach.media_transcript_pipeline import usable_transcript
+        from writing_coach.media_transcript_pipeline import REASON_CAPTION_TIMING, caption_timing_gate, usable_transcript
 
         usable, why = usable_transcript(candidate)
         if not usable:
             hold = f"transcript_{why or 'unusable'}"
+        else:
+            timing_ok, timing_detail, _report = caption_timing_gate(candidate)
+            if not timing_ok:
+                # Held for timing review with the pipeline's own reason, so the console words it the same way.
+                hold = f"transcript_{REASON_CAPTION_TIMING}"
+                from writing_coach.media_transcript_pipeline import reason_message
+
+                candidate = replace(candidate, processing={**ready, "state": "held", "reason": REASON_CAPTION_TIMING,
+                                                           "detail": timing_detail,
+                                                           "message": reason_message(REASON_CAPTION_TIMING)})
     final = replace(candidate, status="unpublished" if hold else "published")
     if hold:
         row["held"] = hold
