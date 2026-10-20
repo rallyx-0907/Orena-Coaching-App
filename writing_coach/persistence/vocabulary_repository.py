@@ -1303,6 +1303,7 @@ class SQLAlchemyVocabularyRepository:
         reading: str | None = None,
         explanations: Mapping[str, str] | None = None,
         clear_explanation: bool = False,
+        label: Mapping[str, str] | None = None,
     ) -> dict[str, Any]:
         """Replace one example sentence of an entry (its `examples[index]`) by hand.
 
@@ -1318,6 +1319,10 @@ class SQLAlchemyVocabularyRepository:
         sentence; a snapshot without it is left alone and named in `snapshots_unmatched`. A call that changes nothing
         writes nothing (no provenance row) and returns `changed: False`. Who, when, why, and the text before and after
         are kept in `provenance.example_corrections`. No schema change; nothing learner-owned is read or written.
+
+        `label` (optional, by support language) replaces the item's label, for a sentence whose old label described
+        where it came from (an uncredited quote "from a cartoon" replaced by an Orena-authored sentence). Without it
+        the label is kept.
         """
         self._require_available()
         clean_text, clean_reason = _text(text), _text(reason)
@@ -1339,6 +1344,7 @@ class SQLAlchemyVocabularyRepository:
 
         clean_translations = localized(translations, "translation")
         clean_explanations = localized(explanations, "explanation")
+        clean_label = localized(label, "label")
         if clean_explanations and clear_explanation:
             raise ValueError("Give new explanations or clear the explanation, not both.")
         clean_reading = _text(reading)
@@ -1366,7 +1372,7 @@ class SQLAlchemyVocabularyRepository:
             entry_language = _text(entry.language_code).casefold()
             if language is not None and _text(language).casefold() != entry_language:
                 raise ValueError("The example's language must be the entry's language.")
-            if entry_language in clean_translations or entry_language in clean_explanations:
+            if entry_language in clean_translations or entry_language in clean_explanations or entry_language in clean_label:
                 raise ValueError("A translation or explanation must be in a support language, not the entry's.")
             examples = _copy_json(entry.examples, []) or []
             if not isinstance(examples, list) or index >= len(examples):
@@ -1409,6 +1415,8 @@ class SQLAlchemyVocabularyRepository:
                     base.pop("explanation", None)
                 elif clean_explanations:
                     base["explanation"] = dict(clean_explanations)
+                if clean_label:
+                    base["label"] = dict(clean_label)
                 base.pop("highlight", None)
                 base.pop("reading_highlight", None)
                 if term and term in clean_text:
@@ -1455,6 +1463,7 @@ class SQLAlchemyVocabularyRepository:
                     "translation_languages": sorted(clean_translations),
                     "explanation": "cleared" if clear_explanation and old_explanation else (
                         "replaced" if clean_explanations else "none"),
+                    **({"label_languages": sorted(clean_label)} if clean_label else {}),
                     "snapshots": sorted(other.collection_id for other, _ in snapshot_updates),
                 })
                 entry.provenance = {**provenance, "example_corrections": history[-50:]}

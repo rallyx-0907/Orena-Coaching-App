@@ -1,0 +1,57 @@
+{
+  "collection": "pilot-zh-idioms",
+  "reason": "PRE-201 F3: example 0 quoted a YouTube transcript without credit (label \"Từ truyện hoạt hình\"); replaced by an Orena-authored sentence with the same idiom and meaning",
+  "corrections": [
+    {
+      "entry": "f6473b65-fa17-44b9-81c1-2568e2fffc0f",
+      "headword": "守株待兔",
+      "index": 0,
+      "expect_from": "从这个故事中我们可以看出守株待兔是一种不切实际的行为。",
+      "quoted_from": "youtube-2HRoo7akLsU",
+      "text": "他总想守株待兔，等着好机会自己找上门来。",
+      "reading": "Tā zǒng xiǎng shǒuzhū dàitù, děngzhe hǎo jīhuì zìjǐ zhǎo shàng mén lái.",
+      "translations": {
+        "vi": "Anh ấy lúc nào cũng muốn ôm cây đợi thỏ, chờ cơ hội tốt tự tìm đến.",
+        "en": "He always waits for luck, expecting good chances to come to him on their own."
+      },
+      "explanations": {
+        "vi": "总想 + V: lúc nào cũng muốn .... 找上门来: tự tìm đến tận nơi."
+      },
+      "label": {"vi": "Nhận xét"}
+    },
+    {
+      "entry": "64738ca1-2697-4684-adf7-49e591fbe804",
+      "headword": "自作聪明",
+      "index": 0,
+      "expect_from": "做事要尊重客观事实不要自作聪明节外生枝。",
+      "quoted_from": "youtube-Limf02l67QQ",
+      "text": "老师已经把步骤讲清楚了，你别自作聪明，按步骤做就行。",
+      "reading": "Lǎoshī yǐjīng bǎ bùzhòu jiǎng qīngchu le, nǐ bié zìzuò cōngming, àn bùzhòu zuò jiù xíng.",
+      "translations": {
+        "vi": "Thầy đã giảng rõ các bước rồi, em đừng tự cho mình thông minh, cứ làm theo từng bước là được.",
+        "en": "The teacher has explained the steps clearly; don't try to be clever, just follow them."
+      },
+      "explanations": {
+        "vi": "把 + O + 讲清楚: giảng rõ cái gì. 别 + V: đừng .... 按 + N + 做: làm theo ...."
+      },
+      "label": {"vi": "Ở trường"}
+    },
+    {
+      "entry": "806510eb-9a86-4750-a5fc-a9dfa51aa652",
+      "headword": "装模作样",
+      "index": 0,
+      "expect_from": "每次演奏，南郭先生都拿着竽装模作样地混在队伍里。",
+      "quoted_from": "youtube-JQSX47mUXAI",
+      "text": "他根本没读过那本书，却在会上装模作样地发表意见。",
+      "reading": "Tā gēnběn méi dúguo nà běn shū, què zài huì shang zhuāngmú zuòyàng de fābiǎo yìjiàn.",
+      "translations": {
+        "vi": "Anh ta chưa hề đọc cuốn sách đó, vậy mà trong cuộc họp lại làm bộ làm tịch phát biểu ý kiến.",
+        "en": "He never read the book, yet at the meeting he put on a show of giving his opinion."
+      },
+      "explanations": {
+        "vi": "根本没 + V + 过: chưa hề .... 却: vậy mà, nhưng lại. 装模作样地 + V: làm gì một cách giả bộ."
+      },
+      "label": {"vi": "Phê phán"}
+    }
+  ]
+}

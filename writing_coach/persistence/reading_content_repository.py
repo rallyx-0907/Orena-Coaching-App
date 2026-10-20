@@ -1646,6 +1646,57 @@ class ReadingContentRepository:
             )
         return self.get_article(article_id)
 
+    def reestimate_level(
+        self, article_id: str, *, actor: str, reason: str = "reestimate", now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        """Re-estimate one article's automatic level with the current estimator (`LEVEL_VERSION`).
+
+        The machine's own column, written by the machine's own function (`analyze_article`) over the body read
+        inside this transaction, `FOR UPDATE`: `estimated_level`, its confidence, and the analysis's
+        `level_version`, `level_confidence` and `level_evidence`. `reviewed_level` is never touched; the learner's
+        `effective_level` moves only when no reviewer override exists (D-196). Re-estimating is an owner decision
+        (D-198): this method is called only by `scripts/reading_relevel.py`. None when the article does not exist,
+        else `{"id", "from", "to", "level_version", "changed"}`; an unchanged level writes nothing.
+        """
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            query = select(ReadingArticle.id, ReadingArticle.body, ReadingArticle.language,
+                           ReadingArticle.estimated_level, ReadingArticle.reviewed_level,
+                           ReadingArticle.effective_level, ReadingArticle.analysis_json,
+                           ReadingArticle.content_revision).where(ReadingArticle.id == _uuid(article_id))
+            if connection.dialect.name == "postgresql":
+                query = query.with_for_update()
+            row = connection.execute(query).first()
+            if row is None:
+                return None
+            measured = analyze_article(row.body or "", row.language or "en")
+            stored = dict(row.analysis_json or {}) if isinstance(row.analysis_json, Mapping) else {}
+            old_version = str(stored.get("level_version") or "")
+            result = {"id": str(row.id), "from": row.estimated_level or "", "to": measured.estimated_level,
+                      "level_version": measured.level_version, "changed": measured.estimated_level != (row.estimated_level or "")}
+            if not result["changed"]:
+                return result
+            stored.update(level_confidence=measured.confidence, level_version=measured.level_version,
+                          level_evidence=measured.evidence)
+            effective = _effective(measured.estimated_level, row.reviewed_level)
+            values: dict[str, Any] = {
+                "estimated_level": measured.estimated_level,
+                "estimated_level_confidence": float(measured.confidence),
+                "effective_level": effective,
+                "analysis_json": stored,
+                "updated_at": moment,
+            }
+            if effective != row.effective_level:
+                # The level is on the learner's card: a cached copy must refetch.
+                values["content_revision"] = row.content_revision + 1
+            connection.execute(update(ReadingArticle).where(ReadingArticle.id == row.id).values(**values))
+            self._record_event(connection, article_id=row.id, actor=actor, action="level_reestimated", reason=reason,
+                               changes={"estimated_level": {"from": result["from"], "to": result["to"]},
+                                        "level_version": {"from": old_version, "to": measured.level_version},
+                                        "effective_level": {"from": row.effective_level, "to": effective}},
+                               now=moment)
+        return result
+
     def recount_articles(
         self, *, apply: bool = False, article_id: str | None = None, actor: str = "recount",
         now: datetime | None = None, batch_size: int = RECOUNT_BATCH_SIZE,
