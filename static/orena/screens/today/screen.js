@@ -73,7 +73,11 @@ export default async function mountToday(element, ctx) {
      that is gone - or that cannot be read now - is left out rather than drawn as a card that leads nowhere. */
   const listed = new Set(listeningItems.flatMap((item) => [item?.lesson_id, item?.media_object_id]).filter(Boolean));
   const checked = new Map(await Promise.all(continuedMediaIds(remembered).filter((id) => !listed.has(id)).map((id) =>
-    openMedia(id, { api, support: supportLang, language }).then(() => [id, true], () => [id, false]))));
+    openMedia(id, { api, support: supportLang, language }).then(() => [id, true], (error) => {
+      // Gone for good (a retired lesson, #446): the place is forgotten, so the next Today never asks for it again.
+      if (error?.status === 404) state.memory?.forgetPlace?.(`media:${id}`);
+      return [id, false];
+    }))));
   const continuation = liveContinuation(remembered, (id) => listed.has(id) || checked.get(id) === true);
   const pool = leadWithContinuation(buildRecommendationPool({ reading, listening: listeningItems, speaking: speakingItems, review, language }, t), continuation, t, forYouCover);
   const usedIds = usedRecommendationIds(pool);

@@ -77,6 +77,16 @@ memory.replaceContinuation([{ id: 'text:y', title: 'Y', place: null }]);
 memory.remove('text:z');
 assert.deepEqual(seen, [['enter', 'text:z'], ['clear', 'text:z']]);
 assert.deepEqual(memory.value.continuation.map((entry) => entry.id), ['text:y']);
+/* #446: a place whose lesson is gone is forgotten on the device and cleared on the account, once; the rest stays. */
+memory.replaceContinuation([{ id: 'media:en-science-cosmic-calendar', title: 'Gone', place: null }, { id: 'text:y', title: 'Y', place: null }]);
+memory.write('media:en-science-cosmic-calendar', 'my answer', 'answers');
+seen.length = 0;
+assert.ok(memory.forgetPlace('media:en-science-cosmic-calendar'));
+assert.equal(memory.forgetPlace('media:en-science-cosmic-calendar'), false, 'nothing to forget the second time');
+assert.deepEqual(seen, [['clear', 'media:en-science-cosmic-calendar']]);
+assert.deepEqual(memory.value.continuation.map((entry) => entry.id), ['text:y']);
+assert.equal(memory.value.answers['media:en-science-cosmic-calendar'], 'my answer', 'only the place is forgotten');
+assert.equal(sync.placeKind({ id: 'media:en-science-cosmic-calendar' }), 'listening', 'the account clear has a kind');
 setPlaceSink(null);
 
 /* The read: a failed request keeps the device list. */

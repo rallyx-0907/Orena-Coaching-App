@@ -398,3 +398,23 @@ console.log('Orena live voice (§9 mode A): session body, PCM16 codecs, thread w
   assert.equal(refOf(messageMarkup(run('').messages[1], where)), null, 'no voice session id, no link');
   assert.equal(refOf(messageMarkup(run(undefined).messages[1], where)), null);
 }
+
+// #446: voice off (the voice list answers 404) is a normal state. It is asked once and kept for five minutes, so the
+// Settings and Orena rooms do not send the same 404 on every open; after the five minutes it is asked again.
+{
+  const { listVoices, forgetVoiceOff } = await import('../static/orena/agent/live-voice.js');
+  forgetVoiceOff();
+  let calls = 0;
+  const off = async () => { calls += 1; return { ok: false, status: 404, json: async () => ({ detail: 'Not Found' }) }; };
+  assert.equal(await listVoices('en', { fetchImpl: off, now: 1000 }), null);
+  assert.equal(await listVoices('vi', { fetchImpl: off, now: 2000 }), null);
+  assert.equal(calls, 1, 'voice off is not asked again within five minutes');
+  assert.equal(await listVoices('en', { fetchImpl: off, now: 1000 + 300001 }), null);
+  assert.equal(calls, 2, 'after five minutes it is asked again');
+  let failed = 0;
+  const down = async () => { failed += 1; return { ok: false, status: 503, json: async () => ({}) }; };
+  await listVoices('en', { fetchImpl: down, now: 1 });
+  await listVoices('en', { fetchImpl: down, now: 2 });
+  assert.equal(failed, 2, 'only voice off is remembered, not a failure');
+  forgetVoiceOff();
+}

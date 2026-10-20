@@ -207,9 +207,12 @@ export default async function plan(element, ctx) {
   await useStyles('screens/plan/plan.css');
   // One folder serves both frames: Plans is its own route and its own module.
   if (ctx.route?.id === 'pricing') return pricing(element, ctx);
+  // Billing off is a normal state (#446): the card subscription is asked for only when the deployment has billing
+  // (`enabled` on the offers answer), so a deployment without it sends no request that can only answer 503.
+  const salePromise = api.billingOffers().catch(() => null);
   const [commerce, offers, plansAnswer, subscription, sale] = await Promise.all([
-    api.productCommerce().catch(() => null), loadOffers(api), api.productPlans().catch(() => null),
-    api.billingSubscription().catch(() => null), api.billingOffers().catch(() => null),
+    api.productCommerce().catch(() => null), loadOffers({ billingOffers: () => salePromise }), api.productPlans().catch(() => null),
+    salePromise.then((answer) => (answer?.enabled ? api.billingSubscription().catch(() => null) : null)), salePromise,
   ]);
   if (!ctx.isCurrent()) return undefined;
   if (!commerce) throw new Error('plan_unavailable');

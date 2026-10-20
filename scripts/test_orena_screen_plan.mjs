@@ -365,3 +365,17 @@ console.log('Orena plan screens: real usage and plans only, honest unavailable s
     assert.match(active, /data-open-cancel/, `${ui}: Cancel plan on a live plan`);
   }
 }
+
+// #446: billing off is a normal state. The card subscription is asked for only when the offers answer says the
+// deployment has billing (`enabled`), and the offers are read once for both uses - no 503 to swallow, no retry.
+{
+  const { readFileSync } = await import('node:fs');
+  const screen = readFileSync(new URL('../static/orena/screens/plan/screen.js', import.meta.url), 'utf8');
+  const load = screen.slice(screen.indexOf('export default async function plan('), screen.indexOf('if (!ctx.isCurrent()) return undefined;', screen.indexOf('export default async function plan(')));
+  assert.match(load, /answer\?\.enabled \? api\.billingSubscription\(\)\.catch\(\(\) => null\) : null/, 'subscription only while billing is enabled');
+  assert.equal((load.match(/api\.billingOffers\(\)/g) || []).length, 1, 'the offers are read once on open');
+  assert.equal((load.match(/api\.billingSubscription\(\)/g) || []).length, 1);
+  const { loadOffers } = await import('../static/orena/product/credit-topup.js');
+  const off = await loadOffers({ billingOffers: () => Promise.resolve(null) });
+  assert.equal(off.available, false, 'no offers answer: no credits, no error');
+}
