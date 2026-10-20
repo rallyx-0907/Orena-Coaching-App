@@ -7,7 +7,8 @@ globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
 globalThis.window ??= { addEventListener() {}, removeEventListener() {}, location: { hash: '' } };
 
 const src = (path) => readFileSync(path, 'utf8');
-const RESETS = '2026-10-20T00:00:00Z';
+// A reset time in the future whenever the gate runs: a fixed date became the past on 2026-10-20 and the gate failed on main.
+const RESETS = '2099-01-01T00:00:00Z';
 
 const answer = (status, body, headers = {}) => ({
   ok: status >= 200 && status < 300,

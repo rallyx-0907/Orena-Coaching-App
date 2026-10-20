@@ -1,0 +1,458 @@
+{
+ "about": "youtube-aIWeYL6Bb5s (Chinese history narration), the public Chinese caption track as the caption endpoint returns it (start, display duration), fetched without audio on 2026-10-20. :8000 holds it as supadata / caption_kind unknown; YouTube lists the track as not generated. Unpunctuated, no overlaps: a correctly timed Chinese track the gate must pass. No real Chinese automatic track was found among the :8000 Chinese items (the rest have manual tracks or transcripts disabled).",
+ "media_id": "youtube-aIWeYL6Bb5s",
+ "language": "zh",
+ "youtube_generated": false,
+ "cues": [
+  {
+   "text": "说秦朝主要就是说",
+   "start_ms": 720,
+   "duration_ms": 1650
+  },
+  {
+   "text": "秦始皇 因为秦朝太短了只有15年",
+   "start_ms": 2371,
+   "duration_ms": 3059
+  },
+  {
+   "text": "公元前221年",
+   "start_ms": 5431,
+   "duration_ms": 1739
+  },
+  {
+   "text": "秦灭六国 结束了春秋战国长达五百多年的诸侯纷争",
+   "start_ms": 7171,
+   "duration_ms": 4469
+  },
+  {
+   "text": "统一华夏 国家是统一了",
+   "start_ms": 11641,
+   "duration_ms": 2759
+  },
+  {
+   "text": "但是在前老大周朝血淋淋的历史面前",
+   "start_ms": 14401,
+   "duration_ms": 3089
+  },
+  {
+   "text": "秦朝思考如何能够不重蹈覆辙",
+   "start_ms": 17491,
+   "duration_ms": 3149
+  },
+  {
+   "text": "当年周朝的制度主要是分封制 周天子把自己的土地分封给了亲戚或者臣子",
+   "start_ms": 20641,
+   "duration_ms": 6419
+  },
+  {
+   "text": "每块封地就是一个诸侯国",
+   "start_ms": 27061,
+   "duration_ms": 2189
+  },
+  {
+   "text": "也就是说",
+   "start_ms": 29251,
+   "duration_ms": 719
+  },
+  {
+   "text": "土地不完全属于王室",
+   "start_ms": 29971,
+   "duration_ms": 2129
+  },
+  {
+   "text": "诸侯王在自己的封地上有着绝对的权力",
+   "start_ms": 32101,
+   "duration_ms": 3029
+  },
+  {
+   "text": "可以世袭",
+   "start_ms": 35131,
+   "duration_ms": 719
+  },
+  {
+   "text": "可以拥有自己的军队",
+   "start_ms": 35851,
+   "duration_ms": 1829
+  },
+  {
+   "text": "诸侯国必须向王室缴纳贡税",
+   "start_ms": 37681,
+   "duration_ms": 2819
+  },
+  {
+   "text": "这种制度刚开始的时候",
+   "start_ms": 40501,
+   "duration_ms": 1529
+  },
+  {
+   "text": "还可以 因为周天子和诸侯大家都是亲戚熟人嘛",
+   "start_ms": 42031,
+   "duration_ms": 3809
+  },
+  {
+   "text": "但是时间一长 就会发展成为诸侯国势力超过王室",
+   "start_ms": 45841,
+   "duration_ms": 3449
+  },
+  {
+   "text": "各大诸侯群雄皆启的局面",
+   "start_ms": 49291,
+   "duration_ms": 3089
+  },
+  {
+   "text": "春秋战国就是这么来的",
+   "start_ms": 52381,
+   "duration_ms": 2789
+  },
+  {
+   "text": "秦汲 取了周朝灭亡的经验",
+   "start_ms": 55171,
+   "duration_ms": 1889
+  },
+  {
+   "text": "首创了郡县制 郡县制是",
+   "start_ms": 57061,
+   "duration_ms": 2309
+  },
+  {
+   "text": "以皇帝为首 三公九卿为代表的中央政府集权制度 把国家分为36个郡",
+   "start_ms": 59371,
+   "duration_ms": 6479
+  },
+  {
+   "text": "郡下面又分为1000多个县",
+   "start_ms": 65851,
+   "duration_ms": 2099
+  },
+  {
+   "text": "每个郡县的长官都是由中央任命的",
+   "start_ms": 67951,
+   "duration_ms": 2519
+  },
+  {
+   "text": "互相之间没有任何的血缘关系",
+   "start_ms": 70471,
+   "duration_ms": 2399
+  },
+  {
+   "text": "与周朝诸侯向国家缴纳贡税不同",
+   "start_ms": 72871,
+   "duration_ms": 3119
+  },
+  {
+   "text": "郡县制皇帝向官宦发放俸禄",
+   "start_ms": 75991,
+   "duration_ms": 2969
+  },
+  {
+   "text": "这种层层递进的模式使中央权力高度集中",
+   "start_ms": 78961,
+   "duration_ms": 3599
+  },
+  {
+   "text": "统治者拥有绝对的权威",
+   "start_ms": 82561,
+   "duration_ms": 2039
+  },
+  {
+   "text": "有利于加强中央集权和国家的统一",
+   "start_ms": 84601,
+   "duration_ms": 3239
+  },
+  {
+   "text": "原来的各个诸侯国在很多方面都有自己的制度",
+   "start_ms": 87841,
+   "duration_ms": 4289
+  },
+  {
+   "text": "但是在全国统一以后",
+   "start_ms": 92131,
+   "duration_ms": 1949
+  },
+  {
+   "text": "这些制度就会比较麻烦",
+   "start_ms": 94081,
+   "duration_ms": 2159
+  },
+  {
+   "text": "比如说货币不同",
+   "start_ms": 96241,
+   "duration_ms": 1079
+  },
+  {
+   "text": "工商业就没有办法发展 度量衡",
+   "start_ms": 97321,
+   "duration_ms": 2459
+  },
+  {
+   "text": "不同买东西也就很不方便",
+   "start_ms": 99781,
+   "duration_ms": 2219
+  },
+  {
+   "text": "文字不同也就没有办法进行交流",
+   "start_ms": 102001,
+   "duration_ms": 2669
+  },
+  {
+   "text": "于是",
+   "start_ms": 104671,
+   "duration_ms": 599
+  },
+  {
+   "text": "秦始皇在全国范围内推行了统一货币和度量衡 给秦朝经济贸易的往来奠定了基础",
+   "start_ms": 105271,
+   "duration_ms": 6959
+  },
+  {
+   "text": "以小篆为全国通用文字",
+   "start_ms": 112231,
+   "duration_ms": 2219
+  },
+  {
+   "text": "有利于文化的普及与百姓思想",
+   "start_ms": 114451,
+   "duration_ms": 2279
+  },
+  {
+   "text": "的统一  说到思想统一",
+   "start_ms": 116731,
+   "duration_ms": 2099
+  },
+  {
+   "text": "顺便就把焚书坑儒说了吧",
+   "start_ms": 118831,
+   "duration_ms": 2279
+  },
+  {
+   "text": "以前各个诸侯国各自推崇的文化理念不一样",
+   "start_ms": 121111,
+   "duration_ms": 3719
+  },
+  {
+   "text": "才有个春秋时的百家争鸣",
+   "start_ms": 124831,
+   "duration_ms": 2129
+  },
+  {
+   "text": "到秦统一之后",
+   "start_ms": 126961,
+   "duration_ms": 1259
+  },
+  {
+   "text": "当时最大的两种思想潮流是儒家文化和法家文化",
+   "start_ms": 128221,
+   "duration_ms": 4469
+  },
+  {
+   "text": "儒家强调以仁治国",
+   "start_ms": 132691,
+   "duration_ms": 1829
+  },
+  {
+   "text": "以理服人",
+   "start_ms": 134521,
+   "duration_ms": 959
+  },
+  {
+   "text": "法加强调",
+   "start_ms": 135481,
+   "duration_ms": 839
+  },
+  {
+   "text": "以武治国以权制民  秦朝推崇法家制度",
+   "start_ms": 136321,
+   "duration_ms": 4019
+  },
+  {
+   "text": "遭到了儒家文人的反对",
+   "start_ms": 140341,
+   "duration_ms": 2039
+  },
+  {
+   "text": "秦始皇采取烧毁史书",
+   "start_ms": 142381,
+   "duration_ms": 1889
+  },
+  {
+   "text": "活埋儒生的方式来打压其他的文化",
+   "start_ms": 144271,
+   "duration_ms": 2849
+  },
+  {
+   "text": "以达到维护大统的目的",
+   "start_ms": 147121,
+   "duration_ms": 2129
+  },
+  {
+   "text": "也就是秦始皇这种以武治国的理念",
+   "start_ms": 149251,
+   "duration_ms": 2789
+  },
+  {
+   "text": "也为后来秦朝的灭亡埋下了伏笔",
+   "start_ms": 152041,
+   "duration_ms": 2999
+  },
+  {
+   "text": "为了抵御外族的入侵",
+   "start_ms": 155041,
+   "duration_ms": 1589
+  },
+  {
+   "text": "秦朝动用了几十万的劳工修筑长城",
+   "start_ms": 156631,
+   "duration_ms": 3029
+  },
+  {
+   "text": "其实",
+   "start_ms": 159661,
+   "duration_ms": 539
+  },
+  {
+   "text": "长城最早建于春秋时期",
+   "start_ms": 160201,
+   "duration_ms": 2399
+  },
+  {
+   "text": "秦朝统一之后又对它进行了加固修缮",
+   "start_ms": 162601,
+   "duration_ms": 2969
+  },
+  {
+   "text": "并且连接完整",
+   "start_ms": 165571,
+   "duration_ms": 1649
+  },
+  {
+   "text": "除此以外",
+   "start_ms": 167221,
+   "duration_ms": 899
+  },
+  {
+   "text": "秦朝造阿房宫 修皇陵",
+   "start_ms": 168121,
+   "duration_ms": 2489
+  },
+  {
+   "text": "征用劳力数百万人",
+   "start_ms": 170611,
+   "duration_ms": 1799
+  },
+  {
+   "text": "秦法严苛 繁重的苦役与压迫使得民不聊生",
+   "start_ms": 172411,
+   "duration_ms": 3689
+  },
+  {
+   "text": "社会矛盾日渐加重",
+   "start_ms": 176101,
+   "duration_ms": 2099
+  },
+  {
+   "text": "公元前210年",
+   "start_ms": 178201,
+   "duration_ms": 1469
+  },
+  {
+   "text": "秦始皇最后一次出巡 在沙丘行宫突然",
+   "start_ms": 179671,
+   "duration_ms": 4169
+  },
+  {
+   "text": "对 正史的记载就是两个字  暴毙  民间对他的死因有两种不同的说法",
+   "start_ms": 183841,
+   "duration_ms": 5729
+  },
+  {
+   "text": "一种是说他生病死的",
+   "start_ms": 189571,
+   "duration_ms": 1529
+  },
+  {
+   "text": "而另一种说是他被赵高谋害",
+   "start_ms": 191101,
+   "duration_ms": 2459
+  },
+  {
+   "text": "因为死得突然",
+   "start_ms": 193561,
+   "duration_ms": 1409
+  },
+  {
+   "text": "原本他的遗诏是要他的长子扶苏继位",
+   "start_ms": 194971,
+   "duration_ms": 3569
+  },
+  {
+   "text": "但是秦始皇在留下遗诏的时候",
+   "start_ms": 198541,
+   "duration_ms": 2399
+  },
+  {
+   "text": "身边只有他的小儿子胡亥",
+   "start_ms": 200941,
+   "duration_ms": 2309
+  },
+  {
+   "text": "宦官赵高",
+   "start_ms": 203251,
+   "duration_ms": 449
+  },
+  {
+   "text": "和丞相李斯三个人 赵高和扶苏有矛盾",
+   "start_ms": 203701,
+   "duration_ms": 4379
+  },
+  {
+   "text": "所以他怕扶苏继位以后报复他",
+   "start_ms": 208081,
+   "duration_ms": 2399
+  },
+  {
+   "text": "于是",
+   "start_ms": 210481,
+   "duration_ms": 629
+  },
+  {
+   "text": "赵高就说服了胡亥",
+   "start_ms": 211111,
+   "duration_ms": 1529
+  },
+  {
+   "text": "威胁李斯篡改了秦始皇的遗诏",
+   "start_ms": 212641,
+   "duration_ms": 3419
+  },
+  {
+   "text": "命扶苏自杀",
+   "start_ms": 216061,
+   "duration_ms": 1319
+  },
+  {
+   "text": "立胡亥继位",
+   "start_ms": 217381,
+   "duration_ms": 1799
+  },
+  {
+   "text": "之后李斯也被胡亥腰斩",
+   "start_ms": 219181,
+   "duration_ms": 1889
+  },
+  {
+   "text": "赵高独揽大权之后发生了什么情是怎么灭亡的呢",
+   "start_ms": 221071,
+   "duration_ms": 5189
+  },
+  {
+   "text": "下次我们接着说",
+   "start_ms": 226261,
+   "duration_ms": 1409
+  },
+  {
+   "text": "下次见",
+   "start_ms": 227671,
+   "duration_ms": 389
+  }
+ ]
+}

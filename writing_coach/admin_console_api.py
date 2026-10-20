@@ -1310,7 +1310,7 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
                 raise orena_http_error(409, "media_transcript_required", "A usable transcript is required before publishing.")
             from writing_coach.media_transcript_pipeline import caption_timing_gate
             if not caption_timing_gate(current)[0]:
-                raise orena_http_error(409, "media_transcript_required",
+                raise orena_http_error(409, "media_caption_timing",
                                        "The caption timing does not follow the speech. Reprocess the item before publishing.")
             if current.source.get("rights") != "cleared":
                 raise orena_http_error(409, "media_rights_required", "Source rights must be cleared before publishing.")

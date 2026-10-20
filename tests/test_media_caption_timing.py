@@ -380,3 +380,79 @@ def test_a_reprocess_keeps_the_ids_learner_references_point_at(tmp_path, inline)
     after = store.get(entry.media_id).lesson["payload"]["transcript"]["segments"]
     kept = [s for s in after if s["original_text"] in before]
     assert len(kept) >= 9 and all(s["segment_id"] == before[s["original_text"]] for s in kept)
+
+
+# -- review follow-ups (Hermes): real Chinese captions, the provider normaliser, long pauses -------------------------
+
+ZH = json.loads((Path(__file__).parent / "fixtures" / "media_caption_timing_zh_qin.json").read_text(encoding="utf-8"))
+
+
+def _zh_cues() -> list[Cue]:
+    return [Cue(c["start_ms"], c["start_ms"] + c["duration_ms"], c["text"]) for c in ZH["cues"]]
+
+
+def test_a_real_correctly_timed_chinese_track_passes_and_is_not_called_automatic():
+    cues = _zh_cues()
+    assert classify_caption_kind(KIND_UNKNOWN, cues) == KIND_UNKNOWN   # no markers, no rolling: kind is not claimed
+    lines = segment_lines(clip_to_next_start(cues)[0], "zh")
+    report = caption_timing_report(lines, language="zh", caption_kind=KIND_UNKNOWN, retimed=False)
+    assert report.passed, report.as_dict()
+    assert report.counts["short_dense"] == 0 and report.counts["fast"] == 0
+
+
+def test_the_same_chinese_track_shown_rolling_is_read_as_automatic_and_re_timed_back():
+    cues = _zh_cues()
+    # How YouTube displays an automatic track: each cue stays up until the cue after next starts.
+    rolling = [Cue(cue.start_ms, cues[index + 2].start_ms if index + 2 < len(cues) else cue.end_ms, cue.text)
+               for index, cue in enumerate(cues)]
+    assert classify_caption_kind(KIND_UNKNOWN, rolling) == KIND_AUTO
+    old = caption_timing_report(segment_lines(rolling, "zh"), language="zh", caption_kind=KIND_AUTO, retimed=False)
+    assert not old.passed
+    fixed = segment_lines(clip_to_next_start(rolling)[0], "zh")
+    assert caption_timing_report(fixed, language="zh", caption_kind=KIND_AUTO, retimed=True).passed
+    true_starts = {cue.start_ms for cue in cues}
+    assert sum(line.start_ms in true_starts for line in fixed) >= len(fixed) * 0.8   # lines start where speech starts
+
+
+def test_normalize_youtube_transcript_ends_rolling_snippets_at_the_next_start_and_reads_the_kind():
+    from writing_coach.media_providers.youtube import (
+        YouTubeCaptionSnippet,
+        YouTubeCaptionTrack,
+        normalize_youtube_transcript,
+        track_caption_kind,
+    )
+
+    track = YouTubeCaptionTrack(
+        source_language="en",
+        snippets=tuple(YouTubeCaptionSnippet(text=c["text"], start_seconds=c["start_ms"] / 1000,
+                                             duration_seconds=c["duration_ms"] / 1000) for c in FIXTURE["cues"]),
+        kind=KIND_UNKNOWN, provider="supadata")
+    assert track_caption_kind(track) == KIND_AUTO
+    segments = normalize_youtube_transcript("youtube:ZncA70OAgPw", track).segments
+    assert all(seg.end_ms <= nxt.start_ms for seg, nxt in zip(segments, segments[1:], strict=False))
+    well = next(seg for seg in segments if "Well, about 15 hours" in seg.original_text)
+    assert (well.start_ms, well.end_ms) == (2760, 4800)   # was 2760-6800: on screen until the cue after next
+    assert track_caption_kind(replace(track, kind=KIND_MANUAL)) == KIND_MANUAL
+
+
+def test_a_correctly_timed_video_with_two_long_pauses_passes():
+    lines = ([Cue(i * 3000, i * 3000 + 2600, f"This is spoken line number {i} of the clip.") for i in range(20)]
+             + [Cue(80_000 + i * 3000, 80_000 + i * 3000 + 2600, f"After the first pause, line {i} is spoken.") for i in range(20)]
+             + [Cue(160_000 + i * 3000, 160_000 + i * 3000 + 2600, f"And after the second, line {i}.") for i in range(20)])
+    for kind in (KIND_MANUAL, KIND_AUTO, KIND_UNKNOWN):
+        report = caption_timing_report(lines, language="en", caption_kind=kind, limits=STRICT)
+        assert report.passed and report.counts["gap_mid_sentence"] == 0, (kind, report.as_dict())
+    open_before_pause = [*lines[:19], Cue(57_000, 59_600, "and then we went down to the"), *lines[20:]]
+    opened = caption_timing_report(open_before_pause, language="en", caption_kind=KIND_MANUAL, limits=STRICT)
+    assert opened.counts["gap_mid_sentence"] == 0   # the next line starts a new sentence (capital): not clearly continuing
+    lower = [*open_before_pause[:20], Cue(80_000, 82_600, "river where the boats were."), *open_before_pause[21:]]
+    assert caption_timing_report(lower, language="en", caption_kind=KIND_MANUAL, limits=STRICT).counts["gap_mid_sentence"] == 1
+    # On an automatic track the gap rule does not run: its punctuation says nothing about where a sentence ends.
+    assert caption_timing_report(lower, language="en", caption_kind=KIND_AUTO, limits=STRICT).counts["gap_mid_sentence"] == 0
+
+
+def test_four_words_or_seven_han_in_a_short_cue_is_short_dense():
+    assert caption_timing_report([Cue(0, 700, "Okay, got it now.")], language="en").counts["short_dense"] == 1
+    assert caption_timing_report([Cue(0, 700, "Okay, got it.")], language="en").counts["short_dense"] == 0
+    assert caption_timing_report([Cue(0, 800, "我们一起去公园")], language="zh").counts["short_dense"] == 1
+    assert caption_timing_report([Cue(0, 800, "好的，没问题。")], language="zh").counts["short_dense"] == 0

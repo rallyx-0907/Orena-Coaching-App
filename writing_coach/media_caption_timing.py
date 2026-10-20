@@ -36,10 +36,10 @@ DEFAULT_MAX_CPS_ZH = 10.0
 DEFAULT_MAX_DEFECT_SHARE = 0.02
 DEFAULT_MAX_GAP_SECONDS = 12
 SHORT_LINE_MS = 800
-# At most 0.8 s holding this many words is faster than anyone speaks (6+ English words, 10+ Han a second): three words
-# or five Han in 0.8 s is ordinary dialogue and ordinary Mandarin, and is not a defect.
-SHORT_LINE_WORDS = 5
-SHORT_LINE_HAN = 8
+# At most 0.8 s holding this many words is faster than ordinary speech (5 English words, ~9 Han a second): three words
+# or five Han in 0.8 s is ordinary dialogue and ordinary Mandarin, and is not a defect (review of #430, 2026-10-20).
+SHORT_LINE_WORDS = 4
+SHORT_LINE_HAN = 7
 
 _SPEAKER = re.compile(r">{2,}")
 _SOUND_TAG = re.compile(r"\[[^\]]{1,40}\]")
@@ -162,11 +162,11 @@ def caption_timing_report(
 
     * `order`: any line that ends at or before its start, starts before the previous one, or overlaps it fails at once;
     * `fast`: a line read faster than `max_cps` characters a second (`max_cps_zh` Han characters for Chinese);
-    * `short_dense`: a line of at most 0.8 s holding five or more words (eight Han characters);
+    * `short_dense`: a line of at most 0.8 s holding four or more words (seven Han characters);
     * `gap_mid_sentence`: a silence longer than `max_gap_ms` where the text clearly continues - a punctuated track,
       the line before ending on a comma or a word that cannot end an English sentence (`the`, `to`, `and`...) and the
       next starting in lower case (Chinese: the line before ending on `，` or `、`), and neither line marking
-      non-speech (`[music]`, `♪`), since a music break or a pause after a finished thought is not a defect;
+      non-speech (`[music]`, `♪`), since a music break or a pause after a finished thought is not a defect; never on an automatic track;
     * `not_retimed`: an automatic track whose cues were not re-timed to the next start.
 
     `fast`, `short_dense` and `gap_mid_sentence` together may touch at most `max_defect_share` of the lines (and at least
@@ -178,6 +178,8 @@ def caption_timing_report(
     order = fast = short_dense = gap = 0
     defective: set[int] = set()
     previous: Cue | None = None
+    # The gap rule reads punctuation, which an automatic track does not have reliably: it is skipped for one.
+    automatic = str(caption_kind or "").casefold() == KIND_AUTO
     punctuated = bool(lines) and sum(1 for line in lines if _PUNCTUATION.search(line.text)) / len(lines) >= _PUNCTUATED_SHARE
     for index, line in enumerate(lines):
         duration = line.end_ms - line.start_ms
@@ -193,7 +195,7 @@ def caption_timing_report(
             short_dense += 1
             defective.add(index)
         if previous is not None and line.start_ms - previous.end_ms > limits.max_gap_ms:
-            if punctuated and _clearly_continues(previous.text, line.text, zh):
+            if not automatic and punctuated and _clearly_continues(previous.text, line.text, zh):
                 gap += 1
                 defective.add(index)
         previous = line
