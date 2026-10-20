@@ -577,3 +577,14 @@
   padding-top: 20px;
   border-top: 1px solid var(--border2);
 }
+/* A point of a grammar set the learner's plan does not reach (D-248 §4, MV2-5): the locked Reader's end-of-preview card
+   (`.o-coming__card`), with the design sheet title's size for its line, as the Reader draws it. */
+.s-gc__lockedCard {
+  font-family: var(--font-ui);
+  line-height: normal;
+}
+.s-gc__lockedTitle {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}

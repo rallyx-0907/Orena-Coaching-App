@@ -113,6 +113,8 @@ export function buildLibrary({ rows = [], functions = [], progress = [], current
       cat,
       tag: catName(cat),
       ...lookOf(cat),
+      // D-248 §4 (MV2-5): the server's tier for this point of its set (`{tier, rotation}`); never computed here.
+      access: row.access && typeof row.access === 'object' ? row.access : null,
       learned: progressKnown ? Boolean(state) : null,
       score: state?.last_quiz && Number.isFinite(state.last_quiz.total) ? { correct: state.last_quiz.correct, total: state.last_quiz.total } : null,
     };

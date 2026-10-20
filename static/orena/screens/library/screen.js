@@ -4,12 +4,13 @@
 import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
-import { mediaCard, masteryBars } from '../../kit/components.js';
+import { mediaCard, masteryBars, planTag } from '../../kit/components.js';
+import { readAccess, itemView, tierClass } from '../../product/content-access.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
-import { shellCopy as sc } from '../../copy/shell.js';
+import { shellCopy as sc, planName } from '../../copy/shell.js';
 import { moreButton, moreMenu } from '../../kit/overflow.js';
 import { toast } from '../../kit/toast.js';
 import { syncImports } from '../../shell/context.js';
@@ -51,14 +52,18 @@ function tabsMarkup(active, dueCount) {
    learning language server-side (GET /api/collection and GET /api/library/vocabulary both read
    `current_language_code()`, writing_coach/collection_api.py / becoming_library.py) - never a
    guess, the actual language every row this call can return is in. */
-function contentRow(row, language) {
-  return html`<button type="button" class="s-library-content-row" data-content="${row.contentId}">
+/* D-248 §4 (MV2-5): a Plus/Pro article carries Pricing's tag before the chevron and the tier wash (a fill, D-147); the
+   tap still opens it, and the Reader shows the locked preview when the server refuses. A video never has a tag. */
+function contentRow(row, language, access) {
+  const { badge } = itemView(row, access);
+  return html`<button type="button" class="${cls('s-library-content-row', tierClass(badge))}" data-content="${row.contentId}">
     <span class="s-library-content-row__body">
       <span class="s-library-content-row__type">${row.domain === 'media' ? sc('listening') : sc('content')}</span>
       <span class="s-library-content-row__title">${row.title ? langSpan(row.title, language) : t('untitledContent')}</span>
       ${row.source || row.unavailable ? html`<span class="s-library-content-row__source">${row.source || t('contentUnavailable')}</span>` : ''}
       <span class="s-library-content-row__progress"><span class="o-progress"><span style="width:${row.pct}%"></span></span><span class="s-library-content-row__pct">${row.pct}%</span></span>
     </span>
+    ${badge ? planTag(planName({ id: badge }) || badge) : ''}
     <span class="s-library-content-row__chevron">${raw(icon('chevron-right', { size: 20 }))}</span>
   </button>`;
 }
@@ -83,9 +88,9 @@ function ownContentRow(row, language, menuFor) {
   </div>`;
 }
 
-function contentPanel(rows, language, menuFor) {
+function contentPanel(rows, language, menuFor, access) {
   if (!rows.length) return html``;
-  return html`<div class="s-library-content-grid">${rows.map((row) => (row.importId ? ownContentRow(row, language, menuFor) : contentRow(row, language)))}</div>`;
+  return html`<div class="s-library-content-grid">${rows.map((row) => (row.importId ? ownContentRow(row, language, menuFor) : contentRow(row, language, access)))}</div>`;
 }
 
 function languageRow(row, language) {
@@ -197,7 +202,7 @@ export default async function library(element, ctx) {
   // The account's view of the imports first, so a deletion made on another device is not shown here.
   await syncImports(ctx.context.memory, language).catch(() => false);
 
-  const [collection, vocabulary, collections, decks, queue, dueItems, curated] = await Promise.all([
+  const [collection, vocabulary, collections, decks, queue, dueItems, curated, access] = await Promise.all([
     api.collection({ domains: ['reading', 'media'], limit: 24 }),
     api.libraryVocabulary({ limit: 24 }),
     safe(api.libraryCollections(), { collections: [] }),
@@ -205,6 +210,7 @@ export default async function library(element, ctx) {
     safe(api.libraryReviewQueue(), { pinned: [], pinned_count: 0, due_count: 0, total: 0 }),
     safe(api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 }), null),
     safe(api.vocabularyLibraryCollections(language), { items: [] }),
+    readAccess(),
   ]);
 
   const ownRows = () => {
@@ -226,7 +232,7 @@ export default async function library(element, ctx) {
   if (dueItems) stats.dueSource = sessionSourceCount(dueRows);
 
   function panelFor(id) {
-    if (id === 'content') return contentPanel([...ownRows(), ...rows.content], language, menuFor);
+    if (id === 'content') return contentPanel([...ownRows(), ...rows.content], language, menuFor, access);
     if (id === 'language') return languagePanel(rows.language, language);
     if (id === 'collections') return collectionsPanel(rows.collections);
     if (id === 'active') return activePanel(stats);

@@ -727,6 +727,20 @@
 .s-gl__allEmpty {
   background: var(--surface);
 }
+/* A paid point of its set (D-248 §4-§5, MV2-5): the kit's tier wash (a fill, never an outline, D-147) wins over the
+   card surfaces above, at rest and on hover. */
+.s-gl .s-gl__topic.o-tier--plus,
+.s-gl .s-gl__topic.o-tier--plus:hover,
+.s-gl .s-gl__row.o-tier--plus,
+.s-gl .s-gl__cont.o-tier--plus {
+  background: var(--spark-soft);
+}
+.s-gl .s-gl__topic.o-tier--pro,
+.s-gl .s-gl__topic.o-tier--pro:hover,
+.s-gl .s-gl__row.o-tier--pro,
+.s-gl .s-gl__cont.o-tier--pro {
+  background: var(--accent-soft);
+}
 :root:not([data-theme='dark']) .s-gl__views {
   background: var(--surface);
   box-shadow: var(--edge-light);

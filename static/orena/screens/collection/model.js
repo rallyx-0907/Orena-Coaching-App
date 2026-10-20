@@ -15,7 +15,8 @@
      collection's words the learner has met in their own reading/listening content - always 0.
    Both are recorded in the surface report as backend gaps, not guessed at. */
 
-import { collectionWordKey } from './actions.js';
+import { collectionWordKey, isLockedCard } from './actions.js';
+import { itemView } from '../../product/content-access.js';
 import { collectionTitle } from '../../copy/general-catalogue.js';
 
 /* A word's meaning in the learner's support language. `card.meanings` is a flat
@@ -41,11 +42,15 @@ export function supportMeaning(card = {}, support = '') {
 /* Mastery bars: 4 bars, `review_stage` (0-4, already the backend's own clamp point elsewhere -
    masteryStars uses the same range) filled in green when the word is saved; a word never saved
    is drawn as NEW instead of a bar count (D2: the two are mutually exclusive, isNew/notNew). */
-export function wordRow(card = {}, support = '') {
+export function wordRow(card = {}, support = '', access = undefined) {
   const headword = String(card.headword || '');
   const saved = Boolean(card.saved);
   const stage = Math.max(0, Math.min(4, Number(card.review_stage) || 0));
+  // D-248 §4 (MV2-5): the server's tier for this word of the set; a locked one arrives without its meanings.
+  const { badge, locked } = itemView(card, access);
   return {
+    badge,
+    locked,
     id: headword,
     word: headword,
     // languages-5 / finding A: the card's own `identity.language` (this module's header comment:
@@ -70,7 +75,7 @@ export function wordRow(card = {}, support = '') {
    all (progress.learned_count / item_count) - the closest real measure to "how far along this
    pack is" the backend can answer; it is not a mastery-only figure (mastered_count would
    under-count a pack the learner has only begun). */
-export function collectionViewModel(collection = {}, support = '') {
+export function collectionViewModel(collection = {}, support = '', access = undefined) {
   const items = Array.isArray(collection.items) ? collection.items : [];
   const progress = collection.progress || {};
   const wordCount = Number(collection.item_count) || items.length;
@@ -91,7 +96,8 @@ export function collectionViewModel(collection = {}, support = '') {
     metInSources: 0, // rule 40: no source-encounter aggregate exists for a collection
     percent,
     savedCount: new Set(items.filter((card) => card.saved).map(collectionWordKey)).size,
-    missingCount: new Set(items.filter((card) => !card.saved && card.headword).map(collectionWordKey)).size,
-    words: items.map((card) => wordRow(card, support)),
+    // A locked word is not added by "Add all" (its body is Plus); the words the learner already saved stay theirs.
+    missingCount: new Set(items.filter((card) => !card.saved && card.headword && !isLockedCard(card)).map(collectionWordKey)).size,
+    words: items.map((card) => wordRow(card, support, access)),
   };
 }

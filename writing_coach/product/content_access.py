@@ -586,6 +586,57 @@ def reading_card_access(items: list[dict[str, Any]], *, now: datetime | None = N
     return out
 
 
+# --- Own sets (MV2-5) ----------------------------------------------------------------------------------------------
+
+def set_free_items() -> int:
+    """How many items at the head of each set are Free (`access.set_free_items`, Admin › Policies)."""
+    return max(0, int(policies.value("access.set_free_items")))
+
+
+def set_rank(key: str, head: list[str]) -> int:
+    """The position `set_tier` reads for one item: its place among the set's first `set_free_items()` keys (`head`, in
+    set order, unfiltered), else just past them. Exact for the rule, without reading the whole set."""
+    try:
+        return head.index(key)
+    except ValueError:
+        return max(len(head), set_free_items())
+
+
+def set_card_access(items: list[Item], *, user_key: str | None = None,
+                    own: Callable[[int], bool] | None = None) -> list[dict[str, Any]]:
+    """The `access` block of each item of one set, in order: `{tier, rotation, locked}`. `tier` is the same for every
+    learner; `locked` says this learner's plan is below it, only while enforcement is on. `own(i)` marks an item the
+    learner already keeps (a saved word): it is never locked, so a learner's own review is never taken away.
+
+    The plan is read strictly, as for any gated body (D-248 §6): 503 when it cannot be read, never a lock over an
+    outage; it is read only when enforcement is on and some item is paid."""
+    decisions = [decide(item) for item in items]
+    have: str | None = None
+    check = enforced() and any(decision.tier != "free" for decision in decisions)
+    if check:
+        have = learner_tier(_user(user_key))
+    out = []
+    for index, decision in enumerate(decisions):
+        locked = (check and have is not None and RANK[have] < RANK[decision.tier]
+                  and not (own is not None and own(index)))
+        out.append({"tier": decision.tier, "rotation": decision.rotation, "locked": bool(locked)})
+    return out
+
+
+def card_access(items: list[Item], *, now: datetime | None = None) -> list[dict[str, Any]]:
+    """`{tier, rotation}` of each item, the same for every learner (a list stays cacheable); a tier that cannot be read
+    is `None`, which the client never reads as locked."""
+    out = []
+    for item in items:
+        try:
+            decision = decide(item, now=now)
+            out.append({"tier": decision.tier, "rotation": decision.rotation})
+        except Exception:  # noqa: BLE001 - an entry is never lost to the access read; its detail read decides
+            _log.warning("content access: an entry's tier could not be read", exc_info=True)
+            out.append({"tier": None, "rotation": False})
+    return out
+
+
 # --- Media tools ---------------------------------------------------------------------------------------------------
 
 def _local_week_key(now: datetime) -> str:

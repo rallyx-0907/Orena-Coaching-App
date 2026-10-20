@@ -184,6 +184,24 @@ export function showQuotaNotice(ctx, error) {
   toast(quotaMessage(error), { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
 }
 
+/* A Free learner's capped review (D-248 amendment, MV2-5): the server's `review_limit` `{limit, saved, held}` from a review
+   read, or the `preview.review_limit` of a 403 `plan_required` on grading. The sentence names the figures, with the way to
+   the plans as the toast's action (the quota notice's own pattern). '' and nothing shown when nothing is held. */
+export function reviewHeldLine(reviewLimit) {
+  const limit = Number(reviewLimit?.limit);
+  const held = Number(reviewLimit?.held);
+  if (!(limit > 0) || !(held > 0)) return '';
+  const ui = languages().ui;
+  return t('reviewHeld', { limit: formatNumber(limit, ui), held: formatNumber(held, ui) });
+}
+
+export function showReviewLimitNotice(ctx, reviewLimit) {
+  const line = reviewHeldLine(reviewLimit);
+  if (!line) return false;
+  toast(line, { undo: () => ctx.go(ctx.href('pricing')), undoLabel: seePlansLabel() });
+  return true;
+}
+
 /* Taking a learning language the account does not hold yet, when the plan's count is reached (HTTP 403
    `language_limit_reached`, or `feature_not_in_plan` for `languages.target`, D-170). The server judges it; the client
    only says it. A toast was too small and gone too soon to explain it, so the refusal opens Plans at once

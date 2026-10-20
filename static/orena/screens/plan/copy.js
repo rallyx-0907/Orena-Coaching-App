@@ -26,6 +26,10 @@ const KEYS = [
   'feature_progress_weekly_report',
   // MV2-3 (D-248 §5, G4/G6/G8): the light upgrade sheet, the end of a locked article's preview and a paid tool's lock.
   'upgradeTitle', 'upgradeLeadReading', 'upgradeLeadTool', 'benefitReading', 'benefitVideoTools', 'benefitVideoReview', 'startTrial', 'previewEnd', 'previewUnlock', 'partOfPlan',
+  // MV2-5 (D-248 §4): the sheet opened from a locked item of a vocabulary or grammar set.
+  'upgradeLeadSet', 'benefitSets',
+  // D-248 amendment (MV2-5): a Free learner's review holds their first saved words; the rest wait for Plus.
+  'reviewHeld',
   'compare_orena_message', 'compare_writing_review', 'compare_pronunciation_audio', 'compare_media_import', 'compare_languages_target',
   'resetsDaily', 'resetsIn', 'resetsOn', 'amountMinutes', 'exhausted_writing_review', 'exhausted_orena_message', 'exhausted_orena_voice', 'exhausted_pronunciation_audio', 'exhausted_media_import', 'exhausted_word_assist', 'exhausted_reading_assist', 'exhausted_writing_task', 'exhausted_generic', 'aiPaused', 'aiPausedNoTime', 'resetsAtTime', 'resetsOnDate', 'exhausted_orena_voice_only', 'line_orena_voice_day', 'line_orena_voice_month', 'exhausted_orena_voice_day', 'exhausted_orena_voice_month', 'exhausted_orena_voice_only_day', 'exhausted_orena_voice_only_month', 'rateLimited', 'rateLimitedNoTime', 'quotaUnavailable', 'reasonLanguageTitle', 'reasonLanguageNone', 'reasonThisPlan', 'reasonHave', 'reasonUpgradeTo', 'reasonUpgradeAny', 'reasonNoUpgrade', 'reasonNothingChanged', 'recordAgain',
   'sheetUpgrade', 'sheetSwitch', 'rowPlan', 'rowPrice', 'dueToday', 'billingNote', 'sheetBack', 'sheetConfirm',
@@ -54,6 +58,8 @@ export const t = defineCopy('plan', {
     feature_word_assist: 'Word explanations', feature_reading_assist: 'Reading help', feature_writing_task: 'Writing prompts',
     line_word_assist: '{n} word explanations a day', line_reading_assist: '{n} reading helps a day', line_writing_task: '{n} writing prompts a day',
     upgradeTitle: 'Unlock with {plan}', upgradeLeadReading: 'This article is part of {plan}.', upgradeLeadTool: 'This tool is part of {plan}. The video stays free to watch.', benefitReading: 'Every reading article', benefitVideoTools: 'Full translation, scored shadowing and dictation on videos', benefitVideoReview: 'Save words from videos to review', startTrial: 'Start 7-day free trial', previewEnd: 'Keep reading with {plan}', previewUnlock: 'Unlock', partOfPlan: 'Part of {plan}',
+    upgradeLeadSet: 'The rest of this set is part of {plan}. The first one is free.', benefitSets: 'Every word and grammar point in each set',
+    reviewHeld: 'Free reviews your first {limit} saved words. {held} more are kept and join review with Plus.',
     feature_media_tools_weekly: 'Word look-up in videos', feature_progress_weekly_report: 'Weekly progress report', line_media_tools_weekly: 'Word look-up in {n} videos a week', exhausted_media_tools_weekly: 'You have looked up words in {used} of {limit} videos this week. The videos still play.',
     line_orena_message: '{n} Orena messages a day', line_orena_voice: '{n} min of voice chat with Orena', line_orena_voice_day: '{n} min a day of voice chat with Orena', line_orena_voice_month: '{n} min a month of voice chat with Orena', line_writing_review: '{n} writing reviews a month', line_pronunciation_audio: '{n} min pronunciation analysis', line_media_import: '{n} min media import', line_languages_target_one: '{n} target language', line_languages_target_other: '{n} target languages',
     compare_orena_message: 'Orena messages / day', compare_writing_review: 'Writing reviews / month', compare_pronunciation_audio: 'Pronunciation analysis', compare_media_import: 'Media import', compare_languages_target: 'Target languages',
@@ -140,6 +146,8 @@ export const t = defineCopy('plan', {
     feature_word_assist: 'Giải thích từ', feature_reading_assist: 'Hỗ trợ đọc', feature_writing_task: 'Đề bài viết',
     line_word_assist: '{n} lượt giải thích từ mỗi ngày', line_reading_assist: '{n} lượt hỗ trợ đọc mỗi ngày', line_writing_task: '{n} đề bài viết mỗi ngày',
     upgradeTitle: 'Mở khóa với {plan}', upgradeLeadReading: 'Bài đọc này thuộc gói {plan}.', upgradeLeadTool: 'Công cụ này thuộc gói {plan}. Video vẫn xem miễn phí.', benefitReading: 'Toàn bộ bài đọc', benefitVideoTools: 'Dịch song ngữ đầy đủ, nhại theo có chấm điểm và chép chính tả trên video', benefitVideoReview: 'Lưu từ trong video để ôn tập', startTrial: 'Dùng thử 7 ngày miễn phí', previewEnd: 'Đọc tiếp với gói {plan}', previewUnlock: 'Mở khóa', partOfPlan: 'Thuộc gói {plan}',
+    upgradeLeadSet: 'Phần còn lại của bộ này thuộc gói {plan}. Mục đầu tiên miễn phí.', benefitSets: 'Mọi từ và điểm ngữ pháp trong từng bộ',
+    reviewHeld: 'Gói Miễn phí ôn tập {limit} từ bạn lưu đầu tiên. {held} từ còn lại vẫn được giữ và sẽ vào ôn tập với gói Plus.',
     feature_media_tools_weekly: 'Tra từ trong video', feature_progress_weekly_report: 'Báo cáo tiến bộ hằng tuần', line_media_tools_weekly: 'Tra từ trong {n} video mỗi tuần', exhausted_media_tools_weekly: 'Tuần này bạn đã tra từ trong {used}/{limit} video. Video vẫn phát bình thường.',
     line_orena_message: '{n} tin nhắn Orena mỗi ngày', line_orena_voice: '{n} phút trò chuyện bằng giọng nói với Orena', line_orena_voice_day: '{n} phút/ngày trò chuyện bằng giọng nói với Orena', line_orena_voice_month: '{n} phút/tháng trò chuyện bằng giọng nói với Orena', line_writing_review: '{n} lượt chữa bài viết mỗi tháng', line_pronunciation_audio: '{n} phút phân tích phát âm', line_media_import: '{n} phút nhập media', line_languages_target_other: '{n} ngôn ngữ học',
     compare_orena_message: 'Tin nhắn Orena / ngày', compare_writing_review: 'Chữa bài viết / tháng', compare_pronunciation_audio: 'Phân tích phát âm', compare_media_import: 'Nhập media', compare_languages_target: 'Ngôn ngữ học',
@@ -226,6 +234,8 @@ export const t = defineCopy('plan', {
     feature_word_assist: '词语讲解', feature_reading_assist: '阅读辅助', feature_writing_task: '写作题目',
     line_word_assist: '每天 {n} 次词语讲解', line_reading_assist: '每天 {n} 次阅读辅助', line_writing_task: '每天 {n} 个写作题目',
     upgradeTitle: '开通 {plan} 解锁', upgradeLeadReading: '这篇文章属于 {plan} 套餐。', upgradeLeadTool: '此工具属于 {plan} 套餐。视频仍可免费观看。', benefitReading: '全部阅读文章', benefitVideoTools: '视频的完整双语翻译、评分跟读和听写', benefitVideoReview: '把视频中的词语存入复习', startTrial: '免费试用 7 天', previewEnd: '开通 {plan} 继续阅读', previewUnlock: '解锁', partOfPlan: '属于 {plan} 套餐',
+    upgradeLeadSet: '这一套的其余内容属于 {plan} 套餐。第一项免费。', benefitSets: '每一套中的全部词语和语法点',
+    reviewHeld: '免费版复习你最先保存的 {limit} 个词。其余 {held} 个词仍会保留，升级到 Plus 后进入复习。',
     feature_media_tools_weekly: '视频中查词', feature_progress_weekly_report: '每周进步报告', line_media_tools_weekly: '每周 {n} 个视频可查词', exhausted_media_tools_weekly: '本周已在 {used}/{limit} 个视频中查词。视频仍可正常播放。',
     line_orena_message: '每天 {n} 条 Orena 消息', line_orena_voice: '{n} 分钟与 Orena 语音聊天', line_orena_voice_day: '每天 {n} 分钟与 Orena 语音聊天', line_orena_voice_month: '每月 {n} 分钟与 Orena 语音聊天', line_writing_review: '每月 {n} 次写作批改', line_pronunciation_audio: '{n} 分钟发音分析', line_media_import: '{n} 分钟媒体导入', line_languages_target_other: '{n} 种学习语言',
     compare_orena_message: 'Orena 消息 / 天', compare_writing_review: '写作批改 / 月', compare_pronunciation_audio: '发音分析', compare_media_import: '媒体导入', compare_languages_target: '学习语言',

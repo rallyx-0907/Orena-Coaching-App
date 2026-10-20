@@ -15,7 +15,12 @@
 
    The header row (back, breadcrumb, search, status) is drawn once and the rest of the page re-renders under it, so the
    search field keeps its focus while the learner types. */
-import { html, mount, raw } from '../../kit/html.js';
+import { html, mount, raw, esc, cls } from '../../kit/html.js';
+import { planTag, toolLock } from '../../kit/components.js';
+import { planName } from '../../copy/shell.js';
+import { readAccess, itemView, tierClass } from '../../product/content-access.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
+import { t as planT } from '../plan/copy.js';
 import { useStyles } from '../../kit/styles.js';
 import { icon } from '../../kit/icons.js';
 import { langSpan } from '../../kit/lang.js';
@@ -71,14 +76,27 @@ function reading(entry, cls, pinyin) {
   return entry.reading && pinyin ? html`<span class="${cls}">${entry.reading}</span>` : '';
 }
 
+/* D-248 §4 (MV2-5): a paid point of its set carries Pricing's tag and the tier wash; a locked one also the tool lock,
+   and its tap opens the light upgrade sheet instead of the point. `entry.badge`/`entry.locked` come from itemView. */
+function openAttr(entry) {
+  return entry.locked ? raw(` data-locked="${esc(entry.badge || 'plus')}"`) : raw(` data-open="${esc(entry.id)}"`);
+}
+
+function tierMarks(entry) {
+  if (!entry.badge) return '';
+  const plan = planName({ id: entry.badge }) || entry.badge;
+  return html`${planTag(plan)}${entry.locked ? toolLock({ size: 15, label: planT('partOfPlan', { plan }) }) : ''}`;
+}
+
 function continueCard(entry, pinyin) {
-  return html`<button type="button" class="s-gl__cont" data-open="${entry.id}">
+  return html`<button type="button" class="${cls('s-gl__cont', tierClass(entry.badge))}"${openAttr(entry)}>
     ${tile(entry, 44, 21)}
     <span class="s-gl__contBody">
       ${title(entry, 's-gl__contTitle')}${reading(entry, 's-gl__contRd', pinyin)}
       <span class="s-gl__contMean">${entry.mean}</span>
       ${tag(entry, ' s-gl__tag--cont')}
     </span>
+    ${tierMarks(entry)}
     ${ring(entry)}
   </button>`;
 }
@@ -96,18 +114,19 @@ function categoryCard(category) {
 }
 
 function topicCard(entry, pinyin) {
-  return html`<button type="button" class="s-gl__topic" data-open="${entry.id}">
+  return html`<button type="button" class="${cls('s-gl__topic', tierClass(entry.badge))}"${openAttr(entry)}>
     <span class="s-gl__topicHead">${title(entry, 's-gl__topicTitle')}${reading(entry, 's-gl__topicRd', pinyin)}</span>
     <span class="s-gl__topicMean">${entry.mean}</span>
-    <span class="s-gl__topicFoot">${tag(entry, ' s-gl__tag--clip')}${ring(entry)}</span>
+    <span class="s-gl__topicFoot">${tag(entry, ' s-gl__tag--clip')}${tierMarks(entry)}${ring(entry)}</span>
   </button>`;
 }
 
 function topicRow(entry, pinyin) {
-  return html`<button type="button" class="s-gl__row" data-open="${entry.id}">
+  return html`<button type="button" class="${cls('s-gl__row', tierClass(entry.badge))}"${openAttr(entry)}>
     ${tile(entry, 38, 18)}
     <span class="s-gl__rowBody">${title(entry, 's-gl__rowTitle')}${reading(entry, 's-gl__rowRd', pinyin)}<span class="s-gl__rowMean">${entry.mean}</span></span>
     ${tag(entry, ' s-gl__tag--row')}
+    ${tierMarks(entry)}
     ${ring(entry)}
   </button>`;
 }
@@ -119,8 +138,9 @@ function option(value, label, selected) {
 export default async function grammarLibrary(element, ctx) {
   await useStyles('screens/grammar/grammar.css');
   const target = ctx.context.language === 'zh' ? 'zh' : 'en';
-  const [data, firstProgress] = await Promise.all([grammarLibraryData(target), grammarProgress()]);
+  const [data, firstProgress, access] = await Promise.all([grammarLibraryData(target), grammarProgress(), readAccess()]);
   let progress = firstProgress;
+  const mark = (entry) => ({ ...entry, ...itemView(entry, access) });
   if (!ctx.isCurrent()) return;
 
   const state = { q: readSearch(history.state) };
@@ -190,7 +210,7 @@ export default async function grammarLibrary(element, ctx) {
 
       ${view.progressKnown
         ? view.continue.length
-          ? html`<div class="s-gl__group"><h2 class="s-gl__h2">${t('continueTitle')}</h2><div class="s-gl__grid">${view.continue.map((entry) => continueCard(entry, pinyin))}</div></div>`
+          ? html`<div class="s-gl__group"><h2 class="s-gl__h2">${t('continueTitle')}</h2><div class="s-gl__grid">${view.continue.map((entry) => continueCard(mark(entry), pinyin))}</div></div>`
           : ''
         : html`<div class="s-gl__group"><div class="s-gl__progressOff" role="status"><span>${t('progressUnavailable')}</span><button type="button" class="s-gl__clear" data-retry-progress>${shell('retry')}</button></div></div>`}
 
@@ -207,7 +227,7 @@ export default async function grammarLibrary(element, ctx) {
             <button type="button" class="s-gl__seeAll" data-see-all="${panel.id || NO_FUNCTION}">${t('seeAll')}${raw(icon('arrow-right', { size: 16 }))}</button>
           </div>
           ${view.panelItems.length
-            ? html`<div class="s-gl__grid">${view.panelItems.map((entry) => topicCard(entry, pinyin))}</div>`
+            ? html`<div class="s-gl__grid">${view.panelItems.map((entry) => topicCard(mark(entry), pinyin))}</div>`
             : html`<div class="s-gl__panelEmpty">${view.filtering ? t('catEmptyFiltered') : t('catEmpty', { level })}</div>`}
         </div>`
         : ''}
@@ -221,8 +241,8 @@ export default async function grammarLibrary(element, ctx) {
         <div class="s-gl__chips">${[{ id: 'all', name: t('chipAll') }, ...view.categories].map((entry) => html`<button type="button" class="s-gl__chip" data-chip="${entry.id || NO_FUNCTION}" aria-pressed="${entry.id === view.allCat ? 'true' : 'false'}">${entry.name}</button>`)}</div>
         ${view.all.length
           ? list
-            ? html`<div class="s-gl__list">${view.all.map((entry) => topicRow(entry, pinyin))}</div>`
-            : html`<div class="s-gl__grid">${view.all.map((entry) => topicCard(entry, pinyin))}</div>`
+            ? html`<div class="s-gl__list">${view.all.map((entry) => topicRow(mark(entry), pinyin))}</div>`
+            : html`<div class="s-gl__grid">${view.all.map((entry) => topicCard(mark(entry), pinyin))}</div>`
           : html`<div class="s-gl__allEmpty"><div class="s-gl__allEmptyTitle">${t('emptyFiltered')}</div><button type="button" class="s-gl__clear" data-clear>${t('clearFilters')}</button></div>`}
       </div>`,
     );
@@ -259,6 +279,11 @@ export default async function grammarLibrary(element, ctx) {
         progress = next;
         render();
       });
+      return;
+    }
+    const locked = hit('[data-locked]');
+    if (locked) {
+      void openUpgradeSheet({ source: 'grammar', kind: 'set', tier: locked.dataset.locked || 'plus', go: (to) => ctx.go(to) });
       return;
     }
     const open = hit('[data-open]');

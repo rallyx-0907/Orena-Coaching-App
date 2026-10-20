@@ -5,12 +5,16 @@
    detail); word meanings read the learner's support language from the card's own meanings[]
    (model.js#supportMeaning), never a hardcoded field. Saving one word is a different screen's
    job (Word Detail); this frame draws no per-word save control (D2 §6 word-row composition). */
-import { html, mount, raw } from '../../kit/html.js';
+import { html, mount, raw, cls } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { loadingMarkup, emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
-import { heroMedia, masteryBars } from '../../kit/components.js';
+import { heroMedia, masteryBars, planTag, toolLock } from '../../kit/components.js';
+import { readAccess, tierClass } from '../../product/content-access.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
+import { t as planT } from '../plan/copy.js';
+import { planName } from '../../copy/shell.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { rememberWordSeed } from '../../product/word-seed.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
@@ -36,17 +40,34 @@ function meaningTag(language) {
   return label ? html` <span class="o-tag">${label}</span>` : '';
 }
 
+/* A locked word of the set (D-248 §4, MV2-5): its headword stays, its meaning line says which plan holds it, and the
+   row carries Pricing's tag, the tier wash and the tool lock; a tap opens the light upgrade sheet, not Word Detail. */
+function lockedWordRowMarkup(word) {
+  const plan = planName({ id: word.badge || 'plus' }) || word.badge || 'plus';
+  return html`<div class="${cls('s-collection-word', tierClass(word.badge))}" role="button" tabindex="0" data-word-locked="${word.badge || 'plus'}" data-word="${word.id}">
+    <span class="s-collection-word__body">
+      <span class="s-collection-word__title" lang="${langAttr(word.lang)}">${word.word}</span>
+      <span class="s-collection-word__meaning">${planT('partOfPlan', { plan })}</span>
+    </span>
+    ${planTag(plan)}
+    ${toolLock({ size: 18, label: planT('partOfPlan', { plan }) })}
+  </div>`;
+}
+
 function wordRowMarkup(word) {
+  if (word.locked) return lockedWordRowMarkup(word);
   const badge = word.isNew
     ? html`<span class="s-collection-word__new">${t('collectionNewBadge')}</span>`
     : masteryBars({ filled: word.filled, total: word.total, color: 'var(--green)' });
-  return html`<div class="s-collection-word" role="button" tabindex="0" data-word-open data-word="${word.id}">
+  const plan = word.badge ? planName({ id: word.badge }) || word.badge : '';
+  return html`<div class="${cls('s-collection-word', tierClass(word.badge))}" role="button" tabindex="0" data-word-open data-word="${word.id}">
     <span class="s-collection-word__body">
       <span class="s-collection-word__title" lang="${langAttr(word.lang)}">${word.word}${word.reading ? html` <span class="s-collection-word__reading">${word.reading}</span>` : ''}</span>
       <span class="s-collection-word__meaning">${word.meaning
         ? html`<span lang="${langAttr(word.meaningLanguage || languages().support)}">${word.meaning}</span>${meaningTag(word.meaningLanguage)}`
         : t('collectionNoMeaning')}</span>
     </span>
+    ${plan ? planTag(plan) : ''}
     ${badge}
     <button type="button" class="s-collection-word__play" data-word-play data-word="${word.id}" aria-label="${t('collectionPlay')}">${raw(icon('volume-2', { size: 18 }))}</button>
   </div>`;
@@ -111,23 +132,28 @@ export default async function collectionScreen(element, ctx) {
   const collectionId = ctx.params?.id || '';
   mount(element, html`<div class="s-collection">${loadingMarkup(t('collectionLoading'))}</div>`);
 
-  let data = await readCollection(collectionId, api.vocabularyLibraryCollection);
+  const [read, access] = await Promise.all([readCollection(collectionId, api.vocabularyLibraryCollection), readAccess()]);
+  let data = read;
   if (!ctx.isCurrent()) return;
   const { support } = languages();
-  let model = collectionViewModel(data, support);
+  let model = collectionViewModel(data, support, access);
 
   function paint() {
-    model = collectionViewModel(data, support);
+    model = collectionViewModel(data, support, access);
     mount(element, screenMarkup(model));
   }
 
   paint();
   for (const card of data.items || []) rememberWordSeed(card);
   let saving = false;
+  const unlock = (row) => {
+    void openUpgradeSheet({ source: 'collection', kind: 'set', tier: row.dataset.wordLocked || 'plus', go: (to) => ctx.go(to) });
+  };
   const click = async (event) => {
-    const target = event.target.closest('button, [data-word-open]');
+    const target = event.target.closest('button, [data-word-open], [data-word-locked]');
     if (!target || !element.contains(target)) return;
-    if (target.hasAttribute('data-back')) ctx.back();
+    if (target.hasAttribute('data-word-locked')) unlock(target);
+    else if (target.hasAttribute('data-back')) ctx.back();
     else if (target.hasAttribute('data-review') && model.savedCount && !saving) {
       ctx.go(ctx.href('review', {}, { collection: model.id }));
     } else if (target.hasAttribute('data-save') && !saving && model.missingCount) {
@@ -163,7 +189,13 @@ export default async function collectionScreen(element, ctx) {
   };
   element.addEventListener('click', click);
   const keydown = (event) => {
-    if (!event.target.matches('[data-word-open]') || !['Enter', ' '].includes(event.key)) return;
+    if (!['Enter', ' '].includes(event.key)) return;
+    if (event.target.matches('[data-word-locked]')) {
+      event.preventDefault();
+      unlock(event.target);
+      return;
+    }
+    if (!event.target.matches('[data-word-open]')) return;
     event.preventDefault();
     ctx.go(ctx.href('word', { id: event.target.dataset.word }));
   };
