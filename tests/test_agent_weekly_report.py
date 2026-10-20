@@ -134,3 +134,19 @@ def test_a_source_that_cannot_be_read_is_unknown(client, sources):  # noqa: F811
     agent_api._runtime.pack = PackBuilder(enabled=False, sources=PackSources(writing_events=broken))
     body = client.get("/api/agent/progress/weekly").json()
     assert body["writing"] is None
+
+
+def test_a_bad_time_zone_header_falls_back_to_utc(client, sources):  # noqa: F811
+    answered = client.get("/api/agent/progress/weekly", headers={"X-Orena-Timezone": "Mars/Olympus"})
+    assert answered.status_code == 200 and answered.json()["time_zone"] == "UTC"
+
+
+def test_the_route_reports_statuses_and_counts(client, sources):  # noqa: F811
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    sources["writing"] = [{"category": "grammar", "created_at": (now - timedelta(weeks=w)).isoformat(), "essay_id": w,
+                           "fragment": "he go", "suggestion": "he goes", "mini_rule_vi": "-s"} for w in (0, 1)]
+    (item,) = client.get("/api/agent/progress/weekly").json()["writing"]
+    assert (item["status"], item["this_week"], item["before"]) == ("recurring", 1, 1)
+    assert item["example"]["fragment"] == "he go"

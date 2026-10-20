@@ -80,7 +80,8 @@ class PackSources:
     repositories scope it by learner and language. A reader that raises is a source that is unknown here."""
 
     profile: Callable[[], Mapping[str, Any]] = _unreadable  # becoming_memory.get_learner_profile
-    # One row per error a stored review recorded: {category, created_at, essay_id} (app._agent_writing_error_events).
+    # One row per error a stored review recorded: {category, created_at, essay_id} (app._agent_writing_error_events),
+    # plus fragment, suggestion and mini_rule_vi for the weekly report; the pack reads only the first three.
     writing_events: Callable[[], Sequence[Mapping[str, Any]]] = _unreadable
     vocabulary_counts: Callable[[], Mapping[str, Any]] = _unreadable  # becoming_library.library_summary()["summary"]
     vocabulary_items: Callable[[int], Sequence[Mapping[str, Any]]] = _unreadable  # saved words, with lapse_count
