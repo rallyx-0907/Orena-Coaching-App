@@ -116,4 +116,22 @@ const share = listenCss.lastIndexOf('.is-dictation:not(.is-typing):has(.s-dict__
 assert.ok(share > listenCss.lastIndexOf('@media (max-height: 700px)'), 'the Dictation share comes after the short-phone floors');
 assert.match(listenCss.slice(share), /^[^}]*min-height:\s*30%/, 'after a check the Transcript keeps at least 30% of the body');
 
+/* --- #445: after Check the result is in view on the phone, never under the keyboard --------------------------
+   WebKit sends no focusout when the focused answer box is replaced by the result, so the room stayed in its
+   keyboard layout. Check lets go of the field first, the room ends typing at once and brings the result's stage to
+   its score, settling again while the visible viewport grows back; the page itself is never what scrolls. */
+const checkFn = practiceSrc.slice(practiceSrc.indexOf('async function check()'));
+assert.ok(checkFn.indexOf('.blur()') > -1 && checkFn.indexOf('.blur()') < checkFn.indexOf('paint()'),
+  'Check lets go of the answer box before the result replaces it');
+assert.match(practiceSrc, /event\.keyCode !== 229/, "an input method's Enter commits its word, never the answer");
+assert.match(practiceSrc, /!event\.isComposing/, 'and so does a composing Enter');
+const onCheck = listenSrc.slice(listenSrc.indexOf('onCheck:'), listenSrc.indexOf('onRetry:'));
+assert.match(onCheck, /revealResult\(\)/, 'the room settles the result after every check');
+const reveal = listenSrc.slice(listenSrc.indexOf('function revealResult()'));
+assert.match(reveal, /classList\.remove\('is-typing'\)/, 'typing ends at once, not after the focusout delay');
+assert.match(reveal, /removeProperty\('--ls-visible-h'\)/, 'the room is the full visible area again');
+assert.match(reveal, /viewport\.addEventListener\('resize'/, 'and settles again while the keyboard closes');
+assert.match(reveal, /stage\.scrollTop = 0/, "the stage, the result's own region, starts at the score");
+assert.doesNotMatch(reveal.slice(0, reveal.indexOf('setTimeout(')), /scrollIntoView/, 'nothing scrolls the page itself');
+
 console.log('Dictation workspace: a held line is the whole of what may be played; the phone keeps the Transcript while typing and draws the hint as an eye: PASS');

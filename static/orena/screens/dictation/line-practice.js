@@ -134,7 +134,9 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
       if (hintLevel > 0) paintLive();
     });
     input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      // An input method still composing (pinyin, Vietnamese Telex) owns Enter: it commits the word, not the answer.
+      // iOS Safari reports that keydown as keyCode 229 and not always as isComposing.
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
         event.preventDefault();
         void check();
       }
@@ -254,6 +256,11 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
 
   async function check() {
     const line = seg;
+    /* The answer box is about to be replaced by the result. Letting go of it first closes the phone keyboard and
+       ends typing through the ordinary focus path; WebKit sends no focusout for a focused field that is removed, which
+       left the room in its keyboard layout with the result under where the keyboard had been (#445). */
+    const field = q('[data-input]');
+    if (field && document.activeElement === field) field.blur();
     lastResult = checkAnswer({ expected: line.text, answer, language: lesson.language });
     checked = true;
     revealedIds.add(line.id);
