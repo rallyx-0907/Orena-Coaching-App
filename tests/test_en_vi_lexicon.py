@@ -76,12 +76,28 @@ def test_an_absent_word_is_reported_absent_never_guessed() -> None:
 def test_an_inflected_form_reaches_its_headword_and_nothing_else() -> None:
     """P0 QA: "adopted" showed no meaning, because the shared tagger's lemma only strips a plural."""
     adopt = vi_lexicon.lookup("adopt")
-    assert adopt and vi_lexicon.lookup("adopted") == adopt == vi_lexicon.lookup("adopting") == vi_lexicon.lookup("adopts")
-    assert vi_lexicon.gloss("adopted", "verb", "The family adopted a dog.") == adopt[0].gloss
-    assert vi_lexicon.lookup("studied") == vi_lexicon.lookup("study")
-    assert vi_lexicon.lookup("stopped") == vi_lexicon.lookup("stop")
+    assert adopt and vi_lexicon.lookup("adopted") == (), "lookup is the headword only; choose reduces, knowing the class"
+    for form in ("adopted", "adopting", "adopts"):
+        assert vi_lexicon.gloss(form, "verb", "The family adopted a dog.") == adopt[0].gloss, form
+    assert vi_lexicon.gloss("stopped", "verb", "The bus stopped.") == vi_lexicon.lookup("stop")[0].gloss
+    # "need" has three verb senses that agree (cần / cần phải / cần; muốn): the common one.
+    assert vi_lexicon.gloss("needed", "verb", "We needed help.") == "cần"
     # A reduction that names no headword stays a miss: Wiktionary has no Vietnamese translation of "amuse".
-    assert vi_lexicon.lookup("amuse") == () and vi_lexicon.lookup("amused") == ()
+    assert vi_lexicon.lookup("amuse") == () and vi_lexicon.gloss("amused", "verb") is None
+
+
+def test_a_reduction_never_guesses_a_wrong_sense() -> None:
+    """#459 review: "lied" read "nằm" (lie down) and "stated" read "nhà nước" (the noun "state")."""
+    # "lie" has two verb senses that share no word (lie down / tell a lie): unless the sentence names one, a miss.
+    assert vi_lexicon.gloss("lied", "verb", "He lied to me about the money.") is None
+    assert vi_lexicon.gloss("lied", "verb") is None
+    # -ed with no class is not reduced; with the verb class, "state" has no verb sense in the pack: a miss.
+    assert vi_lexicon.gloss("stated") is None and vi_lexicon.gloss("stated", "", "He stated the facts.") is None
+    assert vi_lexicon.gloss("stated", "verb", "He stated the facts.") is None
+    # -ed / -ing are reduced only for a verb or an adjective; a noun-tagged "-ed" word is not.
+    assert vi_lexicon.gloss("adopted", "noun") is None
+    # Irregular forms are not guessed.
+    assert vi_lexicon.gloss("went", "verb", "They went home.") is None
 
 
 def test_an_english_or_in_a_cell_is_split_into_alternatives() -> None:

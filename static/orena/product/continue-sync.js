@@ -60,25 +60,54 @@ const sent = new Map();
 /* Places this page let go of (removed, or content that is gone: #446). Until the learner opens one again, a
    server list that still carries it - a clear that has not landed, or failed - does not bring it back, so no
    screen asks for a retired lesson on every visit. */
-const LET_GO_KEY = 'orena.continue.letGo.v1';
+const LET_GO_KEY = 'orena.continue.letGo.v2';
 const LET_GO_LIMIT = 50;
+/* `{ owner, ids }`: the hold belongs to one account; another account (or a sign-out) starts with none. */
 function readLetGo() {
   try {
-    const stored = JSON.parse(globalThis.localStorage?.getItem(LET_GO_KEY) || '[]');
-    return Array.isArray(stored) ? stored.filter((id) => typeof id === 'string' && id.length <= 255).slice(-LET_GO_LIMIT) : [];
+    const stored = JSON.parse(globalThis.localStorage?.getItem(LET_GO_KEY) || '{}');
+    const ids = Array.isArray(stored?.ids) ? stored.ids.filter((id) => typeof id === 'string' && id.length <= 255) : [];
+    return { owner: typeof stored?.owner === 'string' ? stored.owner : '', ids: ids.slice(-LET_GO_LIMIT) };
   } catch {
-    return [];
+    return { owner: '', ids: [] };
   }
 }
 /* Kept on this device too, so a reload against a server that still lists the place (its clear answered 404 before
    the server accepted clears of unavailable media) does not ask for the gone lesson again. */
-const letGo = new Set(readLetGo());
+const letGo = new Set();
+let letGoOwner = '';
 function keepLetGo() {
   try {
-    globalThis.localStorage?.setItem(LET_GO_KEY, JSON.stringify([...letGo].slice(-LET_GO_LIMIT)));
+    globalThis.localStorage?.setItem(LET_GO_KEY, JSON.stringify({ owner: letGoOwner, ids: [...letGo].slice(-LET_GO_LIMIT) }));
   } catch {
     /* private mode or storage full: the in-page hold still applies */
   }
+}
+
+/* The signed-in account (shell/context.js): its own hold is read back; another account's is dropped. */
+export function setPlaceOwner(owner) {
+  const next = String(owner || '');
+  if (next === letGoOwner && letGo.size) return;
+  letGo.clear();
+  letGoOwner = next;
+  const stored = readLetGo();
+  if (stored.owner === next) stored.ids.forEach((id) => letGo.add(id));
+  else forgetStoredLetGo();
+}
+
+function forgetStoredLetGo() {
+  try {
+    globalThis.localStorage?.removeItem(LET_GO_KEY);
+  } catch {
+    /* nothing stored, or storage unavailable */
+  }
+}
+
+/* Sign-out: nothing of this account's hold stays for the next one. */
+export function forgetLetGo() {
+  letGo.clear();
+  letGoOwner = '';
+  forgetStoredLetGo();
 }
 
 function crosses(previous, body) {

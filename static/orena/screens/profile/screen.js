@@ -43,6 +43,7 @@ import { loadOffers } from '../../product/credit-topup.js';
 import { api } from '../../infrastructure/api.js';
 import { clearMemoryState } from '../../agent/memory-switch.js';
 import { clearConsentState } from '../../product/consent.js';
+import { forgetLetGo } from '../../product/continue-sync.js';
 import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { avatarMarkup as kitAvatar } from '../../kit/avatar.js';
@@ -212,6 +213,7 @@ async function signOut() {
   let destination = SIGN_OUT_NEXT;
   clearMemoryState();
   clearConsentState();
+  forgetLetGo();
   try {
     destination = signedOutDestination(await api.logout(SIGN_OUT_NEXT));
   } catch (error) {

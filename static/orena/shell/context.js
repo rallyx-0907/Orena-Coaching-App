@@ -16,7 +16,7 @@ import { learningLanguage } from '../product/languages.js';
 import { chooseInterface, setSupportFromProfile } from '../copy/index.js';
 import { INTERFACE_KEY } from '../product/languages.js';
 import { reconcileInterface, reviewFromProfile } from '../product/account-settings.js';
-import { clearPlace, sendPlace, syncContinuation } from '../product/continue-sync.js';
+import { clearPlace, sendPlace, setPlaceOwner, syncContinuation } from '../product/continue-sync.js';
 import { attachProvenance, pullImportState, pushImport, recordsFor, removeImport, settleMedia } from '../product/account-records.js';
 import { activateRemovedScope } from '../product/import-removed.js';
 import { setSpeakingSessionScope } from '../product/speaking-session.js';
@@ -93,6 +93,7 @@ export async function loadContext(storage = window.localStorage) {
   state.level = String(profile?.declared_level || '').trim();
   state.pinyin = profile?.pinyin !== 'off';
   state.due = Number.isFinite(Number(vocabulary?.summary?.due)) ? Math.max(0, Number(vocabulary.summary.due)) : 0;
+  setPlaceOwner(state.owner); // a let-go hold is the account's own (PR CC review)
   setPlaceSink({ enter: sendPlace, clear: clearPlace, addImport: pushImport, removeImport, recordsFor, dropLocal: (id) => dropLocalAnnotations(storage, state.owner, id), keepLanguage: attachProvenance });
   if (!pageHideBound && typeof window.addEventListener === 'function') {
     pageHideBound = true;

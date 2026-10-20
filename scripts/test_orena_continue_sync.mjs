@@ -100,6 +100,26 @@ assert.deepEqual(await sync.clearPlace('media:youtube-9xIf7Tb0ykU'), { status: '
 assert.deepEqual(sync.mergeContinuation([{ content_id: 'media:youtube-9xIf7Tb0ykU', kind: 'listening', place: { title: 'G', index: 1, total: 1 } }], []), []);
 setPlaceSink(null);
 
+/* #459 review: the let-go hold is the account's own - another account and a sign-out start with none. */
+{
+  const data = {};
+  globalThis.localStorage = { getItem: (k) => data[k] ?? null, setItem: (k, v) => { data[k] = String(v); }, removeItem: (k) => { delete data[k]; } };
+  const gone = [{ content_id: 'media:youtube-gone', kind: 'listening', place: { title: 'G', index: 1, total: 1 } }];
+  sync.setPlaceOwner('learner-a');
+  await sync.clearPlace('media:youtube-gone');
+  assert.deepEqual(JSON.parse(data['orena.continue.letGo.v2']).owner, 'learner-a');
+  assert.deepEqual(sync.mergeContinuation(gone, []), []);
+  sync.setPlaceOwner('learner-b');
+  assert.deepEqual(sync.mergeContinuation(gone, []).map((e) => e.id), ['media:youtube-gone'], 'another account is not held');
+  assert.equal(data['orena.continue.letGo.v2'], undefined, "the other account's hold is dropped");
+  sync.setPlaceOwner('learner-a');
+  await sync.clearPlace('media:youtube-gone');
+  sync.forgetLetGo();
+  assert.equal(data['orena.continue.letGo.v2'], undefined, 'sign-out leaves nothing');
+  assert.deepEqual(sync.mergeContinuation(gone, []).map((e) => e.id), ['media:youtube-gone']);
+  delete globalThis.localStorage;
+}
+
 /* The read: a failed request keeps the device list. */
 script = [{ status: 500, body: {} }];
 assert.equal(await sync.syncContinuation(learnerMemory(store, 'o2', 'en')), false);

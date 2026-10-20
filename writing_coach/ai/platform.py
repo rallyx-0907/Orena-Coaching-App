@@ -549,6 +549,20 @@ MIN_RETRY_SECONDS = 0.5
 BACKUP_RESERVE_SECONDS = 1.5
 
 
+def _backup_can_answer(target: ProviderTarget, health: Any = None) -> bool:
+    """Whether a later rung could be asked at all: its provider is configured and its breaker is not holding it down.
+    Time is reserved only for such a rung; an unconfigured or stood-down backup leaves the primary the whole deadline."""
+
+    item = providers().get(target.provider)
+    if item is None or not getattr(item, "configured", False):
+        return False
+    tracker = health or _routing.provider_health
+    try:
+        return bool(tracker.is_available(target.provider, target.model))
+    except Exception:  # noqa: BLE001 - a tracker that cannot answer reserves nothing
+        return False
+
+
 # PR CA: an answer that is not a complete JSON object (empty, cut off) is asked again once on the same rung. DeepSeek's
 # JSON mode (`response_format: json_object`, sent by every OpenAI-compatible adapter) may still return empty content
 # now and then, and a rerun answers; the retry is another paid call, admitted again by the spend gate and charged.
@@ -1041,7 +1055,7 @@ def generate_structured(
                 remaining = max(0.05, deadline - _routing.monotonic())
                 # A rung with a backup after it never spends the whole deadline: a primary that times out (a
                 # configured timeout longer than the capability's deadline) still leaves the backup its time.
-                if target in chain and chain.index(target) < len(chain) - 1:
+                if target in chain and any(_backup_can_answer(later, health) for later in chain[chain.index(target) + 1:]):
                     remaining = max(_routing.MIN_ATTEMPT_SECONDS, remaining - min(BACKUP_RESERVE_SECONDS, remaining / 2))
                 limit = remaining if limit is None else min(limit, remaining)
             return limit

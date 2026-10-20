@@ -339,6 +339,20 @@ def test_a_primary_with_a_long_configured_timeout_still_leaves_the_backup_its_ti
         state.get("reason") in (None, "timeout") for state in routing.provider_health.snapshot().values())
 
 
+def test_no_time_is_reserved_for_a_backup_that_cannot_answer(env) -> None:
+    """#459 review: an unconfigured backup, or one its breaker holds down, leaves the primary the whole deadline."""
+    env.repo.config = config(timeout_seconds=30, backup_provider="groq", backup_model="openai/gpt-oss-120b")
+    route("word_translation", LAMP)  # groq is not among the configured providers here
+    assert env.fake.calls[0]["timeout"] == pytest.approx(4.0)
+
+    router_module.reset_state()
+    env.fake.calls.clear()
+    env.repo.config = config(timeout_seconds=30)
+    routing.provider_health.record_failure("openrouter", "spend_cap", STANDBY)  # the standby's breaker is open
+    route("word_translation", word("chair"))
+    assert env.fake.calls[0]["model"] == GEMMA and env.fake.calls[0]["timeout"] == pytest.approx(4.0)
+
+
 def test_a_deadline_that_is_already_gone_asks_nobody(env) -> None:
     with pytest.raises(AllProvidersUnavailable):
         route("word_translation", LAMP, deadline=env.clock.now - 1)

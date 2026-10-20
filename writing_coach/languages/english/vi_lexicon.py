@@ -149,15 +149,26 @@ def _glosses(values: Any) -> tuple[str, ...]:
     return tuple(dict.fromkeys(out))
 
 
-def _base_forms(word: str) -> list[str]:
-    """Regular base forms of an inflected English word, most likely first (never the word itself)."""
+_VERBAL = ("ed", "ing", "ied", "ying")  # past / -ing: reduced only for a word tagged verb or adjective here
+_VERBAL_POS = frozenset({"verb", "auxiliary", "adjective"})
+_PLURAL_POS = frozenset({"noun", "verb", "auxiliary"})  # -s / -es / -ies: a plural noun or a third-person verb
+
+
+def _base_forms(word: str, part_of_speech: str = "") -> list[str]:
+    """Regular base forms of an inflected English word, most likely first (never the word itself), for the part of
+    speech the word has in its sentence. Unknown part of speech: none (an "-ed" word with no class is not guessed at)."""
 
     lower = word.casefold()
-    if not lower.isalpha():
+    pos = str(part_of_speech or "").strip().casefold()
+    if not lower.isalpha() or not pos:
         return []
     forms: list[str] = []
     for suffix, endings in _INFLECTIONS:
         if not lower.endswith(suffix):
+            continue
+        if suffix in _VERBAL and pos not in _VERBAL_POS:
+            continue
+        if suffix not in _VERBAL and pos not in _PLURAL_POS:
             continue
         stem = lower[: -len(suffix)]
         for ending in endings:
@@ -172,33 +183,57 @@ def _rows(key: str) -> list[Any]:
     return _record(key.casefold()[:PREFIX_LENGTH]).get(key) or []
 
 
+def _senses(rows: list[Any]) -> tuple[ViSense, ...]:
+    return tuple(ViSense(str(pos), str(sense), _glosses(glosses)) for pos, sense, glosses in rows if _glosses(glosses))
+
+
 def lookup(word: str) -> tuple[ViSense, ...]:
     """Every Vietnamese sense of an English headword, common sense first; () when the pack has none.
 
     The headword as written is tried first ("US", "May"), then its lower case; a leading infinitive "to " is dropped.
-    A form the pack does not carry is then reduced by regular inflection ("adopted" -> "adopt"): the shared tagger's
-    lemma only strips a plural, so the past and -ing forms a learner taps would otherwise always miss the pack."""
+    An inflected form the pack does not carry is not reduced here: `choose` does that, knowing the word's class."""
 
     clean = _clean(word)
     if clean.casefold().startswith("to ") and len(clean) > 3:
         clean = clean[3:].strip()
     if not clean:
         return ()
-    rows: list[Any] = []
     for key in dict.fromkeys((clean, clean.casefold())):
         rows = _rows(key)
         if rows:
-            break
-    if not rows and " " not in clean:
-        for key in _base_forms(clean):
-            rows = _rows(key)
-            if rows:
-                break
-    return tuple(
-        ViSense(str(pos), str(sense), _glosses(glosses))
-        for pos, sense, glosses in rows
-        if _glosses(glosses)
-    )
+            return _senses(rows)
+    return ()
+
+
+def _syllables(gloss_text: str) -> set[str]:
+    return {part for part in re.split(r"[\s;,]+", gloss_text.casefold()) if part}
+
+
+def _reduced(word: str, part_of_speech: str, wanted: frozenset[str], context: str) -> ViSense | None:
+    """The sense of a regular inflection's base form ("adopted" -> "adopt"), or None.
+
+    The shared tagger's lemma only strips a plural, so a past or -ing form would always miss the pack. A base form is
+    used only for the class the word has here (`wanted`), and only when its senses of that class agree: "needed" ->
+    "cần" (cần / cần phải / cần; muốn), but "lied" is never "nằm" - the verb "lie" has two senses that share no word
+    (lie down, tell a lie), so unless the sentence names one, the tap falls through to the next layer."""
+
+    for base in _base_forms(word, part_of_speech):
+        senses = tuple(sense for sense in lookup(base) if sense.part_of_speech in wanted)
+        if not senses:
+            continue
+        if len(senses) == 1:
+            return senses[0]
+        if context:
+            around = _stems(context, word) - _stems(base, "")
+            scores = [len(_stems(sense.sense, base) & around) for sense in senses]
+            best = max(scores)
+            if best > 0 and scores.count(best) == 1:
+                return senses[scores.index(best)]
+        first = _syllables(senses[0].gloss)
+        if all(first & _syllables(sense.gloss) for sense in senses[1:]):
+            return senses[0]
+        return None
+    return None
 
 
 def _stems(text: str, skip: str) -> set[str]:
@@ -206,19 +241,20 @@ def _stems(text: str, skip: str) -> set[str]:
     return {
         token[:5]
         for token in _WORD.findall(text.casefold())
-        if len(token) >= 3 and token not in _STOP and token[:5] != skip_stem
+        if len(token) >= 3 and token not in _STOP and (not skip_stem or token[:5] != skip_stem)
     }
 
 
 def choose(word: str, part_of_speech: str = "", context: str = "") -> ViSense | None:
     """The sense that fits: the word's part of speech in the sentence, then the sense label's words in the sentence,
     otherwise the common sense. None when the pack has no sense, or none of the part of speech the word has here (a
-    noun's gloss is not the meaning of the adjective "light")."""
+    noun's gloss is not the meaning of the adjective "light"). A form the pack lacks is reduced to its base form only
+    for a known part of speech, and only to a sense of that part of speech (`_reduced`)."""
 
     senses = lookup(word)
-    if not senses:
-        return None
     wanted = _POS_MATCH.get(str(part_of_speech or "").strip().casefold())
+    if not senses:
+        return _reduced(word, part_of_speech, wanted, context) if wanted and " " not in _clean(word) else None
     if wanted:
         senses = tuple(sense for sense in senses if sense.part_of_speech in wanted)
         if not senses:
