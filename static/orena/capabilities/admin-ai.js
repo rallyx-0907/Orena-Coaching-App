@@ -223,7 +223,7 @@ export function providerUsage(operations, providerId) {
      routed                      saved, enabled, no evidence against it
    "Routed" is not "healthy": `health` carries the recorded telemetry state separately (rule: never
    imply configured = healthy). */
-export function capabilityRows(config, operations, providers) {
+export function capabilityRows(config, operations, providers, health = null) {
   const byCapability = new Map((operations?.by_capability || []).map((row) => [row.capability, row]));
   const byProvider = new Map((providers || []).map((provider) => [provider.id, provider]));
   return (config?.capabilities || []).map((capability) => {
@@ -232,7 +232,9 @@ export function capabilityRows(config, operations, providers) {
     const evidence = byCapability.get(capability.key) || null;
     const primary = saved ? byProvider.get(saved.provider) || null : null;
     const standby = saved?.backup_provider ? byProvider.get(saved.backup_provider) || null : null;
-    const failing = evidence && ['provider_failure', 'failed', 'degraded'].includes(evidence.health_state);
+    // PR BZ: a primary the provider-health report says is down fails the route too (GET /api/admin/ai/health).
+    const down = Boolean(saved && (health?.down || []).some((row) => row.provider === saved.provider));
+    const failing = down || (evidence && ['provider_failure', 'failed', 'degraded'].includes(evidence.health_state));
     let state;
     if (kind === 'reserved') state = 'reserved';
     else if (kind === 'deterministic') state = 'local';
@@ -311,6 +313,7 @@ export function createAiAdmin({ api = adminApi, onChange = () => {} } = {}) {
     catalog: null,
     catalogState: 'loading',
     operations: null,
+    health: null,
     providers: [],
     routeTests: new Map(),
     providerTests: new Map(),
@@ -322,12 +325,15 @@ export function createAiAdmin({ api = adminApi, onChange = () => {} } = {}) {
   };
 
   async function loadCore() {
-    const [config, operations] = await Promise.all([
+    const [config, operations, health] = await Promise.all([
       api.aiConfig(),
       api.aiOperations(200).catch(() => ({ available: false, by_capability: [], recent: [] })),
+      // Provider health (PR BZ): an unreadable report draws nothing rather than claiming health.
+      typeof api.aiHealth === 'function' ? api.aiHealth().catch(() => null) : Promise.resolve(null),
     ]);
     state.config = config;
     state.operations = operations;
+    state.health = health;
     emit();
   }
 

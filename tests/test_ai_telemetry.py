@@ -180,6 +180,9 @@ def test_failure_telemetry_is_typed_and_redacts_suspicious_model(
         "cost": {"state": "unpriced", "currency": None, "amount": None, "provenance": {"catalog_version": PRICING_CATALOG_VERSION, "provider": "openai", "model": "[redacted]", "input_per_million": None, "output_per_million": None, "reason": "model_not_cataloged"}},
         "quota_available": "unknown",
         "billable_attempt": False,  # PR-MON-6 §8: the chain's rungs are recorded each; the summary is not a call
+        # PR BZ: the provider-health class (closed words), and the mark that this closing row repeats the rung's row.
+        "failure_class": "other",
+        "chain_summary": True,
     }
     assert "do-not-leak" not in repr(caught.value.telemetry)
 

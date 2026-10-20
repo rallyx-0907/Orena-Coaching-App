@@ -136,6 +136,8 @@ export const adminApi = {
   saveAgentDataClasses: (body) => raw('/api/admin/agent/data-classes', json('PUT', body)),
   aiCatalog: () => request('/api/admin/ai/catalog'),
   aiOperations: (limit = 200) => request(`/api/admin/ai/operations${query({ limit })}`),
+  // PR BZ: provider health, the router's breaker, recent provider switches and the providers that are down.
+  aiHealth: () => request('/api/admin/ai/health'),
   saveCapability: (key, body) => raw(`/api/admin/ai/config/${encodeURIComponent(key)}`, json('PUT', body)),
   testCapability: (key, standby = false) =>
     raw(`/api/admin/ai/test/${encodeURIComponent(key)}${standby ? '?standby=true' : ''}`, { method: 'POST' }),

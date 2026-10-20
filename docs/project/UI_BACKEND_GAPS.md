@@ -6511,3 +6511,15 @@ The design draws only "Tap to finish" and the duration pills, and gives no silen
 
 The duration pill stays the hard cap. Open for the owner: these values after the first iPhone sessions.
 
+## Admin: provider health, provider down and switch history (PR BZ, P0 2026-10-20)
+
+The pinned `Orena-Admin.dc.html` draws no provider-health indicator from recorded traffic: A2 marks a provider only by its connection test (`pst`: Healthy / Test failed / Configured · not tested) and its "is failing its test" banner (`BN("err", ...)` with "Open provider"); A5 capability rows read "Primary failing · standby ready / no standby"; A1 Overview has one `ovBanner` (title + text). It draws no switch history. The data of `GET /api/admin/ai/health` (`writing_coach/ai/health_signal.py`) is placed in those drawn elements only (`static/orena/screens/admin/provider-health.js`, copy `copy-health.js`, EN/VI/ZH):
+
+- **Provider down banner** (the A2 / A1 banner): one per provider that is down - "{provider} is down: {reason}", then "Since {when}.", "Running on a backup: {capabilities}.", "No backup answered: {capabilities}." - error tone for a spending cap or a rejected key, warn otherwise, with "Open provider". On A1 Overview and A2 AI & Models (Providers and Capability routing tabs).
+- **Provider row** (A2): the status pill reads "Failing · {reason}" in place of the tested status while the provider is down; a mute pill "Last error {when} · {n} in {minutes} min" sits where the design puts "Last test {when}".
+- **Capability row** (A2 routing tab): a route whose primary is down reads the design's own "Primary failing · standby ready / no standby"; the capability's own last-error pill as above.
+- **Switch history** (Operations, right column): a row list "{capability} · {when} · {from} → {to} · {reason}" with a trigger pill (Provider down / Failed, switched / Refused), from the `provider_switch` field of the recorded operations (most recent sample, not a full log).
+- **Thresholds and breaker timing** are policies in a new Policies & limits group, "Provider health".
+
+Open for the owner: whether the design should draw a health state of its own, a count of calls in the window, and a full switch log page (the history shows the most recent recorded sample only).
+

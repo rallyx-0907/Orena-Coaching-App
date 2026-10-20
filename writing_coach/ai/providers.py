@@ -852,6 +852,7 @@ class OpenAICompatibleProvider:
             )
             error.rate_limit = dict(self._last_rate_limit)
             error.status_code = response.status_code
+            error.failure_class = _http_failure_class(response, detail)  # type: ignore[attr-defined]
             raise error
         try:
             return response.json()
@@ -1048,6 +1049,7 @@ class OpenAICompatibleProvider:
             error = AIProviderError(f"{self.name} returned HTTP {response.status_code}. {detail[:300]}".strip())
             error.rate_limit = dict(self._last_rate_limit)
             error.status_code = response.status_code
+            error.failure_class = _http_failure_class(response, detail)  # type: ignore[attr-defined]
             raise error
         return self._read_chat_stream(response, should_stop)
 
@@ -1134,6 +1136,26 @@ class OpenAICompatibleProvider:
             cached_tokens=_count(details.get("cached_tokens")),
             rate_limit=dict(self._last_rate_limit),
         )
+
+
+def _http_failure_class(response: Any, detail: str) -> str:
+    """The provider-health class of an HTTP failure (ai/health_signal.py), from the status, the message and the
+    error's own code (OpenAI's insufficient_quota arrives with the same words as an ordinary per-minute 429). The
+    text is read here and never kept."""
+
+    from writing_coach.ai.health_signal import classify_failure
+
+    code = ""
+    try:
+        payload = response.json()
+        if isinstance(payload, list) and payload and isinstance(payload[0], dict):
+            payload = payload[0]
+        error = payload.get("error") if isinstance(payload, dict) else None
+        if isinstance(error, dict):
+            code = " ".join(str(error.get(name) or "") for name in ("code", "type", "status") if isinstance(error.get(name), str))
+    except Exception:  # noqa: BLE001 - an unreadable body is classified from its status alone
+        code = ""
+    return classify_failure(status=getattr(response, "status_code", None), text=f"{detail} {code}")
 
 
 def _error_detail(response: Any) -> str:

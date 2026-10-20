@@ -227,6 +227,20 @@ def routed_definition(capability_key: str) -> AICapabilityDefinition:
     return dataclasses.replace(definition, paid_standby_cap_policy=cap) if cap else definition
 
 
+def learner_text_refused(definition: AICapabilityDefinition, provider_id: str, model: str) -> bool:
+    """D-104 at switch time (PR BZ): True when a capability that carries learner text may not be sent to this rung - a
+    free tier, a provider that may log prompts, an unknown provider, or a model without its required privacy review.
+    The same rule `validate_capability_config` applies when a route is saved, checked again before a rung is asked, so
+    a backup reached because the primary is down can never be one the rule refuses."""
+
+    if definition.input_class != "learner_text":
+        return False
+    provider = get_provider_definition(provider_id)
+    if provider is None or provider.may_log_prompts or is_free_model(provider_id, model):
+        return True
+    return provider.learner_text_models is not None and model not in provider.learner_text_models
+
+
 def validate_routed_policy(capability_key: str, config: CapabilityConfig, *, enforce_cap: bool = True) -> None:
     """The static policy of a routed capability (PR-MON-7 design revision 2.1, §4.2), on top of
     `validate_capability_config`. Refused:

@@ -27,6 +27,7 @@ import {
 import { relative, latency, num, percent } from '../../capabilities/admin-format.js';
 import { humanKey, matchesFilter, providerMono, providerPill, routePill, sourceLabel } from './model.js';
 import { banner, bars, block, chipRow, formBlock, kv, metrics, pageHead, rowList, skeleton, stateBlock, tabs } from './blocks.js';
+import { capabilityHealthOf, downBanners, downPill, lastErrorPill, providerHealthOf } from './provider-health.js';
 
 const capName = (t, key) => (t.has(`cap_${key}`) ? t(`cap_${key}`) : humanKey(key));
 const capHint = (t, key) => (t.has(`capHint_${key}`) ? t(`capHint_${key}`) : '');
@@ -200,7 +201,8 @@ function dataClassesTab({ state, view, t }) {
 /* A2: the Providers, Capability routing, Token usage and Learner data tabs. */
 export function listPage({ state, view, t, ui, href, now }) {
   const tab = ['route', 'tok', 'data'].includes(view.tab) ? view.tab : 'prov';
-  const rows = capabilityRows(state.config, state.operations, state.providers);
+  const rows = capabilityRows(state.config, state.operations, state.providers, state.health);
+  const providerName = (id) => state.providers.find((item) => item.id === id)?.name || id;
   let body;
   if (tab === 'data') {
     body = dataClassesTab({ state, view, t });
@@ -217,7 +219,10 @@ export function listPage({ state, view, t, ui, href, now }) {
           const parts = [t(sourceLabel(credential))];
           if (provider.catalogLoaded && provider.models.length) parts.push(t.plural('models', provider.models.length));
           parts.push(used ? t.plural('usedBy', used) : t('notUsed'));
-          const pills = [pillOf(t, providerPill(providerStatus(provider, test)))];
+          // PR BZ: a provider the health report says is down shows that, in place of its tested status.
+          const pills = [downPill(t, state.health, provider.id) || pillOf(t, providerPill(providerStatus(provider, test)))];
+          const lastError = lastErrorPill(t, state.health, providerHealthOf(state.health, provider.id), { ui, now });
+          if (lastError) pills.push(lastError);
           if ((test?.state === 'ok' || test?.state === 'failed') && test.at) pills.push({ label: t('lastTest', { when: relative(test.at, ui, now) }), tone: 'mute' });
           return {
             tile: providerMono(provider.name || provider.id),
@@ -241,7 +246,8 @@ export function listPage({ state, view, t, ui, href, now }) {
             title: capName(t, row.key),
             meta: row.saved ? t('routeMeta', { primary: side(row.primary) || t('routeNone'), standby: side(row.standby) || t('routeNone') }) : '',
             detail: capHint(t, row.key),
-            pills: [pillOf(t, routePill(row.state))],
+            pills: [pillOf(t, routePill(row.state)),
+              ...[lastErrorPill(t, state.health, row.saved ? capabilityHealthOf(state.health, row.saved.provider, row.key) : null, { ui, now })].filter(Boolean)],
             actions: editable ? [{ label: t('actEditRoute'), a: 'go', data: { to: href('adminCapability', { id: row.key }) } }] : [],
             go: editable ? href('adminCapability', { id: row.key }) : '',
           };
@@ -249,7 +255,10 @@ export function listPage({ state, view, t, ui, href, now }) {
       emptyList(t, view.query),
     );
   }
-  const banners = tab === 'tok' || tab === 'data' ? [] : failingBanner(t, state, href);
+  const banners = tab === 'tok' || tab === 'data' ? [] : [
+    ...downBanners(t, state.health, { ui, now, href, providerName, capabilityName: (key) => capName(t, key) }),
+    ...failingBanner(t, state, href),
+  ];
   return {
     title: t('aiTitle'),
     markup: html`<section class="a-page" data-screen-label="A2 AI &amp; Models">

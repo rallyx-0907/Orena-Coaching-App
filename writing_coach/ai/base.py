@@ -357,8 +357,43 @@ def sanitize_telemetry(value: object) -> dict[str, Any] | None:
     # PR-MON-7 §4.4: an estimate of whether provider credits covered the call; never a cash fact.
     if value.get("cost_coverage") in {"provider_credit_estimated", "cash", "unknown"}:
         result["cost_coverage"] = value["cost_coverage"]
+    # PR BZ: the failure's class for provider health (ai/health_signal.py), a closed vocabulary decided from the
+    # provider's answer when it was recorded; the answer's own words are never kept.
+    if outcome == "failure" and value.get("failure_class") in _FAILURE_CLASSES:
+        result["failure_class"] = value["failure_class"]
+    # A chain's closing row repeats a failure each rung already recorded; health does not count it twice.
+    if value.get("chain_summary") is True:
+        result["chain_summary"] = True
+    switch = _provider_switch(value.get("provider_switch"))
+    if switch is not None:
+        result["provider_switch"] = switch
     result.update(_router_telemetry(value))
     return result
+
+
+_PROVIDER_ID = re.compile(r"[a-z][a-z0-9_-]{0,39}")
+_SWITCH_REASONS = frozenset({"spend_cap", "rate_limit", "auth", "unconfigured", "server", "timeout", "schema", "other",
+                             "privacy", "budget", "unfunded"})
+
+
+def _provider_switch(value: object) -> dict[str, Any] | None:
+    """PR BZ: the router moved from the first rung to another (from, to, reason, trigger) - provider ids and closed
+    words only, so nothing a learner wrote can ride along."""
+
+    if not isinstance(value, dict):
+        return None
+    source, target = value.get("from"), value.get("to")
+    if not isinstance(source, str) or not _PROVIDER_ID.fullmatch(source):
+        return None
+    if target is not None and (not isinstance(target, str) or not _PROVIDER_ID.fullmatch(target)):
+        target = None
+    reason = value.get("reason") if value.get("reason") in _SWITCH_REASONS else "other"
+    trigger = value.get("trigger") if value.get("trigger") in {"down", "failed", "refused"} else "failed"
+    return {"from": source, "to": target, "reason": reason, "trigger": trigger}
+
+
+_FAILURE_CLASSES = frozenset({"spend_cap", "rate_limit", "auth", "unconfigured", "server", "timeout", "schema", "other",
+                              "not_counted"})
 
 
 def extract_json_object(text: str) -> dict[str, Any]:
