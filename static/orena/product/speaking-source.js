@@ -79,6 +79,18 @@ function lineReading(segment, spokenText, catalog) {
   return '';
 }
 
+/* Where a line's audio ends: its own end, and never after the next line starts (D-020, the boundary Listening's
+   active line already uses, `capabilities/transcript-timeline.js`). A caption cue's end can be when it left the
+   screen rather than when its words ended (#430); playing the line to that end plays the next line's first words
+   under this line's text (#440). Lines that start together are parallel tracks and are left alone. */
+export function lineEndMs(segments, at) {
+  const own = Number(segments?.[at]?.end_ms);
+  const start = Number(segments?.[at]?.start_ms);
+  const next = (segments || []).slice(at + 1).map((item) => Number(item?.start_ms)).find((value) => Number.isFinite(value) && value > start);
+  if (!Number.isFinite(own)) return Number.isFinite(next) ? next : own;
+  return Number.isFinite(next) && next < own ? next : own;
+}
+
 /* A Listening lesson (`GET /api/listening/library/{lessonId}`'s own payload shape - confirmed
    against `scripts/fixtures/api/listening_library_lesson.en.json`, not assumed): the spoken text
    of a segment is `catalog.spoken_text_by_segment[segment_id]`, never a `segment.spoken_text`
@@ -111,7 +123,7 @@ export function sourceFromLesson(lessonId, payload, segmentId = '', support = ''
       // Use Listening's support-language encounter translations; never guess a meaning.
       meaning: encounter(payload, support).meaning(segment.segment_id) || '',
       startMs: segment.start_ms,
-      endMs: segment.end_ms,
+      endMs: lineEndMs(segments, at),
       // The model clip is read only when the lesson says it was prepared at content readiness (D-140).
       modelClipUrl: (catalog.model_clip_segments || []).includes(segment.segment_id)
         ? `/api/speaking/model-clip/${encodeURIComponent(lessonId)}/${encodeURIComponent(segment.segment_id)}` : '',

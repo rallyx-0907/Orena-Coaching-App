@@ -234,6 +234,18 @@ export function wordBands(view, durationS) {
 
 /* ---- Playback ---- */
 
+/* What the room shows, the component's own rule (`showRecord: !R || rec || err`, `hasRes: !!R`): the record card
+   until there is a result, while recording, and after a failed take. A failed take clears the result
+   (`analyze()` sets `res = null` with the error, #441): the banner never sits over the previous score. While a
+   new take records or is assessed the previous result stays below the record card, in the scrolling column;
+   only a record card with nothing under it is sized to the workspace (`fit`, rule 49). `busy` disables the
+   playback bar, so no button there is pressed into a take that is still recording (#443). */
+export function roomLayout({ hasResult, recording = false, processing = false, failed = false }) {
+  const result = Boolean(hasResult) && !failed;
+  const record = !result || recording || processing || failed;
+  return { record, result, fit: record && !result, busy: recording || processing };
+}
+
 export const PLAYBACK_MODES = Object.freeze(['model_then_you', 'word_by_word', 'model_only', 'you_only']);
 export const PLAYBACK_SPEEDS = Object.freeze([0.75, 1, 1.25]);
 

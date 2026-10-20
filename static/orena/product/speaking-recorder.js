@@ -12,6 +12,7 @@
 import { createSpeakingTake, TAKE, MAX_TAKE_MS } from '../capabilities/speaking-take.js';
 import { createLocalAudioRecorder } from '../capabilities/audio-recorder.js';
 import { watchMicrophone } from '../capabilities/mic-readiness.js';
+import { sharedAudioContext } from '../capabilities/audio-context.js';
 import { pronunciationView } from '../capabilities/pronunciation-result.js';
 import { recordTake, noteAttemptId } from './take-store.js';
 import { logSpeakingTask, noteSpeakingTaskAttempt } from './speaking-session.js';
@@ -41,6 +42,7 @@ export function createSpeakingRecorder({
 
   const levels = new Array(BARS).fill(0);
   let take = null;
+  let capture = null; // the recorder the current take records through
   let mic = null;
   let clock = 0;
   let stopTimer = 0;
@@ -66,7 +68,14 @@ export function createSpeakingRecorder({
   function startListening() {
     levels.fill(0);
     mic?.stop?.();
+    /* The level is read from the recorder's own microphone stream (a clone, so releasing the meter never ends the
+       take). A second getUserMedia while recording reconfigures, or on iOS Safari mutes, the capture the take is
+       being recorded from - a silent take the assessment answers with "no speech" (#443). */
+    const live = capture?.input?.();
+    const own = typeof live?.clone === 'function' ? { getUserMedia: async () => live.clone() } : undefined;
     mic = watchMic({
+      ...(own ? { mediaDevices: own } : {}),
+      context: sharedAudioContext(), // the context the tap started; one made now would stay suspended on iOS
       onLevel: (peak) => {
         if (disposed || state.phase !== TAKE.RECORDING) return;
         levels.shift();
@@ -124,7 +133,7 @@ export function createSpeakingRecorder({
     take?.dispose();
     take = makeTake({
       api,
-      recorder: makeRecorder(),
+      recorder: (capture = makeRecorder()),
       language,
       now: deps.now,
       urls: deps.urls,

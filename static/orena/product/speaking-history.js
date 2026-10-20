@@ -172,3 +172,33 @@ export async function loadCurrentSession(api, limit = 100) {
   if (!payload || typeof payload !== 'object' || !Array.isArray(payload.items)) throw new Error('speaking_session_unavailable');
   return { meta: payload.session || null, rows: payload.items.map(attemptRow).sort((a, b) => a.at - b.at) };
 }
+
+/* The room and its attempt list in history (#444; owner rule: Back returns to the previous screen). The room opens
+   the list on top of itself, so Back from the list returns to the room. Opening an attempt from that list steps back
+   to the room with the attempt chosen, instead of pushing a second copy of the room: history never grows with every
+   attempt opened, and Back from the room still leaves the source. Session memory only, keyed by room and line. */
+let roomBelow = '';
+let returning = null;
+export const roomKey = (id, segment) => `${id || ''}|${segment || ''}`;
+/* The room is about to open its attempt list on top of itself. */
+export function noteRoomBelow(key) {
+  roomBelow = key;
+}
+/* The room is on screen again: nothing of it is below a list any more. */
+export function clearRoomBelow() {
+  roomBelow = '';
+}
+/* From the list: true when this line's room is the screen below (step back to it); the attempt is handed to it. */
+export function returnToRoom(key, attemptId) {
+  if (!key || roomBelow !== key) return false;
+  roomBelow = '';
+  returning = { key, attemptId: String(attemptId || '') };
+  return true;
+}
+/* The room, as it opens: the attempt the list chose, once. */
+export function takeReturnedAttempt(key) {
+  if (!returning || returning.key !== key) return '';
+  const { attemptId } = returning;
+  returning = null;
+  return attemptId;
+}

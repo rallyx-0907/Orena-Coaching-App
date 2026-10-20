@@ -381,4 +381,27 @@ assert.equal(segmentOf(null), '');
   recorder.dispose();
 }
 
+{
+  // #443: the level meter reads a clone of the take's own microphone stream - never a second capture, which on
+  // iOS Safari mutes the stream being recorded (a silent take, answered "no speech").
+  let clock = 0;
+  let cloned = 0;
+  const live = { clone: () => { cloned += 1; return { getTracks: () => [] }; } };
+  const fakeRecorder = { start: async () => true, stop: async () => ({ blob: new Blob(['x'.repeat(4000)]), url: 'blob:r' }), cleanup() {}, discard() {}, snapshot: () => ({}), input: () => live };
+  const watched = [];
+  const source = sourceFromLesson('rec-lesson-4', fixture('listening_library_lesson.en.json'));
+  const recorder = createSpeakingRecorder({
+    api: { assessPronunciation: async () => ({ ...RESULT }) }, source, key: lineKey(source.sourceId, source.line.lineId), language: 'en',
+    deps: { createRecorder: () => fakeRecorder, watchMic: (options) => (watched.push(options), { stop() {} }), now: () => clock, urls: { createObjectURL: () => 'blob:take', revokeObjectURL() {} } },
+  });
+  await recorder.start();
+  assert.equal(watched.length, 1);
+  assert.ok(watched[0].mediaDevices, 'the meter is handed the take\'s own stream');
+  await watched[0].mediaDevices.getUserMedia({ audio: true });
+  assert.equal(cloned, 1, 'a clone of the recording stream, not a new capture');
+  clock = 1500;
+  await recorder.stop();
+  recorder.dispose();
+}
+
 console.log('test_orena_screen_speak.mjs: Scripted Pronunciation data mapping, shared speaking-source resolution, take-store views and the one-attempt-per-take recorder - real backend contracts, rule 40 throughout: PASS');
