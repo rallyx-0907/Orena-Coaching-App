@@ -14,6 +14,7 @@ import { setOverlayLayer } from './kit/overlay.js';
 import { setToastLayer, toast } from './kit/toast.js';
 import { bannerMarkup } from './kit/states.js';
 import { useStyles } from './kit/styles.js';
+import { installAvatarFallback } from './kit/avatar.js';
 import { isAdminHash } from './shell/routes.js';
 import { drawFrame } from './shell/frame.js';
 import { createRouter } from './shell/router.js';
@@ -22,6 +23,8 @@ import { setUnauthorizedHandler, setVoiceConsentRequiredHandler } from './infras
 import { bootOutcome, unauthorizedRoute } from './shell/session.js';
 
 const app = document.getElementById('app');
+// A learner picture that does not load shows the initial the design draws (kit/avatar.js).
+installAvatarFallback(document);
 
 function offlineBanner(holder) {
   const paint = () => {

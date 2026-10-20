@@ -45,11 +45,11 @@ import { clearMemoryState } from '../../agent/memory-switch.js';
 import { clearConsentState } from '../../product/consent.js';
 import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
+import { avatarMarkup as kitAvatar } from '../../kit/avatar.js';
 import { buildProfileModel, profileActions, weekdayAbbrevs, WEEKLY_GOAL_TARGET } from './model.js';
 
 function avatarMarkup(model) {
-  if (model.picture) return html`<span class="s-profile-avatar o-avatar"><img src="${model.picture}" alt=""></span>`;
-  return html`<span class="s-profile-avatar o-avatar" aria-hidden="true">${model.initial}</span>`;
+  return kitAvatar(model, 's-profile-avatar o-avatar');
 }
 
 /* due === 0 has its own key with no placeholder (heroHeadlineNone); due >= 1 always fills a real,

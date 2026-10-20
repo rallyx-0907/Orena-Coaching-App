@@ -12,6 +12,8 @@ import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { emptyMarkup } from '../../kit/states.js';
 import { toast } from '../../kit/toast.js';
+import { canPlayAudio } from '../../kit/audio-support.js';
+import { speakOnDevice } from '../../kit/device-voice.js';
 import { openSheet } from '../../kit/overlay.js';
 import { masteryBars } from '../../kit/components.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
@@ -155,7 +157,10 @@ export default async function mountFeed(element, ctx) {
         const card = cards[indexOf(button)];
         try {
           const info = await api.wordAudio(card.word);
-          if (info?.available && info.url) playUrl(info.url);
+          // A recording this device cannot play (Ogg on iOS Safari): the device's own voice, said to be the device's.
+          if (info?.available && info.url && !canPlayAudio(info.url, info.mediaType)) {
+            toast(t(speakOnDevice(card.word, language) ? 'sourceDevice' : 'noAudio'));
+          } else if (info?.available && info.url) playUrl(info.url);
           else toast(t('noAudio'));
         } catch {
           toast(t('noAudio'));

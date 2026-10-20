@@ -5,6 +5,7 @@
 import { html, mount, raw } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
 import { icon } from '../../kit/icons.js';
+import { avatarMarkup } from '../../kit/avatar.js';
 import { brandChip, intelChip, markGlyph } from '../../kit/brand.js';
 import { api } from '../../infrastructure/api.js';
 import { toast } from '../../kit/toast.js';
@@ -218,7 +219,7 @@ export default async function onboardingScreen(element, ctx) {
     return html`<section class="s-onboarding__panel">
       <div class="s-onboarding__head"><h1 class="s-onboarding__title" tabindex="-1">${t('accountTitle')}</h1></div>
       <div class="s-onboarding__identity">
-        <span class="s-onboarding__avatar o-avatar">${id.picture ? html`<img src="${id.picture}" alt="">` : id.initial}</span>
+        ${avatarMarkup(id, 's-onboarding__avatar o-avatar')}
         <div class="s-onboarding__identity-body">
           ${id.name ? html`<div class="s-onboarding__identity-name">${id.name}</div>` : ''}
           ${id.email ? html`<div class="s-onboarding__identity-email">${id.email}</div>` : ''}

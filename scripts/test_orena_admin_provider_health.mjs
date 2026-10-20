@@ -58,6 +58,7 @@ const report = {
     { at: '2026-10-19T23:38:00Z', capability: 'writing_evaluator', from: 'gemini', to: null, reason: 'privacy', trigger: 'refused', answered: false },
   ],
   breaker: [],
+  provider_names: { gemini: 'Google Gemini', deepseek: 'DeepSeek', openrouter: 'OpenRouter', groq: 'Groq' },
   prompt: PROMPT,
 };
 
@@ -110,13 +111,30 @@ for (const ui of ['en', 'vi', 'zh']) {
   assert.deepEqual(rows.map((row) => row.state), ['failing_standby', 'failing_no_standby', 'routed']);
 
   const overview = control.controlPage('adminOverview', { overview: {}, spend: null, health: report }, { href }).markup.toString();
-  assert.ok(overview.includes(esc(words.phDownTitle.replace('{provider}', 'gemini').replace('{reason}', reason))), `${ui}: the Overview banner`);
+  assert.ok(overview.includes(esc(words.phDownTitle.replace('{provider}', 'Google Gemini').replace('{reason}', reason))), `${ui}: the Overview banner names the provider`);
+  assert.ok(!overview.includes(esc(words.phDownTitle.replace('{provider}', 'gemini').replace('{reason}', reason))), `${ui}: never its lowercase id`);
 
   const ops = control.controlPage('adminOperations', { runtime: {}, telemetry: {}, overview: {}, reading: {}, health: report }, { href }).markup.toString();
   assert.ok(ops.includes(esc(words.phSwitches)), `${ui}: the switch history block`);
-  assert.ok(ops.includes(esc(words.phSwitchMeta.replace('{from}', 'gemini').replace('{to}', 'deepseek').replace('{reason}', reason))), `${ui}: from -> to and why`);
-  assert.ok(ops.includes(esc(words.phSwitchMeta.replace('{from}', 'gemini').replace('{to}', words.phSwitchNobody).replace('{reason}', words.phReason_privacy))), `${ui}: a refused switch`);
+  assert.ok(ops.includes(esc(words.phSwitchMeta.replace('{from}', 'Google Gemini').replace('{to}', 'DeepSeek').replace('{reason}', reason))), `${ui}: from -> to and why`);
+  assert.ok(ops.includes(esc(words.phSwitchMeta.replace('{from}', 'Google Gemini').replace('{to}', words.phSwitchNobody).replace('{reason}', words.phReason_privacy))), `${ui}: a refused switch`);
   assert.ok(ops.includes(esc(words.phTrigger_down)) && ops.includes(esc(words.phTrigger_refused)));
+}
+
+/* ---- P0 QA: the primary and its backup both down - the banner never says "running on a backup" ---------- */
+{
+  copyIndex.setLanguages({ ui: 'en', support: 'en' });
+  const both = { down: [
+    { provider: 'groq', reason: 'timeout', since: '2026-10-19T23:17:00Z', severity: 'medium', on_backup: [], without_backup: [], backup_down: ['word_translation'], backups: { word_translation: 'openrouter' } },
+    { provider: 'openrouter', reason: 'unconfigured', since: '2026-10-19T23:17:00Z', severity: 'medium', on_backup: [], without_backup: ['word_translation'], backup_down: [], backups: {} },
+  ], provider_names: report.provider_names };
+  const banners = health.downBanners(t, both, { ui: 'en', now: NOW, capabilityName: (key) => key });
+  assert.equal(banners[0].title, t('phDownTitle', { provider: 'Groq', reason: t('phReason_timeout') }));
+  assert.ok(banners[0].text.includes(t('phNoRoute', { list: 'word_translation (OpenRouter)' })), banners[0].text);
+  assert.ok(!banners.some((b) => b.text.includes(t('phOnBackup', { list: '' }).split(':')[0])), 'no banner claims a backup is running');
+  assert.equal(banners[1].title, t('phDownTitle', { provider: 'OpenRouter', reason: t('phReason_unconfigured') }));
+  const working = health.downBanners(t, { down: [{ provider: 'groq', reason: 'timeout', on_backup: ['word_translation'], backups: { word_translation: 'openrouter' } }], provider_names: report.provider_names }, { ui: 'en', now: NOW });
+  assert.ok(working[0].text.includes(t('phOnBackup', { list: 'word_translation (OpenRouter)' })), 'a working backup is named');
 }
 
 /* ---- d. nothing claimed without a report; the pieces on their own --------------------------------- */

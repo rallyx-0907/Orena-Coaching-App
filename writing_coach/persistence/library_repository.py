@@ -287,7 +287,8 @@ class LibraryRepository:
         }
 
     def set_place(
-        self, *, kind: str, source_id: str, place: dict[str, Any] | None, settle: bool = False
+        self, *, kind: str, source_id: str, place: dict[str, Any] | None, settle: bool = False,
+        create: bool = True,
     ) -> dict[str, Any]:
         """Record where the learner is in one piece of content, in place, newest write wins.
 
@@ -295,6 +296,8 @@ class LibraryRepository:
         first open. `version` and `updated_at` are never touched, so a concurrent pin/note PATCH at
         the version it read still lands. `place=None` unsets the place (SQL NULL); "clear" as the
         learner means it is a place carrying `cleared: true`, which keeps the relationship.
+        `create=False` only moves an existing row's place and never starts a relationship: it answers
+        `absent` when there is none (clearing the place of media that is no longer available, #446).
         """
         if kind not in PLACE_KINDS or not str(source_id or "").strip():
             raise LibraryConflict("kind_mismatch")
@@ -311,6 +314,8 @@ class LibraryRepository:
                         LibraryItem.relationship_kind == "started",
                     )
                 )
+                if item is None and not create:
+                    return {"status": "absent", "content_id": source_id, "kind": kind}
                 if item is None:
                     item = LibraryItem(
                         id=uuid.uuid4(), user_id=uid, language_code=lang, kind=kind, saved_word_id=None,

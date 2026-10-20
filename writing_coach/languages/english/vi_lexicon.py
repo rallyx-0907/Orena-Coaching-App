@@ -129,25 +129,76 @@ def _clean(word: str) -> str:
     return " ".join(unicodedata.normalize("NFC", str(word or "")).split())
 
 
+# Regular English inflections, tried only when the form itself is not a headword: (suffix, endings that replace it).
+# A reduction is accepted only when it names a headword of the pack (a closed set), so "adopted" reaches "adopt" and
+# "amused" reaches "amuse", while a form whose reduction names nothing stays a miss. Irregular forms are not guessed.
+_INFLECTIONS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("ying", ("ie",)), ("ies", ("y",)), ("ied", ("y",)), ("es", ("e", "")), ("s", ("",)),
+    ("ed", ("e", "")), ("ing", ("e", "")),
+)
+_MIN_STEM = 3
+# A Wiktionary translation cell sometimes lists spelling alternatives with an English "or" ("anh or anh trai"); the
+# word is not Vietnamese, so each alternative is its own gloss (the build splits them too: scripts/build_en_vi_pack.py).
+_ENGLISH_OR = re.compile(r"\s+or\s+")
+
+
+def _glosses(values: Any) -> tuple[str, ...]:
+    out: list[str] = []
+    for value in values or ():
+        out.extend(part.strip() for part in _ENGLISH_OR.split(str(value)) if part.strip())
+    return tuple(dict.fromkeys(out))
+
+
+def _base_forms(word: str) -> list[str]:
+    """Regular base forms of an inflected English word, most likely first (never the word itself)."""
+
+    lower = word.casefold()
+    if not lower.isalpha():
+        return []
+    forms: list[str] = []
+    for suffix, endings in _INFLECTIONS:
+        if not lower.endswith(suffix):
+            continue
+        stem = lower[: -len(suffix)]
+        for ending in endings:
+            if len(stem + ending) >= _MIN_STEM:
+                forms.append(stem + ending)
+        if suffix in {"ed", "ing"} and len(stem) >= _MIN_STEM + 1 and stem[-1] == stem[-2] and stem[-1] not in "aeiouls":
+            forms.append(stem[:-1])  # stopped -> stop, running -> run
+    return [form for form in dict.fromkeys(forms) if form != lower]
+
+
+def _rows(key: str) -> list[Any]:
+    return _record(key.casefold()[:PREFIX_LENGTH]).get(key) or []
+
+
 def lookup(word: str) -> tuple[ViSense, ...]:
     """Every Vietnamese sense of an English headword, common sense first; () when the pack has none.
 
-    The headword as written is tried first ("US", "May"), then its lower case; a leading infinitive "to " is dropped."""
+    The headword as written is tried first ("US", "May"), then its lower case; a leading infinitive "to " is dropped.
+    A form the pack does not carry is then reduced by regular inflection ("adopted" -> "adopt"): the shared tagger's
+    lemma only strips a plural, so the past and -ing forms a learner taps would otherwise always miss the pack."""
 
     clean = _clean(word)
     if clean.casefold().startswith("to ") and len(clean) > 3:
         clean = clean[3:].strip()
     if not clean:
         return ()
+    rows: list[Any] = []
     for key in dict.fromkeys((clean, clean.casefold())):
-        rows = _record(key.casefold()[:PREFIX_LENGTH]).get(key)
+        rows = _rows(key)
         if rows:
-            return tuple(
-                ViSense(str(pos), str(sense), tuple(str(gloss) for gloss in glosses))
-                for pos, sense, glosses in rows
-                if glosses
-            )
-    return ()
+            break
+    if not rows and " " not in clean:
+        for key in _base_forms(clean):
+            rows = _rows(key)
+            if rows:
+                break
+    return tuple(
+        ViSense(str(pos), str(sense), _glosses(glosses))
+        for pos, sense, glosses in rows
+        if _glosses(glosses)
+    )
 
 
 def _stems(text: str, skip: str) -> set[str]:

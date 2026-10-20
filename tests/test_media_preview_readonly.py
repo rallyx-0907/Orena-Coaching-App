@@ -64,6 +64,7 @@ class Recorder:
     # library_api
     def set_place(self, **kwargs):
         self.writes.append(("continue", kwargs["source_id"]))
+        self.last_place = kwargs
         return {"status": "written"}
 
     def keep(self, **kwargs):
@@ -209,6 +210,28 @@ def test_a_held_shared_id_receives_no_state_in_any_spelling(world, name, media_i
         assert response.status_code == 404, (name, cid, response.text)
         assert "media_not_available" in response.text, response.text
     assert recorder.writes == [], f"{name} wrote for a held id: {recorder.writes}"
+
+
+@pytest.mark.parametrize("media_id", [HELD, HELD_UPLOAD, THEIRS])
+def test_clearing_the_place_of_unavailable_media_moves_only_the_pointer(world, media_id):
+    """#446 follow-up: a retired or hidden item's place can be cleared, so the client stops asking for it.
+    The clear may not start a relationship, and stores nothing but `cleared` (no title, no position)."""
+    client, recorder = world
+    response = client.put(f"/api/continue/media:{media_id}", json={
+        "kind": "listening", "place": {"cleared": True, "title": "smuggled", "index": 3, "total": 9},
+    })
+    assert response.status_code == 200, response.text
+    assert recorder.writes == [("continue", f"media:{media_id}")]
+    assert recorder.last_place["create"] is False
+    place = recorder.last_place["place"]
+    assert place["cleared"] is True and place["title"] == "" and "index" not in place
+
+
+def test_clearing_a_visible_items_place_still_creates_as_before(world):
+    client, recorder = world
+    response = client.put(f"/api/continue/media:{PUBLISHED}", json={"kind": "listening", "place": {"cleared": True}})
+    assert response.status_code == 200, response.text
+    assert recorder.last_place["create"] is True
 
 
 @pytest.mark.parametrize("name", sorted(PROGRESS_WRITERS))

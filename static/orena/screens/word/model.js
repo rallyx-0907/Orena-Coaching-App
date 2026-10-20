@@ -82,10 +82,13 @@ function text(value) {
    it otherwise, 422 word_detail_text_not_in_context). The word's own saved source fragment is a
    real sentence when it both exists and actually contains the word; otherwise the word is its own
    (still valid) context - never an invented sentence. */
-export function contextFor(word, item) {
+export function contextFor(word, item, sentence = '') {
   const w = text(word);
-  const fragment = text(item?.source_fragment);
-  if (fragment && fragment.toLowerCase().includes(w.toLowerCase())) return fragment;
+  // The saved record's sentence first, then the sentence the learner tapped the word in (the sheet's "full word
+  // detail" passes it), each only when it contains the word; otherwise the word is its own valid context.
+  for (const candidate of [text(item?.source_fragment), text(sentence)]) {
+    if (candidate && candidate.toLowerCase().includes(w.toLowerCase())) return candidate;
+  }
   return w;
 }
 

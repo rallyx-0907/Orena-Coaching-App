@@ -87,6 +87,17 @@ assert.deepEqual(seen, [['clear', 'media:en-science-cosmic-calendar']]);
 assert.deepEqual(memory.value.continuation.map((entry) => entry.id), ['text:y']);
 assert.equal(memory.value.answers['media:en-science-cosmic-calendar'], 'my answer', 'only the place is forgotten');
 assert.equal(sync.placeKind({ id: 'media:en-science-cosmic-calendar' }), 'listening', 'the account clear has a kind');
+/* #446 follow-up: a cleared place the server still lists (the clear has not landed) is not merged back, so Today
+   does not ask for the retired lesson again; opening that content again lifts the hold. */
+await sync.clearPlace('media:youtube-retired');
+const relisted = [{ content_id: 'media:youtube-retired', kind: 'listening', place: { title: 'Gone', index: 1, total: 1 } }];
+assert.deepEqual(sync.mergeContinuation(relisted, []).map((entry) => entry.id), [], 'a let-go place stays gone');
+await sync.sendPlace({ id: 'media:youtube-retired', title: 'Back', place: { index: 1, total: 1 } });
+assert.deepEqual(sync.mergeContinuation(relisted, []).map((entry) => entry.id), ['media:youtube-retired'], 'opening it again brings it back');
+/* A clear the server answers 404 (media_not_available) counts as done: the place stays gone. */
+script = [{ status: 404, body: { detail: { code: 'media_not_available' } } }];
+assert.deepEqual(await sync.clearPlace('media:youtube-9xIf7Tb0ykU'), { status: 'gone' });
+assert.deepEqual(sync.mergeContinuation([{ content_id: 'media:youtube-9xIf7Tb0ykU', kind: 'listening', place: { title: 'G', index: 1, total: 1 } }], []), []);
 setPlaceSink(null);
 
 /* The read: a failed request keeps the device list. */

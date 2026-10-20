@@ -544,6 +544,9 @@ def _record_attempt(capability_key: str | None, router_version: str | None = Non
 
 # A chain with a deadline does not retry an invalid answer with less than this left.
 MIN_RETRY_SECONDS = 0.5
+# What a rung with a backup after it leaves of the deadline for that backup: a primary that times out must not take
+# the whole time, or the configured backup is never asked (P0 QA: Groq timing out, word lookups got no answer).
+BACKUP_RESERVE_SECONDS = 1.5
 
 
 # PR CA: an answer that is not a complete JSON object (empty, cut off) is asked again once on the same rung. DeepSeek's
@@ -1036,6 +1039,10 @@ def generate_structured(
             limit = float(target.timeout_seconds) if target.timeout_seconds is not None else attempt_timeout
             if deadline is not None:
                 remaining = max(0.05, deadline - _routing.monotonic())
+                # A rung with a backup after it never spends the whole deadline: a primary that times out (a
+                # configured timeout longer than the capability's deadline) still leaves the backup its time.
+                if target in chain and chain.index(target) < len(chain) - 1:
+                    remaining = max(_routing.MIN_ATTEMPT_SECONDS, remaining - min(BACKUP_RESERVE_SECONDS, remaining / 2))
                 limit = remaining if limit is None else min(limit, remaining)
             return limit
 
@@ -1532,6 +1539,10 @@ def ai_health_report() -> dict[str, Any]:
     else:
         report = report_from_repository(repository, breaker=breaker)
     report["breaker"] = [{"provider": key, "model": None, **state} for key, state in sorted(breaker.items())]
+    # Each provider's display name, so a page that loads no provider list (the Overview) still says "OpenRouter".
+    from writing_coach.ai.providers import provider_definitions
+
+    report["provider_names"] = {definition.id: definition.name for definition in provider_definitions()}
     return report
 
 

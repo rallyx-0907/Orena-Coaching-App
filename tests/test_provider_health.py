@@ -259,11 +259,46 @@ def test_the_report_from_a_repository_adds_the_switches_and_who_is_down():
     assert (down["provider"], down["reason"], down["severity"]) == ("gemini", "spend_cap", "high")
     assert down["on_backup"] == ["learner_dictionary"] and down["without_backup"] == ["agent_turn_fast"]
 
+    assert down["backup_down"] == [] and down["backups"] == {"learner_dictionary": "groq"}
+
     class Broken:
         def list_ai_operation_events(self, limit):
             raise RuntimeError("database down")
 
     assert health_signal.report_from_repository(Broken(), now=NOW)["status"] == "unknown"
+
+
+def test_a_backup_that_is_down_too_is_no_working_route_and_an_old_answer_is_not_running_on_it():
+    """P0 QA on :8021: Groq (primary) timing out, OpenRouter (backup) unconfigured; Admin said "running on the backup"."""
+    since = "2026-10-20T15:00:00Z"
+    alerts = {"alerts": [
+        {"provider": "groq", "severity": "medium", "failure_class": "timeout", "failing_since": since,
+         "capabilities": ["word_translation"]},
+        {"provider": "openrouter", "severity": "medium", "failure_class": "unconfigured", "failing_since": since,
+         "capabilities": ["word_translation"]},
+    ]}
+
+    def switch(at, source, target, answered, capability="word_translation"):
+        return {"at": at, "capability": capability, "from": source, "to": target, "reason": "timeout",
+                "trigger": "failed", "answered": answered}
+
+    switches = [
+        switch("2026-10-20T15:37:33Z", "groq", "openrouter", False),
+        switch("2026-10-20T15:36:04Z", "groq", "openrouter", True),  # answered once, earlier
+        switch("2026-10-20T15:37:22Z", "openrouter", None, False),
+    ]
+    rows = {row["provider"]: row for row in health_signal.down_providers(alerts, switches)}
+    groq = rows["groq"]
+    assert groq["on_backup"] == [], "an earlier answer on the backup is not where it runs now"
+    assert groq["backup_down"] == ["word_translation"] and groq["without_backup"] == []
+    assert groq["backups"] == {"word_translation": "openrouter"}
+    assert rows["openrouter"]["without_backup"] == ["word_translation"] and rows["openrouter"]["on_backup"] == []
+
+    # The backup back up and answering: running on it.
+    recovered = {"alerts": alerts["alerts"][:1]}
+    latest = [switch("2026-10-20T15:40:00Z", "groq", "openrouter", True), *switches]
+    groq = health_signal.down_providers(recovered, latest)[0]
+    assert groq["on_backup"] == ["word_translation"] and groq["backup_down"] == [] and groq["without_backup"] == []
 
 
 # ===================================================================================================== circuit breaker ==

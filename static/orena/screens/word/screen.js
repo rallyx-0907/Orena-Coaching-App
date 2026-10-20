@@ -31,6 +31,7 @@ import { toVocabularyModel, learnerState, savePayloadOf, highlightParts } from '
 import { mountStrokeSheet } from './stroke-sheet.js';
 import { createStrokeTiles } from './stroke-tiles.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
+import { canPlayAudio } from '../../kit/audio-support.js';
 import { wordSeed } from '../../product/word-seed.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
@@ -158,7 +159,7 @@ export default async function mountWordDetail(element, ctx) {
     // The lookup runs in the learner's current learning language: the server refuses any other (409,
     // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
     // English IPA labelled pinyin (UI_BACKEND_GAPS VC-15); the card mapper drops a reading of the wrong kind.
-    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item), source_language: language, target_language: languages().support }).catch((error) => { wordPause = refusalLineOf(error); lookupFailed = !wordPause; return null; }),
+    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item, String(ctx.query?.get?.('ctx') || '').slice(0, 600)), source_language: language, target_language: languages().support }).catch((error) => { wordPause = refusalLineOf(error); lookupFailed = !wordPause; return null; }),
     api.wordClips(word, 6).catch(() => { clipsFailed = true; return null; }),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);
@@ -270,7 +271,9 @@ export default async function mountWordDetail(element, ctx) {
       };
       try {
         const audioInfo = await api.wordAudio(word, model.pronunciation.text || '', true);
-        if (audioInfo?.available && audioInfo.url) playUrl(audioInfo.url);
+        // A recording this device cannot play (Ogg on iOS Safari) falls back to the device's voice, as offline does.
+        if (audioInfo?.available && audioInfo.url && !canPlayAudio(audioInfo.url, audioInfo.mediaType)) onDevice();
+        else if (audioInfo?.available && audioInfo.url) playUrl(audioInfo.url);
         else if (audioInfo?.reason === 'synthesis_unavailable') onDevice();
         else toast(t('noAudio'));
       } catch {

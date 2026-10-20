@@ -73,6 +73,28 @@ def test_an_absent_word_is_reported_absent_never_guessed() -> None:
     assert vi_lexicon.lookup("") == ()
 
 
+def test_an_inflected_form_reaches_its_headword_and_nothing_else() -> None:
+    """P0 QA: "adopted" showed no meaning, because the shared tagger's lemma only strips a plural."""
+    adopt = vi_lexicon.lookup("adopt")
+    assert adopt and vi_lexicon.lookup("adopted") == adopt == vi_lexicon.lookup("adopting") == vi_lexicon.lookup("adopts")
+    assert vi_lexicon.gloss("adopted", "verb", "The family adopted a dog.") == adopt[0].gloss
+    assert vi_lexicon.lookup("studied") == vi_lexicon.lookup("study")
+    assert vi_lexicon.lookup("stopped") == vi_lexicon.lookup("stop")
+    # A reduction that names no headword stays a miss: Wiktionary has no Vietnamese translation of "amuse".
+    assert vi_lexicon.lookup("amuse") == () and vi_lexicon.lookup("amused") == ()
+
+
+def test_an_english_or_in_a_cell_is_split_into_alternatives() -> None:
+    """P0 QA: "brothers" showed "anh or anh trai" - English inside a Vietnamese gloss."""
+    for word in ("brother", "brothers", "sister", "engineer"):
+        for sense in vi_lexicon.lookup(word):
+            assert all(" or " not in gloss for gloss in sense.glosses), (word, sense)
+    assert vi_lexicon.lookup("brother")[0].glosses[:2] == ("anh", "anh trai")
+    script = _build_script()
+    entry = {"pos": "noun", "translations": [{"lang_code": "vi", "word": "chị or chị gái", "sense": "female sibling"}]}
+    assert script.entry_senses(entry) == [["noun", "female sibling", ["chị", "chị gái"]]]
+
+
 def test_a_missing_pack_is_unavailable_not_an_error(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(vi_lexicon, "INDEX_PATH", tmp_path / "absent.json")
     vi_lexicon._index.cache_clear()
@@ -150,6 +172,18 @@ def test_a_word_the_pack_lacks_falls_through_to_the_ai_seam(tap) -> None:
     result = service.lookup("launch", "They watched the launch.", "en", "vi").to_dict()
     assert result["meanings"] == [{"text": "từ AI", "source": "word_translation"}]
     assert asked == [("launch", "en", "vi")]
+
+
+def test_a_past_form_tap_resolves_from_the_pack_with_no_ai_call(tap, monkeypatch) -> None:
+    service, asked = tap
+    monkeypatch.setattr(
+        reading_lookup, "_local_token_facts",
+        lambda _l, _c, selection: {"part_of_speech": "verb", "pronunciation": "", "base_form": "", "lemma": selection},
+    )
+    result = service.lookup("adopted", "The family adopted a dog last year.", "en", "vi").to_dict()
+    assert result["meanings"][0]["source"] == "bilingual_dictionary"
+    assert "con nuôi" in result["meanings"][0]["text"]
+    assert asked == []
 
 
 def test_the_vendored_pack_answers_only_its_pair() -> None:

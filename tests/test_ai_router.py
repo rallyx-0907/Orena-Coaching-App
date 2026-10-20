@@ -318,6 +318,27 @@ def test_each_attempt_is_bounded_by_what_remains_of_the_total_deadline(env) -> N
     assert 0 < env.fake.calls[1]["timeout"] <= 1.0 + 1e-9
 
 
+def test_a_primary_with_a_long_configured_timeout_still_leaves_the_backup_its_time(env) -> None:
+    """P0 QA: Groq (primary) timing out took the whole deadline, so the configured backup was never asked."""
+    env.repo.config = config(timeout_seconds=30.0)
+
+    def slow(kwargs):
+        if kwargs["model"] == GEMMA:
+            env.clock.now += kwargs["timeout"]  # the primary times out after exactly what it was given
+
+    env.fake.on_call = slow
+    env.fake.script = {GEMMA: [AIProviderTimeout("slow")]}
+    result = route("word_translation", LAMP)
+    assert env.fake.models() == [GEMMA, STANDBY], "the backup is asked after the primary's timeout"
+    assert env.fake.calls[0]["timeout"] <= 4.0 - platform.BACKUP_RESERVE_SECONDS + 1e-9
+    assert env.fake.calls[1]["timeout"] >= platform.BACKUP_RESERVE_SECONDS - 1e-9
+    assert result.provenance["model"] == STANDBY
+    failed = [row for row in env.repo.operations if row["outcome"] == "failure"]
+    assert (failed[0]["fallback_reason"], failed[0]["failure_class"]) == ("timeout", "timeout"), "the breaker class"
+    assert routing.provider_health.snapshot() == {} or all(
+        state.get("reason") in (None, "timeout") for state in routing.provider_health.snapshot().values())
+
+
 def test_a_deadline_that_is_already_gone_asks_nobody(env) -> None:
     with pytest.raises(AllProvidersUnavailable):
         route("word_translation", LAMP, deadline=env.clock.now - 1)

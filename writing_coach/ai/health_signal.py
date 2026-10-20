@@ -363,18 +363,29 @@ def down_providers(report: Mapping[str, Any], switches: list[dict[str, Any]],
         if isinstance(state, Mapping) and state.get("cooling_down") and _ID.fullmatch(provider):
             stood_down.setdefault(provider, state)
     rows = []
-    for provider in sorted(set(alerts) | set(stood_down)):
+    down = set(alerts) | set(stood_down)
+    for provider in sorted(down):
         alert, state = alerts.get(provider) or {}, stood_down.get(provider) or {}
         reason = state.get("reason") or alert.get("failure_class") or "other"
         reason = reason if reason in FAILURE_CLASSES else "other"
         since = state.get("down_since") or alert.get("failing_since") or alert.get("last_error_at")
         mine = [row for row in switches if row["from"] == provider and (not since or row["at"] >= since)]
-        on_backup = sorted({row["capability"] for row in mine if row["answered"]})
-        failing = set(alert.get("capabilities") or []) | {row["capability"] for row in mine if not row["answered"]}
+        # Each capability's newest switch says where it stands now: one answer on the backup earlier does not mean it
+        # runs on the backup when the switches since got no answer, nor when that backup is itself down now.
+        latest: dict[str, Mapping[str, Any]] = {}
+        for row in sorted(mine, key=lambda item: item["at"], reverse=True):
+            latest.setdefault(row["capability"], row)
+        on_backup = sorted(cap for cap, row in latest.items() if row["answered"] and row.get("to") not in down)
+        # No working route: the capability's backup is down too.
+        backup_down = sorted(cap for cap, row in latest.items() if row.get("to") in down and cap not in on_backup)
+        failing = set(alert.get("capabilities") or []) | {cap for cap, row in latest.items() if not row["answered"]}
         rows.append({
             "provider": provider, "reason": reason, "since": since,
             "severity": "high" if reason in HIGH_CLASSES else (alert.get("severity") or "medium"),
-            "on_backup": on_backup, "without_backup": sorted(failing - set(on_backup)),
+            "on_backup": on_backup, "without_backup": sorted(failing - set(on_backup) - set(backup_down)),
+            "backup_down": backup_down,
+            # The backup each capability last moved to ({capability: provider}), so Admin can name it.
+            "backups": {cap: str(latest[cap]["to"]) for cap in sorted(latest) if latest[cap].get("to")},
             "breaker_open": bool(state), "seconds_remaining": int(state.get("seconds_remaining") or 0),
         })
     rows.sort(key=lambda row: (row["severity"] != "high", row["provider"]))
