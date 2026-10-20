@@ -37,7 +37,7 @@ The learner UI runs on :8021 (dev/QA, `codex/work`) and on :8000 (public product
 | Word Quick Sheet · Sentence Quick Sheet | `screens/quick-sheet/` | `scripts/test_orena_screen_quick-sheet.mjs` | reviewable |
 | Vocabulary Focus | `screens/listening/vocab-sheet.js` | `scripts/test_orena_screen_listening.mjs` | reviewable |
 | Contextual Orena · Orena Voice | `screens/orena/panel.js`, `screens/orena/voice.js` | `scripts/test_orena_screen_orena.mjs`, `scripts/test_orena_agent.mjs` | reviewable |
-| Import | `screens/import/` (opened from Discover's "Create lesson" card, 2026-10-15 pin, and from the "+ Import" controls of Today and My Library) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
+| Import | `screens/import/` (opened only from Discover's "Create lesson" card, 2026-10-15 pin; the old "+ Import" controls of Today, My Library and the Discover overview are deleted, D-243) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Notifications | `screens/notifications/` (opened from the shell bell, `shell/router.js`) | `scripts/test_orena_screen_sheets.mjs` | reviewable |
 | Stroke Practice | `screens/word/stroke-sheet.js`, `screens/word/stroke-tiles.js` | `scripts/test_orena_screen_word.mjs` | reviewable (styled from Word and Review, browser-checked in the Vocabulary batch 1ce3b816) |
 | VocabularyCard (Word Detail `detail`, Review `review-front` / `review-back`, Daily Feed `feed`; D-179) | `kit/vocabulary-card.js`, `kit/vocabulary-card.css`, `product/vocabulary-card.js` (pure mapper), `copy/vocabulary-card.js` | `scripts/test_orena_vocabulary_card.mjs` | building (PR 2; browser check on :8021 pending) |

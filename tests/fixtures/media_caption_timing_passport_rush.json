@@ -1,0 +1,385 @@
+{
+ "about": "Passport Rush (YouTube ZncA70OAgPw), the public automatic English caption track (generated=True), first minute: `cues` as the caption endpoint returns them (start, display duration), `json3_words` the same track's per-word start offsets (first 21 s), and `stored_8000_lines` every lesson line :8000 served on 2026-10-20 (supadata, caption_kind unknown). Fetched without audio. P0 2026-10-20.",
+ "media_id": "youtube-ZncA70OAgPw",
+ "language": "en",
+ "cues": [
+  {
+   "text": "So, how long's the flight again?",
+   "start_ms": 1000,
+   "duration_ms": 3800
+  },
+  {
+   "text": ">> Well, about 15 hours.",
+   "start_ms": 2760,
+   "duration_ms": 4040
+  },
+  {
+   "text": ">> Everyone's already here. You're making",
+   "start_ms": 4800,
+   "duration_ms": 3440
+  },
+  {
+   "text": "it to my birthday, right?",
+   "start_ms": 6800,
+   "duration_ms": 3440
+  },
+  {
+   "text": ">> Of course I'll make it. And guess what?",
+   "start_ms": 8240,
+   "duration_ms": 3880
+  },
+  {
+   "text": "I've got a surprise for you. Okay, got",
+   "start_ms": 10240,
+   "duration_ms": 5520
+  },
+  {
+   "text": "to go. Time to check in. Bye.",
+   "start_ms": 12120,
+   "duration_ms": 5200
+  },
+  {
+   "text": ">> Your passport, [music] please.",
+   "start_ms": 15760,
+   "duration_ms": 4520
+  },
+  {
+   "text": ">> Yeah, yeah, one second.",
+   "start_ms": 17320,
+   "duration_ms": 2960
+  },
+  {
+   "text": ">> [music]",
+   "start_ms": 42575,
+   "duration_ms": 2020
+  },
+  {
+   "text": "[music]",
+   "start_ms": 48470,
+   "duration_ms": 2020
+  },
+  {
+   "text": "[music]",
+   "start_ms": 55675,
+   "duration_ms": 2020
+  }
+ ],
+ "json3_words": [
+  {
+   "text": "So,",
+   "start_ms": 1000
+  },
+  {
+   "text": "how",
+   "start_ms": 1520
+  },
+  {
+   "text": "long's",
+   "start_ms": 1640
+  },
+  {
+   "text": "the",
+   "start_ms": 1840
+  },
+  {
+   "text": "flight",
+   "start_ms": 1920
+  },
+  {
+   "text": "again?",
+   "start_ms": 2120
+  },
+  {
+   "text": ">> Well,",
+   "start_ms": 2760
+  },
+  {
+   "text": "about",
+   "start_ms": 3200
+  },
+  {
+   "text": "15",
+   "start_ms": 3520
+  },
+  {
+   "text": "hours.",
+   "start_ms": 3920
+  },
+  {
+   "text": ">> Everyone's",
+   "start_ms": 4800
+  },
+  {
+   "text": "already",
+   "start_ms": 5160
+  },
+  {
+   "text": "here.",
+   "start_ms": 5480
+  },
+  {
+   "text": "You're",
+   "start_ms": 6360
+  },
+  {
+   "text": "making",
+   "start_ms": 6480
+  },
+  {
+   "text": "it",
+   "start_ms": 6800
+  },
+  {
+   "text": "to",
+   "start_ms": 6880
+  },
+  {
+   "text": "my",
+   "start_ms": 6960
+  },
+  {
+   "text": "birthday,",
+   "start_ms": 7080
+  },
+  {
+   "text": "right?",
+   "start_ms": 7640
+  },
+  {
+   "text": ">> Of",
+   "start_ms": 8240
+  },
+  {
+   "text": "course",
+   "start_ms": 8360
+  },
+  {
+   "text": "I'll",
+   "start_ms": 8680
+  },
+  {
+   "text": "make",
+   "start_ms": 8800
+  },
+  {
+   "text": "it.",
+   "start_ms": 9040
+  },
+  {
+   "text": "And",
+   "start_ms": 9440
+  },
+  {
+   "text": "guess",
+   "start_ms": 9560
+  },
+  {
+   "text": "what?",
+   "start_ms": 9800
+  },
+  {
+   "text": "I've",
+   "start_ms": 10240
+  },
+  {
+   "text": "got",
+   "start_ms": 10360
+  },
+  {
+   "text": "a",
+   "start_ms": 10520
+  },
+  {
+   "text": "surprise",
+   "start_ms": 10560
+  },
+  {
+   "text": "for",
+   "start_ms": 11000
+  },
+  {
+   "text": "you.",
+   "start_ms": 11120
+  },
+  {
+   "text": "Okay,",
+   "start_ms": 11720
+  },
+  {
+   "text": "got",
+   "start_ms": 11960
+  },
+  {
+   "text": "to",
+   "start_ms": 12120
+  },
+  {
+   "text": "go.",
+   "start_ms": 12200
+  },
+  {
+   "text": "Time",
+   "start_ms": 12440
+  },
+  {
+   "text": "to",
+   "start_ms": 12640
+  },
+  {
+   "text": "check",
+   "start_ms": 12760
+  },
+  {
+   "text": "in.",
+   "start_ms": 12960
+  },
+  {
+   "text": "Bye.",
+   "start_ms": 13280
+  },
+  {
+   "text": ">> Your",
+   "start_ms": 15760
+  },
+  {
+   "text": "passport,",
+   "start_ms": 15960
+  },
+  {
+   "text": "[music]",
+   "start_ms": 16375
+  },
+  {
+   "text": "please.",
+   "start_ms": 16440
+  },
+  {
+   "text": ">> Yeah,",
+   "start_ms": 17320
+  },
+  {
+   "text": "yeah,",
+   "start_ms": 17440
+  },
+  {
+   "text": "one",
+   "start_ms": 17640
+  },
+  {
+   "text": "second.",
+   "start_ms": 17800
+  }
+ ],
+ "stored_8000_lines": [
+  {
+   "start_ms": 1000,
+   "end_ms": 4800,
+   "text": "So, how long's the flight again?"
+  },
+  {
+   "start_ms": 4800,
+   "end_ms": 6800,
+   "text": ">> Well, about 15 hours."
+  },
+  {
+   "start_ms": 6800,
+   "end_ms": 7200,
+   "text": ">> Everyone's already here."
+  },
+  {
+   "start_ms": 7200,
+   "end_ms": 10240,
+   "text": "You're making it to my birthday, right?"
+  },
+  {
+   "start_ms": 10240,
+   "end_ms": 10700,
+   "text": ">> Of course I'll make it."
+  },
+  {
+   "start_ms": 10700,
+   "end_ms": 14417,
+   "text": "And guess what? I've got a surprise for you."
+  },
+  {
+   "start_ms": 14417,
+   "end_ms": 16550,
+   "text": "Okay, got to go. Time to check in."
+  },
+  {
+   "start_ms": 16550,
+   "end_ms": 20280,
+   "text": "Bye. >> Your passport, [music] please."
+  },
+  {
+   "start_ms": 20280,
+   "end_ms": 20680,
+   "text": ">> Yeah, yeah, one second."
+  },
+  {
+   "start_ms": 42575,
+   "end_ms": 44595,
+   "text": ">> [music]"
+  },
+  {
+   "start_ms": 118556,
+   "end_ms": 121600,
+   "text": "[crying] >> Ooh."
+  },
+  {
+   "start_ms": 126280,
+   "end_ms": 129680,
+   "text": ">> Dad. Dad?"
+  },
+  {
+   "start_ms": 139516,
+   "end_ms": 141536,
+   "text": ">> [music]"
+  },
+  {
+   "start_ms": 208680,
+   "end_ms": 216680,
+   "text": ">> Oh. >> Kimiko. You are as beautiful [music] as in our first battle."
+  },
+  {
+   "start_ms": 219200,
+   "end_ms": 224640,
+   "text": ">> I now [music] pronounce you husband and wife by the power vested in me."
+  },
+  {
+   "start_ms": 224640,
+   "end_ms": 227680,
+   "text": "Um you can kiss the bride."
+  },
+  {
+   "start_ms": 229252,
+   "end_ms": 231272,
+   "text": ">> [music]"
+  },
+  {
+   "start_ms": 244317,
+   "end_ms": 249720,
+   "text": "[gasps] >> Um, could you maybe drop me off at home?"
+  },
+  {
+   "start_ms": 261347,
+   "end_ms": 266293,
+   "text": ">> [music] >> Okay, here's your ticket."
+  },
+  {
+   "start_ms": 266293,
+   "end_ms": 267480,
+   "text": "Now, your cat's passport, please."
+  },
+  {
+   "start_ms": 270518,
+   "end_ms": 272538,
+   "text": ">> [music]"
+  },
+  {
+   "start_ms": 284273,
+   "end_ms": 286293,
+   "text": "[snorts]"
+  }
+ ]
+}

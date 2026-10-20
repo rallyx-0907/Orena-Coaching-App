@@ -90,7 +90,10 @@ SETTING_KEY = "product.quota_enforcement"
 # Meters whose routes this build admits through `admit()`. Listing any other meter enforces nothing, so it is
 # refused by the admin setting and ignored (logged) in the environment: a Plan screen must never show a meter as
 # counted while nothing counts it.
-WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import")
+# PR-MON-7B2a: the semantic AI meters `word.assist`, `reading.assist`, `writing.task` (H7-3, one fresh remote AI request =
+# one unit, per day) are admitted at their call sites through `writing_coach.product.assist_meters`.
+WIRED_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "media.import",
+                                 "word.assist", "reading.assist", "writing.task")
 # Entitlements this build enforces that are NOT bucket meters: a count cap with no window and no reservation
 # (`languages.target`, D-170 - `writing_coach.product.language_limit`). The same switch lists them, so one setting and
 # one pair of environment variables govern everything the server enforces; they never go through `admit()`.
@@ -102,7 +105,8 @@ ENFORCEABLE: tuple[str, ...] = WIRED_METERS + WIRED_ENTITLEMENTS
 # WIRED_METERS with its approved limits. The unit is the frozen D-MON-023 H-2 unit.
 PENDING_METERS: dict[str, str] = {"speech.transcribe": "second", "speech.evaluate": "second", "audio.tts": "character"}
 # Meters whose provider call ends inside the request; only these are reconciled after RECONCILE_AFTER.
-SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio")
+SYNC_METERS: tuple[str, ...] = ("writing.review", "orena.message", "pronunciation.audio", "word.assist", "reading.assist",
+                                "writing.task")
 # Meters whose work outlives the request in a background job that settles its own reservation by operation id
 # (`settle_operation`, D-168). The reconciler is only their backstop, after ASYNC_RECONCILE_AFTER.
 ASYNC_METERS: tuple[str, ...] = ("media.import",)
@@ -298,6 +302,9 @@ def switch() -> dict[str, Any]:
       * unset -> the admin setting decides; a setting that cannot be read, in a process that never read it, makes
         every wired meter answer 503 (`reason=switch_unreadable`); nothing stored -> off.
     :8000 must pin both environment variables so the setting is never the authority there.
+    BQ (owner 2026-10-20, Admin may only tighten): `ORENA_QUOTA_METERS` is a floor, not a ceiling - the meters enforced
+    are those it lists plus any the setting adds while it is switched on, so Admin can enforce more on a pinned
+    runtime, never fewer. On staging and production the setting itself can be tightened only (`save_switch`).
     `meters` lists the meters that are refused or metered (both go through `admit()`'s store path)."""
     env = _env()
     raw = str(env.get(FLAG, "") or "").strip().casefold()
@@ -311,7 +318,7 @@ def switch() -> dict[str, Any]:
             "wired_entitlements": list(WIRED_ENTITLEMENTS)}
     if raw in _OFF:
         return {**base, "enabled": False, "meters": [], "source": "environment", "state": "off", "reason": ""}
-    setting = _setting() if (raw not in _ON or env_meters is None) else None
+    setting = _setting()
     unreadable = setting is _UNREAD
     setting = {} if unreadable or setting is None else setting
     if raw in _ON:
@@ -321,7 +328,11 @@ def switch() -> dict[str, Any]:
                 "state": "unavailable", "reason": "switch_unreadable"}
     else:
         enabled, source = setting.get("enabled") is True, "setting" if setting else "default"
-    listed = env_meters if env_meters is not None else [str(item) for item in setting.get("meters") or []]
+    added = [str(item) for item in setting.get("meters") or []]
+    if env_meters is not None:  # the setting adds meters only while it is itself switched on
+        listed = [*env_meters, *(added if setting.get("enabled") is True else [])]
+    else:
+        listed = added
     ignored = [item for item in listed if item not in ENFORCEABLE]
     if ignored:
         _log.warning("quota meters not wired in this build are ignored: %s", ", ".join(ignored))
@@ -369,6 +380,27 @@ def stored_meta() -> dict[str, Any]:
     return {"updated_at": record.get("updated_at") or None, "updated_by": record.get("updated_by") or None}
 
 
+def _refuse_loosening_on_public_runtime(normalized: dict[str, Any]) -> None:
+    """BQ (owner 2026-10-20: the pilot runs like production): on staging and production (every APP_ENV alias the
+    deployment guard accepts) Admin may switch enforcement on and add meters, never switch it off or drop a meter it
+    enforces (ValueError, HTTP 422)."""
+    from writing_coach.core.deployment import is_public_environment
+
+    if not is_public_environment(_env().get("APP_ENV", "")):
+        return
+    if normalized["enabled"] is not True:
+        raise ValueError("Quota enforcement cannot be switched off on a staging or production runtime.")
+    try:
+        record = _runtime.settings.get_setting(SETTING_KEY) or {}
+    except Exception as error:  # noqa: BLE001 - cannot tell what would be dropped: refuse rather than guess
+        raise RuntimeError("The quota switch could not be read.") from error
+    stored = record.get("value") if isinstance(record.get("value"), dict) else {}
+    if stored.get("enabled") is True:
+        dropped = [item for item in stored.get("meters") or [] if item not in normalized["meters"]]
+        if dropped:
+            raise ValueError("A meter cannot be removed on a staging or production runtime: " + ", ".join(dropped) + ".")
+
+
 def save_switch(document: object, *, updated_by: str = "", audit: dict | None = None,
                 expected_updated_at: object = ...) -> dict[str, Any]:
     """Store the switch. `expected_updated_at` (the version the editor loaded; None for "nothing stored yet") is
@@ -376,6 +408,7 @@ def save_switch(document: object, *, updated_by: str = "", audit: dict | None = 
     normalized = validate_switch_setting(document)
     if _runtime.settings is None:
         raise RuntimeError("No settings store on this deployment.")
+    _refuse_loosening_on_public_runtime(normalized)
     _runtime.settings.set_setting(SETTING_KEY, normalized, updated_by=updated_by,
                                   expected_updated_at=expected_updated_at, audit=audit)
     _clear_switch_cache()

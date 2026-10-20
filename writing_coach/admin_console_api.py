@@ -1308,6 +1308,10 @@ def set_media_status(media_id: str, payload: MediaStatusIn, request: Request, re
                 raise orena_http_error(409, "media_transcript_required", "Transcript processing must finish before publishing.")
             if not usable_transcript(current)[0]:
                 raise orena_http_error(409, "media_transcript_required", "A usable transcript is required before publishing.")
+            from writing_coach.media_transcript_pipeline import caption_timing_gate
+            if not caption_timing_gate(current)[0]:
+                raise orena_http_error(409, "media_caption_timing",
+                                       "The caption timing does not follow the speech. Reprocess the item before publishing.")
             if current.source.get("rights") != "cleared":
                 raise orena_http_error(409, "media_rights_required", "Source rights must be cleared before publishing.")
             from writing_coach.thumbnails import has_media_thumbnail, required_message
@@ -1679,6 +1683,66 @@ def correct_vocabulary_gloss(collection_id: str, entry_id: str, payload: Vocabul
            payload={"collection_id": collection_id, "language": language, "from": result["from"], "to": result["to"],
                     "outcome": "unchanged" if result["from"] == result["to"] else "ok"})
     return {"changed": result["from"] != result["to"], "entry": result["entry"]}
+
+
+class VocabularyExampleIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    text: str = Field(min_length=1, max_length=1000)
+    translations: dict[str, str] = Field(default_factory=dict)
+    reason: str = Field(min_length=1, max_length=500)
+    language: str | None = Field(default=None, min_length=2, max_length=20)
+    reading: str | None = Field(default=None, max_length=1000)
+    explanations: dict[str, str] = Field(default_factory=dict)
+    clear_explanation: bool = False
+
+
+@router.patch("/content/vocabulary/{collection_id}/entries/{entry_id}/examples/{index}")
+def correct_vocabulary_example(collection_id: str, entry_id: str, index: int, payload: VocabularyExampleIn,
+                               request: Request, response: Response) -> dict[str, Any]:
+    """Replace one example sentence of an entry in a collection, by hand (the sibling of the gloss correction).
+
+    An import with overwrite replaces only an unpublished entry, so a published example (for instance one quoted
+    from a source without credit) had no way to be replaced. The item keeps its shape: the sentence, its reading,
+    its support-language translations. The entry is shared: the correction shows wherever the entry does. No
+    learner-owned record is touched.
+    """
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    repository = _state.vocabulary_repository
+    if not _vocabulary_available() or not hasattr(repository, "correct_entry_example"):
+        raise orena_http_error(503, "vocabulary_schema_unavailable", "Vocabulary content persistence is not active.")
+    supported = set(media_corrections.support_codes())
+
+    def by_language(values: dict[str, str], what: str) -> dict[str, str]:
+        out = {str(code).strip().casefold(): text for code, text in values.items()}
+        if any(code not in supported for code in out) or len(out) != len(values):
+            raise orena_http_error(422, "vocabulary_example_invalid", f"Choose a support language for each {what}.")
+        if any(len(text) > 1000 for text in out.values()):
+            raise orena_http_error(422, "vocabulary_example_invalid", f"A {what} is too long.")
+        return out
+
+    translations = by_language(payload.translations, "translation")
+    explanations = by_language(payload.explanations, "explanation")
+    try:
+        result = repository.correct_entry_example(
+            collection_id, entry_id, index, text=payload.text, translations=translations, actor=_actor(admin),
+            reason=payload.reason, language=payload.language, reading=payload.reading,
+            explanations=explanations, clear_explanation=payload.clear_explanation)
+    except LookupError:
+        raise orena_http_error(404, "content_not_found", "This collection has no such entry.") from None
+    except ValueError as exc:
+        raise orena_http_error(422, "vocabulary_example_invalid", str(exc)) from exc
+    if result["changed"]:  # an identical repeat changes nothing, so it records nothing
+        _audit(admin, "admin.content.vocabulary_example", entity_type="vocabulary_entry", entity_id=entry_id,
+               payload={"collection_id": collection_id, "index": index, "from": result["from"][:300],
+                        "to": result["to"][:300], "translation_languages": sorted(translations),
+                        "explanation": "cleared" if payload.clear_explanation else sorted(explanations),
+                        "snapshots_unmatched": result["snapshots_unmatched"],
+                        "reason": payload.reason.strip()[:300], "outcome": "ok"})
+    return {"changed": result["changed"], "snapshots_unmatched": result["snapshots_unmatched"],
+            "entry": result["entry"]}
 
 
 # -- imports ---------------------------------------------------------------------------

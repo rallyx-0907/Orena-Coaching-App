@@ -9,9 +9,10 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
-from writing_coach.core.support_languages import UnsupportedSupportLanguage
+from writing_coach.core.support_languages import UnsupportedSupportLanguage, normalize_support_language
 from writing_coach.media_ingestion import primary_language
 from writing_coach.media_translation import MAX_TRANSLATION_BATCH_CHARS
+from writing_coach.product import assist_meters
 from writing_coach.reading_cache_scope import SHARED, learner_scope, scope_for
 from writing_coach.reading_lookup import ReadingLookupService
 from writing_coach.reading_summary import ReadingSummaryService, SummaryUnavailable
@@ -92,13 +93,10 @@ def translate_reading(payload: ReadingTranslationIn) -> dict[str, Any]:
             "Text language must match the current learning language.",
             retryable=False,
         )
+    segments = [TextSegment(segment.segment_id, segment.text) for segment in payload.segments]
+    scope = scope_for(payload.content_id, [segment.text for segment in payload.segments])
     try:
-        result = _service.translate(
-            source,
-            payload.target_language,
-            [TextSegment(segment.segment_id, segment.text) for segment in payload.segments],
-            scope=scope_for(payload.content_id, [segment.text for segment in payload.segments]),
-        )
+        result = _translate_metered(source, payload.target_language, segments, scope)
     except UnsupportedSupportLanguage as exc:
         raise orena_http_error(
             422,
@@ -123,6 +121,27 @@ def translate_reading(payload: ReadingTranslationIn) -> dict[str, Any]:
             for segment_id, meaning in result.translations
         ],
     }
+
+
+def _translate_metered(source: str, target: str, segments: list[TextSegment], scope: Any):
+    """The translation, as one `reading.assist` request when it reaches a paid engine (PR-MON-7B2a).
+
+    Feature access is checked first; a request whose every sentence is already held is answered from the cache and
+    never admitted. A request with any sentence missing is one request, however many sentences it asks for, admitted
+    before the provider and settled 1 when it came back whole (0 when the engine could not answer). The local engine
+    (`READING_TRANSLATION_PROVIDER=local`, our own machine) costs nothing and is not metered."""
+    assist_meters.require_feature(assist_meters.READING_ASSIST)
+    if (
+        not _service.uses_paid_provider
+        or primary_language(source) == normalize_support_language(target)   # nothing to translate
+        or _service.cached(source, target, segments, scope=scope) is not None
+    ):
+        return _service.translate(source, target, segments, scope=scope)
+    digest = ("reading-translate", source, target, [(segment.segment_id, segment.original_text) for segment in segments])
+    with assist_meters.fresh(assist_meters.READING_ASSIST, digest=digest, ref="reading-translate") as ticket:
+        result = _service.translate(source, target, segments, scope=scope)
+        ticket.settle(1 if result.status is ReadingTranslationStatus.READY else 0, f"reading-translate:{result.status.value}")
+        return result
 
 
 class ReadingLookupIn(BaseModel):
@@ -229,9 +248,15 @@ def summarize_reading(payload: ReadingSummaryIn) -> dict[str, Any]:
     text, persist = _summary_source(payload)
     if not text.strip():
         raise orena_http_error(422, "reading_summary_empty", "There is no text to summarise.", retryable=False)
+    scope = SHARED if persist else learner_scope()
     try:
-        bullets = _summary_service.summarize(text, source, payload.target_language,
-                                             scope=SHARED if persist else learner_scope())
+        # PR-MON-7B2a: a summary that has to be made is one `reading.assist` request; a held one costs nothing.
+        assist_meters.require_feature(assist_meters.READING_ASSIST)
+        bullets = _summary_service.cached(text, source, payload.target_language, scope=scope)
+        if bullets is None:
+            digest = ("reading-summary", source, payload.target_language, text)
+            with assist_meters.fresh(assist_meters.READING_ASSIST, digest=digest, ref="reading-summary"):
+                bullets = _summary_service.summarize(text, source, payload.target_language, scope=scope)
     except UnsupportedSupportLanguage as exc:
         raise orena_http_error(
             422, "invalid_support_language", "Choose a valid support language.", retryable=False

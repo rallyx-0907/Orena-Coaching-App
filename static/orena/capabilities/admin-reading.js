@@ -42,8 +42,17 @@ export function rightsLevel(state) {
    (reading_admin_api.publication_blockers) read ahead of the click: the right to republish and,
    for an adapted text, the right to adapt, denied or never answered. These are warnings: an
    administrator can still publish, by confirming them and giving a reason. The server decides. */
+/* The rights the publish confirmation reads: the article's own snapshot (authoritative for it), and
+   its source's policy only when the article has no rights of its own. The server says which. */
+export function publicationRights(article) {
+  const source = article?.source || {};
+  const found = source.publication_rights;
+  if (found && typeof found === 'object') return { basis: found.basis || 'snapshot', state: found.state || {} };
+  return { basis: 'snapshot', state: source.rights_state || {} };
+}
+
 export function publicationBlockers(article) {
-  const state = article?.source?.rights_state || {};
+  const { state } = publicationRights(article);
   const blockers = [];
   const republish = state.can_republish || 'unknown';
   if (republish === 'denied') blockers.push({ code: 'rights_not_cleared', question: 'can_republish' });
@@ -76,7 +85,7 @@ export function confirmationsFor(list) {
 
 /* More to confirm before publishing: attribution that was never answered. */
 export function publicationAdvice(article) {
-  const state = article?.source?.rights_state || {};
+  const { state } = publicationRights(article);
   return (state.attribution_required || 'unknown') === 'unknown' ? [{ code: 'attribution_unknown', level: 'warning' }] : [];
 }
 

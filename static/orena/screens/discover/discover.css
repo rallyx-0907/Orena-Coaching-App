@@ -77,23 +77,6 @@
   display: none;
 }
 
-/* Imported with nothing imported: one card holding a line and the import control. */
-.s-discover__importcta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px 20px;
-  padding: 20px 22px;
-}
-.s-discover__importcta-text {
-  flex: 1 1 240px;
-  min-width: 0;
-  font-size: 15px;
-  line-height: 22px;
-  color: var(--text);
-}
-
 /* Filter Sheet body (frame 52-Filter-Sheet.html): one block per group, a wrapped chip row. The
    sheet shell itself (position/inset/width/radius/header/footer) is kit.css's .o-sheet family. */
 .s-discover-fgroup__label {

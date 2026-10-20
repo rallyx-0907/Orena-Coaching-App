@@ -52,8 +52,9 @@ class Audio:
         raise RuntimeError("audio refused")
 
 
-def _first_import(tmp_path, ingestion, *, policy=None, state_source=None, asr=None, meanings=None):
-    store, entry, pipeline = _world(tmp_path, ingestion=ingestion, asr=asr if asr is not None else Asr(), meanings=meanings)
+def _first_import(tmp_path, ingestion, *, policy=None, state_source=None, asr=None, meanings=None, upload=False):
+    store, entry, pipeline = _world(tmp_path, ingestion=ingestion, asr=asr if asr is not None else Asr(), meanings=meanings,
+                                    upload=upload)
     audio, ledger = Audio(), SpyLedger()
     pipeline._youtube_audio, pipeline._ledger = audio, ledger
     source = {**entry.source, **(state_source or {})}
@@ -103,15 +104,19 @@ def test_captions_only_with_good_captions_is_the_normal_caption_import(tmp_path)
     assert audio.calls == 0 and ledger.recorded == []
 
 
-def test_the_default_policy_still_falls_back_to_asr_and_says_so(tmp_path):
-    asr_cues = [Cue(i * 3000, i * 3000 + 2500, text) for i, text in enumerate(t.text for t in _cues())]
+@pytest.mark.parametrize("ingestion, expected", [
+    (Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_FAILURE)), "captions_unavailable"),
+    (Ingestion(cues=None), mtp.REASON_YOUTUBE_NO_CAPTIONS),
+])
+def test_the_default_policy_no_longer_falls_back_to_asr_for_youtube(tmp_path, ingestion, expected):
+    # Rights decision 2026-10-19 (D-244): `captions_or_asr` never downloads a YouTube video's audio.
     for policy in (None, mtp.POLICY_DEFAULT):
-        store, entry, pipeline, audio, _ledger = _first_import(
-            tmp_path / str(policy), Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_FAILURE)), policy=policy)
-        pipeline._speech = lambda *_a: (asr_cues, [], "en", 0.002, 8.0, {"filtered": 0, "flagged": 0})
+        store, entry, pipeline, audio, ledger = _first_import(tmp_path / str(policy), ingestion, policy=policy)
+        pipeline._speech = lambda *_a: pytest.fail("speech recognition was run for a YouTube video")
         pipeline._run(store, None, entry.media_id, "b1", None)
         processing = store.get(entry.media_id).processing
-        assert processing["origin"] == mtp.ORIGIN_ASR and processing["caption_fallback"] == "captions_unavailable"
+        assert processing["state"] == "failed" and processing["reason"] == expected
+        assert "origin" not in processing and audio.calls == 0 and ledger.recorded == []
 
 
 def test_captions_only_is_kept_when_the_item_is_reprocessed(tmp_path):
@@ -191,7 +196,8 @@ def test_the_importer_stores_the_policy_on_a_youtube_item_only_and_an_item_overr
 
 
 def test_a_rate_limited_translation_whose_429_asks_for_521_seconds_arms_the_continuation_on_the_asr_path(tmp_path, monkeypatch):
-    """The exact shape of youtube-LlhdnpsADZs: caption fetch refused, ASR fallback, 72 of 114 translated, Retry-After 521 s."""
+    """The shape of youtube-LlhdnpsADZs (72 of 114 translated, Retry-After 521 s) on the ASR path, which since D-244 only an
+    uploaded file takes: a YouTube video is no longer heard."""
     total, calls = 114, {"n": 0}
 
     def meanings(_entry, _target):  # about 63% of the stored lines, as 72 of 114 was
@@ -201,7 +207,7 @@ def test_a_rate_limited_translation_whose_429_asks_for_521_seconds_arms_the_cont
                                reason="rate_limited", retry_after=521.0)
 
     store, entry, pipeline, audio, _ledger = _first_import(
-        tmp_path, Ingestion(error=MediaImportError(MediaImportCategory.PROVIDER_FAILURE)), meanings=meanings)
+        tmp_path, Ingestion(), meanings=meanings, upload=True)
     asr_cues = [Cue(i * 3000, i * 3000 + 2500, f"Spoken sentence number {i} of the recording.") for i in range(total)]
     pipeline._speech = lambda *_a: (asr_cues, [], "en", 0.0066, 594.8, {"filtered": 0, "flagged": 0})
     pipeline._sleep = lambda _s: None
@@ -210,7 +216,7 @@ def test_a_rate_limited_translation_whose_429_asks_for_521_seconds_arms_the_cont
     pipeline._clock = lambda: 1_000_000.0
     pipeline._run(store, None, entry.media_id, "b1", None)
     stored = store.get(entry.media_id).processing
-    assert stored["origin"] == mtp.ORIGIN_ASR and stored["caption_fallback"] == "captions_unavailable"
+    assert stored["origin"] == mtp.ORIGIN_ASR and stored["caption_fallback"] == ""
     assert stored["state"] == "held"  # the item itself is untouched
     assert stored["translation"] == "deferred" and stored["translation_reason"] == "rate_limited"
     assert stored["translation_continuation"]["attempt"] == 1 and stored["translation_continuation"]["retry_after"] == 521.0

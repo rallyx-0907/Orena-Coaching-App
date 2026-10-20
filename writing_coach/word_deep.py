@@ -49,6 +49,7 @@ from writing_coach.becoming_library import (
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore, InvalidAssetKey
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
+from writing_coach.product import assist_meters
 from writing_coach.reading_cache_scope import learner_scope
 from writing_coach.reading_derived import DerivedCache, content_key, normalize_text
 from writing_coach.vocabulary_library import normalize_vocabulary_word
@@ -304,6 +305,18 @@ def _learner_layer(*, word: str, context: str, language: str, support: str, iden
 
 
 def _explained_layer(*, word: str, context: str, language: str, support: str) -> dict[str, Any]:
+    """The explanation behind the deep page, asked only after both caches missed: one `word.assist` request
+    (PR-MON-7B2a). Over the plan's limit the page answers without these sections - its catalogue, provenance and the
+    learner's own sentences are deterministic and still drawn - exactly as when the provider is down."""
+    layer = assist_meters.quiet(
+        assist_meters.WORD_ASSIST, digest=("word-deep", word, context, language, support), ref="word-deep",
+        call=lambda: _ask_explained_layer(word=word, context=context, language=language, support=support),
+        charged=lambda result: bool(result) and any(result.values()),
+    )
+    return layer or {}
+
+
+def _ask_explained_layer(*, word: str, context: str, language: str, support: str) -> dict[str, Any]:
     try:
         raw = media_interaction.explain_media_text(
             media_interaction.MediaExplainIn(

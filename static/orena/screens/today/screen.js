@@ -6,12 +6,12 @@
    - not the Writing-only streak of /api/dashboard. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { mediaCard, sectionHead, settleCovers, vipButton } from '../../kit/components.js';
-import { openImportFlow } from '../import/open.js';
+import { mediaCard, sectionHead, settleCovers } from '../../kit/components.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { api } from '../../infrastructure/api.js';
+import { openMedia } from '../../product/media-source.js';
 import { languages } from '../../copy/index.js';
 import { bannerMarkup } from '../../kit/states.js';
 import { shellCopy } from '../../copy/shell.js';
@@ -22,6 +22,8 @@ import {
   usedRecommendationIds,
   buildStreak,
   leadWithContinuation,
+  liveContinuation,
+  continuedMediaIds,
   todayDateLabel,
   buildGreeting,
   buildHeadSubtitle,
@@ -65,7 +67,14 @@ export default async function mountToday(element, ctx) {
   // first_due_word}. A rejected/aborted call is a rule-40 empty queue, never an invented one.
   const review = reviewResult.status === 'fulfilled' ? reviewResult.value : { due_count: 0, first_due_word: '' };
 
-  const continuation = Array.isArray(state.memory?.value?.continuation) ? state.memory.value.continuation : [];
+  const remembered = Array.isArray(state.memory?.value?.continuation) ? state.memory.value.continuation : [];
+  /* A continued lesson is offered only while it still opens (D-245). One the library just listed is live; any other
+     is asked for once through the same persisted read the room opens it with (cached for that open), and a lesson
+     that is gone - or that cannot be read now - is left out rather than drawn as a card that leads nowhere. */
+  const listed = new Set(listeningItems.flatMap((item) => [item?.lesson_id, item?.media_object_id]).filter(Boolean));
+  const checked = new Map(await Promise.all(continuedMediaIds(remembered).filter((id) => !listed.has(id)).map((id) =>
+    openMedia(id, { api, support: supportLang, language }).then(() => [id, true], () => [id, false]))));
+  const continuation = liveContinuation(remembered, (id) => listed.has(id) || checked.get(id) === true);
   const pool = leadWithContinuation(buildRecommendationPool({ reading, listening: listeningItems, speaking: speakingItems, review, language }, t), continuation, t, forYouCover);
   const usedIds = usedRecommendationIds(pool);
   const forYou = buildForYou(
@@ -211,16 +220,6 @@ export default async function mountToday(element, ctx) {
     </div>`;
   }
 
-  // Import, featured (human, 2026-10-09, D-167): the page's own card shell and icon tile, one line of what it is for,
-  // and the VIP "+ Import" control - the same one every entry point draws, opening the same flow.
-  function importMarkup() {
-    return html`<div class="o-card s-today-import">
-      <span class="s-today-rest-card__icon" style="background:var(--accent-fill)">${raw(icon('upload', { size: 20 }))}</span>
-      <span class="s-today-rest-card__title s-today-import__text">${t('importValue')}</span>
-      ${vipButton({ label: shellCopy('importAction'), dataset: { import: '' } })}
-    </div>`;
-  }
-
   function levelPromptMarkup() {
     if (!needsLevelPrompt(state.profile) || promptSkipped(language)) return '';
     return bannerMarkup({
@@ -240,7 +239,6 @@ export default async function mountToday(element, ctx) {
         ${headMarkup()}
         ${recommendedMarkup()}
         ${progressMarkup()}
-        ${importMarkup()}
         ${forYouMarkup()}
       </div>`,
     );
@@ -254,7 +252,6 @@ export default async function mountToday(element, ctx) {
       }
       paint();
     });
-    element.querySelector('[data-import]')?.addEventListener('click', () => openImportFlow(ctx));
     element.querySelector('[data-another]')?.addEventListener('click', () => {
       heroIndex += 1;
       paint();

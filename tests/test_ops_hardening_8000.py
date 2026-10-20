@@ -174,15 +174,25 @@ def _ops(name):
     return (Path(__file__).resolve().parents[1] / "scripts" / name).read_text(encoding="utf-8")
 
 
-def test_both_registrations_run_headless_with_a_fallback_and_stay_under_the_user():
+def test_health_registration_runs_headless_with_a_fallback_and_both_stay_under_the_user():
+    text = _ops("register_health_check_8000.ps1")
+    assert "conhost.exe" in text and "--headless powershell.exe" in text
+    assert "Test-HeadlessConhost" not in text and "$headless = ($BuildNumber -ge 22000)" in text  # build only, no probe
+    assert "-WindowStyle Hidden" in text  # the fallback
     for name in ("register_health_check_8000.ps1", "register_daily_backup_8000.ps1"):
         text = _ops(name)
-        assert "conhost.exe" in text and "--headless powershell.exe" in text
-        assert "Test-HeadlessConhost" not in text and "$headless = ($BuildNumber -ge 22000)" in text  # build only, no probe
         code = " ".join(line for line in text.splitlines() if not line.lstrip().startswith("Write-Host"))
         assert not re.search(r"-(Execute|Argument)\s+'\$", code), "single-quoted variable in the action"
-        assert "-WindowStyle Hidden" in text  # the fallback
         assert "SYSTEM" not in text and "-Password" not in text and "-RunLevel" not in text
+
+
+def test_backup_registration_keeps_the_scripts_exit_code_visible_to_task_scheduler():
+    # PR BV: under conhost --headless the task recorded LastTaskResult 0 for a backup that exited 2.
+    code = _ops("register_daily_backup_8000.ps1")
+    code = code[code.index("#>"):]
+    assert "conhost" not in code and "--headless" not in code
+    assert "New-ScheduledTaskAction -Execute 'powershell.exe'" in code
+    assert "-ExecutionTimeLimit (New-TimeSpan -Hours 4)" in code  # longer than the 03:30-06:00 retry window
 
 
 def test_no_msg_exe_and_toast_is_off_by_default():
@@ -222,8 +232,9 @@ def test_powershell_scripts_parse_when_powershell_is_available():
     if not exe:
         pytest.skip("no PowerShell on this host")
     root = Path(__file__).resolve().parents[1] / "scripts"
-    for name in ("health_check_8000.ps1", "register_health_check_8000.ps1", "register_daily_backup_8000.ps1"):
-        command = ("$e=$null;[void][System.Management.Automation.Language.Parser]::ParseFile('%s',[ref]$null,[ref]$e);"
+    for name in ("health_check_8000.ps1", "register_health_check_8000.ps1", "register_daily_backup_8000.ps1",
+                 "daily_backup_8000.ps1"):
+        command =("$e=$null;[void][System.Management.Automation.Language.Parser]::ParseFile('%s',[ref]$null,[ref]$e);"
                    "if($e.Count){$e|%%{$_.Message};exit 1}" % (root / name))
         done = subprocess.run([exe, "-NoProfile", "-Command", command], capture_output=True, text=True)
         assert done.returncode == 0, done.stdout + done.stderr
@@ -272,25 +283,33 @@ def _run_registration(script, build, *extra):
         "function Register-ScheduledTask { param($TaskName, $Action, $Trigger, $Settings, $Description, [switch]$Force) "
         "$global:reg = [pscustomobject]@{ Task = $TaskName; Execute = $Action.Execute; Arguments = $Action.Arguments } };"
     )
-    command = mocks + f"& '{path}' -Apply -BuildNumber {build} {' '.join(extra)} | Out-Null; $global:reg | ConvertTo-Json -Compress"
+    build_arg = f"-BuildNumber {build}" if build is not None else ""
+    command = mocks + f"& '{path}' -Apply {build_arg} {' '.join(extra)} | Out-Null; $global:reg | ConvertTo-Json -Compress"
     done = subprocess.run([exe, "-NoProfile", "-Command", command], capture_output=True, text=True)
     assert done.returncode == 0, done.stdout + done.stderr
     return json.loads(done.stdout.strip().splitlines()[-1])
 
 
-@pytest.mark.parametrize("script,task,quiet_flag", [
-    ("register_health_check_8000.ps1", "OrenaHealthCheck8000", " -NoToast"),
-    ("register_daily_backup_8000.ps1", "OrenaDailyBackup8000", ""),
-])
-def test_apply_registers_the_real_action_not_a_literal_variable_name(script, task, quiet_flag):
+def test_apply_registers_the_real_action_not_a_literal_variable_name():
+    script, task = "register_health_check_8000.ps1", "OrenaHealthCheck8000"
     modern = _run_registration(script, 26200)
     assert modern["Task"] == task and modern["Execute"] == "conhost.exe"
     assert modern["Arguments"].startswith("--headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File ")
-    assert modern["Arguments"].endswith(quiet_flag) or quiet_flag == ""
+    assert modern["Arguments"].endswith(" -NoToast")
     older = _run_registration(script, 19045)
     assert older["Execute"] == "powershell.exe" and older["Arguments"].startswith("-WindowStyle Hidden -NoProfile")
-    for registered in (modern, older):
+    backup = _run_registration("register_daily_backup_8000.ps1", None)
+    assert backup["Task"] == "OrenaDailyBackup8000" and backup["Execute"] == "powershell.exe"
+    assert backup["Arguments"].startswith("-WindowStyle Hidden -NoProfile -ExecutionPolicy Bypass -File ")
+    assert backup["Arguments"].endswith('daily_backup_8000.ps1"')
+    for registered in (modern, older, backup):
         assert "$" not in registered["Execute"] and "$" not in registered["Arguments"]
+
+
+def test_backup_registration_passes_the_offsite_and_retry_options_through():
+    got = _run_registration("register_daily_backup_8000.ps1", None, "-VerifyOffsite", "-RetryUntil", "05:30",
+                            "-MinFreeRamGBDump", "0.8", "-OffsiteDir", r"'C:\Backups Off\'")["Arguments"]
+    assert got.endswith(r' -OffsiteDir "C:\Backups Off" -RetryUntil 05:30 -MinFreeRamGBDump 0.8 -VerifyOffsite')
 
 
 def test_health_registration_opts_in_to_toast_only_when_asked():

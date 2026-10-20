@@ -259,7 +259,11 @@ def _ready_response(
 
 @router.post("/import")
 def import_media(payload: MediaImportIn) -> dict[str, Any]:
-    """Acquire native media, then Groq timing/transcript, then explicit fallback."""
+    """Acquire native media, then Groq timing/transcript, then explicit fallback.
+
+    For YouTube the fallback asks Supadata for native captions only, never `generate` (D-244, amended 2026-10-20); a
+    video whose channel provides none ends as `youtube_no_channel_captions` in `import_job.failure_kind`.
+    """
     # The learner UI imports through `/api/media-learning/source` (metered, D-168); this older route runs Groq and
     # Supadata work with no duration to charge, so where `media.import` is enforced it is refused, not left open.
     quota.refuse_unmetered(

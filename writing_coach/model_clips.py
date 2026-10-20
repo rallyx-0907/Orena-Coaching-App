@@ -33,6 +33,15 @@ CODEC = "webm-opus-mono-24k-32k"
 MAX_LINE_MS = 60_000
 DEFAULT_MAX_LINES = 500
 KEY_PREFIX = "speaking/model-clip/"
+# D-244 (amended 2026-10-20): Orena never downloads a YouTube video's audio, so a YouTube item gets no model clip. That
+# is a skip with this reason, never an error; Compare then says its model plot is unavailable, as for any missing clip.
+SKIP_YOUTUBE_NO_AUDIO_DOWNLOAD = "youtube_no_audio_download"
+SKIP_YOUTUBE_NOTE = "youtube_no_audio_download (D-244)"
+
+
+def is_youtube_provider(provider: object) -> bool:
+    """Whether a stored entry's or catalogue lesson's provider is YouTube (whose audio Orena never downloads)."""
+    return str(provider or "").strip().casefold() == "youtube"
 
 
 @dataclass(frozen=True)

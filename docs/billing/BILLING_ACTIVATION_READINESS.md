@@ -25,9 +25,9 @@ Updated 2026-10-19.
 | 6 | Downgrade **in the app** = cancel at period end (scheduled downgrade off) | proven | PR-MON-9 §1 and §2 |
 | 7 | Downgrade **in Polar's portal** (Pro → Plus, applied at once with `invoice`) | proven | sandbox subscription D, 2026-10-18 (owner run): Polar applied Plus at once and Orena followed it (`plus · active`). Its renewal on Plus is observed in §3. |
 | 8 | Cancel at period end: the plan stays until the end | proven | PR-MON-10 step 3; PR-MON-9 §2 |
-| 9 | Cancel at period end: the plan **ends** at the period end | **observing** | daily test subscription A (§3), period end 2026-10-19 18:32 (UTC+7) |
-| 10 | Renewal: `paid_through` moves to the next period | **observing** | daily test subscription B (§3); see risk R1 |
-| 11 | Failed renewal → `past_due` → grace → `ended` | tested, **observing** on the sandbox | hermetic (`unpaid` → `ended`, `past_due` keeps the grace). Sandbox subscription F (owner-approved 2026-10-18): its card was changed to a test card that declines, renewal on 2026-10-19 (§3). |
+| 9 | Cancel at period end: the plan **ends** at the period end | proven | sandbox A, 2026-10-19: `canceled` at the period end, no charge, even with a pending change (`PR-MON-9_E2E_EVIDENCE.md` §3) |
+| 10 | Renewal: `paid_through` moves to the next period | proven | sandbox D, 2026-10-19: Orena `paid_through` moved one day; the renewal receipt `applied` (R1 closed) |
+| 11 | Failed renewal → `past_due` → grace → `ended` | `past_due` + grace **proven**; the end tested | hermetic (`unpaid` → `ended`, `past_due` keeps the grace). Sandbox subscription F (owner-approved 2026-10-18): its card was changed to a test card that declines, renewal on 2026-10-19 (§3). |
 | 12 | Refund | proven | PR-MON-10 step 6 (recorded, matched, auto-resolved; access follows the subscription) |
 | 13 | Immediate revocation → `ended` | proven | PR-MON-10 step 4 |
 | 14 | Deleted account: Polar customer clean-up; events after deletion rejected | proven | PR-MON-10 steps 7, 7b and 7c |
@@ -39,16 +39,16 @@ Updated 2026-10-19.
 | --- | --- | --- | --- |
 | 16 | Duplicate and out-of-order webhooks | proven + tested | PR-MON-10 step 1 (two `stale` receipts with the same `modified_at`); `reference_backbone.subscription_event_decision` |
 | 17 | In-app change, cancel or resume where Polar's answer is lost | tested | `tests/test_billing_polar_subscription.py` and `tests/test_billing_polar_postgres.py` (journal, per-subscription fence, `modified_at` rule, one PATCH under real CAS races) |
-| 18 | Polar's `modified_at` is empty after a scheduled change | **found 2026-10-18** | risk R1 |
+| 18 | Polar's `modified_at` is empty after a scheduled change | **closed 2026-10-19** | risk R1: renewal sets it |
 
-**Risk R1 (open, being observed).** Orena orders a subscription's webhooks by Polar's `modified_at`, falling back to
-`created_at` (`writing_coach/billing/polar.py`). Equal or older events are `stale`.
-- The daily test showed that a scheduled change leaves `modified_at` empty, while a cancel sets it.
-- If a **renewal** also left `modified_at` empty, the renewal event would carry the same version as the creation
-  event and be dropped as `stale`. `paid_through` would not move, and a paying learner would lose the plan after the
-  first period.
-- Subscription B's renewal on 2026-10-19 shows whether Polar sets `modified_at` on renewal. If it does not, the
-  version must be fixed (for example, from the current period start) before gate 7b, with independent review.
+**Risk R1 (closed 2026-10-19, no code change).**
+- Orena orders a subscription's webhooks by Polar's `modified_at`, falling back to `created_at`
+  (`writing_coach/billing/polar.py`). Equal or older events are `stale`.
+- On 2026-10-18, a scheduled change left `modified_at` empty, while a cancel set it. A renewal with an empty
+  `modified_at` would have been dropped as `stale`, and a paying learner would have lost the plan after the first
+  period.
+- On 2026-10-19, Polar set `modified_at` at renewal (sandbox B), and Orena applied D's renewal: `paid_through`
+  moved one day (`PR-MON-9_E2E_EVIDENCE.md` §3).
 
 ## 3. The period-end run (owner-approved 2026-10-18)
 
@@ -62,7 +62,13 @@ The four real products are untouched.
 | D | Pro → Plus in Polar's portal (daily test products, through the `:8031` sandbox) | renews on Plus. Orena's `paid_through` moves: R1 in Orena itself. |
 | F | card changed to a declining test card | renewal fails: `past_due` on Polar, grace in Orena (item 11). |
 
-The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`, which stays off until then.
+**Results (2026-10-19), detailed in `PR-MON-9_E2E_EVIDENCE.md` §3:**
+- A ended at the period end: cancel wins over a pending change.
+- B renewed on Low and was charged $1, with `modified_at` set.
+- D renewed on Plus for $0.11: the unused Pro part was credited, and Orena's `paid_through` moved.
+- F is `past_due` on both sides, with Orena's grace counted from the failed charge.
+
+`SCHEDULED_CHANGES` stays off until the owner asks for scheduled downgrades. The blocker that kept it off (which change wins) is now answered.
 
 ## 4. Screens
 
@@ -70,7 +76,7 @@ The result goes into `PR-MON-9_E2E_EVIDENCE.md`. It decides `SCHEDULED_CHANGES`,
 | --- | --- | --- | --- |
 | 19 | Plan & usage and Pricing with billing **on** | proven | PR-MON-9 §2 (desktop, phone, EN/VI/ZH, light and dark) |
 | 20 | Plan & usage and Pricing with billing **off** (offers empty, `billing_ready: false`) | tested; browser **open** | `scripts/test_orena_screen_plan.mjs`. Browser check on the pilot build (`:8000`) by the UI lane. |
-| 21 | Prices and limits shown = the approved catalogue (PRE-401) | checked on `main`; **`:8000` needs the next deploy** | see below |
+| 21 | Prices and limits shown = the approved catalogue (PRE-401) | **checked on `:8000`** (2026-10-19, image `orena:main-9952152a`) | see below |
 
 **PRE-401, read 2026-10-19 (read only, no sign-in).** The approved catalogue is
 `writing_coach/product/catalog.py`:
@@ -91,8 +97,18 @@ Billing is off on `:8000`, so nobody is charged there. Even so, gate 7b must run
 current `:8000` build, a Vietnamese learner would see a dong price and be charged dollars by Polar. The next `:8000`
 deploy fixes both. Re-read the table after that deploy.
 
-The owner decided on 2026-10-19 that voice chat with Orena is for Plus and Pro only, not Free. The Intelligence lane
-is adding the voice entitlement to the catalogue, and its row joins this table once it is merged.
+**Re-read after the deploy (2026-10-19; `:8000` on `orena:main-9952152a`, schema `20261018_0035`; read only).**
+- No `product.plan_catalog` row is stored, so the code's catalogue applies. Its prices and every limit above match
+  `main`, including the assist limits.
+- `orena.voice` is 900 s (15 min) a day for Plus and Pro, and off for Free (D-235 to D-237).
+- `PLAN_CURRENCY` is USD in every language.
+- `BILLING_ENABLED` is unset.
+- `ORENA_QUOTA_ENFORCEMENT=on`, with `ORENA_QUOTA_METERS` = `writing.review`, `orena.message`, `pronunciation.audio`, `media.import`, `languages.target`, the same list as gate 7b C6; the assist meters are not in the list (gate 7b C6).
+
+PRE-401 is closed.
+
+The owner decided on 2026-10-19 that voice chat with Orena is for Plus and Pro only, not Free (D-235 to D-237).
+The re-read above checks it on `:8000`.
 
 ## 5. Configuration for the pilot host (names only)
 
@@ -108,7 +124,7 @@ The pilot host keeps billing **off**: every variable below is empty, or not set.
 | `POLAR_WEBHOOK_SECRET` | the production webhook secret |
 | `POLAR_ENVIRONMENT` | `production` |
 | `ORENA_ACCOUNT_BACKBONE` | `on` |
-| `APP_ENV` | `production` |
+| `APP_ENV` | unchanged: a public value, not `development` (`staging` on `:8000`; plans need no `production`) |
 | `PUBLIC_BASE_URL` | the public HTTPS origin |
 | Google sign-in | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `SESSION_SECRET` |
 
@@ -145,14 +161,13 @@ funding enforcement.
      Until both exist, nothing is deleted, so "kept for at least 3 months" already holds.
 5. **Gate 7b itself.** Readiness `ready: true`, then the owner's first real subscription (runbook §4-§5).
 
-## 7. One approval for gate 7b (prepared; waits for the owner and for R1)
+## 7. One approval for gate 7b (prepared; waits for the owner)
 
 The owner approves every write to Polar **production** in one list. Nothing on it has been done. The ordered
 checklist, with a check and a rollback per step, is `GATE_7B_APPROVAL_PACKAGE.md`.
 
-**Precondition:** R1 is resolved by the 2026-10-19 renewal run (§2-§3). If Polar leaves `modified_at` empty at
-renewal, a code fix lands first, with independent review. `:8000` runs a build from `main` (item 21: the
-`2026-10-11` build shows dong to Vietnamese learners).
+**Precondition:** R1 is resolved: done 2026-10-19, no code change (§2-§3). (Had Polar left `modified_at` empty at
+renewal, a reviewed code fix would have landed first.) `:8000` runs a build from `main`: done, `9952152a` (item 21).
 
 **Polar production (owner).**
 
@@ -173,7 +188,7 @@ renewal, a code fix lands first, with independent review. `:8000` runs a build f
 | `BILLING_PRICES_FILE` | `/data/billing/prices.json`, with the four P1 product ids |
 | `POLAR_ENVIRONMENT` | `production` |
 | `POLAR_ACCESS_TOKEN` / `POLAR_WEBHOOK_SECRET` | from P3 and P4 |
-| `APP_ENV` | `production` |
+| `APP_ENV` | unchanged: a public value, not `development` (`staging` on `:8000`; plans need no `production`) |
 | `PUBLIC_BASE_URL` | `https://orena.chillpickle.org` |
 | `ORENA_ACCOUNT_BACKBONE` | `on` |
 

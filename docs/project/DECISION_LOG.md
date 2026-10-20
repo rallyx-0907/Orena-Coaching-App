@@ -7583,6 +7583,8 @@ Supersedes the "pending" state of D-234 item 7: the switch stays default-off in 
 
 **Not in this decision.** No schema change, no provider, no AI image, no network call at publish time, and no unpublishing of existing items. Real pictures for the existing articles (NASA, Wikimedia and the like) are attached later with the route above.
 
+**Amendment 2026-10-20 (owner report relayed by Hermes: every fable card showed a "T", the title was cut by the duration pill and "EN" hidden by the type pill).** Point 3 is narrowed to what the pinned Discover card draws over a picture (the type and duration pills only): the typographic cover prints no title and no topic/language label (the title stays its accessible name), its glyph is the first letter of the first meaningful word (a leading English article and quotes skipped; Chinese skips punctuation only), placed clear of both pills, and its second hue is chosen by the topic from the same token list (by the title when there is none). Existing covers are remade with `scripts/backfill_typographic_covers.py --regenerate-typographic` (dry run unless `--apply`; only a cover whose provenance kind is typographic; a real picture is never touched). Gap recorded in `UI_BACKEND_GAPS.md` ("Discover: the cover of a text-only item").
+
 ## D-241 - Account deletion: the D-054 gate is lifted for the reviewed operator tool (2026-10-19)
 
 **Status:** ACCEPTED (owner, 2026-10-19 16:26, relayed by Hermes: "tôi thấy cứ làm theo đề xuất" - approving the
@@ -7618,3 +7620,136 @@ recommendation to lift the gate as the architecture reviewer proposed).
 3. **Updating.** Only by a reviewed PR that changes the pins alone (`docs/project/CI_FAST_PATH.md`).
 
 **Not in this decision.** No hashes, no change to the application code or the Python version.
+
+## D-243 - Import has one way in: the design's Create lesson card (2026-10-19)
+
+**Status:** ACCEPTED (explicit owner instruction, 2026-10-19: "phần import trong learner app — tôi đã đưa thiết kế và
+bạn cũng đã làm rồi mà sao giờ vẫn giữ cái nút import cũ"). The number is assigned at merge.
+
+1. **Supersedes D-167 points 6-8.** The pinned design (`Orena.dc.html`, 2026-10-15 pin) draws exactly one entry to the
+   Import sheet: Discover's "Create lesson" card (and the sheet's own Back to its type step). Today, My Library and the
+   Discover overview draw no import control. The old entries are deleted, with their code (Design Contract rule 44):
+   Today's featured import card, My Library's header "+ Import", the Discover All overview's always-drawn Imported
+   section with its "+ Import" call to action, the kit `vipButton` and its rainbow `.o-btn--vip` CSS (the D-147 exception
+   of D-167 point 7 ends with it), and their words (`shell.importAction`, `today.importValue`, `discover.importAction`,
+   `discover.importCta`).
+2. **Discover All.** Imported is a section like the others: left out when nothing is imported. A learner with nothing at
+   all sees the page's empty state, with the Create lesson card above it.
+3. **My Library's head is the design's:** the title and its one muted line ("Everything you've saved, met, or need to come
+   back to.", en/vi/zh).
+4. **Unchanged.** The Create lesson card (including its practice-chooser variant, CL-7), the Import sheet, its steps and the
+   recorded gaps CL-1 to CL-7. The practice choosers keep the card per CL-7.
+5. **Gate.** `scripts/test_orena_screen_discover.mjs` refuses every old entry, control and string, and asserts Discover is the
+   only screen that opens the import flow.
+
+## D-244 - Orena does not download YouTube audio for speech recognition (2026-10-19)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-19, after the PRE-201 rights recheck).
+
+1. **Decision.** From now on Orena never downloads a YouTube video's audio to run speech recognition. A new YouTube video
+   is transcribed only from captions the provider offers through the existing caption path (YouTube's own track, or
+   Supadata in native mode, D-215). A Creative Commons licence does not by itself open the audio route: listening to a CC
+   video would need its licence and the provider's terms to allow the download, and that is a separate owner decision.
+   Nothing in this change downloads audio for a CC video.
+2. **Where it is enforced.** `MediaPipeline._transcript` (`writing_coach/media_transcript_pipeline.py`): for a YouTube
+   item whose captions are absent or unusable, every transcript policy now stops before any audio download, recognition
+   or spend. `captions_or_asr` (D-214) keeps its meaning only for sources with no caption track. Reasons: no track, or a
+   track too poor to use, is `youtube_no_channel_captions` ("YouTube video without channel captions: Orena does not
+   download YouTube audio (rights decision 2026-10-19)"; admin copy en/vi/zh, `impErr_youtube_no_channel_captions`), with
+   the caption cause as its language-neutral detail; a caption fetch the provider refused this time keeps
+   `captions_unavailable`, and the daily caption cap keeps `caption_quota`. A reprocess of an existing YouTube item obeys
+   the same rule and restores the stored transcript. `captions_blocked` is no longer produced.
+3. **Still allowed.** Speech recognition of a file the learner or admin uploaded, and of a non-YouTube source whose rights
+   allow it, is unchanged.
+4. **Provenance.** Every newly stored transcript records `transcript_provenance` beside `transcript_origin` (in the lesson
+   payload and in `processing`, shown as `transcript.provenance` in the admin outcome): `channel_captions` (a track a
+   person made, `caption_kind` manual), `machine_captions` (the provider's generated track, `auto`),
+   `captions_unknown_kind`, or `orena_asr`. For an item stored before this, the admin outcome derives it from the origin
+   and caption kind.
+5. **Existing transcripts.** The 17 Chinese YouTube transcripts made by speech recognition before this decision are
+   accepted for the pilot only. They must be reviewed (kept on a recorded basis, re-sourced from captions, or withdrawn)
+   before G-6.
+
+**Not in this decision (owner decisions left open).** The model-clip cut (D-140, `_prepare_model_clips` and
+`scripts/backfill_model_clips.py`) still downloads a published YouTube item's audio to cut Compare clips; it runs no
+speech recognition. The older learner route `POST /api/media/import` can still start Supadata `mode=generate` (a
+provider-side transcript) where plan limits are not enforced. Both fall outside "audio for speech recognition by Orena"
+as decided here and are reported for a decision rather than changed.
+
+**Amendment 2026-10-20 (Hermes for the owner; #418): for YouTube, only the captions the channel already provides.** The
+two items left open above are decided.
+1. **Model clips.** A YouTube item gets no model clips, and its audio is never downloaded for them. Readiness
+   (`MediaPipeline._prepare_model_clips`) and the backfill (`writing_coach/model_clip_backfill.py`,
+   `scripts/backfill_model_clips.py`) skip it with the reason `youtube_no_audio_download (D-244)`: a skip, never an
+   error. The backfill report counts it under `skipped` with the reason on the item; the admin outcome carries it as
+   `model_clips_skipped`. Uploads and other allowed sources are cut as before. Compare reads a missing clip as it
+   always has (its model plot is unavailable); no learner UI changes.
+2. **Supadata.** `mode=generate`, and `auto` (which may generate), are never requested for a YouTube URL, under any
+   plan or policy. `SupadataTranscriptClient` refuses them before any request (`SupadataYouTubeGenerationRefused`) and
+   defaults to `native`; the YouTube adapter's inline fallback and the older learner route's fallback service
+   (`POST /api/media-learning/import`) ask in native mode only. A YouTube video with no channel captions there ends
+   as `youtube_no_channel_captions` (the admin reason D-244 already defines). The live learner route
+   (`POST /api/media-learning/source`, and `GET /api/media/my/{id}` while it is polled) now answers a failed item with
+   that reason as `import_job.failure_kind` too, so the Import sheet says it in its existing error slot
+   (`error_youtube_no_channel_captions`, en/vi/zh) on either route. A non-YouTube source keeps its fallback.
+
+## D-245 - The six built-in sample Listening lessons are retired; the built-in catalogue is empty (2026-10-20)
+
+**Status:** ACCEPTED (explicit owner instruction, typed 2026-10-20: remove the original sample lessons like "A pen in my
+bag" and the similar Chinese ones, they have no real learning value; extended the same day to "The cosmic calendar" and
+怎么搜索维基百科). The number is assigned at merge.
+
+1. **Retired.** `en-daily-pen-in-my-bag`, `zh-daily-what-is-this`, `zh-culture-nationalities`,
+   `zh-culture-where-are-you-from`, `en-science-cosmic-calendar` and `zh-technology-search-wikipedia` leave
+   `writing_coach/content/listening_catalog.v1.json`, with their five Wikimedia Commons sources. The manifest keeps
+   `schema_version` 1 with empty `sources` and `lessons`, which the loader already accepts. No media or illustration
+   file was bundled for them (playback streams from Commons), so no asset is deleted.
+2. **Learner data stays.** No row is deleted and no migration runs. A progress row, saved place, take, annotation or
+   content-visibility row that names a retired id stays in place and resolves as a lesson that is not on the shelf
+   already does (D-203): absent from every list, `404` when opened (`/api/listening/library/{id}`,
+   `/api/speaking/model-audio/{id}/...`), nothing resolved by the progress and collection resolvers, never a 500. A
+   saved Continue entry that names one opens the router's existing "gone" page.
+3. **Zero built-in lessons is a valid state.** Listening, Discover and Today show no catalogue section (or their existing
+   empty state); the Speaking library carries only its authored items; word clips, the model-clip backfill
+   (`include_catalog`), agent suggestions and the licences page read an empty list. Media an administrator imports
+   still fills the same library.
+4. **Tests.** Tests that exercised catalogue lessons run on a fixture-local copy of the retired manifest
+   (`tests/fixtures/listening_catalog.fixture.v1.json`, loaded by the `fixture_listening_catalog` fixture in
+   `conftest.py`) with their assertions unchanged; `tests/test_listening_catalog_empty.py` pins the empty shipped
+   catalogue and the graceful lookups. The catalogue-reading Node gates check the fixture beside the shipped manifest.
+   Tombstone: `LEGACY_TOMBSTONES.md`, "The built-in sample Listening lessons".
+
+## D-246 - An EN->VI dictionary pack from the English Wiktionary's Vietnamese translations (2026-10-20)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-20, on the evaluation
+`ORENA_PRE_MARKET_EVIDENCE/EN_VI_DICTIONARY_PACK_EVALUATION_2026-10-20.md`, candidate 1a). The number is assigned at merge.
+
+1. **Source.** The English Wiktionary's Vietnamese translation tables (`lang_code` `vi`) of its English entries, as
+   extracted by Wiktextract and published by kaikki.org in its per-language English file
+   (`kaikki.org-dictionary-English.jsonl.gz`, extraction of 2026-10-03 from the enwiktionary dump of 2026-09-02; the
+   input's SHA-256 is in the pack index). Vietnamese Wiktionary and the Hồ Ngọc Đức / FVDP dictionary are **not** used
+   (GPL data and informal relicensing); a word the pack lacks falls through to the next layer of the word tap (local
+   translation, then the `word_translation` seam and its cache).
+2. **Licence and the share-alike boundary.** CC BY-SA 4.0 (the GFDL side is not used), the same model already accepted
+   for CC-CEDICT: the pack, and any adaptation of it, stays CC BY-SA 4.0 and ships with its licence text, provenance
+   and modification notice (`writing_coach/languages/english/vi_lexicon_data/`). The share-alike reaches that data only;
+   Orena's code and its other data files are separate works. Attribution ("Wiktionary contributors; extraction by Tatu
+   Ylonen's Wiktextract (kaikki.org)") is shown where CC-CEDICT's is: the learner Licences and data sources page
+   (`writing_coach/licences.py`, id `wiktionary-en-vi`), `THIRD_PARTY_NOTICES.md`, the pack's README and its index
+   `sources` record.
+3. **Scope.** The full set, not a subset by level: 16,660 headwords, 20,239 senses, 29,271 Vietnamese translations,
+   0.65 MB packed (CC-CEDICT's pack is 5.5 MB). Each Vietnamese translation keeps the English sense label of its
+   table. Vietnamese text is trimmed, NFC, de-duplicated, and dropped when empty or not in Vietnamese orthography.
+   On the evaluation's 30-word B1-B2 sample it covers 27 (missing: launch, supply, solar).
+4. **Use.** It is the vendored EN->VI pack of the bilingual pack seam (#423, `writing_coach/bilingual_dictionary.py`):
+   catalogue -> pack -> local translation -> `word_translation`. A pack hit costs no AI call. The sense shown is the one
+   whose part of speech matches the word's in its sentence (none of that class is a miss), then the one whose sense
+   label shares words with the sentence, otherwise the common sense (senses are ordered by how many languages
+   translate them). A registered or dropped-in pack for the pair still wins.
+5. **Build and update.** `scripts/build_en_vi_pack.py --kaikki <file> --release <date>` streams the input (never loads
+   it whole), is stdlib only and deterministic, and is also the update script; `--check` verifies the committed pack.
+   The raw download stays outside the repository and is deleted after a build.
+6. **The D-124 subset stays.** `writing_coach/localization_data/vi_glosses.json.gz` is not superseded: it also carries
+   the Vietnamese Wiktionary data the vocabulary-localization sources read (`WiktionaryVietnameseSource`, and the zh->vi
+   pivot through a chosen English sense), which this pack deliberately excludes. Those sources remain non-default, as
+   D-124 left them; retiring that subset is a separate decision.

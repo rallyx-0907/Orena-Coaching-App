@@ -112,13 +112,14 @@ def test_the_semantic_ai_meters_are_daily_requests_with_the_approved_bootstrap_l
         assert free[key].enabled and free[key].as_dict()["monthly_limit"] is None
 
 
-def test_the_semantic_ai_meters_activate_nothing():
-    """In the catalogue only: not wired, so never enforceable, never admitted, never credit-funded."""
+def test_the_semantic_ai_meters_are_wired_but_never_credit_funded():
+    """PR-MON-7B2a: wired (enforceable when the switch lists them, reconciled as request-bound meters) and still never
+    credit-funded."""
     from writing_coach.billing.funding import CREDIT_ELIGIBLE_V1
     from writing_coach.product import quota
 
     for key in ("word.assist", "reading.assist", "writing.task"):
-        assert key not in quota.WIRED_METERS and key not in quota.ENFORCEABLE
+        assert key in quota.WIRED_METERS and key in quota.ENFORCEABLE and key in quota.SYNC_METERS
         assert key not in CREDIT_ELIGIBLE_V1
 
 

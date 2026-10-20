@@ -53,6 +53,8 @@ const ERROR_KEYS = new Set([
   'provider_timeout',
   'provider_failure',
   'malformed_transcript',
+  // A YouTube video with no channel captions: Orena does not transcribe it (D-244, amended 2026-10-20).
+  'youtube_no_channel_captions',
   'unsupported_source_language',
   'invalid_target_language',
   'media_job_unavailable',

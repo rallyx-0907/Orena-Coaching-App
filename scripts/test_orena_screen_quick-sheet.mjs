@@ -240,6 +240,28 @@ assert.deepEqual(highlightExample('No match here.', 'settled'), [{ value: 'No ma
   assert.equal('translation_vi' in vocabSavePayload('a', 'meaning', 's', {}, 'en'), false);
 }
 
+/* --- Owner decision 2026-10-18: the base meaning is always on the sheet; a contextual meaning never hides it,
+   and an English definition shown to a Vietnamese/Chinese learner is always labelled with its language --- */
+{
+  // The base meaning alone (no contextual meaning): a VI learner never sees an unlabelled English definition.
+  const english = mapWordCard('shields', { detail: { headword: 'shields', meaningSource: 'dictionary', meaningLanguage: 'en', contextMeaning: 'Anything that protects or defends' }, support: 'vi' });
+  assert.equal(english.hasContent, true, 'a base meaning draws the word card, never the "not prepared" branch');
+  assert.equal(english.meaningLanguage, 'en', 'the English fallback is labelled');
+  const translated = mapWordCard('shields', { detail: { headword: 'shields', meaningSource: 'word_translation', meaningLanguage: 'vi', contextMeaning: 'tấm chắn' }, support: 'vi' });
+  assert.equal(translated.hasContent, true);
+  assert.equal(translated.meaningLanguage, '', 'a meaning in the support language carries no label');
+  const enLearner = mapWordCard('shields', { detail: { headword: 'shields', meaningSource: 'dictionary', meaningLanguage: 'en', contextMeaning: 'Anything that protects' }, support: 'en' });
+  assert.equal(enLearner.meaningLanguage, '', 'an English learner reads the English definition unlabelled');
+  // A contextual meaning keeps the base meaning beside it, labelled when it is English.
+  const contextual = mapWordCard('shields', { detail: { headword: 'shields', meaningSource: 'context', contextMeaning: 'tấm chắn nhiệt', generalMeaning: 'Anything that protects', generalMeaningLanguage: 'en' }, support: 'vi' });
+  assert.equal(contextual.generalMeaning, 'Anything that protects', 'the base meaning stays under the contextual one');
+  assert.equal(contextual.generalMeaningLanguage, 'en');
+  const sameLanguage = mapWordCard('shields', { detail: { headword: 'shields', meaningSource: 'context', contextMeaning: 'x', generalMeaning: 'y', generalMeaningLanguage: 'vi' }, support: 'vi' });
+  assert.equal(sameLanguage.generalMeaningLanguage, '');
+  const sheetSrc = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
+  assert.match(sheetSrc, /card\.generalMeaningLanguage \? ` · \$\{meaningLanguageLabel\(card\.generalMeaningLanguage/, 'the common meaning names its language when it is not the support language');
+}
+
 /* --- Notes: device memory (AGENTS.md §7), a fake Web Storage --- */
 class FakeStorage {
   constructor() {

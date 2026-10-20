@@ -61,6 +61,17 @@ from writing_coach.media_library_store import MediaLibraryEntry
 from writing_coach.media_asr_filter import screen_segments
 from writing_coach.media_zh_cleanup import clean_asr_cues, normalise_words
 from writing_coach.media_segmentation import Cue, first_failure, primary_language, segment_lines, validate_lines
+from writing_coach.media_caption_timing import (
+    REASON_CAPTION_TIMING,
+    TIMING_KEY,
+    TIMING_NEXT_START,
+    TimingReport,
+    caption_timing_report,
+    classify_caption_kind,
+    clip_to_next_start,
+    lesson_caption_facts,
+    thresholds as timing_thresholds,
+)
 from writing_coach.media_spend import KIND_AI, KIND_ASR, SpendCapReached, SpendLedger
 from writing_coach.speech_asr import (
     SpeechAsrMalformed,
@@ -183,6 +194,34 @@ POLICY_DEFAULT = "captions_or_asr"
 POLICY_CAPTIONS_ONLY = "captions_only"
 TRANSCRIPT_POLICIES = (POLICY_DEFAULT, POLICY_CAPTIONS_ONLY)
 
+# Rights decision 2026-10-19 (D-244): Orena never downloads a YouTube video's audio to run speech recognition. A YouTube
+# item is transcribed from the captions the provider offers or not at all, whatever its transcript policy says, so
+# `captions_or_asr` listens to the audio only for a file the learner or admin uploaded, or another source whose rights
+# allow it. The item stops with this reason, before any download, recognition or spend; the caption cause is the detail.
+REASON_YOUTUBE_NO_CAPTIONS = "youtube_no_channel_captions"
+
+# Where the stored transcript's text came from, kept beside `transcript_origin` (D-244): the channel's own captions (a
+# track a person made), the provider's machine-generated captions, a caption track whose kind the provider did not say,
+# or Orena's speech recognition of audio it was allowed to use.
+PROVENANCE_CHANNEL_CAPTIONS = "channel_captions"
+PROVENANCE_MACHINE_CAPTIONS = "machine_captions"
+PROVENANCE_CAPTIONS_UNKNOWN = "captions_unknown_kind"
+PROVENANCE_ORENA_ASR = "orena_asr"
+
+
+def transcript_provenance(origin: str, caption_kind: str) -> str:
+    """The provenance of a transcript from its origin and, for captions, the track's kind (`manual`, `auto`, other)."""
+    if origin == ORIGIN_ASR:
+        return PROVENANCE_ORENA_ASR
+    if origin != ORIGIN_CAPTION:
+        return ""
+    kind = str(caption_kind or "").casefold()
+    if kind == "manual":
+        return PROVENANCE_CHANNEL_CAPTIONS
+    if kind == "auto":
+        return PROVENANCE_MACHINE_CAPTIONS
+    return PROVENANCE_CAPTIONS_UNKNOWN
+
 CHUNK_SECONDS = 600
 MAX_ATTEMPTS = 3
 AUDIO_FORMAT_TIMEOUT = 600
@@ -248,6 +287,8 @@ REASON_MESSAGES: dict[str, str] = {
     "captions_unusable": "The provider's captions were not good enough to use. Speech recognition was not run; any stored captions were kept.",
     "zh_traditional_not_accepted": "The only Chinese captions offered are Traditional; only Simplified is accepted for now. Nothing was translated.",
     "caption_quota": "Today's limit of caption requests to the caption provider was reached; none was sent.",
+    REASON_CAPTION_TIMING: "The caption timing does not follow the speech, so the item is held for timing review and not published.",
+    REASON_YOUTUBE_NO_CAPTIONS: "YouTube video without channel captions: Orena does not download YouTube audio (rights decision 2026-10-19).",
     "spend_cap_day": "The daily processing spend limit was reached.",
     "spend_cap_batch_asr": "The speech recognition spend limit for this batch was reached.",
     "spend_cap_batch_ai": "The AI spend limit for this batch was reached.",
@@ -441,6 +482,47 @@ def build_transcript(asset_id: str, language: str, lines: list[Cue]) -> MediaTra
     return MediaTranscript(asset_id=asset_id, source_language=language, segments=tuple(segments))
 
 
+CARRY_WINDOW = 8
+
+
+def carry_segment_ids(previous_payload: Mapping[str, Any] | None, transcript: MediaTranscript) -> tuple[MediaTranscript, int]:
+    """Keep a line's identity when a re-run only moved it in time (P0 2026-10-20 re-time sweep).
+
+    A segment id hashes its start and end, so re-timing an item would give every line a new id and detach what points at
+    the old one: listening and shadowing progress, speaking attempts, saved words and notes, the learner's place, the
+    meaning cache. A new line takes the id of the old line with the same text, matched in order (each old id once, within
+    a short window ahead of the last match), so references follow the line to its corrected time. A line whose text
+    changed keeps its new id, exactly as before. Returns (transcript, how many ids were carried)."""
+    transcript_payload = (previous_payload or {}).get("transcript") if isinstance(previous_payload, Mapping) else None
+    rows = transcript_payload.get("segments") if isinstance(transcript_payload, Mapping) else None
+    old = [(str(row.get("segment_id") or ""), _normal_text(str(row.get("original_text") or "")))
+           for row in (rows or []) if isinstance(row, Mapping) and row.get("segment_id")]
+    if not old:
+        return transcript, 0
+    carried: list[TranscriptSegment] = []
+    pointer = carried_count = 0
+    for segment in transcript.segments:
+        key = _normal_text(segment.original_text)
+        match = next((index for index in range(pointer, min(len(old), pointer + CARRY_WINDOW)) if old[index][1] == key), None)
+        if match is None:
+            carried.append(segment)
+            continue
+        pointer = match + 1
+        carried_count += int(old[match][0] != segment.segment_id)
+        carried.append(replace(segment, segment_id=old[match][0]))
+    if len({segment.segment_id for segment in carried}) != len(carried):
+        return transcript, 0   # a carried id met a new one: keep the new ids rather than merge two lines
+    try:
+        return MediaTranscript(asset_id=transcript.asset_id, source_language=transcript.source_language,
+                               segments=tuple(carried)), carried_count
+    except Exception:  # noqa: BLE001 - the contract refused the carried ids; the new ones stand
+        return transcript, 0
+
+
+def _normal_text(text: str) -> str:
+    return " ".join(unicodedata.normalize("NFC", text).split()).casefold()
+
+
 def lines_from_payload(payload: Mapping[str, Any] | None) -> list[Cue]:
     transcript = (payload or {}).get("transcript") if isinstance(payload, Mapping) else None
     rows = (transcript or {}).get("segments") if isinstance(transcript, Mapping) else None
@@ -523,6 +605,23 @@ def usable_transcript(entry: MediaLibraryEntry) -> tuple[bool, str]:
     checks = validate_lines(lines, language=entry.language, duration_ms=int(entry.duration_ms or 0))
     reason = first_failure(checks)
     return (not reason), reason
+
+
+def caption_timing_gate(entry: MediaLibraryEntry, lines: list[Cue] | None = None) -> tuple[bool, str, TimingReport | None]:
+    """The caption-timing gate for a stored entry (P0 2026-10-20): (passes, detail, report).
+
+    Applies to a transcript made from provider captions; any other origin passes (`None` report). Run before anything is
+    published - the pipeline's automatic publication, the operator's Publish, a content-pack import - so a mistimed
+    transcript is held for timing review (`caption_timing`) instead of reaching a learner. A track whose kind the
+    provider did not say is classified from its markers (`>>`, `[music]`)."""
+    applies, kind, retimed = lesson_caption_facts(entry)
+    if not applies:
+        return True, "", None
+    if lines is None:
+        lines = lines_from_payload((entry.lesson or {}).get("payload") if entry.lesson else None)
+    report = caption_timing_report(lines, language=entry.language, caption_kind=classify_caption_kind(kind, lines),
+                                   retimed=retimed, limits=timing_thresholds())
+    return report.passed, ("" if report.passed else report.detail()[:200]), report
 
 
 class MediaPipeline:
@@ -645,6 +744,8 @@ class MediaPipeline:
             kept.update(attempts=current.get("attempts", 0), updated_at=_now(), reprocess_reason=reason, reprocess_detail=detail,
                         reprocess_message=reason_message(reason), previous={})
             restored.append(True)
+            # A re-run that failed (no captions this time, a quota, a provider error) puts the item back exactly as it
+            # was, published or not, and says why; only new captions that fail the timing gate hold an item (in `_run`).
             return replace(fresh, processing=kept, status=str(snapshot.get("_status") or fresh.status))
         try:
             store.update_if_present(media_id, change)
@@ -778,6 +879,12 @@ class MediaPipeline:
                 if rights != RIGHTS_CLEARED:
                     target_status = "review"
                     processing.update(state=STATE_HELD, reason="rights_unknown", auto_published=False)
+            if target_status == "published" and fresh.library == "shared":
+                # The last step before a learner sees it: the caption-timing gate, whatever path got here.
+                timing_ok, timing_detail, _report = caption_timing_gate(fresh)
+                if not timing_ok:
+                    target_status = "review"
+                    processing.update(state=STATE_HELD, reason=REASON_CAPTION_TIMING, detail=timing_detail, auto_published=False)
             if "reason" in fields or processing.get("reason"):
                 # Stored beside the code so the record says it in words; a code without a message keeps none.
                 processing["message"] = reason_message(processing.get("reason", ""))
@@ -867,7 +974,8 @@ class MediaPipeline:
             entry = self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_FETCH, reason="", detail="", batch_id=batch_id, status="processing",
                                            translation="", translation_counts={}, translation_reason="", translation_retry_after=0, translation_continuation={}, asr_filtered=0, asr_flagged=0,
                                            transcript_correction_state="", transcript_correction_detail="", transcript_corrections=[], transcript_correction_rejected=[],
-                                           caption_kind="", caption_provider="", caption_language="", caption_fallback="", caption_fallback_detail="", reprocess_reason="", reprocess_detail="", reprocess_message="")
+                                           caption_kind="", caption_provider="", caption_language="", caption_fallback="", caption_fallback_detail="", reprocess_reason="", reprocess_detail="", reprocess_message="",
+                                           **{TIMING_KEY: ""})
             self._dispatch_quota(entry)
             lines, origin, cost, asr_seconds, detected, words, screen = self._transcript(store, assets, entry, batch_id, candidate)
         except PipelineStop as stop:
@@ -893,6 +1001,20 @@ class MediaPipeline:
             self._clear_correction_admission(store, media_id)
             return
         entry = self._store_lesson(store, entry, lines, origin, duration, status="processing", words=words)
+        if not personal:
+            timing_ok, timing_detail, _report = caption_timing_gate(entry)
+            if not timing_ok:
+                # Caption timing that does not follow the speech is never published (P0 2026-10-20): held for timing review,
+                # before any translation is paid for. The previous transcript is not restored over it - it was cut by the
+                # same rule or an older one, and a person decides from here (reprocess, or correct the cues).
+                self._clear_previous(store, media_id)
+                entry = store.get(media_id) or entry
+                self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_SEGMENT, reason=REASON_CAPTION_TIMING,
+                                       detail=timing_detail, checks=public_checks, origin=origin, cost_usd=round(cost, 6),
+                                       asr_seconds=round(asr_seconds, 1), auto_published=False, previous={},
+                                       status="review", **_screen_fields(screen))
+                self._clear_correction_admission(store, media_id)
+                return
         stop: dict[str, Any] = {}
         translation, translation_counts = self._translate(store, entry, batch_id, personal, stop=stop)
         translation = self._defer_translation(store, entry, translation, stop)
@@ -917,7 +1039,8 @@ class MediaPipeline:
                 entry = media_entry_with_cover(entry, assets)
         if personal or (rights == RIGHTS_CLEARED and not correction_incomplete):
             # Readiness is when source artifacts are made, once (D-121); the model clip Compare measures is one (D-140).
-            self._prepare_model_clips(assets, entry)
+            # A skip (a YouTube item, D-244) is recorded for the admin outcome; it is not an error and moves no state.
+            common["model_clips_skipped"] = self._prepare_model_clips(assets, entry) or ""
         if personal:
             self._write_processing(store, entry, state=STATE_READY, stage=STAGE_READY, reason="", detail="", auto_published=False, **common, status="published")
         elif rights == RIGHTS_CLEARED and correction_incomplete:
@@ -929,25 +1052,29 @@ class MediaPipeline:
             self._write_processing(store, entry, state=STATE_HELD, stage=STAGE_READY, reason="rights_unknown", detail="", auto_published=False, **common, status="review")
         self._clear_correction_admission(store, media_id)
 
-    def _prepare_model_clips(self, assets: BookAssetStore, entry: MediaLibraryEntry) -> None:
+    def _prepare_model_clips(self, assets: BookAssetStore, entry: MediaLibraryEntry) -> str | None:
         """Cut each speakable line's model clip once, from the source this item was admitted from.
 
         Idempotent (a stored clip is never cut again), bounded, provider-free, and never able to fail
         readiness: a lesson without clips is complete, and Compare says its model plot is unavailable.
+        A YouTube item is never cut, because Orena does not download YouTube audio (D-244, amended
+        2026-10-20): the skip reason is returned (and logged), and nothing is downloaded.
         """
-        from writing_coach import policies
+        from writing_coach import model_clips, policies
 
         if not policies.value("media.model_clips_enabled"):
-            return
+            return None
+        if model_clips.is_youtube_provider(getattr(entry, "provider", "")):
+            _logger.info("model clips for %s: skipped, %s", entry.media_id, model_clips.SKIP_YOUTUBE_NOTE)
+            return model_clips.SKIP_YOUTUBE_NO_AUDIO_DOWNLOAD
         try:
-            from writing_coach import model_clips
             from writing_coach.speaking_library import entry_clip_lines
 
             lesson = dict(entry.lesson or {})
             admitted = replace(entry, status="published", lesson={**lesson, "status": "PUBLISHED"})
             pending = model_clips.missing_lines(assets, entry_clip_lines(admitted))
             if not pending:
-                return
+                return None
             max_seconds = max_asr_seconds()
             with tempfile.TemporaryDirectory(prefix="orena-clips-") as directory:
                 source = self._audio_source(assets, entry, Path(directory), max_seconds)
@@ -959,6 +1086,7 @@ class MediaPipeline:
             _logger.info("model clips for %s: %s", entry.media_id, result.as_dict())
         except Exception:  # noqa: BLE001 - optional artifact; readiness stands without it
             _logger.warning("model clips could not be prepared for %s", entry.media_id, exc_info=True)
+        return None
 
     def _hold_failed(self, store: Any, media_id: str, stop: PipelineStop) -> None:
         entry = store.get(media_id)
@@ -976,7 +1104,18 @@ class MediaPipeline:
 
     def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
+        # A re-run keeps each unchanged line's identity, so what points at it stays attached after a re-time.
+        transcript, _carried = carry_segment_ids((entry.lesson or {}).get("payload") if entry.lesson else None, transcript)
         payload = lesson_payload(entry, transcript, origin, duration, words=words, english_reading=self._english_reading)
+        # Channel captions, machine captions or Orena's recognition: told apart wherever the origin is (D-244).
+        provenance = transcript_provenance(origin, str((entry.processing or {}).get("caption_kind") or ""))
+        payload["transcript_provenance"] = provenance
+        if origin == ORIGIN_CAPTION:
+            # The kind and the re-timing travel with the lines (a content pack carries the lesson, not the processing record),
+            # so the caption-timing gate can tell a re-timed automatic track from one cut before the fix.
+            processing_now = entry.processing or {}
+            payload["caption_kind"] = str(processing_now.get("caption_kind") or "")
+            payload[TIMING_KEY] = str(processing_now.get(TIMING_KEY) or "")
         existing = dict(entry.lesson or {})
         lesson = {
             **{key: value for key, value in existing.items() if key != "payload"},
@@ -991,7 +1130,8 @@ class MediaPipeline:
             if fresh.status == "archived" or (fresh.processing or {}).get("state") == "cancelled":
                 raise PipelineStop("cancelled")
             # The origin is recorded with the payload that carries it, in one write, so the two never disagree (D-213).
-            processing = {**dict(fresh.processing or {}), "origin": origin} if fresh.processing is not None else fresh.processing
+            processing = ({**dict(fresh.processing or {}), "origin": origin, "transcript_provenance": provenance}
+                          if fresh.processing is not None else fresh.processing)
             return replace(fresh, lesson=lesson, processing=processing, duration_ms=int(fresh.duration_ms or 0) or duration, status=status)
         updated = store.update_if_present(entry.media_id, change)
         if updated is None:
@@ -1020,12 +1160,17 @@ class MediaPipeline:
                     # the importer was refused by the provider and said so (or by the daily caption cap, D-215)
                     captions_error = str(entry.source.get("caption_error") or "") or "provider_failure"
             if cues:
+                # The kind is read from the cues as the provider gave them (a rolling auto track overlaps), then every cue
+                # ends no later than the next one starts: a cue's own end is when it leaves the screen (D-020, P0 2026-10-20).
+                kind = classify_caption_kind(kind, cues)
+                cues, _clipped = clip_to_next_start(cues)
                 lines = segment_lines(cues, language)
                 duration = int(entry.duration_ms or 0)
                 checks = validate_lines(lines, language=language, duration_ms=duration)
                 if not first_failure(checks):
                     self._write_processing(store, entry, caption_kind=kind, caption_provider=provider,
-                                           caption_language=caption_language, caption_fallback="", caption_fallback_detail="")
+                                           caption_language=caption_language, caption_fallback="", caption_fallback_detail="",
+                                           **{TIMING_KEY: TIMING_NEXT_START})
                     lines, correction = self._correct_transcript(store, entry, batch_id, lines, origin=ORIGIN_CAPTION)
                     return lines, ORIGIN_CAPTION, 0.0, 0.0, "", [], correction
                 # Captions that are not good enough fall through to the audio (D-111 item 3).
@@ -1046,17 +1191,18 @@ class MediaPipeline:
                 # The operator asked for captions or nothing (D-214): no audio is downloaded, no recognition runs, nothing
                 # is spent. The item fails with the stable reason and can be re-run once the provider answers.
                 raise PipelineStop(fallback or "captions_unavailable", captions_error)
+            # Rights decision 2026-10-19 (D-244): the audio of a YouTube video is never downloaded for recognition. A caption
+            # fetch the provider refused this time (or the daily caption cap) keeps its own retryable reason; a video with no
+            # caption track, or one too poor to use, stops with the rights reason, the caption cause as its detail.
+            if captions_error and fallback != "captions_unusable":
+                raise PipelineStop(fallback or "captions_unavailable", captions_error)
+            raise PipelineStop(REASON_YOUTUBE_NO_CAPTIONS, captions_error if fallback == "captions_unusable" else "no_caption_track")
         self._write_processing(store, entry, state=STATE_RUNNING, stage=STAGE_TRANSCRIBE, caption_kind="", caption_provider="",
                                caption_language="", caption_fallback=fallback,
                                caption_fallback_detail=captions_error if fallback == "captions_unusable" else "")
-        try:
-            raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
-        except PipelineStop as stop:
-            # Captions were refused by the provider (not merely absent) and the audio route is closed too: that is the
-            # cause an operator can act on, with the audio failure kept in the detail.
-            if stop.code == "audio_unavailable" and captions_error in {"provider_failure", "provider_timeout"}:
-                raise PipelineStop("captions_blocked", "audio_unavailable") from stop
-            raise
+        # Only a source with no caption track reaches here (an upload, or a non-YouTube source whose rights allow listening);
+        # `captions_blocked` (captions refused and the YouTube audio refused too) is no longer produced since D-244.
+        raw, words, detected, cost, seconds, screen = self._speech(store, assets, entry, batch_id)
         # Chinese recognition output is repaired (no spaces between Hanzi, sentence marks, no leading silence) before it is cut.
         raw = clean_asr_cues(raw, words, language or detected)
         words = normalise_words(words, language or detected)  # the same script as the lines, so taps stay aligned

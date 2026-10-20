@@ -9,9 +9,13 @@ from __future__ import annotations
 
 import pytest
 
-from writing_coach.listening_catalog import CATALOG
+from writing_coach import listening_catalog
 from writing_coach.listening_api import open_listening_library_lesson
 from writing_coach.pinyin_alignment import align_pinyin
+
+# The shipped built-in Listening catalogue is empty since D-245; this module exercises catalogue lessons on the
+# fixture-local copy of the retired manifest (conftest.fixture_listening_catalog).
+pytestmark = pytest.mark.usefixtures("fixture_listening_catalog")
 
 
 def cells(text: str, reading: str) -> list[tuple[str, str]]:
@@ -59,7 +63,7 @@ def test_a_line_that_does_not_agree_with_its_reading_is_left_unaligned(text: str
 def test_every_chinese_line_the_catalogue_ships_aligns() -> None:
     """A wrong syllable in the catalogue is caught here, not by a learner."""
     checked = 0
-    for lesson in CATALOG:
+    for lesson in listening_catalog.CATALOG:
         if lesson.source.language != "zh":
             continue
         payload = open_listening_library_lesson(lesson.lesson_id, "en")

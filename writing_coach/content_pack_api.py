@@ -11,6 +11,7 @@ route is admin-only, same-origin and audited, like the rest of the console.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -32,6 +33,7 @@ from writing_coach.content_packs import (
 from writing_coach.core.errors import orena_http_error
 
 router = APIRouter(prefix="/api/admin/content-packs", tags=["admin-content-packs"])
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -62,11 +64,16 @@ class ExportBody(BaseModel):
     kinds: list[str] = Field(default_factory=lambda: ["reading", "vocabulary"], max_length=4)  # also "media" (D-234)
     languages: list[str] = Field(default_factory=list, max_length=4)
     source_slug_prefix: str = Field(default="", max_length=120)
+    exclude_source_slug_prefixes: list[str] = Field(default_factory=list, max_length=20)  # Reading sources left out
     collection_prefix: str = Field(default="", max_length=160)
     media_ids: list[str] = Field(default_factory=list, max_length=500)
     exclude_media_id_prefixes: list[str] = Field(default_factory=list, max_length=20)
     include_derived_text: bool = False  # carry transcript cues and translations (default off: an owner decision)
     allow_partial: bool = False  # export media although some cue translations are not stored (coverage below 100%)
+
+
+def _slug_of(item: PackItem) -> str:
+    return str(item.data.get("slug") if item.kind == "reading_source" else item.data.get("source_slug") or "")
 
 
 def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[PackItem]:
@@ -87,8 +94,10 @@ def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[Pa
             extra["excluded"] = excluded
     languages = tuple(code for code in body.languages if code in {"en", "zh"})
     if "reading" in body.kinds:
-        items += reading.pack_reading_items(source_slug_prefix=body.source_slug_prefix.strip(), languages=languages,
-                                            assets_out=extra.setdefault("assets", {}) if extra is not None else None)
+        reading_items = reading.pack_reading_items(source_slug_prefix=body.source_slug_prefix.strip(), languages=languages,
+                                                   assets_out=extra.setdefault("assets", {}) if extra is not None else None)
+        excluded = tuple(prefix for prefix in body.exclude_source_slug_prefixes if prefix)
+        items += [item for item in reading_items if not excluded or not _slug_of(item).startswith(excluded)]
     if "vocabulary" in body.kinds and _state.vocabulary_ids and _state.vocabulary_export:
         for collection_id in _state.vocabulary_ids(languages, body.collection_prefix.strip()):
             data = _state.vocabulary_export(collection_id)
@@ -101,10 +110,11 @@ def _items_for(body: ExportBody, extra: dict[str, Any] | None = None) -> list[Pa
     return items
 
 
-@router.post("/export")
-def export_pack(request: Request, body: ExportBody) -> Response:
-    admin = reading._admin(request)
-    reading._same_origin(request)
+def run_export(admin: dict[str, Any], body: ExportBody, *, dry_run: bool = False) -> tuple[bytes, dict[str, int]]:
+    """The one export, for the route and for `scripts/content_pack.py`: the pack's bytes and its per-kind counts.
+
+    A dry run builds (so the same refusals apply) and audits nothing."""
+
     extra: dict[str, Any] = {}
     items = reading._guarded(lambda: _items_for(body, extra))
     coverage = extra.get("coverage")
@@ -125,7 +135,16 @@ def export_pack(request: Request, body: ExportBody) -> Response:
     counts: dict[str, int] = {}
     for item in items:
         counts[item.kind] = counts.get(item.kind, 0) + 1
-    reading._audit(admin, "admin.content_pack_export", entity_type="content_pack", entity_id="", payload={"counts": counts})
+    if not dry_run:
+        reading._audit(admin, "admin.content_pack_export", entity_type="content_pack", entity_id="", payload={"counts": counts})
+    return raw, counts
+
+
+@router.post("/export")
+def export_pack(request: Request, body: ExportBody) -> Response:
+    admin = reading._admin(request)
+    reading._same_origin(request)
+    raw, _counts = run_export(admin, body)
     return Response(raw, media_type="application/zip", headers={
         "Content-Disposition": 'attachment; filename="orena-content.orenapack"', "Cache-Control": "no-store"})
 
@@ -175,12 +194,19 @@ def _media_rows(pack: Any, *, overwrite: bool, dry_run: bool, actor: str) -> lis
                                         dry_run=dry_run, actor=actor, translations=_state.media_translations)
 
 
-def _plan(pack: Any, overwrite: bool = False) -> dict[str, Any]:
+# A source the pack creates arrives unapproved (D-105), so the plan predicts what the import will do with its articles.
+ARRIVES_UNAPPROVED = "needs_review"
+
+
+def plan_import(pack: Any, overwrite: bool = False) -> dict[str, Any]:
     rows = []
+    pack_sources = {item.data.get("slug") for item in pack.items if item.kind == "reading_source"}
     for item in pack.items:
         if item.kind == media_pack.KIND:
             continue
         existing, state = _existing(item)
+        if item.kind == "reading_article" and state is None and item.data.get("source_slug") in pack_sources:
+            state = ARRIVES_UNAPPROVED  # not here yet: the import creates it unapproved before it reaches the article
         rows.append(plan_item(item, existing_hash=existing, source_state=state))
     rows += _media_rows(pack, overwrite=overwrite, dry_run=True, actor=media_pack.PACK_ACTOR)
     summary: dict[str, int] = {}
@@ -198,15 +224,32 @@ async def plan_pack(request: Request, file: UploadFile | None = File(default=Non
     reading._admin(request)
     reading._same_origin(request)
     pack = _verified(await _read_upload(file))
-    return reading._guarded(lambda: _plan(pack, overwrite))
+    return reading._guarded(lambda: plan_import(pack, overwrite))
 
 
-@router.post("/import")
-async def import_pack(request: Request, file: UploadFile | None = File(default=None),
-                      overwrite: bool = False) -> dict[str, Any]:
-    admin = reading._admin(request)
-    reading._same_origin(request)
-    pack = _verified(await _read_upload(file))
+# Built-in errors whose message names the problem in the code's own terms (a key, an index, a type), never a value
+# from a connection or a credential; any other exception is reported by its type alone (the log has the trace).
+_DESCRIBED = (KeyError, IndexError, TypeError, ValueError, AttributeError)
+
+
+def failure_reason(exc: BaseException) -> str:
+    """An item's failure as an administrator can act on it: the engine's own code when it has one, otherwise what was
+    missing or wrong - never a bare exception name such as `KeyError`."""
+
+    code = getattr(exc, "code", None)
+    if isinstance(code, str) and code:
+        return code
+    if isinstance(exc, KeyError):
+        missing = exc.args[0] if exc.args else ""
+        return f"internal_error: missing key {missing!r} (KeyError)"[:200]
+    if isinstance(exc, _DESCRIBED) and str(exc):
+        return f"internal_error: {type(exc).__name__}: {str(exc).splitlines()[0]}"[:200]
+    return f"internal_error: {type(exc).__name__}"
+
+
+def run_import(admin: dict[str, Any], pack: Any, *, overwrite: bool = False) -> dict[str, Any]:
+    """The one import, for the route and for `scripts/content_pack.py`: each item through its engine, audited."""
+
     pack_id = str(pack.manifest.get("pack_id") or "")
     order = {"reading_source": 0, "reading_article": 1, "vocabulary_collection": 2, "media_item": 3}
     results = []
@@ -229,7 +272,8 @@ async def import_pack(request: Request, file: UploadFile | None = File(default=N
                 result = reading._guarded(lambda item=item: reading.pack_import_reading(
                     item, admin, pack_id=pack_id, assets=pack.assets))
         except Exception as exc:  # noqa: BLE001 - one item never fails the pack; its failure is reported
-            result = {"result": "failed", "category": getattr(exc, "code", type(exc).__name__)}
+            _logger.exception("content pack %s: %s %s failed", pack_id, item.kind, item.natural_key)
+            result = {"result": "failed", "category": failure_reason(exc)}
         results.append({"kind": item.kind, "natural_key": item.natural_key, "outcome": outcome, **result})
     summary: dict[str, int] = {}
     for row in results:
@@ -238,3 +282,12 @@ async def import_pack(request: Request, file: UploadFile | None = File(default=N
     reading._audit(admin, "admin.content_pack_import", entity_type="content_pack", entity_id=pack_id,
                    payload={"summary": summary, "overwrite": overwrite})  # fmt: skip
     return {"pack_id": pack_id, "summary": summary, "items": results}
+
+
+@router.post("/import")
+async def import_pack(request: Request, file: UploadFile | None = File(default=None),
+                      overwrite: bool = False) -> dict[str, Any]:
+    admin = reading._admin(request)
+    reading._same_origin(request)
+    pack = _verified(await _read_upload(file))
+    return run_import(admin, pack, overwrite=overwrite)

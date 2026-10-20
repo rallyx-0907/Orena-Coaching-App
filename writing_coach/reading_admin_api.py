@@ -75,7 +75,7 @@ from writing_coach.persistence.reading_job_repository import (
     InvalidCursor,
     ReadingJobRepository,
 )
-from writing_coach.reading_content_engine import ReadingContentEngine
+from writing_coach.reading_content_engine import ReadingContentEngine, carried_review_changes, carried_review_reason
 from writing_coach.reading_processing import content_fingerprint
 from writing_coach.reading_provenance import provenance_blockers
 from writing_coach.reading_source_import import (
@@ -208,6 +208,23 @@ def _category(exc: HTTPException) -> str:
     return str(detail.get("category") or "")
 
 
+def _publication_rights(article: Mapping[str, Any]) -> Mapping[str, Any]:
+    source = article.get("source") or {}
+    found = source.get("publication_rights")
+    if isinstance(found, Mapping):
+        return found
+    return {"basis": "snapshot", "state": source.get("rights_state") or {}}
+
+
+def _publication_state(article: Mapping[str, Any]) -> Mapping[str, Any]:
+    return _publication_rights(article).get("state") or {}
+
+
+def publication_rights_basis(article: Mapping[str, Any]) -> str:
+    """Where the publish confirmation's rights came from: `snapshot`, `source` or `none`."""
+    return str(_publication_rights(article).get("basis") or "snapshot")
+
+
 def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
     """What is unclear about publishing an article, from its effective rights.
 
@@ -217,12 +234,13 @@ def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
     right (and, for an adapted text, the adapt right) being denied or never
     answered, and an incomplete credit, each appear here.
 
-    Read from the source snapshot with the administrator's recorded answers
-    folded over it (`rights_state`), so answering the questions on the review
-    page is what clears the gate.
+    Read from the article's own rights snapshot with the administrator's
+    recorded answers folded over it, so answering the questions on the review
+    page is what clears the gate. The snapshot is authoritative for the
+    article; only an article with no rights of its own reads its source's
+    policy (`publication_rights`, whose `basis` says which).
     """
-    source = article.get("source") or {}
-    state = source.get("rights_state") or {}
+    state = _publication_state(article)
     blockers: list[dict[str, str]] = []
     republish = state.get("can_republish", "unknown")
     if republish == "denied":
@@ -257,8 +275,7 @@ def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
 
     Like `publication_blockers`, publishing over it needs the explicit override.
     """
-    source = article.get("source") or {}
-    state = source.get("rights_state") or {}
+    state = _publication_state(article)
     if state.get("attribution_required", "unknown") == "unknown":
         return [{"code": "attribution_unknown", "level": "warning"}]
     return []
@@ -1231,7 +1248,7 @@ def set_article_status(
                 "admin.reading_article_publish_refused",
                 entity_type="reading_article",
                 entity_id=article_id,
-                payload={"blockers": everything},
+                payload={"blockers": everything, "rights_basis": publication_rights_basis(current)},
             )
             fields = [
                 *(["quality_override"] if quality_open else []),
@@ -1297,6 +1314,8 @@ def set_article_status(
         audit_payload |= {
             "warnings": warnings,
             "acknowledged_warnings": bool(warnings),
+            # Whose rights the confirmation read: the article's own snapshot, its source's policy, or none.
+            "rights_basis": publication_rights_basis(current),
             # Publish records the article's effective automation permission -
             # the override when present, else its source's default.
             "automation": (current.get("automation") or {}),
@@ -1702,7 +1721,7 @@ def _apply_pack_thumbnail(admin: Mapping[str, Any], article: Mapping[str, Any], 
     A downloaded picture arrives only if it verifies (allowed host and licence, the manifest's bytes) and never
     replaces a real picture already here. Without one the importer makes the deterministic typographic cover: a
     pack from before this rule imports fine, and no imported article is left without a thumbnail."""
-    article_id = article["id"]
+    article_id = str(article["id"])
     store = _image_store()
     review = _guarded(lambda: _content().image_review(article_id)) or {}
     current_kind = str((review.get("approved") or {}).get("kind") or "")
@@ -1721,6 +1740,11 @@ def _apply_pack_thumbnail(admin: Mapping[str, Any], article: Mapping[str, Any], 
         return "attached"
     if _guarded(lambda: _content().has_thumbnail(article_id)):
         return "kept"
+    if not article.get("title") or not article.get("language"):
+        # The cover is made from the article as it is here; a caller holding only its id reads it first.
+        article = _guarded(lambda: _content().get_article(article_id)) or {}
+        if not article.get("title") or not article.get("language"):
+            return "refused:thumbnail_article_unreadable"
     stored = thumbnails.make_reading_cover(
         store, article_id=article_id, title=article["title"], language=article["language"], topic=article.get("topic") or "")
     _guarded(lambda: _content().approve_image(article_id, stored, actor=_actor(admin), reason="content pack"))
@@ -1763,9 +1787,12 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str,
             kind="text", text=data["body"], url=str(data.get("canonical_url") or ""), title=str(data.get("title") or ""),
             author=str(data.get("author") or ""), language=str(data.get("language") or ""),
             published_at=str(data.get("published_at") or ""), source_name=source["name"], source_id=source["id"],
-            rights=rights,
+            rights=rights, review=_carried_review(data, pack_id),
         ), actor=actor)  # fmt: skip
-        return {"result": "submitted", "job_id": job["id"], "note": "sets attach when the article is published; import again"}
+        # The reviewed level and topic travel in the job and land on the article the worker creates; comprehension
+        # sets and the thumbnail attach to a present article, so they need a later import once it is published.
+        return {"result": "submitted", "job_id": job["id"],
+                "note": "its reviewed level and topic arrive with the article; sets attach on an import once it is published"}
     attached = []
     thumbnail = _apply_pack_thumbnail(admin, found, data, assets or {}) if _state.asset_store is not None else "unavailable"
     if found["status"] == "published" and _state.evidence is not None:
@@ -1775,8 +1802,47 @@ def pack_import_reading(item: Any, admin: Mapping[str, Any], *, pack_id: str,
             if not support or support in have or not pack_set.get("questions"):
                 continue
             attached.append(_attach_pack_set(admin, found["id"], support, pack_set, pack_id=pack_id))
+    review = _apply_pack_review(admin, found["id"], data, pack_id=pack_id)
     return {"result": "present", "article_id": found["id"], "status": found["status"], "sets": attached,
-            "thumbnail": thumbnail}
+            "thumbnail": thumbnail, "review": review}
+
+
+def _carried_review(data: Mapping[str, Any], pack_id: str) -> dict[str, Any]:
+    """The review a pack article carries (#411), in the engine's shape; empty for a pack made before it."""
+
+    marks = data.get("review") if isinstance(data.get("review"), Mapping) else {}
+    if not str(data.get("reviewed_level") or "").strip() and not isinstance(marks.get("topic"), Mapping):
+        return {}
+    return {"reviewed_level": data.get("reviewed_level"), "topic": data.get("topic"), "subtopic": data.get("subtopic"),
+            "review": dict(marks), "pack_id": pack_id}
+
+
+def _apply_pack_review(admin: Mapping[str, Any], article_id: str, data: Mapping[str, Any], *,
+                       pack_id: str) -> dict[str, str]:
+    """The administrator's review a pack carries (#411), onto a present article that has none of its own here (a new
+    article receives it from the worker, through the job, by the same rule: `carried_review_changes`).
+
+    The reviewed level arrives only when this article was never level-reviewed here (no override, none cleared); the
+    topic and subtopic only when they were reviewed at the source and never here. A review of this environment's own
+    is always kept. What arrives is one correction through the same repository call, so it lands in the article's
+    review trail and the audit log with the importing actor and the pack. A pack without these fields (made before
+    them) carries no review, and the article keeps the estimate this environment's engine gave it."""
+
+    carried = _carried_review(data, pack_id)
+    if not carried:
+        return {}
+    article = _guarded(lambda: _content().get_article(article_id)) or {}
+    own = _guarded(lambda: _content().review_marks(article_id))
+    changes, outcome = carried_review_changes(carried, article, own)
+    if not changes:
+        return outcome
+    updated = _guarded(lambda: _content().update_article(
+        article_id, actor=_actor(admin), reason=carried_review_reason(carried), **changes))
+    _audit(admin, "admin.reading_level_override" if set(changes) == {"reviewed_level"} else "admin.reading_article_edited",
+           entity_type="reading_article", entity_id=article_id,
+           payload={"reviewed_level": (updated or {}).get("reviewed_level"), "content_pack": pack_id,
+                    "effective_level": (updated or {}).get("effective_level"), "changed": sorted(changes)})  # fmt: skip
+    return outcome
 
 
 def _attach_pack_set(admin: Mapping[str, Any], article_id: str, support: str, pack_set: Mapping[str, Any], *,

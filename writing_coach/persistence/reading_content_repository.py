@@ -31,6 +31,7 @@ from __future__ import annotations
 
 import base64
 import json
+import logging
 import uuid
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
@@ -67,6 +68,8 @@ from writing_coach.persistence.models import (
     ReadingSource,
     ReadingSourceItem,
 )
+
+_logger = logging.getLogger(__name__)
 
 DEFAULT_ARTICLE_PAGE = 24
 MAX_ARTICLE_PAGE = 60
@@ -346,6 +349,40 @@ def overlay_rights(
     return effective
 
 
+OWN_RIGHTS_KEYS = (*RIGHTS_QUESTIONS, "license_note")
+
+
+def publication_rights(
+    snapshot: Any, decisions: Sequence[Mapping[str, Any]], source_policy: Mapping[str, Any] | None, *,
+    built_in: bool,
+) -> dict[str, Any]:
+    """The rights the publish confirmation reads, and where they came from (`basis`).
+
+    The article's own snapshot is authoritative for that article (the per-item
+    snapshot model, D-111): when it, or an administrator's recorded answer,
+    carries any rights answer, the source's policy is not consulted at all - a
+    text imported through the "Direct URL" input path keeps the public-domain
+    answer it was imported with, and a snapshot that says no, or leaves the
+    republish question unanswered, still asks for the confirmation.
+
+    Only an article with no rights of its own falls back to its registered
+    source's policy (`basis: "source"`). A built-in input path (manual paste,
+    direct URL, file upload) has no reviewed policy to fall back to - its
+    columns are defaults nobody answered - so there the answers stay unknown
+    (`basis: "none"`).
+    """
+    own = dict(snapshot) if isinstance(snapshot, dict) else {}
+    answered = any(key in own for key in OWN_RIGHTS_KEYS) or any(
+        any(key in answers for key in OWN_RIGHTS_KEYS) for answers in decisions
+    )
+    if answered:
+        return {"basis": "snapshot", "state": rights_state(overlay_rights(own, decisions))}
+    if built_in or not source_policy:
+        return {"basis": "none", "state": rights_state({})}
+    fallback = {key: source_policy[key] for key in RIGHTS_QUESTIONS if key in source_policy}
+    return {"basis": "source", "state": rights_state(fallback)}
+
+
 def fold_image_events(events: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
     """The thumbnail state of an article from its image events, oldest first.
 
@@ -520,11 +557,22 @@ class ReadingContentRepository:
     # repository (a script, a unit test) stays permissive so it can set up content without art.
     require_thumbnail = False
     # Set at wiring: makes and stores a typographic cover for {article_id, title, language, topic} and returns the
-    # stored-image dict an `image_set` event carries, or None. Used only where the engine admits an article by itself.
+    # stored-image dict an `image_set` event carries, or None. Every article the engine creates gets one (D-240).
     cover_factory: Callable[[dict[str, Any]], dict[str, Any] | None] | None = None
 
     def __init__(self, engine: Engine) -> None:
         self.engine = engine
+
+    def _make_cover(self, article_id: str, *, title: str, language: str, topic: str) -> dict[str, Any] | None:
+        """The typographic cover `cover_factory` makes for a new article, or None (no factory, or it failed: the
+        article is still created, and waits for review without a thumbnail rather than being lost)."""
+        if self.cover_factory is None:
+            return None
+        try:
+            return self.cover_factory({"article_id": article_id, "title": title, "language": language, "topic": topic})
+        except Exception:  # noqa: BLE001 - a cover that cannot be stored never loses the article
+            _logger.exception("reading: typographic cover could not be made for a new article")
+            return None
 
     # ---- sources ---------------------------------------------------------
     def ensure_built_in_sources(self, *, now: datetime | None = None) -> None:
@@ -987,15 +1035,15 @@ class ReadingContentRepository:
                     min_targets=MIN_TARGETS, max_targets=MAX_TARGETS)
                 prepared_analysis["admission"] = decision
                 admitted = decision["decision"] == "published" and status == "needs_review"
-                if admitted and self.require_thumbnail:
-                    # An automatic admission publishes with nobody looking, so it makes the cover itself (D-240);
-                    # without one it waits for review instead.
-                    cover = self.cover_factory({"article_id": str(article_id), "title": title, "language": language,
-                                                "topic": topic}) if self.cover_factory else None
-                    if cover is None:
-                        admitted = False
-                if admitted:
-                    status = LEARNER_VISIBLE_STATUS
+            if self.require_thumbnail:
+                # D-240: every admitted article gets its typographic cover here, whether the engine publishes it or
+                # it waits for review - a held article must not reach the publish gate without one. An automatic
+                # admission publishes with nobody looking; without a cover it waits for review instead.
+                cover = self._make_cover(str(article_id), title=title, language=language, topic=topic)
+                if cover is None:
+                    admitted = False
+            if admitted:
+                status = LEARNER_VISIBLE_STATUS
             connection.execute(
                 insert(ReadingArticle).values(
                     id=article_id,
@@ -1050,7 +1098,7 @@ class ReadingContentRepository:
                          **({"admission": decision} if automatic_admission else {})},
                 now=moment,
             )
-            if admitted and cover is not None:
+            if cover is not None:
                 self._record_event(connection, article_id=article_id, actor=actor, action=IMAGE_SET_EVENT, reason="",
                     changes={"from": None, "to": {"image": dict(cover)}}, now=moment)
             if admitted:
@@ -1086,6 +1134,7 @@ class ReadingContentRepository:
                     select(
                         ReadingSource.automation_allowed, ReadingSource.name,
                         ReadingSource.slug, ReadingSource.polling_policy,
+                        ReadingSource.can_republish, ReadingSource.can_adapt, ReadingSource.attribution_required,
                     ).where(
                         ReadingSource.id == source_item.source_id
                     )
@@ -1109,6 +1158,16 @@ class ReadingContentRepository:
             article["automation"] = effective_automation(answered, source_default)
             article["source"]["rights_state"] = rights_state(effective)
             article["source"]["rights_effective"] = effective
+            # What the publish confirmation reads: the article's own snapshot when it has one, else its source.
+            article["source"]["publication_rights"] = publication_rights(
+                article["source"]["rights"], answered,
+                {
+                    "can_republish": bool(source_head.can_republish),
+                    "can_adapt": bool(source_head.can_adapt),
+                    "attribution_required": bool(source_head.attribution_required),
+                } if source_head else None,
+                built_in=bool(source_head) and source_head.slug in BUILT_IN_SLUGS,
+            )
             article["source"]["source_name"] = source_head.name if source_head else ""
             article["source"]["public_name"] = public_name_of(source_head.polling_policy) if source_head else ""
             article["provenance"] = _learner_credit(SimpleNamespace(
@@ -1147,6 +1206,36 @@ class ReadingContentRepository:
                 {"action": event.action, "answers": dict(answers), "actor": event.actor, "at": _iso(event.created_at)}
             )
         return found
+
+    def _review_marks(self, connection: Any, article_ids: Sequence[Any]) -> dict[Any, dict[str, str]]:
+        """When an administrator last reviewed each article's level and its topic, read from its review trail in one
+        query: `{"level_at": ..., "topic_at": ...}`, each key only when that review happened. An override cleared again
+        is a review too - the article's own decision to read at its estimate."""
+        if not article_ids:
+            return {}
+        rows = connection.execute(
+            select(ReadingReviewEvent.article_id, ReadingReviewEvent.changes_json, ReadingReviewEvent.created_at)
+            .where(
+                ReadingReviewEvent.article_id.in_(list(article_ids)),
+                ReadingReviewEvent.action.in_(("level_override", "edited")),
+            )
+            .order_by(ReadingReviewEvent.created_at, ReadingReviewEvent.id)
+        ).all()
+        found: dict[Any, dict[str, str]] = {}
+        for row in rows:
+            changes = row.changes_json or {}
+            if "reviewed_level" in changes:
+                found.setdefault(row.article_id, {})["level_at"] = _iso(row.created_at)
+            if "topic" in changes or "subtopic" in changes:
+                found.setdefault(row.article_id, {})["topic_at"] = _iso(row.created_at)
+        return found
+
+    def review_marks(self, article_id: str) -> dict[str, str]:
+        """`_review_marks` for one article: the content-pack importer's check for a review of this environment's own."""
+        if _lookup_uuid(article_id) is None:
+            return {}
+        with self.engine.connect() as connection:
+            return self._review_marks(connection, [_uuid(article_id)]).get(_uuid(article_id), {})
 
     def _rights_decisions(
         self, connection: Any, article_ids: Sequence[Any]
@@ -1557,6 +1646,57 @@ class ReadingContentRepository:
             )
         return self.get_article(article_id)
 
+    def reestimate_level(
+        self, article_id: str, *, actor: str, reason: str = "reestimate", now: datetime | None = None,
+    ) -> dict[str, Any] | None:
+        """Re-estimate one article's automatic level with the current estimator (`LEVEL_VERSION`).
+
+        The machine's own column, written by the machine's own function (`analyze_article`) over the body read
+        inside this transaction, `FOR UPDATE`: `estimated_level`, its confidence, and the analysis's
+        `level_version`, `level_confidence` and `level_evidence`. `reviewed_level` is never touched; the learner's
+        `effective_level` moves only when no reviewer override exists (D-196). Re-estimating is an owner decision
+        (D-198): this method is called only by `scripts/reading_relevel.py`. None when the article does not exist,
+        else `{"id", "from", "to", "level_version", "changed"}`; an unchanged level writes nothing.
+        """
+        moment = _now(now)
+        with self.engine.begin() as connection:
+            query = select(ReadingArticle.id, ReadingArticle.body, ReadingArticle.language,
+                           ReadingArticle.estimated_level, ReadingArticle.reviewed_level,
+                           ReadingArticle.effective_level, ReadingArticle.analysis_json,
+                           ReadingArticle.content_revision).where(ReadingArticle.id == _uuid(article_id))
+            if connection.dialect.name == "postgresql":
+                query = query.with_for_update()
+            row = connection.execute(query).first()
+            if row is None:
+                return None
+            measured = analyze_article(row.body or "", row.language or "en")
+            stored = dict(row.analysis_json or {}) if isinstance(row.analysis_json, Mapping) else {}
+            old_version = str(stored.get("level_version") or "")
+            result = {"id": str(row.id), "from": row.estimated_level or "", "to": measured.estimated_level,
+                      "level_version": measured.level_version, "changed": measured.estimated_level != (row.estimated_level or "")}
+            if not result["changed"]:
+                return result
+            stored.update(level_confidence=measured.confidence, level_version=measured.level_version,
+                          level_evidence=measured.evidence)
+            effective = _effective(measured.estimated_level, row.reviewed_level)
+            values: dict[str, Any] = {
+                "estimated_level": measured.estimated_level,
+                "estimated_level_confidence": float(measured.confidence),
+                "effective_level": effective,
+                "analysis_json": stored,
+                "updated_at": moment,
+            }
+            if effective != row.effective_level:
+                # The level is on the learner's card: a cached copy must refetch.
+                values["content_revision"] = row.content_revision + 1
+            connection.execute(update(ReadingArticle).where(ReadingArticle.id == row.id).values(**values))
+            self._record_event(connection, article_id=row.id, actor=actor, action="level_reestimated", reason=reason,
+                               changes={"estimated_level": {"from": result["from"], "to": result["to"]},
+                                        "level_version": {"from": old_version, "to": measured.level_version},
+                                        "effective_level": {"from": row.effective_level, "to": effective}},
+                               now=moment)
+        return result
+
     def recount_articles(
         self, *, apply: bool = False, article_id: str | None = None, actor: str = "recount",
         now: datetime | None = None, batch_size: int = RECOUNT_BATCH_SIZE,
@@ -1922,7 +2062,8 @@ class ReadingContentRepository:
 
         with self.engine.connect() as connection:
             rows = connection.execute(
-                select(ReadingArticle.id, ReadingArticle.status, ReadingArticle.body, ReadingSourceItem.content_hash)
+                select(ReadingArticle.id, ReadingArticle.status, ReadingArticle.body, ReadingArticle.title,
+                       ReadingArticle.language, ReadingArticle.topic, ReadingSourceItem.content_hash)
                 .join(ReadingSourceItem, ReadingSourceItem.id == ReadingArticle.source_item_id)
                 .join(ReadingSource, ReadingSource.id == ReadingSourceItem.source_id)
                 # Not only current snapshots: texts that share one address (a collection on one page) supersede
@@ -1932,7 +2073,9 @@ class ReadingContentRepository:
             ).all()
         for row in rows:
             if row.content_hash == content_hash or (fingerprint is not None and fingerprint(row.body) == content_hash):
-                return {"id": str(row.id), "status": row.status}
+                # What the importer needs to finish a present article (its typographic cover is made from these).
+                return {"id": str(row.id), "status": row.status, "title": row.title, "language": row.language,
+                        "topic": row.topic or ""}
         return None
 
     def published_for_export(
@@ -1945,7 +2088,7 @@ class ReadingContentRepository:
         query = (
             select(
                 ReadingArticle.id, ReadingArticle.title, ReadingArticle.body, ReadingArticle.language,
-                ReadingArticle.topic, ReadingArticle.subtopic, ReadingArticle.content_kind,
+                ReadingArticle.topic, ReadingArticle.subtopic, ReadingArticle.content_kind, ReadingArticle.reviewed_level,
                 ReadingSourceItem.canonical_url, ReadingSourceItem.original_author,
                 ReadingSourceItem.original_published_at, ReadingSourceItem.rights_snapshot_json.label("rights_snapshot"),
                 ReadingSource.slug.label("source_slug"), ReadingSource.automation_allowed.label("source_automation"),
@@ -1963,10 +2106,12 @@ class ReadingContentRepository:
         with self.engine.connect() as connection:
             rows = connection.execute(query).all()
             decisions = self._rights_decisions(connection, [row.id for row in rows])
+            marks = self._review_marks(connection, [row.id for row in rows])
         exported = []
         for row in rows:
             answered = [entry["answers"] for entry in decisions.get(row.id, [])]
             effective = overlay_rights(row.rights_snapshot, answered, row.source_automation)
+            mark = marks.get(row.id, {})
             exported.append({
                 "origin_id": str(row.id), "title": row.title, "body": row.body, "language": row.language,
                 "topic": row.topic, "subtopic": row.subtopic, "content_kind": row.content_kind,
@@ -1974,6 +2119,11 @@ class ReadingContentRepository:
                 "published_at": _iso(row.original_published_at), "source_slug": row.source_slug,
                 "rights": {key: effective.get(key) for key in ("can_republish", "can_adapt", "attribution_required",
                                                                   "license_note") if key in effective},
+                # An administrator's review travels with the text (#411): the reviewed level, and when the level and
+                # the topic were reviewed - never who reviewed them (a pack carries no personal data).
+                "reviewed_level": row.reviewed_level,
+                "review": {key: {"by": "administrator", "at": mark[f"{key}_at"]}
+                           for key in ("level", "topic") if f"{key}_at" in mark},
             })
         return exported
 

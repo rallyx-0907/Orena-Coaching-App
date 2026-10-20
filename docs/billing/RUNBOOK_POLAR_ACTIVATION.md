@@ -20,7 +20,8 @@ usage.
 - The code is merged: revision 8.2 (#254) and PR-MON-10.
 - The sandbox end-to-end run (`PR-MON-10_DESIGN.md` §6) passed and its payloads were captured.
 - PostgreSQL is the runtime, with the account backbone on (`ORENA_ACCOUNT_BACKBONE=on`).
-- `APP_ENV=production`, with Google sign-in configured.
+- A public `APP_ENV` (`staging` or `production`, never `development`), with Google sign-in configured. Plan billing needs neither in
+  particular: `:8000` stays `staging` (`GATE_7B_APPROVAL_PACKAGE.md`).
 - A public **HTTPS** `PUBLIC_BASE_URL`.
 - Migrations up to `20261015_0033` are applied (`RUNBOOK_MIGRATION_0027_0033.md`), after a fresh, verified backup.
 
@@ -49,9 +50,10 @@ usage.
    - customers may update their subscription: `allow_customer_updates` on;
    - plan changes are allowed between the four products: `update_plan` on;
    - proration is **invoice** (`proration_behavior=invoice`): the difference is charged at once.
-   - On a downgrade, the unused part of the higher plan must count against the lower one (owner, D-MON-035).
-     Sandbox subscription D (2026-10-19) shows whether `invoice` credits it. If it does not, this step names the
-     setting that does, before P2 is approved.
+   - On a downgrade, the unused part of the higher plan counts against the lower one (owner, D-MON-035). With
+     `invoice`, Polar applies a portal downgrade at once and credits the unused part to the next invoice. This was
+     proven on sandbox subscription D (2026-10-19): Pro to Plus, and the renewal charged $0.11 instead of $9.99. Keep
+     `invoice`.
 3. **Organization access token** with exactly these scopes (each proved on the sandbox token, 2026-10-18; PR-MON-9
    review P1-4):
    - `checkouts:write`: the embedded and hosted checkout;

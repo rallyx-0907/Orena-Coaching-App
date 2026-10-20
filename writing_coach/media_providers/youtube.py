@@ -23,6 +23,7 @@ from youtube_transcript_api._errors import (
 )
 
 from writing_coach.media_providers.supadata import (
+    NATIVE_MODE,
     SupadataTranscriptClient,
     SupadataTranscriptMalformed,
     SupadataTranscriptRequestFailed,
@@ -39,6 +40,8 @@ from writing_coach.media_ingestion import (
     primary_language,
 )
 from writing_coach.media_transcript_quality import CaptionUnit, clean_caption_units
+from writing_coach.media_caption_timing import KIND_UNKNOWN, classify_caption_kind, clip_to_next_start
+from writing_coach.media_segmentation import Cue
 from writing_coach.media_learning import (
     MediaLearningAsset,
     MediaLearningContractError,
@@ -373,11 +376,15 @@ def normalize_youtube_transcript(
         normalized.append((start_ms, start_ms + duration_ms, provider_order, text))
 
     normalized.sort(key=lambda item: (item[0], item[1], item[2]))
+    # A caption's own end is when it leaves the screen; an automatic track rolls, so that is the start of the cue after
+    # next. Each cue ends no later than the next one starts (D-020, P0 2026-10-20): provider timing only, no audio.
+    clipped, _changed = clip_to_next_start(Cue(start_ms, end_ms, text) for start_ms, end_ms, _order, text in normalized)
+    normalized = [(cue.start_ms, cue.end_ms, order, cue.text) for cue, (_s, _e, order, _t) in zip(clipped, normalized, strict=True)]
     fingerprint_occurrences: dict[str, int] = {}
     segments_list: list[TranscriptSegment] = []
     for order, (start_ms, end_ms, _provider_order, text) in enumerate(normalized):
         fingerprint = hashlib.sha256(
-            f"{start_ms}\0{end_ms}\0{text}".encode("utf-8")
+            f"{start_ms}\0{end_ms}\0{text}".encode()
         ).hexdigest()
         occurrence = fingerprint_occurrences.get(fingerprint, 0)
         fingerprint_occurrences[fingerprint] = occurrence + 1
@@ -399,6 +406,20 @@ def normalize_youtube_transcript(
         )
     except MediaLearningContractError as exc:
         raise ProviderTranscriptMalformed() from exc
+
+
+def track_caption_kind(track: YouTubeCaptionTrack) -> str:
+    """The track's kind: the provider's word when it gave one, else read from the raw cues (`>>`, `[music]`, the rolling
+    overlap of automatic captions) before any cue is re-timed."""
+    cues = []
+    for snippet in track.snippets:
+        try:
+            start = round(_finite_number(snippet.start_seconds) * 1000)
+            end = start + max(1, round(_finite_number(snippet.duration_seconds) * 1000))
+        except ProviderTranscriptMalformed:
+            continue
+        cues.append(Cue(start, end, str(snippet.text or "")))
+    return classify_caption_kind(track.kind, cues)
 
 
 def _finite_number(value: object) -> float:
@@ -472,10 +493,12 @@ class YouTubeMediaProviderAdapter:
         )
         if not snippets:
             return None
+        # Supadata does not say whether a track is manual or automatic (D-215): the kind is read from the cues instead.
         return YouTubeCaptionTrack(
             source_language=result.language,
             snippets=snippets,
-            kind="auto",
+            kind=KIND_UNKNOWN,
+            provider="supadata",
         )
 
     def recognizes(self, source_url: str) -> bool:
@@ -515,20 +538,22 @@ class YouTubeMediaProviderAdapter:
         if track is not None:
             try:
                 transcript = normalize_youtube_transcript(asset_id, track)
-                caption_kind = str(track.kind or "")
+                caption_kind = track_caption_kind(track)
                 caption_provider = str(track.provider or "")
             except ProviderTranscriptMalformed:
                 native_malformed = True
 
         if transcript is None and not isinstance(native_caption_error, TraditionalChineseNotAccepted):
+            # Native captions only: `auto`/`generate` could have the provider transcribe the audio (D-244, 2026-10-20).
             fallback_track = self._fallback_track(
                 canonical_url,
                 source_language,
-                mode="generate" if native_malformed else "auto",
+                mode=NATIVE_MODE,
             )
             if fallback_track is not None:
                 transcript = normalize_youtube_transcript(asset_id, fallback_track)
-                caption_kind = str(fallback_track.kind or "")
+                caption_kind = track_caption_kind(fallback_track)
+                caption_provider = str(fallback_track.provider or "")
 
         if transcript is None and not self._defer_transcript_recovery:
             if native_malformed:

@@ -85,3 +85,24 @@ def _fresh_provider_catalogue_cache():
 
     providers.reset_catalogue_cache()
     yield
+
+
+LISTENING_FIXTURE_MANIFEST = Path(__file__).parent / "tests" / "fixtures" / "listening_catalog.fixture.v1.json"
+
+
+@pytest.fixture
+def fixture_listening_catalog(monkeypatch):
+    """A fixture-local Listening catalogue for the tests that exercise catalogue lessons.
+
+    The shipped built-in catalogue is empty since D-245 (its six sample lessons were retired), so a test that needs a
+    curated lesson loads this copy of the retired manifest through the real loader and puts it where every learner
+    path reads it (`listening_catalog.CATALOG` / `CATALOG_SOURCES`, read by `catalog_lesson` and `catalog_lessons`).
+    The shipped manifest is never touched. Returns the loaded lessons.
+    """
+
+    from writing_coach import listening_catalog
+
+    sources, lessons = listening_catalog.load_catalog_manifest(LISTENING_FIXTURE_MANIFEST)
+    monkeypatch.setattr(listening_catalog, "CATALOG", lessons)
+    monkeypatch.setattr(listening_catalog, "CATALOG_SOURCES", sources)
+    return lessons

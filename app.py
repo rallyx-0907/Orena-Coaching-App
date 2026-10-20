@@ -201,6 +201,7 @@ from writing_coach.ai.router.tap import (
 )
 from writing_coach.ai.router.router import count_event as router_count_event
 from writing_coach.tap_sense_model import enabled as sense_choice_enabled, sense_choice_seam
+from writing_coach.bilingual_dictionary import lookup as bilingual_pack_lookup
 from writing_coach.reading_prefetch import Prefetcher, install_log_handler
 from writing_coach.product.service import configure_product_repository
 from writing_coach.product.catalog import configure_plan_store
@@ -674,6 +675,8 @@ except ValueError as exc:
 
 # PRE-502 R8 (owner, 2026-10-19 16:26): usage counts kept 12 months, administrators' audit records 24 months. Each sweep
 # is deletion, off until its switch is on (an unclear value refuses to start); PostgreSQL only. Same daily schedule.
+# BQ: each switch is now a policy (`usage.retention_sweep`, `admin_audit.retention_sweep`) read at every tick, so Admin
+# can switch it on without a restart; the variable still pins it.
 from writing_coach.agent.retention import sweep_enabled as _retention_switch  # noqa: E402
 from writing_coach.persistence import retention_sweeps as _retention_sweeps  # noqa: E402
 
@@ -684,13 +687,13 @@ if _persistence_runtime.backend == "postgresql" and _persistence_runtime.engine 
     _r8_retention = [
         FeedbackRetentionSchedule(
             lambda before, limit: _retention_sweeps.delete_usage_before(_persistence_runtime.engine, before, limit),
-            enabled=lambda: _retention_switch(os.environ, _retention_sweeps.USAGE_SWEEP_SWITCH),
+            enabled=lambda: _policies.value("usage.retention_sweep"),  # BQ: Admin's switch; the variable pins it
             days=_retention_sweeps.USAGE_RETENTION_DAYS,
             label="usage counts",
         ),
         FeedbackRetentionSchedule(
             lambda before, limit: _retention_sweeps.delete_admin_audit_before(_persistence_runtime.engine, before, limit),
-            enabled=lambda: _retention_switch(os.environ, _retention_sweeps.ADMIN_AUDIT_SWEEP_SWITCH),
+            enabled=lambda: _policies.value("admin_audit.retention_sweep"),
             days=_retention_sweeps.ADMIN_AUDIT_RETENTION_DAYS,
             label="admin audit records",
         ),
@@ -806,6 +809,8 @@ _reading_lookup_service = ReadingLookupService(
     # D-228: the model step of the sense choice, only when the zero-cost rules tie; off until the capability is enabled.
     sense_choice=sense_choice_seam,
     sense_choice_enabled=sense_choice_enabled,
+    # The open bilingual pack for the pair (EN->VI and others): after the catalogue, before any translation, free.
+    bilingual_dictionary=bilingual_pack_lookup,
 )
 configure_reading_lookup(_reading_lookup_service)
 install_log_handler()  # D-200: the prefetch's counts-only INFO lines reach the server log
@@ -1155,9 +1160,13 @@ def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
 
 
 # The system-wide daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD; AI_DAILY_SPEND_WARN_RATIO, default 0.8): unset, no
-# ceiling. An unreadable value refuses to start rather than guess.
-_spend_gate.configure_ceiling(_spend_gate.ceiling_from_env(os.environ), read=_system_ai_spend_since,
-                              warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
+# ceiling. An unreadable value refuses to start rather than guess. BQ: both are read at each check through the policies
+# (`ai.daily_spend_ceiling_usd` can only lower the environment's ceiling; `ai.daily_spend_warn_ratio`), so Admin tunes
+# them without a restart.
+_spend_gate.ceiling_from_env(os.environ)
+_spend_gate.warn_ratio_from_env(os.environ)
+_spend_gate.configure_ceiling(_spend_gate.live_ceiling, read=_system_ai_spend_since,
+                              warn_ratio=_spend_gate.live_warn_ratio)
 # Every response a ceiling refusal touched says so: `X-Orena-AI-Paused: <resets_at>` (the client's one signal).
 _spend_gate.install_paused_header(app)
 # PRE-502 R1/R2 (#369): on a public runtime each published promise not in force is an ERROR at start (no ceiling, a
@@ -1419,7 +1428,10 @@ def _memory_store(keys):
     return PostgresMemoryRepository(_persistence_runtime.engine, keys)
 
 
-_configure_agent_memory(_MemoryRuntime.from_env(os.environ, _account_backbone, _memory_store))
+# BQ: the expired-memory sweep follows `agent.memory_retention_sweep` (AGENT_MEMORY_RETENTION_SWEEP pins it), read when
+# a sweep is due, so Admin can switch it on without a restart.
+_configure_agent_memory(_MemoryRuntime.from_env(os.environ, _account_backbone, _memory_store,
+                                                enabled=lambda: _policies.value("agent.memory_retention_sweep")))
 
 
 def _reading_cache_incarnation(user_key: str) -> str | None:
@@ -1444,6 +1456,7 @@ app.include_router(work_router)
 # it is on and this runtime has no quota store (SQLite, missing tables, account backbone off) every enforced meter
 # answers 503 instead of running unmetered.
 from writing_coach.product import quota as _quota  # noqa: E402
+from writing_coach.product import assist_meters as _assist  # noqa: E402
 from writing_coach.product.service import configure_product_usage, product_service as _product_service  # noqa: E402
 
 _QUOTA_TABLES = ("commerce_quota_buckets", "commerce_quota_reservations", "account_incarnations")
@@ -1755,7 +1768,9 @@ from writing_coach.product.entitlement import COMMERCE_TABLES as _COMMERCE_TABLE
 _billing_readiness.configure(_billing_readiness.RuntimeFacts(
     switch=_billing_enabled(os.environ),
     # PR-MON-10: pausing new sales keeps webhooks, the portal and the clean-up running (RUNBOOK_POLAR_ACTIVATION)
-    new_sales=os.getenv("BILLING_NEW_SALES", "on").strip().casefold() not in {"0", "false", "no", "off"},
+    # BQ: `billing.new_sales` in Admin (BILLING_NEW_SALES pins it), read strictly at each readiness report: an
+    # unreadable store keeps new sales closed (review of #428).
+    new_sales=_billing_readiness.policy_new_sales,
     backend=str(_persistence_runtime.backend or ""),
     backbone=_account_backbone.state,
     commerce_schema=lambda: _schema_state(_COMMERCE_TABLES),
@@ -2830,6 +2845,15 @@ def generate_practice_task(payload: TaskGenerateIn) -> dict[str, Any]:
     topic_text = topic_instruction(requested_topic)
     target_level = validate_target_level(payload.target_cefr)
 
+    # PR-MON-7B2a: a generated task is one `writing.task` request, admitted before the provider (outside the try, so a
+    # refusal is never turned into the built-in task) and settled 0 when the built-in task answers instead.
+    digest = ("writing-task", payload.model_dump(), target_level)
+    with _assist.fresh(_assist.WRITING_TASK, digest=digest, ref="writing-task") as ticket:
+        return _generated_practice_task(payload, ticket, requested_topic, guidance, topic_text, target_level)
+
+
+def _generated_practice_task(payload: TaskGenerateIn, ticket: Any, requested_topic: str, guidance: str,
+                             topic_text: str, target_level: str) -> dict[str, Any]:
     schema = {
         "type": "object",
         "properties": {
@@ -2845,7 +2869,6 @@ def generate_practice_task(payload: TaskGenerateIn) -> dict[str, Any]:
         },
         "required": ["title", "instruction", "checklist", "topic"],
     }
-
     try:
         ai = generate_structured(
             messages=[
@@ -2878,6 +2901,7 @@ def generate_practice_task(payload: TaskGenerateIn) -> dict[str, Any]:
         if not title or not instruction or len(checklist) < 2:
             raise ValueError("Task generator returned incomplete structured output")
 
+        ticket.settle(1, "writing-task")
         return {
             "title": title,
             "instruction": instruction,
@@ -2890,6 +2914,7 @@ def generate_practice_task(payload: TaskGenerateIn) -> dict[str, Any]:
     except AICapabilityError:
         raise
     except Exception:
+        ticket.settle(0, "writing-task:built-in")
         return fallback_practice_task(payload)
 
 
@@ -3254,14 +3279,17 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
         return {"phonetic": ""}  # a cache-only read that missed: no network, no AI
 
     if language == "zh" or (language is None and is_chinese()):
-        try:
-            payload = chinese_dictionary_ai(clean)
-            payload["cached"] = False
-        except Exception as exc:
-            raise HTTPException(
-                503,
-                "Chinese dictionary AI is unavailable.",
-            ) from exc
+        # PR-MON-7B2a: a dictionary entry the AI writes is one `word.assist` request (after the cache missed); the
+        # gate's refusal is admitted outside the try, so it is never reported as "dictionary unavailable".
+        with _assist.fresh(_assist.WORD_ASSIST, digest=("dictionary", "zh", cache_key), ref="dictionary:zh"):
+            try:
+                payload = chinese_dictionary_ai(clean)
+                payload["cached"] = False
+            except Exception as exc:
+                raise HTTPException(
+                    503,
+                    "Chinese dictionary AI is unavailable.",
+                ) from exc
     else:
         _external_started = time.perf_counter()
         transient_miss = False
@@ -3317,14 +3345,15 @@ def lookup_dictionary(word: str, *, language: str | None = None, allow_ai: bool 
                 # `unreachable`: the dictionary could not be asked (timeout, rate limit), so the answer is not "no entry"
                 # and must not be remembered as one.
                 return {"phonetic": "", "unreachable": True} if transient_miss else {"phonetic": ""}
-            try:
-                payload = dictionary_ai_fallback(clean)
-                payload["cached"] = False
-            except Exception as exc:
-                raise HTTPException(
-                    503,
-                    "Dictionary service is unavailable and AI fallback failed.",
-                ) from exc
+            with _assist.fresh(_assist.WORD_ASSIST, digest=("dictionary", "en", cache_key), ref="dictionary:ai"):
+                try:
+                    payload = dictionary_ai_fallback(clean)
+                    payload["cached"] = False
+                except Exception as exc:
+                    raise HTTPException(
+                        503,
+                        "Dictionary service is unavailable and AI fallback failed.",
+                    ) from exc
 
     if persist:
         _learning_cache.put_dictionary(
@@ -3542,21 +3571,24 @@ def api_translate(payload: TranslateIn) -> dict[str, Any]:
             "Translate phrases by meaning, not word by word. Keep notes concise."
         )
 
-    try:
-        result = ai_json(
-            "learner_translation",
-            [
-                {"role": "system", "content": system},
-                {"role": "user", "content": payload.text},
-            ],
-            schema,
-            num_predict=550,
-            temperature=0.0,
-        )
-        result["text"] = payload.text
-        return result
-    except Exception as exc:
-        raise HTTPException(503, "AI translation is unavailable.") from exc
+    # PR-MON-7B2a: translating a word or phrase is one `word.assist` request (nothing caches it), admitted outside the try
+    # so the gate's refusal keeps its own status.
+    with _assist.fresh(_assist.WORD_ASSIST, digest=("translate", is_chinese(), payload.text), ref="translate"):
+        try:
+            result = ai_json(
+                "learner_translation",
+                [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": payload.text},
+                ],
+                schema,
+                num_predict=550,
+                temperature=0.0,
+            )
+            result["text"] = payload.text
+            return result
+        except Exception as exc:
+            raise HTTPException(503, "AI translation is unavailable.") from exc
 
 @app.get("/api/dictionary")
 def api_dictionary(word: str, response: Response = None) -> dict[str, Any]:

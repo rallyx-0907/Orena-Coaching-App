@@ -7,7 +7,8 @@ globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
 globalThis.window ??= { addEventListener() {}, removeEventListener() {}, location: { hash: '' } };
 
 const src = (path) => readFileSync(path, 'utf8');
-const RESETS = '2026-10-20T00:00:00Z';
+// The next UTC midnight, so the reset time is always in the future (a fixed date expired on 2026-10-20 and broke CI).
+const RESETS = (() => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.toISOString().replace('.000Z', 'Z'); })();
 
 const answer = (status, body, headers = {}) => ({
   ok: status >= 200 && status < 300,
@@ -78,17 +79,31 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(pausedLineOf(null), '');
 }
 
+// 1b. PR-MON-7B2a: a sheet or reading room whose AI help is a plan meter says the meter's own sentence, in the same place
+// and with no Retry, when the allowance is spent; the pause still wins; a fault is still nothing.
+{
+  const { refusalLineOf, pausedMessage } = await import('../static/orena/screens/plan/quota-notice.js');
+  const spent = (feature) => Object.assign(new Error('x'), { status: 429, category: 'quota_exhausted', context: { feature, used: 30, limit: 30 } });
+  assert.equal(refusalLineOf(spent('word.assist')), 'You have used 30 of 30 word explanations today.');
+  assert.equal(refusalLineOf(spent('reading.assist')), 'You have used 30 of 30 reading helps today.');
+  assert.equal(refusalLineOf(spent('writing.task')), 'You have used 30 of 30 writing prompts today.');
+  const paused = Object.assign(spent('word.assist'), { aiPaused: RESETS });
+  assert.equal(refusalLineOf(paused), pausedMessage(RESETS), 'the system pause is told first');
+  assert.equal(refusalLineOf(Object.assign(new Error('x'), { status: 503 })), '', 'a fault is never a plan line');
+  assert.equal(refusalLineOf(null), '');
+}
+
 // 2. Each surface shows the line in its own failed-request place, with no retry (pinned at the source).
 {
   const reader = src('static/orena/screens/reader/screen.js');
-  assert.ok(/pausedLineOf\(error\)/.test(reader) && /translationState === 'failed' && translationPause\) return html`[^`]*\$\{translationPause\}<\/p>`/.test(reader), 'Reader: the translation says the pause, with no Retry button');
+  assert.ok(/refusalLineOf\(error\)/.test(reader) && /translationState === 'failed' && translationPause\) return html`[^`]*\$\{translationPause\}<\/p>`/.test(reader), 'Reader: the translation says the pause, with no Retry button');
   assert.ok(/summary\.state === 'failed' && summaryPause\) return html`[^`]*\$\{summaryPause\}<\/div>`/.test(reader), 'Reader: the summary says the pause, with no Retry button');
   const listening = src('static/orena/screens/listening/screen.js');
   assert.ok(/const meaningPause = pausedLineNow\(\['\/api\/media\/', '\/api\/listening'\]\)/.test(listening) && /toast\(meaningPause \|\| t\('meaningUnavailable'\)\)/.test(listening), 'Listening: a 200 with its meaning unavailable says the pause');
   const vocab = src('static/orena/screens/listening/vocab-sheet.js');
-  assert.ok(/paused = pausedLineOf\(error\)/.test(vocab) && /pauseLine \? html`<div class="s-vocab__empty" role="status">/.test(vocab), 'Vocabulary Focus: the pause is said once above the terms');
+  assert.ok(/paused = refusalLineOf\(error\)/.test(vocab) && /pauseLine \? html`<div class="s-vocab__empty" role="status">/.test(vocab), 'Vocabulary Focus: the pause is said once above the terms');
   const sheet = src('static/orena/screens/quick-sheet/sheet.js');
-  assert.ok(/aiPause = pausedLineOf\(error\)/.test(sheet) && /\$\{aiPause \|\| t\('noGlossNotice'\)\}/.test(sheet), 'word sheet: the pause replaces the no-gloss notice');
+  assert.ok(/aiPause = refusalLineOf\(error\)/.test(sheet) && /sheetPause = refusalLineOf\(error\)/.test(sheet) && /\$\{aiPause \|\| t\('noGlossNotice'\)\}/.test(sheet), 'word sheet: the pause replaces the no-gloss notice');
   assert.ok(/contextualFailed && aiPause\) return html`[^`]*\$\{aiPause\}/.test(sheet), 'word sheet: "Why here?" says the pause with no Retry');
   assert.ok(/if \(aiPause\) return html`<div class="s-qs__panel" role="status">\$\{aiPause\}<\/div>`/.test(sheet), 'sentence sheet: the Translation tab says the pause with no Retry');
   assert.ok(/sheetPause && !sheetData\.structure\.length/.test(sheet) && /sheetPause && !sheetData\.vocabulary\.length/.test(sheet), 'sentence sheet: Structure and Vocabulary say the pause');
@@ -101,7 +116,7 @@ const answer = (status, body, headers = {}) => ({
   assert.ok(/if \(turnPause\) return html`[^`]*\$\{turnPause\}<\/span>\$\{endButton\(\)\}<\/div>`/.test(conversation), 'Conversation: the pause replaces the reply-failed line and its retry button');
   assert.ok(/paused: pausedLineOf\(error\)/.test(conversation) && /\$\{card\.paused \|\| t\('coachingUnavailable'\)\}/.test(conversation), 'Conversation: the coaching card says the pause');
   const word = src('static/orena/screens/word/screen.js');
-  assert.ok(/wordPause = pausedLineOf\(error\)/.test(word) && /s-word-empty" role="status">\$\{wordPause\}/.test(word), 'Word deep screen: the deep panel says the pause');
+  assert.ok(/wordPause = refusalLineOf\(error\)/.test(word) && /s-word-empty" role="status">\$\{wordPause\}/.test(word), 'Word deep screen: the deep panel says the pause');
   const planCopy = src('static/orena/screens/plan/copy.js');
   for (const line of ['Every plan includes all reading, listening, speaking practice,', 'Mọi gói đều gồm đầy đủ luyện đọc, nghe, luyện nói,', '每个套餐都包含全部阅读、听力、口语练习、']) assert.ok(planCopy.includes(line), line);
   const api = src('static/orena/infrastructure/api.js');
