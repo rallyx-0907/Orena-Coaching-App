@@ -303,6 +303,9 @@ export default async function mountShadowing(element, ctx) {
       recorder: createLocalAudioRecorder(),
       language: lesson.language,
       keep: { assetId: lesson.assetId, segmentId: segment().id },
+      // Scored shadowing is a Plus tool around this video (D-248 §4): the server checks the plan by the video.
+      practice: 'shadowing',
+      mediaId: lesson.assetId || '',
       onChange: onTakeChange,
     });
   }

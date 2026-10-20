@@ -15,6 +15,9 @@ Proved here, hermetically (SQLite Reading engine, in-memory settings and quota d
 from __future__ import annotations
 
 import asyncio
+import math
+import random
+import uuid
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 
@@ -65,22 +68,40 @@ def test_the_same_item_always_gets_the_same_tier():
 def test_about_thirty_percent_of_a_level_is_free(size):
     free, rotation = content_access.reading_free_ids(_ids(size), free_percent=30, rotation_per_week=2, week="2026-W43")
     share = len(free) / size
-    assert 0.30 <= share <= 0.36, share
+    assert 0.25 <= share <= 0.35, share
     assert len(rotation) == 2 and not (rotation & free), "the rotation comes from the Plus pool"
 
 
 @pytest.mark.parametrize("size", [1, 2, 3, 7])
 def test_a_small_level_still_has_its_floor(size):
     free, _rotation = content_access.reading_free_ids(_ids(size), free_percent=30, rotation_per_week=0, week="2026-W43")
-    assert len(free) >= -(-30 * size // 100)
+    assert len(free) >= max(1, math.ceil(content_access.split_share(30) * size))
 
 
-def test_publishing_more_never_takes_a_free_article_away():
-    pool = _ids(200)
-    before, _ = content_access.reading_free_ids(pool, free_percent=30, rotation_per_week=0, week="2026-W43")
-    newer = [(f"b{index:05d}", NOW + timedelta(days=index + 1)) for index in range(300)]
-    after, _ = content_access.reading_free_ids(pool + newer, free_percent=30, rotation_per_week=0, week="2026-W43")
-    assert before <= after
+def test_a_single_publish_never_takes_a_free_article_away():
+    """Property (review of #466, P1): over many random pools, n from 1, publishing one newer article - in the hash
+    bucket or not - never turns a Free article Plus."""
+    rng = random.Random(466)
+    for trial in range(3000):
+        size = 1 + trial % 60
+        pool = [(uuid.UUID(int=rng.getrandbits(128)).hex, NOW - timedelta(hours=size - index)) for index in range(size)]
+        before, _ = content_access.reading_free_ids(pool, free_percent=30, rotation_per_week=0, week="2026-W43")
+        added = (uuid.UUID(int=rng.getrandbits(128)).hex, NOW + timedelta(minutes=1))
+        after, _ = content_access.reading_free_ids(pool + [added], free_percent=30, rotation_per_week=0, week="2026-W43")
+        assert before <= after, (size, before - after)
+    only, _ = content_access.reading_free_ids([("only", NOW)], free_percent=30, rotation_per_week=0, week="2026-W43")
+    assert only == {"only"}, "a level of one article has it Free"
+
+
+def test_a_publish_during_the_week_never_reshuffles_its_rotation():
+    week = content_access.iso_week(NOW)
+    pool = _ids(400)
+    _, picks = content_access.reading_free_ids(pool, free_percent=30, rotation_per_week=2, week=week)
+    rng = random.Random(7)
+    for _ in range(50):
+        pool = pool + [(uuid.UUID(int=rng.getrandbits(128)).hex, NOW + timedelta(minutes=rng.randrange(1, 5000)))]
+        _, later = content_access.reading_free_ids(pool, free_percent=30, rotation_per_week=2, week=week)
+        assert later == picks
 
 
 def test_the_rotation_is_stable_within_a_week_and_changes_across_weeks():
@@ -103,7 +124,7 @@ def test_decide_reads_the_pool_and_the_policies():
         assert {d.tier for d in decisions.values()} == {"free", "plus"}
         assert sum(d.rotation for d in decisions.values()) == 2
         free_share = sum(d.tier == "free" for d in decisions.values()) / len(pool)
-        assert 0.30 <= free_share <= 0.40
+        assert 0.24 <= free_share <= 0.38
     with installed(MemoryPolicyStore({"access.reading_free_percent": 100})):
         content_access.clear_caches()
         assert all(content_access.access_tier(Item("reading", item_id, "en", "B1")) == "free" for item_id, _ in pool)
@@ -257,14 +278,42 @@ def test_a_plus_body_is_private_even_while_enforcement_is_off(reading):
     assert response.headers["cache-control"].startswith("private")
 
 
-def test_a_free_body_keeps_its_short_shared_cache(reading):
+def test_a_free_body_is_private_too_because_its_tier_can_change(reading):
+    """A Free body today may be Plus after Monday's rotation or an override: no shared cache may outlive that."""
     article_id = reading.publish()
     content_access.save_overrides({"set": {f"reading:{article_id}": "free"}}, actor="sub-admin")
     _plan_for(catalog.FREE)
     with installed(MemoryPolicyStore({"access.enforced": True})):
         response = call(reading.app, "GET", f"/api/reading/articles/{article_id}")
     assert response.status_code == 200
-    assert response.headers["cache-control"].startswith("public")
+    assert response.headers["cache-control"].startswith("private") and response.headers["vary"] == "Cookie"
+    assert "etag" in response.headers, "revalidation stays cheap"
+
+
+def test_the_practice_set_of_a_plus_article_is_refused_the_same_way(reading):
+    from writing_coach import reading_practice_api
+
+    article_id = reading.publish()
+    _make_plus(reading, article_id)
+
+    class Practice:
+        def served_set(self, article_id, support_language):
+            return {"questions": []}
+
+        def article_is_published(self, article_id):
+            return True
+
+    reading_practice_api.configure_reading_practice(Practice(), support_language=lambda: "vi")
+    try:
+        _plan_for(catalog.FREE)
+        with installed(MemoryPolicyStore({"access.enforced": True})):
+            with pytest.raises(HTTPException) as refused:
+                reading_practice_api.article_set(article_id, SimpleNamespace(headers={}))
+            assert refused.value.status_code == 403 and refused.value.detail["category"] == "plan_required"
+            _plan_for(catalog.PLUS)
+            assert reading_practice_api.article_set(article_id, SimpleNamespace(headers={}))["set"] == {"questions": []}
+    finally:
+        reading_practice_api.configure_reading_practice(None, support_language=None)
 
 
 def test_an_unknown_article_is_a_404_before_any_403(reading):
@@ -364,6 +413,29 @@ def test_the_plus_tools_are_refused_to_free_and_open_to_plus(tool):
         assert (context["kind"], context["item_id"], context["tool"]) == ("media_tool", "yt-1", tool)
         _plan_for(catalog.PLUS)
         content_access.require_media_tool(tool, "yt-1")
+
+
+def test_scored_shadowing_cannot_skip_its_video_link():
+    from writing_coach.speech_api import _require_practice_access
+
+    _plan_for(catalog.FREE)
+    with installed():
+        _require_practice_access("", "")  # off: an old client is not refused
+    with installed(MemoryPolicyStore({"access.enforced": True})):
+        for practice, media_id, expected in (("", "", "pronunciation_practice_required"),
+                                             ("shadowing", "", "pronunciation_media_required"),
+                                             ("karaoke", "", "pronunciation_practice_invalid")):
+            with pytest.raises(HTTPException) as refused:
+                _require_practice_access(practice, media_id)
+            assert refused.value.status_code == 422 and refused.value.detail["category"] == expected
+        with pytest.raises(HTTPException) as refused:
+            _require_practice_access("shadowing", "yt-1")
+        assert refused.value.status_code == 403 and refused.value.detail["context"]["tool"] == "shadowing_score"
+        with pytest.raises(HTTPException):
+            _require_practice_access("speaking", "yt-1")  # a take that names a video is a video tool
+        _require_practice_access("speaking", "")  # Speaking practice is not gated
+        _plan_for(catalog.PLUS)
+        _require_practice_access("shadowing", "yt-1")
 
 
 def test_the_dictation_route_refuses_free_before_writing():

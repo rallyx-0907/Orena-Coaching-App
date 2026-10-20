@@ -62,6 +62,10 @@ export function createSpeakingTake({
   now = () => Date.now(),
   urls = globalThis.URL,
   keep = null,
+  // Which practice this take belongs to (`speaking` | `shadowing`) and, for shadowing, its video: the server gates
+  // scored shadowing by plan (D-248 §4).
+  practice = 'speaking',
+  mediaId = '',
   onChange = () => {},
 }) {
   let generation = 0;
@@ -143,7 +147,7 @@ export function createSpeakingTake({
     const line = String(reference || '').trim();
     set({ phase: TAKE.PROCESSING, error: null, result: null, kept: null, attemptId: '', reference: line });
     try {
-      const result = await api.assessPronunciation(take.blob, language, line, 'scripted', 'recording.webm', { idempotencyKey: takeKey });
+      const result = await api.assessPronunciation(take.blob, language, line, 'scripted', 'recording.webm', { idempotencyKey: takeKey, practice, mediaId });
       if (disposed || mine !== generation) return;
       set({ phase: TAKE.RESULT, result });
       if (keep) void remember(result, mine);

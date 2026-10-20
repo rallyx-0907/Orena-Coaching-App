@@ -114,6 +114,20 @@ def next_article(response: Response) -> dict[str, Any]:
             "support_language": _support()}
 
 
+def _require_article_access(article_id: str) -> None:
+    """A practice set is part of its article (D-248 §6): a Plus article's set is the same 403 `plan_required` as its
+    body, after the 404 for an id that is no published article."""
+    from writing_coach import reading_articles_api
+    from writing_coach.product import content_access
+
+    articles = reading_articles_api._repository
+    if articles is None:
+        return
+    article = reading_articles_api._guarded(lambda: articles.get_published_article(article_id))
+    if article is not None:
+        content_access.require_reading(article)
+
+
 @router.get("/articles/{article_id}")
 def article_set(article_id: str, response: Response) -> dict[str, Any]:
     _no_store(response)
@@ -123,6 +137,7 @@ def article_set(article_id: str, response: Response) -> dict[str, Any]:
         # body. Only an id that is no published article is "not found".
         if not _guarded(lambda: _repo().article_is_published(article_id)):
             raise orena_http_error(404, "reading_set_not_available", "This article is not available.")
+    _require_article_access(article_id)
     return {"set": served, "submit_enabled": submit_enabled(), "support_language": _support()}
 
 

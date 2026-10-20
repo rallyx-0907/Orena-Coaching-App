@@ -9,12 +9,12 @@ table and no cron. Only exceptions are stored: a bounded list of per-item overri
 Rules, per kind:
 
 * **Reading article** (`reading`). In each (language, level) pool of published articles:
-  - a *stable bucket*: `int(sha256(id)[:8], 16) % 100 < free_percent` is Free. The bucket never flips when other
-    articles are published (a ranking would);
-  - a *floor*: at least `ceil(free_percent% x n)` of the pool is Free; when the buckets give fewer, the earliest
-    published articles are added;
-  - a *weekly rotation*: from the rest (the Plus pool), the `rotation_per_week` articles with the smallest
-    `sha256("<ISO week>:<id>")` are Free that week (ISO week, UTC, Monday 00:00);
+  - Free = a *floor* (the earliest `ceil(s x n)` published) UNION a *stable bucket* (`int(sha256(id)[:8], 16) % 100 <
+    s x 100`), with `s = 1 - sqrt(1 - free_percent)` so the union is about `free_percent` of the pool. Both parts only
+    grow as articles are published, so a publish never takes a Free article away (review of #466, P1);
+  - a *weekly rotation*: from the Plus pool as it stood at the start of the ISO week (UTC, Monday 00:00), the
+    `rotation_per_week` articles with the smallest `sha256("<ISO week>:<id>")` are Free that week; a publish during
+    the week never reshuffles them;
   - everything else is Plus.
 * **Media** (`media`, YouTube or other). Watching is **always** Free, at every plan, after any weekly cap: YouTube API
   Services Developer Policies III.F.3.a ("API Clients must not charge users to watch content in an embedded YouTube
@@ -140,25 +140,58 @@ def _rotation_rank(week: str, item_id: str) -> str:
 
 def reading_free_ids(pool: Iterable[tuple[str, Any]], *, free_percent: int, rotation_per_week: int,
                      week: str) -> tuple[frozenset[str], frozenset[str]]:
-    """(the Free ids of one (language, level) pool by bucket and floor, the week's rotation picks).
+    """(the Free ids of one (language, level) pool, the week's rotation picks).
+
+    Free = the earliest `ceil(s x n)` published articles (the floor) UNION the articles whose stable bucket is under
+    `s`, where `s = 1 - sqrt(1 - free_percent)` so the union is about `free_percent` of the pool. Both parts only grow
+    when a newer article is published (the prefix keeps its members, a bucket never moves), so **publishing never
+    takes a Free article away** - and a level of one article has it Free.
+
+    The rotation is drawn from the Plus pool **as it stood at the start of the ISO week** (articles published before
+    Monday 00:00 UTC), so a publish during the week never reshuffles that week's picks.
 
     `pool` is `(id, published_at)` for every published article of the pool. Pure: the same pool, numbers and week give
     the same answer everywhere."""
-    items = sorted({str(item_id): published for item_id, published in pool}.items(),
-                   key=lambda pair: (_sortable(pair[1]), pair[0]))
+    items = _ordered(pool)
     if not items:
         return frozenset(), frozenset()
-    share = max(0, min(100, int(free_percent)))
-    free = {item_id for item_id, _published in items if bucket(item_id) < share}
-    floor = math.ceil(share * len(items) / 100)
-    for item_id, _published in items:  # earliest published first
-        if len(free) >= floor:
-            break
-        free.add(item_id)
-    paid = [item_id for item_id, _published in items if item_id not in free]
+    share = split_share(free_percent)
+    free = _free_set(items, share)
+    start = week_start(week)
+    before = [(item_id, published) for item_id, published in items
+              if isinstance(published, datetime) and _aware(published) < start]
+    plus_at_start = [item_id for item_id in (pair[0] for pair in before) if item_id not in _free_set(before, share)]
     count = max(0, int(rotation_per_week))
-    rotation = sorted(paid, key=lambda item_id: _rotation_rank(week, item_id))[:count]
-    return frozenset(free), frozenset(rotation)
+    rotation = sorted(plus_at_start, key=lambda item_id: _rotation_rank(week, item_id))[:count]
+    return frozenset(free), frozenset(rotation) - free
+
+
+def split_share(free_percent: int) -> float:
+    """The share each part of the Free set uses, so floor and bucket together are about `free_percent`."""
+    p = max(0, min(100, int(free_percent))) / 100
+    return 1.0 if p >= 1 else 1 - math.sqrt(1 - p)
+
+
+def _ordered(pool: Iterable[tuple[str, Any]]) -> list[tuple[str, Any]]:
+    return sorted({str(item_id): published for item_id, published in pool}.items(),
+                  key=lambda pair: (_sortable(pair[1]), pair[0]))
+
+
+def _free_set(items: list[tuple[str, Any]], share: float) -> set[str]:
+    floor = math.ceil(share * len(items) - 1e-9)
+    earliest = {item_id for item_id, _published in items[:floor]}
+    return earliest | {item_id for item_id, _published in items if bucket(item_id) < share * 100}
+
+
+def week_start(week: str) -> datetime:
+    """Monday 00:00 UTC of an ISO week named `2026-W43`."""
+    year, _sep, number = week.partition("-W")
+    day = date.fromisocalendar(int(year), int(number), 1)
+    return datetime(day.year, day.month, day.day, tzinfo=UTC)
+
+
+def _aware(moment: datetime) -> datetime:
+    return (moment if moment.tzinfo else moment.replace(tzinfo=UTC)).astimezone(UTC)
 
 
 def _sortable(published: Any) -> str:
@@ -396,7 +429,8 @@ def decide(item: Item, *, now: datetime | None = None) -> Decision:
                                       rotation_per_week=policies.value("access.reading_rotation_per_week"),
                                       week=iso_week(now or _runtime.clock()))
     if item.id in free:
-        return Decision("free", "bucket" if bucket(item.id) < policies.value("access.reading_free_percent") else "floor")
+        in_bucket = bucket(item.id) < split_share(policies.value("access.reading_free_percent")) * 100
+        return Decision("free", "bucket" if in_bucket else "floor")
     if item.id in rotation:
         return Decision("free", "rotation", rotation=True)
     return Decision("plus", "rule")
@@ -517,9 +551,10 @@ def require_reading(article: Mapping[str, Any], *, user_key: str | None = None) 
 
 
 def cache_control(decision: Decision, public_value: str) -> dict[str, str]:
-    """The cache headers for a body of this tier: a gated body is never publicly cacheable (D-248 §6, plan F6)."""
-    if decision.tier == "free":
-        return {"Cache-Control": public_value}
+    """The cache headers for an article body: never in a shared cache (D-248 §6, plan F6). Every body is private,
+    whatever its tier now, because any tier can change (the weekly rotation, an override, a policy edit) and a
+    shared copy would outlive that change (review of #466). `decision` and `public_value` are kept for the caller's
+    shape; the ETag still revalidates the body cheaply."""
     return {"Cache-Control": "private, max-age=60", "Vary": "Cookie"}
 
 

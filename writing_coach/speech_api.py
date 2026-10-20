@@ -725,22 +725,45 @@ async def _read_pronunciation_upload_limited(
     return b"".join(chunks)
 
 
+PRACTICES = frozenset({"speaking", "shadowing"})
+
+
+def _require_practice_access(practice: str, media_id: str) -> None:
+    """D-248 §4: a shadowing take is scored only for a plan with the full media tools (403 `plan_required`). While
+    content access is enforced, a take must say which practice it is (422 `pronunciation_practice_required`) and a
+    shadowing take which video (422 `pronunciation_media_required`)."""
+    from writing_coach.product import content_access
+
+    kind = practice.strip().casefold()
+    video = media_id.strip()
+    if kind and kind not in PRACTICES:
+        raise orena_http_error(422, "pronunciation_practice_invalid", "Unknown practice.", retryable=False)
+    if content_access.enforced():
+        if not kind:
+            raise orena_http_error(422, "pronunciation_practice_required", "Say which practice this take is.",
+                                   retryable=False)
+        if kind == "shadowing" and not video:
+            raise orena_http_error(422, "pronunciation_media_required", "A shadowing take names its video.",
+                                   retryable=False)
+    if kind == "shadowing" or video:
+        content_access.require_media_tool("shadowing_score", video)
+
+
 @router.post("/pronunciation")
 async def assess_pronunciation(
     file: UploadFile = File(...),
     language: str = Form(default=""),
     reference_text: str = Form(default=""),
     mode: str = Form(default="scripted"),
-    # The video a shadowing take is scored against, when it is one (D-248 §4): scored shadowing is a Plus tool around a
-    # video. Speaking practice sends none and is not gated.
+    # Which practice the take belongs to, and the video a shadowing take is scored against (D-248 §4): scored shadowing
+    # is a Plus tool around a video; Speaking practice is not gated. Every client take sends `practice`
+    # (capabilities/speaking-take.js); while content access is enforced the server requires it, and a `shadowing` take
+    # must name its video, so the gate cannot be skipped by leaving the link out.
+    practice: str = Form(default="", max_length=32),
     media_id: str = Form(default="", max_length=255),
 ) -> dict[str, Any]:
     await anyio.to_thread.run_sync(consent.require_voice_consent)  # D-233: 403 voice_consent_required when refused
-    if media_id.strip():
-        from writing_coach.product import content_access
-
-        await anyio.to_thread.run_sync(
-            lambda: content_access.require_media_tool("shadowing_score", media_id.strip()))
+    await anyio.to_thread.run_sync(lambda: _require_practice_access(practice, media_id))
     normalized_language = language.strip().casefold()
     if normalized_language not in {"en", "zh"}:
         raise orena_http_error(
