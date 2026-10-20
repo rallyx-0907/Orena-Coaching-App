@@ -53,6 +53,21 @@ export function cardView(card, access = OFF) {
   return Object.freeze({ badge: read.tier === 'free' || read.rotation ? null : read.tier, locked: read.locked });
 }
 
+/* An item of an own set (a word of a vocabulary set, a grammar point; D-248 §4, MV2-5) or a row of a list (My Library,
+   Search): `{badge, locked}` as for a card. When the server says `locked` itself (a set's detail read, which never locks
+   a word the learner already saved), its answer wins over the comparison. */
+export function itemView(item, access = OFF) {
+  const view = cardView(item, access);
+  if (!access?.enforced) return view;
+  const server = item?.access && typeof item.access.locked === 'boolean' ? item.access.locked : null;
+  return server == null ? view : Object.freeze({ badge: view.badge, locked: server });
+}
+
+/* The wash class of a paid row (G2: a fill, never an outline), '' for none. */
+export function tierClass(badge) {
+  return badge === 'plus' || badge === 'pro' ? `o-tier--${badge}` : '';
+}
+
 /* Whether a media payload's tool is locked for this learner (`translation`, `shadowing_score`, `dictation`,
    `save_to_review`). The server adds `access` only while enforcement is on; the player and the captions are never a tool. */
 export function toolLocked(payload, tool) {

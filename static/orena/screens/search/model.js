@@ -88,6 +88,11 @@ export function wordItems(payload, language = '') {
     .filter(Boolean);
 }
 
+/* The server's `access` block of a Reading item (`{tier, rotation}`), or null. */
+function accessOf(item) {
+  return item && item.access && typeof item.access === 'object' ? item.access : null;
+}
+
 /* GET /api/reading/articles - one page of published articles, client-filtered by title/topic
    since the route takes no free-text query (SCRATCH C2 §1). */
 export function articleItems(payload, query, language = '') {
@@ -113,6 +118,8 @@ export function articleItems(payload, query, language = '') {
         topic: article?.topic || '',
         meta: itemLevelLabel(article),
         open: { route: 'content', id: `article:${id}` },
+        // D-248 §4 (MV2-5): the list's own per-card tier block, as Discover reads it; never computed here.
+        access: accessOf(article),
       };
     })
     .filter(Boolean);
@@ -231,7 +238,8 @@ export function collectionItems(payload, relationshipLabel) {
       const snippet = String(entry?.snippet ?? '').trim();
       const relKey = RELATIONSHIP_KEY[entry?.relationship];
       const meta = snippet || (relKey && typeof relationshipLabel === 'function' ? relationshipLabel(relKey) : '');
-      return { kindKey: COLLECTION_KIND[domain] || domain, title, meta, open };
+      // Only a Reading entry carries a tier block (MV2-5); a video never does (III.F.3.a).
+      return { kindKey: COLLECTION_KIND[domain] || domain, title, meta, open, access: domain === 'reading' ? accessOf(entry) : null };
     })
     .filter(Boolean);
 }

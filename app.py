@@ -5626,6 +5626,48 @@ def becoming_vocabulary_library_collection_cover(collection_id: str, request: Re
     return Response(content=data, media_type=content_type, headers=headers)
 
 
+def _vocabulary_set_key(entry: dict[str, Any]) -> str:
+    """One member of a vocabulary set, as the first-item rule names it: its lexical identity, else its word."""
+    return str(entry.get("identity_key") or entry.get("normalized_word") or entry.get("word") or "")
+
+
+def _vocabulary_set_head(collection_id: str, entries: list[dict[str, Any]], *, persisted: bool,
+                         filtered: bool) -> list[str]:
+    """The keys of the first `access.set_free_items` members of a set, in set order and unfiltered (D-248 §4). A page
+    that starts the set already holds them (a static pack is always whole here); a searched, levelled or later page of
+    a stored set asks for its head alone."""
+    count = _content_access.set_free_items()
+    if count <= 0:
+        return []
+    source = entries
+    if persisted and filtered:
+        head = _persisted_vocabulary_collection(collection_id, limit=count, offset=0)
+        source = (head or {}).get("entries") or []
+    return [_vocabulary_set_key(entry) for entry in source[:count]]
+
+
+# What a locked word of a set still shows (D-248 §4: the title of locked content stays visible): its headword and the
+# learner's own state for it, never its meanings, examples, readings or notes.
+_LOCKED_VOCABULARY_CARD_FIELDS = ("identity", "headword", "level", "framework", "saved", "review_stage", "due",
+                                  "successful_recalls", "lapse_count")
+
+
+def _gate_vocabulary_set_items(collection_id: str, entries: list[dict[str, Any]], cards: list[dict[str, Any]],
+                               head: list[str]) -> list[dict[str, Any]]:
+    """Each card with its `access` block (`{tier, rotation, locked}`, MV2-5). A locked card keeps only its headword: the
+    rest of its body is Plus. A word the learner already saved is never locked, so its review stays theirs."""
+    keys = [_vocabulary_set_key(entry) for entry in entries]
+    members = [_content_access.Item("vocab_set", f"{collection_id}:{key}",
+                                    position=_content_access.set_rank(key, head)) for key in keys]
+    blocks = _content_access.set_card_access(members, own=lambda index: bool(cards[index].get("saved")))
+    gated = []
+    for card, block in zip(cards, blocks, strict=True):
+        if block["locked"]:
+            card = {field: card[field] for field in _LOCKED_VOCABULARY_CARD_FIELDS if field in card}
+        gated.append({**card, "access": block})
+    return gated
+
+
 @app.get(
     "/api/vocabulary/library/collections/{collection_id}",
     name="becoming_vocabulary_library_collection_detail",
@@ -5639,6 +5681,7 @@ def becoming_vocabulary_library_collection_detail(
     include_review: bool = Query(default=False),
 ) -> dict[str, Any]:
     is_general = is_reserved_collection_id(collection_id)
+    persisted = False
     if is_general:
         collection = _general_catalogue_page(collection_id, search=search, level=level, limit=limit, offset=offset)
     else:
@@ -5649,11 +5692,16 @@ def becoming_vocabulary_library_collection_detail(
             limit=limit,
             offset=offset,
         )
+        persisted = collection is not None
         if collection is None:
             collection = get_vocabulary_collection(collection_id)
     if collection is None:
         raise HTTPException(404, "Vocabulary collection not found.")
     entries = collection.pop("entries")
+    # D-248 §4 (MV2-5): the head of the set, unfiltered and in set order - the members the first-item rule makes Free.
+    # General is the dictionary's aggregate, not a set (D-188; looking a word up stays free), so it has no head.
+    head = [] if is_general else _vocabulary_set_head(collection_id, entries, persisted=persisted,
+                                                      filtered=bool(search or level or offset))
     collection["thumbnail"] = collection.get("thumbnail") or _collection_thumbnail_view(
         collection.get("id") or collection_id, collection.get("title") or "", collection.get("provenance")
     )
@@ -5684,6 +5732,8 @@ def becoming_vocabulary_library_collection_detail(
         card["successful_recalls"] = int(saved.get("successful_recalls") or 0) if saved else 0
         card["lapse_count"] = int(saved.get("lapse_count") or 0) if saved else 0
         items.append(card)
+    if not is_general:
+        items = _gate_vocabulary_set_items(collection_id, entries, items, head)
     collection["items"] = items
     collection["progress"] = (
         _general_progress(collection["language_code"])

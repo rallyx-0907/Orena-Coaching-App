@@ -67,6 +67,15 @@
 .c-media--tier-pro {
   background: var(--accent-soft);
 }
+/* The same wash on a row of a list or a set (My Library, Search, a vocabulary set's word, a grammar point; MV2-5). Two
+   class selectors, so the wash wins over a row's own single-class background in a screen sheet loaded after the kit;
+   still a fill only (D-147). */
+[class].o-tier--plus {
+  background: var(--spark-soft);
+}
+[class].o-tier--pro {
+  background: var(--accent-soft);
+}
 /* A paid tool's lock (G6): Lucide `lock` after the control's label, at its icon size, in `--text3`. */
 .o-tool-lock {
   display: inline-flex;

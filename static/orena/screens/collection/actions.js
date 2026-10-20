@@ -1,6 +1,9 @@
 /* Shared collection action/read orchestration. No providers or storage of its own.
    Opening reads; only the explicit keep action calls the existing saved-word API. */
 export const collectionWordKey = (card) => card.identity?.normalized || String(card.headword || '').trim().toLowerCase();
+/* A word of the set the server sent without its body (D-248 §4, MV2-5: the rest of a set is Plus). Never kept by "Add
+   all"; a word the learner already saved is never sent locked. */
+export const isLockedCard = (card) => card?.access?.locked === true;
 export async function readCollection(id, read, { includeReview = false } = {}) {
   let offset = 0;
   let result;
@@ -42,7 +45,7 @@ export function collectionSavePayload(card) {
 
 export async function keepCollectionWords(collection, { language, save, onProgress = () => {}, isCurrent = () => true }) {
   if (collection.language_code !== language) throw new Error('Collection language changed');
-  const missing = [...new Map((collection.items || []).filter((card) => !card.saved && card.headword)
+  const missing = [...new Map((collection.items || []).filter((card) => !card.saved && card.headword && !isLockedCard(card))
     .map((card) => [collectionWordKey(card), card])).values()];
   let added = 0;
   let error = null;

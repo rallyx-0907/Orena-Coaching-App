@@ -152,5 +152,6 @@ scripts/test_orena_avatar_fallback.mjs
 scripts/test_orena_word_audio_format.mjs
 scripts/test_orena_access.mjs
 scripts/test_orena_upgrade_access.mjs
+scripts/test_orena_set_access.mjs
 scripts/test_orena_locked_reader_fold.mjs
 scripts/test_orena_content_locked_fold.mjs

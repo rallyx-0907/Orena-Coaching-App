@@ -5,13 +5,14 @@
    typing never loses focus or the caret; only `.s-search__body` repaints as the query changes. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { listRow } from '../../kit/components.js';
+import { listRow, planTag } from '../../kit/components.js';
+import { readAccess, itemView, tierClass } from '../../product/content-access.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
 import { errorMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
 import { catalogueLanguage } from '../../product/vocabulary-card.js';
-import { shellCopy as ts } from '../../copy/shell.js';
+import { shellCopy as ts, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
 import {
   normalizeQuery, readRecent, pushRecent, matchesText,
@@ -69,6 +70,12 @@ export default async function search(element, ctx) {
   let startedFor = ''; // the query last sent: a keystroke that normalises to it (a trailing space) sends nothing new
   let debounceTimer = 0;
   let token = 0;
+  // The learner's plan and the enforcement switch, read once (product/content-access.js caches it a minute).
+  let access;
+  readAccess().then((value) => {
+    access = value;
+    if (ctx.isCurrent() && searchedFor) renderBody();
+  });
 
   element.classList.add('s-search');
   mount(
@@ -135,8 +142,13 @@ export default async function search(element, ctx) {
     // (docs/project/UI_BACKEND_GAPS.md N-35) - rendered in its own lang="en" span, never folded
     // unmarked into the meta string the way it used to be.
     const sub = item.topic ? html`${langSpan(item.topic, 'en')}${item.meta ? html` · ${item.meta}` : ''}` : item.meta;
+    // D-248 §4 (MV2-5): a Plus/Pro article's tag and tier wash; the tap still opens it (the Reader shows the locked
+    // preview when the server refuses). Only a Reading item carries a block; a video never has a tag.
+    const { badge } = itemView(item, access);
     return listRow({
       tag: item.open ? 'button' : 'div',
+      className: tierClass(badge),
+      trailing: badge ? planTag(planName({ id: badge }) || badge) : null,
       variant: 'outline',
       radius: 14,
       pad: '13px 18px',

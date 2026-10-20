@@ -110,13 +110,18 @@ class CollectionEntry:
     action: Mapping[str, str] | None = None
     durability: str = 'account'
     detail: Mapping[str, Any] = field(default_factory=dict)
+    # D-248 §4 (MV2-5): a Reading entry's `{tier, rotation}`, the same block a Discover card carries; None elsewhere
+    # (a video never carries one: YouTube API Services Developer Policies III.F.3.a).
+    access: Mapping[str, Any] | None = None
 
     @property
     def kind(self) -> str:
         return KIND_OF[self.domain]
 
     def as_dict(self) -> dict[str, Any]:
+        extra = {'access': dict(self.access)} if self.access is not None else {}
         return {
+            **extra,
             'ref': {'domain': self.domain, 'id': self.id},
             'kind': self.kind,
             'title': self.title,
@@ -268,6 +273,7 @@ def reading_entries(rows: Sequence[Mapping[str, Any]], language: str) -> list[Co
             updated_at=str(row.get('created_at') or ''),
             action=_action('open_source', route('encounter', id=f'article:{article_id}', intent='reading')),
             detail={'correct': int(row.get('correct_count') or 0), 'total': int(row.get('total') or 0)},
+            access=row.get('access') if isinstance(row.get('access'), Mapping) else None,
         ))
     return entries
 

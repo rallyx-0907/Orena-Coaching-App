@@ -778,6 +778,26 @@ class GrammarStoreRepository:
             "points": points,
         }
 
+    def set_rank(self, language: str, point_id: str) -> int | None:
+        """The 0-based place of a published point in its set - the published points of its function at its level,
+        ordered as the catalogue orders them (sequence, then id) - for D-248 §4's first-item rule (MV2-5). None when the
+        point is not published. Three narrow columns; no content is read."""
+        with self.engine.connect() as connection:
+            row = connection.execute(select(POINTS.c.function_id, POINTS.c.level_value).where(
+                POINTS.c.id == point_id, POINTS.c.language_code == language,
+                POINTS.c.lifecycle == "published")).first()
+            if row is None:
+                return None
+            same_function = (POINTS.c.function_id.is_(None) if row.function_id is None
+                             else POINTS.c.function_id == row.function_id)
+            same_level = (POINTS.c.level_value.is_(None) if row.level_value is None
+                          else POINTS.c.level_value == row.level_value)
+            ids = list(connection.execute(
+                select(POINTS.c.id).where(POINTS.c.language_code == language, POINTS.c.lifecycle == "published",
+                                          same_function, same_level)
+                .order_by(POINTS.c.sequence, POINTS.c.id)).scalars())
+        return ids.index(point_id) if point_id in ids else None
+
     def published(self, language: str, point_id: str) -> dict[str, Any] | None:
         with self.engine.connect() as connection:
             row = connection.execute(
