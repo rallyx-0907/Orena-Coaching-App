@@ -393,7 +393,7 @@ def test_catalogue_pack_and_local_answers_never_reach_the_meter():
 
     service = ReadingLookupService(
         None, lambda _w: {"phonetic": ""}, ReadingTranslationService(_Paid(), cache=DerivedCache()),
-        word_translation=seam, bilingual_dictionary=lambda word, _s, _t: {"shield": "tấm chắn"}.get(word),
+        word_translation=seam, bilingual_dictionary=lambda word, _s, _t, **_k: {"shield": "tấm chắn"}.get(word),
     )
     result = service.lookup("shield", "Its heat shield held.", "en", "vi").to_dict()
     assert result["meanings"][0]["source"] == "bilingual_dictionary"

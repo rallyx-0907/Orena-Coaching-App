@@ -70,7 +70,7 @@ def test_the_bilingual_pack_answers_before_any_translation_and_the_seam_is_not_a
     asked: list[tuple] = []
     service = _service(
         dictionary=_english({"shields": "Anything that protects or defends"}),
-        pack=lambda word, source, target: {"shield": "tấm chắn; cái khiên"}.get(word),
+        pack=lambda word, source, target, **_k: {"shield": "tấm chắn; cái khiên"}.get(word),
         seam=lambda *args: asked.append(args) or "never",
     )
     result = service.lookup("shields", SENTENCE, "en", "vi").to_dict()
@@ -86,14 +86,14 @@ def test_a_pack_miss_reaches_word_translation_with_the_word_only(lemma) -> None:
         asked.append((selection, source, target))
         return "tấm chắn"
 
-    service = _service(pack=lambda *_a: None, seam=seam)
+    service = _service(pack=lambda *_a, **_k: None, seam=seam)
     result = service.lookup("shields", SENTENCE, "en", "vi").to_dict()
     assert result["meanings"] == [{"text": "tấm chắn", "source": "word_translation"}]
     assert asked == [("shields", "en", "vi")]
 
 
 def test_a_failing_pack_is_a_miss_never_a_blank_sheet(lemma) -> None:
-    def broken(*_a):
+    def broken(*_a, **_k):
         raise RuntimeError("pack corrupt")
 
     service = _service(dictionary=_english({"shields": "Anything that protects"}), pack=broken)
@@ -120,8 +120,11 @@ def test_the_file_pack_plugs_in_by_dropping_a_file(tmp_path, monkeypatch) -> Non
     assert bilingual_dictionary.lookup("shield", "en", "en") is None
 
 
-def test_no_pack_is_installed_by_default() -> None:
-    assert bilingual_dictionary.lookup("shield", "en", "vi") is None
+def test_only_the_vendored_en_vi_pack_is_installed_by_default() -> None:
+    # D-246: EN->VI ships vendored (English Wiktionary via kaikki.org); no other pair has a pack.
+    assert bilingual_dictionary.lookup("shield", "en", "vi")
+    assert bilingual_dictionary.lookup("shield", "en", "zh") is None
+    assert bilingual_dictionary.has_pack("en", "zh") is False
 
 
 # --- the sheet's projection -------------------------------------------------------------------------------------
@@ -149,7 +152,7 @@ def test_a_vietnamese_learner_never_reads_an_unlabelled_english_definition() -> 
 
 
 def test_a_missing_contextual_meaning_still_shows_the_base_meaning(monkeypatch, lemma) -> None:
-    service = _service(pack=lambda word, *_a: {"shield": "tấm chắn"}.get(word))
+    service = _service(pack=lambda word, *_a, **_k: {"shield": "tấm chắn"}.get(word))
     monkeypatch.setattr(word_detail, "_gloss", lambda *_a: None)  # the contextual ask answered nothing
     monkeypatch.setattr(word_detail, "_cache", None)
     monkeypatch.setattr(word_detail, "_saved_terms", None)

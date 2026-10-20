@@ -2,8 +2,8 @@
 
 A learner tapping a word wants a fast, deterministic answer. The real order is:
 the shared local tagger (class, reading), the vocabulary catalogue, an open
-bilingual dictionary pack for the pair (`bilingual_dictionary`; none ships yet
-for EN->VI, the seam is ready for one), the dictionary senses (English: a
+bilingual dictionary pack for the pair (`bilingual_dictionary`; EN->VI is the
+vendored English Wiktionary pack, D-246), the dictionary senses (English: a
 monolingual API, asked again for the lemma when the inflected form has no entry;
 Chinese: the vendored CC-CEDICT pack), the local machine translation (only if
 the Reading engine is the free local one), the `word_translation` seam (D-195: the AI Cost Router, bounded by
@@ -132,9 +132,11 @@ def lexical_language(selection: str, fallback: str) -> str:
 # (selection, sentence, dictionary definitions, source language, support language) -> a short meaning, or None.
 # The one place the `word_translation` capability plugs in (D-195).
 WordTranslationSeam = Callable[[str, str, list[str], str, str], "str | None"]
-# (word, source language, support language) -> the base meaning from an open bilingual pack, or None. Deterministic,
-# offline, free (`writing_coach.bilingual_dictionary`); asked after the catalogue and before any translation.
-BilingualDictionarySeam = Callable[[str, str, str], "str | None"]
+# (word, source language, support language, *, part_of_speech=, context=) -> the base meaning from an open bilingual
+# pack, or None. Deterministic, offline, free (`writing_coach.bilingual_dictionary`); asked after the catalogue and
+# before any translation. The keywords (the word's class in its sentence, and the sentence) let a sense-labelled pack
+# pick the sense that fits.
+BilingualDictionarySeam = Callable[..., "str | None"]
 # (selection, source language, support language) -> a short meaning, or None; raises when the provider side failed.
 # The translate-ahead variant (D-199): the word only, no learner, no sentence.
 WordTranslationPrefetchSeam = Callable[[str, str, str], "str | None"]
@@ -633,14 +635,16 @@ class ReadingLookupService:
             return True
         return _safe_machine_translation(self._translation_service, source, target, selection, None, cached_only=True) is not None
 
-    def _pack_meaning(self, selection: str, lemma: str, source: str, target: str) -> str:
+    def _pack_meaning(
+        self, selection: str, lemma: str, source: str, target: str, part_of_speech: str = "", context: str = "",
+    ) -> str:
         """The open bilingual pack's gloss for the selection (or its lemma) in the support language, or ""."""
 
         if self._bilingual_dictionary is None or not selection or source == target:
             return ""
         for word in dict.fromkeys(item for item in (selection, lemma) if item):
             try:
-                found = self._bilingual_dictionary(word, source, target)
+                found = self._bilingual_dictionary(word, source, target, part_of_speech=part_of_speech, context=context)
             except Exception as exc:  # noqa: BLE001 - a pack is an aid; its failure is a miss
                 _log_layer("bilingual_pack", "failed", language=source, error=exc)
                 continue
@@ -782,7 +786,10 @@ class ReadingLookupService:
         if not meanings and target != source and not withheld and not structural:
             # The open bilingual pack for the pair (owner decision 2026-10-18): the base meaning in the support
             # language at no cost, before any translation layer. A miss changes nothing below.
-            packed = self._pack_meaning(selection, local["lemma"], source, target)
+            packed = self._pack_meaning(
+                selection, local["lemma"], source, target, tagged_pos,
+                sentence_around(context, selection) if source == surrounding else "",
+            )
             if packed:
                 meanings.append(LookupMeaning(packed, "bilingual_dictionary"))
 
