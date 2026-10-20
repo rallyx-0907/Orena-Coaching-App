@@ -7872,8 +7872,8 @@ every schema step named below stays a human gate.
    on/off plan feature, **`progress.weekly_report`**, is off for Free and on for Plus and Pro. Every client line about
    voice minutes reads the window from the data ("this month" / "today", EN/VI/ZH). Agent Contract **v14** records, as
    implemented on `main`, `GET /api/agent/voice/allowance` (#469), `GET /api/agent/progress/weekly` (#471, #476) and the
-   administrators-only, experimental `POST /api/agent/band/writing` (#470, future entitlement `band.estimate`). Left to
-   the Intelligence lane: counting voice seconds per month with `resets_at` on the 1st, and the server's 403
-   `feature_not_in_plan` for `progress.weekly_report`.
+   administrators-only, experimental `POST /api/agent/band/writing` (#470, future entitlement `band.estimate`). The
+   Intelligence lane counts voice seconds over the meter's window with `resets_at` on the 1st (#478); the server's 403
+   `feature_not_in_plan` for `progress.weekly_report` is left to it.
 
 Design gaps G1-G12 are recorded in `docs/project/UI_BACKEND_GAPS.md` ("Monetisation v2").

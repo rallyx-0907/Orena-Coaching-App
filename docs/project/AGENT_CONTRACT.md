@@ -599,9 +599,10 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - `limit` and `left` are **`null` when the minutes are not capped** on this server (no plan system, no usage store, or no
      limit in the catalogue); `entitled` is then `true` and `used` is `0`. The client draws no bar and does not tell the
      learner a figure.
-   - As implemented when v14 was recorded, `used` sums the seconds minted in the current UTC day and `resets_at` is the next
-     UTC midnight; the server moves both to the catalogue's monthly window (`resets_at` 00:00 on the 1st of the next
-     month) in the Intelligence lane. The client never computes the reset itself: it reads `window` and `resets_at`.
+   - `used` sums the seconds minted in the meter's window (#478): with `window: "month"` the current UTC calendar month,
+     and `resets_at` is 00:00 UTC on the 1st of the next month (a `day` window: the UTC day and the next UTC midnight).
+     The 429 `quota_exhausted` of §9 point 1 carries the same `window` and `resets_at`. The client never computes the
+     reset itself: it reads `window` and `resets_at`.
    - Errors: 404 `{"detail": "Not Found"}` when voice is absent on this server (as every voice route, and while the agent
      is off, §2.1) - the client hides the bar; 503 `quota_unavailable` (§2.1) when the plan, the catalogue or the usage
      cannot be read (fail closed: never "no minutes left") - the client shows no figure; 429 `rate_limited` with

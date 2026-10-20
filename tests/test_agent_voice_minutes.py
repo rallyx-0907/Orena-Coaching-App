@@ -1,8 +1,7 @@
 """A cap on each learner's voice minutes with Orena (Hermes for the owner, 2026-10-19): one Pro learner talking all
 day would otherwise use the whole system's $5 AI budget (COST_PRE402_403). The `orena.voice` limit is seconds per month
 since D-248 (MV2-6a; it was per UTC day under D-237): Plus 6000 s (about 100 minutes), Pro 18000 s by the code's defaults
-(an administrator edits it in the plan catalogue). Counting the month and its `resets_at` is the Intelligence lane's
-change to `plan_features`; these tests read the limit and window from the catalogue and do not fix the reset. The minutes used are
+(an administrator edits it in the plan catalogue); the seconds are counted over the meter's window (#478). The minutes used are
 the voice seconds the server already records per learner (`agent.voice_seconds` usage events), so the cap holds whether
 or not usage limits are enforced. At the cap: 429 `quota_exhausted` with `feature: "orena.voice"` - this learner only;
 nothing locks the system. Every token minted is clamped to the seconds left today, and its seconds are counted when it
@@ -10,7 +9,6 @@ is minted, metered or not, so an open session is seen by the next check."""
 
 from __future__ import annotations
 
-import inspect
 from datetime import UTC, datetime
 
 import pytest
@@ -22,17 +20,11 @@ from writing_coach.product.catalog import FREE, METERS, PLUS, PRO, Meter
 
 NOW = datetime(2026, 10, 19, 9, 0, tzinfo=UTC)
 LIMIT = PLUS.entitlement_map()["orena.voice"].limit  # 6000 s by the code's defaults (D-248)
-# The Intelligence lane's #478 counts voice seconds per the meter's window (a monthly reader beside the daily one). Until it
-# is on this branch, the monthly reset cannot be asserted: that test is pending (strict xfail, so it flips when #478 lands).
-MONTHLY = "monthly_usage" in inspect.signature(plan_features.configure).parameters
 
 
 def configure(usage, clock=lambda: NOW):
-    """Both readers, so the meter's window (day or month) is counted whichever it is."""
-    if MONTHLY:
-        plan_features.configure(daily_usage=usage, monthly_usage=usage, clock=clock)
-    else:
-        plan_features.configure(daily_usage=usage, clock=clock)
+    """Both readers (#478), so the meter's window - a day or a month - is counted whichever it is."""
+    plan_features.configure(daily_usage=usage, monthly_usage=usage, clock=clock)
 
 
 @pytest.fixture()
@@ -60,13 +52,14 @@ def test_under_the_cap_voice_opens_and_at_the_cap_this_learner_is_told(voice_day
     voice_day["used"] = LIMIT
     with pytest.raises(HTTPException) as refused:
         plan_features.require_voice_time("u1")
-    assert refused.value.status_code == 429
+    first = datetime(2026, 11, 1, tzinfo=UTC)
+    assert refused.value.status_code == 429 and refused.value.headers["Retry-After"] == str(int((first - NOW).total_seconds()))
     detail = refused.value.detail
     assert detail["category"] == "quota_exhausted" and detail["retryable"] is False
     context = detail["context"]
-    # The window is the catalogue's (month since D-248), never a fixed day; its reset is asserted per window below.
+    # The window is the catalogue's (month since D-248), never a fixed day.
     assert (context["feature"], context["used"], context["limit"], context["window"]) == ("orena.voice", LIMIT, LIMIT, "month")
-    assert context["display_unit"] == "minute" and context["scale"] == 60
+    assert context["display_unit"] == "minute" and context["scale"] == 60 and context["resets_at"] == "2026-11-01T00:00:00Z"
     assert "upgrade" not in context  # no plans offer here (D-237)
 
 
@@ -87,7 +80,6 @@ def test_a_daily_voice_window_resets_at_the_next_utc_midnight(voice_day, monkeyp
     assert plan_features.voice_allowance("u1")["resets_at"] == "2026-10-20T00:00:00Z"
 
 
-@pytest.mark.xfail(not MONTHLY, strict=True, reason="pending #478: voice seconds counted per month (Intelligence lane)")
 def test_the_monthly_voice_window_resets_on_the_first_of_next_month(voice_day):
     """The month case, exactly: D-248's monthly meter resets at 00:00 UTC on the 1st of the next month."""
     refused = _refused_at_the_cap(voice_day)
@@ -191,10 +183,9 @@ def test_a_token_that_uses_exactly_the_seconds_left_ends_the_day(voice_day, monk
 def test_the_allowance_reports_todays_minutes_used_and_left(voice_day):
     voice_day["used"] = 660
     allowance = plan_features.voice_allowance("u1")
-    del allowance["resets_at"]  # asserted exactly per window above (day now; month pending #478)
     assert allowance == {
         "feature": "orena.voice", "entitled": True, "limit": LIMIT, "used": 660, "left": LIMIT - 660, "unit": "second",
-        "display_unit": "minute", "scale": 60, "window": "month", "plan": "plus"}
+        "display_unit": "minute", "scale": 60, "window": "month", "resets_at": "2026-11-01T00:00:00Z", "plan": "plus"}
 
 
 def test_the_allowance_never_reports_more_used_than_the_limit(voice_day):

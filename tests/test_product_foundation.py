@@ -143,7 +143,7 @@ def test_voice_is_a_monthly_meter_with_the_d248_limits():
     row = voice[1].as_dict()
     assert (row["window"], row["monthly_limit"]) == ("month", 6000)
     # A monthly meter's window ends (its `resets_at`) at 00:00 on the 1st of the next month - the catalogue's window, read
-    # by the quota's window. Voice's own counting moves to it in the Intelligence lane's plan_features change.
+    # by the quota's window (voice's own count, plan_features #478, resets on the 1st too).
     window = quota.window_for(meter.window, now=datetime(2026, 10, 21, 9, tzinfo=UTC), zone_name="UTC", previous=None)
     assert window.end == datetime(2026, 11, 1, tzinfo=UTC)
     december = quota.window_for(meter.window, now=datetime(2026, 12, 31, 23, tzinfo=UTC), zone_name="UTC", previous=None)
