@@ -36,14 +36,26 @@ DEFAULT_MAX_CPS_ZH = 10.0
 DEFAULT_MAX_DEFECT_SHARE = 0.02
 DEFAULT_MAX_GAP_SECONDS = 12
 SHORT_LINE_MS = 800
-SHORT_LINE_WORDS = 3
-SHORT_LINE_HAN = 5
+# At most 0.8 s holding this many words is faster than anyone speaks (6+ English words, 10+ Han a second): three words
+# or five Han in 0.8 s is ordinary dialogue and ordinary Mandarin, and is not a defect.
+SHORT_LINE_WORDS = 5
+SHORT_LINE_HAN = 8
 
 _SPEAKER = re.compile(r">{2,}")
 _SOUND_TAG = re.compile(r"\[[^\]]{1,40}\]")
 _HAN = re.compile(r"[㐀-䶿一-鿿]")
 _WORD = re.compile(r"[^\W\d_]+(?:['’][^\W\d_]+)*|\d+", re.UNICODE)
 _TERMINAL = re.compile(r"[.!?…。！？；]['\"”’）)]*$")
+_PUNCTUATION = re.compile(r"[.!?…,;:。！？；，、：]")
+_NON_SPEECH = re.compile(r"\[[^\]]{1,40}\]|\([^)]{1,40}\)|[♪♫♬♩]")
+# An English line ending on one of these words has clearly not finished its sentence.
+_EN_CONTINUES = frozenset({
+    "the", "a", "an", "to", "of", "and", "or", "but", "in", "on", "at", "with", "for", "from", "that", "my",
+    "your", "his", "her", "their", "our", "its", "is", "are", "was", "were", "because", "if", "when", "than",
+})
+# A track this share of whose lines carries any punctuation is punctuated; an unpunctuated (raw automatic) track
+# says nothing about where a sentence ends, so its pauses are never read as mid-sentence.
+_PUNCTUATED_SHARE = 0.3
 # A cue is "rolling" when it is still on screen after the next cue has started by more than this.
 _ROLLING_OVERLAP_MS = 250
 _ROLLING_SHARE = 0.4
@@ -150,8 +162,11 @@ def caption_timing_report(
 
     * `order`: any line that ends at or before its start, starts before the previous one, or overlaps it fails at once;
     * `fast`: a line read faster than `max_cps` characters a second (`max_cps_zh` Han characters for Chinese);
-    * `short_dense`: a line of at most 0.8 s holding three or more words (five Han characters);
-    * `gap_mid_sentence`: a silence longer than `max_gap_ms` after a line that stops mid-sentence;
+    * `short_dense`: a line of at most 0.8 s holding five or more words (eight Han characters);
+    * `gap_mid_sentence`: a silence longer than `max_gap_ms` where the text clearly continues - a punctuated track,
+      the line before ending on a comma or a word that cannot end an English sentence (`the`, `to`, `and`...) and the
+      next starting in lower case (Chinese: the line before ending on `，` or `、`), and neither line marking
+      non-speech (`[music]`, `♪`), since a music break or a pause after a finished thought is not a defect;
     * `not_retimed`: an automatic track whose cues were not re-timed to the next start.
 
     `fast`, `short_dense` and `gap_mid_sentence` together may touch at most `max_defect_share` of the lines (and at least
@@ -163,6 +178,7 @@ def caption_timing_report(
     order = fast = short_dense = gap = 0
     defective: set[int] = set()
     previous: Cue | None = None
+    punctuated = bool(lines) and sum(1 for line in lines if _PUNCTUATION.search(line.text)) / len(lines) >= _PUNCTUATED_SHARE
     for index, line in enumerate(lines):
         duration = line.end_ms - line.start_ms
         if duration <= 0 or (previous is not None and (line.start_ms < previous.start_ms or line.start_ms < previous.end_ms)):
@@ -177,10 +193,7 @@ def caption_timing_report(
             short_dense += 1
             defective.add(index)
         if previous is not None and line.start_ms - previous.end_ms > limits.max_gap_ms:
-            before = _spoken(previous.text)
-            after = _spoken(line.text)
-            continues = bool(before) and not _TERMINAL.search(before) and (zh or (after[:1].islower()))
-            if continues:
+            if punctuated and _clearly_continues(previous.text, line.text, zh):
                 gap += 1
                 defective.add(index)
         previous = line
@@ -196,6 +209,19 @@ def caption_timing_report(
         failed.append("not_retimed")
     counts = {"order": order, "fast": fast, "short_dense": short_dense, "gap_mid_sentence": gap, "not_retimed": not_retimed}
     return TimingReport(passed=not failed, lines=len(lines), counts=counts, failed=tuple(failed))
+
+
+def _clearly_continues(before_raw: str, after_raw: str, zh: bool) -> bool:
+    if _NON_SPEECH.search(before_raw) or _NON_SPEECH.search(after_raw):
+        return False
+    before, after = _spoken(before_raw), _spoken(after_raw)
+    if not before or not after or _TERMINAL.search(before):
+        return False
+    if zh:
+        return before.endswith(("，", "、"))
+    words = _WORD.findall(before.casefold())
+    ends_open = before.endswith((",", ";", ":")) or bool(words and words[-1] in _EN_CONTINUES)
+    return ends_open and after[:1].islower()
 
 
 def lesson_caption_facts(entry: Any) -> tuple[bool, str, bool]:

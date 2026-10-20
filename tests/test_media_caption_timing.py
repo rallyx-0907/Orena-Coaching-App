@@ -65,7 +65,7 @@ def test_the_lines_8000_served_fail_the_gate():
                                    retimed=False)
     assert not report.passed and report.reason == REASON_CAPTION_TIMING
     assert "not_retimed" in report.failed and "defects" in report.failed
-    assert report.counts["short_dense"] >= 2 and report.counts["fast"] >= 2
+    assert report.counts["fast"] >= 3 and report.counts["short_dense"] >= 1
 
 
 # -- the fix ---------------------------------------------------------------------------------------------------------
@@ -222,7 +222,9 @@ def test_the_pipeline_never_publishes_a_mistimed_item_whatever_path_publishes_it
     assert after.processing["reason"] == REASON_CAPTION_TIMING and after.processing["message"]
 
 
-def test_a_failed_re_run_does_not_put_a_mistimed_transcript_back_on_the_shelf(tmp_path):
+def test_a_failed_re_run_puts_the_item_back_exactly_as_it_was(tmp_path):
+    # A re-time sweep whose caption fetch fails (or meets the quota) must leave the published item where it was; only
+    # new captions that fail the gate hold an item.
     from tests.test_media_import_pipeline_reasons import _Ledger
     from writing_coach import media_transcript_pipeline as mtp
     from writing_coach.media_library_store import FileMediaLibraryStore
@@ -234,7 +236,8 @@ def test_a_failed_re_run_does_not_put_a_mistimed_transcript_back_on_the_shelf(tm
     pipeline = mtp.MediaPipeline(ledger=_Ledger(), workers=1)
     assert pipeline._restore_previous(store, entry.media_id, "captions_unavailable")
     after = store.get(entry.media_id)
-    assert after.status == "review" and after.processing["reason"] == REASON_CAPTION_TIMING
+    assert after.status == "published" and after.processing["state"] == "ready"
+    assert after.processing["reprocess_reason"] == "captions_unavailable"
 
 
 class _Ingestion:
@@ -292,3 +295,88 @@ def test_the_scan_reports_in_a_dry_run_and_holds_only_with_apply(tmp_path, monke
     held = store.get("youtube-ZncA70OAgPw")
     assert held.status == "review" and held.processing["reason"] == REASON_CAPTION_TIMING
     assert held.lesson["payload"] == _passport_entry().lesson["payload"]   # the transcript is left as it was
+
+
+# -- review follow-ups: no false holds on ordinary speech, and line identities survive a re-time ---------------------
+
+
+def test_ordinary_quick_dialogue_and_mandarin_are_not_short_dense():
+    english = [Cue(i * 2000, i * 2000 + 800, text) for i, text in enumerate(
+        ["Wait for me.", "Okay, got it.", "Are you sure?", "I don't know.", "Come on, hurry!"] * 4)]
+    report = caption_timing_report(english, language="en", caption_kind=KIND_MANUAL, limits=TimingThresholds(max_defect_share=0.0))
+    assert report.counts["short_dense"] == 0 and report.passed, report.as_dict()
+    mandarin = [Cue(i * 2000, i * 2000 + 800, text) for i, text in enumerate(
+        ["好的，没问题。", "我知道了。", "对对对。", "你先走吧。", "真的吗？", "快点儿！"] * 4)]
+    report = caption_timing_report(mandarin, language="zh", caption_kind=KIND_MANUAL, limits=TimingThresholds(max_defect_share=0.0))
+    assert report.counts["short_dense"] == 0 and report.passed, report.as_dict()
+    squeezed = [Cue(0, 700, "我们今天下午一起去公园散步吧")]   # 13 Han in 0.7 s: nobody speaks that fast
+    assert caption_timing_report(squeezed, language="zh").counts["short_dense"] == 1
+
+
+STRICT = TimingThresholds(max_defect_share=0.0)
+
+
+def test_a_long_gap_after_music_or_a_finished_thought_is_not_a_defect():
+    music = [Cue(0, 2000, "So we went down to the"), Cue(2000, 20_000, "[music]"), Cue(40_000, 42_000, "river at night."),
+             Cue(43_000, 45_000, "It was cold.")]
+    assert caption_timing_report(music, language="en", limits=STRICT).counts["gap_mid_sentence"] == 0
+    after_music = [Cue(0, 2000, "[music] and then we went to the"), Cue(30_000, 32_000, "river at night."),
+                   Cue(33_000, 35_000, "It was cold.")]
+    assert caption_timing_report(after_music, language="en", limits=STRICT).counts["gap_mid_sentence"] == 0
+    capital = [Cue(0, 2000, "We stopped there,"), Cue(30_000, 32_000, "Later that week we left."), Cue(33_000, 35_000, "Fine.")]
+    assert caption_timing_report(capital, language="en", limits=STRICT).counts["gap_mid_sentence"] == 0
+
+
+def test_an_unpunctuated_lowercase_automatic_track_never_reads_pauses_as_mid_sentence():
+    raw = [Cue(0, 2000, "so we went down to the"), Cue(30_000, 32_000, "river and then we"), Cue(50_000, 52_000, "came back home")]
+    assert caption_timing_report(raw, language="en", limits=STRICT).counts["gap_mid_sentence"] == 0
+
+
+def test_a_long_chinese_pause_is_not_a_defect_unless_the_clause_is_open():
+    pause = [Cue(0, 2000, "他走了"), Cue(30_000, 32_000, "我们都很难过。"), Cue(33_000, 35_000, "后来呢？")]
+    assert caption_timing_report(pause, language="zh", limits=STRICT).counts["gap_mid_sentence"] == 0
+    stop = [Cue(0, 2000, "他走了。"), Cue(30_000, 32_000, "我们都很难过。")]
+    assert caption_timing_report(stop, language="zh", limits=STRICT).counts["gap_mid_sentence"] == 0
+    open_clause = [Cue(0, 2000, "他说，"), Cue(30_000, 32_000, "明天再来。"), Cue(33_000, 35_000, "好。")]
+    assert caption_timing_report(open_clause, language="zh", limits=STRICT).counts["gap_mid_sentence"] == 1
+
+
+def test_a_re_time_keeps_every_unchanged_lines_identity():
+    from writing_coach.media_transcript_pipeline import build_transcript, carry_segment_ids
+
+    old = build_transcript("youtube-ZncA70OAgPw", "en", _stored_lines())
+    previous = {"transcript": {"segments": [{"segment_id": s.segment_id, "original_text": s.original_text} for s in old.segments]}}
+    clipped, _ = clip_to_next_start(_raw_cues())
+    new = build_transcript("youtube-ZncA70OAgPw", "en", segment_lines(clipped, "en"))
+    old_ids = {s.segment_id for s in old.segments}
+    assert sum(s.segment_id not in old_ids for s in new.segments) >= 9   # what re-timing alone does to the ids
+    kept, carried = carry_segment_ids(previous, new)
+    texts = [s.original_text for s in old.segments]
+    by_text = {s.original_text: s.segment_id for s in old.segments if texts.count(s.original_text) == 1}
+    shared = [s for s in kept.segments if s.original_text in by_text]
+    assert carried >= 9 and len(shared) >= 9
+    assert all(s.segment_id == by_text[s.original_text] for s in shared)
+    assert len({s.segment_id for s in kept.segments}) == len(kept.segments)
+    assert [s.start_ms for s in kept.segments] == [s.start_ms for s in new.segments]   # the new times stand
+    changed = replace(new.segments[0], original_text="A corrected first line.")
+    alone, count = carry_segment_ids(previous, replace(new, segments=(changed,)))
+    assert count == 0 and alone.segments[0].segment_id == changed.segment_id
+
+
+def test_a_reprocess_keeps_the_ids_learner_references_point_at(tmp_path, inline):
+    from tests.test_media_import_pipeline_reasons import _Ledger
+    from writing_coach import media_transcript_pipeline as mtp
+    from writing_coach.media_library_store import FileMediaLibraryStore
+
+    store = FileMediaLibraryStore(tmp_path / "index")
+    entry = replace(_passport_entry(), duration_ms=60_000, status="review",
+                    processing={"state": "held", "reason": REASON_CAPTION_TIMING})
+    store.upsert(entry)
+    rows = entry.lesson["payload"]["transcript"]["segments"]
+    texts = [s["original_text"] for s in rows]
+    before = {s["original_text"]: s["segment_id"] for s in rows if texts.count(s["original_text"]) == 1}
+    ingestion = _Ingestion(_raw_cues(), {"caption_kind": KIND_UNKNOWN, "caption_provider": "supadata", "caption_language": "en"})
+    assert mtp.MediaPipeline(ledger=_Ledger(), workers=1, ingestion=ingestion).retry(store, None, entry.media_id)
+    after = store.get(entry.media_id).lesson["payload"]["transcript"]["segments"]
+    kept = [s for s in after if s["original_text"] in before]
+    assert len(kept) >= 9 and all(s["segment_id"] == before[s["original_text"]] for s in kept)

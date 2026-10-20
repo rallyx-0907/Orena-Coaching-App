@@ -482,6 +482,47 @@ def build_transcript(asset_id: str, language: str, lines: list[Cue]) -> MediaTra
     return MediaTranscript(asset_id=asset_id, source_language=language, segments=tuple(segments))
 
 
+CARRY_WINDOW = 8
+
+
+def carry_segment_ids(previous_payload: Mapping[str, Any] | None, transcript: MediaTranscript) -> tuple[MediaTranscript, int]:
+    """Keep a line's identity when a re-run only moved it in time (P0 2026-10-20 re-time sweep).
+
+    A segment id hashes its start and end, so re-timing an item would give every line a new id and detach what points at
+    the old one: listening and shadowing progress, speaking attempts, saved words and notes, the learner's place, the
+    meaning cache. A new line takes the id of the old line with the same text, matched in order (each old id once, within
+    a short window ahead of the last match), so references follow the line to its corrected time. A line whose text
+    changed keeps its new id, exactly as before. Returns (transcript, how many ids were carried)."""
+    transcript_payload = (previous_payload or {}).get("transcript") if isinstance(previous_payload, Mapping) else None
+    rows = transcript_payload.get("segments") if isinstance(transcript_payload, Mapping) else None
+    old = [(str(row.get("segment_id") or ""), _normal_text(str(row.get("original_text") or "")))
+           for row in (rows or []) if isinstance(row, Mapping) and row.get("segment_id")]
+    if not old:
+        return transcript, 0
+    carried: list[TranscriptSegment] = []
+    pointer = carried_count = 0
+    for segment in transcript.segments:
+        key = _normal_text(segment.original_text)
+        match = next((index for index in range(pointer, min(len(old), pointer + CARRY_WINDOW)) if old[index][1] == key), None)
+        if match is None:
+            carried.append(segment)
+            continue
+        pointer = match + 1
+        carried_count += int(old[match][0] != segment.segment_id)
+        carried.append(replace(segment, segment_id=old[match][0]))
+    if len({segment.segment_id for segment in carried}) != len(carried):
+        return transcript, 0   # a carried id met a new one: keep the new ids rather than merge two lines
+    try:
+        return MediaTranscript(asset_id=transcript.asset_id, source_language=transcript.source_language,
+                               segments=tuple(carried)), carried_count
+    except Exception:  # noqa: BLE001 - the contract refused the carried ids; the new ones stand
+        return transcript, 0
+
+
+def _normal_text(text: str) -> str:
+    return " ".join(unicodedata.normalize("NFC", text).split()).casefold()
+
+
 def lines_from_payload(payload: Mapping[str, Any] | None) -> list[Cue]:
     transcript = (payload or {}).get("transcript") if isinstance(payload, Mapping) else None
     rows = (transcript or {}).get("segments") if isinstance(transcript, Mapping) else None
@@ -703,13 +744,9 @@ class MediaPipeline:
             kept.update(attempts=current.get("attempts", 0), updated_at=_now(), reprocess_reason=reason, reprocess_detail=detail,
                         reprocess_message=reason_message(reason), previous={})
             restored.append(True)
-            status = str(snapshot.get("_status") or fresh.status)
-            if status == "published" and fresh.library == "shared" and not caption_timing_gate(fresh)[0]:
-                # Putting a mistimed transcript back is publishing it again: it goes to timing review instead.
-                status = "review"
-                kept.update(state=STATE_HELD, reason=REASON_CAPTION_TIMING, auto_published=False,
-                            message=reason_message(REASON_CAPTION_TIMING), detail=caption_timing_gate(fresh)[1])
-            return replace(fresh, processing=kept, status=status)
+            # A re-run that failed (no captions this time, a quota, a provider error) puts the item back exactly as it
+            # was, published or not, and says why; only new captions that fail the timing gate hold an item (in `_run`).
+            return replace(fresh, processing=kept, status=str(snapshot.get("_status") or fresh.status))
         try:
             store.update_if_present(media_id, change)
         except Exception:  # noqa: BLE001
@@ -1067,6 +1104,8 @@ class MediaPipeline:
 
     def _store_lesson(self, store: Any, entry: MediaLibraryEntry, lines: list[Cue], origin: str, duration: int, *, status: str, words: list[SpeechAsrWord] | None = None) -> MediaLibraryEntry:
         transcript = build_transcript(entry.media_id, entry.language, lines)
+        # A re-run keeps each unchanged line's identity, so what points at it stays attached after a re-time.
+        transcript, _carried = carry_segment_ids((entry.lesson or {}).get("payload") if entry.lesson else None, transcript)
         payload = lesson_payload(entry, transcript, origin, duration, words=words, english_reading=self._english_reading)
         # Channel captions, machine captions or Orena's recognition: told apart wherever the origin is (D-244).
         provenance = transcript_provenance(origin, str((entry.processing or {}).get("caption_kind") or ""))
