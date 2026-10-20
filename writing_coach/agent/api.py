@@ -33,7 +33,7 @@ import threading
 from collections.abc import AsyncIterator, Iterator, Mapping
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
@@ -353,6 +353,16 @@ def agent_voice_voices(
     # on /voice/session stays the authority.
     user_key = LearnerScope.from_request_context().user_key
     return {**voice_catalog(interface), "entitled": plan_features.entitled(user_key, plan_features.VOICE)}
+
+
+@router.get("/voice/allowance")
+def agent_voice_allowance(response: Response, voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
+    """Today's voice minutes with Orena for the energy bar (Monetisation v2): `limit`, `used`, `left` in seconds,
+    `resets_at` (next UTC midnight), `entitled`. A read: nothing is minted or charged; /voice/session stays the
+    authority (403 / 429). Absent where voice is not configured."""
+
+    response.headers["Cache-Control"] = "no-store"
+    return plan_features.voice_allowance(LearnerScope.from_request_context().user_key)
 
 
 @router.post("/voice/tool")

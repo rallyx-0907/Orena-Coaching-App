@@ -135,3 +135,29 @@ def require_voice_time(user_key: str) -> None:
         "feature": VOICE, "used": used, "limit": limit, "unit": meter.unit, "display_unit": meter.display_unit,
         "scale": meter.scale, "window": meter.window, "resets_at": resets.isoformat().replace("+00:00", "Z"),
         "plan": plan.id}, now=now)  # fmt: skip
+
+
+def voice_allowance(user_key: str) -> dict:
+    """Today's voice minutes for the energy bar (Monetisation v2): read only, nothing minted or charged. `used` counts
+    every token already minted today (a token's seconds count when it is minted), so `left` is what a new session may
+    still use. A plan without voice is `entitled: false` with nothing left - not a refusal. `limit`/`left` are None when
+    the minutes are not capped here (no plan system, no usage store, no limit). Unreadable: 503, fail closed."""
+
+    meter = METERS[VOICE]
+    now = _clock()
+    resets = datetime(now.year, now.month, now.day, tzinfo=UTC) + timedelta(days=1)
+    answer = {"feature": VOICE, "entitled": True, "limit": None, "used": 0, "left": None, "unit": meter.unit,
+              "display_unit": meter.display_unit, "scale": meter.scale, "window": meter.window,
+              "resets_at": resets.isoformat().replace("+00:00", "Z"), "plan": None}  # fmt: skip
+    plan = _plan(user_key)
+    if plan is None:
+        return answer
+    answer["plan"] = plan.id
+    entitlement = plan.entitlement_map().get(VOICE)
+    if entitlement is None or not entitlement.enabled:
+        return {**answer, "entitled": False, "limit": 0, "left": 0}
+    limit = _voice_limit(plan)
+    if limit is None or _daily_usage is None:
+        return answer
+    used = min(_voice_used(user_key), limit)
+    return {**answer, "limit": limit, "used": used, "left": limit - used}
