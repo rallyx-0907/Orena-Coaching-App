@@ -16,7 +16,7 @@ import { icon } from '../../kit/icons.js';
 import { languages } from '../../copy/index.js';
 import { planName, planDescription } from '../../copy/shell.js';
 import { adminApi } from '../../capabilities/admin-api.js';
-import { t as planCopy } from '../plan/copy.js';
+import { t as planCopy, windowedKey } from '../plan/copy.js';
 import { FEATURE_ORDER, featureCopyKey } from '../plan/model.js';
 import { t } from './copy.js';
 import { block, pageHead, skeleton } from './blocks.js';
@@ -44,10 +44,9 @@ export function draftOf(plan) {
     entitlements: (plan.entitlements || []).map((item) => {
       const voice = item.key === 'orena.voice';
       const scale = voice && !(Number(item.scale) > 0) ? 60 : scaleOf(item);
-      const held = item.limit ?? item.monthly_limit;
-      // The server reads a stored voice limit under one minute (the old on/off 1) as its 15-minute default; none is uncapped
-      // (D-237, _voice_limit). The editor shows that, and only for a plan that has voice: a disabled one is left as stored.
-      const limit = voice && item.enabled === true && held != null && Number(held) < 60 ? 900 : held;
+      // The server already reads a stored voice limit under one minute (the old on/off 1) as that plan's default
+      // (catalog._stored_limit), so the editor shows the figure it is sent; none is uncapped (D-237).
+      const limit = item.limit ?? item.monthly_limit;
       const field = limit == null ? null : shown(limit, scale);
       return {
         key: item.key, enabled: item.enabled === true,
@@ -121,7 +120,9 @@ function frontFace(plan, ui, flipped) {
     if (limit == null) return featureLabel(key);
     const n = Number(limit) / scaleOf(item);
     if (key === 'languages.target') return planCopy.plural('line_languages_target', n, { n: new Intl.NumberFormat(ui).format(n) });
-    const line = `line_${key.replace(/\./g, '_')}`;
+    // Voice minutes name their window from the catalogue ("a month" under D-248), as the learner's Plans card does.
+    const base = `line_${key.replace(/\./g, '_')}`;
+    const line = key === 'orena.voice' ? windowedKey(base, item.window) : base;
     return planCopy.has(line) ? planCopy(line, { n: new Intl.NumberFormat(ui).format(n) }) : featureLabel(key);
   });
   const month = plan.prices?.monthly || {};
@@ -182,6 +183,24 @@ function appliesLine(doc, ui) {
   return [t('plansFrom', { when }), doc.updated_by ? t('plansBy', { name: doc.updated_by }) : ''].filter(Boolean).join(' · ');
 }
 
+/* Saved limits the server does not apply because they were set under another window than the meter's current one (D-248:
+   voice day -> month; `stale_limits` of GET /api/product/admin/plans). One line per window change, naming the features and
+   plans; the built-in value applies until the operator saves again. '' when there is none. */
+export function staleLine(doc) {
+  const rows = Array.isArray(doc?.stale_limits) ? doc.stale_limits : [];
+  const groups = new Map();
+  for (const row of rows) {
+    const id = `${row.key}|${row.saved_window}|${row.window}`;
+    if (!groups.has(id)) groups.set(id, { ...row, plans: [] });
+    groups.get(id).plans.push(row.plan);
+  }
+  const period = (window) => (window && t.has(`plansWindow_${window}`) ? t(`plansWindow_${window}`) : String(window || ''));
+  return [...groups.values()].map((group) => t('plansStale', {
+    features: `${featureLabel(group.key)} (${group.plans.map((id) => planName({ id })).join(', ')})`,
+    saved: period(group.saved_window), window: period(group.window),
+  })).join(' ');
+}
+
 export function plansPage({ doc, drafts, editing = {}, busy = false, error = null, failed = false, ui = 'en', href }) {
   const back = { href: href('adminUsers'), label: t('navUsers') };
   const label = 'data-screen-label="Plans & pricing"';
@@ -189,6 +208,7 @@ export function plansPage({ doc, drafts, editing = {}, busy = false, error = nul
   if (!doc) return html`<section class="a-page" ${raw(label)}>${pageHead({ back, title: t('plansTitle'), sub: t('plansSub') })}${skeleton(t('loading'))}</section>`;
   return html`<section class="a-page" ${raw(label)}>
     ${pageHead({ back, title: t('plansTitle'), sub: appliesLine(doc, ui) })}
+    ${staleLine(doc) ? html`<p class="a-plans__note">${staleLine(doc)}</p>` : ''}
     <div class="a-plans">${doc.plans.map((plan) => planCard(plan, drafts[plan.id], { flipped: editing[plan.id] === true, busy, error: error && error.plan === plan.id ? error.message : '', ui }))}</div>
     <p class="a-plans__note">${t('plansBilling')}</p>
   </section>`;

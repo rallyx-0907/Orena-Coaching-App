@@ -16,7 +16,7 @@ import { bannerMarkup } from '../../kit/states.js';
 import { api } from '../../infrastructure/api.js';
 import { languages } from '../../copy/index.js';
 import { shellCopy, planName, planDescription } from '../../copy/shell.js';
-import { t } from './copy.js';
+import { t, windowedKey } from './copy.js';
 import { pricingPlans, compareRows, changeKind, featureCopyKey, formatNumber, priceView, yearlySaving, languageReasonFacts, CYCLES, subscriptionView, cycleOf } from './model.js';
 import { heldReason, releaseReason, REASON_LANGUAGE } from './reason.js';
 import { languageReasonText } from './reason-text.js';
@@ -30,7 +30,9 @@ function featureLine(feature) {
   const suffix = feature.key.replace(/\./g, '_');
   if (feature.limit == null) return t(featureCopyKey(feature.key));
   if (feature.key === 'languages.target') return t.plural('line_languages_target', Number(feature.limit), { n: number(feature.limit) });
-  return t(`line_${suffix}`, { n: number(feature.limit) });
+  // Voice minutes name their window from the catalogue ("a month" under D-248), never a fixed day.
+  const key = feature.key === 'orena.voice' ? windowedKey(`line_${suffix}`, feature.window) : `line_${suffix}`;
+  return t(key, { n: number(feature.limit) });
 }
 
 function ctaMarkup(plan, current, cycle, currentCycle) {
