@@ -41,6 +41,7 @@ from writing_coach.ai.capabilities import AIOperation, require_capability
 from writing_coach.ai.config import (
     ROUTING_SWITCH,  # noqa: F401 - re-exported for the routing switch's readers
     CapabilityConfig,
+    learner_text_refused,
     routed_capabilities,
     routed_definition,
     validate_capability_config,
@@ -56,6 +57,7 @@ from writing_coach.ai.credentials import (
     decrypt_credentials,
     encrypt_credentials,
 )
+from writing_coach.ai.health_signal import failure_class_of
 from writing_coach.ai.pricing import estimate_token_cost
 from writing_coach.ai.routing import (
     AllProvidersUnavailable,
@@ -506,9 +508,12 @@ def _record_attempt(capability_key: str | None, router_version: str | None = Non
         # why it was never asked.
         error_class = (
             "ProviderCoolingDown" if attempt.outcome == "skipped_unhealthy"
+            else "privacy_refused" if attempt.outcome == "skipped_budget" and attempt.reason == "privacy"
             else "budget_skipped" if attempt.outcome == "skipped_budget"
             else attempt.error_class
         )
+        # PR BZ: a skipped rung is not a provider failure; a failed one carries its health class.
+        failure_class = "not_counted" if attempt.outcome != "failure" else (attempt.failure_class or "other")
         _persist_operation_telemetry(
             {
                 "capability": safe_capability_display(capability_key)
@@ -528,6 +533,7 @@ def _record_attempt(capability_key: str | None, router_version: str | None = Non
                 "cost": estimate_token_cost(attempt.provider, model_display, None),
                 "quota_available": "unknown",
                 "billable_attempt": was_sent,
+                "failure_class": failure_class,
                 **_router_fields(router_version, attempt.provider, model_display, attempt=counter["n"],
                                  reason=attempt.reason, status_class=attempt.status_class),
             }
@@ -561,9 +567,47 @@ def _record_invalid_output(capability_key: str | None, target: ProviderTarget, r
             "cost": estimate_token_cost(target.provider, model_display, usage),
             "quota_available": "unknown",
             "billable_attempt": True,   # the provider answered: the call was made and may have cost tokens
+            "failure_class": "not_counted",  # the validator refused one answer: not a provider failure (PR BZ)
             **_router_fields(router_version, target.provider, model_display, attempt=attempt, reason="invalid_output"),
         }
     )
+
+
+def _privacy_gate(definition: Any, gate: Callable[[ProviderTarget], str | None] | None
+                  ) -> Callable[[ProviderTarget], str | None]:
+    """D-104 at switch time (PR BZ): before any rung is asked - the primary, or a backup reached because the primary is
+    down - a capability carrying learner text refuses a free tier or a prompt-logging provider (`"privacy"`), then the
+    spend and funding gate decides as before. With every rung refused the chain ends in the caller's gentle error or
+    its deterministic answer; nothing is sent."""
+
+    def admit(target: ProviderTarget) -> str | None:
+        if learner_text_refused(definition, target.provider, target.model):
+            return "privacy"
+        return gate(target) if gate is not None else None
+
+    return admit
+
+
+# The trigger of a switch, from what the first rung did.
+_SWITCH_TRIGGERS = {"skipped_unhealthy": "down", "failure": "failed"}
+
+
+def provider_switch(attempts: Sequence[Attempt] | None, answered_by: str | None) -> dict[str, Any] | None:
+    """The `provider_switch` telemetry field (PR BZ): the configured first rung did not answer and the chain moved on.
+    `from` is that rung, `to` the provider that answered (None: nobody did), `reason` a closed failure class (the
+    breaker's for a provider that is down; `privacy` / `budget` / `unfunded` for a rung a gate refused) and `trigger`
+    down / failed / refused. Provider ids and closed words only, never a prompt."""
+
+    rungs = list(attempts or ())
+    if len(rungs) < 2 or rungs[0].outcome == "success":
+        return None
+    first = rungs[0]
+    trigger = _SWITCH_TRIGGERS.get(first.outcome, "refused")
+    if trigger == "refused":
+        reason = first.reason if first.reason in {"privacy", "budget", "unfunded"} else "budget"
+    else:
+        reason = first.failure_class or "other"
+    return {"from": first.provider, "to": answered_by or None, "reason": reason, "trigger": trigger}
 
 
 AGENT_TURN_CAPABILITY = "agent_turn_fast"
@@ -657,6 +701,7 @@ def stream_agent_turn(
                 "model_redacted": model_redacted,
                 "outcome": outcome,
                 "error_class": error_class or (telemetry_error_class(error) if error is not None else None),
+                "failure_class": failure_class_of(error, error_class=error_class) if outcome == "failure" else None,
                 "latency_ms": normalized_latency((perf_counter() - started) * 1000),
                 "usage": usage,
                 "rate_limit": normalized_rate_limit(rate_limit),
@@ -800,6 +845,9 @@ def generate_structured(
             "billable_attempt": True,
             **_router_fields(router_version, provider_id, model_display, attempt=len(attempts or ()) or 1),
         }
+        switch = provider_switch(attempts, provider_id)
+        if switch is not None:
+            runtime["telemetry"]["provider_switch"] = switch
         if router_version is not None:
             runtime["router"] = {"attempts": list(attempts or ()), "calls": attempts_made["calls"]}
         _persist_operation_telemetry(runtime["telemetry"])
@@ -897,6 +945,7 @@ def generate_structured(
 
         gate = _funded_gate(definition.key, budget,
                             lambda target: _effective_timeout(_timeout_for(target), _provider_timeout(target.provider)))
+        admit = _privacy_gate(definition, gate)
 
         def _ask(target: ProviderTarget) -> AIResult:
             nonlocal provider_id, model
@@ -945,7 +994,7 @@ def generate_structured(
                 chain, _ask, on_attempt=_record_attempt(capability_key, router_version,
                                                         sent=lambda: unaccounted.pop("rung", False)),
                 deadline=deadline,
-                health=health, admit=gate,
+                health=health, admit=admit,
             )
         except AllProvidersUnavailable as error:
             skipped = [a for a in getattr(error, "attempts", []) or []]
@@ -975,6 +1024,10 @@ def generate_structured(
             "quota_available": "unknown",
             # the legacy call that raised was sent; a chain's rungs were each recorded already (never twice)
             "billable_attempt": unaccounted["legacy"],
+            "failure_class": failure_class_of(exc),
+            # PR BZ: a chain's rungs were each recorded already; this closing row is not counted again by health.
+            **({"chain_summary": True} if getattr(exc, "attempts", None) else {}),
+            **({"provider_switch": switch} if (switch := provider_switch(getattr(exc, "attempts", None), None)) else {}),
             **_router_fields(router_version, provider_id, model_display, attempt=len(getattr(exc, "attempts", ())) or 1,
                              reason=fallback_reason(exc) if isinstance(exc, AIProviderError) else None,
                              status_class=http_status_class(getattr(exc, "status_code", None))),
@@ -1323,6 +1376,32 @@ def admin_ai_provider_credential_delete(
 def admin_ai_operations(request: Request, limit: int = 100) -> dict[str, Any]:
     _require_admin(request)
     return _control_plane().operations(limit=limit)
+
+
+def ai_health_report() -> dict[str, Any]:
+    """Provider health (PR BZ): the recorded operations of the last minutes per provider and capability, the router's
+    breaker in this process, the recent provider switches and the providers that are down. Counts and closed words
+    only (ai/health_signal.py)."""
+
+    from writing_coach.ai.health_signal import report_from_repository, unavailable_report
+
+    breaker = _routing.provider_health.snapshot()
+    try:
+        repository = _installed_platform_repository()
+    except RuntimeError:
+        report = unavailable_report()
+        report.update({"switches": [], "down": []})
+    else:
+        report = report_from_repository(repository, breaker=breaker)
+    report["breaker"] = [{"provider": key, "model": None, **state} for key, state in sorted(breaker.items())]
+    return report
+
+
+@router.get("/health")
+def admin_ai_health(request: Request, response: Response) -> dict[str, Any]:
+    _require_admin(request)
+    response.headers["Cache-Control"] = "no-store"
+    return ai_health_report()
 
 
 # Audio capabilities are reported per minute of audio; every other one per call.

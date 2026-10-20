@@ -66,8 +66,9 @@ export async function mountControl(shell, ctx) {
     host.paint();
     try {
       if (route === 'adminOverview') {
-        const [overview, spend] = await Promise.all([adminApi.overview(), adminApi.aiSpend().catch(() => null)]);
-        data = { overview, spend };
+        const [overview, spend, health] = await Promise.all([adminApi.overview(), adminApi.aiSpend().catch(() => null),
+          adminApi.aiHealth().catch(() => null)]);
+        data = { overview, spend, health };
       }
       else if (route === 'adminUser') {
         const [detail, membership] = await Promise.all([adminApi.user(ctx.params.id), adminApi.membership(ctx.params.id).catch(() => null)]);
@@ -80,9 +81,9 @@ export async function mountControl(shell, ctx) {
         data = { summary, list };
       } else if (route === 'adminPolling') data = { sources: await adminApi.readingSources() };
       else {
-        const results = await Promise.allSettled([adminApi.runtime(), adminApi.aiOperations(), adminApi.overview(), adminApi.readingOperations()]);
+        const results = await Promise.allSettled([adminApi.runtime(), adminApi.aiOperations(), adminApi.overview(), adminApi.readingOperations(), adminApi.aiHealth()]);
         if (request !== generation) return;
-        data = Object.fromEntries(['runtime', 'telemetry', 'overview', 'reading'].map((name, index) => [name, results[index].status === 'fulfilled' ? results[index].value : { available: false }]));
+        data = Object.fromEntries(['runtime', 'telemetry', 'overview', 'reading', 'health'].map((name, index) => [name, results[index].status === 'fulfilled' ? results[index].value : { available: false }]));
       }
     } catch {
       if (request !== generation) return;

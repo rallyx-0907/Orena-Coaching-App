@@ -14,6 +14,17 @@ Checks (each one a PASS or FAIL line):
   backup-log        the last "exit N:" line of backup.log has N = 0
   ai-spend          (notice only, never a failure) today's container log holds the daily AI spend warning or cap-reached line;
                     raises the alert once per UTC day and level
+  providers         (PR BZ) provider health from the recorded AI operations: `docker exec` runs
+                    `python -m writing_coach.ai.health_signal` in the app container (one read-only SELECT on audit_logs;
+                    no key, prompt or learner text is read or printed). FAIL when a provider alerts: 3 failures in a row
+                    or in 10 minutes (policies ai.health_*), and AT ONCE for a spending cap or a rejected key (severity
+                    high), which also raises the notification at once, without waiting for -AlertAfter. Unreadable
+                    telemetry is a WARN line, not a failure.
+
+What Hermes reads (one JSON shape, version 1; docs/operations/PROVIDER_HEALTH.md):
+  health.log         `PASS providers ...` or `FAIL providers ...`, then `JSON providers {...}`: the whole report on one
+                     line (status, severity, alerts, down providers with reason / since / on_backup, recent switches).
+  health.state.json  `providers`: { status, severity, checked_at, line, alerts, down } from the last run.
 
 Writes %USERPROFILE%\.orena\health\health.log (one line per check, UTC) and health.state.json (the consecutive
 failure count and the restart counts). After -AlertAfter (2) consecutive failing runs it raises a Windows toast
@@ -80,12 +91,13 @@ try {
 
 # Maintenance pause: the flag file turns the whole run into a no-op that records status "paused".
 $MaintenanceFlag = Join-Path $HealthDir 'maintenance.flag'
-$state = @{ failures = 0; restarts = @{}; spendDay = ''; spendLevel = ''; paused = $false; last_status = '' }
+$state = @{ failures = 0; restarts = @{}; spendDay = ''; spendLevel = ''; paused = $false; last_status = ''; providersAlert = ''; providers = $null }
 try {
     if (Test-Path -LiteralPath $StateFile) {
         $saved = Get-Content -LiteralPath $StateFile -Raw | ConvertFrom-Json
         if ($saved.failures) { $state.failures = [int]$saved.failures }
         if ($saved.spendDay) { $state.spendDay = [string]$saved.spendDay; $state.spendLevel = [string]$saved.spendLevel }
+        if ($saved.providersAlert) { $state.providersAlert = [string]$saved.providersAlert }
         if ($saved.restarts) { $saved.restarts.PSObject.Properties | ForEach-Object { $state.restarts[$_.Name] = [int]$_.Value } }
     }
 } catch { }
@@ -178,6 +190,37 @@ if ($spendLevel) {
     Log "PASS ai-spend no ceiling warning in today's container log"
 }
 
+# 7. Provider health (PR BZ, owner rule 2026-10-20: Hermes is alerted before learners notice). Read-only: the module
+# runs one SELECT on the AI operation rows and prints one JSON line; nothing is written in the container.
+$providersReport = $null
+try {
+    $raw = (& docker.exe exec $spendContainer python -m writing_coach.ai.health_signal 2>$null | Select-Object -Last 1)
+    if ($raw) { $providersReport = "$raw" | ConvertFrom-Json }
+} catch { }
+$providersHigh = $false
+if ($null -eq $providersReport) {
+    Log 'WARN providers status=unknown health signal unreadable (docker exec failed)'
+} elseif (-not $providersReport.available) {
+    Log ('WARN providers ' + $providersReport.line)
+} else {
+    Check 'providers' ($providersReport.status -ne 'alert') $providersReport.line
+    $providersHigh = ($providersReport.severity -eq 'high')
+}
+if ($null -ne $providersReport) {
+    Log ('JSON providers ' + ($providersReport | ConvertTo-Json -Depth 8 -Compress))
+    $state.providers = @{ status = $providersReport.status; severity = $providersReport.severity; checked_at = $providersReport.checked_at; line = $providersReport.line; alerts = @($providersReport.alerts); down = @($providersReport.down) }
+} else {
+    $state.providers = @{ status = 'unknown'; severity = $null; checked_at = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ'); line = 'health signal unreadable'; alerts = @(); down = @() }
+}
+# A spending cap or a rejected key does not wait for -AlertAfter: it is raised at once, and again when it changes.
+$providersKey = ''
+if ($providersHigh) { $providersKey = ((@($providersReport.alerts) | Where-Object { $_.severity -eq 'high' } | ForEach-Object { '{0}:{1}' -f $_.provider, $_.failure_class }) -join ',') }
+if ($providersHigh -and ($state.providersAlert -ne $providersKey)) {
+    $providersRaised = Raise-Alert ('Orena :8000 AI provider down: ' + $providersKey)
+    Log ("ALERT providers {0} {1}" -f $providersKey, $(if ($providersRaised) { 'raised' } else { 'not shown (-NoToast or no BurntToast); see the state file' }))
+}
+$state.providersAlert = $providersKey
+
 # Alerting: after $AlertAfter consecutive failing runs, then hourly while it persists.
 $code = 0
 if ($failures.Count -eq 0) {
@@ -196,6 +239,7 @@ if ($failures.Count -eq 0) {
         $code = 2
     }
 }
+if ($providersHigh) { $code = 2 }
 
 try { ($state | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $StateFile -Encoding UTF8 } catch { }
 exit $code

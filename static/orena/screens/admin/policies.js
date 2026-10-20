@@ -23,7 +23,7 @@ import { humanKey } from './model.js';
 import { featureLabel } from './plans.js';
 
 /* The order the groups are drawn in; "quota" first (the enforcement switch is above its settlement policy). */
-export const GROUP_ORDER = Object.freeze(['quota', 'agent', 'voice', 'speech', 'media', 'vocabulary', 'rates', 'feedback', 'spend', 'billing']);
+export const GROUP_ORDER = Object.freeze(['quota', 'agent', 'voice', 'speech', 'media', 'vocabulary', 'rates', 'feedback', 'spend', 'billing', 'health']);
 
 const copyKey = (prefix, key) => `${prefix}${String(key).replace(/[.]/g, '_')}`;
 const text = (value) => (value == null ? '' : String(value));
@@ -167,7 +167,7 @@ function changedLine(meta, ui) {
 }
 
 /* Where each card sits on the desktop two-column page (phones keep the authored order, one column). */
-export const GROUP_COLUMN = Object.freeze({ quota: 'left', agent: 'left', voice: 'left', speech: 'left', media: 'left', rates: 'right', billing: 'right', vocabulary: 'right', spend: 'right', feedback: 'right' });
+export const GROUP_COLUMN = Object.freeze({ quota: 'left', agent: 'left', voice: 'left', speech: 'left', media: 'left', rates: 'right', billing: 'right', vocabulary: 'right', spend: 'right', feedback: 'right', health: 'right' });
 
 function quotaBlock(view, ui) {
   const { quota, quotaDraft: draft } = view;

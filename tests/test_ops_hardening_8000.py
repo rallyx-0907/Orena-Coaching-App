@@ -220,8 +220,23 @@ def test_state_json_keeps_its_keys_and_only_adds_paused_and_last_status():
     init = re.search(r"\$state = @\{(.*?)\}\r?\n", health).group(1)
     keys = [k.strip().split(" = ")[0] for k in init.split(";")]
     assert keys[:4] == ["failures", "restarts", "spendDay", "spendLevel"]
-    assert keys[4:] == ["paused", "last_status"]
+    assert keys[4:6] == ["paused", "last_status"]
+    # PR BZ: the provider health Hermes reads, and the key of the last high alert raised (raised once per change).
+    assert keys[6:] == ["providersAlert", "providers"]
     assert "$state.last_status = 'ok'" in health and "$state.last_status = 'unhealthy'" in health
+
+
+def test_the_providers_check_reads_the_health_signal_and_alerts_a_spend_cap_at_once():
+    health = _ops("health_check_8000.ps1")
+    branch = health[health.index("# 7. Provider health"):health.index("# Alerting: after")]
+    # Read-only: the module prints one JSON line; the log carries the PASS/FAIL line and the whole report as JSON.
+    assert "docker.exe exec $spendContainer python -m writing_coach.ai.health_signal" in branch
+    assert "Check 'providers'" in branch and "Log ('JSON providers '" in branch
+    assert "$state.providers = @{" in branch and "Raise-Alert" in branch
+    # High severity (spend cap, rejected key) does not wait for -AlertAfter and turns the exit code to 2.
+    assert "$providersHigh" in branch and "if ($providersHigh) { $code = 2 }" in health
+    # An unreadable signal is a WARN line, not a failure.
+    assert "Log 'WARN providers status=unknown" in branch
 
 
 def test_powershell_scripts_parse_when_powershell_is_available():

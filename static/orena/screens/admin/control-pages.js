@@ -3,6 +3,14 @@ import { planName } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
 import { pageHead, block, metrics, rowList, kv, stateBlock, formBlock, banner } from './blocks.js';
+import { downBanners, switchRows } from './provider-health.js';
+
+const capabilityWords = (key) => (t.has(`cap_${key}`) ? t(`cap_${key}`) : String(key || '').replaceAll('_', ' '));
+
+/* PR BZ: one banner per provider that is down (GET /api/admin/ai/health), the design's Overview banner. */
+export function providerDownBanners(health, href, now = Date.now()) {
+  return downBanners(t, health, { ui: languages().ui, now, href, capabilityName: capabilityWords }).map(banner);
+}
 
 const value = (x) => x === null || x === undefined || x === '' ? t('opUnavailable') : String(x);
 const key = (x) => String(x || '').replaceAll('_', ' ');
@@ -100,7 +108,7 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
   if (route === 'adminOverview') {
     sub = t('opOverviewSub');
     const d = data.overview || {};
-    body = html`${spendBanner(data.spend, href)}<div class="a-overview-metrics">${metrics([
+    body = html`${providerDownBanners(data.health, href)}${spendBanner(data.spend, href)}<div class="a-overview-metrics">${metrics([
       { label: t('opActive'), value: d.activity?.available ? value(d.activity.active_7d) : t('opUnavailable') },
       { label: t('opNew'), value: d.accounts?.available ? value(d.accounts.new_7d) : t('opUnavailable') },
       // Every kind, Reading included (content.states); the older count left Reading out.
@@ -172,7 +180,11 @@ export function controlPage(route, data, { href, filters = {}, offset = 0 } = {}
         title: key(e.capability), meta: [e.created_at, e.provider, e.error_class].filter(Boolean).join(' · '),
         pills: [{ label: key(e.outcome), tone: e.outcome === 'success' ? 'ok' : 'err' }],
         go: e.provider ? href('adminProvider', { id: e.provider }) : href('adminAi'),
-      }))), { col: route === 'adminOperations' ? 'right' : '' })}`;
+      }))), { col: route === 'adminOperations' ? 'right' : '' })}${route === 'adminOperations' ? block({
+        col: 'right', title: t('phSwitches'), sub: t('phSwitchesSub'),
+        body: data.health?.available === false && !data.health?.switches ? stateBlock({ kind: 'unavail', heading: t('opUnavailable') })
+          : rows(switchRows(t, data.health, { ui: languages().ui, now: Date.now(), href, capabilityName: capabilityWords }).slice(0, 15)),
+      }) : ''}`;
     }
   }
   return { title, filterValue: filters.q || '', markup: html`<section class="a-page">${pageHead({ title, sub, back, actions: [...(route === 'adminOverview' ? [{ label: t('trafTitle'), size: 'sm', a: 'go', data: { to: href('adminTraffic') } }] : []), ...(route === 'adminUsers' ? [{ label: t('plansTitle'), size: 'sm', a: 'go', data: { to: href('adminPlans') } }, { label: t('fbTitle'), size: 'sm', a: 'go', data: { to: href('adminFeedback') } }] : []), { label: t('retry'), a: 'reload' }] })}<div class="a-blocks">${body}</div></section>` };

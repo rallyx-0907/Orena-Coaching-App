@@ -98,7 +98,7 @@ def _p(key: str, group: str, kind: str, default: Any, **extra: Any) -> Policy:
 
 
 GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "vocabulary", "rates", "feedback", "spend",
-                           "billing")
+                           "billing", "health")
 
 POLICIES: tuple[Policy, ...] = (
     # --- quota (the enforcement switch itself is product.quota_enforcement, D-161; this is what the reconciler decides)
@@ -242,6 +242,18 @@ POLICIES: tuple[Policy, ...] = (
        env="BILLING_PAST_DUE_GRACE_HOURS", env_min=0, danger="charging"),
     # PR-MON-10: off pauses new checkouts only; webhooks, the portal and the reconciler keep running (billing/readiness).
     _p("billing.new_sales", "billing", "bool", True, env="BILLING_NEW_SALES", danger="charging"),
+    # --- provider health (PR BZ, owner rule 2026-10-20: Hermes is alerted before learners notice). ai/health_signal.py
+    # reads the recorded AI operations over this window; a provider alerts at this many failures in a row or in the
+    # window. A spending cap or a rejected key alerts at the first failure, whatever these say.
+    _p("ai.health_window_minutes", "health", "int", 10, unit="minutes", low=1, high=120),
+    _p("ai.health_consecutive_failures", "health", "int", 3, unit="count", low=1, high=50),
+    _p("ai.health_window_failures", "health", "int", 3, unit="count", low=1, high=1000),
+    # The router's circuit breaker (ai/routing.py, P0 2026-10-20): a spending cap or a rejected key stands the provider
+    # down for this long, then one request probes; a run of rate limits stands it down for the shorter time. While it
+    # is down, requests go straight to the capability's configured backup (which still passes the spend gate).
+    _p("ai.breaker_hard_cooldown_minutes", "health", "int", 30, unit="minutes", low=1, high=1440),
+    _p("ai.breaker_rate_limit_failures", "health", "int", 3, unit="count", low=1, high=20),
+    _p("ai.breaker_rate_limit_cooldown_seconds", "health", "int", 120, unit="seconds", low=10, high=3600),
 )
 
 

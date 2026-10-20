@@ -251,6 +251,12 @@ live.
 | `OLLAMA_URL`, `OLLAMA_MODEL`, `*_BASE_URL`, `AZURE_SPEECH_REGION` | env, (b) | URL or id | provider defaults | Endpoints. | — | — | — | — | restart |
 | `OPENAI_MODELS`, `DEEPSEEK_MODELS`, `GEMINI_MODELS`, `GROQ_MODELS`, `OPENROUTER_MODELS`, `OLLAMA_CLOUD_MODELS`, `AZURE_OPENAI_DEPLOYMENTS` | env, (b) | comma lists | per compose | Model allowlists Admin may choose from. | — | reviewed models only | An unreviewed model becomes selectable. | capability rows | restart |
 | `ORENA_ENVIRONMENT_LABEL` / `ORENA_ENV_LABEL` | env, (b) | text | local | Labels cost events and the Admin header. | staging-8000 | production | mixed cost reports | — | restart |
+| `ai.health_window_minutes` | Admin › Policies › Provider health | 1–120 min | 10 | How far back recorded AI calls count for provider health (docs/operations/PROVIDER_HEALTH.md). | 10 | 10 | Too long: an old outage keeps alerting. | health check | live |
+| `ai.health_consecutive_failures` | Admin › Policies › Provider health | 1–50 | 3 | Failures in a row that alert (a spending cap or a rejected key alerts at the first). | 3 | 3 | Too high: learners notice first. | health check | live |
+| `ai.health_window_failures` | Admin › Policies › Provider health | 1–1000 | 3 | Failures inside the window that alert. | 3 | 3 | Too low: noise. | health check | live |
+| `ai.breaker_hard_cooldown_minutes` | Admin › Policies › Provider health | 1–1440 min | 30 | How long the router skips a provider after a spending cap (that model) or a rejected key (the provider); then one request probes. | 30 | 30 | Too short: every request pays a failed call first. | capability backups | live |
+| `ai.breaker_rate_limit_failures` | Admin › Policies › Provider health | 1–20 | 3 | Rate limits in a row that stand a provider down for the shorter pause. | 3 | 3 | — | — | live |
+| `ai.breaker_rate_limit_cooldown_seconds` | Admin › Policies › Provider health | 10–3600 s | 120 | How long a rate-limited provider is skipped. | 120 | 120 | Too long: a free tier that recovered is left idle. | — | live |
 
 ## 8. Infrastructure, identity, secrets and activation gates (environment only, restart)
 

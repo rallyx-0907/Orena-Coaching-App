@@ -4414,6 +4414,10 @@ def admin_readiness_summary(request: Request) -> dict[str, Any]:
     # PRE-502 R1/R2: what the published policies promise and this runtime does not keep (names only, no values).
     summary["unmet_promises"] = [{"code": p.code, "message": p.message}
                                  for p in _unmet_promises(os.environ, _policies.value)]
+    # PR BZ: provider health, the same report as GET /api/admin/ai/health and the :8000 health check's providers line.
+    from writing_coach.ai.platform import ai_health_report
+
+    summary["providers"] = ai_health_report()
     return summary
 
 
