@@ -860,3 +860,33 @@
   line-height: 1.1;
   white-space: nowrap;
 }
+
+/* ---- A locked article's preview (screens/reader/locked.js, D-248 G8) ------------------------------------------ */
+/* The title, the cover and the first paragraph, never blurred; then the Coming-soon card as the end of the preview. */
+.s-reader-locked__figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.s-reader-locked__cover {
+  display: block;
+  aspect-ratio: 16 / 10;
+  border-radius: 20px;
+  background-color: var(--surface2);
+  background-size: cover;
+  background-position: center;
+}
+.s-reader-locked__title {
+  margin: 0;
+}
+.s-reader-locked__end {
+  font-family: var(--font-ui);
+  line-height: normal;
+}
+/* The design sheet title's size (`.o-sheet__title`, 18/600): the card's 28px page title is too loud for a line under the text. */
+.s-reader-locked__end-title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
+}

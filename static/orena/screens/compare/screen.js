@@ -182,6 +182,9 @@ export default async function mountCompareWithModel(element, ctx) {
     source,
     key,
     language,
+    // Reached as Shadowing on a video (route `shadow`): a scored shadowing take, a Plus tool around that video (D-248 §4);
+    // a refusal opens the upgrade sheet through showAssessmentRefusal.
+    ...(ctx.route?.id === 'shadow' && source.assetId ? { practice: 'shadowing', mediaId: source.assetId } : {}),
     facts: (finished) => [
       { label: t('metricAccuracy'), value: finished.accuracy },
       ...(finished.fluencyMeasured ? [{ label: t('metricFluency'), value: finished.fluency }] : []),

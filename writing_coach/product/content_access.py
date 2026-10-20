@@ -490,6 +490,19 @@ def _trial(user_key: str) -> bool | None:
     return None if answer is None else bool(answer)
 
 
+def learner_access(user_key: str | None = None) -> dict[str, Any]:
+    """What the learner UI needs to draw badges and locks (MV2-3), read with the commerce state: whether enforcement is
+    on, the tier the learner's effective plan gives, and whether the trial may still be started (None: not known). A
+    plan that cannot be read is `tier: None`, which the client never reads as locked - no upgrade prompt over an
+    outage; the routes still fail closed on their own."""
+    user = _user(user_key)
+    try:
+        tier = learner_tier(user)
+    except Exception:  # noqa: BLE001 - a read for drawing; the gated routes refuse on their own
+        tier = None
+    return {"enforced": enforced(), "tier": tier, "trial_available": _trial(user)}
+
+
 def plan_required(*, user_key: str, kind: str, item_id: str, required_tier: str, plan: str | None,
                   preview: Mapping[str, Any] | None = None, tool: str | None = None) -> Exception:
     """The 403 `plan_required` refusal, in the contract's error envelope."""

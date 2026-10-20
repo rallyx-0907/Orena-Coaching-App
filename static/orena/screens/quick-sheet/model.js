@@ -198,6 +198,14 @@ function vietnameseMeaning(card) {
   return written.toLowerCase() === 'vi' ? text(card?.meaning) : '';
 }
 
+/* The video a save from Listening comes from (D-248 §4): saving from a video to review is one of the paid tools around
+   it, and the server needs the video to apply an editor's override. Nothing for any other source. */
+export function sourceMediaOf(source) {
+  if (text(source?.kind) !== 'listening') return {};
+  const id = text(source?.content_id).replace(/^media:/, '').slice(0, 255);
+  return id ? { source_media_id: id } : {};
+}
+
 export function wordSavePayload(card, sentence, source) {
   return {
     word: text(card?.word),
@@ -211,6 +219,7 @@ export function wordSavePayload(card, sentence, source) {
     source_kind: ['reading', 'listening', 'writing', 'speaking', 'feed', 'collection', 'feedback', 'strength', 'dictionary'].includes(text(source?.kind))
       ? text(source.kind)
       : 'dictionary',
+    ...sourceMediaOf(source),
   };
 }
 
@@ -286,6 +295,7 @@ export function vocabSavePayload(term, meaning, sentence, source, supportLanguag
     ...(text(supportLanguage).toLowerCase() === 'vi' && text(meaning) ? { translation_vi: text(meaning) } : {}),
     source_fragment: text(sentence),
     source_kind: ['reading', 'listening', 'writing', 'speaking'].includes(text(source?.kind)) ? text(source.kind) : 'dictionary',
+    ...sourceMediaOf(source),
   };
 }
 

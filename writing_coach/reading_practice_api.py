@@ -110,8 +110,20 @@ class QuestionChoiceBody(BaseModel):
 def next_article(response: Response) -> dict[str, Any]:
     _no_store(response)
     choice = _guarded(lambda: _repo().next_article(support_language=_support()))
+    choice = _with_access(choice)
     return {"available": choice is not None, "next": choice, "submit_enabled": submit_enabled(),
             "support_language": _support()}
+
+
+def _with_access(choice: Any) -> Any:
+    """The recommended article carries the same `access` block as a Reading card (D-248 MV2-3), so Today can badge it."""
+    from writing_coach.product import content_access
+
+    article = (choice.get("set") or {}).get("article") if isinstance(choice, dict) and isinstance(choice.get("set"), dict) else None
+    if not isinstance(article, dict) or not article.get("id"):
+        return choice
+    decorated = content_access.reading_card_access([article])[0]
+    return {**choice, "set": {**choice["set"], "article": decorated}}
 
 
 def _require_article_access(article_id: str) -> None:

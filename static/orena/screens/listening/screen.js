@@ -40,6 +40,12 @@ import { processingProgressMarkup } from '../../kit/states.js';
 import { openWordSheet } from '../quick-sheet/sheet.js';
 import { openVocabFocus } from './vocab-sheet.js';
 import { pausedLineNow } from '../plan/quota-notice.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
+import { t as planT } from '../plan/copy.js';
+import { toolLock } from '../../kit/components.js';
+import { planRequired } from '../../kit/access.js';
+import { toolLocked } from '../../product/content-access.js';
+import { planName } from '../../copy/shell.js';
 import { topicLabel } from '../discover/model.js';
 import { t as discoverT } from '../discover/copy.js';
 import { levelWithQualifier } from '../../kit/level-label.js';
@@ -192,9 +198,23 @@ export default async function listening(element, ctx) {
     },
   });
 
+  /* Orena's paid tools around the video (D-248 §4-§5, G6): the server says which are locked for this learner
+     (`payload.access.tools`, only while enforcement is on). A locked control keeps its place and its label, shows a lock
+     after it and opens the light upgrade sheet; the player, its controls and the channel's captions are never locked,
+     and the sheet only opens once the player is paused (Required Minimum Functionality: nothing over a playing player). */
+  const locked = (tool) => toolLocked(payload, tool);
+  const tierOf = (tool) => payload?.access?.tools?.[tool]?.tier || 'plus';
+  const lockMark = (tool, size = 15) => (locked(tool) ? toolLock({ size, label: planT('partOfPlan', { plan: planName({ id: tierOf(tool) }) }) }) : '');
+  function upsell(tool) {
+    if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
+    void openUpgradeSheet({ source: `listening_${tool}`, kind: 'tool', tier: tierOf(tool), go: (to) => ctx.go(to) });
+  }
+
   // Reached by the Dictation route (Practice Hub, Progress) the room opens in Dictation, on the remembered or
-  // named line (LEX-034): one Dictation experience, whichever way the learner came in.
-  if (dictationOn && (ctx.route?.id === 'dictation' || ctx.query.get('mode') === 'dictation')) mode = 'dictation';
+  // named line (LEX-034): one Dictation experience, whichever way the learner came in. A locked Dictation opens the
+  // room in Listening and offers the plan once it is drawn.
+  const dictationAsked = dictationOn && (ctx.route?.id === 'dictation' || ctx.query.get('mode') === 'dictation');
+  if (dictationAsked && !locked('dictation')) mode = 'dictation';
 
   /* A hidden line: one muted bar per word (per character in Chinese), so its length is known and its
      words are not. */
@@ -293,7 +313,7 @@ export default async function listening(element, ctx) {
       { id: 'dictation', label: s('dictation'), on: dictationOn },
     ];
     const pressed = (id) => (id === 'dictation') === (mode === 'dictation');
-    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" ${item.on ? '' : raw('disabled')} title="${item.on ? '' : t('transcriptUnavailable')}" aria-pressed="${String(pressed(item.id))}">${item.label}</button>`)}`;
+    return html`${list.map((item) => html`<button type="button" class="s-listening__mode" data-mode="${item.id}" ${item.on ? '' : raw('disabled')} title="${item.on ? '' : t('transcriptUnavailable')}" aria-pressed="${String(pressed(item.id))}">${item.label}${item.id === 'dictation' ? lockMark('dictation', 14) : ''}</button>`)}`;
   }
   function paintModes() {
     element.classList.toggle('is-dictation', mode === 'dictation');
@@ -313,6 +333,7 @@ export default async function listening(element, ctx) {
     }
   }
   function onMode(id) {
+    if (id === 'dictation' && locked('dictation')) { upsell('dictation'); return; }
     if (id === mode) return;
     // Switching never plays on: the learner is on the same line, paused, in either mode.
     if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
@@ -499,7 +520,7 @@ export default async function listening(element, ctx) {
 
   /* The listening aids act on visible text; in Dictation the text is hidden, so they step aside (LEX-035). */
   function aidsMarkup() {
-    return html`${showMeaningToggle ? html`<button type="button" class="s-listening__pill s-listening__pill--toggle" data-act="trans" aria-pressed="${String(showTrans)}"><span class="s-listening__trans-code">${support}</span><span class="s-listening__trans-label">${t('meaning')}</span></button>` : ''}
+    return html`${showMeaningToggle ? html`<button type="button" class="s-listening__pill s-listening__pill--toggle" data-act="trans" aria-pressed="${String(showTrans)}"><span class="s-listening__trans-code">${support}</span><span class="s-listening__trans-label">${t('meaning')}</span>${lockMark('translation')}</button>` : ''}
       <button type="button" class="s-listening__more" data-act="more" aria-pressed="${String(moreOpen)}" aria-label="${t('more')}" title="${t('more')}"><span class="s-listening__more-glyph">${raw(icon('ellipsis', { size: 18 }))}</span></button>
       <span class="s-listening__secondary">${toggles()}</span>
       ${moreOpen ? html`<div class="s-listening__drawer"><div class="s-listening__drawer-row">${toggles()}</div></div>` : ''}`;
@@ -532,6 +553,7 @@ export default async function listening(element, ctx) {
       return;
     }
     if (action === 'trans') {
+      if (locked('translation')) { upsell('translation'); return; }
       showTrans = !showTrans;
       saveStage();
       if (showTrans && !hasMeanings()) toast(meaningPause || t('meaningUnavailable'));
@@ -698,13 +720,13 @@ export default async function listening(element, ctx) {
       </div>
       <div class="s-listening__selected-actions" data-scroll-region>
         ${playbackOk ? pill({ id: 'play-seg', label: t('playSegment'), iconName: 'play', variant: 'primary' }) : ''}
-        ${preview ? '' : html`<button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}</button>`}
+        ${preview ? '' : html`<button type="button" class="s-listening__pill${saved ? ' s-listening__pill--saved' : ''}" data-act="save-phrase" aria-pressed="${String(saved)}">${phraseLabelFor(seg)}${saved ? '' : lockMark('save_to_review')}</button>`}
         ${pill({ id: 'vocab', label: t('vocabularyFocus') })}
         ${preview ? '' : html`<button type="button" class="s-listening__pill--ai" data-act="explain">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}${t('explain')}</button>`}
         <span class="s-listening__extra-acts${moreActs ? ' is-open' : ''}" role="group" aria-label="${t('practiseLine')}">
           <span class="s-listening__practise-label">${t('practiseLine')}</span>
-          ${lesson.modes.dictation ? pill({ id: 'dictation', label: s('dictation') }) : ''}
-          ${lesson.modes.shadowing && !preview ? pill({ id: 'shadowing', label: s('shadowing') }) : ''}
+          ${lesson.modes.dictation ? pill({ id: 'dictation', label: html`${s('dictation')}${lockMark('dictation')}` }) : ''}
+          ${lesson.modes.shadowing && !preview ? pill({ id: 'shadowing', label: html`${s('shadowing')}${lockMark('shadowing_score')}` }) : ''}
           ${preview ? '' : pill({ id: 'react', label: s('reactReuse'), title: `${s('reactReuse')}: ${t('reactHint')}` })}
           <span class="s-listening__practise-hint">${s('reactReuse')} · ${t('reactHint')}</span>
         </span>
@@ -857,14 +879,17 @@ export default async function listening(element, ctx) {
         savedPhrases.delete(text);
         toast(t('removedToast'));
       } else {
-        await api.saveLibraryVocabulary(phraseSavePayload(text, { meaning: enc.meaning(seg.segment_id) || '' }));
+        // The video it comes from (D-248 §4): saving from a video to review is one of the paid tools around it.
+        await api.saveLibraryVocabulary({ ...phraseSavePayload(text, { meaning: enc.meaning(seg.segment_id) || '' }), source_media_id: routeId });
         savedPhrases.add(text);
         // The line kept as a phrase is recorded like a kept word: where it was met, and the sentence.
         void keepProvenance({ term: text, source: { kind: 'listening', content_id: routeId, segment: seg.segment_id }, sentence: text });
         toast(t('phraseSaved'));
       }
-    } catch {
-      if (ctx.isCurrent()) toast(t('saveFailed'));
+    } catch (error) {
+      if (!ctx.isCurrent()) return;
+      if (planRequired(error)) upsell('save_to_review');
+      else toast(t('saveFailed'));
       return;
     }
     if (ctx.isCurrent() && selectedId === seg.segment_id) paintSelected();
@@ -896,6 +921,10 @@ export default async function listening(element, ctx) {
       source: { kind: 'listening', content_id: routeId, segment: id },
       readOnly: preview,
       onPlay: () => playLine(id),
+      mediaId: routeId,
+      saveLocked: locked('save_to_review'),
+      saveLock: lockMark('save_to_review', 14),
+      onLocked: () => upsell('save_to_review'),
     });
   }
 
@@ -917,7 +946,10 @@ export default async function listening(element, ctx) {
     if (action === 'more-acts') { moreActs = !moreActs; paintSelected(); return; }
     if (!seg) return;
     if (action === 'play-seg') return playLine(id);
-    if (action === 'save-phrase') return togglePhrase(seg);
+    if (action === 'save-phrase') {
+      if (!savedPhrases.has(seg.original_text) && locked('save_to_review')) return upsell('save_to_review');
+      return togglePhrase(seg);
+    }
     if (action === 'vocab') {
       if (playing && playbackOk) togglePlayback(playerEl, lesson.playback);
       void openVocab(id, seg);
@@ -936,7 +968,10 @@ export default async function listening(element, ctx) {
       });
       return;
     }
-    if (action === 'shadowing') return ctx.go(ctx.href('shadow', { id: routeId }, { seg: id }));
+    if (action === 'shadowing') {
+      if (locked('shadowing_score')) return upsell('shadowing_score');
+      return ctx.go(ctx.href('shadow', { id: routeId }, { seg: id }));
+    }
     if (action === 'react') return ctx.go(ctx.href('react', { id: routeId }, { seg: id }));
   }
 
@@ -972,7 +1007,7 @@ export default async function listening(element, ctx) {
           </button>` : ''}
           <div class="s-listening__end-actions">
             <button type="button" class="o-btn o-btn--secondary" data-act="replay-all">${t('replayAll')}</button>
-            ${lesson.modes.dictation ? html`<button type="button" class="o-btn o-btn--secondary" data-act="dictation-all">${s('dictation')}</button>` : ''}
+            ${lesson.modes.dictation ? html`<button type="button" class="o-btn o-btn--secondary" data-act="dictation-all">${s('dictation')}${lockMark('dictation')}</button>` : ''}
             <button type="button" class="o-btn o-btn--secondary" data-act="saved">${t('reviewSaved')}</button>
             <button type="button" class="o-btn o-btn--primary" data-act="discover">${s('discover')}</button>
           </div>
@@ -998,6 +1033,7 @@ export default async function listening(element, ctx) {
       return;
     }
     if (action === 'dictation-all') {
+      if (locked('dictation')) return upsell('dictation');
       hideEnded();
       currentId = segments[0]?.segment_id || currentId;
       return onMode('dictation');
@@ -1013,6 +1049,8 @@ export default async function listening(element, ctx) {
   paintSelected();
   rememberPlace(true);
   scrollRowIntoView(currentId);
+  // Reached as Dictation while Dictation is a Plus tool: the room is open in Listening, and the plan is offered once.
+  if (dictationAsked && locked('dictation')) upsell('dictation');
 
   // A stored import can finish after the Import sheet's polling window.
   // Re-enter the same workspace when it changes; keep manual refresh available

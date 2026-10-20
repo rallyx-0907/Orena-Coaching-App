@@ -85,6 +85,11 @@
   background: var(--surface);
   color: var(--text);
 }
+/* A locked Dictation (D-248 G6): the lock after the label, the 6px gap the room's pills keep between label and icon. */
+.s-listening__mode .o-tool-lock {
+  margin-left: 6px;
+  vertical-align: middle;
+}
 
 /* ---- Body split ---- */
 .s-listening__body {

@@ -1,0 +1,20 @@
+/* The light upgrade sheet (screens/plan/upgrade-sheet.js, D-248 G4). Every visible part is a drawn class reused
+   as is (the sheet head, the Coming-soon lock well, Pricing's benefit rows and billed line, the Mic sheet's buttons);
+   this file only lays them out in the sheet body. */
+.s-upgrade {
+  gap: 18px;
+}
+.s-upgrade__top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+}
+.s-upgrade__top .s-mic__body {
+  max-width: none;
+}
+.s-upgrade__actions {
+  max-width: none;
+  margin-top: 0;
+}

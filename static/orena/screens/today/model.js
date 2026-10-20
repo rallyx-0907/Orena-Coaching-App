@@ -98,6 +98,8 @@ export function buildRecommendationPool({ reading, listening = [], speaking = []
       routeId: 'reader',
       routeParams: { id: contentIdFor('article', article.id) },
       routeQuery: reading.next.recommendation ? { rec: reading.next.recommendation } : {},
+      // D-248 §4: the server's tier for this article (`{tier, rotation}`), read by product/content-access.js.
+      access: article.access && typeof article.access === 'object' ? article.access : null,
     });
   }
   const firstListening = listening.find((item) => item?.lesson_id);
