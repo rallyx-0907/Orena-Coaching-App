@@ -194,7 +194,7 @@ def test_the_report_lists_a_published_wire_article_even_when_ingested_before_the
     wire = _ingest(parts, _page("wire_derived_article.html"), base_url="https://www.voachinese.com",
                    url="https://www.voachinese.com/a/wire/1.html")
     # published before D-250, as D-190 allowed over the warning: the state it was left in
-    with engine.begin() as connection:
+    with content.engine.begin() as connection:
         connection.execute(update(ReadingArticle).where(ReadingArticle.id == uuid.UUID(wire["id"]))
                            .values(status=LEARNER_VISIBLE_STATUS))
     found = content.published_staff_only_rights_candidates()
