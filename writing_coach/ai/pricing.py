@@ -12,7 +12,7 @@ from types import MappingProxyType
 from typing import Any
 
 
-PRICING_CATALOG_VERSION = "2026-10-19.v10"
+PRICING_CATALOG_VERSION = "2026-10-20.v11"
 MAX_PRICED_TOKENS = 1_000_000_000
 
 
@@ -41,8 +41,23 @@ class TokenPricing:
 _CATALOG = MappingProxyType({
     ("openai", "gpt-4o-mini"): TokenPricing("openai", "gpt-4o-mini", "USD", 0.15, 0.60),
     ("openai", "gpt-4o"): TokenPricing("openai", "gpt-4o", "USD", 2.50, 10.00),
+    # LEGACY (PR CA, 2026-10-20): neither id is on DeepSeek's pricing page any more
+    # (https://api-docs.deepseek.com/quick_start/pricing/, read 2026-10-20) and the :8000 DeepSeek key does not offer
+    # `deepseek-chat`. Kept only so ledger rows written before still price; retired below, so never a fallback model.
     ("deepseek", "deepseek-chat"): TokenPricing("deepseek", "deepseek-chat", "USD", 0.27, 1.10),
     ("deepseek", "deepseek-reasoner"): TokenPricing("deepseek", "deepseek-reasoner", "USD", 0.55, 2.19),
+    # DeepSeek "Models & Pricing", https://api-docs.deepseek.com/quick_start/pricing/, read 2026-10-20, USD per 1M
+    # tokens. The page prices two bands: PEAK (01:00-04:00 and 06:00-10:00 UTC, Monday-Friday, not Chinese public
+    # holidays) and OFF-PEAK ("half of the peak rates", every other hour). The catalogue holds one rate, so it takes the
+    # PEAK cache-MISS input and the PEAK output: a spend cap never understates a call (off-peak and cache-hit are lower
+    # and not modelled).
+    #   deepseek-flash  (DeepSeek-V4.1-Flash-1017): input hit 0.006 / miss 0.30, output 1.20 (off-peak 0.003/0.15/0.60)
+    #   deepseek-v4-pro (DeepSeek-V4-Pro-0813):     input hit 0.044 / miss 1.32, output 3.96 (off-peak 0.022/0.66/1.98)
+    ("deepseek", "deepseek-flash"): TokenPricing("deepseek", "deepseek-flash", "USD", 0.30, 1.20),
+    ("deepseek", "deepseek-v4-pro"): TokenPricing("deepseek", "deepseek-v4-pro", "USD", 1.32, 3.96),
+    # Same page, footnote 1: the legacy name `deepseek-v4-flash` "is still accepted"; its model is retired and the
+    # request is served by DeepSeek-V4.1-Flash-1017 and billed at the Flash price - so it prices exactly as above.
+    ("deepseek", "deepseek-v4-flash"): TokenPricing("deepseek", "deepseek-v4-flash", "USD", 0.30, 1.20),
     # SHUT DOWN 2026-08-16 (https://console.groq.com/docs/deprecations; replacement openai/gpt-oss-120b, issue #312).
     # Kept only so ledger rows written before the shutdown still price; no capability offers it any more.
     ("groq", "llama-3.3-70b-versatile"): TokenPricing("groq", "llama-3.3-70b-versatile", "USD", 0.59, 0.79),
@@ -195,7 +210,10 @@ def list_rate(provider: object, model: object) -> tuple[float, float] | None:
 
 
 # Priced entries the provider has shut down: kept so old ledger rows still price, never offered (issue #312).
-_RETIRED = frozenset({("groq", "llama-3.3-70b-versatile"), ("groq", "llama-3.1-8b-instant")})
+_RETIRED = frozenset({("groq", "llama-3.3-70b-versatile"), ("groq", "llama-3.1-8b-instant"),
+                      # Not on DeepSeek's pricing page (read 2026-10-20); `deepseek-v4-flash` is a legacy alias only.
+                      ("deepseek", "deepseek-chat"), ("deepseek", "deepseek-reasoner"),
+                      ("deepseek", "deepseek-v4-flash")})
 
 
 def priced_catalogue_models(provider: object) -> list[str]:

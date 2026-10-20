@@ -962,20 +962,24 @@ class OpenAICompatibleProvider:
         except requests.ConnectionError as exc:
             raise AIProviderUnavailable(f"{self.name} is not reachable.") from exc
 
-        first_choice, content = _openai_message_content(envelope)
-        usage = envelope.get("usage") if isinstance(envelope.get("usage"), dict) else {}
-        return AIResult(
-            data=extract_json_object(content),
-            provider=self.id,
-            model=model,
-            runtime={
-                "finish_reason": first_choice.get("finish_reason"),
-                "prompt_tokens": usage.get("prompt_tokens"),
-                "completion_tokens": reported_completion_tokens(usage),
-                "total_tokens": usage.get("total_tokens"),
-                "rate_limit": dict(self._last_rate_limit),
-            },
-        )
+        usage = envelope.get("usage") if isinstance(envelope, dict) and isinstance(envelope.get("usage"), dict) else {}
+        runtime = {
+            "finish_reason": None,
+            "prompt_tokens": usage.get("prompt_tokens"),
+            "completion_tokens": reported_completion_tokens(usage),
+            "total_tokens": usage.get("total_tokens"),
+            "rate_limit": dict(self._last_rate_limit),
+        }
+        try:
+            first_choice, content = _openai_message_content(envelope)
+            runtime["finish_reason"] = first_choice.get("finish_reason")
+            data = extract_json_object(content)
+        except AIProviderResponseInvalid as exc:
+            # PR CA: an empty or cut-off JSON answer was still billed; its usage rides on the error so the caller can
+            # record what it cost (ai/platform.py retries it once). Counts and closed words only, never the content.
+            exc.runtime = runtime  # type: ignore[attr-defined]
+            raise
+        return AIResult(data=data, provider=self.id, model=model, runtime=runtime)
 
 
     def stream_chat(
@@ -1228,7 +1232,9 @@ def build_providers(provider_credentials: dict[str, dict[str, Any]] | None = Non
             base_url_env="DEEPSEEK_BASE_URL",
             default_base_url="https://api.deepseek.com",
             models_env="DEEPSEEK_MODELS",
-            default_models=("deepseek-v4-flash", "deepseek-v4-pro"),
+            # DeepSeek's current ids (api-docs.deepseek.com/quick_start/pricing/, read 2026-10-20); `deepseek-v4-flash`
+            # is a legacy alias of `deepseek-flash` there.
+            default_models=("deepseek-flash", "deepseek-v4-pro"),
             credential_override=provider_credentials.get("deepseek"),
         ),
         # Groq speaks the OpenAI chat API, so it needs no adapter of its own.

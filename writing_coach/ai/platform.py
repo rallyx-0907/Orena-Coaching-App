@@ -546,12 +546,20 @@ def _record_attempt(capability_key: str | None, router_version: str | None = Non
 MIN_RETRY_SECONDS = 0.5
 
 
-def _record_invalid_output(capability_key: str | None, target: ProviderTarget, result: AIResult,
-                           router_version: str | None, *, attempt: int) -> None:
-    """An answer that parsed but failed the contract is a failed generation that may still have cost tokens."""
+# PR CA: an answer that is not a complete JSON object (empty, cut off) is asked again once on the same rung. DeepSeek's
+# JSON mode (`response_format: json_object`, sent by every OpenAI-compatible adapter) may still return empty content
+# now and then, and a rerun answers; the retry is another paid call, admitted again by the spend gate and charged.
+MALFORMED_JSON_RETRIES = 1
+
+
+def _record_invalid_output(capability_key: str | None, target: ProviderTarget, result: AIResult | None,
+                           router_version: str | None, *, attempt: int, runtime: dict[str, Any] | None = None,
+                           error_class: str = "output_invalid") -> None:
+    """An answer that parsed but failed the contract - or (PR CA) that was not a complete JSON object and is asked
+    again - is a failed generation that may still have cost tokens: recorded with its usage, so the ledger prices it."""
 
     model_display, model_redacted = safe_model_display(target.model)
-    usage = normalized_usage(result.runtime)
+    usage = normalized_usage(result.runtime if result is not None else runtime)
     _persist_operation_telemetry(
         {
             "capability": safe_capability_display(capability_key) if capability_key else "legacy",
@@ -560,7 +568,7 @@ def _record_invalid_output(capability_key: str | None, target: ProviderTarget, r
             "model": model_display or None,
             "model_redacted": model_redacted,
             "outcome": "failure",
-            "error_class": "output_invalid",
+            "error_class": error_class,
             "latency_ms": None,
             "usage": usage,
             "rate_limit": normalized_rate_limit(None),
@@ -956,27 +964,53 @@ def generate_structured(
             if not item.configured:
                 raise AIProviderUnavailable(f"{item.name} is not configured.")
             generate_once = getattr(item, "generate_json_once", None) or item.generate_json
+
+            def _retry_admitted() -> bool:
+                if deadline is not None and deadline - _routing.monotonic() < MIN_RETRY_SECONDS:
+                    return False  # no time for a second try: the standby gets what is left
+                # a retry is another paid call: it is admitted again, never assumed from the first
+                return gate is None or gate(target) is None
+
+            def _generate() -> AIResult:
+                """One answer from this rung; an answer that is not a complete JSON object is asked again once (PR CA)."""
+
+                for malformed_try in range(MALFORMED_JSON_RETRIES + 1):
+                    options: dict[str, Any] = {}
+                    timeout = _timeout_for(target)
+                    if timeout is not None:
+                        options["timeout"] = timeout
+                    attempts_made["calls"] += 1
+                    unaccounted["rung"] = True
+                    try:
+                        return generate_once(
+                            messages=messages,
+                            schema=schema,
+                            model=target.model,
+                            max_output_tokens=max_output_tokens,
+                            temperature=config.temperature if config.temperature is not None else temperature,
+                            seed=seed,
+                            **options,
+                        )
+                    except AIProviderResponseInvalid as exc:
+                        if isinstance(exc, AIOutputInvalid) or malformed_try >= MALFORMED_JSON_RETRIES:
+                            raise
+                        # This answer was billed: recorded first with its usage, so the ledger prices it before the
+                        # spend gate decides on the retry. The rung's outcome is the retry's; only a second malformed
+                        # answer (or a refused retry) fails the rung, recorded once by the chain.
+                        unaccounted["rung"] = False
+                        _record_invalid_output(capability_key, target, None, router_version,
+                                               attempt=chain.index(target) + 1,
+                                               runtime=getattr(exc, "runtime", None),
+                                               error_class=telemetry_error_class(exc))
+                        if not _retry_admitted():
+                            raise
+                raise AssertionError("unreachable")  # pragma: no cover
+
             invalid: AIOutputInvalid | None = None
             for _try in range(max(0, int(invalid_retries)) + 1):
-                if _try and deadline is not None and deadline - _routing.monotonic() < MIN_RETRY_SECONDS:
-                    break  # no time for a second try: the standby gets what is left
-                if _try and gate is not None and gate(target) is not None:
-                    break  # a retry is another paid call: it is admitted again, never assumed from the first
-                options: dict[str, Any] = {}
-                timeout = _timeout_for(target)
-                if timeout is not None:
-                    options["timeout"] = timeout
-                attempts_made["calls"] += 1
-                unaccounted["rung"] = True
-                result = generate_once(
-                    messages=messages,
-                    schema=schema,
-                    model=target.model,
-                    max_output_tokens=max_output_tokens,
-                    temperature=config.temperature if config.temperature is not None else temperature,
-                    seed=seed,
-                    **options,
-                )
+                if _try and not _retry_admitted():
+                    break
+                result = _generate()
                 unaccounted["rung"] = False   # answered: its cost is recorded by finish() or as invalid output
                 if validate is None:
                     return result
