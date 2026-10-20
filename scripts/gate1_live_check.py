@@ -4,7 +4,9 @@ Approved by the owner (2026-10-19 06:30: the cost and the re-run; budget cap $0.
 four D1 checks the owner would otherwise do signed in (OWNER_ADMIN_STEPS_8000_2026-10-19 §C.5):
 
 1. one Orena chat turn, answered with a `done` that carries the `trace_id` the "Báo sai" link reports against;
-2. a word sheet's "Why here?" (`POST /api/dictionary/word-detail`, depth full, contextual);
+2. a word sheet's "Why here?" (`POST /api/dictionary/word-detail`, depth full, contextual; `word_detail` is called
+   directly, so the route's per-account dictionary AI brake is not consulted for this one probe - the plan's
+   `word.assist` metering still applies);
 3. one Writing review (`POST /api/evaluate`) - it is stored on the test account, as a learner's would be;
 4. a Listening meaning (`POST /api/media-learning/explain`).
 
@@ -135,7 +137,7 @@ def _review(app: Any, lang: str, run_id: str):
     evaluator = str(result.get("evaluator") or "")
     ok = bool(evaluator) and "fallback" not in evaluator and not result.get("reused")
     return ok, {"evaluator": evaluator or None, "reused": bool(result.get("reused")),
-                "level": result.get("level_estimate")}
+                "level": result.get("cefr_estimate")}
 
 
 def _listening_meaning(lang: str):
