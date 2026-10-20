@@ -114,7 +114,8 @@ def _admin_catalog() -> dict[str, Any]:
         # the number it edits (D-160).
         "meters": {
             key: {"window": meter.window, "unit": meter.unit, "display_unit": meter.display_unit,
-                  "scale": meter.scale, "params": {name: list(bounds) for name, bounds in meter.params.items()}}
+                  "scale": meter.scale, "params": {name: list(bounds) for name, bounds in meter.params.items()},
+                  "on_off": meter.on_off}
             for key, meter in METERS.items()
         },
         "version": 2,

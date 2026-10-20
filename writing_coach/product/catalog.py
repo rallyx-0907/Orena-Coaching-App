@@ -52,9 +52,11 @@ _log = logging.getLogger(__name__)
 class Meter:
     """What a metered feature is. Code-owned: an administrator never changes a window or a unit.
 
-    `window` is `day`, `month` or None (a count cap, not a bucket). `unit` is one stored/bucket unit;
+    `window` is `day`, `week`, `month` or None (a count cap, not a bucket). `unit` is one stored/bucket unit;
     `display_unit` is what a learner reads, and `scale` stored units make one displayed unit (60 seconds
     are one minute). `params` names the meter's own admin-editable whole numbers with their bounds.
+    `on_off` marks a plan feature that is only on or off (no window, no limit): its entitlement's limit is
+    always None.
     """
 
     key: str
@@ -63,6 +65,7 @@ class Meter:
     display_unit: str
     scale: int = 1
     params: Mapping[str, tuple[int, int]] = field(default_factory=dict)
+    on_off: bool = False
 
 
 METERS: dict[str, Meter] = {
@@ -80,10 +83,12 @@ METERS: dict[str, Meter] = {
         Meter("word.assist", "day", "request", "request"),
         Meter("reading.assist", "day", "request", "request"),
         Meter("writing.task", "day", "request", "request"),
-        # Owner 2026-10-19: voice chat with Orena, on or off by plan, and a daily cap on each learner's voice seconds
-        # (Hermes for the owner: 15 minutes by default) - product/plan_features.py. Its time is still charged as Orena
-        # messages (`voice_seconds_per_message`); this cap protects the system's AI budget from one learner.
-        Meter("orena.voice", "day", "second", "minute", scale=60),
+        # Owner 2026-10-19: voice chat with Orena, on or off by plan, and a cap on each learner's voice seconds -
+        # product/plan_features.py. Its time is still charged as Orena messages (`voice_seconds_per_message`); this cap
+        # protects the system's AI budget from one learner. D-248 (MV2-6a): the cap is per month (it was per day, D-237).
+        Meter("orena.voice", "month", "second", "minute", scale=60),
+        # D-248 (MV2-6a): the weekly recurring-mistake report (GET /api/agent/progress/weekly), on or off by plan.
+        Meter("progress.weekly_report", None, "report", "report", on_off=True),
         # MV2-1 (D-248 §4): the videos a week on which Orena's tap-to-look-up works for a learner whose plan does not
         # include the full media tools. One video counts once per ISO week (`writing_coach.product.content_access`).
         # Watching a video is never metered (YouTube API Services Developer Policies III.F.3.a).
@@ -162,8 +167,9 @@ def _prices(monthly_usd: float, monthly_vnd: float, yearly_usd: float, yearly_vn
 
 
 VOICE_SECONDS_PER_MESSAGE = 60
-# Hermes for the owner, 2026-10-19: each Plus/Pro learner's voice chat with Orena per UTC day (an administrator edits it).
-VOICE_MINUTES_PER_DAY = 15
+# D-248 (MV2-6a): each learner's voice chat with Orena per month, in seconds (an administrator edits it): Plus about 100
+# minutes, Pro 300. Free has no voice chat. Replaces D-237's 15 minutes a day.
+VOICE_SECONDS_PER_MONTH: dict[str, int] = {"free": 0, "plus": 6000, "pro": 18000}
 
 
 # H7-3 (D-MON-025) bootstrap product limits, requests per day: (word.assist, reading.assist, writing.task).
@@ -176,8 +182,9 @@ MEDIA_TOOL_VIDEOS: dict[str, int] = {"free": 3, "plus": 10_000, "pro": 10_000}
 
 
 def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, import_minutes: int,
-                  languages: int, assist: tuple[int, int, int], *, voice: bool = True,
-                  media_tool_videos: int = MEDIA_TOOL_VIDEOS["free"]) -> tuple[Entitlement, ...]:
+                  languages: int, assist: tuple[int, int, int], *, voice_seconds: int = 0,
+                  media_tool_videos: int = MEDIA_TOOL_VIDEOS["free"],
+                  weekly_report: bool = False) -> tuple[Entitlement, ...]:
     word_assist, reading_assist, writing_task = assist
     return (
         Entitlement("orena.message", limit=messages, params={"voice_seconds_per_message": VOICE_SECONDS_PER_MESSAGE}),
@@ -188,8 +195,11 @@ def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, impor
         Entitlement("word.assist", limit=word_assist),
         Entitlement("reading.assist", limit=reading_assist),
         Entitlement("writing.task", limit=writing_task),
-        Entitlement("orena.voice", enabled=voice, limit=VOICE_MINUTES_PER_DAY * 60),
+        # Free: off. A disabled entitlement keeps the Plus figure only so an editor that turns it on has a number to show.
+        Entitlement("orena.voice", enabled=voice_seconds > 0,
+                    limit=voice_seconds or VOICE_SECONDS_PER_MONTH["plus"]),
         Entitlement("media.tools_weekly", limit=media_tool_videos),
+        Entitlement("progress.weekly_report", enabled=weekly_report, limit=None),
     )
 
 
@@ -200,7 +210,7 @@ FREE = Plan(
     price_label="Free",
     rank=0,
     prices=_prices(0, 0, 0, 0),
-    entitlements=_entitlements(20, 2, 5, 15, 1, ASSIST_LIMITS["free"], voice=False),  # voice chat: Plus and Pro
+    entitlements=_entitlements(20, 2, 5, 15, 1, ASSIST_LIMITS["free"]),  # voice chat and the weekly report: Plus and Pro
 )
 
 PLUS = Plan(
@@ -210,7 +220,9 @@ PLUS = Plan(
     price_label="Plus",
     rank=1,
     prices=_prices(9.99, 199000, 79.99, 1590000),
-    entitlements=_entitlements(200, 10, 30, 120, 2, ASSIST_LIMITS["plus"], media_tool_videos=MEDIA_TOOL_VIDEOS["plus"]),
+    entitlements=_entitlements(200, 10, 30, 120, 2, ASSIST_LIMITS["plus"],
+                               voice_seconds=VOICE_SECONDS_PER_MONTH["plus"], media_tool_videos=MEDIA_TOOL_VIDEOS["plus"],
+                               weekly_report=True),
 )
 
 PRO = Plan(
@@ -220,7 +232,9 @@ PRO = Plan(
     price_label="Pro",
     rank=2,
     prices=_prices(19.99, 399000, 159.99, 3190000),
-    entitlements=_entitlements(1000, 50, 120, 600, 2, ASSIST_LIMITS["pro"], media_tool_videos=MEDIA_TOOL_VIDEOS["pro"]),
+    entitlements=_entitlements(1000, 50, 120, 600, 2, ASSIST_LIMITS["pro"],
+                               voice_seconds=VOICE_SECONDS_PER_MONTH["pro"], media_tool_videos=MEDIA_TOOL_VIDEOS["pro"],
+                               weekly_report=True),
 )
 
 # The default catalogue, in rank order. `PLANS` keeps its name: the persistence importer seeds the `plans`
@@ -314,9 +328,14 @@ def _validated_entitlement(plan_id: str, item: object) -> dict[str, Any]:
     if type(enabled) is not bool:
         raise PlanCatalogInvalid(f"{plan_id} {key}: enabled must be true or false.")
     limit = item.get("limit")
-    if limit is None:
+    if meter.on_off:
+        # On or off only: there is no number to keep.
+        if limit is not None:
+            raise PlanCatalogInvalid(f"{plan_id} {key}: this feature is on or off and has no limit.")
+    elif limit is None:
         raise PlanCatalogInvalid(f"{plan_id} {key}: a limit is required.")
-    limit = _number(limit, what=f"{plan_id} {key} limit", integer=True, upper=MAX_LIMIT)
+    else:
+        limit = _number(limit, what=f"{plan_id} {key} limit", integer=True, upper=MAX_LIMIT)
     default = PLANS[plan_id].entitlement_map()[key].params
     raw_params = item.get("params") or {}
     if not isinstance(raw_params, Mapping):
@@ -380,13 +399,22 @@ def validate_catalog(document: object, *, accept_v1: bool = False) -> dict[str, 
     return {"version": CATALOG_VERSION, "plans": [seen[plan_id] for plan_id in PLANS]}
 
 
+def _stored_limit(default: Entitlement, limit: int | None) -> int | None:
+    """A stored `orena.voice` limit under a minute is the on/off placeholder (1) an editor saved under D-236, before the
+    limit counted seconds: it reads as the code's default for that plan, never as one second (review of #325, P1-2). Read
+    here, so every consumer - the enforcement read, Plans and Admin's editor - sees the same figure."""
+    if default.key == "orena.voice" and limit is not None and limit < 60:
+        return default.limit
+    return limit
+
+
 def _overlay(plan: Plan, row: Mapping[str, Any]) -> Plan:
     stored = {item["key"]: item for item in row.get("entitlements", [])}
     entitlements = tuple(
         Entitlement(
             item.key,
             enabled=bool(stored[item.key]["enabled"]),
-            limit=stored[item.key]["limit"],
+            limit=_stored_limit(item, stored[item.key]["limit"]),
             params=dict(stored[item.key].get("params") or item.params),
         ) if item.key in stored else item
         for item in plan.entitlements

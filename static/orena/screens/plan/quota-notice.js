@@ -10,7 +10,7 @@
 import { languages } from '../../copy/index.js';
 import { toast } from '../../kit/toast.js';
 import { aiPauseOf, recentAiPause } from '../../infrastructure/ai-paused.js';
-import { t } from './copy.js';
+import { t, windowedKey } from './copy.js';
 import { displayAmount, formatNumber } from './model.js';
 import { holdLanguageRefusal, REASON_LANGUAGE } from './reason.js';
 import { openUpgradeSheet } from './upgrade-sheet.js';
@@ -48,7 +48,9 @@ export function quotaMessage(error, commerce = null) {
   const context = error?.context || {};
   const scale = Number(context.scale) > 0 ? Number(context.scale) : 1;
   // The voice cap says "You can still message Orena" only while messages remain (G9).
-  const key = context.feature === 'orena.voice' && messagesSpent(commerce) ? 'exhausted_orena_voice_only' : `exhausted_${String(context.feature || '').replace(/\./g, '_')}`;
+  // The voice line names its window from the data (`context.window`: "this month" under D-248, "today" before), never a fixed day.
+  const base = context.feature === 'orena.voice' && messagesSpent(commerce) ? 'exhausted_orena_voice_only' : `exhausted_${String(context.feature || '').replace(/\./g, '_')}`;
+  const key = context.feature === 'orena.voice' ? windowedKey(base, context.window) : base;
   if (t.has(key) && context.used != null && context.limit != null) {
     const figure = (value) => formatNumber(displayAmount(value, scale), languages().ui);
     return withResets(t(key, { used: figure(context.used), limit: figure(context.limit) }), context.resets_at);
@@ -93,14 +95,14 @@ export function transcribeRefusalLine(error) {
   return '';
 }
 
-/* The line for the day's voice minutes running out inside a chunk (`day_limit_reached`, D-237): no 429 carries the figure, so
-   `n` is the plan's own `orena.voice` limit and scale from the commerce read (GET /api/product/commerce). Without it the
-   generic line is used, never a made-up number. */
+/* The line for the voice minutes running out inside a chunk (`day_limit_reached`, D-237): no 429 carries the figure, so
+   `n` is the plan's own `orena.voice` limit, scale and window from the commerce read (GET /api/product/commerce). Without it
+   the generic line is used, never a made-up number. */
 export function voiceDayLimitMessage(commerce) {
   const item = commerce?.features?.['orena.voice'];
   const limit = item?.limit ?? item?.monthly_limit;
   if (limit == null) return quotaMessage(null);
-  return quotaMessage({ context: { feature: 'orena.voice', used: limit, limit, scale: item.scale } }, commerce);
+  return quotaMessage({ context: { feature: 'orena.voice', used: limit, limit, scale: item.scale, window: item.window } }, commerce);
 }
 
 /* At the daily voice-minute cap (429 `quota_exhausted`, feature `orena.voice`, D-237) a paying learner is told the line and

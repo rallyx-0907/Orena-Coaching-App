@@ -223,7 +223,8 @@ live.
 | `media.import` (minutes) | month | 15 | 120 | 600 | yes |
 | `languages.target` | count | 1 | 2 | 2 | yes (count cap) |
 | `word.assist` / `reading.assist` / `writing.task` | day | 30 / 10 / 5 | 300 / 100 / 30 | 1 500 / 500 / 100 | no: catalogue only |
-| `orena.voice` (on/off and minutes) | day | off | 15 min | 15 min | a plan feature, enforced whatever the quota switch says |
+| `orena.voice` (on/off and minutes, D-248) | month | off | 100 min (6 000 s) | 300 min (18 000 s) | a plan feature, enforced whatever the quota switch says |
+| `progress.weekly_report` (on/off, D-248) | — | off | on | on | a plan feature (the server check on the weekly report route is the Intelligence lane's) |
 | `media.tools_weekly` (videos with Orena's look-up, D-248) | week (ISO, Monday) | 3 | 10 000 | 10 000 | yes, when the quota switch lists it and `access.enforced` is on; Plus and Pro are never metered (full tools) |
 | Prices (USD / VND, monthly and yearly) | — | 0 | 9.99 / 199 000; 79.99 / 1 590 000 | 19.99 / 399 000; 159.99 / 3 190 000 | display only while billing is off |
 

@@ -214,7 +214,14 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(model.BOOLEAN_FEATURES, undefined, 'no on/off allowlist is left');
   // The plan line, in the three languages.
   const copy4 = src('static/orena/screens/plan/copy.js');
-  for (const line of ["line_orena_voice: '{n} min a day of voice chat with Orena'", "line_orena_voice: '{n} phút/ngày trò chuyện bằng giọng nói với Orena'", "line_orena_voice: '每天 {n} 分钟与 Orena 语音聊天'"]) assert.ok(copy4.includes(line), line);
+  for (const line of ["line_orena_voice_day: '{n} min a day of voice chat with Orena'", "line_orena_voice_day: '{n} phút/ngày trò chuyện bằng giọng nói với Orena'", "line_orena_voice_day: '每天 {n} 分钟与 Orena 语音聊天'",
+    "line_orena_voice_month: '{n} min a month of voice chat with Orena'", "line_orena_voice_month: '{n} phút/tháng trò chuyện bằng giọng nói với Orena'", "line_orena_voice_month: '每月 {n} 分钟与 Orena 语音聊天'"]) assert.ok(copy4.includes(line), line);
+  // D-248 (MV2-6a): the plan line's window is the catalogue's, carried on each feature.
+  assert.equal(list[1].features.find((feature) => feature.key === 'orena.voice').window, 'day');
+  const monthly = pricingPlans({ plans: [{ id: 'plus', rank: 1, entitlements: [entitlement('orena.voice', { limit: 6000, scale: 60, display_unit: 'minute', window: 'month' })] }] });
+  assert.deepEqual(monthly[0].features[0], { key: 'orena.voice', limit: 100, window: 'month' });
+  const pricingSource = src('static/orena/screens/plan/pricing.js');
+  assert.ok(/windowedKey\(`line_\$\{suffix\}`, feature\.window\)/.test(pricingSource), 'Plans reads the window from the feature');
   // Plan & usage draws a voice meter in minutes when the commerce read reports it.
   const usage = model.usageRows({ features: { 'orena.voice': { limit: 900, used: 300, scale: 60, display_unit: 'minute', window: 'day', usage_state: 'known', entitlement_state: 'known', resets_at: '2026-10-20T00:00:00Z' } } });
   assert.deepEqual([usage[0].key, usage[0].used, usage[0].limit, usage[0].unit], ['orena.voice', 5, 15, 'minute']);
@@ -245,15 +252,14 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(plansPayload([draft]).plans[0].entitlements[0].limit, 450);
   voice.enabled = false;
   assert.equal(plansPayload([draft]).plans[0].entitlements[0].enabled, false, 'the toggle still saves');
-  // A stored voice limit under one minute (the old on/off 1) is read by the server as the 15-minute default: the editor shows 15 and saves 900.
+  // A stored voice limit under one minute (the old on/off 1) is read as the plan's default by the server's catalogue
+  // itself (catalog._stored_limit, D-248), so the editor shows exactly the figure it is sent - no client constant.
   const voiceOf = (entitlement) => draftOf({ id: 'plus', prices: {}, entitlements: [{ key: 'orena.voice', params: {}, ...entitlement }] }).entitlements[0];
   const savedLimit = (entry) => plansPayload([{ id: 'plus', prices: {}, entitlements: [entry] }]).plans[0].entitlements[0].limit;
-  for (const stored of [1, 59]) {
-    const bare = voiceOf({ enabled: true, limit: stored });
-    assert.equal(bare.metered, true, `limit ${stored}: a minutes field`);
-    assert.equal(bare.limit, '15', `limit ${stored}: shown as 15 min`);
-    assert.equal(savedLimit(bare), 900, `limit ${stored}: saved as 900`);
-  }
+  const sent = voiceOf({ enabled: true, limit: 6000, scale: 60, window: 'month' });
+  assert.equal(sent.limit, '100', 'the server figure in minutes');
+  assert.equal(savedLimit(sent), 6000, 'and saved back unchanged');
+  assert.ok(!/\b900\b/.test(src('static/orena/screens/admin/plans.js')), 'no hard-coded voice default in the editor');
   // No stored limit is UNCAPPED on the server: it stays null, shown as an unlimited meter, and a plain save writes no cap.
   for (const stored of [null, undefined]) {
     const open = voiceOf({ enabled: true, ...(stored === undefined ? {} : { limit: stored }) });
@@ -290,10 +296,15 @@ const answer = (status, body, headers = {}) => ({
   assert.ok(/15/.test(sentence) && !/900/.test(sentence), 'n = limit / scale');
   const copy = src('static/orena/screens/plan/copy.js');
   for (const line of [
-    "exhausted_orena_voice: 'You have used all {limit} minutes of voice chat today. You can still message Orena.'",
-    "exhausted_orena_voice: 'Hôm nay bạn đã dùng hết {limit} phút trò chuyện bằng giọng nói. Bạn vẫn có thể nhắn tin với Orena.'",
-    "exhausted_orena_voice: '今天的 {limit} 分钟语音聊天已用完。你仍可以给 Orena 发消息。'",
+    "exhausted_orena_voice_day: 'You have used all {limit} minutes of voice chat today. You can still message Orena.'",
+    "exhausted_orena_voice_day: 'Hôm nay bạn đã dùng hết {limit} phút trò chuyện bằng giọng nói. Bạn vẫn có thể nhắn tin với Orena.'",
+    "exhausted_orena_voice_day: '今天的 {limit} 分钟语音聊天已用完。你仍可以给 Orena 发消息。'",
+    "exhausted_orena_voice_month: 'You have used all {limit} minutes of voice chat this month. You can still message Orena.'",
+    "exhausted_orena_voice_month: 'Bạn đã dùng hết {limit} phút trò chuyện bằng giọng nói của tháng này. Bạn vẫn có thể nhắn tin với Orena.'",
+    "exhausted_orena_voice_month: '本月的 {limit} 分钟语音聊天已用完。你仍可以给 Orena 发消息。'",
   ]) assert.ok(copy.includes(line), line);
+  assert.ok(sentence.includes('today'), 'window day: today');
+  assert.ok(quotaMessage(cap({ window: 'month', used: 6000, limit: 6000 })).includes('100 minutes of voice chat this month'), 'window month: this month');
   const voice = src('static/orena/screens/orena/voice.js');
   assert.ok(/if \(isQuotaExhausted\(error\)\) \{[^}]*setPhase\('idle'\);\s+showPlanLimit\(error\);\s+return;/.test(voice), 'session 429: the line, no device cascade, no retry; text chat is a different surface and stays');
   assert.ok(/if \(isQuotaExhausted\(error\)\) showPlanLimit\(error\)/.test(voice), 'extend 429: told once, the held token plays out');
@@ -303,12 +314,13 @@ const answer = (status, body, headers = {}) => ({
   assert.ok(/onLimit\(error\);\s+return;/.test(live) && !/onLimit\(error\);\s+return end/.test(live));
 }
 
-// 5. The contract text and the code constant agree on v13.
+// 5. The contract text and the code constant agree on v14.
 {
   const { CONTRACT_VERSION } = await import('../static/orena/agent/contract.js');
   const text = src('docs/project/AGENT_CONTRACT.md');
-  assert.equal(CONTRACT_VERSION, 13);
-  assert.ok(text.includes('`contract_version: 13`'));
+  assert.equal(CONTRACT_VERSION, 14);
+  assert.ok(text.includes('`contract_version: 14`'));
+  for (const route of ['GET /api/agent/voice/allowance', 'GET /api/agent/progress/weekly', 'POST /api/agent/band/writing']) assert.ok(text.includes(route), route);
   assert.ok(text.includes('X-Orena-AI-Paused') && text.includes('`orena.voice`') && text.includes('"entitled": false'));
 }
 
