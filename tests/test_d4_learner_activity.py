@@ -92,6 +92,23 @@ def test_an_unknown_timezone_is_refused():
         learner_activity.resolve_timezone("Mars/Olympus")
 
 
+@pytest.mark.parametrize("legacy", ["Asia/Saigon", "Asia/Calcutta", "Asia/Rangoon", "US/Pacific", "Europe/Kiev"])
+def test_the_legacy_zone_names_devices_still_report_are_known(legacy):
+    """#446: an iPhone in Vietnam reports `Asia/Saigon`. Debian bookworm moved the legacy names to `tzdata-legacy`,
+    so the image refused it with 422 and the streak never drew; the `tzdata` package (requirements.txt) keeps them."""
+
+    zone = learner_activity.resolve_timezone(legacy)
+    assert learner_activity.compute_activity({}, now=UTC_NOW, tz=legacy)["timezone"] == legacy
+    assert zone.key == legacy
+
+
+def test_the_zone_names_do_not_depend_on_the_system_tz_database():
+    from importlib import resources
+
+    # zoneinfo falls back to this package when the system database lacks a name, as python:3.12-slim does.
+    assert resources.files("tzdata.zoneinfo").joinpath("Asia").joinpath("Saigon").is_file()
+
+
 # --- the route on the real repositories -------------------------------------------------------------
 
 

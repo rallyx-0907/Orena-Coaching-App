@@ -365,3 +365,33 @@ console.log('Orena plan screens: real usage and plans only, honest unavailable s
     assert.match(active, /data-open-cancel/, `${ui}: Cancel plan on a live plan`);
   }
 }
+
+// #446: billing off is a normal state. The card subscription is asked for only when the offers answer says the
+// deployment has billing (`enabled`), and the offers are read once for both uses - no 503 to swallow, no retry.
+{
+  const { readFileSync } = await import('node:fs');
+  const screen = readFileSync(new URL('../static/orena/screens/plan/screen.js', import.meta.url), 'utf8');
+  const load = screen.slice(screen.indexOf('export default async function plan('), screen.indexOf('if (!ctx.isCurrent()) return undefined;', screen.indexOf('export default async function plan(')));
+  assert.match(load, /loadSubscription\(api, salePromise\)/, 'the subscription waits on the same offers answer');
+  assert.equal((load.match(/api\.billingOffers\(\)/g) || []).length, 1, 'the offers are read once on open');
+  const { loadSubscription } = (await import('../static/orena/screens/plan/screen.js')).__internal;
+  const SUB = { provider: 'polar', live: true };
+  const counting = (answer) => {
+    const client = { calls: 0, billingSubscription: () => { client.calls += 1; return answer(); } };
+    return client;
+  };
+  const off = counting(() => Promise.resolve(SUB));
+  assert.equal(await loadSubscription(off, Promise.resolve({ enabled: false, offers: [] })), null);
+  assert.equal(off.calls, 0, 'billing off: no subscription request');
+  for (const offersAnswer of [null, undefined, 'garbage', {}, { enabled: true }]) {
+    const on = counting(() => Promise.resolve(SUB));
+    assert.deepEqual(await loadSubscription(on, Promise.resolve(offersAnswer)), SUB, `offers ${JSON.stringify(offersAnswer)}: the paying learner keeps the plan card`);
+    assert.equal(on.calls, 1);
+  }
+  const refused = counting(() => Promise.reject(Object.assign(new Error('billing_off'), { status: 503 })));
+  assert.equal(await loadSubscription(refused, Promise.resolve(null)), null, 'a 503 is quietly no subscription, no retry');
+  assert.equal(refused.calls, 1);
+  const { loadOffers } = await import('../static/orena/product/credit-topup.js');
+  const noOffers = await loadOffers({ billingOffers: () => Promise.resolve(null) });
+  assert.equal(noOffers.available, false, 'no offers answer: no credits, no error');
+}

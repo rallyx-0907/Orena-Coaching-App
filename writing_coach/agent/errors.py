@@ -44,12 +44,23 @@ class AgentError(Exception):
     """Raised inside a turn; the stream turns it into one `error` event."""
 
     error_class = "internal_error"
+    # The learner copy for this failure when it is not its kind's own (`ERROR_KINDS[...].copy_key`): the same
+    # class and fallback (contract §4.1), only a truer sentence.
+    copy_key: str | None = None
 
 
 class ProviderUnavailable(AgentError):
     """The configured provider did not answer usably (down, timed out, malformed)."""
 
     error_class = "provider_unavailable"
+
+
+class ProviderOutOfService(ProviderUnavailable):
+    """The provider refused for a reason a short wait does not cure (#438): its spending cap, quota or credit is
+    spent, or its credential is rejected or missing. Still `provider_unavailable` with `retry` (contract §4.1), but
+    the learner is not told that Orena is merely busy."""
+
+    copy_key = "error.provider_out_of_service"
 
 
 class ProviderNotCleared(ProviderUnavailable):

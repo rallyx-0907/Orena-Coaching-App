@@ -359,6 +359,14 @@ export function learnerMemory(storage, owner, language) {
       value.continuation = (Array.isArray(list) ? list : []).slice(0, 20);
       return save();
     },
+    /* A saved place whose content no longer exists (a retired lesson answers 404, #446): it leaves this device
+       and the account's places, so no screen asks for it again. Only the place - nothing the learner wrote. */
+    forgetPlace(id) {
+      if (!value.continuation.some((x) => x.id === id)) return false;
+      value.continuation = value.continuation.filter((x) => x.id !== id);
+      placeSink?.clear(id);
+      return save();
+    },
     write(id, text, field = 'expressions') {
       if (
         !['expressions', 'answers'].includes(field) ||

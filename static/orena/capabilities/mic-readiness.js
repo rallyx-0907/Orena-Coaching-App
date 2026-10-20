@@ -43,9 +43,12 @@ export function watchMicrophone({
   AudioContextCtor = globalThis.AudioContext || globalThis.webkitAudioContext,
   onState = () => {},
   onLevel = () => {},
+  // A context the learner's tap started (capabilities/audio-context.js): used, never closed, by this meter.
+  context: givenContext = null,
 } = {}) {
   let stream = null;
   let context = null;
+  let source = null;
   let frame = 0;
   let stopped = false;
 
@@ -60,6 +63,13 @@ export function watchMicrophone({
       }
     }
     stream = null;
+    try {
+      source?.disconnect?.();
+    } catch {
+      // Already disconnected.
+    }
+    source = null;
+    if (context && context === givenContext) context = null;
     if (context) {
       try {
         context.close();
@@ -89,8 +99,8 @@ export function watchMicrophone({
     const facts = trackFacts(stream);
     onState({ state: READY, facts });
     try {
-      context = new AudioContextCtor();
-      const source = context.createMediaStreamSource(stream);
+      context = givenContext || new AudioContextCtor();
+      source = context.createMediaStreamSource(stream);
       const analyser = context.createAnalyser();
       analyser.fftSize = 512;
       source.connect(analyser);

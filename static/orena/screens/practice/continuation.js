@@ -27,7 +27,11 @@ export async function recentMediaFacts(entries, options) {
       const index = source.lines.findIndex(line => line.lineId === source.line.lineId) + 1;
       return [item.id, { canonicalId, contentKey: payload.catalog?.lesson_id || source.assetId || id,
         segment: source.line.lineId, index, total: source.lines.length }];
-    } catch { return [item.id, null]; }
+    } catch (error) {
+      // A lesson that is gone for good (404, #446) leaves the saved places, so it is not asked for again.
+      if (error?.status === 404 && item.id.startsWith('media:')) options.memory?.forgetPlace?.(item.id);
+      return [item.id, null];
+    }
   })));
 }
 

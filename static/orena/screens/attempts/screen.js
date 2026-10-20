@@ -13,7 +13,7 @@ import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
 import { loadSpeakingSource, segmentOf } from '../../product/speaking-source.js';
 import { lineKey, listTakes, keepRecent, attemptIdOf } from '../../product/take-store.js';
-import { loadLineAttempts, mergeAttempts } from '../../product/speaking-history.js';
+import { loadLineAttempts, mergeAttempts, roomKey, returnToRoom } from '../../product/speaking-history.js';
 import { t } from './copy.js';
 import { statsFor, deltaLabel, rowsFor } from './model.js';
 
@@ -81,7 +81,12 @@ export default async function mountAttemptHistory(element, ctx) {
 
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
   element.querySelectorAll('[data-open]').forEach((button) => {
-    button.addEventListener('click', () => ctx.go(ctx.href('compare', { id: ctx.params.id }, { ...lineQuery, attempt: button.dataset.open })));
+    // Opening an attempt returns to the room below this list with it chosen (#444); a list opened from elsewhere
+    // (Progress) opens the room in its own place.
+    button.addEventListener('click', () => {
+      if (ctx.hasHistory?.() && returnToRoom(roomKey(ctx.params.id, source.line.lineId), button.dataset.open)) ctx.back();
+      else ctx.replace(ctx.href('compare', { id: ctx.params.id }, { ...lineQuery, attempt: button.dataset.open }));
+    });
   });
 
   return undefined;

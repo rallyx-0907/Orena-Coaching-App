@@ -29,6 +29,10 @@ export function originalSegmentPlayer(source, {documentImpl=globalThis.document}
     if(event.detail.state==='ready') begin();
     else if(['error','blocked'].includes(event.detail.state)) stop();
   });
+  // The player paused this line at its end: finish now, even while the embed's reported time still reads short of it.
+  root.addEventListener('orena:segment-end',()=>{
+    if(finish && playingRange?.started) {finish();finish=null;playingRange=null;}
+  });
   root.addEventListener('orena:media-time',event=>{
     const {time_ms:time,player_state:state}=event.detail;
     if (playingRange && state===1 && time>=playingRange.start-150 && time<playingRange.end) playingRange.started=true;

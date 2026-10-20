@@ -536,7 +536,7 @@ class _Turn:
             if not self.should_stop():
                 if not released:
                     yield opened
-                yield self._error(exc.error_class)
+                yield self._error(exc.error_class, copy_key=exc.copy_key)
             return
         except Exception:  # an unexpected failure still ends the stream properly
             _log.exception("agent turn failed", extra={"trace_id": self.trace_id})
@@ -1315,9 +1315,10 @@ class _Turn:
         usage = Usage(input_tokens=self.usage_in, output_tokens=self.usage_out)
         yield self.stream.emit(DoneEvent(usage=usage, trace_id=self.trace_id))
 
-    def _error(self, error_class: str) -> Event:
+    def _error(self, error_class: str, *, copy_key: str | None = None) -> Event:
         return self.stream.emit(
-            error_event(error_class, interface=self.locale.interface, support=self.locale.support, address=self.address)
+            error_event(error_class, interface=self.locale.interface, support=self.locale.support, address=self.address,
+                        copy_key=copy_key)
         )
 
     # --- after a completed turn -------------------------------------------------

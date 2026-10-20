@@ -4,6 +4,8 @@
    starts, so it is loaded then: {loadRnnoise,RnnoiseWorkletNode} arrive from
    the same module, just later. */
 
+import {sharedAudioContext} from './audio-context.js';
+
 const SPEECH_AUDIO_CONSTRAINTS={
   echoCancellation:{ideal:true},
   noiseSuppression:{ideal:false},
@@ -28,6 +30,16 @@ const RNNOISE_ASSETS={
   simdWasm:new URL('../vendor/web-noise-suppressor/rnnoise_simd.wasm',import.meta.url).href,
 };
 
+/* A browser promise that may never settle (an AudioContext resumed or closed outside a tap on iOS Safari) is given
+   this long, then the recorder carries on: a recording must start and must end. */
+const RESUME_WAIT_MS=1500;
+const CLOSE_WAIT_MS=500;
+// How long a stopped MediaRecorder may take to hand back its take before the take is reported as failed (#439).
+export const STOP_WAIT_MS=4000;
+function settle(promise,ms){
+  return Promise.race([Promise.resolve(promise).catch(()=>{}),new Promise(resolve=>setTimeout(resolve,ms))]);
+}
+
 function stopTracks(stream){
   for(const track of stream?.getTracks?.()||[]){
     try{track.stop();}catch{}
@@ -36,18 +48,32 @@ function stopTracks(stream){
 
 async function buildRnnoisePipeline(stream,{
   AudioContextCtor=globalThis.AudioContext||globalThis.webkitAudioContext,
+  sharedContext=null,
 }={}){
-  if(typeof AudioContextCtor!=='function')return null;
+  /* The context the learner's tap started (capabilities/audio-context.js) is used when there is one: on iOS Safari
+     only a context started in the tap runs. It belongs to the page and is never closed here; one made here is. */
+  const owned=!sharedContext;
+  if(owned&&typeof AudioContextCtor!=='function')return null;
 
-  let context;
-  try{
-    context=new AudioContextCtor({sampleRate:48000});
-  }catch{
-    context=new AudioContextCtor();
+  let context=sharedContext;
+  if(owned){
+    try{
+      context=new AudioContextCtor({sampleRate:48000});
+    }catch{
+      context=new AudioContextCtor();
+    }
   }
+  const release=async()=>{if(owned){try{await settle(context.close(),CLOSE_WAIT_MS);}catch{}}};
 
   if(context.sampleRate!==48000){
-    try{await context.close();}catch{}
+    await release();
+    return null;
+  }
+  // Checked before anything is loaded, and again once the graph is built (below).
+  if(context.state==='suspended')await settle(context.resume(),RESUME_WAIT_MS);
+  if(context.state!=='running'){
+    await release();
+    console.warn('[Orena Speaking] audio context not running; using native microphone processing.',context.state);
     return null;
   }
 
@@ -94,7 +120,12 @@ async function buildRnnoisePipeline(stream,{
     gain.connect(compressor);
     compressor.connect(destination);
 
-    if(context.state==='suspended')await context.resume();
+    if(context.state==='suspended')await settle(context.resume(),RESUME_WAIT_MS);
+    /* A context that is not running passes nothing through: the processed stream is silence, the take is uploaded
+       and the assessment answers "no speech" (#443, 422 pronunciation_no_speech twice on an iPhone retry). iOS
+       Safari leaves a context created outside the tap `suspended` or `interrupted` after other media played (the
+       model line). The microphone's own stream is used then, never a silent one. */
+    if(context.state!=='running')throw new Error(`audio context ${context.state}`);
 
     return {
       stream:destination.stream,
@@ -107,9 +138,10 @@ async function buildRnnoisePipeline(stream,{
       compressor,
       destination,
       mode:'rnnoise-enhanced',
+      owned,
     };
   }catch(error){
-    try{await context.close();}catch{}
+    await release();
     console.warn('[Orena Speaking] RNNoise unavailable; using native microphone processing.',error);
     return null;
   }
@@ -128,6 +160,8 @@ export function createLocalAudioRecorder({
   URLApi=globalThis.URL,
   BlobCtor=globalThis.Blob,
   AudioContextCtor=globalThis.AudioContext||globalThis.webkitAudioContext,
+  sharedContext=sharedAudioContext,
+  stopWaitMs=STOP_WAIT_MS,
 }={}){
   let rawStream=null;
   let recordingStream=null;
@@ -163,8 +197,10 @@ export function createLocalAudioRecorder({
       try{processingPipeline.lowpass?.disconnect?.();}catch{}
       try{processingPipeline.gain?.disconnect?.();}catch{}
       try{processingPipeline.compressor?.disconnect?.();}catch{}
+      try{processingPipeline.destination?.disconnect?.();}catch{}
       try{processingPipeline.denoiser?.destroy?.();}catch{}
-      try{await processingPipeline.context?.close?.();}catch{}
+      // The page's shared context outlives the take; only a context this recorder made is closed.
+      if(processingPipeline.owned)try{await settle(processingPipeline.context?.close?.(),CLOSE_WAIT_MS);}catch{}
     }
     processingPipeline=null;
   };
@@ -209,7 +245,7 @@ export function createLocalAudioRecorder({
       const audioTrack=rawStream.getAudioTracks?.()[0];
       inputSettings=audioTrack?.getSettings?.()||null;
 
-      processingPipeline=await buildRnnoisePipeline(rawStream,{AudioContextCtor});
+      processingPipeline=await buildRnnoisePipeline(rawStream,{AudioContextCtor,sharedContext:sharedContext?.()||null});
       if(disposed){await shutdownCapture();return false;}
       if(processingPipeline){
         recordingStream=processingPipeline.stream;
@@ -244,13 +280,29 @@ export function createLocalAudioRecorder({
 
     return await new Promise(resolve=>{
       let settled=false;
+      let watchdog=0;
       const finish=value=>{
         if(settled)return;
         settled=true;
+        clearTimeout(watchdog);
         resolve(value);
       };
+      // A recorder that never reports its end (seen on iOS Safari) must not leave the room recording for ever:
+      // the take is reported as failed and the microphone is released (#439).
+      watchdog=setTimeout(()=>{
+        if(settled)return;
+        try{if(activeRecorder.state!=='inactive')activeRecorder.stop();}catch{}
+        shutdownCapture().finally(()=>{
+          if(recorder===activeRecorder)recorder=null;
+          chunks=[];
+          status='error';
+          error='recording_failed';
+          finish(null);
+        });
+      },stopWaitMs);
 
       activeRecorder.addEventListener('stop',async()=>{
+        if(settled)return;
         await shutdownCapture();
         recorder=null;
 

@@ -13,7 +13,7 @@ import { useStyles } from '../../kit/styles.js';
 import { toast } from '../../kit/toast.js';
 import { languages as copyLanguages } from '../../copy/index.js';
 import { acceptConsent, consentRequired, markVoiceRefused, voiceConsent, writeVoiceConsent } from '../../product/consent.js';
-import { legalHref, legalLabel } from '../../legal/links.js';
+import { legalHref } from '../../legal/links.js';
 import { t } from './copy.js';
 
 const DISC = { iconBg: 'var(--accent-soft)', iconColor: 'var(--accent)' };
@@ -56,8 +56,8 @@ export async function openConsentSheet(ctx = {}) {
       title: t('consentTitle'),
       text: t('consentBody'),
       links: [
-        { href: legalHref('/terms'), label: legalLabel(t('consentTerms'), ui) },
-        { href: legalHref('/privacy'), label: legalLabel(t('consentPrivacy'), ui) },
+        { href: legalHref('/terms'), label: t('consentTerms') },
+        { href: legalHref('/privacy'), label: t('consentPrivacy') },
       ],
       actions: [{ key: 'agree', label: t('consentAgree'), variant: 'primary' }],
     },
