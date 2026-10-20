@@ -4,6 +4,7 @@
    place, breadcrumb, badges). */
 import { html, mount, raw } from '../kit/html.js';
 import { icon } from '../kit/icons.js';
+import { avatarMarkup } from '../kit/avatar.js';
 import { brandChip, intelChip } from '../kit/brand.js';
 import { shellCopy as t } from '../copy/shell.js';
 import { href } from './routes.js';
@@ -43,9 +44,7 @@ function learningLabel(context) {
 }
 
 function avatar(context, className = 'o-avatar') {
-  return context.picture
-    ? html`<span class="${className}"><img src="${context.picture}" alt=""></span>`
-    : html`<span class="${className}" aria-hidden="true">${context.initial}</span>`;
+  return avatarMarkup(context, className);
 }
 
 function railMarkup(state) {

@@ -57,7 +57,14 @@ def clean_caption_text(value: object) -> str:
         return ""
     if _ONLY_MARKS.fullmatch(text):
         return ""
+    if _LONE_LETTER.fullmatch(text):
+        return ""
     return text
+
+
+# A cue that is one Latin letter and nothing else ("n", "h.") is a recognition artefact, not speech: no learner line is
+# one letter. "a", "I" and "O" are words and stay. (P0 QA: GREY's last line read "n".) Han text is never touched.
+_LONE_LETTER = re.compile(r"[\W_]*(?![aAiIoO])[A-Za-z][\W_]*")
 
 
 def _words(group: str) -> list[str]:
@@ -97,7 +104,8 @@ def repair_english_caption_text(value: object) -> str:
     text = _SPEAKER_MARK.sub(" ", str(value or ""))
     text = _EN_SQUARE_TAG.sub(_square_is_noise, text)
     text = _EN_PAREN_TAG.sub(_paren_is_sound, text)
-    return _SPACE.sub(" ", text).strip()
+    text = _SPACE.sub(" ", text).strip()
+    return "" if _LONE_LETTER.fullmatch(text) else text
 
 def _primary(value: str) -> str:
     return (value or "").strip().casefold().replace("_", "-").split("-", 1)[0]

@@ -87,7 +87,38 @@ assert.deepEqual(seen, [['clear', 'media:en-science-cosmic-calendar']]);
 assert.deepEqual(memory.value.continuation.map((entry) => entry.id), ['text:y']);
 assert.equal(memory.value.answers['media:en-science-cosmic-calendar'], 'my answer', 'only the place is forgotten');
 assert.equal(sync.placeKind({ id: 'media:en-science-cosmic-calendar' }), 'listening', 'the account clear has a kind');
+/* #446 follow-up: a cleared place the server still lists (the clear has not landed) is not merged back, so Today
+   does not ask for the retired lesson again; opening that content again lifts the hold. */
+await sync.clearPlace('media:youtube-retired');
+const relisted = [{ content_id: 'media:youtube-retired', kind: 'listening', place: { title: 'Gone', index: 1, total: 1 } }];
+assert.deepEqual(sync.mergeContinuation(relisted, []).map((entry) => entry.id), [], 'a let-go place stays gone');
+await sync.sendPlace({ id: 'media:youtube-retired', title: 'Back', place: { index: 1, total: 1 } });
+assert.deepEqual(sync.mergeContinuation(relisted, []).map((entry) => entry.id), ['media:youtube-retired'], 'opening it again brings it back');
+/* A clear the server answers 404 (media_not_available) counts as done: the place stays gone. */
+script = [{ status: 404, body: { detail: { code: 'media_not_available' } } }];
+assert.deepEqual(await sync.clearPlace('media:youtube-9xIf7Tb0ykU'), { status: 'gone' });
+assert.deepEqual(sync.mergeContinuation([{ content_id: 'media:youtube-9xIf7Tb0ykU', kind: 'listening', place: { title: 'G', index: 1, total: 1 } }], []), []);
 setPlaceSink(null);
+
+/* #459 review: the let-go hold is the account's own - another account and a sign-out start with none. */
+{
+  const data = {};
+  globalThis.localStorage = { getItem: (k) => data[k] ?? null, setItem: (k, v) => { data[k] = String(v); }, removeItem: (k) => { delete data[k]; } };
+  const gone = [{ content_id: 'media:youtube-gone', kind: 'listening', place: { title: 'G', index: 1, total: 1 } }];
+  sync.setPlaceOwner('learner-a');
+  await sync.clearPlace('media:youtube-gone');
+  assert.deepEqual(JSON.parse(data['orena.continue.letGo.v2']).owner, 'learner-a');
+  assert.deepEqual(sync.mergeContinuation(gone, []), []);
+  sync.setPlaceOwner('learner-b');
+  assert.deepEqual(sync.mergeContinuation(gone, []).map((e) => e.id), ['media:youtube-gone'], 'another account is not held');
+  assert.equal(data['orena.continue.letGo.v2'], undefined, "the other account's hold is dropped");
+  sync.setPlaceOwner('learner-a');
+  await sync.clearPlace('media:youtube-gone');
+  sync.forgetLetGo();
+  assert.equal(data['orena.continue.letGo.v2'], undefined, 'sign-out leaves nothing');
+  assert.deepEqual(sync.mergeContinuation(gone, []).map((e) => e.id), ['media:youtube-gone']);
+  delete globalThis.localStorage;
+}
 
 /* The read: a failed request keeps the device list. */
 script = [{ status: 500, body: {} }];

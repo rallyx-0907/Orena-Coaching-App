@@ -73,6 +73,44 @@ def test_an_absent_word_is_reported_absent_never_guessed() -> None:
     assert vi_lexicon.lookup("") == ()
 
 
+def test_an_inflected_form_reaches_its_headword_and_nothing_else() -> None:
+    """P0 QA: "adopted" showed no meaning, because the shared tagger's lemma only strips a plural."""
+    adopt = vi_lexicon.lookup("adopt")
+    assert adopt and vi_lexicon.lookup("adopted") == (), "lookup is the headword only; choose reduces, knowing the class"
+    for form in ("adopted", "adopting", "adopts"):
+        assert vi_lexicon.gloss(form, "verb", "The family adopted a dog.") == adopt[0].gloss, form
+    assert vi_lexicon.gloss("stopped", "verb", "The bus stopped.") == vi_lexicon.lookup("stop")[0].gloss
+    # "need" has three verb senses that agree (cần / cần phải / cần; muốn): the common one.
+    assert vi_lexicon.gloss("needed", "verb", "We needed help.") == "cần"
+    # A reduction that names no headword stays a miss: Wiktionary has no Vietnamese translation of "amuse".
+    assert vi_lexicon.lookup("amuse") == () and vi_lexicon.gloss("amused", "verb") is None
+
+
+def test_a_reduction_never_guesses_a_wrong_sense() -> None:
+    """#459 review: "lied" read "nằm" (lie down) and "stated" read "nhà nước" (the noun "state")."""
+    # "lie" has two verb senses that share no word (lie down / tell a lie): unless the sentence names one, a miss.
+    assert vi_lexicon.gloss("lied", "verb", "He lied to me about the money.") is None
+    assert vi_lexicon.gloss("lied", "verb") is None
+    # -ed with no class is not reduced; with the verb class, "state" has no verb sense in the pack: a miss.
+    assert vi_lexicon.gloss("stated") is None and vi_lexicon.gloss("stated", "", "He stated the facts.") is None
+    assert vi_lexicon.gloss("stated", "verb", "He stated the facts.") is None
+    # -ed / -ing are reduced only for a verb or an adjective; a noun-tagged "-ed" word is not.
+    assert vi_lexicon.gloss("adopted", "noun") is None
+    # Irregular forms are not guessed.
+    assert vi_lexicon.gloss("went", "verb", "They went home.") is None
+
+
+def test_an_english_or_in_a_cell_is_split_into_alternatives() -> None:
+    """P0 QA: "brothers" showed "anh or anh trai" - English inside a Vietnamese gloss."""
+    for word in ("brother", "brothers", "sister", "engineer"):
+        for sense in vi_lexicon.lookup(word):
+            assert all(" or " not in gloss for gloss in sense.glosses), (word, sense)
+    assert vi_lexicon.lookup("brother")[0].glosses[:2] == ("anh", "anh trai")
+    script = _build_script()
+    entry = {"pos": "noun", "translations": [{"lang_code": "vi", "word": "chị or chị gái", "sense": "female sibling"}]}
+    assert script.entry_senses(entry) == [["noun", "female sibling", ["chị", "chị gái"]]]
+
+
 def test_a_missing_pack_is_unavailable_not_an_error(tmp_path, monkeypatch) -> None:
     monkeypatch.setattr(vi_lexicon, "INDEX_PATH", tmp_path / "absent.json")
     vi_lexicon._index.cache_clear()
@@ -150,6 +188,18 @@ def test_a_word_the_pack_lacks_falls_through_to_the_ai_seam(tap) -> None:
     result = service.lookup("launch", "They watched the launch.", "en", "vi").to_dict()
     assert result["meanings"] == [{"text": "từ AI", "source": "word_translation"}]
     assert asked == [("launch", "en", "vi")]
+
+
+def test_a_past_form_tap_resolves_from_the_pack_with_no_ai_call(tap, monkeypatch) -> None:
+    service, asked = tap
+    monkeypatch.setattr(
+        reading_lookup, "_local_token_facts",
+        lambda _l, _c, selection: {"part_of_speech": "verb", "pronunciation": "", "base_form": "", "lemma": selection},
+    )
+    result = service.lookup("adopted", "The family adopted a dog last year.", "en", "vi").to_dict()
+    assert result["meanings"][0]["source"] == "bilingual_dictionary"
+    assert "con nuôi" in result["meanings"][0]["text"]
+    assert asked == []
 
 
 def test_the_vendored_pack_answers_only_its_pair() -> None:

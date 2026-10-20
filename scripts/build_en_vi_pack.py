@@ -30,6 +30,7 @@ import argparse
 import gzip
 import hashlib
 import json
+import re
 import sys
 import unicodedata
 import zlib
@@ -56,6 +57,7 @@ _VI_LETTERS = set(
 _VI_PUNCTUATION = set(" -'’.,0123456789")
 # Translations so tagged are kept, after the current ones.
 _DATED_TAGS = {"archaic", "obsolete", "dated", "historical", "rare"}
+_ENGLISH_OR = re.compile(r"\s+or\s+")
 
 
 def is_vietnamese(text: str) -> bool:
@@ -114,12 +116,13 @@ def entry_senses(entry: dict[str, Any]) -> list[list[Any]]:
         languages.setdefault(clean_text(item.get("sense"), MAX_SENSE_CHARS), set()).add(code)
         if code != "vi":
             continue
-        vi = clean_text(item.get("word"), MAX_GLOSS_CHARS)
-        if not vi or not is_vietnamese(vi):
-            continue
         sense = clean_text(item.get("sense"), MAX_SENSE_CHARS)
         dated = bool(_DATED_TAGS.intersection(str(tag).casefold() for tag in item.get("tags") or []))
-        groups.setdefault(sense, []).append((dated, vi))
+        # A cell listing spelling alternatives with an English "or" ("anh or anh trai") is one gloss per alternative.
+        for part in _ENGLISH_OR.split(str(item.get("word") or "")):
+            vi = clean_text(part, MAX_GLOSS_CHARS)
+            if vi and is_vietnamese(vi):
+                groups.setdefault(sense, []).append((dated, vi))
     senses: list[list[Any]] = []
     pos = str(entry.get("pos") or "").strip().casefold()
     for sense, items in groups.items():

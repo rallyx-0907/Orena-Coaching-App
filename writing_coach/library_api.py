@@ -258,10 +258,23 @@ def continue_put(content_id: str, payload: ContinueIn) -> dict[str, Any]:
     source_id = content_id.strip()
     if not source_id or len(source_id) > 255:
         raise orena_http_error(422, "place_invalid", "That content id is not valid.")
-    _require_state_writable(source_id)
-    place = _clean_place(payload.place) if payload.place is not None else None
+    create = True
+    if payload.place is not None and payload.place.cleared:
+        # Clearing is how the client lets go of media that is gone (retired, held, unpublished: #446). It is
+        # accepted for such an id too, but then it only moves the learner's own existing pointer to `cleared`
+        # (nothing else is stored, no relationship is started, no other record is touched).
+        from writing_coach.listening_api import media_state_writable  # lazy, as in _require_state_writable
+
+        create = media_state_writable(source_id)
+        place = _clean_place(payload.place if create else PlaceIn(cleared=True))
+    else:
+        _require_state_writable(source_id)
+        place = _clean_place(payload.place) if payload.place is not None else None
     try:
-        return _library().set_place(kind=payload.kind, source_id=source_id, place=place, settle=bool(payload.place and payload.place.settle))
+        return _library().set_place(
+            kind=payload.kind, source_id=source_id, place=place,
+            settle=bool(payload.place and payload.place.settle), create=create,
+        )
     except LibraryConflict as error:
         raise _refuse(error) from error
 

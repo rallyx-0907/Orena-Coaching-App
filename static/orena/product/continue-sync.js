@@ -57,6 +57,58 @@ export function placeBody(entry) {
    The server coalesces the same way (30 s, no boundary crossed); this only saves the round trip. */
 const THROTTLE_MS = 30000;
 const sent = new Map();
+/* Places this page let go of (removed, or content that is gone: #446). Until the learner opens one again, a
+   server list that still carries it - a clear that has not landed, or failed - does not bring it back, so no
+   screen asks for a retired lesson on every visit. */
+const LET_GO_KEY = 'orena.continue.letGo.v2';
+const LET_GO_LIMIT = 50;
+/* `{ owner, ids }`: the hold belongs to one account; another account (or a sign-out) starts with none. */
+function readLetGo() {
+  try {
+    const stored = JSON.parse(globalThis.localStorage?.getItem(LET_GO_KEY) || '{}');
+    const ids = Array.isArray(stored?.ids) ? stored.ids.filter((id) => typeof id === 'string' && id.length <= 255) : [];
+    return { owner: typeof stored?.owner === 'string' ? stored.owner : '', ids: ids.slice(-LET_GO_LIMIT) };
+  } catch {
+    return { owner: '', ids: [] };
+  }
+}
+/* Kept on this device too, so a reload against a server that still lists the place (its clear answered 404 before
+   the server accepted clears of unavailable media) does not ask for the gone lesson again. */
+const letGo = new Set();
+let letGoOwner = '';
+function keepLetGo() {
+  try {
+    globalThis.localStorage?.setItem(LET_GO_KEY, JSON.stringify({ owner: letGoOwner, ids: [...letGo].slice(-LET_GO_LIMIT) }));
+  } catch {
+    /* private mode or storage full: the in-page hold still applies */
+  }
+}
+
+/* The signed-in account (shell/context.js): its own hold is read back; another account's is dropped. */
+export function setPlaceOwner(owner) {
+  const next = String(owner || '');
+  if (next === letGoOwner && letGo.size) return;
+  letGo.clear();
+  letGoOwner = next;
+  const stored = readLetGo();
+  if (stored.owner === next) stored.ids.forEach((id) => letGo.add(id));
+  else forgetStoredLetGo();
+}
+
+function forgetStoredLetGo() {
+  try {
+    globalThis.localStorage?.removeItem(LET_GO_KEY);
+  } catch {
+    /* nothing stored, or storage unavailable */
+  }
+}
+
+/* Sign-out: nothing of this account's hold stays for the next one. */
+export function forgetLetGo() {
+  letGo.clear();
+  letGoOwner = '';
+  forgetStoredLetGo();
+}
 
 function crosses(previous, body) {
   return ['index', 'total', 'finished', 'segment', 'intent', 'title', 'context'].some((key) => previous.place[key] !== body.place[key]);
@@ -66,6 +118,7 @@ function crosses(previous, body) {
 export function sendPlace(entry, now = Date.now()) {
   const body = placeBody(entry);
   if (!body) return Promise.resolve(null);
+  if (letGo.delete(entry.id)) keepLetGo();
   const previous = sent.get(entry.id);
   if (previous && !entry.settle && now - previous.at < THROTTLE_MS && !crosses(previous, body)) return Promise.resolve(null);
   sent.set(entry.id, { at: now, place: body.place });
@@ -76,11 +129,14 @@ export function clearPlace(id) {
   const kind = placeKind({ id });
   if (!kind) return Promise.resolve(null);
   sent.delete(id);
+  letGo.delete(id);
+  letGo.add(id);
+  keepLetGo();
   return request(`/api/continue/${encodeURIComponent(id)}`, {
     method: 'PUT',
     headers: JSON_HEADERS,
     body: JSON.stringify({ kind, place: { cleared: true } }),
-  }).catch(() => null);
+  }).catch((error) => (error?.status === 404 ? { status: 'gone' } : null)); // 404: nothing left to clear - done
 }
 
 /* A server item -> the device's continuation entry shape. */
@@ -104,7 +160,7 @@ export function entryFromServer(item) {
 
 /* The server's places first (newest first), then the device's own that the server does not hold. */
 export function mergeContinuation(serverItems, deviceEntries) {
-  const fromServer = (Array.isArray(serverItems) ? serverItems : []).map(entryFromServer);
+  const fromServer = (Array.isArray(serverItems) ? serverItems : []).map(entryFromServer).filter((entry) => !letGo.has(entry.id));
   const seen = new Set(fromServer.map((entry) => entry.id));
   const legacy = (Array.isArray(deviceEntries) ? deviceEntries : []).filter((entry) => entry && !seen.has(entry.id));
   return [...fromServer, ...legacy].slice(0, 20);

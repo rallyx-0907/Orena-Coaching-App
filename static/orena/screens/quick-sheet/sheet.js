@@ -63,6 +63,7 @@ import { keepProvenance } from '../../product/account-records.js';
 import { createStrokeTiles } from '../word/stroke-tiles.js';
 import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
 import { speakOnDevice } from '../../kit/device-voice.js';
+import { canPlayAudio } from '../../kit/audio-support.js';
 
 let audio = null;
 function playUrl(url, button = null) {
@@ -308,8 +309,16 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   function bind() {
     sheetEl.querySelector('[data-sheet-close]')?.addEventListener('click', () => handle.close());
     sheetEl.querySelector('[data-play]')?.addEventListener('click', async () => {
-      if (card.audioUrl) playUrl(card.audioUrl, sheetEl.querySelector('[data-play]'));
-      else {
+      // A recording this device cannot play (Ogg on iOS Safari) is said in the device's own voice, labelled so.
+      const onDevice = () => {
+        if (speakOnDevice(target, lang)) audioAttribution = t('sourceDevice');
+        else audioMissing = true;
+        paint();
+      };
+      if (card.audioUrl) {
+        if (canPlayAudio(card.audioUrl)) playUrl(card.audioUrl, sheetEl.querySelector('[data-play]'));
+        else onDevice();
+      } else {
         if (audioBusy || audioMissing) return;
         audioBusy = true;
         paint();
@@ -317,7 +326,9 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           const result = await api.wordAudio(target, card.reading, true);
           if (!alive) return;
           audioBusy = false;
-          if (result?.available && result.url) {
+          if (result?.available && result.url && !canPlayAudio(result.url, result.mediaType)) {
+            onDevice();
+          } else if (result?.available && result.url) {
             audioAttribution = audioSourceLabel(result);
             paint();
             playUrl(result.url, sheetEl.querySelector('[data-play]'));
@@ -345,7 +356,9 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
     sheetEl.querySelector('[data-why]')?.addEventListener('click', () => askWordDeeper(card.word, lang, source, sentence));
     bindReport(sheetEl, (to) => { handle?.close(); if (typeof ctx.go === 'function') ctx.go(to); });
     sheetEl.querySelector('[data-detail]')?.addEventListener('click', () => {
-      if (typeof ctx.go === 'function') ctx.go(href('word', { id: card.word }));
+      // The sentence the word was tapped in travels to the page, so its lookup is asked in that sentence.
+      const met = contextFor(card.word, context || sentence);
+      if (typeof ctx.go === 'function') ctx.go(href('word', { id: card.word }, met !== card.word ? { ctx: met.slice(0, 600) } : {}));
     });
     sheetEl.querySelector('[data-practise-strokes]')?.addEventListener('click', openStroke);
     sheetEl.querySelector('[data-why-ask]')?.addEventListener('click', () => askContextual());

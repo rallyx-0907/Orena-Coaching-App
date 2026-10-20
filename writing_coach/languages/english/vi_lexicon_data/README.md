@@ -25,7 +25,9 @@ the word tap.
 
 Changed on 2026-10-20 by the Orena project. From each English entry, only its Vietnamese
 translations are kept, grouped by the English sense label of their translation table; entries
-of one headword are merged. The Vietnamese text is trimmed, normalised to Unicode NFC
+of one headword are merged. A translation cell that lists alternatives with an English "or"
+is split into one translation per alternative (the committed pack predates the split in the
+build script; the loader applies the same split when it reads it). The Vietnamese text is trimmed, normalised to Unicode NFC
 (diacritics kept), de-duplicated, and dropped when empty, longer than 60 characters, or not
 written in Vietnamese orthography (a Han or Nôm form, or another language's word). Within an
 entry, senses are ordered by how many languages the translation table translates them (ties

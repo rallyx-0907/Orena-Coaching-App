@@ -365,9 +365,18 @@ def test_chinese_allowance_is_a_quarter_of_the_cue_capped_at_four():
     ("[MAN] where are you going", "where are you going"), ("[Narrator] It was late", "It was late"),
     ("[man] is lower case speech", "[man] is lower case speech"), ("[Male Voice] come here", "come here"),
     ("[Applause]", ""), ("[music playing] hello", "hello"),
+    # P0 QA (GREY's last line read "n"): a cue left as one letter is an artefact, not speech; "a", "I", "O" are words
+    ("n", ""), ("[Music] n", ""), ("N.", ""), ("a", "a"), ("I", "I"), ("O!", "O!"), ("hi n", "hi n"), ("no", "no"),
 ])
 def test_english_noise_rule_is_bounded(raw, clean):
     assert repair_english_caption_text(raw) == clean
+
+
+def test_the_canonical_caption_cleaning_drops_a_lone_letter_cue_and_keeps_words():
+    from writing_coach.media_transcript_quality import clean_caption_text
+
+    assert clean_caption_text("n") == "" and clean_caption_text(" h. ") == ""
+    assert [clean_caption_text(text) for text in ("a", "I", "O", "no", "好")] == ["a", "I", "O", "no", "好"]
 
 
 def test_a_model_that_re_adds_speaker_marks_or_sound_tags_is_cleaned_before_the_check(tmp_path):

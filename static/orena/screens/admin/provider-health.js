@@ -39,17 +39,31 @@ export function lastErrorPill(t, health, entry, { ui, now }) {
   return { label: t('phLastError', { when: relative(entry.last_error_at, ui, now), n: num(entry.failed, ui), minutes: num(health?.window_minutes || 10, ui) }), tone: 'mute' };
 }
 
-/* One banner per provider that is down: who, why, since when, and which capabilities run on a backup. */
-export function downBanners(t, health, { ui, now, href, providerName = (id) => id, capabilityName = (key) => key }) {
+/* A provider's display name from the report itself (`provider_names`), else the page's own list, else its id. */
+export function namedBy(health, providerName = null) {
+  return (id) => {
+    const named = providerName ? providerName(id) : '';
+    if (named && named !== id) return named;
+    const own = health?.provider_names?.[id];
+    return typeof own === 'string' && own ? own : (named || id || '');
+  };
+}
+
+/* One banner per provider that is down: who, why, since when, which capabilities run on a working backup (named),
+   which got no answer, and which have no working route because their backup is down too. */
+export function downBanners(t, health, { ui, now, href, providerName = null, capabilityName = (key) => key }) {
+  const name = namedBy(health, providerName);
   return (health?.down || []).map((row) => {
     const parts = [];
+    const withBackup = (key) => (row.backups?.[key] ? `${capabilityName(key)} (${name(row.backups[key])})` : capabilityName(key));
     if (row.since) parts.push(t('phDownSince', { when: relative(row.since, ui, now) }));
-    if (row.on_backup?.length) parts.push(t('phOnBackup', { list: row.on_backup.map(capabilityName).join(', ') }));
+    if (row.on_backup?.length) parts.push(t('phOnBackup', { list: row.on_backup.map(withBackup).join(', ') }));
+    if (row.backup_down?.length) parts.push(t('phNoRoute', { list: row.backup_down.map(withBackup).join(', ') }));
     if (row.without_backup?.length) parts.push(t('phNoBackup', { list: row.without_backup.map(capabilityName).join(', ') }));
-    if (!row.on_backup?.length && !row.without_backup?.length) parts.push(t('phNoCapability'));
+    if (!row.on_backup?.length && !row.without_backup?.length && !row.backup_down?.length) parts.push(t('phNoCapability'));
     return {
       tone: row.severity === 'high' ? 'err' : 'warn',
-      title: t('phDownTitle', { provider: providerName(row.provider), reason: reasonText(t, row.reason) }),
+      title: t('phDownTitle', { provider: name(row.provider), reason: reasonText(t, row.reason) }),
       text: parts.join(' '),
       actions: href ? [{ label: t('openProvider'), size: 'sm', a: 'go', data: { to: href('adminProvider', { id: row.provider }) } }] : [],
     };
@@ -57,7 +71,8 @@ export function downBanners(t, health, { ui, now, href, providerName = (id) => i
 }
 
 /* The switch history as rows: when, which capability, from -> to, why. */
-export function switchRows(t, health, { ui, now, href, providerName = (id) => id, capabilityName = (key) => key }) {
+export function switchRows(t, health, { ui, now, href, providerName: own = null, capabilityName = (key) => key }) {
+  const providerName = namedBy(health, own);
   return (health?.switches || []).map((row) => ({
     title: capabilityName(row.capability),
     meta: [

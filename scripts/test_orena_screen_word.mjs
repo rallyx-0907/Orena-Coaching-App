@@ -28,6 +28,17 @@ import {
 
 /* --- contextFor: the server rejects a context that does not contain the word --- */
 assert.equal(contextFor('buffer', null), 'buffer', 'no item: the word is its own valid context');
+/* P0 QA: "Xem chi tiết từ" from the sheet passes the sentence the word was tapped in (?ctx=), not the word. */
+assert.equal(contextFor('adopted', null, 'They adopted a dog.'), 'They adopted a dog.', 'the tapped sentence is the context');
+assert.equal(contextFor('adopted', null, 'Nothing here.'), 'adopted', 'a sentence without the word is never sent');
+assert.equal(contextFor('buffer', { source_fragment: 'Keep a buffer.' }, 'A buffer zone.'), 'Keep a buffer.', 'the saved sentence wins');
+{
+  const { readFileSync } = await import('node:fs');
+  const sheet = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
+  assert.match(sheet, /href\('word', \{ id: card\.word \}, met !== card\.word \? \{ ctx: met/, 'the sheet links the word page with its sentence');
+  const screen = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
+  assert.match(screen, /contextFor\(word, item, String\(ctx\.query\?\.get\?\.\('ctx'\)/, 'the word page reads it');
+}
 assert.equal(
   contextFor('buffer', { source_fragment: 'Keep a buffer before the deadline.' }),
   'Keep a buffer before the deadline.',

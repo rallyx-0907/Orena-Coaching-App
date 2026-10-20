@@ -86,6 +86,19 @@ def test_a_place_round_trips_and_a_new_session_reads_it_back(env):
     assert listed[0]["place_at"]
 
 
+def test_a_clear_that_may_not_create_moves_only_an_existing_pointer(env):
+    """#446 follow-up: clearing the place of unavailable media never starts a relationship."""
+    library = env.repo()
+    absent = library.set_place(kind="listening", source_id="media:gone", place={"cleared": True}, create=False)
+    assert absent["status"] == "absent"
+    assert _row(env, "listening", "media:gone") is None, "no row is created for media the learner cannot see"
+    library.set_place(kind="listening", source_id="media:gone-too", place=_place())
+    cleared = library.set_place(kind="listening", source_id="media:gone-too", place={"cleared": True}, create=False)
+    assert cleared["status"] == "written"
+    assert library.list_places() == [], "the cleared pointer is no longer offered"
+    assert _row(env, "listening", "media:gone-too").relationship_kind == "started", "the relationship stays"
+
+
 def test_ids_of_every_shape_round_trip(env):
     for kind, source_id in (("reading", "text:9f3a"), ("listening", "media:lesson-1"), ("book", "book:b1:c2"), ("reading", "url:abc123")):
         env.repo().set_place(kind=kind, source_id=source_id, place=_place())
