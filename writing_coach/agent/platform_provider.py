@@ -16,7 +16,7 @@ import logging
 from collections.abc import Callable, Iterator
 from typing import Any
 
-from writing_coach.agent.errors import ProviderUnavailable
+from writing_coach.agent.errors import ProviderOutOfService, ProviderUnavailable
 from writing_coach.agent.provider import (
     ModelRoute,
     ProviderEvent,
@@ -28,10 +28,32 @@ from writing_coach.agent.provider import (
     TurnFinished,
     never_stop,
 )
-from writing_coach.ai.base import AICapabilityError, AIProviderError, ChatFinished, ChatTextDelta, ChatToolCall
+from writing_coach.ai.base import (
+    AICapabilityError,
+    AIProviderError,
+    AIProviderNotConfigured,
+    ChatFinished,
+    ChatTextDelta,
+    ChatToolCall,
+)
 
 _log = logging.getLogger(__name__)
 _FINISH = {"stop": "stop", "tool_calls": "tool_calls", "length": "length"}
+# A provider's own words for "the money or the quota is spent", which a short wait does not cure (#438). A per-minute
+# rate limit ("rate limit", "too many requests") is not among them: that one passes.
+_SPENT = ("spending cap", "spend cap", "billing", "insufficient_quota", "insufficient credit", "credit balance",
+          "payment required", "out of credits")
+
+
+def _unavailable(exc: Exception, message: str) -> ProviderUnavailable:
+    """The agent error for a provider failure: out of service when waiting will not help, else unavailable."""
+
+    status = getattr(exc, "status_code", None)
+    text = str(exc).casefold()
+    if (isinstance(exc, AIProviderNotConfigured) or status in (401, 402, 403)
+            or (status == 429 and any(word in text for word in _SPENT))):
+        return ProviderOutOfService(message)
+    return ProviderUnavailable(message)
 
 
 def _finish(reason: object) -> str:
@@ -109,7 +131,7 @@ class PlatformAgentTurnProvider:
         except (AIProviderError, AICapabilityError) as exc:
             # For the operator only: the learner is told `provider_unavailable`, never this.
             _log.warning("agent provider round did not start: %s", exc)
-            raise ProviderUnavailable("the provider did not start") from exc
+            raise _unavailable(exc, "the provider did not start") from exc
         return self._convert(events)
 
     @staticmethod
@@ -131,7 +153,7 @@ class PlatformAgentTurnProvider:
                     )
         except (AIProviderError, AICapabilityError) as exc:
             _log.warning("agent provider round stopped: %s", exc)
-            raise ProviderUnavailable("the provider stopped") from exc
+            raise _unavailable(exc, "the provider stopped") from exc
 
 
 class PlatformModelRouter:
