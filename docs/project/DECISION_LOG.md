@@ -7789,3 +7789,78 @@ OpenRouter approved as fallbacks 19:25).
 **Not in this decision.** Raising any provider's spend cap (the owner's), new paid providers beyond those approved,
 and a fallback after the first token.
 
+## D-248 - Monetisation v2: VND plans, an exam pass, a no-card trial, content gating and server entitlement (2026-10-20)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-20: "implement without further approval"). Basis:
+`ORENA_PRE_MARKET_EVIDENCE/founder/STRATEGY_2026-10-20.md` and the UI-lane plan
+`ORENA_PRE_MARKET_EVIDENCE/MONETISATION_V2_UI_PLAN_2026-10-20.md` (findings F1-F7, gaps G1-G12, PRs MV2-0..MV2-7). This is a product decision, not activation
+authorization: prices, offers and checkout reach `:8000` only through the existing Billing gates (gate 7a/7b), and
+every schema step named below stays a human gate.
+
+1. **Plans and prices (VND).** Plan ids stay `free`, `plus`, `pro` (D-153).
+   - **Plus** 79.000 a month or 690.000 a year. **Pro** 159.000 a month or 1.390.000 a year.
+   - **Exam pass** 199.000 for 3 months, one payment, **not auto-renewing**. It is an offer that grants an existing
+     plan for its period, not a fourth plan.
+   - **Student price** 49.000 a month (Plus), verified by a student email; the verification rule and its store belong
+     to Billing.
+   - **Trial:** 7 days of Plus, no card, **one per Google account**. It is a server grant (`trialing`, `paid_through` =
+     start + 7 days); the once-per-account record needs `promotional_grants` (proposed migration 0034), which is a
+     human schema gate.
+2. **Cost guard.** A hidden per-learner AI cost ceiling at **60% of the plan's net revenue** (after the gateway's and
+   the merchant of record's fees and tax), and a **Free AI pool of USD 0.50 a day** across all Free learners. Neither
+   figure is shown to learners; both reuse the existing cost telemetry (`ai_cost_records`, D-MON-007) and the quota
+   admission. At the ceiling a paid learner's calls **degrade to an economy model, then refuse only at the hard
+   ceiling** (with the existing quota responses).
+3. **Payment.** **VietQR through SePay** for the exam pass, the yearly plans and Credits top-ups; **Polar (card)** for
+   the monthly subscriptions. This supersedes:
+   - the 9.99/79.99 (Plus) and 19.99/159.99 (Pro) USD prices of **D-MON-032** and **D-MON-038** (2) (gate 7b, C5);
+   - D-MON-032's "only Polar sells plans": a yearly plan and the exam pass are sold as one-time prepaid periods on
+     SePay (the D-MON-031 mechanism, at the new prices; D-MON-031's own prices stay withdrawn);
+   - the VND figures above apply to the VietQR/SePay offers (exam pass, yearly plans, student price, top-ups);
+   - the catalogue defaults of **D-153** (Plus 199.000/1.590.000, Pro 399.000/3.190.000).
+   The Polar products and `billing/price_integrity.py` follow the new prices in the Billing lane.
+
+   **OPEN, owned by the Billing lane (not resolved here):** Polar charges in USD only, and D-MON-005/015 require the
+   price shown to equal the price charged (D-MON-034 shows plan prices in USD for that reason; Hermes' spec also says
+   "USD only for Polar"). For the card/Polar monthly plans, either the displayed price is the USD amount Polar charges,
+   or the monthly plan moves to VietQR. Until Billing records which, no VND price is shown for a Polar charge.
+4. **Content gating** (the tier is computed on the server from rules, plus a bounded list of stored exceptions in
+   `platform_settings`; no schema in phase 1). A **stored per-item tier column** (on `reading_articles`,
+   `vocabulary_collections` or `grammar_points`, or a `content_access` table) is a **human schema gate**, like the
+   trial record in §1: it may only be proposed (`migrations/proposed/`), with independent architecture review, never
+   applied by an agent. This narrows D-MON-001's "generous Free core" for Reading and sets.
+   - **Reading:** about **30% of each (language, level) is Free**, by a stable per-article bucket with a floor, plus
+     **2 more articles a week free on rotation** (deterministic per ISO week). The rest is Plus. Title, cover and the
+     first paragraph of a locked article stay visible.
+   - **YouTube and other media:** watching and **the channel's own captions stay free for every plan, unlimited**. Only
+     Orena's learning tools around the player are gated (Free: tap-to-look-up on 3 videos a week; Plus: full
+     translation, scored shadowing, dictation, save to review). Basis: YouTube API Services Developer Policies
+     **III.F.3.a** ("API Clients must not charge users to watch content in an embedded YouTube player") and the
+     Developer Policies Guide ("You also cannot charge people a fee for services that are offered free of charge on
+     YouTube"). So: the player is never blocked, YouTube's captions are never paid, no paywall, lock or sheet is drawn
+     over the player, no Plus/Pro badge sits on a YouTube item's card or cover, and the offer is marketed as tools,
+     never as access to videos.
+   - **Sets (vocabulary collections, grammar functions):** the **first item of each set is Free**; the rest is Plus. A
+     learner's own decks are never gated. Mock tests are deferred until they exist.
+5. **Badges and frames.** A Plus/Pro corner badge is Pricing's tag pill. A tier frame is a **fill, never an outline**
+   (**D-147**): the edge stays `--edge-light`; Plus is a `--spark-soft` wash and Pro an `--accent-soft` wash (plan G2).
+   The locked state uses the design's lock-in-a-well (Lucide `lock`); the upgrade sheet is built from the Coming-soon
+   sheet shape (plan G4).
+6. **Server entitlement.** Every route that returns a gated body checks the plan on the server and answers **`403
+   plan_required`** with `{content_kind, content_id, required_plan, plan, upgrade, trial_available, preview}`. The client
+   never computes a tier. The check fails closed (an unreadable plan is 503, never an upgrade prompt), an unpublished id
+   is still 404 before any 403, and a gated body is never publicly cacheable (`Cache-Control: private`; plan F6).
+7. **Conflicts, resolved.**
+   - **NC content: D-189 wins.** D-189 §2 says NonCommercial sources are never published into the commercial or paid
+     catalogue. Orena's Free tier is part of a commercial service, so an NC item is **removed (unpublished)**, not kept
+     Free. It may stay only with the publisher's written permission. An item whose rights are unclear is not gateable
+     and goes to the Admin review queue. Audit: `ORENA_PRE_MARKET_EVIDENCE/MV2_NC_AUDIT_8000_2026-10-20.md`.
+   - **Pricing copy:** the Pricing frame's line "Every plan includes all reading, listening, speaking, writing and review
+     practice. Plans differ in how much Orena can analyse for you." is rewritten to match this decision (in EN, VI and
+     ZH). Recorded in `UI_BACKEND_GAPS.md`.
+8. **Open for counsel (before paid launch).** Storing captions fetched through Supadata (native mode) indefinitely cuts
+   against YouTube API Services Developer Policies **III.E.6** (no scraping, directly or indirectly) and **III.E.4.c**
+   (stored data deleted or refreshed after 30 days). Monetising raises the stakes. It is an owner/counsel gate; it does
+   not block the UI work.
+
+Design gaps G1-G12 are recorded in `docs/project/UI_BACKEND_GAPS.md` ("Monetisation v2").
