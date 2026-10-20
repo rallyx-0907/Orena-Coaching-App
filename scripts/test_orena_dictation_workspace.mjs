@@ -155,5 +155,12 @@ assert.match(revealFn, /revealedIds\.add\(line\.id\)/, 'the line is revealed as 
 assert.match(revealFn, /onCheck\(line\)/, 'and the room settles it in view as after a check');
 assert.match(revealFn, /if \(readOnly\) return;/, "an administrator's preview stores nothing");
 assert.match(practiceSrc, /answerChips\(seg\.text, lesson\.language\)/, 'the shown line is drawn in its own spelling');
+// Measured at 360x740 (issue 445): with the picture strip the stage had 108px and no word of the result was in view. After a
+// check, or once the answer is shown, the phone's picture gives way (still rendered, so Replay plays) and comes later
+// than the strip rule it overrides.
+const yields = '.is-dictation:not(.is-typing):has(.s-dict__result) .s-listening__player';
+assert.ok(phone(yields).some((r) => /position:\s*absolute/.test(r.body) && /opacity:\s*0/.test(r.body) && !/display:\s*none/.test(r.body)),
+  'after a check the picture yields on the phone but stays rendered');
+assert.ok(listenCss.lastIndexOf(yields) > listenCss.lastIndexOf('.is-dictation:not(.is-typing) .s-listening__player {'), 'and wins over the compact strip');
 
 console.log('Dictation workspace: a held line is the whole of what may be played; the phone keeps the Transcript while typing and draws the hint as an eye: PASS');

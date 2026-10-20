@@ -1006,6 +1006,14 @@
 :root[data-device="mobile"] .s-listening.is-dictation:not(.is-typing) .s-listening__player { flex: none; height: 96px; min-height: 0; aspect-ratio: auto; }
 :root[data-device="mobile"] .s-listening.is-dictation:not(.is-typing):has(.s-dict__result) .s-listening__transcript,
 :root[data-device="mobile"] .s-listening.is-dictation:not(.is-typing):has(.s-dict__live:not([hidden])) .s-listening__transcript { min-height: 30%; }
+/* After Check, or once the answer is shown (issue 445), the per-word result is what the learner looks at. Measured on
+   :8021 at 360x740, the compact picture strip and the Transcript's 30% left the card's stage 108px, and not one
+   word of "You wrote" was in view. So on the phone the picture gives way, as it already does while typing and on the
+   shortest phones. The player stays rendered, so Replay still plays the line, and the Transcript keeps its share.
+   The checked line, with its meaning, is in the Transcript pane below. */
+:root[data-device="mobile"] .s-listening.is-dictation:not(.is-typing):has(.s-dict__result) .s-listening__player {
+  position: absolute; width: 1px; height: 1px; min-height: 0; opacity: 0; pointer-events: none;
+}
 /* Typing: the task is never cut - the Transcript takes exactly what the answer, hint and Check leave above the
    keyboard (no floor of its own, so on the shortest screens it yields, never the answer box). */
 :root[data-device="mobile"] .s-listening.is-typing .s-listening__transcript { min-height: 0; }
