@@ -77,7 +77,7 @@ from writing_coach.persistence.reading_job_repository import (
 )
 from writing_coach.reading_content_engine import ReadingContentEngine, carried_review_changes, carried_review_reason
 from writing_coach.reading_processing import content_fingerprint
-from writing_coach.reading_provenance import provenance_blockers
+from writing_coach.reading_rights_gate import RightsRefused, publication_rights, rights_blockers
 from writing_coach.reading_source_import import (
     MAX_FILE_BYTES,
     ReadingSourceError,
@@ -208,54 +208,15 @@ def _category(exc: HTTPException) -> str:
     return str(detail.get("category") or "")
 
 
-def _publication_rights(article: Mapping[str, Any]) -> Mapping[str, Any]:
-    source = article.get("source") or {}
-    found = source.get("publication_rights")
-    if isinstance(found, Mapping):
-        return found
-    return {"basis": "snapshot", "state": source.get("rights_state") or {}}
-
-
-def _publication_state(article: Mapping[str, Any]) -> Mapping[str, Any]:
-    return _publication_rights(article).get("state") or {}
-
-
 def publication_rights_basis(article: Mapping[str, Any]) -> str:
     """Where the publish confirmation's rights came from: `snapshot`, `source` or `none`."""
-    return str(_publication_rights(article).get("basis") or "snapshot")
+    return str(publication_rights(article).get("basis") or "snapshot")
 
 
 def publication_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
-    """What is unclear about publishing an article, from its effective rights.
-
-    These are warnings, not a gate (D-189 amends D-105): an administrator can
-    always publish, but over any of them only with an explicit override and a
-    reason (`acknowledge_warnings`), recorded with the decision. The republish
-    right (and, for an adapted text, the adapt right) being denied or never
-    answered, and an incomplete credit, each appear here.
-
-    Read from the article's own rights snapshot with the administrator's
-    recorded answers folded over it, so answering the questions on the review
-    page is what clears the gate. The snapshot is authoritative for the
-    article; only an article with no rights of its own reads its source's
-    policy (`publication_rights`, whose `basis` says which).
-    """
-    state = _publication_state(article)
-    blockers: list[dict[str, str]] = []
-    republish = state.get("can_republish", "unknown")
-    if republish == "denied":
-        blockers.append({"code": "rights_not_cleared", "question": "can_republish"})
-    elif republish != "allowed":
-        blockers.append({"code": "rights_unknown", "question": "can_republish"})
-    if article.get("is_adapted"):
-        adapt = state.get("can_adapt", "unknown")
-        if adapt == "denied":
-            blockers.append({"code": "adaptation_not_cleared", "question": "can_adapt"})
-        elif adapt != "allowed":
-            blockers.append({"code": "adaptation_unknown", "question": "can_adapt"})
-    # D-189: where the terms require attribution, an incomplete credit is a warning.
-    blockers.extend(provenance_blockers(article.get("provenance") or {}))
-    return blockers
+    """What stops an article being published: its rights and credit (D-250, `reading_rights_gate`). A refusal, not a
+    warning - the D-190 override is gone. Answering the rights questions on the review page is what clears it."""
+    return [item for item in rights_blockers(article) if item["code"] != "attribution_unknown"]
 
 
 def quality_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
@@ -271,14 +232,8 @@ def quality_blockers(article: Mapping[str, Any]) -> list[dict[str, str]]:
 
 
 def publication_warnings(article: Mapping[str, Any]) -> list[dict[str, str]]:
-    """Advice recorded beside the decision: an unanswered attribution question.
-
-    Like `publication_blockers`, publishing over it needs the explicit override.
-    """
-    state = _publication_state(article)
-    if state.get("attribution_required", "unknown") == "unknown":
-        return [{"code": "attribution_unknown", "level": "warning"}]
-    return []
+    """The unanswered attribution question - a refusal too since D-250, kept apart for the review page's copy."""
+    return [{**item, "level": "warning"} for item in rights_blockers(article) if item["code"] == "attribution_unknown"]
 
 
 def _actor(admin: Mapping[str, Any]) -> str:
@@ -403,8 +358,8 @@ class ArticleStatusBody(BaseModel):
 
     status: str
     reason: str = Field(default="", max_length=2000)
-    # Publishing while rights or attribution are unclear is the administrator's
-    # deliberate act: this flag and a non-empty reason, recorded with the warnings.
+    # D-250: no longer an override - rights that are not clear always refuse. Still accepted (and ignored) so a
+    # client that sends it is not refused 422 before the UI lane removes it.
     acknowledge_warnings: bool = False
     # A separate, explicit decision to publish despite a hard quality failure (D-191). It does
     # not stand in for `acknowledge_warnings`, nor the other way round.
@@ -1239,7 +1194,7 @@ def set_article_status(
         warnings = [{**item, "level": "warning"} for item in publication_blockers(current)]
         warnings += publication_warnings(current)
         quality = quality_blockers(current)
-        rights_open = bool(warnings) and not payload.acknowledge_warnings
+        rights_open = bool(warnings)  # D-250: no override
         quality_open = bool(quality) and not payload.quality_override
         if rights_open or quality_open:
             everything = [*quality, *warnings]
@@ -1250,13 +1205,9 @@ def set_article_status(
                 entity_id=article_id,
                 payload={"blockers": everything, "rights_basis": publication_rights_basis(current)},
             )
-            fields = [
-                *(["quality_override"] if quality_open else []),
-                *(["acknowledge_warnings"] if rights_open else []),
-            ]
+            # Only quality has an override now (D-191); rights that are not clear have none (D-250).
+            fields = ["quality_override"] if quality_open else []
             context: dict[str, Any] = {"blockers": everything, "override_fields": fields}
-            if rights_open:
-                context["override_field"] = "acknowledge_warnings"
             if quality_open:
                 raise orena_http_error(
                     409,
@@ -1267,12 +1218,13 @@ def set_article_status(
             raise orena_http_error(
                 409,
                 "reading_rights_not_cleared",
-                "Rights or attribution for this text are unclear. Confirm the warnings and give a reason to publish anyway.",
+                "Rights or attribution for this text are not clear, so it cannot be published. Answer the rights "
+                "questions first.",
                 context=context,
             )
-        if (warnings or quality) and not payload.reason.strip():
+        if quality and not payload.reason.strip():
             raise orena_http_error(
-                422, "reading_reason_required", "Publishing over a warning or a quality failure keeps its reason - say why."
+                422, "reading_reason_required", "Publishing past a quality failure keeps its reason - say why."
             )
         if quality:
             overriding = True
@@ -1286,7 +1238,7 @@ def set_article_status(
     try:
         article = _guarded(
             lambda: _content().set_status(
-                article_id, status, actor=_actor(admin), reason=payload.reason.strip(), warnings=warnings,
+                article_id, status, actor=_actor(admin), reason=payload.reason.strip(),
                 quality_override=overriding,
             )
         )
@@ -1296,6 +1248,12 @@ def set_article_status(
         raise orena_http_error(
             409, "thumbnail_required", thumbnails.required_message("Reading article"),
             context={"blockers": [{"code": "thumbnail_required", "gate": "thumbnail"}]},
+        ) from exc
+    except RightsRefused as exc:  # D-250: the repository is the last gate here too (a race with a rights change)
+        raise orena_http_error(
+            409, "reading_rights_not_cleared",
+            "Rights or attribution for this text are not clear, so it cannot be published.",
+            context={"blockers": [{**item, "level": "warning"} for item in exc.blockers], "override_fields": []},
         ) from exc
     except QualityRefused as exc:  # the repository is the last gate; the route only translates it
         if exc.reason_missing:
@@ -1312,8 +1270,6 @@ def set_article_status(
     if status == "published":
         # An override is only meaningful beside what it overrode.
         audit_payload |= {
-            "warnings": warnings,
-            "acknowledged_warnings": bool(warnings),
             # Whose rights the confirmation read: the article's own snapshot, its source's policy, or none.
             "rights_basis": publication_rights_basis(current),
             # Publish records the article's effective automation permission -
@@ -1323,7 +1279,7 @@ def set_article_status(
     _audit(admin, f"admin.reading_article_{status}", entity_type="reading_article", entity_id=article_id,
            payload=audit_payload)
     if status == "published":
-        return {**article, "publication_warnings": warnings}
+        return {**article, "publication_warnings": []}  # kept for clients: nothing is published over a warning
     return article
 
 

@@ -197,7 +197,8 @@ def seed_reading(lang: str) -> str | None:
     snapshot = content.record_source_item(
         source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="", title="E2E",
         author="", published_at=None, language=lang, body=body, content_hash=uuid.uuid4().hex * 2,
-        metadata={}, rights={"can_republish": True},
+        # the harness's own text: republishable, nothing to attribute (D-250 publishes only clear rights)
+        metadata={}, rights={"can_republish": True, "attribution_required": False},
     )  # fmt: skip
     article = content.create_article(
         source_item_id=snapshot["id"], title=f"E2E {lang}", body=body, excerpt="", language=lang, topic="travel",
