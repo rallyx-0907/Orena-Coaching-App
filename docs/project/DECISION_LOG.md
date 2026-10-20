@@ -7877,3 +7877,36 @@ every schema step named below stays a human gate.
    `feature_not_in_plan` for `progress.weekly_report` is left to it.
 
 Design gaps G1-G12 are recorded in `docs/project/UI_BACKEND_GAPS.md` ("Monetisation v2").
+
+## D-249 - A daily voice sub-cap under the monthly voice minutes (2026-10-21)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-21 04:20). Basis: `ORENA_PRE_MARKET_EVIDENCE/COST_PRE402_403.md` §7.
+
+**Why.** D-248 (MV2-6a, #477) moved the voice cap from 15 minutes a day (D-237) to a month: Plus 6000 s, Pro 18000 s. With
+no daily cap, one Pro learner could talk for five hours in a day, at the measured voice cost about $3.75 (mean) to $9.15
+(p95). That is more than the system's daily AI ceiling on :8000 ($2, alert at 80%), which then pauses paid AI for every
+learner until UTC midnight.
+
+1. **Two caps, both counted.** Each learner's voice seconds are capped per month (the `orena.voice` limit) **and** per UTC
+   day (`daily_seconds`). A session may use the smaller of what is left in each. Tokens are clamped to it.
+2. **Defaults:** Plus 1200 s (20 minutes) a day, Pro 1800 s (30 minutes; about $0.38 to $0.92 at p95). Free has no
+   voice; its stored figure (1200) only gives an editor a number if voice is ever turned on.
+3. **Editable in Admin › Plans.** Both are per plan:
+   - the monthly cap is the `orena.voice` limit;
+   - the daily cap is the entitlement's `daily_seconds` parameter, an integer from 60 to 86400.
+
+   A saved catalogue without `daily_seconds` uses the code's default.
+4. **Refusal.** At either cap the learner gets 429 `quota_exhausted` (`feature: "orena.voice"`).
+   - `context.window` is `"day"` or `"month"`; `resets_at` is the next UTC midnight or the 1st of next month. When both
+     caps are used up, the month is reported, as it is the longer wait.
+   - A daily total that cannot be read is answered 503 (fail closed).
+5. **Energy bar.** `GET /api/agent/voice/allowance` adds:
+   - `daily: {limit, used, left, resets_at}`, or `null` when there is no daily cap;
+   - `available`, what a new session may use now.
+
+   The window fields are unchanged.
+6. **Variables.**
+   - `catalog.VOICE_SECONDS_PER_MONTH` and `catalog.VOICE_SECONDS_PER_DAY`: the defaults.
+   - `catalog.METERS["orena.voice"].params["daily_seconds"]`: the bounds, 60 to 86400.
+   - `plan_features.DAILY`: the parameter's name.
+   - The daily total is read from `product_repository.daily_usage` (UTC day); the month from `monthly_usage`.
