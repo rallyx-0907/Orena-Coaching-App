@@ -90,6 +90,10 @@ for (const [page, count] of LEGAL) {
     }
     for (const [key, label] of data.nav) assert.ok(h.includes(`>${label}</a>`), `${file}: nav ${key}`);
     assert.deepEqual(data.nav.map((n) => n[0]), ['privacy', 'terms', 'account-deletion'], `${page}.${lang}: nav order`);
+    // The three-pill tab row fits a 360px phone: below 480px it spans the column, the pills share it, and it wraps
+    // rather than scrolling or clipping "Delete account" (CB).
+    assert.equal((h.match(/<nav class="lg-nav" style="display:flex;/g) || []).length, 1, `${file}: the tab row carries lg-nav`);
+    assert.ok(h.includes('@media (max-width:479px){.lg-nav{align-self:stretch!important;flex-wrap:wrap}.lg-nav>a{flex:1 1 auto!important;justify-content:center;padding:0 8px!important}}'), `${file}: the narrow tab row rule`);
     for (const mail of ['orena.legal@chillpickle.org', 'orena.support@chillpickle.org']) assert.ok(h.includes(mail), `${file}: ${mail}`);
     assert.ok(h.includes('RallyX'), `${file}: the operator is named`);
     // One language: no switch, no alternate-language link (D-238).
