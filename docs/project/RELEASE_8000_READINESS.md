@@ -507,7 +507,7 @@ What the code and scripts now do. None of it was run against :8000; the human de
 
 ## 14. Consent evidence and voice consent (PR O, D-233, proposed migration 0036)
 
-Human gate: promoting `migrations/proposed/20261019_0036_consent_evidence.py` into `versions/` and applying it (:8021 first, then :8000, after a backup, `scripts/bootstrap_runtime_schema.py --upgrade`). Re-parent it (or Billing's 0034) on the head if the other is promoted first; never merge two heads. The code is dormant until the columns exist.
+**Status: promoted; NOT applied to :8000 until the owner approves the next migration.** `20261019_0036_consent_evidence.py` is in `migrations/versions/` (PR BD, parent `20261018_0035`, the single head), source control only; the promotion PR needs an independent architecture review before merge. Human gate: applying it (:8021 first, then :8000, after a backup, `scripts/bootstrap_runtime_schema.py --upgrade`); startup refuses a schema below head, so no runtime takes this code before it. Billing's 0034, if promoted later, re-parents on 0036; never merge two heads. The code is dormant until the columns exist.
 
 - **Legal text is English only (D-238).** `docs/legal/public/<page>.en.json` is the only source; `node scripts/build_public_pages.mjs --check` must pass, and no Vietnamese or Chinese legal file is expected or maintained.
 - **Set `LEGAL_EFFECTIVE_DATE`** (YYYY-MM-DD) in the runtime environment to the same date passed to `build_public_pages.mjs --release --effective-date`. `APP_ENV=production` refuses to start without it; staging records `unstamped` if it is missing, so set it there too. Rebuild the public pages with the new text (shipped in the repository, effective at promotion).

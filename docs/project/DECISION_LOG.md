@@ -7477,6 +7477,8 @@ Status: ACCEPTED (2026-10-19, accepted by Hermes for the owner; D-entry acceptan
 8. **Deletion.** `deletion_enumeration.CONSENT_COLUMNS_TO_RESET` and `consent.reset_consent` are the reset; no account-deletion runtime exists (`deletion_journal.py`: "not built"), so there is nothing to wire it into yet, and that workflow must call it. Open owner question for counsel: must consent evidence be retained after an account is deleted? Resetting erases the proof of what the learner accepted.
 9. **Out of scope.** No consent history table, no re-consent on a new policy version (a changed `LEGAL_EFFECTIVE_DATE` does not re-ask), no export format, no change to `/api/agent/*`.
 
+**Promotion (2026-10-19, PR BD).** `20261019_0036_consent_evidence.py` moved to `migrations/versions/` unchanged except its Status paragraph, as the single head on `20261018_0035`. Source control only: not applied to :8000 or any runtime until the owner approves the next migration; the promotion PR needs an independent architecture review before merge (reviewer, commit and outcome recorded in Git). Billing's proposed 0034 re-parents on 0036 if promoted later.
+
 Consequences. Tests: `tests/test_consent_evidence.py` (migration up and down on a populated SQLite table, absent-column degradation, sign-in recording, bootstrap flag, endpoints, 403 gate, deletion reset), `scripts/test_orena_consent.mjs`; the PostgreSQL proof is `tests/test_consent_evidence_postgres.py` (skipped without `ORENA_TEST_POSTGRES_URL`).
 
 ## D-234 - Media content packs: published shared media moves between environments by the existing content-pack format (2026-10-19)
