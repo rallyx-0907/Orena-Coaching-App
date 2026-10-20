@@ -17,7 +17,7 @@
       "explanations": {
         "vi": "总想 + V: lúc nào cũng muốn .... 找上门来: tự tìm đến tận nơi."
       },
-      "label": {"vi": "Nhận xét"}
+      "label": {"vi": "Nhận xét", "en": "Comment", "zh": "评论"}
     },
     {
       "entry": "64738ca1-2697-4684-adf7-49e591fbe804",
@@ -34,7 +34,7 @@
       "explanations": {
         "vi": "把 + O + 讲清楚: giảng rõ cái gì. 别 + V: đừng .... 按 + N + 做: làm theo ...."
       },
-      "label": {"vi": "Ở trường"}
+      "label": {"vi": "Ở trường", "en": "At school", "zh": "在学校"}
     },
     {
       "entry": "806510eb-9a86-4750-a5fc-a9dfa51aa652",
@@ -51,7 +51,7 @@
       "explanations": {
         "vi": "根本没 + V + 过: chưa hề .... 却: vậy mà, nhưng lại. 装模作样地 + V: làm gì một cách giả bộ."
       },
-      "label": {"vi": "Phê phán"}
+      "label": {"vi": "Phê phán", "en": "Criticism", "zh": "批评"}
     }
   ]
 }

@@ -1320,9 +1320,9 @@ class SQLAlchemyVocabularyRepository:
         writes nothing (no provenance row) and returns `changed: False`. Who, when, why, and the text before and after
         are kept in `provenance.example_corrections`. No schema change; nothing learner-owned is read or written.
 
-        `label` (optional, by support language) replaces the item's label, for a sentence whose old label described
-        where it came from (an uncredited quote "from a cartoon" replaced by an Orena-authored sentence). Without it
-        the label is kept.
+        `label` (optional, by interface language) replaces the item's label in each language it names, for a sentence
+        whose old label described where it came from (an uncredited quote "from a cartoon" replaced by an
+        Orena-authored sentence); a language it does not name keeps its label. Without it the label is kept.
         """
         self._require_available()
         clean_text, clean_reason = _text(text), _text(reason)
@@ -1372,7 +1372,7 @@ class SQLAlchemyVocabularyRepository:
             entry_language = _text(entry.language_code).casefold()
             if language is not None and _text(language).casefold() != entry_language:
                 raise ValueError("The example's language must be the entry's language.")
-            if entry_language in clean_translations or entry_language in clean_explanations or entry_language in clean_label:
+            if entry_language in clean_translations or entry_language in clean_explanations:
                 raise ValueError("A translation or explanation must be in a support language, not the entry's.")
             examples = _copy_json(entry.examples, []) or []
             if not isinstance(examples, list) or index >= len(examples):
@@ -1416,7 +1416,11 @@ class SQLAlchemyVocabularyRepository:
                 elif clean_explanations:
                     base["explanation"] = dict(clean_explanations)
                 if clean_label:
-                    base["label"] = dict(clean_label)
+                    # Merged by language: a language the correction does not name keeps its label.
+                    old_label = base.get("label")
+                    merged = ({_text(code).casefold(): value for code, value in old_label.items()}
+                              if isinstance(old_label, Mapping) else ({"vi": _text(old_label)} if _text(old_label) else {}))
+                    base["label"] = {**merged, **clean_label}
                 base.pop("highlight", None)
                 base.pop("reading_highlight", None)
                 if term and term in clean_text:

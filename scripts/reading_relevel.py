@@ -9,10 +9,12 @@ articles whose stored `estimated_level` differs from `analyze_article` under `LE
 each through `ReadingContentRepository.reestimate_level`, which re-reads the body under a row lock, writes the machine's
 `estimated_level`, its confidence and `analysis.level_version`, moves `effective_level` only when no `reviewed_level`
 exists (D-196), bumps `content_revision` when the learner's level changes, and records a `level_reestimated` event with
-the `--actor` in `reading_review_events`. An existing `reviewed_level` is never overridden by a re-estimate.
+the `--actor` in `reading_review_events`, and an `admin.reading_level_reestimate` row in `audit_logs` (actor, from/to,
+level_version). An existing `reviewed_level` is never overridden by a re-estimate.
 
 `--set <article>=<level>` (repeatable) sets `reviewed_level` explicitly through `update_article` (the Admin's correction:
-event `level_override`, the actor, the reason). `<article>` is an article id or an exact, unique article title. That is
+event `level_override`, the actor, the reason), and records `admin.reading_level_override` in `audit_logs` as the
+route does. `<article>` is an article id or an exact, unique article title. That is
 the only way this CLI changes a reviewed level, and only for the article it names.
 
 Authority: re-estimating stored levels is an owner decision (D-198). The owner delegated it on 2026-10-20 ("Tôi uỷ
@@ -33,9 +35,11 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.operator_cli import OperatorRefused, database_url, emit, refused, require_actor  # noqa: E402
+from scripts.operator_cli import OperatorRefused, audit_recorder, database_url, emit, refused, require_actor  # noqa: E402
 
 SCRIPT = "scripts/reading_relevel.py"
+REESTIMATE_EVENT = "admin.reading_level_reestimate"
+OVERRIDE_EVENT = "admin.reading_level_override"   # what POST /api/admin/reading/articles/{id} records
 
 
 def parse_sets(raw: list[str]) -> list[tuple[str, str]]:
@@ -67,11 +71,14 @@ def resolve_article(engine: Any, repository: Any, key: str) -> str:
     return str(ids[0])
 
 
-def run(engine: Any, *, apply: bool, actor: str, sets: list[tuple[str, str]], reason: str) -> tuple[dict[str, Any], int]:
+def run(engine: Any, *, apply: bool, actor: str, sets: list[tuple[str, str]], reason: str,
+        record_event: Any = None) -> tuple[dict[str, Any], int]:
     from scripts.report_reading_level_changes import find_changes
     from writing_coach.persistence.reading_content_repository import ReadingContentRepository
     from writing_coach.reading_processing import EN_LEVEL_BANDS, LEVEL_VERSION, ZH_LEVEL_BANDS
 
+    if apply and record_event is None:
+        raise OperatorRefused("audit_unavailable", "--apply records each change in audit_logs")
     repository = ReadingContentRepository(engine)
     planned_sets: list[dict[str, Any]] = []
     for key, level in sets:
@@ -94,6 +101,9 @@ def run(engine: Any, *, apply: bool, actor: str, sets: list[tuple[str, str]], re
             if result is not None and result["changed"]:
                 changed += 1
                 row["written"] = {"from": result["from"], "to": result["to"], "level_version": result["level_version"]}
+                record_event(REESTIMATE_EVENT, actor_key=actor, entity_type="reading_article", entity_id=item["id"],
+                             payload={"from": result["from"], "to": result["to"], "level_version": result["level_version"],
+                                      "reason": reason, "via": SCRIPT, "actor": actor})
         else:
             row["outcome"] = "would_change"
         rows.append(row)
@@ -107,7 +117,12 @@ def run(engine: Any, *, apply: bool, actor: str, sets: list[tuple[str, str]], re
             item["outcome"] = "set" if updated and updated.get("reviewed_level") == item["reviewed_to"] else "unchanged"
             if item["reviewed_from"] == item["reviewed_to"]:
                 item["outcome"] = "unchanged"
-            reviewed_set += int(item["outcome"] == "set")
+            if item["outcome"] == "set":
+                reviewed_set += 1
+                # The event the Admin route records for the same correction.
+                record_event(OVERRIDE_EVENT, actor_key=actor, entity_type="reading_article", entity_id=item["id"],
+                             payload={"reviewed_level": updated["reviewed_level"], "effective_level": updated["effective_level"],
+                                      "via": SCRIPT, "actor": actor})
         else:
             item["outcome"] = "unchanged" if item["reviewed_from"] == item["reviewed_to"] else "would_set"
     report = {
@@ -134,7 +149,8 @@ def main(argv: list[str] | None = None) -> int:
         from sqlalchemy import create_engine
 
         engine = create_engine(database_url(args.url))
-        report, code = run(engine, apply=args.apply, actor=actor, sets=sets, reason=args.reason.strip()[:300])
+        report, code = run(engine, apply=args.apply, actor=actor, sets=sets, reason=args.reason.strip()[:300],
+                           record_event=audit_recorder(engine) if args.apply else None)
     except OperatorRefused as error:
         return refused(SCRIPT, error)
     except Exception as error:  # noqa: BLE001 - the kind only, never a URL

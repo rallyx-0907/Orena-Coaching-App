@@ -233,7 +233,8 @@ def test_relevel_apply_writes_the_estimate_and_version_keeps_a_reviewed_level(re
     plain = _reading_article(repository, title="Rain returns")
     reviewed = _reading_article(repository, title="Reviewed one", body=BODY + " The end.")
     repository.update_article(reviewed["id"], actor="admin", reviewed_level="C1")
-    report, code = reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[], reason="D-198 delegated")
+    report, code = reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[], reason="D-198 delegated",
+                                       record_event=AdminConsoleRepository(engine).record_event)
     assert code == 0 and report["changed"] == 2 and report["reviewed_kept"] == 1
     fresh = repository.get_article(plain["id"])
     assert fresh["estimated_level"] == analyze_article(BODY, "en").estimated_level
@@ -243,7 +244,17 @@ def test_relevel_apply_writes_the_estimate_and_version_keeps_a_reviewed_level(re
     assert kept["reviewed_level"] == "C1" and kept["effective_level"] == "C1"
     events = _events(engine, "level_reestimated")
     assert len(events) == 2 and {event.actor for event in events} == {ACTOR}
-    assert reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[], reason="r")[0]["changed"] == 0   # idempotent
+    audit = _audit(engine, "admin.reading_level_reestimate")
+    assert len(audit) == 2 and {row["actor"] for row in audit} == {ACTOR}
+    assert {row["level_version"] for row in audit} == {LEVEL_VERSION}
+    assert {row["to"] for row in audit} == {analyze_article(BODY, "en").estimated_level,
+                                            analyze_article(BODY + " The end.", "en").estimated_level}
+    assert reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[], reason="r",
+                               record_event=AdminConsoleRepository(engine).record_event)[0]["changed"] == 0   # idempotent
+    assert len(_audit(engine, "admin.reading_level_reestimate")) == 2
+    with pytest.raises(OperatorRefused) as no_audit:
+        reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[], reason="r")
+    assert no_audit.value.code == "audit_unavailable"
 
 
 def test_relevel_set_names_an_article_by_title_and_refuses_unknown_or_bad_levels(reading):
@@ -252,15 +263,18 @@ def test_relevel_set_names_an_article_by_title_and_refuses_unknown_or_bad_levels
     sets = reading_relevel.parse_sets(["The Ants and the Grasshopper=A2"])
     report, _ = reading_relevel.run(engine, apply=False, actor=ACTOR, sets=sets, reason="r")
     assert report["sets"][0]["outcome"] == "would_set" and repository.get_article(article["id"])["reviewed_level"] in (None, "")
-    report, code = reading_relevel.run(engine, apply=True, actor=ACTOR, sets=sets, reason="r")
+    record = AdminConsoleRepository(engine).record_event
+    report, code = reading_relevel.run(engine, apply=True, actor=ACTOR, sets=sets, reason="r", record_event=record)
     assert code == 0 and report["reviewed_set"] == 1
+    override = _audit(engine, "admin.reading_level_override")
+    assert len(override) == 1 and override[0]["actor"] == ACTOR and override[0]["reviewed_level"] == "A2"
     assert repository.get_article(article["id"])["reviewed_level"] == "A2"
     assert [event.actor for event in _events(engine, "level_override")] == [ACTOR]
     with pytest.raises(OperatorRefused) as missing:
-        reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[("No such title", "A2")], reason="r")
+        reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[("No such title", "A2")], reason="r", record_event=record)
     assert missing.value.code == "article_not_found"
     with pytest.raises(OperatorRefused) as bad:
-        reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[(article["id"], "HSK3")], reason="r")
+        reading_relevel.run(engine, apply=True, actor=ACTOR, sets=[(article["id"], "HSK3")], reason="r", record_event=record)
     assert bad.value.code == "level_invalid"
     with pytest.raises(OperatorRefused):
         reading_relevel.parse_sets(["no-level"])
@@ -336,7 +350,7 @@ def _correction(entry, **changes):
     from tests.test_admin_cue_corrections import GOOD, QUOTED
 
     item = {"collection": "idioms", "entry": entry, "index": 1, "text": GOOD["text"], "reading": GOOD["reading"],
-            "translations": GOOD["translations"], "explanations": GOOD["explanations"], "label": {"vi": "Nhận xét"},
+            "translations": GOOD["translations"], "explanations": GOOD["explanations"], "label": {"en": "Comment", "zh": "评论"},
             "expect_from": QUOTED}
     item.update(changes)
     return item
@@ -362,11 +376,16 @@ def test_vocab_apply_writes_through_the_function_with_the_actor_and_label(vocab)
                                              actor=ACTOR, repository_for=repository_for, record_event=record)
     assert code == 0 and report["written"] == 1 and report["items"][0]["entry_id"] == entry_id
     examples, provenance = _stored(repository, entry_id)
-    assert examples[1]["text"] == NEW and examples[1]["label"] == {"vi": "Nhận xét"}
+    # Merged by language: the old VI label stays, EN and ZH are added.
+    assert examples[1]["text"] == NEW and examples[1]["label"] == {"vi": "Làm vị ngữ", "en": "Comment", "zh": "评论"}
     history = provenance["example_corrections"][0]
-    assert history["actor"] == ACTOR and history["label_languages"] == ["vi"]
+    assert history["actor"] == ACTOR and history["label_languages"] == ["en", "zh"]
+    vocab_correct_example.run(repository.engine, [_correction(entry_id, label={"vi": "Nhận xét"}, expect_from="")],
+                              reason="r", apply=True, actor=ACTOR, repository_for=repository_for, record_event=record)
+    assert _stored(repository, entry_id)[0][1]["label"] == {"vi": "Nhận xét", "en": "Comment", "zh": "评论"}
     audit = _audit(repository.engine, "admin.content.vocabulary_example")
-    assert len(audit) == 1 and audit[0]["via"] == vocab_correct_example.SCRIPT and audit[0]["index"] == 1
+    assert len(audit) == 2 and audit[0]["via"] == vocab_correct_example.SCRIPT and audit[0]["index"] == 1
+    assert {row["actor"] for row in audit} == {ACTOR}
 
 
 def test_vocab_a_bad_correction_in_a_file_writes_none_of_them(vocab, tmp_path):
@@ -406,3 +425,4 @@ def test_the_f3_file_is_complete_for_the_three_pilot_idioms():
         uuid.UUID(item["entry"])
         assert item["index"] == 0 and item["headword"] in item["text"] and item["expect_from"]
         assert set(item["translations"]) == {"vi", "en"} and item["reading"] and item["explanations"]["vi"]
+        assert set(item["label"]) == {"vi", "en", "zh"} and all(item["label"].values())
