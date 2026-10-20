@@ -320,7 +320,7 @@ def test_each_attempt_is_bounded_by_what_remains_of_the_total_deadline(env) -> N
 
 def test_a_primary_with_a_long_configured_timeout_still_leaves_the_backup_its_time(env) -> None:
     """P0 QA: Groq (primary) timing out took the whole deadline, so the configured backup was never asked."""
-    env.repo.config = config(timeout_seconds=30.0)
+    env.repo.config = config(timeout_seconds=30)
 
     def slow(kwargs):
         if kwargs["model"] == GEMMA:
