@@ -30,8 +30,11 @@ from sqlalchemy import Engine, create_engine  # noqa: E402
 from writing_coach.persistence.reading_library_repository import PostgresReadingLibraryRepository  # noqa: E402
 
 
+LIMIT = 1000
+
+
 def find_books_needing_rights(engine: Engine) -> list[dict[str, Any]]:
-    return PostgresReadingLibraryRepository(engine).rights_review()
+    return PostgresReadingLibraryRepository(engine).rights_review(limit=LIMIT)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -51,6 +54,8 @@ def main(argv: list[str] | None = None) -> int:
         print("ok: every Reading book has attested rights (or migration 0037 is not applied)")
         return 0
     print(f"{len(found)} Reading book(s) without attested rights (nothing changed):")
+    if len(found) >= LIMIT:
+        print(f"(the list stops at {LIMIT}; decide these, then run it again)")
     for item in found:
         shelf = "on the learner shelf" if item["learner_visible"] else "not shown to learners"
         print(f"- {item['id']} [{item['language']}] {item['title']}: {item['rights_status']}, {item['status']}, {shelf}")
