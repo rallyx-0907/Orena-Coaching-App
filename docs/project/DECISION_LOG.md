@@ -7716,3 +7716,38 @@ bag" and the similar Chinese ones, they have no real learning value; extended th
    `conftest.py`) with their assertions unchanged; `tests/test_listening_catalog_empty.py` pins the empty shipped
    catalogue and the graceful lookups. The catalogue-reading Node gates check the fixture beside the shipped manifest.
    Tombstone: `LEGACY_TOMBSTONES.md`, "The built-in sample Listening lessons".
+
+## D-246 - An EN->VI dictionary pack from the English Wiktionary's Vietnamese translations (2026-10-20)
+
+**Status:** ACCEPTED (Hermes for the owner, 2026-10-20, on the evaluation
+`ORENA_PRE_MARKET_EVIDENCE/EN_VI_DICTIONARY_PACK_EVALUATION_2026-10-20.md`, candidate 1a). The number is assigned at merge.
+
+1. **Source.** The English Wiktionary's Vietnamese translation tables (`lang_code` `vi`) of its English entries, as
+   extracted by Wiktextract and published by kaikki.org in its per-language English file
+   (`kaikki.org-dictionary-English.jsonl.gz`, extraction of 2026-10-03 from the enwiktionary dump of 2026-09-02; the
+   input's SHA-256 is in the pack index). Vietnamese Wiktionary and the Hồ Ngọc Đức / FVDP dictionary are **not** used
+   (GPL data and informal relicensing); a word the pack lacks falls through to the next layer of the word tap (local
+   translation, then the `word_translation` seam and its cache).
+2. **Licence and the share-alike boundary.** CC BY-SA 4.0 (the GFDL side is not used), the same model already accepted
+   for CC-CEDICT: the pack, and any adaptation of it, stays CC BY-SA 4.0 and ships with its licence text, provenance
+   and modification notice (`writing_coach/languages/english/vi_lexicon_data/`). The share-alike reaches that data only;
+   Orena's code and its other data files are separate works. Attribution ("Wiktionary contributors; extraction by Tatu
+   Ylonen's Wiktextract (kaikki.org)") is shown where CC-CEDICT's is: the learner Licences and data sources page
+   (`writing_coach/licences.py`, id `wiktionary-en-vi`), `THIRD_PARTY_NOTICES.md`, the pack's README and its index
+   `sources` record.
+3. **Scope.** The full set, not a subset by level: 16,660 headwords, 20,239 senses, 29,271 Vietnamese translations,
+   0.65 MB packed (CC-CEDICT's pack is 5.5 MB). Each Vietnamese translation keeps the English sense label of its
+   table. Vietnamese text is trimmed, NFC, de-duplicated, and dropped when empty or not in Vietnamese orthography.
+   On the evaluation's 30-word B1-B2 sample it covers 27 (missing: launch, supply, solar).
+4. **Use.** It is the vendored EN->VI pack of the bilingual pack seam (#423, `writing_coach/bilingual_dictionary.py`):
+   catalogue -> pack -> local translation -> `word_translation`. A pack hit costs no AI call. The sense shown is the one
+   whose part of speech matches the word's in its sentence (none of that class is a miss), then the one whose sense
+   label shares words with the sentence, otherwise the common sense (senses are ordered by how many languages
+   translate them). A registered or dropped-in pack for the pair still wins.
+5. **Build and update.** `scripts/build_en_vi_pack.py --kaikki <file> --release <date>` streams the input (never loads
+   it whole), is stdlib only and deterministic, and is also the update script; `--check` verifies the committed pack.
+   The raw download stays outside the repository and is deleted after a build.
+6. **The D-124 subset stays.** `writing_coach/localization_data/vi_glosses.json.gz` is not superseded: it also carries
+   the Vietnamese Wiktionary data the vocabulary-localization sources read (`WiktionaryVietnameseSource`, and the zh->vi
+   pivot through a chosen English sense), which this pack deliberately excludes. Those sources remain non-default, as
+   D-124 left them; retiring that subset is a separate decision.
