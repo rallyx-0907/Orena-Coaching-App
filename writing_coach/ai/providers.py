@@ -1026,6 +1026,10 @@ class OpenAICompatibleProvider:
                 body["tool_choice"] = tool_choice
         if temperature is not None:
             body["temperature"] = temperature
+        if self.id == "groq" and model in GROQ_REQUEST_OPTIONS:
+            # As `_post_chat`: a Groq reasoning model otherwise thinks inside the turn's max_tokens and can end on
+            # `length` or say nothing (the agent's stream path missed these, review of the "Orena is busy" P0).
+            body.update(GROQ_REQUEST_OPTIONS[model])
         if self.id in _STREAM_USAGE_PROVIDERS:
             # These report usage on a stream only when asked; an endpoint whose
             # support is unverified is not sent a field it may reject, and its

@@ -7759,3 +7759,33 @@ bag" and the similar Chinese ones, they have no real learning value; extended th
    the Vietnamese Wiktionary data the vocabulary-localization sources read (`WiktionaryVietnameseSource`, and the zh->vi
    pivot through a chosen English sense), which this pack deliberately excludes. Those sources remain non-default, as
    D-124 left them; retiring that subset is a separate decision.
+
+## D-247 - Automatic provider fallback for learner AI, never silent (2026-10-20)
+
+**Status:** ACCEPTED (owner, Discord 2026-10-20 19:00 and 19:15, relayed by Hermes: "Không tự fallback được model
+sao?" - "nên có cơ chế fallback qua các model khác để tiếp tục và có thông báo trong admin để biết"; DeepSeek and
+OpenRouter approved as fallbacks 19:25).
+
+**Why.** On :8000 the Gemini project hit its monthly spending cap; every Gemini call failed and Orena chat answered
+"busy". The owner keeps the cap (no spend before publication) and wants learner AI to continue on another model.
+
+1. **Amends the 2026-09-27 ruling** ("No provider-to-provider silent paid failover", line 148) and the matching
+   `ARCHITECTURE_INVARIANTS.md` line: a learner AI call may fall back to a second provider. Never silently: every
+   switch is recorded (`provider_switch` in the AI operation telemetry: from, to, reason, trigger), the shared breaker
+   holds a failing provider down (PR BZ), and Admin shows which provider is down and why.
+2. **Gates:** every rung passes funding and the system daily ceiling, and its cost is recorded in the AI ledger like
+   any call. The agent's own cap and the per-learner quota are checked once per turn, at admission, so a fallback never
+   charges the learner twice. The system's own ceiling is not a provider failure: it neither opens the breaker nor
+   triggers a fallback.
+3. **D-104 stands:** learner text never goes to a free tier or a provider that may log prompts. Both agent rungs pass
+   the learner-text guard; a fallback that would break the rule is refused (`agent_fallback_route`, the Admin route).
+4. **Orena chat (the agent):** the second rung is `agent.fallback_route` (Admin, `PUT /api/admin/agent/fallback-route`;
+   else `AGENT_FALLBACK_ROUTE`). It is taken only before the first rung yields anything - a provider error at the
+   start, or the breaker holding it down - so no learner sees half an answer from one model and the rest from another.
+   Under G8 it is offered only when cleared for at least the first rung's data class.
+5. **Structured capabilities** keep their own rules: a capability routed by the capability router uses its configured
+   backup rung (Admin › AI); learner `generate_structured` on the legacy selection is unchanged by this entry.
+
+**Not in this decision.** Raising any provider's spend cap (the owner's), new paid providers beyond those approved,
+and a fallback after the first token.
+

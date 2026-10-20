@@ -126,6 +126,8 @@ class PlatformAgentTurnProvider:
                 should_stop=should_stop,
                 timeout_seconds=request.timeout_seconds,
                 **({"route": (request.route.provider, request.route.model)} if request.route is not None else {}),
+                **({"fallback": (request.fallback.provider, request.fallback.model)}
+                   if request.fallback is not None else {}),
                 **({"tool_choice": request.tool_choice} if request.tool_choice is not None and request.tools else {}),
             )
         except (AIProviderError, AICapabilityError) as exc:
@@ -161,14 +163,26 @@ class PlatformModelRouter:
     kept for every round after, so an Admin change applies to new conversations only."""
 
     def __init__(self, current: Callable[[], tuple[str, str] | None] | None = None,
-                 usable: Callable[[tuple[str, str]], bool] | None = None) -> None:
-        if current is None or usable is None:
-            from writing_coach.ai.platform import agent_current_route, agent_route_usable
+                 usable: Callable[[tuple[str, str]], bool] | None = None,
+                 fallback: Callable[[], tuple[str, str] | None] | None = None) -> None:
+        if current is None or usable is None or fallback is None:
+            from writing_coach.ai.platform import agent_current_route, agent_fallback_route, agent_route_usable
 
             current = current or agent_current_route
             usable = usable or agent_route_usable
+            fallback = fallback or agent_fallback_route
         self._current = current
         self._usable = usable
+        self._fallback = fallback
+
+    def fallback(self) -> ModelRoute | None:
+        """The second rung (D-247), read each turn; None when there is none or it cannot be read."""
+        try:
+            route = self._fallback()
+        except Exception:  # noqa: BLE001 - an unreadable fallback is no fallback; the first rung is unaffected
+            _log.warning("agent fallback route check failed", exc_info=True)
+            return None
+        return ModelRoute(provider=route[0], model=route[1]) if route else None
 
     def current(self) -> ModelRoute | None:
         route = self._current()

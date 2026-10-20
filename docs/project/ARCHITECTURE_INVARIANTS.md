@@ -132,6 +132,13 @@ review and explicit human authorization.
   `media_transcript_correction`, under the media spend cap and only inside the
   import pipeline's spend scope; the router's own `backup_provider` rung stays
   refused for both, ASR is excluded, and each later batch asks Groq first.
+  A second explicit exception (D-247): an Orena chat round (`agent_turn_fast`)
+  may go to the agent's second rung (`agent.fallback_route`) only when the
+  first rung fails before yielding anything, or the shared breaker holds it
+  down - never after the first token. Never silent (`provider_switch` in the
+  AI operation telemetry, the breaker, Admin); every rung passes the funding
+  and system-ceiling gates; the fallback must pass D-104's learner-text rule
+  and, under G8, be cleared for at least the first rung's data class.
 - Shared-media translation may select Groq or local Marian once from explicit
   configuration; a provider failure must stop rather than silently fail over,
   except for the D-224 capacity exception above.

@@ -655,6 +655,38 @@ def agent_current_route() -> tuple[str, str] | None:
     return route if route[0] and agent_route_usable(route) else None
 
 
+AGENT_FALLBACK_SETTING = "agent.fallback_route"  # platform setting {"provider", "model"} (D-247)
+AGENT_FALLBACK_ENV = "AGENT_FALLBACK_ROUTE"  # "provider:model", while no Admin record exists
+
+
+def agent_fallback_route() -> tuple[str, str] | None:
+    """The agent's second rung (D-247): the Admin record `agent.fallback_route`, else `AGENT_FALLBACK_ROUTE`; None when
+    neither names one, or the one named cannot take agent turns here (not configured, cannot stream them) or may not
+    receive learner text (D-104: a free tier, a provider that may log prompts). Read at each turn, so a change in Admin
+    applies at the next one."""
+
+    raw: Any = None
+    if _platform_repository is not None:
+        try:
+            row = _platform_repository.get_setting(AGENT_FALLBACK_SETTING)
+        except Exception:  # noqa: BLE001 - an unreadable record names no fallback (the first rung is unaffected)
+            row = None
+        if row:
+            value = row.get("value") or {}
+            raw = (str(value.get("provider") or ""), str(value.get("model") or ""))
+    if raw is None:
+        provider, _, model = str(os.environ.get(AGENT_FALLBACK_ENV, "") or "").strip().partition(":")
+        raw = (provider.strip(), model.strip())
+    if not raw[0] or not raw[1] or not agent_route_usable(raw):
+        return None
+    try:
+        _legacy_privacy_guard(None, _route_item(raw), raw[1])
+    except AIProviderUnavailable:
+        _logger.warning("agent fallback %s refused: it may not receive learner text (D-104)", raw[0])
+        return None
+    return raw
+
+
 def stream_agent_turn(
     *,
     messages: list[dict[str, Any]],
@@ -665,21 +697,83 @@ def stream_agent_turn(
     timeout_seconds: float | None = None,
     route: tuple[str, str] | None = None,
     tool_choice: str | None = None,
+    fallback: tuple[str, str] | None = None,
 ) -> Iterator[ChatStreamEvent]:
-    """Stream one Orena Intelligence round on the legacy active selection, or on `route`.
+    """Stream one Orena Intelligence round on `route` (the conversation's pinned model) or the legacy active selection,
+    and on `fallback` when that first rung cannot answer (D-247, owner 2026-10-20: automatic fallback, never silent).
 
-    `route` is `(provider id, model)`: the model the conversation was pinned to when it opened (ORENA_MEMORY.md
-    §7.2). The agent checks that it is still usable before it asks (`agent_route_usable`); a pinned provider that is
-    not usable here fails the round, like any provider failure - nothing switches provider on its own.
+    The fallback is taken only BEFORE the first rung yields anything - a provider error at the start, or the shared
+    breaker already holding that provider (or model) down - so the learner never sees half an answer from one model and
+    the rest from another. Once the first rung has produced its first event, its errors are the round's, as before.
+    `fallback` is chosen by the caller (the agent, which applies the G8 data classes) and has passed the D-104 learner-
+    text rule (`agent_fallback_route`). Each attempt is recorded in the AI operation telemetry under `agent_turn_fast`,
+    the one that answered after a switch with `provider_switch`; each counts toward the spend gates as any round."""
 
-    The agent routes the way every learner call routes until a reviewed
-    activation makes its capability keys configurable (human ruling
-    2026-09-27): the one provider and model selected in Admin › AI. It never
-    runs on a local model (spec D2) - the silent Ollama default of an unset
-    selection is refused, not used - and never switches provider on failure.
-    Each round is recorded in the anonymised AI operation telemetry under
-    `agent_turn_fast`, like `generate_structured` records its calls.
-    """
+    kwargs = dict(messages=messages, tools=tools, max_output_tokens=max_output_tokens, temperature=temperature,
+                  should_stop=should_stop, timeout_seconds=timeout_seconds, tool_choice=tool_choice)
+    first = route
+    if fallback is None or tuple(fallback) == tuple(first or ()):
+        return _agent_round(route=first, **kwargs)
+    first_id = (first[0], first[1]) if first is not None else _selection_route()
+    if first_id is not None and not _routing.provider_health.is_available(*first_id):
+        reason = _routing.provider_health.down_reason(*first_id) or "other"
+        return _agent_round(route=fallback, switch={"from": first_id[0], "to": fallback[0], "reason": reason,
+                                                    "trigger": "down"}, **kwargs)  # fmt: skip
+    return _with_fallback(first, first_id, fallback, kwargs)
+
+
+def _selection_route() -> tuple[str, str] | None:
+    try:
+        item, model = active_selection()
+    except Exception:  # noqa: BLE001 - no selection: the first rung fails as before
+        return None
+    provider = str(getattr(item, "id", "") or "")
+    return (provider, str(model or "")) if provider else None
+
+
+def _with_fallback(first: tuple[str, str] | None, first_id: tuple[str, str] | None, fallback: tuple[str, str],
+                   kwargs: dict[str, Any]) -> Iterator[ChatStreamEvent]:  # fmt: skip
+    """The first rung, falling back to `fallback` only if it fails before yielding anything."""
+
+    try:
+        events = _agent_round(route=first, **kwargs)
+        head = next(events)
+    except StopIteration:
+        return iter(())
+    except (AICapabilityError, AIProviderError) as exc:
+        if isinstance(exc, AICapabilityError) and not isinstance(exc, AIProviderUnavailable):
+            raise  # a configuration refusal is not fixed by asking someone else
+        if isinstance(exc, spend_gate.SpendCeilingReached):
+            raise  # the system's own daily ceiling: every paid rung is refused alike
+        _logger.warning("agent first rung failed before answering (%s); falling back to %s", type(exc).__name__,
+                     fallback[0])  # fmt: skip
+        switch = {"from": first_id[0] if first_id else None, "to": fallback[0],
+                  "reason": failure_class_of(exc) or "other", "trigger": "failed"}  # fmt: skip
+        return _agent_round(route=fallback, switch=switch, **kwargs)
+
+    def chained() -> Iterator[ChatStreamEvent]:
+        try:
+            yield head
+            yield from events
+        finally:
+            events.close()
+
+    return chained()
+
+
+def _agent_round(
+    *,
+    messages: list[dict[str, Any]],
+    tools: list[dict[str, Any]],
+    max_output_tokens: int,
+    temperature: float | None = None,
+    should_stop: Callable[[], bool] = lambda: False,
+    timeout_seconds: float | None = None,
+    route: tuple[str, str] | None = None,
+    tool_choice: str | None = None,
+    switch: dict[str, Any] | None = None,
+) -> Iterator[ChatStreamEvent]:
+    """One provider attempt of an agent round (the body `stream_agent_turn` had before D-247)."""
 
     started = perf_counter()
     provider_id: str | None = None
@@ -716,14 +810,24 @@ def stream_agent_turn(
                 "cost": estimate_token_cost(provider_id, model_display, usage if finished else None),
                 "quota_available": "unknown",
                 "billable_attempt": sent["request"],
+                **({"provider_switch": switch} if switch else {}),
             }
         )
+        # The shared breaker (PR BZ): a provider that failed is skipped by the next rounds while it cools down.
+        if provider_id:
+            if outcome == "success":
+                _routing.provider_health.record_success(provider_id, model)
+            elif (error is not None and _routing.classify(error) == "availability"
+                  and not isinstance(error, spend_gate.SpendCeilingReached)):  # our ceiling, not the provider's fault
+                _routing.provider_health.record_failure(provider_id, failure_class_of(error), model)
 
     try:
         if route is not None:
             item, model = _route_item(route), route[1]
         else:
             item, model = active_selection()
+        # D-104: the agent carries learner text, so it never runs on a free tier or a provider that may log prompts.
+        _legacy_privacy_guard(None, item, model)
         provider_id = str(getattr(item, "id", "") or "") or None
         if getattr(item, "kind", "") != "cloud":
             raise AIProviderUnavailable("The agent needs a managed provider selected in Admin > AI.")
