@@ -23,16 +23,39 @@ VOICE = "orena.voice"
 VOICE_USAGE = "agent.voice_seconds"
 
 _daily_usage: Callable[[str, str], int] | None = None  # (user_key, feature) -> today's (UTC) total
+_monthly_usage: Callable[[str, str], int] | None = None  # (user_key, feature) -> this UTC calendar month's total
 _clock: Callable[[], datetime] = lambda: datetime.now(UTC)
 
 
 def configure(*, daily_usage: Callable[[str, str], int] | None,
+              monthly_usage: Callable[[str, str], int] | None = None,
               clock: Callable[[], datetime] | None = None) -> None:  # fmt: skip
-    """app.py: the usage store's daily total. None (a bare server, tests): voice minutes are not counted."""
+    """app.py: the usage store's daily and monthly totals. None (a bare server, tests): voice minutes are not counted
+    in that window. Which one is read is the `orena.voice` meter's window (code-owned, catalog.METERS)."""
 
-    global _daily_usage, _clock
+    global _daily_usage, _monthly_usage, _clock
     _daily_usage = daily_usage
+    _monthly_usage = monthly_usage
     _clock = clock or (lambda: datetime.now(UTC))
+
+
+def _period_end(now: datetime, window: str | None) -> datetime:
+    """When the window that holds `now` ends (UTC): the next midnight, or the first of next month."""
+
+    if window == "month":
+        return datetime(now.year + (now.month == 12), now.month % 12 + 1, 1, tzinfo=UTC)
+    return datetime(now.year, now.month, now.day, tzinfo=UTC) + timedelta(days=1)
+
+
+def _resets_at(now: datetime, window: str | None) -> str:
+    return _period_end(now, window).isoformat().replace("+00:00", "Z")
+
+
+def _usage_reader() -> Callable[[str, str], int] | None:
+    """The total for the voice meter's window; None when that window is not counted here (never a day read as a
+    month)."""
+
+    return {"day": _daily_usage, "month": _monthly_usage}.get(METERS[VOICE].window)
 
 
 def _plan(user_key: str):
@@ -92,18 +115,19 @@ def _voice_limit(plan) -> int | None:
 
 
 def _voice_used(user_key: str) -> int:
+    read = _usage_reader()
     try:
-        return int(_daily_usage(user_key, VOICE_USAGE)) if _daily_usage is not None else 0
+        return int(read(user_key, VOICE_USAGE)) if read is not None else 0
     except Exception as error:  # noqa: BLE001 - the usage store is down: fail closed
         raise quota._unavailable("usage") from error
 
 
 def voice_seconds_left(user_key: str) -> int | None:
-    """Today's voice seconds still allowed (at least 0); None when not capped (no plan system, no usage store, no limit).
+    """The voice seconds still allowed in this window - today, or this month (at least 0); None when not capped (no plan system, no usage store, no limit).
     The voice service clamps every token it mints to it, so no session runs past the cap."""
 
     plan = _plan(user_key)
-    if plan is None or _daily_usage is None:
+    if plan is None or _usage_reader() is None:
         return None
     limit = _voice_limit(plan)
     if limit is None:
@@ -112,7 +136,7 @@ def voice_seconds_left(user_key: str) -> int | None:
 
 
 def require_voice_time(user_key: str) -> None:
-    """The plan has voice (403 otherwise) and today's voice minutes are not used up: 429 `quota_exhausted` with
+    """The plan has voice (403 otherwise) and this window's voice minutes are not used up: 429 `quota_exhausted` with
     `feature: "orena.voice"` at the plan's daily limit - this learner only, nothing else is locked. Checked before a
     voice session opens or a chunk is renewed; every token minted is clamped to the seconds left
     (`voice_seconds_left`), so the cap is not passed. Usage that cannot be read refuses (503, fail closed)."""
@@ -122,33 +146,31 @@ def require_voice_time(user_key: str) -> None:
         return
     require(user_key, VOICE)
     limit = _voice_limit(plan)
-    if limit is None or _daily_usage is None:
+    if limit is None or _usage_reader() is None:
         return
     used = _voice_used(user_key)
     if used < limit:
         return
     now = _clock()
-    resets = datetime(now.year, now.month, now.day, tzinfo=UTC) + timedelta(days=1)
     meter = METERS[VOICE]
     # No `upgrade`: Plus and Pro have the same voice minutes, so the plans offer nothing more for this.
     raise quota.exhausted_error({
         "feature": VOICE, "used": used, "limit": limit, "unit": meter.unit, "display_unit": meter.display_unit,
-        "scale": meter.scale, "window": meter.window, "resets_at": resets.isoformat().replace("+00:00", "Z"),
+        "scale": meter.scale, "window": meter.window, "resets_at": _resets_at(now, meter.window),
         "plan": plan.id}, now=now)  # fmt: skip
 
 
 def voice_allowance(user_key: str) -> dict:
-    """Today's voice minutes for the energy bar (Monetisation v2): read only, nothing minted or charged. `used` counts
-    every token already minted today (a token's seconds count when it is minted), so `left` is what a new session may
+    """This window's voice minutes for the energy bar (Monetisation v2; the meter's window: a day, or a month):
+    read only, nothing minted or charged. `used` counts every token already minted in the window (a token's seconds count when it is minted), so `left` is what a new session may
     still use. A plan without voice is `entitled: false` with nothing left - not a refusal. `limit`/`left` are None when
     the minutes are not capped here (no plan system, no usage store, no limit). Unreadable: 503, fail closed."""
 
     meter = METERS[VOICE]
     now = _clock()
-    resets = datetime(now.year, now.month, now.day, tzinfo=UTC) + timedelta(days=1)
     answer = {"feature": VOICE, "entitled": True, "limit": None, "used": 0, "left": None, "unit": meter.unit,
               "display_unit": meter.display_unit, "scale": meter.scale, "window": meter.window,
-              "resets_at": resets.isoformat().replace("+00:00", "Z"), "plan": None}  # fmt: skip
+              "resets_at": _resets_at(now, meter.window), "plan": None}  # fmt: skip
     plan = _plan(user_key)
     if plan is None:
         return answer
@@ -157,7 +179,7 @@ def voice_allowance(user_key: str) -> dict:
     if entitlement is None or not entitlement.enabled:
         return {**answer, "entitled": False, "limit": 0, "left": 0}
     limit = _voice_limit(plan)
-    if limit is None or _daily_usage is None:
+    if limit is None or _usage_reader() is None:
         return answer
     used = min(_voice_used(user_key), limit)
     return {**answer, "limit": limit, "used": used, "left": limit - used}
