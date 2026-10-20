@@ -130,8 +130,11 @@ def _in_text(text: str, quote: Any) -> bool:
     return isinstance(quote, str) and bool(_norm(quote)) and _norm(quote) in _norm(text)
 
 
-def schema(exam: str) -> dict[str, Any]:
+def schema(exam: str, criteria: Sequence[str] | None = None) -> dict[str, Any]:
+    """The answer's shape; `criteria` defaults to the writing criteria of `exam` (speaking passes its own)."""
+
     low, high = SCALE[exam]
+    keys = list(criteria if criteria is not None else CRITERIA[exam])
     return {
         "type": "object",
         "additionalProperties": False,
@@ -142,7 +145,7 @@ def schema(exam: str) -> dict[str, Any]:
                 "type": "object", "additionalProperties": False,
                 "required": ["criterion", "score", "reason", "evidence"],
                 "properties": {
-                    "criterion": {"type": "string", "enum": list(CRITERIA[exam])},
+                    "criterion": {"type": "string", "enum": keys},
                     "score": {"type": "integer", "minimum": low, "maximum": high},
                     "reason": {"type": "string"},
                     "evidence": {"type": "array", "items": {"type": "string"}, "maxItems": MAX_EVIDENCE},
