@@ -27,6 +27,11 @@ a learner who left mid-stream and a chain's summary row (each rung is recorded o
 are not counted. Operator tests and configuration checks (origin `operator_test`, `configuration`) are not counted
 either: an administrator trying a bad key is not an outage.
 
+The system's daily AI spend (D-250: a monitor, never a refusal) is in the same report as `spend`: today's (UTC) total of
+the whole AI ledger against the alert threshold (`ai.daily_spend_ceiling_usd`, at most AI_DAILY_SPEND_CEILING_USD). At
+the warning ratio it is severity medium; at the threshold severity high, which makes the whole report an alert, so the
+health check raises it at once. No learner is refused because of it.
+
 The report carries counts, closed classes, provider and capability ids and timestamps only - never a prompt, a key, a
 learner's words or the provider's message. `python -m writing_coach.ai.health_signal` prints it as one JSON line for the
 :8000 health check (scripts/health_check_8000.ps1), which Hermes reads.
@@ -392,6 +397,51 @@ def down_providers(report: Mapping[str, Any], switches: list[dict[str, Any]],
     return rows
 
 
+def spend_monitor(repository: Any, *, now: datetime | None = None,
+                  reader: Callable[[str], Any] | None = None) -> dict[str, Any]:
+    """Today's whole-system AI spend against the monitor's threshold: {threshold_usd, spent_usd, ratio, warn_ratio,
+    severity (None | medium | high), readable}. Severity high means the threshold is reached; nothing is refused."""
+
+    if reader is None:
+        from writing_coach import policies
+
+        reader = policies.value
+    moment = now or datetime.now(UTC)
+    try:
+        threshold = reader("ai.daily_spend_ceiling_usd")
+        warn = float(reader("ai.daily_spend_warn_ratio"))
+    except Exception:  # noqa: BLE001 - an unreadable threshold is reported, never guessed
+        return {"threshold_usd": None, "spent_usd": None, "ratio": None, "warn_ratio": None, "severity": None,
+                "readable": False}
+    if threshold is None:
+        return {"threshold_usd": None, "spent_usd": None, "ratio": None, "warn_ratio": warn, "severity": None,
+                "readable": True}
+    midnight = datetime(moment.year, moment.month, moment.day, tzinfo=UTC)
+    try:
+        usd, unpriced = repository.ai_spend_since(midnight)
+    except Exception:  # noqa: BLE001 - an unreadable ledger is "unknown", never "below the threshold"
+        return {"threshold_usd": float(threshold), "spent_usd": None, "ratio": None, "warn_ratio": warn,
+                "severity": None, "readable": False}
+    from writing_coach.agent.budget import UNPRICED_ALLOWANCE_USD
+
+    spent = round(float(usd) + int(unpriced) * UNPRICED_ALLOWANCE_USD, 4)
+    ratio = round(spent / float(threshold), 4) if threshold else None
+    severity = "high" if spent >= float(threshold) else "medium" if spent >= warn * float(threshold) else None
+    return {"threshold_usd": float(threshold), "spent_usd": spent, "ratio": ratio, "warn_ratio": warn,
+            "severity": severity, "readable": True}
+
+
+def _with_spend(report: dict[str, Any], spend: dict[str, Any]) -> dict[str, Any]:
+    """The spend monitor folded into the report: at the threshold the report is an alert of severity high."""
+
+    report["spend"] = spend
+    if spend.get("severity") == "high":
+        report["status"], report["severity"] = "alert", "high"
+    elif spend.get("severity") == "medium" and report.get("severity") is None:
+        report["severity"] = "medium"
+    return report
+
+
 def report_from_repository(repository: Any, *, now: datetime | None = None,
                            breaker: Mapping[str, Mapping[str, Any]] | None = None) -> dict[str, Any]:
     """The report over the most recent `SAMPLE_LIMIT` operation rows (a busier window is reported as truncated), with
@@ -403,7 +453,7 @@ def report_from_repository(repository: Any, *, now: datetime | None = None,
     except Exception:  # noqa: BLE001 - an unreadable ledger is "unknown", never "healthy"
         report = unavailable_report(now)
         report.update({"switches": [], "down": down_providers(report, [], breaker)})
-        return report
+        return _with_spend(report, spend_monitor(repository, now=now))
     moment = now or datetime.now(UTC)
     limits = thresholds()
     oldest = min((stamp for stamp in (_stamp(e.get("created_at")) for e in events) if stamp), default=None)
@@ -413,7 +463,7 @@ def report_from_repository(repository: Any, *, now: datetime | None = None,
     switches = switch_history(events)
     report["switches"] = switches
     report["down"] = down_providers(report, switches, breaker)
-    return report
+    return _with_spend(report, spend_monitor(repository, now=moment))
 
 
 _CLASS_WORDS = {
@@ -426,12 +476,20 @@ _CLASS_WORDS = {
 def health_line(report: Mapping[str, Any]) -> str:
     """The text after PASS/FAIL on the health check's `providers` line (English, operator log)."""
 
+    spend = report.get("spend") or {}
+    spend_part = ""
+    if spend.get("severity"):
+        level = "reached" if spend["severity"] == "high" else "near"
+        spend_part = (f" spend={level}({spend['severity']}) spent_usd={spend.get('spent_usd')} "
+                      f"threshold_usd={spend.get('threshold_usd')} [monitor only; no learner is refused]")
     if not report.get("available", True):
-        return "status=unknown telemetry unreadable"
+        return "status=unknown telemetry unreadable" + spend_part
     window = report.get("window_minutes")
     if not report.get("alerts"):
+        if spend.get("severity") == "high":
+            return f"status=alert severity=high window_min={window}" + spend_part
         counted = sum(int(item.get("ok", 0)) + int(item.get("failed", 0)) for item in report.get("providers") or [])
-        return f"status=ok calls={counted} window_min={window}"
+        return f"status=ok calls={counted} window_min={window}" + spend_part
     down = {row["provider"]: row for row in report.get("down") or []}
     parts = []
     for alert in report["alerts"]:
@@ -443,7 +501,7 @@ def health_line(report: Mapping[str, Any]) -> str:
             f"on_backup={','.join(row.get('on_backup') or []) or '-'} "
             f"[{_CLASS_WORDS.get(alert['failure_class'], 'failing')}]"
         )
-    return f"status=alert severity={report.get('severity')} window_min={window} " + "; ".join(parts)
+    return f"status=alert severity={report.get('severity')} window_min={window} " + "; ".join(parts) + spend_part
 
 
 def main(argv: list[str] | None = None) -> int:

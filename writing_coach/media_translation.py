@@ -398,12 +398,11 @@ class TranslationProviderError(RuntimeError):
 
 
 def _below_ceiling() -> None:
-    """A paid Groq request is not sent once the system's daily AI spend ceiling is reached (ai/spend_gate.py): Listening
-    and Reading translation outside the media pipeline have no other gate."""
+    """Tick the system's daily AI spend monitor before a paid Groq request (ai/spend_gate.py). Since D-250 it alerts and
+    never refuses: no app-wide cap stops a learner's translation."""
     from writing_coach.ai import spend_gate
 
-    if spend_gate.ceiling_reached():
-        raise TranslationProviderError("The daily AI budget is used up.", reason=spend_gate.CEILING_REASON)
+    spend_gate.observe()
 
 
 _DURATION_PART = re.compile(r"(\d+(?:\.\d+)?)(ms|h|m|s)")

@@ -149,17 +149,18 @@ def test_the_route_says_synthesis_unavailable_when_azure_failed(monkeypatch, tmp
     assert word_audio_api.word_audio("花生", "huā shēng", False)["reason"] == "synthesis_unavailable"
 
 
-def test_at_the_system_ceiling_nothing_is_asked_and_the_next_voice_takes_over():
-    """Review of #308 (P2): the system's daily AI spend ceiling makes Azure a failed voice, like its own cap, so the local
-    voice or the device voice answers instead of the word refusing with 429."""
+def test_past_the_system_spend_monitor_azure_is_still_asked():
+    """D-250: the system's daily AI spend is a monitor, so it no longer turns Azure into a failed voice."""
+    import inspect
+
+    from writing_coach import word_audio_azure
     from writing_coach.ai import spend_gate
 
     spend_gate.configure_ceiling(5.0, read=lambda since: (5.0, 0))
     try:
-        wire = Wire()
-        azure = voice(wire=wire)
-        assert azure.speak(term="花生", language="zh", reading="huā shēng", single_reading=True) is None
-        assert wire.calls == [] and azure.last_failed is True
+        source = inspect.getsource(word_audio_azure)
+        assert "spend_gate.observe()" in source and "ceiling_reached" not in source
+        assert spend_gate.ceiling_status()["reached"] is True   # an alert, nothing refused
     finally:
         spend_gate.configure_ceiling(None, read=None)
         spend_gate.reset()

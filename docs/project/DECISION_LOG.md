@@ -7910,3 +7910,51 @@ learner until UTC midnight.
    - `catalog.METERS["orena.voice"].params["daily_seconds"]`: the bounds, 60 to 86400.
    - `plan_features.DAILY`: the parameter's name.
    - The daily total is read from `product_repository.daily_usage` (UTC day); the month from `monthly_usage`.
+
+## D-250 - No app-wide AI cap: a daily AI cost cap per learner, by plan; the system total is a monitor (2026-10-21)
+
+**Status:** ACCEPTED (the owner, typed in the UI-lane terminal, 2026-10-21). His words, verbatim:
+
+> "không có trần chung cho app, chỉ có trần cho từng người dùng theo gói. chứ khóa vậy thì nhiều người dùng hơn thì lại
+> bị hạn chế thì sao? pilot cũng hoạt động giống với product đừng làm mọi thứ chỉ để test. pilot là pilot bản product"
+
+(There is no app-wide cap; limits apply only per learner, by plan. A shared lock would restrict everyone as the number
+of learners grows. The pilot behaves exactly like production; nothing is configured just for testing.)
+
+**Supersedes:** the system-wide fail-closed daily AI spend ceiling (owner 2026-10-18, D-232 / D-235's
+`X-Orena-AI-Paused`, and PRE-502 R2's "production refuses to start without a ceiling" in the form that ceiling had), and
+D-248 point 2's "Free AI pool of USD 0.50 a day across all Free learners" (never implemented; it is withdrawn, not
+built). D-248 point 2's hidden per-learner ceiling stands and is implemented here.
+
+1. **No mechanism pauses AI for every learner because of the whole system's spend.** The system total
+   (`AI_DAILY_SPEND_CEILING_USD`, Admin `ai.daily_spend_ceiling_usd`, warning at `ai.daily_spend_warn_ratio`) is a
+   **monitor**: it is still computed from the whole AI ledger, it logs the warning at the ratio and, at the threshold,
+   raises a high-severity alert in the log, the provider health signal (`ai/health_signal.py`, the :8000 health.log line,
+   #452) and Admin's overview banner. It never refuses a request. `X-Orena-AI-Paused` is no longer sent, and the
+   `daily_ai_limit` refusal with `scope: "system"` is no longer sent; the category stays listed in the Agent Contract.
+2. **Each learner has a daily AI cost cap by plan** (`ai/learner_cost.py`), counted from the per-account ledger that
+   already exists (`ai_cost_records`, AC-2) - no new table, no schema change. A provider whose free-tier flag is on
+   costs nothing and is not counted. Defaults, policies in Admin > Policies > Spend caps:
+   - Free USD 0.02 a day (`ai.learner_cost.daily_usd_free`);
+   - Plus and Pro: 60% of the monthly price over 30 days at `ai.learner_cost.vnd_per_usd` (assumed 26,000 VND a dollar)
+     and `ai.learner_cost.revenue_share` (0.6): Plus 79.000 d -> about USD 0.061, Pro 159.000 d -> about USD 0.122, until
+     an administrator stores a USD figure. D-248 says "net revenue"; the list price is used until net is known.
+3. **Degrade, then refuse** (D-248's own order). At the cap a learner's paid calls go to the economy model
+   (`ai.learner_cost.economy_model`, default `gemini/gemini-3.1-flash-lite`); free and local rungs run as before. At the
+   hard ceiling (the cap x `ai.learner_cost.hard_ratio`, 1.5) only free and local models answer that learner until UTC
+   midnight; a request with nothing else is the existing 429 `quota_exhausted` (`feature: "ai.daily_cost"`, `window:
+   "day"`, `resets_at`; a Free learner also gets `upgrade`). No figure is shown (D-248: hidden). Zero-cost paths are never
+   capped. A fault (an unreadable per-account ledger) degrades that learner and refuses nobody; an unreadable plan takes
+   the Free cap.
+4. **The per-capability daily caps** (`word_translation`, `word_sense_choice`, and the routed backups of
+   `writing_evaluator`, `writing_improver`, `text_discussion`) measure **the request's own learner**. Work with no
+   signed-in account (a background job) is not a learner and is still measured over the capability.
+5. **The pilot runs as production.** Every public runtime (staging and production) refuses to start unless every plan's
+   per-learner cap resolves above zero (and the hard ratio is at least 1) **and** the monitor's threshold is set in the
+   environment (PRE-502 R2, restated). It stays impossible to run with no per-learner limit.
+6. **Left to their owners.** The agent's own cap (`agent.daily_spend_cap_usd`, `agent/budget.py`) and the `daily_ai_limit`
+   path of `agent/api.py` belong to the Intelligence lane, which makes them per learner with
+   `learner_cost.learner_cost_state(user_key)` (`ok` | `degrade` | `refuse`, and `.economy`). The media pipeline's day
+   cap (`media.daily_cap_usd`) and Supadata's daily request count are operator-pipeline and provider-credit limits, and
+   word audio's lifetime cap falls back to the free voice; each is reported to the owner, not changed here.
+7. **Published text.** No published legal document (docs/legal/public) promises a system spend ceiling; none changes.

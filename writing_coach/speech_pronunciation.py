@@ -366,9 +366,9 @@ class AzureSpeechPronunciationProvider:
         Azure billed (`audio_seconds`, `billed_seconds`). I-1's backstop runs first (PR-MON-6 §2)."""
         from writing_coach.billing.funding_context import require_paid
 
-        from writing_coach.ai.spend_gate import require_below_ceiling
+        from writing_coach.ai.spend_gate import observe
 
-        require_below_ceiling()  # the system's daily AI spend ceiling, before anything is sent
+        observe()  # the system's daily AI spend monitor (D-250): it alerts, it never refuses
         require_paid(capability="pronunciation_evaluator", provider=str(getattr(self, "provider_id", "") or "azure"),
                      timeout_seconds=self._timeout_seconds)   # the timeout of the Azure request below
 

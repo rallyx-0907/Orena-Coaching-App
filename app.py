@@ -1168,18 +1168,29 @@ def _system_ai_spend_since(since: datetime) -> tuple[float, int]:
     return _persistence_runtime.platform_repository.ai_spend_since(since)
 
 
-# The system-wide daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD; AI_DAILY_SPEND_WARN_RATIO, default 0.8): unset, no
-# ceiling. An unreadable value refuses to start rather than guess. BQ: both are read at each check through the policies
-# (`ai.daily_spend_ceiling_usd` can only lower the environment's ceiling; `ai.daily_spend_warn_ratio`), so Admin tunes
-# them without a restart.
+# The system's daily AI spend MONITOR (D-250; AI_DAILY_SPEND_CEILING_USD is its alert threshold, AI_DAILY_SPEND_WARN_RATIO
+# its warning, default 0.8): it alerts in the logs, the provider health signal and Admin, and never refuses a learner. An
+# unreadable value refuses to start rather than guess. Both are read at each check through the policies.
 _spend_gate.ceiling_from_env(os.environ)
 _spend_gate.warn_ratio_from_env(os.environ)
 _spend_gate.configure_ceiling(_spend_gate.live_ceiling, read=_system_ai_spend_since,
                               warn_ratio=_spend_gate.live_warn_ratio)
-# Every response a ceiling refusal touched says so: `X-Orena-AI-Paused: <resets_at>` (the client's one signal).
-_spend_gate.install_paused_header(app)
-# PRE-502 R1/R2 (#369): on a public runtime each published promise not in force is an ERROR at start (no ceiling, a
-# retention sweep off), and production refuses to start without a ceiling. Admin's readiness summary shows the same.
+
+
+def _learner_ai_spend_since(user_key: str, since: datetime, *, exclude_providers: tuple[str, ...] = ()) -> tuple[float, int]:
+    """One learner's AI cost today from the per-account ledger (`ai_cost_records`), for the per-learner cap (D-250)."""
+    return _persistence_runtime.platform_repository.ai_spend_since_for_account(user_key, since,
+                                                                              exclude_providers=exclude_providers)
+
+
+# Each learner's own daily AI cost cap, by plan (D-250, ai/learner_cost.py): degrade to the economy model, then refuse.
+from writing_coach.ai import learner_cost as _learner_cost  # noqa: E402
+
+_learner_cost.configure(_learner_ai_spend_since
+                        if callable(getattr(_persistence_runtime.platform_repository, "ai_spend_since_for_account", None))
+                        else None)
+# PRE-502 R1/R2 (#369), as D-250 restates R2: on a public runtime each published promise not in force is an ERROR at
+# start, and staging and production refuse to start without the per-learner caps and the monitor's alert threshold.
 from writing_coach.core.published_promises import enforce_at_start as _enforce_promises  # noqa: E402
 from writing_coach.core.published_promises import unmet_promises as _unmet_promises  # noqa: E402
 
@@ -1217,8 +1228,8 @@ def _agent_spend_guard():
     # turn; with no cap the guard allows every turn, exactly as when none was built.
     # The strict read: if this worker has never read the settings store, or the stored cap no longer validates, the
     # guard refuses turns (fails closed) instead of treating "unknown" as "no cap".
-    # The system-wide ceiling (ai/spend_gate.py, owner 2026-10-18) is checked first: a turn stops once the whole system's
-    # daily spend is reached, whatever the agent's own cap; that check also raises the system's 80% warning.
+    # `ceiling=`: the system's daily spend monitor (ai/spend_gate.py). Since D-250 it only ticks the monitor (its warning
+    # and alert) and never refuses a turn. The agent's own cap is the Intelligence lane's to make per learner.
     return LiveSpendGuard(lambda: _policies.value_strict("agent.daily_spend_cap_usd"),
                           reader if callable(reader) else None, ceiling=_spend_gate.ceiling_check,
                           warn_ratio=_spend_gate.warn_ratio_from_env(os.environ))
@@ -1744,19 +1755,14 @@ async def _funding_required(_request, exc):  # noqa: ANN001 - FastAPI's handler 
         context={"reason": exc.reason})})
 
 
-@app.exception_handler(_spend_gate.SpendCeilingReached)
-async def _spend_ceiling_reached(_request, exc):  # noqa: ANN001 - FastAPI's handler signature
-    """The system's daily AI spend ceiling (ai/spend_gate.py) refused a paid request that no caller answered itself:
-    told plainly, never retried until the reset (the agent's own routes answer it as contract §2.1 `daily_ai_limit`)."""
+@app.exception_handler(_learner_cost.LearnerCostCapReached)
+async def _learner_cost_cap_reached(_request, exc):  # noqa: ANN001 - FastAPI's handler signature
+    """One learner's daily AI cost cap (D-250) refused a paid request that no caller answered itself: the plan-limit
+    refusal every room already shows (429 `quota_exhausted`, feature `ai.daily_cost`), with no figure (D-248: hidden)."""
     from fastapi.responses import JSONResponse
 
-    from writing_coach.core.errors import error_detail
-
-    status = _spend_gate.ceiling_status()
-    wait = _spend_gate.ceiling_wait() or 60.0
-    return JSONResponse(status_code=429, headers={"Retry-After": str(max(1, int(wait)))}, content={"detail": error_detail(
-        "daily_ai_limit", "The daily AI budget is used up; AI is paused until it resets.", retryable=False,
-        context={"scope": "system", "resets_at": status.get("resets_at")})})
+    body, headers = _learner_cost.refusal_body(exc)
+    return JSONResponse(status_code=429, headers=headers, content=body)
 
 
 # I-1's backstop: FUNDING_ENFORCEMENT off (default) | log | enforce. Its live check reads the admission store.

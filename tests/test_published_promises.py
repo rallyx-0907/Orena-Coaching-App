@@ -1,7 +1,8 @@
-"""PRE-502 R1/R2 (#369): what the published Privacy Policy and the cost policy promise must be in force on a public
-runtime. A system daily AI spend ceiling (AI_DAILY_SPEND_CEILING_USD); the retention sweeps behind the periods the
-policy states (Orena Memory 180 days, agent activity 90 days, feedback 24 months). Production refuses to start without
-a ceiling; every public runtime logs each unmet promise as an ERROR at start and shows it in Admin's readiness."""
+"""PRE-502 R1/R2 (#369), R2 as restated by D-250: what must be in force on a public runtime. Bounded AI spend - every
+plan's per-learner daily AI cost cap and the system spend monitor's alert threshold (AI_DAILY_SPEND_CEILING_USD, which
+alerts and never refuses); the retention sweeps behind the periods the policy states (Orena Memory 180 days, agent
+activity 90 days, feedback 24 months). A public runtime refuses to start without either half of the first; every public
+runtime logs each unmet promise as an ERROR at start and shows it in Admin's readiness."""
 
 from __future__ import annotations
 
@@ -26,7 +27,7 @@ def test_everything_in_force_means_no_unmet_promise():
 
 
 def test_a_zero_ceiling_is_a_ceiling():
-    """$0 refuses every paid call: stricter, not missing."""
+    """$0 alerts from the first paid call: stricter, not missing (D-250: it never refuses one)."""
     assert unmet_promises({**KEPT, "AI_DAILY_SPEND_CEILING_USD": "0"}, policy(ON)) == []
 
 
@@ -107,3 +108,27 @@ def test_admin_readiness_lists_the_unmet_promises_by_name(monkeypatch):
     codes = [p["code"] for p in summary["unmet_promises"]]
     assert "spend_ceiling_unset" in codes and "feedback_retention_sweep_off" in codes
     assert all(set(p) == {"code", "message"} for p in summary["unmet_promises"])
+
+
+# ============================================================================== D-250: per-learner caps at start ==
+
+@pytest.mark.parametrize("missing", ["ai.learner_cost.daily_usd_free", "ai.learner_cost.daily_usd_plus",
+                                     "ai.learner_cost.daily_usd_pro"])
+@pytest.mark.parametrize("app_env", ["production", "staging"])
+def test_a_public_runtime_refuses_to_start_without_a_per_learner_cap(missing, app_env):
+    """Production (and the pilot, which runs exactly like it) can never run with no per-learner AI limit."""
+    values = {**KEPT, "APP_ENV": app_env}
+    for empty in (None, 0, 0.0):
+        with pytest.raises(RuntimeError, match="per-learner daily AI cost cap"):
+            enforce_at_start(values, policy({**ON, missing: empty}))
+    assert "learner_cost_caps_unset" in [p.code for p in unmet_promises(KEPT, policy({**ON, missing: None}))]
+
+
+def test_a_hard_ratio_below_one_is_no_hard_limit():
+    with pytest.raises(RuntimeError, match="hard_ratio"):
+        enforce_at_start({**KEPT, "APP_ENV": "production"}, policy({**ON, "ai.learner_cost.hard_ratio": 0.5}))
+
+
+def test_the_registry_defaults_are_per_learner_caps():
+    """Nothing stored and nothing pinned: every plan has a cap, so a fresh production starts."""
+    assert enforce_at_start({**KEPT, "APP_ENV": "production"}, policy(ON)) == []

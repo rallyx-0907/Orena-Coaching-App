@@ -1,7 +1,10 @@
 """What the published policies promise must be in force on a public runtime (PRE-502 R1/R2, #369).
 
-- **The system daily AI spend ceiling** (owner, 2026-10-18: $5 a day, ai/spend_gate.py). Unset means no ceiling at all,
-  so paid AI spend is unbounded.
+- **Bounded AI spend** (PRE-502 R2 as restated by D-250, owner 2026-10-21: no app-wide cap, only a cap per learner by
+  plan). Two things must be in force: every plan's per-learner daily AI cost cap (ai/learner_cost.py, policies
+  `ai.learner_cost.*`) and the system monitor's alert threshold (`AI_DAILY_SPEND_CEILING_USD`, ai/spend_gate.py), which
+  alerts and never refuses. Neither is a published legal promise; this is the operating rule that no public runtime
+  runs with paid AI unbounded per learner.
 - **The retention sweeps behind the periods the Privacy Policy states** (docs/legal/public/privacy.en.json, facts.json):
   - Orena Memory: unused notes deleted after 180 days (`AGENT_MEMORY_RETENTION_SWEEP`);
   - agent activity: 90 days (`agent.turn_retention_sweep`);
@@ -17,8 +20,9 @@ requested; a backbone that then fails to start makes the item an over-report, ne
 
 `enforce_at_start`:
 - On a public runtime (staging, production), it logs each unmet promise as an ERROR.
-- Every public runtime refuses to start without a ceiling in the environment (review of #428: the pilot runs like
-  production). An Admin ceiling (`ai.daily_spend_ceiling_usd`) can only lower it and never counts as the promise.
+- Every public runtime refuses to start without the per-learner caps and the monitor's threshold in the environment
+  (review of #428: the pilot runs like production). An Admin threshold (`ai.daily_spend_ceiling_usd`) can only lower it
+  and never counts as the environment's.
 
 The sweeps are logged rather than refused. Each is an Admin policy its variable can pin (D-172, BQ), so this reads the
 variable when it is set and the policy otherwise. On a public runtime a promised sweep is ON by default and Admin can
@@ -78,9 +82,19 @@ def _sweep_on(values: Mapping[str, str], policy: Callable[[str], Any], name: str
 
 
 def _ceiling_in_force(values: Mapping[str, str], policy: Callable[[str], Any]) -> bool:
-    """The promise is the environment's ceiling (review of #428): Admin's `ai.daily_spend_ceiling_usd` can only lower
-    it and can be cleared at any time, so an Admin ceiling alone never counts as the promise kept."""
+    """The monitor's threshold is the environment's (review of #428): Admin's `ai.daily_spend_ceiling_usd` can only lower
+    it and can be cleared at any time, so an Admin value alone never counts."""
     return _ceiling_set(values)
+
+
+def _learner_caps_missing(policy: Callable[[str], Any]) -> list[str]:
+    """The plans (or the hard ratio) without a usable per-learner daily AI cost cap (D-250)."""
+    from writing_coach.ai.learner_cost import configured_problems
+
+    try:
+        return configured_problems(policy)
+    except Exception:  # noqa: BLE001 - unreadable is not configured
+        return ["unreadable"]
 
 
 def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
@@ -92,7 +106,12 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
     problems: list[UnmetPromise] = []
     if not _ceiling_in_force(values, policy):
         problems.append(UnmetPromise("spend_ceiling_unset",
-                                     "AI_DAILY_SPEND_CEILING_USD is not set: there is no system daily AI spend ceiling"))
+                                     "AI_DAILY_SPEND_CEILING_USD is not set: the system daily AI spend monitor has no"
+                                     " alert threshold"))
+    missing = _learner_caps_missing(policy)
+    if missing:
+        problems.append(UnmetPromise("learner_cost_caps_unset",
+                                     "no per-learner daily AI cost cap for: " + ", ".join(missing)))
     from writing_coach.account_backbone import requested as backbone_requested
 
     # Orena Memory exists only with its keys and the account backbone (MemoryRuntime.from_env); not otherwise.
@@ -123,8 +142,9 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
 
 
 def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
-    """At start. A public runtime logs each unmet promise as an ERROR and refuses to start without the environment's
-    ceiling (production and staging alike). Development returns nothing and logs nothing."""
+    """At start. A public runtime logs each unmet promise as an ERROR and refuses to start without the per-learner AI
+    cost caps and the environment's monitor threshold (production and staging alike, D-250). Development returns nothing
+    and logs nothing."""
 
     app_env = environment_name(values.get("APP_ENV", "development"))
     if not is_public_environment(app_env):
@@ -132,6 +152,11 @@ def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) ->
     problems = unmet_promises(values, policy)
     for problem in problems:
         _log.error("published promise not in force (%s): %s", problem.code, problem.message)
-    if not _ceiling_set(values):  # the environment's fuse, whatever Admin holds; staging runs like production
-        raise RuntimeError(f"AI_DAILY_SPEND_CEILING_USD is required when APP_ENV={app_env} (PRE-502 R2).")
+    missing = _learner_caps_missing(policy)
+    if missing:  # D-250: never a public runtime with paid AI unbounded per learner
+        raise RuntimeError(f"A per-learner daily AI cost cap is required for every plan when APP_ENV={app_env} "
+                           f"(D-250, PRE-502 R2); missing: {', '.join(missing)}.")
+    if not _ceiling_set(values):  # the monitor's threshold, whatever Admin holds; staging runs like production
+        raise RuntimeError(f"AI_DAILY_SPEND_CEILING_USD (the spend monitor's alert threshold) is required when "
+                           f"APP_ENV={app_env} (D-250, PRE-502 R2).")
     return problems
