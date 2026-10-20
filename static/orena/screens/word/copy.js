@@ -24,7 +24,7 @@ const LAYERS = {
   strokePracticeTitle: 'interface', strokeCount: 'interface', strokeLoading: 'interface',
   strokeUnavailable: 'interface', watchStrokes: 'interface', writeIt: 'interface', nextCharacter: 'interface',
   strokeWatching: 'interface', strokeStep: 'interface', strokeTryAgain: 'interface',
-  strokeComplete: 'interface', playClip: 'interface',
+  strokeComplete: 'interface', playClip: 'interface', noClipAudio: 'interface',
   // languages-4 (1) / finding B.1: the part-of-speech chip's closed value space
   // (writing_coach/linguistic_annotation.py ALLOWED_POS), mapped to interface copy - see
   // model.js's posLabel().
@@ -62,7 +62,7 @@ export const t = defineCopy('word', {
     watchStrokes: 'Watch strokes', writeIt: 'Write it', nextCharacter: 'Next character',
     strokeWatching: 'Watching stroke order', strokeStep: 'Stroke {n} of {total}',
     strokeTryAgain: 'Wrong direction — try again', strokeComplete: 'All strokes done',
-    playClip: 'Play clip',
+    playClip: 'Play clip', noClipAudio: 'No audio for this sentence',
     posNoun: 'Noun', posVerb: 'Verb', posAdjective: 'Adjective', posAdverb: 'Adverb',
     posPronoun: 'Pronoun', posDeterminer: 'Determiner', posPreposition: 'Preposition',
     posConjunction: 'Conjunction', posNumeral: 'Numeral', posParticle: 'Particle',
@@ -94,7 +94,7 @@ export const t = defineCopy('word', {
     watchStrokes: 'Xem thứ tự nét', writeIt: 'Viết thử', nextCharacter: 'Chữ tiếp theo',
     strokeWatching: 'Đang xem thứ tự nét', strokeStep: 'Nét {n} trong {total}',
     strokeTryAgain: 'Sai hướng — thử lại', strokeComplete: 'Đã viết đủ các nét',
-    playClip: 'Nghe đoạn ghi',
+    playClip: 'Nghe đoạn ghi', noClipAudio: 'Câu này chưa có âm thanh',
     posNoun: 'Danh từ', posVerb: 'Động từ', posAdjective: 'Tính từ', posAdverb: 'Trạng từ',
     posPronoun: 'Đại từ', posDeterminer: 'Từ hạn định', posPreposition: 'Giới từ',
     posConjunction: 'Liên từ', posNumeral: 'Số từ', posParticle: 'Trợ từ',
@@ -126,7 +126,7 @@ export const t = defineCopy('word', {
     watchStrokes: '观看笔顺', writeIt: '尝试书写', nextCharacter: '下一个字',
     strokeWatching: '正在演示笔顺', strokeStep: '第 {n} 笔，共 {total} 笔',
     strokeTryAgain: '方向不对，请再试一次', strokeComplete: '已写完所有笔画',
-    playClip: '播放片段',
+    playClip: '播放片段', noClipAudio: '这句话暂时没有音频',
     posNoun: '名词', posVerb: '动词', posAdjective: '形容词', posAdverb: '副词',
     posPronoun: '代词', posDeterminer: '限定词', posPreposition: '介词',
     posConjunction: '连词', posNumeral: '数词', posParticle: '助词',

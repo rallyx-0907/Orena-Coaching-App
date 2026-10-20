@@ -37,7 +37,8 @@ assert.equal(contextFor('buffer', { source_fragment: 'Keep a buffer.' }, 'A buff
   const sheet = readFileSync(new URL('../static/orena/screens/quick-sheet/sheet.js', import.meta.url), 'utf8');
   assert.match(sheet, /href\('word', \{ id: card\.word \}, met !== card\.word \? \{ ctx: met/, 'the sheet links the word page with its sentence');
   const screen = readFileSync(new URL('../static/orena/screens/word/screen.js', import.meta.url), 'utf8');
-  assert.match(screen, /contextFor\(word, item, String\(ctx\.query\?\.get\?\.\('ctx'\)/, 'the word page reads it');
+  assert.match(screen, /const tapped = tappedSentence\(word, ctx\.query\?\.get\?\.\('ctx'\)\)/, 'the word page reads it, cleaned');
+  assert.match(screen, /contextFor\(word, item, tapped\)/, 'and asks its lookup in it');
 }
 assert.equal(
   contextFor('buffer', { source_fragment: 'Keep a buffer before the deadline.' }),

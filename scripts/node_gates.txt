@@ -83,6 +83,7 @@ scripts/test_orena_screen_collection.mjs
 scripts/test_orena_collection_actions.mjs
 scripts/test_orena_vocabulary_meaning.mjs
 scripts/test_orena_screen_word.mjs
+scripts/test_orena_word_tapped_sentence.mjs
 scripts/test_orena_screen_grammar.mjs
 scripts/test_orena_screen_search.mjs
 scripts/test_orena_screen_progress.mjs

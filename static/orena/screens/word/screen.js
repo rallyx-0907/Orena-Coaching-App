@@ -22,6 +22,8 @@ import {
   contextFor,
   mapDeepWord,
   mapClips,
+  tappedSentence,
+  withTappedSentence,
   mapMasteryEvidence,
   restorePayload,
   stageCopyKey,
@@ -87,8 +89,8 @@ function evidenceRow(row) {
 function clipRow(clip, index) {
   return html`<div class="s-word-clip">
     <button type="button" class="s-word-clip__play" data-clip-play="${index}" aria-label="${t('playClip')}">${raw(icon('play', { size: 14 }))}</button>
-    <div class="s-word-clip__body"><div class="s-word-clip__text">${clip.text}</div><div class="s-word-clip__source">${clip.source}</div></div>
-    <button type="button" class="s-word-clip__open" data-clip-open="${index}">${t('open')}</button>
+    <div class="s-word-clip__body"><div class="s-word-clip__text">${clip.text}</div>${clip.source ? html`<div class="s-word-clip__source">${clip.source}</div>` : ''}</div>
+    ${clip.lessonId ? html`<button type="button" class="s-word-clip__open" data-clip-open="${index}">${t('open')}</button>` : ''}
   </div>`;
 }
 
@@ -125,6 +127,8 @@ export default async function mountWordDetail(element, ctx) {
   await useStyles('kit/vocabulary-card.css');
   const word = String(ctx.params?.id || '').trim();
   const language = ctx.context?.language || 'en';
+  // The sentence the word was tapped in (the sheet's "full word detail", #463): untrusted URL text, cleaned and capped.
+  const tapped = tappedSentence(word, ctx.query?.get?.('ctx'));
 
   // The Deep Word lookup (api.wordDetail) is AI-backed and can take several seconds on an
   // uncached word (writing_coach/word_detail.py); paint the shared loading skeleton (kit/states.js
@@ -159,7 +163,7 @@ export default async function mountWordDetail(element, ctx) {
     // The lookup runs in the learner's current learning language: the server refuses any other (409,
     // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
     // English IPA labelled pinyin (UI_BACKEND_GAPS VC-15); the card mapper drops a reading of the wrong kind.
-    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item, String(ctx.query?.get?.('ctx') || '').slice(0, 600)), source_language: language, target_language: languages().support }).catch((error) => { wordPause = refusalLineOf(error); lookupFailed = !wordPause; return null; }),
+    api.wordDetail({ depth: 'full', contextual: true, text: word, context: contextFor(word, item, tapped), source_language: language, target_language: languages().support }).catch((error) => { wordPause = refusalLineOf(error); lookupFailed = !wordPause; return null; }),
     api.wordClips(word, 6).catch(() => { clipsFailed = true; return null; }),
   ]).then(([found, clipsPayload]) => ({ found, clipsPayload }));
   const hasSomethingToShow = Boolean(item || seed);
@@ -176,14 +180,18 @@ export default async function mountWordDetail(element, ctx) {
     // word itself - with no reading rather than a wrong one (rule 40).
     detail = found;
     if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
-    clips = mapClips(clipsPayload);
+    clips = withTappedSentence(mapClips(clipsPayload), tapped);
     clipsReady = !clipsFailed;
   }
 
   // The entry's content: the saved record (which reads the catalogue entry through), else the card the
   // list left behind, else the catalogue's own search answer.
   const contentOf = () => toVocabularyModel(item || seed?.entry || null, { word, supportLanguage: languages().support, lookup: detail, seed });
-  const learnerOf = () => learnerState(item, { saved: item ? true : Boolean(detail?.saved) });
+  // The card's example is the sentence the learner met the word in: the saved record's, else the one just tapped.
+  const learnerOf = () => {
+    const state = learnerState(item, { saved: item ? true : Boolean(detail?.saved) });
+    return state.context ? state : { ...state, context: tapped };
+  };
   let model = contentOf();
   let learner = learnerOf();
   let deepRows = mapDeepWord(detail);
@@ -349,6 +357,7 @@ export default async function mountWordDetail(element, ctx) {
       button.addEventListener('click', () => {
         const clip = clips[Number(button.dataset.clipPlay)];
         if (clip?.url) playUrl(clip.url, { startMs: clip.startMs, endMs: clip.endMs });
+        else if (clip) toast(t('noClipAudio'));
       });
     });
     element.querySelectorAll('[data-clip-open]').forEach((button) => {
@@ -367,7 +376,7 @@ export default async function mountWordDetail(element, ctx) {
       lookupPending = false;
       detail = found;
       if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
-      clips = mapClips(clipsPayload);
+      clips = withTappedSentence(mapClips(clipsPayload), tapped);
       clipsReady = !clipsFailed;
       deepRows = mapDeepWord(detail);
       model = contentOf();
