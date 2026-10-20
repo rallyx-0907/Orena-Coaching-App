@@ -21,6 +21,7 @@ import { t } from './copy.js';
 import { lookupContext } from './model.js';
 import { wordDetailRequest } from '../quick-sheet/model.js';
 import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
+import { planRequired } from '../../kit/access.js';
 
 async function resolveTerm(term, { lang, support, context, source }) {
   let detail = null;
@@ -43,7 +44,9 @@ async function resolveTerm(term, { lang, support, context, source }) {
 
 /* `readOnly` is the administrator's preview of a held item (D-210): the terms are shown and played, the Save buttons
    are not drawn (the design has no disabled state for them) and nothing is kept. */
-export async function openVocabFocus(ctx, { label, terms, lang, support, context, onPlay, source = null, readOnly = false }) {
+/* `saveLocked` (D-248 §4-§5, G6): saving from a video to review is a Plus tool for this learner; the Save button shows
+   `saveLock` after its label and `onLocked()` opens the upgrade sheet. `mediaId` names the video to the server. */
+export async function openVocabFocus(ctx, { label, terms, lang, support, context, onPlay, source = null, readOnly = false, mediaId = '', saveLocked = false, saveLock = '', onLocked = null }) {
   const words = [...new Set((terms || []).filter(Boolean))];
   let rows = words.map((word) => ({ word, reading: '', meaning: '', saved: false }));
   let alive = true;
@@ -57,7 +60,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
         <div class="s-vocab__word"><span lang="${langAttr(lang)}">${row.word}</span>${row.reading ? html` <span class="s-vocab__reading">${row.reading}</span>` : ''}</div>
         ${row.meaning ? html`<div class="s-vocab__meaning">${row.meaning}</div>` : ''}
       </div>
-      ${readOnly ? '' : html`<button type="button" class="s-vocab__save" data-save="${index}" aria-pressed="${String(row.saved)}">${row.saved ? t('saved') : t('save')}</button>`}
+      ${readOnly ? '' : html`<button type="button" class="s-vocab__save" data-save="${index}" aria-pressed="${String(row.saved)}">${row.saved ? t('saved') : html`${t('save')}${saveLocked ? saveLock : ''}`}</button>`}
     </div>`;
   }
 
@@ -90,6 +93,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
   async function toggleSave(index) {
     const row = rows[index];
     if (!row || readOnly) return;
+    if (!row.saved && saveLocked && onLocked) { onLocked(); return; }
     try {
       if (row.saved) {
         await api.deleteLibraryVocabulary(row.word);
@@ -102,6 +106,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
           definition: row.meaning,
           source_kind: 'listening',
           source_fragment: (context || '').slice(0, 1200),
+          ...(mediaId ? { source_media_id: String(mediaId).slice(0, 255) } : {}),
         });
         row.saved = true;
         // Where the word was met - the same record a Reading keep writes (product/account-records.js).
@@ -109,8 +114,10 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
         toast(t('saved'));
       }
       paint();
-    } catch {
-      if (alive) toast(t('saveFailed'));
+    } catch (error) {
+      if (!alive) return;
+      if (planRequired(error) && onLocked) onLocked();
+      else toast(t('saveFailed'));
     }
   }
 

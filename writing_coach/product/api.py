@@ -90,7 +90,10 @@ def product_commerce(request: Request) -> dict[str, Any]:
     Web-only: the full subscription-state vocabulary here is a superset of
     what /me promises mobile, so it is additive rather than a replacement.
     """
-    return accountCommerce(current_user_key(request))
+    user_key = current_user_key(request)
+    state = accountCommerce(user_key)
+    # D-248 MV2-3: badges and locks are drawn from the server's answer, never computed by the client.
+    return {**state, "content_access": content_access.learner_access(user_key)}
 
 
 @router.get("/plans")

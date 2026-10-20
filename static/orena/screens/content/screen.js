@@ -26,6 +26,8 @@ import { languages } from '../../copy/index.js';
 import { openMedia, mediaRef } from '../../product/media-source.js';
 import { mapLesson } from '../listening/model.js';
 import { t } from './copy.js';
+import { planRequired } from '../../kit/access.js';
+import { mountLockedPreview } from '../reader/locked.js';
 import { bookPlace } from '../../product/place-progress.js';
 import { isTraditional } from '../../product/script.js';
 import {
@@ -180,11 +182,21 @@ export default async function content(element, ctx) {
   const language = ctx.context.language;
   const libKind = libraryKindFor(kind);
 
-  const [detail, hasPractice, saved] = await Promise.all([
-    loadDetail(kind, id, ctx),
-    loadHasPractice(kind, id),
-    loadSaved(libKind, id, contentId, ctx.context.memory),
-  ]);
+  let detail;
+  let hasPractice;
+  let saved;
+  try {
+    [detail, hasPractice, saved] = await Promise.all([
+      loadDetail(kind, id, ctx),
+      loadHasPractice(kind, id),
+      loadSaved(libKind, id, contentId, ctx.context.memory),
+    ]);
+  } catch (error) {
+    // A Plus article for a Free learner (D-248 G8): the same preview the Reader shows, never an error card.
+    const refusal = planRequired(error);
+    if (refusal) return mountLockedPreview(element, ctx, refusal, { source: 'content' });
+    throw error;
+  }
   // Related reads the open item's own topic, level and author, so it follows the detail (LEX-075).
   const related = await loadRelated(kind, id, language, detail);
   if (!ctx.isCurrent()) return undefined;

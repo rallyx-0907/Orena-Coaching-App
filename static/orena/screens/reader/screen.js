@@ -44,6 +44,8 @@ import { mountReaderLexical } from './lexical.js';
 import { loadHighlights, isHighlighted, toggleHighlight } from './highlights.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from './annotations-sync.js';
 import { loadReadable, realContentIdOf, loadQuizSize, loadSaved, loadSavedFromText } from './source.js';
+import { planRequired } from '../../kit/access.js';
+import { mountLockedPreview } from './locked.js';
 import {
   parseContentId,
   contentIdFor,
@@ -118,7 +120,15 @@ export default async function mountReader(element, ctx) {
   const memory = ctx.context.memory;
   const owner = ctx.context.owner;
 
-  const doc = await loadReadable(parsed, memory);
+  let doc;
+  try {
+    doc = await loadReadable(parsed, memory);
+  } catch (error) {
+    // A Plus article for a Free learner (D-248 G8): its preview and the way to the plan, never an error.
+    const refusal = planRequired(error);
+    if (refusal) return mountLockedPreview(element, ctx, refusal, { source: 'reader' });
+    throw error;
+  }
   const [quizSize, savedInfo, savedFrom] = await Promise.all([loadQuizSize(doc.kind, doc.id), loadSaved(doc.kind, doc, memory), loadSavedFromText(doc)]);
   const hasQuiz = quizSize > 0;
   /* Practice mode (Content Detail's "Practice this text", the frame's startPractice): read, answer the

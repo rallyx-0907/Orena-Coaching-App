@@ -99,6 +99,18 @@ export function settleCovers(root) {
   });
 }
 
+/* The Pricing frame's plan tag (`pp.tag`), reused as a Plus/Pro badge (D-248 §5, G1). `label` is the plan's name,
+   untranslated as on Pricing. */
+export function planTag(label, className = '') {
+  return html`<span class="${cls('o-plan-tag', className)}">${label}</span>`;
+}
+
+/* A paid tool's lock (D-248 §5, G6): Lucide `lock` after the control's label, at the control's icon size, `--text3`.
+   The control stays enabled; its tap opens the upgrade sheet. `label` names the plan for a screen reader. */
+export function toolLock({ size = 15, label = '' } = {}) {
+  return html`<span class="o-tool-lock"${label ? raw(` role="img" aria-label="${esc(label)}" title="${esc(label)}"`) : raw(' aria-hidden="true"')}>${raw(icon('lock', { size }))}</span>`;
+}
+
 export function mediaCard({
   cover = null,
   image = '',
@@ -111,17 +123,22 @@ export function mediaCard({
   meta = '',
   tags = [],
   dataset = {},
+  tier = null,
+  tierLabel = '',
 } = {}) {
   const pct = progress == null ? null : Math.max(0, Math.min(100, Number(progress)));
+  // D-248 §5: a paid Reading card's corner tag and tier wash. Never passed for a video (YouTube III.F.3.a).
+  const paid = tier === 'plus' || tier === 'pro' ? tier : null;
   // The headline is held to two lines (LEX-036); the source's whole title stays one hover/long-press away.
   const full = String(fullTitle || '').trim();
   const imgRules = [image ? `background-image:${image}` : '', imageHeight ? `height:${px(imageHeight)}` : ''].filter(Boolean).join(';');
   const posterTitle = full || (typeof title === 'string' ? title : '');
-  return html`<button type="button" class="o-card o-card--hover c-media"${dataAttrs(dataset)}>
+  return html`<button type="button" class="${cls('o-card o-card--hover c-media', paid && `c-media--tier-${paid}`)}"${dataAttrs(dataset)}>
     <span class="${cls('c-media__img', !image && cover?.icon && 'c-media__img--blank')}" style="${imgRules}"${image && cover?.icon ? raw(` data-cover-url="${esc(String(image).replace(/^url\(["']?|["']?\)$/g, ''))}" data-cover-icon="${esc(cover.icon)}" data-cover-tint="${esc(cover.tint)}" data-cover-glyph="${esc(posterGlyph(posterTitle))}"`) : ''}>
       ${image ? (posterTitle ? html`<span class="c-media__alt" role="img" aria-label="${posterTitle}"></span>` : '') : posterMarkup(cover, posterTitle)}
       ${kind ? html`<span class="o-overlay-pill c-media__badge c-media__badge--tl">${kind}</span>` : ''}
       ${duration ? html`<span class="o-overlay-pill c-media__badge c-media__badge--br">${duration}</span>` : ''}
+      ${paid ? planTag(tierLabel || paid, 'c-media__tier') : ''}
       ${pct != null ? html`<span class="c-media__progress"><span style="width:${pct}%"></span></span>` : ''}
     </span>
     <span class="c-media__body">

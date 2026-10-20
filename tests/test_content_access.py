@@ -624,3 +624,51 @@ def test_the_trial_seam_says_what_billing_answers():
     error = content_access.plan_required(user_key="u", kind="reading", item_id="a", required_tier="plus", plan="free")
     assert error.detail["context"]["trial_available"] is True
     content_access.configure_trial(None)
+
+
+# ================================================================================ 7. what the learner UI draws (MV2-3) ==
+
+def test_the_learner_access_read_says_enforcement_tier_and_trial():
+    _plan_for(catalog.FREE)
+    with installed(MemoryPolicyStore({"access.enforced": True})):
+        assert content_access.learner_access("u") == {"enforced": True, "tier": "free", "trial_available": None}
+    content_access.configure_trial(lambda user_key: True)
+    _plan_for(catalog.PLUS)
+    with installed(MemoryPolicyStore({"access.enforced": False})):
+        assert content_access.learner_access("u") == {"enforced": False, "tier": "plus", "trial_available": True}
+    content_access.configure_trial(None)
+
+
+def test_an_unreadable_plan_draws_no_lock():
+    def unreadable(user_key, strict=True):
+        raise HTTPException(503, {"category": "quota_unavailable"})
+
+    _plan_for(unreadable)
+    with installed(MemoryPolicyStore({"access.enforced": True})):
+        assert content_access.learner_access("u")["tier"] is None
+
+
+def test_the_commerce_read_carries_the_content_access_block(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from writing_coach.product import api as product_api
+
+    monkeypatch.setattr(product_api, "accountCommerce", lambda user_key: {"available": True, "readiness": "known"})
+    _plan_for(catalog.FREE)
+    app = FastAPI()
+    app.include_router(product_api.router)
+    with installed(MemoryPolicyStore({"access.enforced": True})):
+        body = TestClient(app).get("/api/product/commerce").json()
+    assert body["readiness"] == "known"
+    assert body["content_access"] == {"enforced": True, "tier": "free", "trial_available": None}
+
+
+def test_the_next_recommended_article_carries_its_access_block(monkeypatch):
+    from writing_coach import reading_practice_api
+
+    monkeypatch.setattr(content_access, "decide", lambda item, now=None: content_access.Decision("plus", "rule"))
+    choice = {"set": {"id": "s1", "article": {"id": "a1", "language": "en", "level": "B1"}}, "recommendation": "r"}
+    decorated = reading_practice_api._with_access(choice)
+    assert decorated["set"]["article"]["access"] == {"tier": "plus", "rotation": False}
+    assert decorated["recommendation"] == "r" and "access" not in choice["set"]["article"]
+    assert reading_practice_api._with_access(None) is None

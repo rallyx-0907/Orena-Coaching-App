@@ -305,6 +305,44 @@ async def _voice_extend_allowed(request: Request,
     return _voice(runtime)
 
 
+# --- the weekly recurring-mistake report (Monetisation v2): counts from the learner's own records -------------------
+
+SPEAKING_ATTEMPTS_READ = 200
+
+
+def _source(read, *args):
+    try:
+        return list(read(*args))
+    except Exception:  # noqa: BLE001 - not readable here: unknown, never "no mistakes"
+        return None
+
+
+@router.get("/progress/weekly")
+def agent_progress_weekly(request: Request, response: Response, tz: str | None = Query(default=None, max_length=64),
+                          interface: str = Query(default="en", max_length=16),
+                          runtime: AgentRuntime = Depends(_read_allowed)) -> dict:  # fmt: skip
+    """This ISO week's recurring mistakes against the four weeks before (agent/weekly_report.py), in the learner's time
+    zone (`tz`, else `X-Orena-Timezone`, else UTC). Read from the rows Orena Memory reads; no model call, no cost."""
+
+    from datetime import UTC, datetime
+
+    from writing_coach.agent import weekly_report
+
+    if interface not in interface_languages():
+        raise HTTPException(status_code=422, detail="unknown interface language")
+    sources = getattr(runtime.pack, "sources", None)
+    zone = tz or request.headers.get("X-Orena-Timezone") or "UTC"
+    try:
+        answer = weekly_report.weekly_report(
+            writing=_source(sources.writing_events) if sources is not None else None,
+            speaking=_source(sources.speaking_attempts, SPEAKING_ATTEMPTS_READ) if sources is not None else None,
+            now=datetime.now(UTC), tz=zone, interface=interface)  # fmt: skip
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="unknown_time_zone") from exc
+    response.headers["Cache-Control"] = "private, no-store"
+    return answer
+
+
 @router.post("/voice/session")
 def agent_voice_session(body: dict = Body(...), voice: VoiceService = Depends(_voice_session_allowed)) -> dict:
     # Voice talks to the vendor directly on a token minted here, a chunk of it at a time. The plan messages are
@@ -354,6 +392,16 @@ def agent_voice_voices(
     # on /voice/session stays the authority.
     user_key = LearnerScope.from_request_context().user_key
     return {**voice_catalog(interface), "entitled": plan_features.entitled(user_key, plan_features.VOICE)}
+
+
+@router.get("/voice/allowance")
+def agent_voice_allowance(response: Response, voice: VoiceService = Depends(_voice_call_allowed)) -> dict:
+    """Today's voice minutes with Orena for the energy bar (Monetisation v2): `limit`, `used`, `left` in seconds,
+    `resets_at` (next UTC midnight), `entitled`. A read: nothing is minted or charged; /voice/session stays the
+    authority (403 / 429). Absent where voice is not configured."""
+
+    response.headers["Cache-Control"] = "no-store"
+    return plan_features.voice_allowance(LearnerScope.from_request_context().user_key)
 
 
 @router.post("/voice/tool")

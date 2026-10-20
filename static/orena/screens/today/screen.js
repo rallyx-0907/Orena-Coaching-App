@@ -4,9 +4,11 @@
    unfinished work from device memory; evidence from LearnerSummary. The goal ring, streak and
    level/XP card have no cross-activity backend (rule 40, 0; docs/project/UI_BACKEND_GAPS.md N-21)
    - not the Writing-only streak of /api/dashboard. */
-import { html, mount, raw } from '../../kit/html.js';
+import { html, mount, raw, esc } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
-import { mediaCard, sectionHead, settleCovers } from '../../kit/components.js';
+import { mediaCard, sectionHead, settleCovers, planTag } from '../../kit/components.js';
+import { readAccess, cardView } from '../../product/content-access.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
 import { COVER_VISUALS } from '../../kit/cover-visuals.js';
 import { langSpan } from '../../kit/lang.js';
 import { useStyles } from '../../kit/styles.js';
@@ -14,7 +16,7 @@ import { api } from '../../infrastructure/api.js';
 import { openMedia } from '../../product/media-source.js';
 import { languages } from '../../copy/index.js';
 import { bannerMarkup } from '../../kit/states.js';
-import { shellCopy } from '../../copy/shell.js';
+import { shellCopy, planName } from '../../copy/shell.js';
 import { t } from './copy.js';
 import {
   buildRecommendationPool,
@@ -51,13 +53,16 @@ export default async function mountToday(element, ctx) {
   const level = state.profile?.declared_level || '';
   const supportLang = languages().support;
 
-  const [readingResult, listeningResult, speakingResult, feedResult, reviewResult] = await Promise.allSettled([
+  const [readingResult, listeningResult, speakingResult, feedResult, reviewResult, accessResult] = await Promise.allSettled([
     api.readingPracticeNext(),
     api.listeningLibrary(language),
     api.speakingLibrary(language),
     api.dailyVocabularyFeed(language, level || undefined),
     api.libraryReviewQueue(),
+    readAccess(),
   ]);
+  // Content access (D-248 §4-§5): the recommended article's Plus/Pro tag; a locked one opens the light upgrade sheet.
+  const access = accessResult.status === 'fulfilled' ? accessResult.value : undefined;
 
   const reading = readingResult.status === 'fulfilled' ? readingResult.value : { available: false, next: null };
   const listeningItems = listeningResult.status === 'fulfilled' ? listeningResult.value?.items || [] : [];
@@ -103,6 +108,24 @@ export default async function mountToday(element, ctx) {
   function goAttr(item) {
     return ctx.href(item.routeId, item.routeParams, item.routeQuery);
   }
+
+  // A Reading pick's tag and lock (only a Reading pick carries an `access` block; a video never does).
+  const viewOf = (item) => (item.access ? cardView(item, access) : { badge: null, locked: false });
+  const tagOf = (item) => {
+    const view = viewOf(item);
+    return view.badge ? planTag(planName({ id: view.badge })) : '';
+  };
+  // A locked pick names its plan instead of a route: the tap opens the sheet (handled below), never the room.
+  const target = (item) => {
+    const view = viewOf(item);
+    return view.locked ? raw(`data-locked="${view.badge}"`) : raw(`data-go="${esc(goAttr(item))}"`);
+  };
+  element.addEventListener('click', (event) => {
+    const locked = event.target.closest?.('[data-locked]');
+    if (!locked) return;
+    event.preventDefault();
+    void openUpgradeSheet({ source: 'today', kind: 'reading', tier: locked.dataset.locked, go: (to) => ctx.go(to) });
+  });
 
   // languages-5 / finding A: kit/lang.js's shared helper, given the real language model.js already
   // set on a title that actually *is* a vocabulary word (the due-review headword, a Daily
@@ -168,7 +191,7 @@ export default async function mountToday(element, ctx) {
     return html`<div class="s-today-rec">
       ${sectionHead({ title: t('recommendedTitle'), action: { label: t('anotherAction'), dataset: { another: '1' } } })}
       <div class="s-today-rec-grid">
-        <button type="button" class="s-today-hero" data-go="${goAttr(hero)}">
+        <button type="button" class="s-today-hero" ${target(hero)}>
           <span class="s-today-hero__deco s-today-hero__deco--a"></span>
           <span class="s-today-hero__deco s-today-hero__deco--b"></span>
           <span class="s-today-hero__head">
@@ -179,6 +202,7 @@ export default async function mountToday(element, ctx) {
               const kind = [hero.kind, hero.durationLabel].filter(Boolean).join(' · ');
               return kind ? html`<span class="s-today-hero__kind">${kind}</span>` : '';
             })()}
+            ${tagOf(hero)}
           </span>
           <span class="s-today-hero__body">
             <span class="s-today-hero__title">${wordTitle(hero)}</span>
@@ -189,10 +213,11 @@ export default async function mountToday(element, ctx) {
         <div class="s-today-side">
         <div class="s-today-rest">
           ${rest.map(
-            (item) => html`<button type="button" class="s-today-rest-card" style="${`--hue:${item.tint}`}" data-go="${goAttr(item)}">
+            (item) => html`<button type="button" class="s-today-rest-card" style="${`--hue:${item.tint}`}" ${target(item)}>
               <span class="s-today-rest-card__icon" style="background:${item.tint}">${raw(icon(item.icon, { size: 20 }))}</span>
               <span class="s-today-rest-card__title">${wordTitle(item)}</span>
               <span class="s-today-rest-card__meta">${[item.kind, item.durationLabel].filter(Boolean).join(' · ')}</span>
+              ${tagOf(item)}
             </button>`,
           )}
         </div>

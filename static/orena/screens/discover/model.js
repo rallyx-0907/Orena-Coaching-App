@@ -70,6 +70,8 @@ export function entryFromArticle(item, continuation) {
     image: imageOf(item)?.cssUrl || '',
     started: progressFromContinuation(continuation, id) != null,
     progressPct: progressFromContinuation(continuation, id),
+    // D-248 §4: the server's per-card tier (`{tier, rotation}`), read by product/content-access.js; never computed here.
+    access: item.access && typeof item.access === 'object' ? item.access : null,
   };
 }
 

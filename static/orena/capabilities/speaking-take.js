@@ -37,6 +37,8 @@ export function failureOf(error) {
   if ((error?.name === 'TypeError' && !error?.status) || globalThis.navigator?.onLine === false) return { kind: 'offline', retry: true };
   const category = String(error?.category || '');
   if (error?.status === 429 && category === 'quota_exhausted') return { kind: 'quota', retry: false, error };
+  // A paid tool for this plan (403 `plan_required`, D-248 §4: scored shadowing around a video): the upgrade sheet, never retried.
+  if (error?.status === 403 && category === 'plan_required') return { kind: 'plan_required', retry: false, error };
   // The system's daily AI ceiling (429 `daily_ai_limit`, or the pause header on any answer): told as the paused line, never
   // retried - it would be refused again - and never as a fault of the service (#316 pattern).
   if (aiPauseOf(error)) return { kind: 'paused', retry: false, error };

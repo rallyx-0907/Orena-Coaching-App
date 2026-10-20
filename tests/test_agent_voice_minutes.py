@@ -136,3 +136,64 @@ def test_a_token_that_uses_exactly_the_seconds_left_ends_the_day(voice_day, monk
     monkeypatch.setattr(plan_features, "voice_seconds_left", lambda user_key: 900)  # the whole 900 s session token
     answer = service.open(_body(), LEARNER)
     assert answer["max_seconds"] == 900 and answer["day_limit_reached"] is True
+
+
+# --- the voice energy bar (Monetisation v2): today's minutes, read before a session -------------------------------
+
+
+def test_the_allowance_reports_todays_minutes_used_and_left(voice_day):
+    voice_day["used"] = 660
+    assert plan_features.voice_allowance("u1") == {
+        "feature": "orena.voice", "entitled": True, "limit": 900, "used": 660, "left": 240, "unit": "second",
+        "display_unit": "minute", "scale": 60, "window": "day", "resets_at": "2026-10-20T00:00:00Z", "plan": "plus"}
+
+
+def test_the_allowance_never_reports_more_used_than_the_limit(voice_day):
+    voice_day["used"] = 1200  # a token minted past a lowered limit
+    allowance = plan_features.voice_allowance("u1")
+    assert (allowance["used"], allowance["left"]) == (900, 0)
+
+
+def test_a_plan_without_voice_has_no_minutes_and_is_not_a_refusal(voice_day):
+    voice_day["plan"] = FREE
+    allowance = plan_features.voice_allowance("u1")
+    assert (allowance["entitled"], allowance["limit"], allowance["left"]) == (False, 0, 0)
+
+
+def test_uncapped_voice_says_so_with_no_numbers(voice_day):
+    plan_features.configure(daily_usage=None)
+    allowance = plan_features.voice_allowance("u1")
+    assert allowance["entitled"] is True and allowance["limit"] is None and allowance["left"] is None
+
+
+def test_an_unreadable_allowance_fails_closed(voice_day):
+    def broken(user_key, feature):
+        raise RuntimeError("store down")
+
+    plan_features.configure(daily_usage=broken, clock=lambda: NOW)
+    with pytest.raises(HTTPException) as refused:
+        plan_features.voice_allowance("u1")
+    assert refused.value.status_code == 503
+
+
+def test_the_allowance_route_reads_without_minting_or_charging(client, voice_day):  # noqa: F811
+    from tests.test_agent_api import _Voice, enable
+    from writing_coach.agent import api as agent_api
+
+    enable([])
+    voice = _Voice()
+    agent_api._runtime.voice = voice
+    voice_day["used"] = 300
+    answer = client.get("/api/agent/voice/allowance")
+    assert answer.status_code == 200 and answer.json()["left"] == 600
+    assert answer.headers["Cache-Control"] == "no-store"
+    assert voice.calls == []
+
+
+def test_the_allowance_route_is_absent_without_voice(client, voice_day):  # noqa: F811
+    from tests.test_agent_api import enable
+    from writing_coach.agent import api as agent_api
+
+    enable([])
+    agent_api._runtime.voice = None
+    assert client.get("/api/agent/voice/allowance").status_code == 404
