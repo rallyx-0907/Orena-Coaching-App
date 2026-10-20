@@ -143,7 +143,7 @@ def admin_route(monkeypatch):
     # an English learner: IELTS is their exam (the request context's default language is not assumed)
     monkeypatch.setattr(agent_api.LearnerScope, "from_request_context", classmethod(lambda cls: LearnerScope("u1", "en")))
     monkeypatch.setattr(band, "_generate", seen["generate"])
-    monkeypatch.delenv(band.MODE_ENV, raising=False)
+    monkeypatch.setattr(band, "_mode", "admin")
     return seen
 
 
@@ -164,7 +164,7 @@ def test_a_learner_is_refused_before_any_model_call(client, admin_route):  # noq
 
 
 def test_switched_off_the_route_is_not_there(client, admin_route, monkeypatch):  # noqa: F811
-    monkeypatch.setenv(band.MODE_ENV, "off")
+    monkeypatch.setattr(band, "_mode", band.mode_from_env({band.MODE_ENV: "off"}))
     assert client.post("/api/agent/band/writing", json=BODY).status_code == 404
 
 
@@ -189,3 +189,8 @@ def test_a_provider_that_cannot_answer_is_a_503(client, admin_route, monkeypatch
     monkeypatch.setattr(band, "_generate", down)
     refused = client.post("/api/agent/band/writing", json=BODY)
     assert refused.status_code == 503 and refused.json()["detail"] == "ai_unavailable"
+
+
+def test_the_switch_reads_off_and_defaults_to_administrators():
+    assert band.mode_from_env({}) == "admin" and band.mode_from_env({"BAND_ESTIMATOR": " OFF "}) == "off"
+    assert band.mode_from_env({"BAND_ESTIMATOR": "learners"}) == "admin"  # no learner opening through a switch

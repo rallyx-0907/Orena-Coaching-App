@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import math
 import re
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -63,12 +63,22 @@ SUPPORT = {"vi": "Vietnamese", "en": "English", "zh-CN": "Simplified Chinese"}
 # route. Learners get it only through a later, separate change with its plan entitlement.
 MODE_ENV = "BAND_ESTIMATOR"
 _generate: Callable[..., Any] | None = None  # tests; None: the platform's generate_structured
+_mode = "admin"
+
+
+def mode_from_env(env: Mapping[str, str]) -> str:
+    """app.py passes the process environment (the agent package reads none itself)."""
+
+    return "off" if str(env.get(MODE_ENV, "")).strip().casefold() == "off" else "admin"
+
+
+def configure(mode: str) -> None:
+    global _mode
+    _mode = mode
 
 
 def mode() -> str:
-    import os
-
-    return "off" if os.environ.get(MODE_ENV, "").strip().casefold() == "off" else "admin"
+    return _mode
 
 
 class BandUnavailable(RuntimeError):
