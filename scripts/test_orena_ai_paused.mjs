@@ -7,8 +7,8 @@ globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
 globalThis.window ??= { addEventListener() {}, removeEventListener() {}, location: { hash: '' } };
 
 const src = (path) => readFileSync(path, 'utf8');
-// A reset time in the future whenever the gate runs: a fixed date became the past on 2026-10-20 and the gate failed on main.
-const RESETS = '2099-01-01T00:00:00Z';
+// The next UTC midnight, so the reset time is always in the future (a fixed date expired on 2026-10-20 and broke CI).
+const RESETS = (() => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.toISOString().replace('.000Z', 'Z'); })();
 
 const answer = (status, body, headers = {}) => ({
   ok: status >= 200 && status < 300,
