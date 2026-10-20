@@ -394,9 +394,12 @@ class AdminConsoleRepository:
 
     def list_books(self, *, limit: int = MAX_CATALOG_ROWS) -> list[dict[str, Any]] | None:
         """Every book in every status, or None when the catalog schema is absent."""
+        from writing_coach.persistence.reading_library_repository import has_rights_columns
+
+        rights = ", rights_status" if has_rights_columns(self.engine) else ""  # D-252, after migration 0037
         statement = text(
             "SELECT id, title, author, learning_language, status, chapter_count, word_count, "
-            "cover_asset_key, source_kind, imported_by, created_at, updated_at "
+            f"cover_asset_key, source_kind, imported_by, created_at, updated_at{rights} "
             "FROM reading_books ORDER BY updated_at DESC LIMIT :limit"
         )
         try:
@@ -417,6 +420,7 @@ class AdminConsoleRepository:
             "chapter_count": int(row["chapter_count"] or 0),
             "word_count": int(row["word_count"] or 0),
             "has_cover": bool(row["cover_asset_key"]),
+            "rights_status": row.get("rights_status"),  # None before migration 0037: the gate is dormant
             "source_kind": row["source_kind"],
             "imported_by": row["imported_by"] or "",
             "created_at": _iso(row["created_at"]) or str(row["created_at"] or ""),
@@ -428,12 +432,16 @@ class AdminConsoleRepository:
         if identifier is None:
             return None
         typed = bindparam("id", type_=Uuid(as_uuid=True))
+        from writing_coach.persistence.reading_library_repository import has_rights_columns
+
+        rights = ", rights_status" if has_rights_columns(self.engine) else ""  # D-252, after migration 0037
         try:
             with self.engine.connect() as connection:
                 row = connection.execute(
                     text(
                         "SELECT id, title, author, description, learning_language, status, chapter_count, word_count, "
-                        "cover_asset_key, source_kind, imported_by, created_at, updated_at FROM reading_books WHERE id = :id"
+                        f"cover_asset_key, source_kind, imported_by, created_at, updated_at{rights} "
+                        "FROM reading_books WHERE id = :id"
                     ).bindparams(typed),
                     {"id": identifier},
                 ).mappings().first()

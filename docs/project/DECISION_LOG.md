@@ -7939,3 +7939,32 @@ D-105's hard gate for articles.
    each is a human decision.
 5. **Books are not covered here.** Their rights fields and publish gate need a schema change, proposed separately (a
    human gate).
+
+## D-252 - Reading books get rights, and the learner shelf shows only attested or grandfathered books (2026-10-21)
+
+**Status:** PROPOSED for the schema part, ACCEPTED for the rule (Hermes for the owner, 2026-10-21 05:40: PRE-203 "SIẾT";
+books get a rights field and a publish gate like Media; nothing already published is taken down on its own). Companion
+to D-250 (articles). The schema change is migration `20261021_0037`, kept in `migrations/proposed/`. Promoting and applying
+it are human gates, after an independent architecture review.
+
+1. **Rights on a book.** `reading_books` gains five columns:
+   - `rights_status`: `unknown`, `cleared`, `denied` or `grandfathered`;
+   - `license_note` and `source_url`;
+   - who attested, and when.
+2. **The learner shelf.** `list_books`, `get_book` and `get_chapter` show a ready book only when `rights_status` is
+   `cleared` or `grandfathered`.
+   - A book imported after 0037 starts `unknown` and is not shown.
+   - `denied` takes a book off the shelf.
+   - Archiving and restoring are unchanged; visibility always follows the rights. A book archived before 0037 stays
+     `unknown`, so restoring it needs an attestation: archiving, the only take-down there was, is no way round the
+     gate.
+3. **No take-down on its own.** The migration marks every book on the shelf (`ready`) `grandfathered`, so the shelf is
+   unchanged on the day it is applied. `scripts/check_books_rights.py` (read-only) lists every book not `cleared`, for a person to
+   attest or deny.
+4. **Like Media.** `POST /api/admin/console/content/book/{id}/rights` sets `unknown`, `cleared` or `denied`. `cleared`
+   needs `attested` and a licence note (422 otherwise). The change is audited (`admin.content.rights`).
+   `grandfathered` is the migration's alone.
+5. **Dormant until applied.** The code checks for the columns first. Without them the route answers 503
+   `book_rights_unavailable` and the shelf is exactly as before, so the code can merge before the migration is promoted.
+6. **Admin status.** A ready book learners cannot read yet shows as `draft`, one they can read as `published`.
+   `facts.rights_status` carries the value. Any admin UI for attesting book rights belongs to the UI lane.
