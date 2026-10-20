@@ -880,6 +880,17 @@
 .s-reader-locked__title {
   margin: 0;
 }
+/* Content Detail (a browsing place, `.o-main` scrolls as a page) mounts the same view for the same refusal. Its
+   `.o-screen` has no height, so `.s-reader`'s 100% would resolve to auto and the card would follow the preview in the
+   page scroll, below the fold (#474). The screen asks for the column here, as Orena home does (orena.css): the preview
+   scrolls in its own region and the card stays the bottom row, above the phone bar (`.o-main`'s padding keeps its room).
+   The Reader's own `.o-screen[data-screen='reader']` rule already does this. */
+.o-screen:has(> .s-reader-locked) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
 /* The card is the workspace's fixed bottom row, outside the scroll region (rule 49, #472): Unlock stays in the
    viewport at 360x740 whatever the preview's length. Same column as the article (`.s-reader__grid`). */
 .s-reader-locked__foot {

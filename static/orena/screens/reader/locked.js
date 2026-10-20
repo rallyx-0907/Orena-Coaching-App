@@ -9,7 +9,7 @@
    workspace never scrolls as a page (rule 49): only the Reader's scroll region does. The end-of-preview card sits
    below that region, as the workspace's fixed bottom row (like the toolbar above it), so Unlock is in the viewport
    at 360x740 however long the title or paragraph is (#472); the preview scrolls in its region above it. Content Detail shows the same
-   view for the same refusal. The server has already counted `locked_view` where it refused. */
+   view for the same refusal, filling its column the same way (reader.css `.o-screen:has(> .s-reader-locked)`, #474). The server has already counted `locked_view` where it refused. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
