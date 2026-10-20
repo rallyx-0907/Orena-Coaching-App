@@ -98,7 +98,7 @@ def _p(key: str, group: str, kind: str, default: Any, **extra: Any) -> Policy:
 
 
 GROUPS: tuple[str, ...] = ("quota", "agent", "voice", "speech", "media", "vocabulary", "rates", "feedback", "spend",
-                           "billing", "health")
+                           "billing", "health", "access")
 
 POLICIES: tuple[Policy, ...] = (
     # --- quota (the enforcement switch itself is product.quota_enforcement, D-161; this is what the reconciler decides)
@@ -254,6 +254,17 @@ POLICIES: tuple[Policy, ...] = (
     _p("ai.breaker_hard_cooldown_minutes", "health", "int", 30, unit="minutes", low=1, high=1440),
     _p("ai.breaker_rate_limit_failures", "health", "int", 3, unit="count", low=1, high=20),
     _p("ai.breaker_rate_limit_cooldown_seconds", "health", "int", 120, unit="seconds", low=10, high=3600),
+    # --- content access (D-248 §4, MV2-1: writing_coach/product/content_access.py). The tiers are computed from these;
+    # the weekly videos with Orena's look-up for Free are the `media.tools_weekly` limit in the plan catalogue.
+    # Off until the learner UI can show a locked item (MV2-3): the tiers and the private cache of a paid body apply
+    # either way; on, a Free learner is refused a Plus body with 403 plan_required.
+    _p("access.enforced", "access", "bool", False, danger="charging"),
+    # About this share of each (language, level) of Reading is Free, by a stable per-article bucket with a floor.
+    _p("access.reading_free_percent", "access", "int", 30, low=0, high=100),
+    # And this many more Reading articles of each (language, level) are Free each ISO week, on a deterministic rotation.
+    _p("access.reading_rotation_per_week", "access", "int", 2, unit="count", low=0, high=50),
+    # The first items of each set (vocabulary collection, grammar function, mock test) that are Free.
+    _p("access.set_free_items", "access", "int", 1, unit="count", low=0, high=50),
 )
 
 

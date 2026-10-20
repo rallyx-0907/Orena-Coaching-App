@@ -224,6 +224,7 @@ live.
 | `languages.target` | count | 1 | 2 | 2 | yes (count cap) |
 | `word.assist` / `reading.assist` / `writing.task` | day | 30 / 10 / 5 | 300 / 100 / 30 | 1 500 / 500 / 100 | no: catalogue only |
 | `orena.voice` (on/off and minutes) | day | off | 15 min | 15 min | a plan feature, enforced whatever the quota switch says |
+| `media.tools_weekly` (videos with Orena's look-up, D-248) | week (ISO, Monday) | 3 | 10 000 | 10 000 | yes, when the quota switch lists it and `access.enforced` is on; Plus and Pro are never metered (full tools) |
 | Prices (USD / VND, monthly and yearly) | — | 0 | 9.99 / 199 000; 79.99 / 1 590 000 | 19.99 / 399 000; 159.99 / 3 190 000 | display only while billing is off |
 
 | Name | Set in | Type / range | Default | Meaning | Raise / lower | Pilot | Production | Risk if wrong | Related | Applies |
@@ -237,6 +238,11 @@ live.
 | `BILLING_ENABLED`, `BILLING_PRICES_FILE`, `CREDITS_ENABLED`, `ORENA_FUNDING_ADMISSIONS`, `BILLING_DOMESTIC_GATEWAY`, `BILLING_CREDIT_PACKS_FILE`, `BILLING_METER_PRICES_FILE`, `BILLING_PROMOTIONAL_GRANTS_FILE`, `BILLING_COST_GATE_FILE`, `SEPAY_FEED_ENABLED`, `POLAR_ENVIRONMENT` | env, (b) payment gates | flags; JSON paths on `/data`; sandbox / production | off / unset; Polar `sandbox` | Commerce activation and the approved price files. | — | off | owner gates 7a / 7b | selling without approval | `docs/billing/` runbooks | restart |
 | `BILLING_RECONCILE_INTERVAL_SECONDS`, `BILLING_PULL_AFTER_SECONDS`, `BILLING_PULL_PER_TICK`, `BILLING_PULL_HORIZON_DAYS` | env, (b) internal | ≥ 5 s; ≥ 0 s; ≥ 1; ≥ 1 day | 60; 120; 20; 14 | Payment reconciler cadence. | — | defaults | defaults | Too fast: provider rate limits. | — | restart |
 | Account plan grant | Admin › Accounts (D-154) | plan and an optional end date | Free | Give a learner Plus or Pro by hand. | — | pilot testers | support cases | — | catalogue | live |
+| `access.enforced` | Admin › Policies › Content access (confirmed) | bool | off | D-248 content gating: on, a Free learner is refused a Plus Reading body or a Plus video tool (403 `plan_required`). Off, the tiers and the private cache of a paid body still apply. Videos always play. | Turn on with the learner locked state (MV2-3). | off until MV2-3 | on | On before the locked state ships: Free learners see an error. | `product/content_access.py` | live |
+| `access.reading_free_percent` | Admin › Policies › Content access | 0–100 | 30 | About this share of each (language, level) of Reading is Free, by a stable per-article bucket with a floor. | — | 30 | 30 | — | rotation | live |
+| `access.reading_rotation_per_week` | Admin › Policies › Content access | 0–50 | 2 | More Reading articles of each (language, level) Free each ISO week, on a deterministic rotation. | — | 2 | 2 | — | — | live |
+| `access.set_free_items` | Admin › Policies › Content access | 0–50 | 1 | The first items of each set (vocabulary collection, grammar function, mock test) that are Free. | — | 1 | 1 | — | — | live |
+| Content access overrides `product.content_access` | `PUT /api/product/admin/content-access` (audited; Admin page later) | ≤ 2 000 `<kind>:<id>` → free / plus / pro | none | Force one item Free or paid. A video can only be made Free (watching is never sold). | — | — | editorial | — | — | live |
 
 ## 7. AI providers, routing and models
 

@@ -99,6 +99,7 @@ const fixture = () => ({
     row('media.daily_cap_usd', 'spend', 'float', 25, { unit: 'usd', low: 0, high: 10000, confirm_above: 250 }),
     row('billing.domestic_late_payment_grace_hours', 'billing', 'int', 0, { unit: 'hours', low: 0, high: 168, danger: 'charging' }),
     row('ai.health_window_minutes', 'health', 'int', 10, { unit: 'minutes', low: 1, high: 120 }),
+    row('access.reading_free_percent', 'access', 'int', 30, { low: 0, high: 100 }),
   ],
 });
 const quotaFixture = (extra = {}) => ({

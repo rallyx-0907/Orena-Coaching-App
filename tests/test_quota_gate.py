@@ -240,7 +240,7 @@ def test_the_setting_switches_it_on_and_the_environment_wins_when_set():
 
 def test_only_wired_meters_can_be_listed():
     assert set(quota.WIRED_METERS) == {"writing.review", "orena.message", "pronunciation.audio", "media.import",
-                                       "word.assist", "reading.assist", "writing.task"}
+                                       "word.assist", "reading.assist", "writing.task", "media.tools_weekly"}
     assert quota.validate_switch_setting({"enabled": True, "meters": ["pronunciation.audio", "writing.review"]}) == {
         "enabled": True, "meters": ["writing.review", "pronunciation.audio"]}
     # D-170: `languages.target` is wired as a COUNT entitlement (language_limit.py), not as a bucket meter: the same

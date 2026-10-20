@@ -1984,6 +1984,20 @@ class ReadingContentRepository:
             "next_cursor": next_cursor,
         }
 
+    def published_pool(self, *, language: str, level: str | None, limit: int = 20_000) -> list[tuple[str, Any]]:
+        """`(id, published_at)` of every published article of one (language, level): the pool content access tiers
+        (D-248 §4, `product/content_access.py`). Two narrow columns, bounded; the caller caches it."""
+        query = select(ReadingArticle.id, ReadingArticle.published_at).where(
+            ReadingArticle.status == LEARNER_VISIBLE_STATUS,
+            ReadingArticle.language == language,
+        )
+        query = query.where(ReadingArticle.effective_level == level) if level else query.where(
+            ReadingArticle.effective_level.is_(None) | (ReadingArticle.effective_level == ""))
+        query = query.order_by(ReadingArticle.published_at, ReadingArticle.id).limit(max(1, int(limit)))
+        with self.engine.connect() as connection:
+            return [(str(row.id), _aware(row.published_at) if row.published_at else None)
+                    for row in connection.execute(query).all()]
+
     def get_published_article(self, article_id: str) -> dict[str, Any] | None:
         """What a learner opens: the text, the targets an admin approved, and
         the attribution the rights require. No analysis, no review history, no

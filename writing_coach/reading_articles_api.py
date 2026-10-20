@@ -29,6 +29,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from writing_coach.book_asset_store import AssetNotFound, BookAssetStore
 from writing_coach.core.errors import orena_http_error
+from writing_coach.product import content_access
 from writing_coach.persistence.reading_content_repository import (
     MAX_ARTICLE_PAGE,
     InvalidCursor,
@@ -125,6 +126,8 @@ def list_articles(
             limit=max(1, min(int(limit), MAX_ARTICLE_PAGE)),
         )
     )
+    # Each card's tier (D-248 §4): the same for every learner, so the page stays cacheable; no body is on a card.
+    page = {**page, "items": content_access.reading_card_access(list(page.get("items") or []))}
     if (language or "").strip():
         response.headers["Cache-Control"] = LEARNER_CACHE_CONTROL
     else:
@@ -146,10 +149,14 @@ def read_article(request: Request, response: Response, article_id: str) -> Any:
     article = _guarded(lambda: repository.get_published_article(article_id))
     if article is None:
         raise orena_http_error(404, "reading_article_not_found", "That article is not available.")
+    # D-248 §4/§6: an unpublished id is a 404 first; a Plus body for a Free learner is 403 `plan_required` with the
+    # title, cover and first paragraph as its preview (only while `access.enforced` is on). A paid body is never put
+    # in a shared cache, whoever reads it.
+    decision = content_access.require_reading(article)
     # A thumbnail turning off with its source does not move the revision, so the validator names it.
     etag = f'W/"reading-{article["id"]}-{article["content_revision"]}-{"i" if article.get("image") else "n"}"'
     response.headers["ETag"] = etag
-    response.headers["Cache-Control"] = LEARNER_CACHE_CONTROL
+    response.headers.update(content_access.cache_control(decision, LEARNER_CACHE_CONTROL))
     if _on_open is not None:  # a revalidation (304) is an open too; the hook only enqueues and never blocks
         try:
             _on_open(article)

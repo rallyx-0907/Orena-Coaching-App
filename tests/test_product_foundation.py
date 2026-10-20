@@ -78,7 +78,10 @@ def test_the_meters_are_the_designs_pricing():
     """D-161: the design's BILL_PLANS `lim` - messages/day, reviews/month, minutes (stored as seconds), languages."""
     free, plus, pro = (plan.entitlement_map() for plan in (FREE, PLUS, PRO))
     assert list(free) == ["orena.message", "writing.review", "pronunciation.audio", "media.import", "languages.target",
-                          "word.assist", "reading.assist", "writing.task", "orena.voice"]
+                          "word.assist", "reading.assist", "writing.task", "orena.voice", "media.tools_weekly"]
+    # D-248 (MV2-1): Free looks words up on 3 videos a week; Plus and Pro have the full media tools.
+    assert [m["media.tools_weekly"].limit for m in (free, plus, pro)] == [3, 10_000, 10_000]
+    assert free["media.tools_weekly"].window == "week"
     # Voice chat with Orena: Plus and Pro only (owner, 2026-10-19).
     assert [m["orena.voice"].enabled for m in (free, plus, pro)] == [False, True, True]
     assert [m["orena.message"].limit for m in (free, plus, pro)] == [20, 200, 1000]

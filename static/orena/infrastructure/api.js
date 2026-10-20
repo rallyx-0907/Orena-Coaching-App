@@ -508,12 +508,16 @@ export const api={
   // charged by the take's length against the plan's pronunciation minutes (D-165): one key per take, reused only
   // when that same take is sent again, and the device timezone says when the learner's month ends. The body is a
   // form, so no JSON content type.
-  assessPronunciation:(blob,language,referenceText,mode='scripted',filename='recording.webm',{idempotencyKey}={})=>{
+  /* `practice` (speaking | shadowing) and, for shadowing, the video's `mediaId` tell the server which practice the
+     take is: scored shadowing is a Plus tool around a video (D-248 §4, content access). */
+  assessPronunciation:(blob,language,referenceText,mode='scripted',filename='recording.webm',{idempotencyKey,practice='speaking',mediaId=''}={})=>{
     const form=new FormData();
     form.append('file',blob,filename);
     form.append('language',language||'');
     form.append('reference_text',referenceText||'');
     form.append('mode',mode||'scripted');
+    form.append('practice',practice||'speaking');
+    if(mediaId)form.append('media_id',mediaId);
     return request('/api/speech/pronunciation',{
       method:'POST',
       headers:quotaHeadersFor({},idempotencyKey),

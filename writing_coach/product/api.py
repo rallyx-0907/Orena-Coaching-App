@@ -8,7 +8,7 @@ from auth_support import AUTH_ENABLED, auth_user, require_admin
 from writing_coach import policies
 from writing_coach.persistence.platform_repository import SettingConflict
 from writing_coach.core.request_context import current_user_key as request_user_key
-from writing_coach.product import quota
+from writing_coach.product import content_access, quota
 from writing_coach.product.catalog import (
     CURRENCIES,
     FEATURE_KEYS,
@@ -227,6 +227,58 @@ async def product_admin_policies_save(request: Request) -> dict[str, Any]:
         raise HTTPException(409, "The policies were changed by someone else since you opened this page. Reload to see them.")
     except RuntimeError:
         raise HTTPException(503, "Policies are not editable on this deployment.")
+
+
+@router.get("/admin/content-access")
+def product_admin_content_access(request: Request) -> dict[str, Any]:
+    """Content access (D-248 §4): the per-item overrides, the access policies in force and the media tools' tiers."""
+    require_admin(request)
+    return content_access.admin_snapshot()
+
+
+@router.put("/admin/content-access")
+async def product_admin_content_access_save(request: Request) -> dict[str, Any]:
+    """Apply `{set: {"<kind>:<id>": "free"|"plus"|"pro"}, remove: ["<kind>:<id>"], expected_updated_at}` to the
+    overrides. It applies within seconds in every worker; the audit row commits with the change. A video can only be
+    made free (watching is never sold)."""
+    admin = require_admin(request)
+    try:
+        change = await request.json()
+    except Exception:
+        raise HTTPException(400, "The change must be JSON.")
+    actor = str(admin.get("google_sub") or "")
+    try:
+        return content_access.save_overrides(change, updated_by=str(admin.get("email") or actor), actor=actor)
+    except content_access.OverridesInvalid as error:
+        raise HTTPException(422, str(error))
+    except SettingConflict:
+        raise HTTPException(409, "The overrides were changed by someone else since you opened this page. Reload to see them.")
+    except RuntimeError:
+        raise HTTPException(503, "Content access is not editable on this deployment.")
+
+
+# The events a client may report (D-248 MV2-1). `locked_view` is counted by the server where it refuses, never here.
+CLIENT_ACCESS_EVENTS = ("upgrade_sheet_open", "trial_start")
+
+
+@router.post("/access/events")
+async def product_access_event(request: Request) -> dict[str, Any]:
+    """Count one access event, `{event, source}`: `upgrade_sheet_open` or `trial_start`, with a short source token (where
+    the sheet opened). No content, no title, no id - only the counter `access.<event>:<source>` in the usage store."""
+    user_key = current_user_key(request)
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(400, "The event must be JSON.")
+    event = str((body or {}).get("event") or "") if isinstance(body, dict) else ""
+    source = str((body or {}).get("source") or "") if isinstance(body, dict) else ""
+    if event not in CLIENT_ACCESS_EVENTS:
+        raise HTTPException(422, "Unknown event.")
+    try:
+        recorded = content_access.record_event(event, source, user_key=user_key)
+    except ValueError:
+        raise HTTPException(422, "The source must be a short token.")
+    return {"recorded": recorded}
 
 
 class billing_aware_membership:

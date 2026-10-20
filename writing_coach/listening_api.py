@@ -13,6 +13,7 @@ from fastapi import APIRouter, Query
 from pydantic import BaseModel, Field
 
 from writing_coach.core.errors import orena_http_error
+from writing_coach.product import content_access
 from writing_coach.dictation_evaluator import ListeningPracticeError, evaluate_listening_reconstruction
 from writing_coach.core.request_context import current_language_code, current_user_key
 from writing_coach.listening_catalog import (
@@ -713,7 +714,13 @@ def open_listening_library_lesson(
         stored = stored_media_payload(lesson_id, target_language)
         if stored is None:
             raise orena_http_error(404, "listening_lesson_not_found", "This Listening lesson is unavailable.")
-        return stored
+        return content_access.gate_media_payload(stored, lesson_id)
+    return content_access.gate_media_payload(_catalog_lesson_payload(lesson, target_language), lesson_id)
+
+
+def _catalog_lesson_payload(lesson: Any, target_language: str) -> dict[str, Any]:
+    """A curated lesson as the universal Media Learning payload. Watching it and its own captions are never gated; the
+    caller strips Orena's bilingual translation for a plan without the full media tools (D-248 §4)."""
     target_language = resolve_support_language(
         get_learner_profile().get("native_language"), target_language
     )
@@ -850,6 +857,9 @@ def list_listening_progress(
 
 @router.post("/progress")
 def save_listening_progress(payload: ListeningProgressIn) -> dict[str, Any]:
+    # Dictation is one of Orena's Plus tools around a video (D-248 §4), refused before anything is read or written; the
+    # video itself is never gated.
+    content_access.require_media_tool("dictation", _clean_identity(payload.asset_id, "asset_id"))
     repository = _installed()
     values = payload.model_dump() if hasattr(payload, "model_dump") else payload.dict()
     values["asset_id"] = _clean_identity(values["asset_id"], "asset_id")
