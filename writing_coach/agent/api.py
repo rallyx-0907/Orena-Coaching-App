@@ -33,11 +33,12 @@ import threading
 from collections.abc import AsyncIterator, Iterator, Mapping
 from datetime import UTC, datetime, timedelta
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
+from writing_coach.agent import band
 from writing_coach.agent.contract import DAILY_AI_LIMIT_VERSION
 from writing_coach.agent.events import Event, sse_frame
 from writing_coach.agent.locale import interface_languages, to_internal
@@ -353,6 +354,41 @@ def agent_voice_voices(
     # on /voice/session stays the authority.
     user_key = LearnerScope.from_request_context().user_key
     return {**voice_catalog(interface), "entitled": plan_features.entitled(user_key, plan_features.VOICE)}
+
+
+# --- the band estimator (Monetisation v2): administrators only until calibrated --------------------------------------
+
+
+def _band_admin(request: Request) -> dict:
+    from auth_support import require_admin
+
+    return require_admin(request)
+
+
+@router.post("/band/writing")
+def agent_band_writing(body: band.BandRequest, request: Request, response: Response,
+                       runtime: AgentRuntime = Depends(_read_allowed)) -> dict:  # fmt: skip
+    """An estimated IELTS Writing band or HSK level for a piece of writing (agent/band.py). Experimental and for
+    administrators until the pilot calibration agrees with real scores; `BAND_ESTIMATOR=off` removes it."""
+
+    if band.mode() == "off":
+        raise HTTPException(status_code=404, detail="Not Found")
+    _band_admin(request)
+    learner = LearnerScope.from_request_context()
+    if band.exam_for_language(learner.language) != body.exam:
+        raise HTTPException(status_code=409, detail="exam_language_mismatch")
+    response.headers["Cache-Control"] = "no-store"
+    from writing_coach.ai import spend_gate
+    from writing_coach.ai.base import AICapabilityError, AIProviderError
+
+    try:
+        return band.estimate(body)
+    except band.BandUnavailable as exc:
+        raise HTTPException(status_code=502, detail="band_unavailable") from exc
+    except spend_gate.SpendCeilingReached:
+        raise  # the app's handler answers it, with the paused header
+    except (AICapabilityError, AIProviderError) as exc:
+        raise HTTPException(status_code=503, detail="ai_unavailable") from exc
 
 
 @router.post("/voice/tool")
