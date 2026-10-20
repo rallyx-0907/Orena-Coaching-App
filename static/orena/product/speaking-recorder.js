@@ -31,6 +31,9 @@ export function createSpeakingRecorder({
   language,
   facts = () => [],
   kind = 'scripted_pronunciation',
+  // Which practice the takes are (`speaking` | `shadowing`) and the video a shadowing take is scored against (D-248 §4).
+  practice = 'speaking',
+  mediaId = '',
   on = {},
   deps = {}, // tests only: { createRecorder, createTake, watchMic, recordTake, now, urls }
 }) {
@@ -138,6 +141,8 @@ export function createSpeakingRecorder({
       now: deps.now,
       urls: deps.urls,
       keep: { assetId: source.assetId || '', segmentId: source.line.lineId },
+      practice,
+      mediaId,
       onChange: onTake,
     });
   }

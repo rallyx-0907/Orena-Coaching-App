@@ -101,6 +101,17 @@ for (const tool of ['translation', 'dictation', 'shadowing_score', 'save_to_revi
 assert.ok(/function upsell\(tool\) \{\s*if \(playing && playbackOk\) togglePlayback/.test(listening), 'the player is paused before the sheet opens (RMF)');
 assert.ok(!/data-act="play"[^>]*lockMark|data-player[^>]*lockMark/.test(listening), 'the player is never locked');
 
+// The word sheet's Save from a video names the video, and its 403 opens the sheet (found in the :8021 pass).
+const { wordSavePayload, sourceMediaOf } = await import('../static/orena/screens/quick-sheet/model.js');
+assert.deepEqual(sourceMediaOf({ kind: 'listening', content_id: 'media:youtube-abc' }), { source_media_id: 'youtube-abc' });
+assert.deepEqual(sourceMediaOf({ kind: 'reading', content_id: 'article:a1' }), {});
+assert.equal(wordSavePayload({ word: 'x' }, 's', { kind: 'listening', content_id: 'youtube-abc' }).source_media_id, 'youtube-abc');
+assert.ok(/catch \(error\) \{\s*\/\* The sheet stays as it was[^*]*\*\/\s*offerPlan\(error\);/.test(readFileSync('static/orena/screens/quick-sheet/sheet.js', 'utf8')));
+
+// The Shadowing route (`shadow`, the compare room) scores a shadowing take against its video (found in the :8021 pass).
+assert.ok(/ctx\.route\?\.id === 'shadow' && source\.assetId \? \{ practice: 'shadowing', mediaId: source\.assetId \}/.test(readFileSync('static/orena/screens/compare/screen.js', 'utf8')));
+assert.ok(/practice,\s*mediaId,/.test(readFileSync('static/orena/product/speaking-recorder.js', 'utf8')), 'the recorder hands both to the take');
+
 // A scored take refused for the plan opens the sheet, never retries.
 const refused = Object.assign(new Error('x'), { status: 403, category: 'plan_required', context: { required_tier: 'plus', tool: 'shadowing_score' } });
 assert.deepEqual({ ...failureOf(refused), error: null }, { kind: 'plan_required', retry: false, error: null });

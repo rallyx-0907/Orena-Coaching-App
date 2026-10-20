@@ -62,6 +62,17 @@ import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/a
 import { keepProvenance } from '../../product/account-records.js';
 import { createStrokeTiles } from '../word/stroke-tiles.js';
 import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
+import { planRequired } from '../../kit/access.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
+
+/* Saving from a video to review is a Plus tool (D-248 §4): the server's 403 `plan_required` opens the light upgrade
+   sheet (G4) in place of a silent failure. */
+function offerPlan(error) {
+  const refusal = planRequired(error);
+  if (!refusal) return false;
+  void openUpgradeSheet({ source: 'word_sheet', kind: 'tool', tier: refusal.requiredTier });
+  return true;
+}
 import { speakOnDevice } from '../../kit/device-voice.js';
 import { canPlayAudio } from '../../kit/audio-support.js';
 
@@ -412,8 +423,9 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
         paint();
         toast(t('savedToast'));
       }
-    } catch {
+    } catch (error) {
       /* The sheet stays as it was; nothing was silently marked saved/unsaved. */
+      offerPlan(error);
     } finally {
       busy = false;
     }
@@ -742,8 +754,9 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
       }
       item.saved = !item.saved;
       paint();
-    } catch {
+    } catch (error) {
       /* Left as it was - no false confirmation. */
+      offerPlan(error);
     }
   }
 
