@@ -58,7 +58,7 @@ def _snapshot(repository, *, body=BODY, native_id="", url="", title="Rain return
         body=body,
         content_hash=f"{abs(hash(body)):064x}"[:64],
         metadata={"input_kind": "text"},
-        rights={"can_republish": True},
+        rights={"can_republish": True, "attribution_required": False},
     )
 
 
@@ -430,7 +430,8 @@ def test_published_credits_name_each_visible_text_with_its_licence_and_nothing_e
         source_id=repository.built_in_source_id("manual"), source_native_id="", canonical_url="https://example.org/fox",
         title="The Fox", author="Aesop", published_at=None, language="en", body=BODY,
         content_hash="f" * 64, metadata={"input_kind": "text"},
-        rights={"can_republish": True, "license_note": "Public domain. Translated by V. S. Vernon Jones (1912)."},
+        rights={"can_republish": True, "attribution_required": False,
+                "license_note": "Public domain. Translated by V. S. Vernon Jones (1912)."},
     )
     visible = repository.create_article(source_item_id=snapshot["id"], title="The Fox and the Grapes", body=BODY,
         excerpt=BODY[:120], language="en", topic="", estimated_level="A2", estimated_confidence=0.5, word_count=28,
@@ -477,7 +478,7 @@ def test_the_admin_detail_carries_what_review_needs_and_no_more(repository):
     article = _article(repository)
     detail = repository.get_article(article["id"])
     assert detail["source"]["title"] == "Rain returns"
-    assert detail["source"]["rights"] == {"can_republish": True}
+    assert detail["source"]["rights"] == {"can_republish": True, "attribution_required": False}
     assert detail["analysis"] == {"sentence_count": 2}
     assert len(detail["targets"]) == 2
 

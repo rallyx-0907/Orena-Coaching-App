@@ -60,6 +60,7 @@ from writing_coach.reading_images import (
 from writing_coach.reading_provenance import (
     PUBLIC_NAME_KEY, build_provenance, provenance_blockers, public_name_of, resolve_publisher,
 )
+from writing_coach.reading_rights_gate import RightsRefused, rights_blockers
 from writing_coach.reading_rights_refinement import refine_item_rights
 from writing_coach.persistence.models import (
     ReadingArticle,
@@ -1781,7 +1782,6 @@ class ReadingContentRepository:
         *,
         actor: str,
         reason: str = "",
-        warnings: Sequence[Mapping[str, str]] = (),
         quality_override: bool = False,
         now: datetime | None = None,
     ) -> dict[str, Any] | None:
@@ -1791,15 +1791,11 @@ class ReadingContentRepository:
         here, not only in the route, so a script that calls this directly is stopped too.
         `quality_override` publishes anyway; it needs a reason and is recorded on the event.
 
-        `warnings` are the rights advice that was showing when an administrator
-        published anyway; they are recorded beside the decision, so an override
-        is never separated from what it overrode (D-082, D-083).
-
         Publication is the only transition that makes anything learner-visible,
         and it is always an admin's act: nothing in the pipeline calls this.
-        Rights and attribution never refuse here (D-189 amends D-105): the admin
-        route requires an explicit, reasoned override and passes the warnings it
-        overrode, which are recorded in the review event.
+        Rights and attribution refuse here too (D-250, amends D-190): an article
+        whose rights are not clear (`reading_rights_gate.rights_blockers`) is not
+        published, and there is no override.
         """
         current = self.get_article(article_id)
         if current is None:
@@ -1815,6 +1811,9 @@ class ReadingContentRepository:
                 raise QualityRefused(overridden)
             if overridden and not reason.strip():
                 raise QualityRefused(overridden, reason_missing=True)
+            blockers = rights_blockers(current)
+            if blockers:
+                raise RightsRefused(blockers)
             values |= {"published_at": moment, "unpublished_at": None}
             values["content_revision"] = current["content_revision"] + 1
         elif current["status"] == LEARNER_VISIBLE_STATUS:
@@ -1835,8 +1834,6 @@ class ReadingContentRepository:
                 reason=reason,
                 changes={
                     "status": {"from": current["status"], "to": status},
-                    **({"warnings": [dict(item) for item in warnings],
-                        "published_over_warnings": True} if warnings else {}),
                     **({"quality_override": True, "quality_codes": overridden,
                         "quality_version": QUALITY_VERSION} if overridden else {}),
                 },
@@ -2273,6 +2270,32 @@ class ReadingContentRepository:
                 "id": str(row.id), "title": row.title, "language": row.language,
                 "missing": [item["field"] for item in provenance_blockers(credits.get(row.id) or {})],
                 "overridden": row.id in overridden,
+            })
+        return found
+
+    def published_rights_violations(self, *, limit: int = 5000) -> list[dict[str, Any]]:
+        """Published articles the D-250 gate would refuse now: each with its `blockers` and `overridden`, whether its
+        latest publish went over D-190's warnings. Read-only - nothing is unpublished by this (Hermes for the owner,
+        2026-10-21: re-check, never remove on its own)."""
+        with self.engine.connect() as connection:
+            ids = connection.execute(
+                select(ReadingArticle.id)
+                .where(ReadingArticle.status == LEARNER_VISIBLE_STATUS)
+                .order_by(ReadingArticle.language, ReadingArticle.title, ReadingArticle.id)
+                .limit(max(1, int(limit)))
+            ).scalars().all()
+        found = []
+        for article_id in ids:
+            article = self.get_article(str(article_id))
+            blockers = rights_blockers(article) if article is not None else []
+            if not blockers:
+                continue
+            published = [event for event in self.list_review_events(str(article_id), limit=200)
+                         if event["action"] == LEARNER_VISIBLE_STATUS]  # fmt: skip
+            found.append({
+                "id": str(article_id), "title": article["title"], "language": article["language"],
+                "blockers": [item["code"] for item in blockers],
+                "overridden": bool(published and (published[-1].get("changes") or {}).get("published_over_warnings")),
             })
         return found
 

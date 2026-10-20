@@ -266,7 +266,7 @@ def test_reading_context_and_progress(engine, app_module):
     snapshot = content.record_source_item(
         source_id=content.built_in_source_id("manual"), source_native_id="", canonical_url="", title="T",
         author="", published_at=None, language="en", body=body, content_hash=uuid.uuid4().hex * 2,
-        metadata={}, rights={"can_republish": True},
+        metadata={}, rights={"can_republish": True, "attribution_required": False},
     )  # fmt: skip
     article = content.create_article(
         source_item_id=snapshot["id"], title="The Early Train", body=body, excerpt="", language="en", topic="travel",

@@ -6,13 +6,14 @@ VOA rewrites that end with the agency derivation note ("本文依据了美联社
 from __future__ import annotations
 
 import re
+import uuid
 from pathlib import Path
 
 import pytest
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, update
 
-from writing_coach.persistence.models import Base
-from writing_coach.persistence.reading_content_repository import ReadingContentRepository
+from writing_coach.persistence.models import Base, ReadingArticle
+from writing_coach.persistence.reading_content_repository import LEARNER_VISIBLE_STATUS, ReadingContentRepository
 from writing_coach.persistence.reading_job_repository import ReadingJobRepository
 from writing_coach.reading_admin_api import publication_blockers
 from writing_coach.reading_content_engine import ReadingContentEngine
@@ -192,8 +193,10 @@ def test_the_report_lists_a_published_wire_article_even_when_ingested_before_the
     engine, content, jobs = parts
     wire = _ingest(parts, _page("wire_derived_article.html"), base_url="https://www.voachinese.com",
                    url="https://www.voachinese.com/a/wire/1.html")
-    content.set_status(wire["id"], "published", actor="admin", reason="trial",
-                       warnings=[{"code": "rights_unknown"}])
+    # published before D-250, as D-190 allowed over the warning: the state it was left in
+    with content.engine.begin() as connection:
+        connection.execute(update(ReadingArticle).where(ReadingArticle.id == uuid.UUID(wire["id"]))
+                           .values(status=LEARNER_VISIBLE_STATUS))
     found = content.published_staff_only_rights_candidates()
     assert [item["id"] for item in found] == [wire["id"]]
     assert found[0]["reasons"] == ["wire_copy"] and found[0]["asserted"] is False and found[0]["licence"] == ""

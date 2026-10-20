@@ -87,6 +87,7 @@ def _publish(parts, source, *, url="https://www.nasa.gov/news/rain"):
         kind="text", text=ARTICLE, title="Rain returns", author="", language="en", url=url,
         source_id=source["id"]), actor="admin")
     article_id = parts["engine"].process(parts["jobs"].claim("worker"))["article_id"]
+    parts["content"].set_rights(article_id, {"can_republish": True, "attribution_required": False}, actor="admin")  # D-250: published only with clear rights
     parts["content"].set_status(article_id, "published", actor="admin")
     return article_id
 
