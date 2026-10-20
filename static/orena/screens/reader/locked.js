@@ -6,7 +6,9 @@
 
    The Reader's own frame parts are reused as they are (its toolbar row with the back button and title block, its scroll
    region, its article column and paragraph type), so the preview reads as the start of the article it is. A learning
-   workspace never scrolls as a page (rule 49): only the Reader's scroll region does. Content Detail shows the same
+   workspace never scrolls as a page (rule 49): only the Reader's scroll region does. The end-of-preview card sits
+   below that region, as the workspace's fixed bottom row (like the toolbar above it), so Unlock is in the viewport
+   at 360x740 however long the title or paragraph is (#472); the preview scrolls in its region above it. Content Detail shows the same
    view for the same refusal. The server has already counted `locked_view` where it refused. */
 import { html, mount, raw } from '../../kit/html.js';
 import { icon } from '../../kit/icons.js';
@@ -37,13 +39,15 @@ export function lockedPreviewMarkup({ preview = {}, tier = 'plus', sizePx = null
           ${image ? html`<figure class="s-reader-locked__figure"><span class="s-reader-locked__cover" role="img" aria-label="${image.alt || title}" style="background-image:${image.cssUrl}"></span>${image.credit ? html`<figcaption class="s-reader__meta">${image.credit}</figcaption>` : ''}</figure>` : ''}
           <h1 class="s-reader__heading s-reader-locked__title" lang="${lang}">${title}</h1>
           ${paragraph ? html`<p class="s-reader__paragraph" lang="${lang}"${lang === 'zh' ? raw(' data-tl="zh"') : ''}>${paragraph}</p>` : ''}
-          <div class="o-coming__card s-reader-locked__end">
-            <div class="o-coming__icon">${raw(icon('lock', { size: 28 }))}</div>
-            ${planTag(plan)}
-            <div class="s-reader-locked__end-title">${planT('previewEnd', { plan })}</div>
-            <button type="button" class="o-btn o-btn--primary" data-locked-unlock>${planT('previewUnlock')}</button>
-          </div>
         </article>
+      </div>
+    </div>
+    <div class="s-reader-locked__foot">
+      <div class="o-coming__card s-reader-locked__end">
+        <div class="o-coming__icon">${raw(icon('lock', { size: 28 }))}</div>
+        ${planTag(plan)}
+        <div class="s-reader-locked__end-title">${planT('previewEnd', { plan })}</div>
+        <button type="button" class="o-btn o-btn--primary" data-locked-unlock>${planT('previewUnlock')}</button>
       </div>
     </div>
   </div>`;
