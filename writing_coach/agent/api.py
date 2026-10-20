@@ -331,6 +331,8 @@ def agent_progress_weekly(request: Request, response: Response, tz: str | None =
         raise HTTPException(status_code=422, detail="unknown interface language")
     sources = getattr(runtime.pack, "sources", None)
     zone = tz or request.headers.get("X-Orena-Timezone") or "UTC"
+    if not tz and not weekly_report.known_zone(zone):
+        zone = "UTC"  # a device's bad header falls back; only an explicit `tz` is refused
     try:
         answer = weekly_report.weekly_report(
             writing=_source(sources.writing_events) if sources is not None else None,
