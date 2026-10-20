@@ -102,7 +102,7 @@ def entitled(user_key: str, feature: str) -> bool | None:
 
 
 def _voice_limit(plan) -> int | None:
-    """The plan's daily voice seconds. A stored limit under a minute is the on/off placeholder (1) an editor saved under
+    """The plan's voice seconds per window (a day or a month: the meter's). A stored limit under a minute is the on/off placeholder (1) an editor saved under
     D-236, before the limit counted seconds: it reads as the code's default, never as one second a day."""
 
     from writing_coach.product.catalog import PLANS
@@ -137,7 +137,7 @@ def voice_seconds_left(user_key: str) -> int | None:
 
 def require_voice_time(user_key: str) -> None:
     """The plan has voice (403 otherwise) and this window's voice minutes are not used up: 429 `quota_exhausted` with
-    `feature: "orena.voice"` at the plan's daily limit - this learner only, nothing else is locked. Checked before a
+    `feature: "orena.voice"` at the plan's limit for the window - this learner only, nothing else is locked. Checked before a
     voice session opens or a chunk is renewed; every token minted is clamped to the seconds left
     (`voice_seconds_left`), so the cap is not passed. Usage that cannot be read refuses (503, fail closed)."""
 
