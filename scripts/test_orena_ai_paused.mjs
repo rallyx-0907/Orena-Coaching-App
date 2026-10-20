@@ -7,7 +7,8 @@ globalThis.document ??= { addEventListener() {}, removeEventListener() {} };
 globalThis.window ??= { addEventListener() {}, removeEventListener() {}, location: { hash: '' } };
 
 const src = (path) => readFileSync(path, 'utf8');
-const RESETS = '2026-10-20T00:00:00Z';
+// The next UTC midnight, so the reset time is always in the future (a fixed date expired on 2026-10-20 and broke CI).
+const RESETS = (() => { const d = new Date(); d.setUTCHours(24, 0, 0, 0); return d.toISOString().replace('.000Z', 'Z'); })();
 
 const answer = (status, body, headers = {}) => ({
   ok: status >= 200 && status < 300,
