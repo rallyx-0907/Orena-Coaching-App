@@ -6549,3 +6549,9 @@ The pinned `Orena-Terms.dc.html` and `Orena-Privacy.dc.html` draw a two-pill tab
 
 Open for the owner: whether the design should draw the narrow tab row.
 
+
+## Word Detail: the sentence the word was tapped in (#463, PR CD, 2026-10-21)
+
+- **What the design draws.** Frame "Word Detail": the word card's example is the first real occurrence of the word in the learner's sources (`wordCard`'s `ex`, the word highlighted), and "Context clips · {n}" (`wdClips`) lists every real occurrence - listening segments and the article sentences the learner read (`wSents`), each with a play button (an article sentence toasts "No audio for this article"), the source line and Open. So the sentence the learner tapped is a context: the app now leads the list with it and counts it, and the card shows it when the saved record has no sentence of its own.
+- **No source line, no Open on that row.** `?ctx=` carries only the sentence. The design's row also names its source and opens it; the URL has neither, so the row draws no source line and no Open (rule 40), and play says there is no audio for the sentence. Open for the owner: whether the sheet should pass the source (content id and title) so the row can name and open it.
+- **Clips read failed.** The panel stays out, as before, even with a tapped sentence: a count of one could understate what the catalogue holds.

@@ -225,6 +225,32 @@ export function mapClips(payload) {
   return (payload?.clips || []).map(mapClip).filter((clip) => clip.text);
 }
 
+/* The sentence the word was tapped in (`?ctx=`, issue #463). It comes from the URL, so it is
+   untrusted: plain text only (control characters dropped, whitespace collapsed), capped, and kept
+   only when it actually contains the word. The page renders it through the escaping html``. */
+export const TAPPED_SENTENCE_MAX = 600;
+export function tappedSentence(word, value) {
+  const w = text(word);
+  // eslint-disable-next-line no-control-regex
+  const clean = String(value ?? '').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ').replace(/\s+/g, ' ').trim();
+  const capped = Array.from(clean).slice(0, TAPPED_SENTENCE_MAX).join('').trim();
+  if (!w || !capped || !capped.toLowerCase().includes(w.toLowerCase())) return '';
+  return capped;
+}
+
+/* The design's context list holds every real occurrence of the word in the learner's sources,
+   the sentences they read as well as the listening moments (`wdClips` = segments + article
+   sentences). The tapped sentence is one: it leads the list unless a clip already says it. */
+export function withTappedSentence(clips, sentence) {
+  const list = Array.isArray(clips) ? clips : [];
+  const said = text(sentence);
+  if (!said) return list;
+  const key = (value) => text(value).replace(/\s+/g, ' ').toLowerCase();
+  const same = (value) => key(value) === key(said);
+  if (list.some((clip) => same(clip.text))) return list;
+  return [{ text: said, source: '', seconds: 0, lessonId: '', url: '', kind: 'sentence', startMs: 0, endMs: 0 }, ...list];
+}
+
 /* Mastery evidence (`wdMastery`): real, dated facts about this one saved word - never a count that
    is zero because nothing happened yet. A freshly saved word has exactly one row (it was saved);
    a word graded and missed a few times has more. Order: most recent kind of fact first, matching
