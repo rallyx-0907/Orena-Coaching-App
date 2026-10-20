@@ -49,6 +49,45 @@ export function bootOutcome(error) {
   return isUnauthorized(error) ? 'signed-out' : 'failed';
 }
 
+/* Whether this device last saw a signed-in learner: a device hint only, never authority (the server's
+   answer to /api/me is). It lets a returning learner's boot reads go out together, with no extra round
+   trip, while a visitor nobody has signed in on reads the session alone first. */
+export const SIGNED_IN_HINT_KEY = 'orena.session.signed-in';
+
+export function knownSignedIn(storage) {
+  try {
+    return storage?.getItem(SIGNED_IN_HINT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function rememberSignedIn(storage, signedIn) {
+  try {
+    if (signedIn) storage?.setItem(SIGNED_IN_HINT_KEY, '1');
+    else storage?.removeItem(SIGNED_IN_HINT_KEY);
+  } catch {
+    /* no device store: every boot reads the session first */
+  }
+}
+
+/* The boot's reads, gated on the session. `readSession()` is GET /api/me; `readRest()` starts the reads
+   that need a signed-in learner and returns their promises. Unless the device knows a signed-in learner,
+   the session is read alone first and a 401 ends the boot before any other request is made (the
+   signed-out Welcome makes no signed-in call). Resolves to [session, ...rest]; a 401 forgets the hint. */
+export async function gatedBootReads(storage, readSession, readRest) {
+  const session = readSession();
+  try {
+    if (!knownSignedIn(storage)) await session;
+    const results = await Promise.all([session, ...readRest()]);
+    rememberSignedIn(storage, true);
+    return results;
+  } catch (error) {
+    if (isUnauthorized(error)) rememberSignedIn(storage, false);
+    throw error;
+  }
+}
+
 /* A 401 while the app runs: leave for Welcome, unless the learner is already on a page that is read
    signed out (Welcome itself, the legal pages). */
 export function unauthorizedRoute(hash = '') {

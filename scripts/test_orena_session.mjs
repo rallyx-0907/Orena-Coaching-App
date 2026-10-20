@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import {
   SIGN_IN_PATH, SIGN_OUT_NEXT, signInHref, accountStepSignInHref, signOutUrl, isUnauthorized, bootOutcome, unauthorizedRoute, signedOutDestination,
+  SIGNED_IN_HINT_KEY, knownSignedIn, rememberSignedIn, gatedBootReads,
 } from '../static/orena/shell/session.js';
 import { entryRoute, match } from '../static/orena/shell/routes.js';
 
@@ -153,6 +154,75 @@ const source = (path) => readFileSync(fileURLToPath(new URL(path, import.meta.ur
   assert.equal(entryRoute({ profile: { exists: true, language: 'en' }, activeLanguage: 'en' }), 'today', 'a completed account opens Today');
   assert.equal(match('#/progress').route.id, 'progress', 'a reload keeps the place in the address');
   assert.equal(decodeURIComponent(signInHref('login').split('=')[1]), '/#/', 'the OAuth return target is honoured');
+}
+
+/* --- the boot's reads wait for the session: a signed-out visitor makes no signed-in call (CB) ------- */
+{
+  const store = () => {
+    const map = new Map();
+    return { getItem: (k) => (map.has(k) ? map.get(k) : null), setItem: (k, v) => map.set(k, String(v)), removeItem: (k) => map.delete(k) };
+  };
+  const unauthorized = () => Object.assign(new Error('401'), { status: 401 });
+  const run = async (storage, sessionOk) => {
+    const calls = [];
+    let restStartedBeforeSession = false;
+    let sessionSettled = false;
+    const readSession = () => {
+      calls.push('/api/me');
+      return new Promise((resolve, reject) => setTimeout(() => {
+        sessionSettled = true;
+        if (sessionOk) resolve({ email: 'a@b.c' }); else reject(unauthorized());
+      }, 5));
+    };
+    const readRest = () => {
+      if (!sessionSettled) restStartedBeforeSession = true;
+      calls.push('rest');
+      return [Promise.resolve('bootstrap'), Promise.resolve(null)];
+    };
+    let outcome;
+    try {
+      outcome = await gatedBootReads(storage, readSession, readRest);
+    } catch (error) {
+      outcome = error;
+    }
+    return { calls, restStartedBeforeSession, outcome };
+  };
+
+  // A device nobody has signed in on: the session is read alone, and its 401 ends the boot.
+  const fresh = store();
+  const signedOut = await run(fresh, false);
+  assert.deepEqual(signedOut.calls, ['/api/me'], 'signed out: only the session is read');
+  assert.equal(bootOutcome(signedOut.outcome), 'signed-out', 'the 401 still reaches the boot as signed-out');
+  assert.equal(knownSignedIn(fresh), false);
+
+  // The same device, signed in: the rest follows the session, and the device remembers the learner.
+  const first = await run(fresh, true);
+  assert.deepEqual(first.calls, ['/api/me', 'rest']);
+  assert.equal(first.restStartedBeforeSession, false, 'an unknown device waits for the session');
+  assert.deepEqual(first.outcome, [{ email: 'a@b.c' }, 'bootstrap', null], 'results keep their order');
+  assert.equal(knownSignedIn(fresh), true);
+
+  // A returning learner: every read goes out together (no extra round trip).
+  const again = await run(fresh, true);
+  assert.equal(again.restStartedBeforeSession, true, 'a known learner reads everything at once');
+
+  // The session ended since: the hint is forgotten, so the next signed-out boot is quiet again.
+  await run(fresh, false);
+  assert.equal(knownSignedIn(fresh), false, 'a 401 forgets the signed-in hint');
+  rememberSignedIn(fresh, true);
+  rememberSignedIn(fresh, false);
+  assert.equal(fresh.getItem(SIGNED_IN_HINT_KEY), null, 'sign out forgets the hint');
+
+  // No device store: always the gated path, never a throw.
+  const broken = { getItem() { throw new Error('blocked'); }, setItem() { throw new Error('blocked'); }, removeItem() { throw new Error('blocked'); } };
+  assert.deepEqual((await run(broken, false)).calls, ['/api/me']);
+  assert.deepEqual((await run(null, true)).calls, ['/api/me', 'rest']);
+
+  // The shell's loader uses the gate, and Sign out forgets the hint.
+  const contextSource = source('../static/orena/shell/context.js');
+  assert.match(contextSource, /gatedBootReads\(storage, \(\) => read\('\/api\/me'\)/, 'loadContext gates its reads on the session');
+  assert.ok(!/Promise\.all\(\[\s*read\('\/api\/me'\)/.test(contextSource), 'the session is no longer read beside the signed-in reads');
+  assert.match(source('../static/orena/screens/profile/screen.js'), /rememberSignedIn\(window\.localStorage, false\)/, 'Sign out forgets the hint');
 }
 
 console.log('test_orena_session: ok');
