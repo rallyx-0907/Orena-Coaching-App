@@ -22,16 +22,28 @@ NOW = datetime(2026, 10, 19, 9, 0, tzinfo=UTC)
 LIMIT = PLUS.entitlement_map()["orena.voice"].limit  # 6000 s by the code's defaults (D-248)
 
 
-def configure(usage, clock=lambda: NOW):
-    """Both readers (#478), so the meter's window - a day or a month - is counted whichever it is."""
-    plan_features.configure(daily_usage=usage, monthly_usage=usage, clock=clock)
+def configure(usage, clock=lambda: NOW, today=None):
+    """Both readers (#478), so the meter's window - a day or a month - is counted whichever it is. `today`: the daily
+    total when it differs from the window's (the daily sub-cap under a month); by default the same reader."""
+    plan_features.configure(daily_usage=today or usage, monthly_usage=usage, clock=clock)
 
 
 @pytest.fixture()
 def voice_day(monkeypatch):
-    state = {"plan": PLUS, "used": 0}
+    """`used` is the meter's window (a month by the code's defaults); `today` the daily total under it, 0 unless a test
+    says so - so these window tests are not cut short by the daily sub-cap. With a `day` meter the window is today."""
+    state = {"plan": PLUS, "used": 0, "today": 0}
     monkeypatch.setattr(quota.runtime(), "plan_for", lambda user_key, strict=True: state["plan"])
-    configure(lambda user_key, feature: state["used"] if feature == plan_features.VOICE_USAGE else 0)
+
+    def window(user_key, feature):
+        return state["used"] if feature == plan_features.VOICE_USAGE else 0
+
+    def today(user_key, feature):
+        if METERS[plan_features.VOICE].window == "day":
+            return window(user_key, feature)
+        return state["today"] if feature == plan_features.VOICE_USAGE else 0
+
+    configure(window, today=today)
     yield state
     configure(None)
 
@@ -185,7 +197,9 @@ def test_the_allowance_reports_todays_minutes_used_and_left(voice_day):
     allowance = plan_features.voice_allowance("u1")
     assert allowance == {
         "feature": "orena.voice", "entitled": True, "limit": LIMIT, "used": 660, "left": LIMIT - 660, "unit": "second",
-        "display_unit": "minute", "scale": 60, "window": "month", "resets_at": "2026-11-01T00:00:00Z", "plan": "plus"}
+        "display_unit": "minute", "scale": 60, "window": "month", "resets_at": "2026-11-01T00:00:00Z", "plan": "plus",
+        # nothing used today: Plus's 20 minutes a day are what a session may use now
+        "daily": {"limit": 1200, "used": 0, "left": 1200, "resets_at": "2026-10-20T00:00:00Z"}, "available": 1200}
 
 
 def test_the_allowance_never_reports_more_used_than_the_limit(voice_day):
@@ -287,3 +301,113 @@ def test_december_resets_in_january():
                                                                                                        tzinfo=UTC)
     assert plan_features._period_end(datetime(2026, 10, 19, 9, 0, tzinfo=UTC), "day") == datetime(2026, 10, 20,
                                                                                                    tzinfo=UTC)
+
+
+# --- a daily sub-cap under the month (Hermes for the owner, 2026-10-21; COST_PRE402_403 §7) ------------------------
+# The month alone let one Pro learner spend most of the system's daily AI ceiling in a day. Plus 20 minutes a day,
+# Pro 30, editable in Admin › Plans (`daily_seconds`, a parameter of the `orena.voice` entitlement).
+
+
+@pytest.fixture()
+def voice_daily(monkeypatch):
+    from dataclasses import replace
+
+    from writing_coach.product.catalog import Entitlement
+
+    clock = {"now": NOW}
+    pro = replace(PRO, entitlements=tuple(
+        Entitlement("orena.voice", enabled=True, limit=18000, params={"daily_seconds": 1800})
+        if e.key == "orena.voice" else e for e in PRO.entitlements))
+    state = {"plan": pro, "month": 0, "days": {}}
+    monkeypatch.setattr(quota.runtime(), "plan_for", lambda user_key, strict=True: state["plan"])
+    monkeypatch.setattr(plan_features, "current_catalog", lambda strict=True: ({"pro": pro}, "r1"))
+    # the daily reader answers for the clock's UTC day, as the repository does
+    plan_features.configure(daily_usage=lambda user_key, feature: state["days"].get(clock["now"].date(), 0),
+                            monthly_usage=lambda user_key, feature: state["month"], clock=lambda: clock["now"])  # fmt: skip
+    yield state, clock
+    plan_features.configure(daily_usage=None)
+
+
+def test_the_catalogue_gives_plus_twenty_and_pro_thirty_minutes_a_day():
+    daily = [p.entitlement_map()["orena.voice"].params.get("daily_seconds") for p in (PLUS, PRO)]
+    assert daily == [1200, 1800]
+    from writing_coach.product.catalog import METERS
+
+    assert METERS["orena.voice"].params["daily_seconds"] == (60, 86400)  # an administrator edits it within bounds
+
+
+def test_one_second_under_the_daily_cap_voice_opens(voice_daily):
+    state, _clock = voice_daily
+    state["month"] = state["days"][NOW.date()] = 1799
+    plan_features.require_voice_time("u1")
+    assert plan_features.voice_seconds_left("u1") == 1
+
+
+def test_exactly_at_the_daily_cap_this_learner_waits_for_midnight(voice_daily):
+    state, _clock = voice_daily
+    state["month"] = state["days"][NOW.date()] = 1800  # 30 minutes today; the month has 270 left
+    with pytest.raises(HTTPException) as refused:
+        plan_features.require_voice_time("u1")
+    context = refused.value.detail["context"]
+    assert refused.value.status_code == 429
+    assert (context["window"], context["used"], context["limit"]) == ("day", 1800, 1800)
+    assert context["resets_at"] == "2026-10-20T00:00:00Z" and refused.value.headers["Retry-After"] == str(15 * 3600)
+    assert plan_features.voice_seconds_left("u1") == 0
+
+
+def test_past_the_daily_cap_too(voice_daily):
+    state, _clock = voice_daily
+    state["month"] = state["days"][NOW.date()] = 2400  # a token minted before an administrator lowered the cap
+    with pytest.raises(HTTPException):
+        plan_features.require_voice_time("u1")
+    assert plan_features.voice_seconds_left("u1") == 0
+
+
+def test_after_utc_midnight_the_day_starts_again_but_the_month_remembers(voice_daily):
+    from datetime import timedelta
+
+    state, clock = voice_daily
+    state["month"] = state["days"][NOW.date()] = 1800
+    clock["now"] = datetime(2026, 10, 19, 23, 59, 59, tzinfo=UTC)
+    with pytest.raises(HTTPException):
+        plan_features.require_voice_time("u1")
+    clock["now"] += timedelta(seconds=1)  # 00:00:00 UTC on the 20th
+    plan_features.require_voice_time("u1")
+    assert plan_features.voice_seconds_left("u1") == 1800  # a whole day again; the month still has 16200
+
+
+def test_the_month_still_binds_when_less_is_left_than_today(voice_daily):
+    state, _clock = voice_daily
+    state["month"], state["days"][NOW.date()] = 17900, 0  # 100 s left this month, nothing used today
+    assert plan_features.voice_seconds_left("u1") == 100
+    state["month"] = 18000
+    with pytest.raises(HTTPException) as refused:
+        plan_features.require_voice_time("u1")
+    assert refused.value.detail["context"]["window"] == "month"
+
+
+def test_the_allowance_shows_the_day_beside_the_month(voice_daily):
+    state, _clock = voice_daily
+    state["month"], state["days"][NOW.date()] = 9000, 600
+    allowance = plan_features.voice_allowance("u1")
+    assert (allowance["window"], allowance["limit"], allowance["used"], allowance["left"]) == ("month", 18000, 9000,
+                                                                                              9000)
+    assert allowance["daily"] == {"limit": 1800, "used": 600, "left": 1200, "resets_at": "2026-10-20T00:00:00Z"}
+    assert allowance["available"] == 1200  # what a new session may use now: the smaller of the two
+
+
+def test_an_unreadable_day_fails_closed(voice_daily):
+    def broken(user_key, feature):
+        raise RuntimeError("store down")
+
+    state, _clock = voice_daily
+    plan_features.configure(daily_usage=broken, monthly_usage=lambda user_key, feature: 0, clock=lambda: NOW)
+    with pytest.raises(HTTPException) as refused:
+        plan_features.require_voice_time("u1")
+    assert refused.value.status_code == 503
+
+
+def test_without_a_daily_cap_only_the_month_counts(voice_month):
+    voice_month["day"], voice_month["month"] = 5000, 100  # an entitlement with no daily_seconds
+    assert plan_features.voice_seconds_left("u1") == 5900
+    assert plan_features.voice_allowance("u1")["daily"] is None

@@ -86,7 +86,9 @@ METERS: dict[str, Meter] = {
         # Owner 2026-10-19: voice chat with Orena, on or off by plan, and a cap on each learner's voice seconds -
         # product/plan_features.py. Its time is still charged as Orena messages (`voice_seconds_per_message`); this cap
         # protects the system's AI budget from one learner. D-248 (MV2-6a): the cap is per month (it was per day, D-237).
-        Meter("orena.voice", "month", "second", "minute", scale=60),
+        # Hermes for the owner, 2026-10-21 (COST_PRE402_403 §7): a daily sub-cap under the month, `daily_seconds`, so one
+        # learner cannot spend most of the system's daily AI ceiling in a day.
+        Meter("orena.voice", "month", "second", "minute", scale=60, params={"daily_seconds": (60, 86400)}),
         # D-248 (MV2-6a): the weekly recurring-mistake report (GET /api/agent/progress/weekly), on or off by plan.
         Meter("progress.weekly_report", None, "report", "report", on_off=True),
         # MV2-1 (D-248 §4): the videos a week on which Orena's tap-to-look-up works for a learner whose plan does not
@@ -170,6 +172,10 @@ VOICE_SECONDS_PER_MESSAGE = 60
 # D-248 (MV2-6a): each learner's voice chat with Orena per month, in seconds (an administrator edits it): Plus about 100
 # minutes, Pro 300. Free has no voice chat. Replaces D-237's 15 minutes a day.
 VOICE_SECONDS_PER_MONTH: dict[str, int] = {"free": 0, "plus": 6000, "pro": 18000}
+# Hermes for the owner, 2026-10-21: and at most this much of it a UTC day - Plus 20 minutes, Pro 30 (an administrator
+# edits it: `daily_seconds`). With the system ceiling at $2 a day, 30 minutes is about $0.38 to $0.92 of voice (p95).
+# Free has no voice; it keeps Plus's figure so an editor that turns voice on has a number to show.
+VOICE_SECONDS_PER_DAY: dict[str, int] = {"free": 1200, "plus": 1200, "pro": 1800}
 
 
 # H7-3 (D-MON-025) bootstrap product limits, requests per day: (word.assist, reading.assist, writing.task).
@@ -183,6 +189,7 @@ MEDIA_TOOL_VIDEOS: dict[str, int] = {"free": 3, "plus": 10_000, "pro": 10_000}
 
 def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, import_minutes: int,
                   languages: int, assist: tuple[int, int, int], *, voice_seconds: int = 0,
+                  voice_daily_seconds: int = VOICE_SECONDS_PER_DAY["free"],
                   media_tool_videos: int = MEDIA_TOOL_VIDEOS["free"],
                   weekly_report: bool = False) -> tuple[Entitlement, ...]:
     word_assist, reading_assist, writing_task = assist
@@ -197,7 +204,8 @@ def _entitlements(messages: int, reviews: int, pronunciation_minutes: int, impor
         Entitlement("writing.task", limit=writing_task),
         # Free: off. A disabled entitlement keeps the Plus figure only so an editor that turns it on has a number to show.
         Entitlement("orena.voice", enabled=voice_seconds > 0,
-                    limit=voice_seconds or VOICE_SECONDS_PER_MONTH["plus"]),
+                    limit=voice_seconds or VOICE_SECONDS_PER_MONTH["plus"],
+                    params={"daily_seconds": voice_daily_seconds}),
         Entitlement("media.tools_weekly", limit=media_tool_videos),
         Entitlement("progress.weekly_report", enabled=weekly_report, limit=None),
     )
@@ -221,7 +229,8 @@ PLUS = Plan(
     rank=1,
     prices=_prices(9.99, 199000, 79.99, 1590000),
     entitlements=_entitlements(200, 10, 30, 120, 2, ASSIST_LIMITS["plus"],
-                               voice_seconds=VOICE_SECONDS_PER_MONTH["plus"], media_tool_videos=MEDIA_TOOL_VIDEOS["plus"],
+                               voice_seconds=VOICE_SECONDS_PER_MONTH["plus"], voice_daily_seconds=VOICE_SECONDS_PER_DAY["plus"],
+                               media_tool_videos=MEDIA_TOOL_VIDEOS["plus"],
                                weekly_report=True),
 )
 
@@ -233,7 +242,8 @@ PRO = Plan(
     rank=2,
     prices=_prices(19.99, 399000, 159.99, 3190000),
     entitlements=_entitlements(1000, 50, 120, 600, 2, ASSIST_LIMITS["pro"],
-                               voice_seconds=VOICE_SECONDS_PER_MONTH["pro"], media_tool_videos=MEDIA_TOOL_VIDEOS["pro"],
+                               voice_seconds=VOICE_SECONDS_PER_MONTH["pro"], voice_daily_seconds=VOICE_SECONDS_PER_DAY["pro"],
+                               media_tool_videos=MEDIA_TOOL_VIDEOS["pro"],
                                weekly_report=True),
 )
 
