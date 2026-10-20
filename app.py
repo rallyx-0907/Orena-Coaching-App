@@ -1194,8 +1194,16 @@ def _voice_daily_usage(user_key: str, feature: str) -> int:
 # Each learner's daily voice minutes against the plan's `orena.voice` limit (Hermes for the owner, 2026-10-19).
 from writing_coach.product import plan_features as _plan_features  # noqa: E402
 
-_plan_features.configure(daily_usage=_voice_daily_usage
-                         if callable(getattr(_persistence_runtime.product_repository, "daily_usage", None)) else None)
+def _voice_monthly_usage(user_key: str, feature: str) -> int:
+    """This UTC calendar month's total: the voice meter's window once the catalogue counts minutes a month (MV2-6a)."""
+    return int(_persistence_runtime.product_repository.monthly_usage(user_key=user_key, feature=feature))
+
+
+_plan_features.configure(
+    daily_usage=_voice_daily_usage
+    if callable(getattr(_persistence_runtime.product_repository, "daily_usage", None)) else None,
+    monthly_usage=_voice_monthly_usage
+    if callable(getattr(_persistence_runtime.product_repository, "monthly_usage", None)) else None)
 
 
 def _agent_spend_guard():

@@ -246,3 +246,53 @@ def test_the_allowance_route_is_absent_without_voice(client, voice_day):  # noqa
     enable([])
     agent_api._runtime.voice = None
     assert client.get("/api/agent/voice/allowance").status_code == 404
+
+
+# --- a monthly voice window (MV2-6a: about 100 minutes a month on Plus, 300 on Pro) --------------------------------
+
+
+@pytest.fixture()
+def voice_month(monkeypatch):
+    """The meter moved to a month window, as the UI lane's catalogue change does; the limits are a month's seconds."""
+    from dataclasses import replace
+
+    from writing_coach.product.catalog import METERS, Entitlement, Meter
+
+    monkeypatch.setitem(METERS, plan_features.VOICE, Meter("orena.voice", "month", "second", "minute", scale=60))
+    plus = replace(PLUS, entitlements=tuple(
+        Entitlement("orena.voice", enabled=True, limit=6000) if e.key == "orena.voice" else e for e in PLUS.entitlements))
+    state = {"plan": plus, "day": 0, "month": 0}
+    monkeypatch.setattr(quota.runtime(), "plan_for", lambda user_key, strict=True: state["plan"])
+    monkeypatch.setattr(plan_features, "current_catalog", lambda strict=True: ({"plus": plus}, "r1"))
+    plan_features.configure(daily_usage=lambda user_key, feature: state["day"],
+                            monthly_usage=lambda user_key, feature: state["month"], clock=lambda: NOW)  # fmt: skip
+    yield state
+    plan_features.configure(daily_usage=None)
+
+
+def test_a_monthly_window_counts_the_month_and_resets_on_the_first(voice_month):
+    voice_month["day"], voice_month["month"] = 60, 5400  # one minute today, ninety this month
+    allowance = plan_features.voice_allowance("u1")
+    assert (allowance["window"], allowance["limit"], allowance["used"], allowance["left"]) == ("month", 6000, 5400, 600)
+    assert allowance["resets_at"] == "2026-11-01T00:00:00Z"
+    assert plan_features.voice_seconds_left("u1") == 600
+
+
+def test_at_the_monthly_cap_the_refusal_says_the_month(voice_month):
+    voice_month["month"] = 6000
+    with pytest.raises(HTTPException) as refused:
+        plan_features.require_voice_time("u1")
+    context = refused.value.detail["context"]
+    assert (context["window"], context["used"], context["resets_at"]) == ("month", 6000, "2026-11-01T00:00:00Z")
+
+
+def test_a_monthly_window_without_a_monthly_reader_is_not_counted_as_a_day(voice_month):
+    plan_features.configure(daily_usage=lambda user_key, feature: 6000, monthly_usage=None, clock=lambda: NOW)
+    assert plan_features.voice_seconds_left("u1") is None  # never a day's total read as the month's
+
+
+def test_december_resets_in_january():
+    assert plan_features._period_end(datetime(2026, 12, 31, 23, 0, tzinfo=UTC), "month") == datetime(2027, 1, 1,
+                                                                                                       tzinfo=UTC)
+    assert plan_features._period_end(datetime(2026, 10, 19, 9, 0, tzinfo=UTC), "day") == datetime(2026, 10, 20,
+                                                                                                   tzinfo=UTC)
