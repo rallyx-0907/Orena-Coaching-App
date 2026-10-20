@@ -143,3 +143,35 @@ export function headlineKind(fixCount) {
   if (fixCount === 1) return 'one';
   return 'many';
 }
+
+/* Auto-stop on silence (#439). The take ends by itself once the learner has spoken and then stayed quiet this
+   long; the duration pill stays the hard cap. Levels are the microphone's own 0-1 peaks
+   (`capabilities/mic-readiness.js`). Nothing is decided before speech is heard: a learner who is still thinking
+   is never cut off at the start. Pure, so the timing is checked with numbers. */
+export const SPEECH_PEAK = 0.06;
+export const SILENCE_STOP_MS = 5000;
+export const MIN_SPEECH_MS = 600;
+export function silenceWatch({ speechPeak = SPEECH_PEAK, silenceMs = SILENCE_STOP_MS, minSpeechMs = MIN_SPEECH_MS } = {}) {
+  let speechMs = 0;
+  let lastAt = null;
+  let quietSince = null;
+  return {
+    /* One level reading at `atMs`; true when the take should end now. */
+    feed(peak, atMs) {
+      const at = Number(atMs);
+      const step = lastAt == null ? 0 : Math.max(0, Math.min(250, at - lastAt));
+      lastAt = at;
+      if ((Number(peak) || 0) >= speechPeak) {
+        speechMs += step;
+        quietSince = null;
+        return false;
+      }
+      if (speechMs < minSpeechMs) return false;
+      if (quietSince == null) quietSince = at;
+      return at - quietSince >= silenceMs;
+    },
+    get heardSpeech() {
+      return speechMs >= minSpeechMs;
+    },
+  };
+}

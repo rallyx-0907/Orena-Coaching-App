@@ -301,3 +301,64 @@ console.log('test_orena_screen_compare.mjs: Compare With Model data mapping - re
   assert.deepEqual(metricLineFor(pronunciationView(RESULT, { language: 'en' }), { similarity: 70, intonation: 81 }).parts.slice(0, 2), [{ key: 'metricSimilarity', value: 70 }, { key: 'metricIntonation', value: 81 }]);
   assert.ok(!metricLineFor(pronunciationView(RESULT, { language: 'en' }), { similarity: null, intonation: null }).parts.some((p) => /Similarity|Intonation/.test(p.key)));
 }
+
+/* #441 / #443: the room's layout follows the component's own rule (showRecord / hasRes), and a failed take
+   never leaves the previous score on screen under its banner. */
+{
+  const { roomLayout } = await import('../static/orena/screens/compare/model.js');
+  const assert = (await import('node:assert/strict')).default;
+  assert.deepEqual(roomLayout({ hasResult: false }), { record: true, result: false, fit: true, busy: false }, 'no attempt yet: the record card fills the workspace');
+  assert.deepEqual(roomLayout({ hasResult: true }), { record: false, result: true, fit: false, busy: false }, 'a result: the analysis, no record card');
+  assert.deepEqual(roomLayout({ hasResult: true, recording: true }), { record: true, result: true, fit: false, busy: true },
+    'a new take over a result: both in the scrolling column, never a squeezed record card under the summary');
+  assert.deepEqual(roomLayout({ hasResult: true, processing: true }), { record: true, result: true, fit: false, busy: true });
+  assert.deepEqual(roomLayout({ hasResult: true, failed: true }), { record: true, result: false, fit: true, busy: false },
+    'a failed take: record card and banner, the previous score is not shown');
+}
+
+/* #440: a Shadowing line never plays past the next line's start (D-020). */
+{
+  const { lineEndMs, sourceFromLesson } = await import('../static/orena/product/speaking-source.js');
+  const assert = (await import('node:assert/strict')).default;
+  const segments = [
+    { segment_id: 'a', start_ms: 1000, end_ms: 4200, original_text: 'The name is Grey.' },
+    { segment_id: 'b', start_ms: 3600, end_ms: 6000, original_text: 'Detective.' },
+    { segment_id: 'c', start_ms: 6000, end_ms: 7000, original_text: 'Murders.' },
+    { segment_id: 'd', start_ms: 7500, end_ms: 9000, original_text: 'Last.' },
+  ];
+  assert.equal(lineEndMs(segments, 0), 3600, 'a cue still on screen when the next starts ends at that start');
+  assert.equal(lineEndMs(segments, 1), 6000, 'touching lines keep their own end');
+  assert.equal(lineEndMs(segments, 2), 7000, 'a gap before the next line keeps the line end');
+  assert.equal(lineEndMs(segments, 3), 9000, 'the last line keeps its end');
+  assert.equal(lineEndMs([{ start_ms: 0, end_ms: 900 }, { start_ms: 0, end_ms: 800 }], 0), 900, 'a parallel line that starts together is not a boundary');
+  const source = sourceFromLesson('grey', { asset: { asset_id: 'x' }, catalog: {}, playback: null, transcript: { segments } }, 'a');
+  assert.deepEqual([source.line.startMs, source.line.endMs], [1000, 3600]);
+}
+
+/* #444: moving between lines of one source, and between the room and its attempt list, replaces the history
+   entry - Back leaves the source instead of walking back through every line practised. */
+{
+  const { readFileSync } = await import('node:fs');
+  const assert = (await import('node:assert/strict')).default;
+  const room = readFileSync(new URL('../static/orena/screens/compare/screen.js', import.meta.url), 'utf8');
+  const list = readFileSync(new URL('../static/orena/screens/attempts/screen.js', import.meta.url), 'utf8');
+  assert.match(room, /ctx\.replace\(ctx\.href\('compare', \{ id: source\.sourceId \}, \{ segment: id \}\)\)/, 'a line change replaces');
+  assert.doesNotMatch(room, /ctx\.go\(ctx\.href\('compare'/, 'no line change pushes');
+  assert.match(room, /ctx\.replace\(ctx\.href\('attempts'/);
+  assert.match(list, /ctx\.replace\(ctx\.href\('compare'/);
+}
+
+/* #440: near a held line's end the pause is scheduled for the exact remaining (rate-aware) time. */
+{
+  const { segmentEndDelay, SEGMENT_END_LOOKAHEAD_MS } = await import('../static/orena/capabilities/media-player.js');
+  const assert = (await import('node:assert/strict')).default;
+  assert.equal(segmentEndDelay({ holdEndMs: 5000 }, 4800, 1, true), 200);
+  assert.equal(segmentEndDelay({ holdEndMs: 5000 }, 4800, 1.25, true), 160, 'faster playback reaches the end sooner');
+  assert.equal(segmentEndDelay({ holdEndMs: 5000 }, 4900, 0.75, true), 133);
+  assert.equal(segmentEndDelay({ holdEndMs: 5000 }, 4000, 1, true), null, 'far from the end: the clock tick decides');
+  assert.equal(segmentEndDelay({ holdEndMs: 5000 }, 4800, 1, false), null, 'a paused player owes nothing');
+  assert.equal(segmentEndDelay({ holdEndMs: 5000, segmentEndMs: 4900 }, 4800, 1, true), 100, 'the nearer boundary wins');
+  assert.equal(segmentEndDelay({ holdEndMs: 5000 }, 5000, 1, true), null, 'at or past the end the hold itself pauses');
+  assert.equal(segmentEndDelay({}, 4800, 1, true), null, 'free playback has no boundary');
+  assert.ok(SEGMENT_END_LOOKAHEAD_MS > 125, 'the look-ahead covers more than one clock tick');
+}

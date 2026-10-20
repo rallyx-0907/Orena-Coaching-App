@@ -23,12 +23,13 @@ import { languages } from '../../copy/index.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
+import { watchMicrophone } from '../../capabilities/mic-readiness.js';
 import { logSpeakingTask } from '../../product/speaking-session.js';
 import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
 import {
-  DURATIONS_MS, topics, formatClock, waveBars, resultStats, ledgerFacts, fixesOf, strengthsOf, phrasesFor, headlineKind,
+  DURATIONS_MS, topics, formatClock, waveBars, resultStats, ledgerFacts, fixesOf, strengthsOf, phrasesFor, headlineKind, silenceWatch,
 } from './model.js';
 import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
@@ -66,6 +67,7 @@ export default async function freeTalk(element, ctx) {
   const unitKeys = language === 'zh' ? { count: 'statChars', pace: 'statPaceUnitChars' } : { count: 'statWords', pace: 'statPaceUnit' };
   let startedAt = 0;
   let ticker = 0;
+  let meter = null; // the level of the take being recorded, for the stop on silence
   let takeMs = 0;
   let lastTake = null; // the recording awaiting a transcript, kept so a Retry sends the same take again
   let heard = '';
@@ -261,15 +263,42 @@ export default async function freeTalk(element, ctx) {
       if (clockEl) clockEl.textContent = formatClock(elapsed);
       if (elapsed >= durationMs) void stop();
     }, 250);
+    listenForSilence();
   }
 
+  /* The take also ends by itself after the learner has spoken and gone quiet (#439). The level is read from the
+     take's own microphone stream, cloned - never a second capture, which on iOS Safari mutes the one recording. */
+  function listenForSilence() {
+    meter?.stop();
+    meter = null;
+    const live = recorder.input?.();
+    if (typeof live?.clone !== 'function') return;
+    const quiet = silenceWatch();
+    meter = watchMicrophone({
+      mediaDevices: { getUserMedia: async () => live.clone() },
+      onLevel: (peak) => {
+        if (state === 'recording' && quiet.feed(peak, Date.now())) void stop();
+      },
+    });
+  }
+
+  /* Every take ends in a transcript or a clear reason (#439): the stop is answered at once (the working card),
+     and a recording that came back empty or failed opens the Mic state sheet instead of silently resetting. */
   async function stop() {
     if (state !== 'recording') return;
     clearInterval(ticker);
+    meter?.stop();
+    meter = null;
     const ms = Date.now() - startedAt;
+    state = 'transcribing';
+    paint();
     const take = await recorder.stop();
     if (!alive()) return;
-    if (!take?.blob || ms < MIN_TAKE_MS) { state = 'setup'; paint(); return; }
+    if (!take?.blob || ms < MIN_TAKE_MS) {
+      state = 'setup';
+      paint();
+      return void problem('notheard');
+    }
     lastTake = { blob: take.blob, ms };
     await transcribe();
   }
@@ -356,6 +385,7 @@ export default async function freeTalk(element, ctx) {
   return () => {
     disposed = true;
     clearInterval(ticker);
+    meter?.stop();
     recorder.cleanup();
   };
 }

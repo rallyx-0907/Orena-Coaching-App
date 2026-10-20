@@ -11,6 +11,28 @@ const {
   DURATIONS_MS, topics, formatClock, waveBars, resultStats, ledgerFacts, unitCount, pace, fixesOf, strengthsOf, phraseWords, headlineKind,
 } = await import('../static/orena/screens/free-talk/model.js');
 
+// 0. #439: the take ends by itself after speech and then silence; never before anything was said.
+{
+  const { silenceWatch, SILENCE_STOP_MS } = await import('../static/orena/screens/free-talk/model.js');
+  const quiet = silenceWatch();
+  let at = 0;
+  const tick = (peak) => { at += 100; return quiet.feed(peak, at); };
+  for (let i = 0; i < 100; i += 1) assert.equal(tick(0.01), false, 'ten seconds of silence before speaking: still recording');
+  for (let i = 0; i < 20; i += 1) assert.equal(tick(0.3), false, 'speaking');
+  assert.equal(quiet.heardSpeech, true);
+  let stoppedAfter = null;
+  for (let i = 1; i <= 80 && stoppedAfter == null; i += 1) if (tick(0.01)) stoppedAfter = i * 100;
+  assert.ok(stoppedAfter != null && stoppedAfter >= SILENCE_STOP_MS && stoppedAfter <= SILENCE_STOP_MS + 200, `stops ${SILENCE_STOP_MS} ms after the speech ended (${stoppedAfter})`);
+  const pauses = silenceWatch();
+  let t = 0;
+  for (let i = 0; i < 10; i += 1) pauses.feed(0.3, t += 100);
+  for (let i = 0; i < 30; i += 1) assert.equal(pauses.feed(0.01, t += 100), false, 'a three-second pause between sentences does not end the take');
+  assert.equal(pauses.feed(0.3, t += 100), false);
+  const src = fs.readFileSync(new URL('../static/orena/screens/free-talk/screen.js', import.meta.url), 'utf8');
+  assert.match(src, /return void problem\('notheard'\)/, 'an empty or failed take opens the Mic state sheet, never a silent reset');
+  assert.doesNotMatch(src, /if \(!take\?\.blob \|\| ms < MIN_TAKE_MS\) \{ state = 'setup'; paint\(\); return; \}/);
+}
+
 // 1. Duration caps: exactly the frame's own three pills, in milliseconds.
 assert.deepEqual(DURATIONS_MS, [60_000, 120_000, 180_000]);
 

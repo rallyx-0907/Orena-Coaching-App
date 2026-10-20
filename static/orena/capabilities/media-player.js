@@ -144,7 +144,7 @@ export function segmentHoldAction(hold,timeMs,playing){
 }
 
 function clearSegmentTimer(root){
-  const controller=controllers.get(root);if(controller)controller.segmentEndMs=null;
+  const controller=controllers.get(root);if(controller){controller.segmentEndMs=null;if(controller.endTimer){clearTimeout(controller.endTimer);controller.endTimer=null;}}
   const timer=segmentTimers.get(root);
   if(timer!==undefined){
     clearTimeout(timer);
@@ -163,9 +163,47 @@ function destroyController(root){
   const controller=controllers.get(root);
   if(!controller)return;
   stopClock(controller);
+  if(controller.endTimer){clearTimeout(controller.endTimer);controller.endTimer=null;}
   try{controller.player?.destroy?.();}catch{}
   controllers.delete(root);
   root.dataset.mediaClock='disconnected';
+}
+
+/* The nearest boundary a playing line owes (a held line's end, a one-shot segment end), as a delay.
+   Pure and exported so the arithmetic is checked with numbers. Null when nothing is owed yet within the
+   look-ahead: the next clock tick comes back before then. The delay is in wall time, so a faster rate
+   reaches the boundary sooner. */
+export const SEGMENT_END_LOOKAHEAD_MS=300;
+const SEEK_SETTLE_MS=400;
+export function segmentEndDelay({holdEndMs=null,segmentEndMs=null}={},timeMs,rate=1,playing=true){
+  const at=Number(timeMs),speed=Number(rate)>0?Number(rate):1;
+  if(!playing||!Number.isFinite(at))return null;
+  const ends=[holdEndMs,segmentEndMs].map(Number).filter(end=>Number.isFinite(end)&&end>at);
+  if(!ends.length)return null;
+  const wait=(Math.min(...ends)-at)/speed;
+  return wait<=SEGMENT_END_LOOKAHEAD_MS?Math.max(0,Math.round(wait)):null;
+}
+
+/* The clock polls every 125 ms, so a line used to stop up to a tick (plus the embed's own clock lag) after its
+   end - the next line's first words under this line's text (#440). Near the end, the pause is scheduled for the
+   exact remaining time instead of waiting for the tick after it. */
+function armSegmentEnd(root,controller,timeMs,playing){
+  if(controller.endTimer){clearTimeout(controller.endTimer);controller.endTimer=null;}
+  // Just after a seek the reported time can still be the old position: the tick after it decides instead.
+  if(Date.now()-(controller.seekAt||0)<SEEK_SETTLE_MS)return;
+  const rate=Number(controller.player?.getPlaybackRate?.())||1;
+  const wait=segmentEndDelay(controller,timeMs,rate,playing);
+  if(wait===null)return;
+  controller.endTimer=setTimeout(()=>{
+    controller.endTimer=null;
+    if(controllers.get(root)!==controller)return;
+    try{
+      if(Number(controller.player?.getPlayerState?.())!==1)return;
+      controller.player.pauseVideo?.();
+      controller.segmentEndMs=null;
+    }catch{return;}
+    emitClock(root,controller);
+  },wait);
 }
 
 function emitClock(root,controller){
@@ -196,7 +234,7 @@ function emitClock(root,controller){
       state===1,
     );
     if(holding==='pause'){controller.player.pauseVideo?.();state=2;}
-    else if(holding==='seek')controller.player.seekTo?.(controller.holdStartMs/1000,true);
+    else if(holding==='seek'){controller.player.seekTo?.(controller.holdStartMs/1000,true);controller.seekAt=Date.now();}
     if(Number.isFinite(controller.segmentEndMs)&&currentTime*1000>=controller.segmentEndMs&&state===1){
       controller.player.pauseVideo?.();controller.segmentEndMs=null;state=2;
     }
@@ -205,6 +243,7 @@ function emitClock(root,controller){
 
       state=2;
     }
+    armSegmentEnd(root,controller,currentTime*1000,state===1);
     root.dataset.mediaClock='ready';
     root.dispatchEvent(new CustomEvent('orena:media-time',{
       bubbles:true,
@@ -275,6 +314,7 @@ export function connectMediaPlayer(root,playback){
       mute:()=>{frame.muted=true;},
       unMute:()=>{frame.muted=false;},
       setPlaybackRate:value=>{frame.playbackRate=Number(value)||1;},
+      getPlaybackRate:()=>frame.playbackRate,
       destroy:()=>{
         frame.removeEventListener?.('loadedmetadata',ready);
         frame.removeEventListener?.('play',clock);
@@ -343,6 +383,7 @@ function sendCommand(root,playback,func,args=[]){
     try{
       const method=controller.player?.[func];
       if(typeof method==='function'){
+        if(func==='seekTo')controller.seekAt=Date.now();
         method.apply(controller.player,args);
         emitClock(root,controller);
         return true;
@@ -498,9 +539,9 @@ export function togglePlayback(root,playback){
       // in it the learner is - and from its start once it has been heard out.
       if(Number.isFinite(controller.holdEndMs)&&Number.isFinite(current)&&
         (current*1000>=controller.holdEndMs-HOLD_TOLERANCE_MS||current*1000<controller.holdStartMs)){
-        controller.player.seekTo(controller.holdStartMs/1000,true);
+        controller.player.seekTo(controller.holdStartMs/1000,true);controller.seekAt=Date.now();
       }else if(Number.isFinite(controller.endMs)&&Number.isFinite(current)&&current*1000>=controller.endMs-100){
-        controller.player.seekTo(controller.startMs/1000,true);
+        controller.player.seekTo(controller.startMs/1000,true);controller.seekAt=Date.now();
       }
       controller.player.playVideo();
     }

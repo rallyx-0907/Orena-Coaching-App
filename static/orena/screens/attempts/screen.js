@@ -81,7 +81,8 @@ export default async function mountAttemptHistory(element, ctx) {
 
   element.querySelector('[data-back]').addEventListener('click', () => ctx.back());
   element.querySelectorAll('[data-open]').forEach((button) => {
-    button.addEventListener('click', () => ctx.go(ctx.href('compare', { id: ctx.params.id }, { ...lineQuery, attempt: button.dataset.open })));
+    // The room and its attempt list are one place in history (#444): opening an attempt replaces this list.
+    button.addEventListener('click', () => ctx.replace(ctx.href('compare', { id: ctx.params.id }, { ...lineQuery, attempt: button.dataset.open })));
   });
 
   return undefined;

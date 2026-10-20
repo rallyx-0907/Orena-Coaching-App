@@ -85,6 +85,33 @@ assert.deepEqual(revoked,['blob:local-speaking-take']);
   assert.match(voice,/recorder\.cleanup\(\)/,'the Orena voice screen releases the microphone when it is torn down');
 }
 
+/* #443: an AudioContext that will not run (iOS Safari: `suspended` outside a tap, `interrupted` after other media
+   played) would record silence through the processing graph. The take records the microphone's own stream then. */
+{
+  let closed=0;
+  class StuckContext{
+    constructor(){this.sampleRate=48000;this.state='suspended';}
+    resume(){return new Promise(()=>{});} // never settles, as iOS can leave it
+    close(){closed+=1;return Promise.resolve();}
+  }
+  const devices={async getUserMedia(){return fakeStream;}};
+  const stuck=createLocalAudioRecorder({mediaDevices:devices,Recorder:FakeRecorder,URLApi,AudioContextCtor:StuckContext});
+  assert.equal(await stuck.start(),true,'the take starts, on the native stream (FakeRecorder asserts it is the microphone stream)');
+  assert.equal(stuck.snapshot().processing_mode,'native-fallback');
+  assert.equal(closed,1,'the context that would not run is closed');
+  assert.equal(stuck.input(),fakeStream,'the live input is the microphone stream, for a level meter to clone');
+  await stuck.stop();
+}
+
+/* #439: a recorder that never reports its end does not leave the room recording for ever. */
+{
+  const { STOP_WAIT_MS }=await import('../static/orena/capabilities/audio-recorder.js');
+  assert.ok(STOP_WAIT_MS>=2000&&STOP_WAIT_MS<=6000,'a bounded wait, long enough for a real recorder');
+  const src=(await import('node:fs')).readFileSync(new URL('../static/orena/capabilities/audio-recorder.js',import.meta.url),'utf8');
+  assert.match(src,/watchdog=setTimeout\(/,'stop() is bounded by a watchdog');
+  assert.match(src,/error='recording_failed';\n\s+finish\(null\);/,'a recorder that never ends is reported as a failed take');
+}
+
 const unsupported=createLocalAudioRecorder({mediaDevices:null,Recorder:null,URLApi});
 assert.equal(await unsupported.start(),false);
 assert.equal(unsupported.snapshot().status,'unsupported');

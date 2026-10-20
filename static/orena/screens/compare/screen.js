@@ -15,6 +15,7 @@ import { icon } from '../../kit/icons.js';
 import { useStyles } from '../../kit/styles.js';
 import { langAttr } from '../../kit/lang.js';
 import { toast } from '../../kit/toast.js';
+import { speakOnDevice } from '../../kit/device-voice.js';
 import { shellCopy } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { api } from '../../infrastructure/api.js';
@@ -37,7 +38,7 @@ import { t } from './copy.js';
 import {
   ringColor, scoreLabelKey, headlineKey, wordStatus, pronunciationStatusKey, statusTone, tileMinWidth, wordDetailFor, defaultWordIndex,
   chipsFor, metricLineFor, axisFor, CHART, chartLines, hasVoice, wordPitchLines, wordPages, PLAYBACK_MODES, nextSpeed, playPlan, pillsFor, toneKey, modeAvailable, effectiveMode,
-  ipaByStart, historyFor,
+  ipaByStart, historyFor, roomLayout,
 } from './model.js';
 
 const filled = (name, size) => raw(icon(name, { size }).replace('fill="none"', 'fill="currentColor"'));
@@ -102,7 +103,11 @@ export default async function mountCompareWithModel(element, ctx) {
   let speed = 1;
   let modesOpen = false; // the phone's playback-mode list, opened from the bar
   let errorText = '';
-  let rec = { phase: TAKE.IDLE, levels: new Array(40).fill(0), elapsedMs: 0 };
+  // The newest take failed (any failure, or an answer the assessment could not measure): the room shows the record
+  // card and why, never the previous attempt's score as if it were this one's (#441). Picking an attempt clears it.
+  let failed = false;
+  let seenLatest = null;
+  let rec ={ phase: TAKE.IDLE, levels: new Array(40).fill(0), elapsedMs: 0 };
   const contours = new Map(); // take id -> { you } once measured
   let playing = false;
   let modelPreview = false;
@@ -162,6 +167,7 @@ export default async function mountCompareWithModel(element, ctx) {
     selectedId = id;
     wordSel = defaultWordIndex(viewNow());
     errorText = '';
+    failed = false;
     paint();
     void measure(id);
   }
@@ -187,9 +193,22 @@ export default async function mountCompareWithModel(element, ctx) {
           selectedId = finished.take_ref;
           wordSel = defaultWordIndex(viewOfTake(takeOf(selectedId)));
           errorText = '';
+          failed = false;
           void measure(selectedId);
         }
-        if (next.phase === TAKE.RECORDING) errorText = '';
+        // An answer the assessment could not measure is this take's outcome: said as such, not left looking like
+        // the previous attempt's result.
+        if (next.phase === TAKE.RESULT && finished && finished !== seenLatest) {
+          seenLatest = finished;
+          if (!finished.take_ref) {
+            failed = true;
+            errorText = t('errNotHeard');
+          }
+        }
+        if (next.phase === TAKE.RECORDING) {
+          errorText = '';
+          failed = false;
+        }
         rec = { ...rec, ...next };
         paint();
       },
@@ -198,6 +217,7 @@ export default async function mountCompareWithModel(element, ctx) {
         paintLive();
       },
       failure(error) {
+        failed = true;
         // The plan's pronunciation minutes are used up (D-165): the server's own sentence, with the way to the plans.
         if (showAssessmentRefusal(ctx, error)) {
           errorText = '';
@@ -266,32 +286,60 @@ export default async function mountCompareWithModel(element, ctx) {
   }
   const alive = (token) => token === playToken && ctx.isCurrent();
 
+  /* The learner's recording plays through one element for the life of the room. iOS Safari lets a media element
+     play without a tap only once a tap has played it: a fresh `new Audio()` per step was refused after the model's
+     part (the tap was spent on the model), so "Model, then you" never reached the learner's take (#443). `prime()`
+     runs inside the tap and unlocks this one element for the steps that follow. */
+  let voiceEl = null;
+  const voice = () => (voiceEl ||= new Audio());
+  function prime(url) {
+    if (!url) return;
+    const el = voice();
+    if (el.src !== url) el.src = url;
+    el.muted = true;
+    // Paused again only if no step has started playing it in the meantime.
+    el.play().then(() => { if (audioEl !== el) el.pause(); el.muted = false; }).catch(() => { el.muted = false; });
+  }
+
   function playFile(url, token, { from = 0, to = Infinity } = {}) {
     return new Promise((resolve) => {
       if (!url || !alive(token)) return resolve();
-      audioEl?.pause();
-      const el = new Audio(url);
+      const el = voice();
+      el.pause();
+      el.muted = false;
+      if (el.src !== url) el.src = url;
       audioEl = el;
       el.playbackRate = speed;
-      let settled=false;
-      const done = () => {if(settled)return;settled=true;if(finishAudio===done)finishAudio=null;resolve();};
-      finishAudio=done;
-      el.addEventListener('ended', done, { once: true });
-      el.addEventListener('error', done, { once: true });
-      if (Number.isFinite(to)) {
-        el.addEventListener('timeupdate', () => {
-          if (el.currentTime >= to) {
-            el.pause();
-            done();
-          }
-        });
-      }
-      const start = () => {
-        if (!alive(token) || audioEl !== el) { el.pause(); done(); return; }
-        if (from > 0) el.currentTime = from;
-        el.play().catch(done);
+      let settled = false;
+      const cleanup = () => {
+        el.removeEventListener('ended', done);
+        el.removeEventListener('error', done);
+        el.removeEventListener('timeupdate', bound);
+        el.removeEventListener('loadedmetadata', start);
       };
-      if (from > 0 && el.readyState < 1) el.addEventListener('loadedmetadata', start, { once: true });
+      function done() {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        if (finishAudio === done) finishAudio = null;
+        resolve();
+      }
+      function bound() {
+        if (el.currentTime >= to) {
+          el.pause();
+          done();
+        }
+      }
+      function start() {
+        if (!alive(token) || audioEl !== el) { done(); return; }
+        try { el.currentTime = from; } catch { /* not seekable yet: plays from the start */ }
+        el.play().catch(done);
+      }
+      finishAudio = done;
+      el.addEventListener('ended', done);
+      el.addEventListener('error', done);
+      if (Number.isFinite(to)) el.addEventListener('timeupdate', bound);
+      if (el.readyState < 1) el.addEventListener('loadedmetadata', start, { once: true });
       else start();
     });
   }
@@ -326,6 +374,7 @@ export default async function mountCompareWithModel(element, ctx) {
       return;
     }
     const token = ++playToken;
+    if (hasTake && plan[0] !== 'you') prime(take.url); // the learner's part comes after an await: unlock it in this tap
     playing = true;
     paint();
     for (const step of plan) {
@@ -360,11 +409,35 @@ export default async function mountCompareWithModel(element, ctx) {
     const token = playToken;
     void playFile(take.url, token, wordSpan(word));
   }
-  function hearWordModel(word) {
+  /* "Hear model" for one word. The source's own audio of that word when its timing is known; otherwise (a YouTube
+     source has no prepared clip and no word timing, D-244) the word said as a word, the way the design's own
+     `hearWord` says it - the dictionary's audio, else the device's voice. Only when neither exists is it said that
+     there is nothing to hear (#442). */
+  async function hearWordModel(word) {
     stopPlay();
+    const token = playToken;
     const modelWord = modelWordFor(word);
-    if (modelWord) void playModelLine(playToken, wordSpan(modelWord));
-    else toast(t('modelWordUnavailable'));
+    if (modelWord) {
+      void playModelLine(token, wordSpan(modelWord));
+      return;
+    }
+    const text = String(word?.text || '').replace(/^[\p{P}\p{S}]+|[\p{P}\p{S}]+$/gu, '');
+    if (!text) {
+      toast(t('modelWordUnavailable'));
+      return;
+    }
+    prime(selectedTake()?.url); // the dictionary clip plays after a request: unlock the element inside this tap
+    try {
+      const found = await api.wordAudio(text, '', true);
+      if (!alive(token)) return;
+      if (found?.available && found.url) {
+        await playFile(found.url, token);
+        return;
+      }
+    } catch {
+      if (!alive(token)) return;
+    }
+    if (!speakOnDevice(text, language)) toast(t('modelWordUnavailable'));
   }
 
   /* ---- Markup ---- */
@@ -460,7 +533,8 @@ export default async function mountCompareWithModel(element, ctx) {
   function goLine(id) {
     if (!id || recorder.busy) return;
     stopPlay();
-    ctx.go(ctx.href('compare', { id: source.sourceId }, { segment: id }));
+    // Moving between lines of one source is one place in history: Back leaves the source, not the last line (#444).
+    ctx.replace(ctx.href('compare', { id: source.sourceId }, { segment: id }));
   }
 
   function liveLine() {
@@ -686,7 +760,7 @@ export default async function mountCompareWithModel(element, ctx) {
           <div class="s-compare-detail__label">${t('wordDetail')}</div>
           ${
             detail.scoreKnown
-              ? html`<div class="s-compare-detail__score"><span>${t('wordScore')}</span><div class="s-compare-mini"><svg viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="26" fill="none" stroke="var(--surface3)" stroke-width="6"></circle><circle cx="31" cy="31" r="26" fill="none" stroke="${tone.stroke}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${((c * ringPct) / 100).toFixed(1)} ${c.toFixed(1)}"></circle></svg><b>${detail.score}</b></div></div>`
+              ? html`<div class="s-compare-detail__score"><span>${t('wordScore')}</span><div class="s-compare-mini" role="img" aria-label="${t('wordScore')} ${detail.score}${t('scoreOutOf')}"><svg viewBox="0 0 62 62" aria-hidden="true"><circle cx="31" cy="31" r="26" fill="none" stroke="var(--surface3)" stroke-width="6"></circle><circle cx="31" cy="31" r="26" fill="none" stroke="${tone.stroke}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${((c * ringPct) / 100).toFixed(1)} ${c.toFixed(1)}"></circle></svg><b>${detail.score}</b></div></div>`
               : ''
           }
         </div>
@@ -723,16 +797,18 @@ export default async function mountCompareWithModel(element, ctx) {
       const target = lines[at + dir];
       return html`<button type="button" class="s-compare-bar__nav" data-fk="bar-line-${dir < 0 ? 'prev' : 'next'}" data-source-line="${target?.lineId || ''}" aria-label="${t(dir < 0 ? 'previousLine' : 'nextLine')}" ${busyNow() || !target ? raw('disabled') : ''}>${raw(icon(dir < 0 ? 'chevron-left' : 'chevron-right', { size: 20 }))}</button>`;
     };
+    // A take recording or being assessed owns the room: nothing here can play over it or start another (#443).
+    const off = busyNow() ? raw('disabled') : '';
     return html`<div class="s-compare-bar" data-bar>
       <div class="s-compare-bar__main">
-        <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}"><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
-        <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
-        <button type="button" class="s-compare-bar__again" data-fk="again" data-again>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
+        <button type="button" class="s-compare-bar__play" data-fk="play" data-play aria-label="${playing ? t('stop') : t('play')}" ${off}><span class="s-compare-bar__disc">${playing ? filled('pause', 14) : filled('play', 14)}</span><span data-pb-label>${playing ? t('stop') : t('play')}</span></button>
+        <button type="button" class="s-compare-bar__speed" data-fk="speed-bar" data-speed ${off}><span data-pb-label class="s-compare-muted">${t('speed')} </span>${t('speedUnit', { n: speed })}</button>
+        <button type="button" class="s-compare-bar__again" data-fk="again" data-again ${off}>${raw(icon('rotate-cw', { size: 18, stroke: 2.2 }))}${t('tryAgain')}</button>
       </div>
       <div class="s-compare-bar__sub">
         ${pair ? navButton(-1) : ''}
         <div class="s-compare-bar__modewrap" data-modewrap>
-          <button type="button" class="s-compare-bar__modebtn" data-fk="modes-toggle" data-modes-toggle aria-expanded="${String(modesOpen)}" aria-label="${t('playbackMode')}: ${t(MODE_KEY[active])}"><span class="s-compare-muted">${t('playbackMode')}</span><b>${t(MODE_KEY[active])}</b>${raw(icon('chevron-up', { size: 16 }))}</button>
+          <button type="button" class="s-compare-bar__modebtn" data-fk="modes-toggle" data-modes-toggle aria-expanded="${String(modesOpen)}" aria-label="${t('playbackMode')}: ${t(MODE_KEY[active])}" ${off}><span class="s-compare-muted">${t('playbackMode')}</span><b>${t(MODE_KEY[active])}</b>${raw(icon('chevron-up', { size: 16 }))}</button>
           <div class="${cls('s-compare-bar__modes', modesOpen && 'is-open')}" data-pb-modes role="group" aria-label="${t('playbackMode')}">${PLAYBACK_MODES.map((m) => html`<button type="button" class="${cls('s-compare-bar__mode', active === m && 's-compare-bar__mode--on')}" data-mode="${m}" data-fk="mode-${m}" ${modeAvailable(m, caps) ? '' : raw('disabled')} aria-pressed="${active === m}">${t(MODE_KEY[m])}</button>`)}</div>
         </div>
         ${pair ? navButton(1) : ''}
@@ -799,10 +875,9 @@ export default async function mountCompareWithModel(element, ctx) {
     const focusKey = element.contains(document.activeElement) ? document.activeElement?.closest?.('[data-fk]')?.dataset.fk || '' : '';
     const take = selectedTake();
     const view = take ? viewNow() : null;
-    const recording = rec.phase === TAKE.RECORDING;
-    const processing = rec.phase === TAKE.PROCESSING;
-    const result = Boolean(take && view?.measured);
-    const showRecord = !result || recording || processing || Boolean(errorText);
+    const layout = roomLayout({ hasResult: Boolean(take && view?.measured), recording: rec.phase === TAKE.RECORDING, processing: rec.phase === TAKE.PROCESSING, failed });
+    const result = layout.result;
+    const showRecord = layout.record;
 
     originalPlayer?.park(element);
     mount(
@@ -815,7 +890,7 @@ export default async function mountCompareWithModel(element, ctx) {
         <button type="button" class="s-compare-history" data-attempts aria-label="${t('attemptHistory')}"><span>${t('attemptHistory')}</span></button>
         ${source.lessonId ? html`<button type="button" class="o-iconbtn s-compare-more-btn" data-more aria-label="${t('more')}" title="${t('more')}" ${busyNow() ? raw('disabled') : ''}>${raw(icon('ellipsis', { size: 18 }))}</button>` : ''}
       </div>
-      <div class="s-compare-scroll${showRecord ? ' s-compare-scroll--record' : ''}" data-scroll-region>
+      <div class="s-compare-scroll${layout.fit ? ' s-compare-scroll--record' : ''}" data-scroll-region>
         ${source.playback?.kind === 'embed' ? html`<div class="s-compare-model-preview${modelPreview ? ' is-model-playing' : ''}" data-original-player></div>` : ''}
         ${result && !showRecord ? anchorMarkup(view) : ''}
         ${showRecord ? recordCard() : ''}
@@ -886,7 +961,8 @@ export default async function mountCompareWithModel(element, ctx) {
       void playFile(url, playToken);
     }));
     q('[data-back]').addEventListener('click', () => ctx.back());
-    q('[data-attempts]').addEventListener('click', () => ctx.go(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
+    // The attempt list stands in for this room in history (#444): Back from either leaves the source.
+    q('[data-attempts]').addEventListener('click', () => ctx.replace(ctx.href('attempts', { id: ctx.params.id }, { ...lineQuery, attempt: selectedId })));
     element.querySelectorAll('[data-select]').forEach((button) => button.addEventListener('click', () => select(button.dataset.select)));
     element.querySelectorAll('[data-word]').forEach((button) => {
       button.addEventListener('click', () => {
@@ -912,7 +988,7 @@ export default async function mountCompareWithModel(element, ctx) {
       });
     });
     q('[data-mic]')?.addEventListener('click', () => (rec.phase === TAKE.RECORDING ? recorder.stop() : record()));
-    element.querySelectorAll('[data-hear-word]').forEach((button) => button.addEventListener('click', () => hearWordModel(wordDetailFor(viewNow(), openWord()))));
+    element.querySelectorAll('[data-hear-word]').forEach((button) => button.addEventListener('click', () => void hearWordModel(wordDetailFor(viewNow(), openWord()))));
     q('[data-hear-yours]')?.addEventListener('click', () => hearYours(viewNow()?.words?.[openWord()]));
     q('[data-play]')?.addEventListener('click', () => void playAll());
     element.querySelectorAll('[data-mode]').forEach((button) => {

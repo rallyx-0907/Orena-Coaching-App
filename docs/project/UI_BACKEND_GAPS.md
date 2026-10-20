@@ -6480,3 +6480,9 @@ The owner's report (2026-10-20, :8000, Vietnamese support): some words show "Ngh
 
 The built-in Listening catalogue ships empty since D-245, so a learner on a runtime with no imported media can open Discover (or its Listen tab) with nothing on the shelf and no filter set. The pinned `Orena.dc.html` draws exactly one empty line for the results grid, "Nothing matches these filters yet." with "Clear filters", and no line for an empty shelf without filters. The app keeps the design's line and, as before, leaves out the Clear filters action when no filter is set (`screens/discover/screen.js`, `emptyText`); no wording was invented. Open for the owner: whether the design should draw a no-filter empty line, and its words in en/vi/zh.
 
+## Shadowing / Compare: word detail on a YouTube source (#442, 2026-10-20)
+
+- **Model column "—".** A YouTube item has no prepared model clip (D-244) and, unless its captions carry word timing, no model word interval, so the per-word Model plot and Timing stay unavailable ("—", "No comparison for this word yet."). The design draws a model plot for every word and has no unavailable state. Nothing is synthesised in its place (rule 40). Open for the owner: whether a source without model audio should draw its own state.
+- **Hear model for one word.** The design's `hearWord` says the word (device voice). With no model word interval the app now plays the dictionary's audio of the word (`/api/library/vocabulary/{word}/audio`), else the device voice, and only then says there is nothing to hear.
+- **Word score.** The design draws the score ring (a 0-100 arc) with the number, the status pill under the word and a tip; it draws no "/100" on the word ring. The app keeps that; the ring's accessible name carries the scale ("Word score 5/100"). Open for the owner: whether the word ring should print its scale like the overall ring.
+
