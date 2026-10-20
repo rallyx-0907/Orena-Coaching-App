@@ -15,7 +15,7 @@ import { askOrena } from '../../shell/agent-bridge.js';
 import { dictationEvidence, recoverListeningEvidence } from '../../product/evidence.js';
 import { t } from './copy.js';
 import {
-  previousEvidence, checkAnswer, chipsFor, scoreOf, scoreNoteKey, hintNoteKey, hintButton, liveView, MAX_HINT_LEVEL,
+  previousEvidence, checkAnswer, chipsFor, answerChips, scoreOf, scoreNoteKey, hintNoteKey, hintButton, liveView, MAX_HINT_LEVEL,
 } from './model.js';
 
 function setText(target, value) {
@@ -45,6 +45,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
   let hintLevel = 0;
   let hintHidden = false; // the learner put the hint away to try unaided; the level it reached stays (LEX-033)
   let checked = false;
+  let shown = false; // the learner asked for the answer instead of checking (owner decision 2026-10-20, issue 445)
   let lastResult = null;
   let evidence = null;
   let recover = null;
@@ -123,6 +124,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     mount(dockEl, html`<div class="s-dict__hintrow">
       <button type="button" class="s-dict__hint" data-hint aria-describedby="${noteId}">${raw(icon('eye', { size: 20 }))}<span class="s-dict__actlabel" data-label></span></button>
       <button type="button" class="s-dict__hinttoggle" data-hint-toggle hidden><span class="s-dict__glyph" data-glyph></span><span class="s-dict__actlabel" data-label></span></button>
+      <button type="button" class="s-dict__hint s-dict__reveal" data-reveal aria-label="${t('showAnswer')}" title="${t('showAnswer')}">${raw(icon('book-open', { size: 20 }))}<span class="s-dict__actlabel">${t('showAnswer')}</span></button>
       <span class="s-dict__hintnote" data-hint-note id="${noteId}"></span>
       <span class="s-dict__spacer"></span>
       <button type="button" class="o-btn o-btn--primary s-dict__check" data-check>${t('checkButton')}</button>
@@ -134,7 +136,9 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
       if (hintLevel > 0) paintLive();
     });
     input.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+      // An input method still composing (pinyin, Vietnamese Telex) owns Enter: it commits the word, not the answer.
+      // iOS Safari reports that keydown as keyCode 229 and not always as isComposing.
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
         event.preventDefault();
         void check();
       }
@@ -151,11 +155,33 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
       paintLive();
     });
     q('[data-check]').addEventListener('click', () => void check());
+    q('[data-reveal]').addEventListener('click', () => void reveal());
     paintHint();
     paintLive();
   }
 
+  /* The answer shown on request (owner decision 2026-10-20, issue 445): the whole line and its meaning, marked as shown.
+     No score - nothing was checked - and the same actions as after a check. */
+  function shownMarkup() {
+    return html`<div class="s-dict__result">
+      <div class="s-dict__scorerow"><span class="s-dict__hintbadge">${t('answerShownBadge')}</span></div>
+      ${saveNoteMarkup()}
+      <div class="s-dict__chipblock">
+        <div class="s-dict__chiplabel">${t('transcript')}</div>
+        <div class="s-dict__chips" lang="${langAttr(lesson.language)}">
+          ${answerChips(seg.text, lesson.language).map((chip) => html`<span class="s-dict__chip">${chip.text}</span>`)}
+        </div>
+        ${seg.support ? html`<div class="s-dict__support" lang="${langAttr(languages().support)}">${seg.support}</div>` : ''}
+      </div>
+    </div>`;
+  }
+
   function paintPost() {
+    if (shown || !lastResult) {
+      mount(stageEl, shownMarkup());
+      mountActions();
+      return;
+    }
     const score = scoreOf(lastResult);
     const chips = chipsFor(lastResult, { expected: seg.text, answer, language: lesson.language });
     mount(stageEl, html`<div class="s-dict__result">
@@ -181,6 +207,10 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
         ${seg.support ? html`<div class="s-dict__support" lang="${langAttr(languages().support)}">${seg.support}</div>` : ''}
       </div>
     </div>`);
+    mountActions();
+  }
+
+  function mountActions() {
     mount(dockEl, html`<div class="s-dict__actions">
       <button type="button" class="s-dict__navbtn s-dict__retry" data-retry aria-label="${t('retry')}" title="${t('retry')}">${raw(icon('rotate-ccw', { size: 16 }))}<span class="s-dict__actlabel">${t('retry')}</span></button>
       <button type="button" class="s-dict__ai" data-explain aria-label="${t('explainLine')}" title="${t('explainLine')}">${markGlyph({ size: 20, symbol: 'ol-intel-still' })}<span class="s-dict__actlabel">${t('explainLine')}</span></button>
@@ -252,8 +282,43 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
   }
   const pending = new Map(); // the attempt a retry would send again
 
+  /* Show the answer without checking (owner decision 2026-10-20, issue 445). The line is revealed as a check reveals it, and
+     the segment's record says so through the attempt model's own `revealed` (presentation 'revealed'): the server
+     scores nothing for it, and nothing here invents a score. */
+  async function reveal() {
+    const line = seg;
+    const field = q('[data-input]');
+    if (field && document.activeElement === field) field.blur();
+    shown = true;
+    checked = true;
+    lastResult = null;
+    revealedIds.add(line.id);
+    results.set(line.id, { answer, hintLevel, lastResult: null, shown: true });
+    onCheck(line);
+    paint();
+    onChange();
+    if (readOnly) return;
+    let outgoing = evidence.reveal();
+    if (recover) {
+      try {
+        outgoing = await recover(outgoing);
+      } catch {
+        saveStates.set(line.id, 'unread');
+        if (seg?.id === line.id && checked) paint();
+        return;
+      }
+    }
+    await persist(line, outgoing);
+  }
+
   async function check() {
     const line = seg;
+    shown = false;
+    /* The answer box is about to be replaced by the result. Letting go of it first closes the phone keyboard and
+       ends typing through the ordinary focus path; WebKit sends no focusout for a focused field that is removed, which
+       left the room in its keyboard layout with the result under where the keyboard had been (issue 445). */
+    const field = q('[data-input]');
+    if (field && document.activeElement === field) field.blur();
     lastResult = checkAnswer({ expected: line.text, answer, language: lesson.language });
     checked = true;
     revealedIds.add(line.id);
@@ -287,6 +352,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
     hintLevel = 0;
     hintHidden = false;
     checked = false;
+    shown = false;
     lastResult = null;
     results.delete(seg.id);
     // A new attempt is a real test again: the line's words go back into hiding until it is checked (LEX-038).
@@ -313,6 +379,7 @@ export function createLinePractice({ lesson, byId, priorRead = true, memory = nu
         hintLevel = kept ? kept.hintLevel : 0;
         hintHidden = false;
         checked = Boolean(kept);
+        shown = Boolean(kept?.shown);
         lastResult = kept ? kept.lastResult : null;
         ensureEvidence();
       }

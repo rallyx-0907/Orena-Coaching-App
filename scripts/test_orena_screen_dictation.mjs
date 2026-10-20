@@ -22,6 +22,7 @@ import {
   previousEvidence,
   checkAnswer,
   chipsFor,
+  answerChips,
   scoreOf,
   scoreNoteKey,
   verdictOf,
@@ -233,6 +234,57 @@ assert.deepEqual(previousEvidence({ checked_attempt_count: 3, best_accuracy_perc
   assert.equal(chips.src.length, 4);
   assert.deepEqual(chips.src.map((chip) => chip.text), ['你', '好', '世', '界']);
   assert.equal(scoreOf(result).correct, 2);
+}
+
+/* --- #445: one word-by-word check, the same result states in English and Chinese ---------------------------
+   A phone types what a desk does not: iOS's smart punctuation turns ' into a curly apostrophe, autocapitalises the
+   first word and adds a full stop; a pinyin keyboard commits Hanzi with full-width punctuation and sometimes spaces.
+   None of that is a mistake. A wrong word (a wrong character) is marked on the learner's side and the word it should
+   have been on the transcript's; a missing one is marked on the transcript's side only. */
+{
+  const en = { expected: "I don't think it's raining", answer: 'I don’t think its raining.', language: 'en' };
+  const result = checkAnswer(en);
+  const chips = chipsFor(result, en);
+  assert.deepEqual(chips.mine.map((chip) => chip.kind), ['correct', 'correct', 'correct', 'bad', 'correct'],
+    'a curly apostrophe matches; a dropped one is a different word, as the evaluator has always counted it');
+  assert.deepEqual(chips.mine.map((chip) => chip.text), ['I', 'don’t', 'think', 'its', 'raining'], "the learner's own spelling is shown");
+  assert.deepEqual(chips.src.map((chip) => chip.kind), ['correct', 'correct', 'correct', 'fix', 'correct']);
+  const cased = { expected: 'Take the train home.', answer: 'take THE train home', language: 'en' };
+  assert.equal(checkAnswer(cased).exact, true, 'case and the closing full stop are not mistakes');
+  const missing = { expected: 'Take the train home', answer: 'Take train home', language: 'en' };
+  const gap = chipsFor(checkAnswer(missing), missing);
+  assert.deepEqual(gap.mine.map((chip) => chip.kind), ['correct', 'correct', 'correct'], "a missing word puts nothing red on the learner's side");
+  assert.deepEqual(gap.src.map((chip) => [chip.text, chip.kind]), [['Take', 'correct'], ['the', 'fix'], ['train', 'correct'], ['home', 'correct']],
+    'it is marked where it belongs, on the transcript');
+}
+{
+  const zh = { expected: '我们一起练习听力。', answer: '我们 一起练习 停力！', language: 'zh' };
+  const result = checkAnswer(zh);
+  const chips = chipsFor(result, zh);
+  assert.deepEqual(chips.mine.map((chip) => chip.text), ['我', '们', '一', '起', '练', '习', '停', '力'], 'a character is the unit; spaces and full-width marks are not');
+  assert.deepEqual(chips.mine.map((chip) => chip.kind), ['correct', 'correct', 'correct', 'correct', 'correct', 'correct', 'bad', 'correct']);
+  assert.deepEqual(chips.src.map((chip) => chip.kind), ['correct', 'correct', 'correct', 'correct', 'correct', 'correct', 'fix', 'correct'],
+    'the same wrong / fix pair as English');
+  assert.equal(checkAnswer({ expected: '我们一起练习听力。', answer: '我们一起练习听力', language: 'zh' }).exact, true);
+  const missing = { expected: '你好世界', answer: '你世界', language: 'zh' };
+  const gap = chipsFor(checkAnswer(missing), missing);
+  assert.deepEqual(gap.src.map((chip) => chip.kind), ['correct', 'fix', 'correct', 'correct'], 'a missing character is marked on the transcript');
+  assert.ok(gap.mine.every((chip) => chip.kind === 'correct'));
+}
+
+/* --- #445 "Show answer" (owner decision 2026-10-20): the whole line in its own spelling, unmarked, in both languages;
+   the record says it was revealed and carries no score. --- */
+{
+  assert.deepEqual(answerChips("I don't think it's raining.", 'en').map((chip) => chip.text), ['I', "don't", 'think', "it's", 'raining']);
+  assert.ok(answerChips('Take the train home', 'en').every((chip) => chip.kind === 'shown'), 'nothing was compared, so nothing is right or wrong');
+  assert.deepEqual(answerChips('我们一起练习听力。', 'zh').map((chip) => chip.text), ['我', '们', '一', '起', '练', '习', '听', '力']);
+  const { dictationEvidence } = await import('../static/orena/product/evidence.js');
+  const evidence = dictationEvidence({ asset: 'a', segment: { segment_id: 's1', spoken_text: 'Take the train home' }, language: 'en' });
+  const revealed = evidence.reveal();
+  assert.equal(revealed.presentation, 'revealed');
+  assert.equal(revealed.revealed, true);
+  assert.equal(revealed.checked_attempt_count, 0, 'showing the answer is not a checked attempt');
+  assert.equal(revealed.best_accuracy_percent, null, 'and moves no score');
 }
 
 /* --- hint: the button's label ladder and the fixed category note beside it --- */

@@ -222,6 +222,12 @@ export function chipsFor(result, { expected = '', answer = '', language = 'en' }
 
 export { verdictOf };
 
+/* The line itself as chips, for "Show answer" (owner decision 2026-10-20, issue 445): every word in the transcript's own
+   spelling, unmarked - nothing was compared, so nothing is right or wrong. */
+export function answerChips(expected, language = 'en') {
+  return surfaceWords(expected, language).map((word) => ({ text: word, kind: 'shown' }));
+}
+
 /* The label beside the Hint button: a fixed category for the current level, never the answer's own
    text (design: `hintNote`, always present, even before a hint is asked for). */
 export function hintNoteKey(level, language = 'en') {

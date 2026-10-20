@@ -74,7 +74,7 @@ assert.match(practiceSrc, /labelControl\(button, t\(view\.key, view\.values\)\)/
 assert.match(practiceSrc, /labelControl\(toggle, t\(hintHidden \? 'hintShow' : 'hintHide'\)\)/, 'the toggle is named by its action');
 assert.match(practiceSrc, /icon\(hintHidden \? 'chevron-down' : 'chevron-up'/, 'the toggle draws a chevron, not a second eye');
 // Every one of those names exists, and differs, in the three interface languages.
-const names = ['hintGive', 'hintMore', 'hintMaxed', 'hintHide', 'hintShow', 'hintNoteStart', 'hintNoteStartHan'];
+const names = ['hintGive', 'hintMore', 'hintMaxed', 'hintHide', 'hintShow', 'hintNoteStart', 'hintNoteStartHan', 'showAnswer', 'answerShownBadge'];
 const byLang = {};
 for (const ui of ['en', 'vi', 'zh']) {
   setLanguages({ ui });
@@ -115,5 +115,52 @@ assert.ok(phone('.is-dictation:not(.is-typing) .s-listening__player').some((r) =
 const share = listenCss.lastIndexOf('.is-dictation:not(.is-typing):has(.s-dict__result) .s-listening__transcript');
 assert.ok(share > listenCss.lastIndexOf('@media (max-height: 700px)'), 'the Dictation share comes after the short-phone floors');
 assert.match(listenCss.slice(share), /^[^}]*min-height:\s*30%/, 'after a check the Transcript keeps at least 30% of the body');
+
+/* --- #445: after Check the result is in view on the phone, never under the keyboard --------------------------
+   WebKit sends no focusout when the focused answer box is replaced by the result, so the room stayed in its
+   keyboard layout. Check lets go of the field first, the room ends typing at once and brings the result's stage to
+   its score, settling again while the visible viewport grows back; the page itself is never what scrolls. */
+const checkFn = practiceSrc.slice(practiceSrc.indexOf('async function check()'));
+assert.ok(checkFn.indexOf('.blur()') > -1 && checkFn.indexOf('.blur()') < checkFn.indexOf('paint()'),
+  'Check lets go of the answer box before the result replaces it');
+assert.match(practiceSrc, /event\.keyCode !== 229/, "an input method's Enter commits its word, never the answer");
+assert.match(practiceSrc, /!event\.isComposing/, 'and so does a composing Enter');
+const onCheck = listenSrc.slice(listenSrc.indexOf('onCheck:'), listenSrc.indexOf('onRetry:'));
+assert.match(onCheck, /revealResult\(\)/, 'the room settles the result after every check');
+const reveal = listenSrc.slice(listenSrc.indexOf('function revealResult()'));
+assert.match(reveal, /classList\.remove\('is-typing'\)/, 'typing ends at once, not after the focusout delay');
+assert.match(reveal, /removeProperty\('--ls-visible-h'\)/, 'the room is the full visible area again');
+assert.match(reveal, /viewport\.addEventListener\('resize'/, 'and settles again while the keyboard closes');
+assert.match(reveal, /stage\.scrollTop = 0/, "the stage, the result's own region, starts at the score");
+assert.doesNotMatch(reveal.slice(0, reveal.indexOf('setTimeout(')), /scrollIntoView/, 'nothing scrolls the page itself');
+
+/* --- #445, owner decision 2026-10-20: matched words are green, and the answer can be shown -------------------
+   Green is the semantic success pair the Live check strip already uses, with no edge (D-147). "Show answer" is a
+   control of the hint row's own style (a glyph on the phone, its words on the desk), reveals the line as a check does,
+   and records it through the attempt model's `revealed` - never a score. */
+for (const side of ['.s-dict__chip--mine-correct', '.s-dict__chip--src-correct']) {
+  const rule = rulesFor(dictCss, side);
+  assert.ok(rule.some((r) => /background:\s*var\(--green-soft\)/.test(r.body) && /color:\s*var\(--green\)/.test(r.body)), `${side} is the success pair`);
+  assert.ok(rule.every((r) => !/border|outline|box-shadow/.test(r.body)), `${side} draws no edge`);
+}
+const revealButton = practiceSrc.match(/<button[^>]*data-reveal[^>]*>.*?<\/button>/s)?.[0] || '';
+assert.match(revealButton, /class="s-dict__hint s-dict__reveal"/, "Show answer takes the hint row's button style");
+assert.match(revealButton, /aria-label="\$\{t\('showAnswer'\)\}"/, 'and is named by its words');
+assert.match(revealButton, /icon\('book-open'/, 'a Lucide glyph on the phone');
+assert.ok(practiceSrc.indexOf('data-reveal') < practiceSrc.indexOf('data-check'), 'it sits before Check, not after it');
+const revealFn = practiceSrc.slice(practiceSrc.indexOf('async function reveal()'), practiceSrc.indexOf('async function check()'));
+assert.match(revealFn, /evidence\.reveal\(\)/, "the reveal is the attempt model's own record");
+assert.doesNotMatch(revealFn, /evidence\.compare|checkAnswer/, 'showing the answer scores nothing');
+assert.match(revealFn, /revealedIds\.add\(line\.id\)/, 'the line is revealed as a check reveals it');
+assert.match(revealFn, /onCheck\(line\)/, 'and the room settles it in view as after a check');
+assert.match(revealFn, /if \(readOnly\) return;/, "an administrator's preview stores nothing");
+assert.match(practiceSrc, /answerChips\(seg\.text, lesson\.language\)/, 'the shown line is drawn in its own spelling');
+// Measured at 360x740 (issue 445): with the picture strip the stage had 108px and no word of the result was in view. After a
+// check, or once the answer is shown, the phone's picture gives way (still rendered, so Replay plays) and comes later
+// than the strip rule it overrides.
+const yields = '.is-dictation:not(.is-typing):has(.s-dict__result) .s-listening__player';
+assert.ok(phone(yields).some((r) => /position:\s*absolute/.test(r.body) && /opacity:\s*0/.test(r.body) && !/display:\s*none/.test(r.body)),
+  'after a check the picture yields on the phone but stays rendered');
+assert.ok(listenCss.lastIndexOf(yields) > listenCss.lastIndexOf('.is-dictation:not(.is-typing) .s-listening__player {'), 'and wins over the compact strip');
 
 console.log('Dictation workspace: a held line is the whole of what may be played; the phone keeps the Transcript while typing and draws the hint as an eye: PASS');

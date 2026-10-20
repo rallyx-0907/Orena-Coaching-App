@@ -176,6 +176,13 @@
   color: var(--red);
   text-decoration: underline wavy var(--red);
 }
+/* A matched word is green on both sides (owner decision 2026-10-20, issue 445; frame 07 draws it plain): the semantic
+   success fill and ink the Live check strip already uses, no edge. */
+.s-dict__chip--mine-correct,
+.s-dict__chip--src-correct {
+  background: var(--green-soft);
+  color: var(--green);
+}
 .s-dict__chip--src-fix {
   background: var(--accent-soft);
   color: var(--accent-text);
