@@ -1326,6 +1326,10 @@ def _with_voice(runtime):
     return runtime
 
 
+from writing_coach.agent import band as _agent_band  # noqa: E402
+
+# The band estimator (Monetisation v2): administrators only until calibrated; BAND_ESTIMATOR=off removes the route.
+_agent_band.configure(_agent_band.mode_from_env(os.environ))
 configure_agent(_with_voice(
     build_agent_runtime(
         writing_review=_agent_writing_review,
