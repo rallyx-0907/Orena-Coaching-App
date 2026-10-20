@@ -308,6 +308,7 @@ async def _voice_extend_allowed(request: Request,
 # --- the weekly recurring-mistake report (Monetisation v2): counts from the learner's own records -------------------
 
 SPEAKING_ATTEMPTS_READ = 200
+WEEKLY_REPORT = "progress.weekly_report"  # the plan entitlement (catalog.METERS)
 
 
 def _source(read, *args):
@@ -330,6 +331,9 @@ def agent_progress_weekly(request: Request, response: Response, tz: str | None =
 
     if interface not in interface_languages():
         raise HTTPException(status_code=422, detail="unknown interface language")
+    # Plus and Pro (MV2-6a, D-248): 403 feature_not_in_plan for Free before anything is read; 503 when the plan cannot
+    # be read (fail closed).
+    plan_features.require(LearnerScope.from_request_context().user_key, WEEKLY_REPORT)
     sources = getattr(runtime.pack, "sources", None)
     zone = tz or request.headers.get("X-Orena-Timezone") or "UTC"
     if not tz and not weekly_report.known_zone(zone):
