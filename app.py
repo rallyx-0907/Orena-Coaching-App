@@ -5718,17 +5718,16 @@ def _free_set_words(code: str) -> set[str]:
 
 def _require_vocabulary_set_save(payload: LibraryVocabularyIn) -> None:
     """A `collection` save, while enforcement is on: the word must be an item of the named set that the learner's plan
-    reaches, else 403 `plan_required`. A save that names no set is accepted only for a word the learner already keeps (a
-    re-save that updates it); a new one needs its set (422), so a locked word cannot be kept by leaving the set out.
+    reaches, else 403 `plan_required`. A save that names no set is not a set item: it is kept like a dictionary save
+    (free; looking a word up is free, D-248 §4), never refused - an older client or a re-save of a kept word must not
+    break (re-review of #485). Keeping a word never unlocks its set's card, so leaving the set out opens nothing.
     Words kept from the learner's own reading or video taps are not set items and never come here."""
     if not _content_access.enforced():
         return
     word = str(payload.word or "").strip()
     collection_id = str(payload.source_collection_id or "").strip()
     if not collection_id:
-        if saved_vocabulary_words((word,)):
-            return
-        raise orena_http_error(422, "source_collection_required", "A word kept from a set names its set.")
+        return
     if is_reserved_collection_id(collection_id):
         return  # General is the dictionary's aggregate, not a set: looking a word up stays free (D-188)
     target = normalize_vocabulary_word(word)

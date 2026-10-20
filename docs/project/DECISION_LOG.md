@@ -7883,7 +7883,7 @@ every schema step named below stays a human gate.
    when the plan reaches Plus. Grading a word outside the window is 403 `plan_required`; the review reads say
    `review_limit {limit, saved, held}` and the Review room shows the quota notice with "See all plans". Like every MV2
    gate it applies only while `access.enforced` is on. In the same review, a word kept from a vocabulary set is a set item:
-   a save naming a set the plan does not reach is 403 `plan_required`, and keeping a word never unlocks its set's card.
+   a save naming a set the plan does not reach is 403 `plan_required` (a save naming no set is a free, non-set save), and keeping a word never unlocks its set's card.
 
 Design gaps G1-G12 are recorded in `docs/project/UI_BACKEND_GAPS.md` ("Monetisation v2").
 

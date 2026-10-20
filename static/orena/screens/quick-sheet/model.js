@@ -216,7 +216,9 @@ export function wordSavePayload(card, sentence, source) {
     // fallback is never stored as the Vietnamese meaning, so a later localization can still fill it.
     ...(vietnameseMeaning(card) ? { translation_vi: vietnameseMeaning(card) } : {}),
     source_fragment: text(sentence),
-    source_kind: ['reading', 'listening', 'writing', 'speaking', 'feed', 'collection', 'feedback', 'strength', 'dictionary'].includes(text(source?.kind))
+    // Never `collection`: a set's word is kept from the set itself, which names the set (D-248 §4, MV2-5); the sheet has
+    // no set id, so a word looked up here is a dictionary save.
+    source_kind: ['reading', 'listening', 'writing', 'speaking', 'feed', 'feedback', 'strength', 'dictionary'].includes(text(source?.kind))
       ? text(source.kind)
       : 'dictionary',
     ...sourceMediaOf(source),

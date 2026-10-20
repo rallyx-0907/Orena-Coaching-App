@@ -212,9 +212,33 @@ def test_keeping_a_locked_word_of_a_set_is_refused_and_the_first_is_kept(vocab_s
     assert locked.status_code == 403 and locked.json()["detail"]["category"] == "plan_required"
     assert locked.json()["detail"]["context"]["kind"] == "vocab_set"
     assert first.status_code == 200 and "buffer" in vocab_set.saved
-    assert unnamed.status_code == 422, "a new set save that leaves its set out is refused, not waved through"
+    assert unnamed.status_code == 200, "a save that names no set is not a set item: kept like a dictionary save"
     assert stranger.status_code == 422, "a word that is not in the named set"
-    assert "hectic" not in vocab_set.saved and "steady" not in vocab_set.saved
+    assert "hectic" not in vocab_set.saved and "steady" in vocab_set.saved
+    with installed(MemoryPolicyStore(ENFORCED)):
+        items = {item["headword"]: item for item in
+                 _get(vocab_set.app, "/api/vocabulary/library/collections/pack").json()["items"]}
+    assert items["steady"]["access"]["locked"] is True and "meanings" not in items["steady"], \
+        "leaving the set out opens nothing"
+
+
+@pytest.mark.parametrize("source_kind", ["dictionary", "reading", "manual", "feed"])
+def test_every_non_set_save_path_stays_free_on_free(vocab_set, source_kind):
+    """The word page (`dictionary`), the reading tap sheet (`reading`), a typed word and the feed are not set items."""
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        response = _post(vocab_set.app, "/api/library/vocabulary", {"word": "hectic", "source_kind": source_kind})
+    assert response.status_code == 200 and "hectic" in vocab_set.saved
+
+
+def test_the_quick_sheets_re_save_of_a_word_kept_from_a_set_is_accepted(vocab_set):
+    """The word sheet re-sends a kept word with its stored kind (`collection`) and no set id: never an error."""
+    vocab_set.saved["hectic"] = {"word": "hectic", "review_stage": 1, "due": False, "next_review_at": ""}
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        response = _post(vocab_set.app, "/api/library/vocabulary",
+                         {"word": "hectic", "definition": "busy", "source_kind": "collection"})
+    assert response.status_code == 200
 
 
 def test_add_all_through_the_api_keeps_only_what_the_plan_reaches(vocab_set):

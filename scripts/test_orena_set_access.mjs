@@ -69,6 +69,18 @@ const kept = await keepCollectionWords({ id: 'pilot-en', language_code: 'en', it
 assert.deepEqual(sent, [['buffer', 'pilot-en']], 'a locked word is never saved by "Add all"; a kept word names its set');
 assert.equal(kept.added, 1);
 
+// Every client save path sends a source the server reads right (re-review of #485): only the set's "Add" sends
+// `collection`, and always with its set; the word sheet, the word page and the reading/video taps never do.
+const { wordSavePayload } = await import('../static/orena/screens/quick-sheet/model.js');
+assert.equal(wordSavePayload({ word: 'hectic' }, '', { kind: 'collection' }).source_kind, 'dictionary', 'the word sheet never sends collection');
+assert.equal(wordSavePayload({ word: 'hectic' }, 's', { kind: 'reading', content_id: 'article:a1' }).source_kind, 'reading');
+assert.deepEqual((({ source_kind, source_media_id }) => ({ source_kind, source_media_id }))(wordSavePayload({ word: 'x' }, 's', { kind: 'listening', content_id: 'media:yt-1' })), { source_kind: 'listening', source_media_id: 'yt-1' });
+assert.equal(wordSavePayload({ word: 'x' }, '', null).source_kind, 'dictionary');
+assert.ok(/saveLibraryVocabulary\(savePayloadOf\(model, 'dictionary'\)\)/.test(readFileSync('static/orena/screens/word/screen.js', 'utf8')), 'the word page saves as dictionary');
+assert.ok(/source_kind: 'listening'/.test(readFileSync('static/orena/screens/listening/vocab-sheet.js', 'utf8')), 'the video sheet saves as listening');
+const { collectionSavePayload } = await import('../static/orena/screens/collection/actions.js');
+assert.deepEqual((({ source_kind, source_collection_id }) => ({ source_kind, source_collection_id }))(collectionSavePayload(first, 'pilot-en')), { source_kind: 'collection', source_collection_id: 'pilot-en' }, 'the set\'s Add names its set');
+
 const collectionScreen = readFileSync('static/orena/screens/collection/screen.js', 'utf8');
 assert.ok(/data-word-locked=/.test(collectionScreen) && /planTag\(plan\)/.test(collectionScreen) && /toolLock\(/.test(collectionScreen), 'a locked word: tag + lock');
 assert.ok(/openUpgradeSheet\(\{ source: 'collection', kind: 'set'/.test(collectionScreen), 'its tap opens the upgrade sheet');
