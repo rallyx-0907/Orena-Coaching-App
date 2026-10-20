@@ -31,11 +31,42 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.engine import Engine
 
 DEFAULT_PAGE_LIMIT = 24
 MAX_PAGE_LIMIT = 60
+
+# D-251 (PRE-203 part 2): a book's rights decide whether learners may read it. The columns arrive with the proposed
+# migration 20261021_0037; until a runtime applies it, the gate is dormant and books show as before.
+RIGHTS_STATUSES = ("unknown", "cleared", "denied", "grandfathered")
+LEARNER_RIGHTS = ("cleared", "grandfathered")  # attested, or on the shelf before 0037 (kept until a person decides)
+_RIGHTS_COLUMNS: dict[int, bool] = {}
+
+
+class BookRightsUnavailable(RuntimeError):
+    """The book rights columns are not in this database yet (migration 0037 not applied)."""
+
+
+def has_rights_columns(engine: Engine) -> bool:
+    """Whether `reading_books` carries the rights columns. Read once per engine: applying the migration is an operator
+    step followed by a restart."""
+    key = id(engine)
+    if key not in _RIGHTS_COLUMNS:
+        try:
+            columns = {column["name"] for column in inspect(engine).get_columns("reading_books")}
+        except Exception:  # noqa: BLE001 - no table, no columns: the gate stays dormant
+            columns = set()
+        _RIGHTS_COLUMNS[key] = "rights_status" in columns
+    return _RIGHTS_COLUMNS[key]
+
+
+def _learner_rights(engine: Engine, alias: str = "") -> str:
+    """The SQL condition that keeps a book from learners until its rights allow it; empty while the gate is dormant."""
+    if not has_rights_columns(engine):
+        return ""
+    allowed = ", ".join(f"'{value}'" for value in LEARNER_RIGHTS)
+    return f" AND {alias}rights_status IN ({allowed})"
 
 
 @dataclass(frozen=True)
@@ -78,6 +109,14 @@ def _as_uuid(value: str) -> uuid.UUID | None:
         return uuid.UUID(str(value))
     except (AttributeError, TypeError, ValueError):
         return None
+
+
+def _rights(row: Any) -> dict[str, Any]:
+    at = row["rights_attested_at"]
+    return {"id": str(row["id"]), "status": row["status"], "rights_status": row["rights_status"],
+            "license_note": row["license_note"], "source_url": row["source_url"],
+            "rights_attested_by": row["rights_attested_by"], "rights_attested_at": at.isoformat() if at else None,
+            "learner_visible": row["status"] == "ready" and row["rights_status"] in LEARNER_RIGHTS}  # fmt: skip
 
 
 class PostgresReadingLibraryRepository:
@@ -240,6 +279,51 @@ class PostgresReadingLibraryRepository:
             ).scalar_one_or_none()
         return restored_id is not None
 
+    def set_rights(self, book_id: str, *, status: str, license_note: str, source_url: str,
+                   actor: str) -> dict[str, Any] | None:  # fmt: skip
+        """Record a book's rights (D-251). `cleared` makes a ready book readable by learners, anything else keeps it
+        (or takes it) off their shelf; the caller enforces that `cleared` is attested with a licence note. None when
+        the book does not exist; `BookRightsUnavailable` before migration 0037."""
+        if status not in RIGHTS_STATUSES or status == "grandfathered":
+            raise ValueError(f"not a rights status an administrator sets: {status!r}")
+        if not has_rights_columns(self._engine):
+            raise BookRightsUnavailable("reading_books has no rights columns (migration 0037 not applied)")
+        identity = _as_uuid(book_id)
+        if identity is None:
+            return None
+        now = datetime.now(UTC)
+        attested = status == "cleared"
+        with self._engine.begin() as connection:
+            row = connection.execute(
+                text(
+                    "UPDATE reading_books SET rights_status = :status, license_note = :note, source_url = :url, "
+                    "rights_attested_by = :by, rights_attested_at = :at, updated_at = :now "
+                    "WHERE id = :id RETURNING id, status, rights_status, license_note, source_url, "
+                    "rights_attested_by, rights_attested_at"
+                ),
+                {"id": identity, "status": status, "note": license_note, "url": source_url,
+                 "by": actor if attested else None, "at": now if attested else None, "now": now},
+            ).mappings().first()  # fmt: skip
+        return None if row is None else _rights(row)
+
+    def rights_review(self, *, limit: int = 1000) -> list[dict[str, Any]]:
+        """Every book whose rights are not `cleared` - what a person still has to decide (read-only). Empty while the
+        gate is dormant."""
+        if not has_rights_columns(self._engine):
+            return []
+        with self._engine.connect() as connection:
+            rows = connection.execute(
+                text(
+                    "SELECT id, title, learning_language, status, rights_status FROM reading_books "
+                    "WHERE rights_status <> 'cleared' ORDER BY learning_language, title, id LIMIT :limit"
+                ),
+                {"limit": max(1, int(limit))},
+            ).mappings().all()
+        return [{"id": str(row["id"]), "title": row["title"], "language": row["learning_language"],
+                 "status": row["status"], "rights_status": row["rights_status"],
+                 "learner_visible": row["status"] == "ready" and row["rights_status"] in LEARNER_RIGHTS}
+                for row in rows]  # fmt: skip
+
     def list_books(
         self, *, learning_language: str, cursor: str | None = None, limit: int = DEFAULT_PAGE_LIMIT
     ) -> dict[str, Any]:
@@ -259,7 +343,8 @@ class PostgresReadingLibraryRepository:
                     "SELECT id, title, author, learning_language, cover_asset_key, "
                     "chapter_count, word_count, created_at "
                     "FROM reading_books "
-                    "WHERE status = 'ready' AND learning_language = :language" + cursor_clause + " "
+                    "WHERE status = 'ready' AND learning_language = :language" + _learner_rights(self._engine)
+                    + cursor_clause + " "
                     "ORDER BY created_at DESC, id DESC LIMIT :limit"
                 ),
                 params,
@@ -292,7 +377,7 @@ class PostgresReadingLibraryRepository:
                 text(
                     "SELECT id, title, author, description, learning_language, cover_asset_key, "
                     "chapter_count, word_count, content_revision, created_at "
-                    "FROM reading_books WHERE id = :id AND status = 'ready'"
+                    "FROM reading_books WHERE id = :id AND status = 'ready'" + _learner_rights(self._engine)
                 ),
                 {"id": identity},
             ).mappings().first()
@@ -331,6 +416,7 @@ class PostgresReadingLibraryRepository:
                     "FROM reading_book_chapters c "
                     "JOIN reading_books b ON b.id = c.book_id "
                     "WHERE c.book_id = :book_id AND c.id = :chapter_id AND b.status = 'ready'"
+                    + _learner_rights(self._engine, "b.")
                 ),
                 {"book_id": book_identity, "chapter_id": chapter_identity},
             ).mappings().first()

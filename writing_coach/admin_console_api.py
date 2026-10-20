@@ -1167,6 +1167,49 @@ def restore_book(book_id: str, request: Request, response: Response) -> dict[str
     return {"restored": True, "id": book_id}
 
 
+class BookRightsIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    rights: str = Field(default="unknown", max_length=20)
+    license: str = Field(default="", max_length=1000)
+    source_url: str = Field(default="", max_length=1000)
+    attested: bool = False
+
+
+@router.post("/content/book/{book_id}/rights")
+def review_book_rights(book_id: str, payload: BookRightsIn, request: Request, response: Response) -> dict[str, Any]:
+    """A book's rights (D-251, PRE-203): the gate learners' shelf reads, like Media's. `cleared` - attested, with a
+    licence note - puts a ready book on the shelf; `unknown` or `denied` keeps it (or takes it) off. 503 until the
+    runtime has applied migration 0037."""
+    from writing_coach.persistence.reading_library_repository import BookRightsUnavailable
+
+    admin = _admin(request)
+    _same_origin(request)
+    _no_store(response)
+    rights = payload.rights.strip().casefold()
+    note = payload.license.strip()
+    if rights not in {"unknown", "cleared", "denied"}:
+        raise orena_http_error(422, "book_rights_invalid", "Choose unknown, cleared or denied rights.")
+    if rights == "cleared" and (not payload.attested or not note):
+        raise orena_http_error(422, "book_rights_attestation_required",
+                               "Cleared rights need a licence or permission note and confirmation.")
+    reading = _state.reading_repository
+    if reading is None:
+        raise orena_http_error(503, "reading_library_unavailable", "The Reading Library is not configured for this deployment.")
+    try:
+        result = reading.set_rights(book_id, status=rights, license_note=note, source_url=payload.source_url.strip(),
+                                    actor=str(admin.get("email") or admin.get("google_sub") or "admin"))  # fmt: skip
+    except BookRightsUnavailable as exc:
+        raise orena_http_error(503, "book_rights_unavailable",
+                               "Book rights are not available until this server's database is upgraded.") from exc
+    if result is None:
+        raise orena_http_error(404, "content_not_found", "This book is not in the catalog.")
+    _audit(admin, "admin.content.rights", entity_type="book", entity_id=book_id,
+           payload={"rights": rights, "license": note, "attested": payload.attested,
+                    "learner_visible": result["learner_visible"], "outcome": "ok"})  # fmt: skip
+    return {"book": result}
+
+
 class MediaRightsIn(BaseModel):
     rights: str = Field(default="unknown", max_length=20)
     license: str = Field(default="", max_length=1000)

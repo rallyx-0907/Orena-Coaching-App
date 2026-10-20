@@ -60,8 +60,17 @@ def book_error_stage(category: str) -> str:
     return _BOOK_STAGES.get(_text(category), "parse")
 
 
+def book_status(book: Mapping[str, Any]) -> str:
+    """`archived`, `published` (learners can read it) or `draft` (ready, but its rights are not attested yet, D-251).
+    Before migration 0037 a book has no `rights_status` and a ready book is published, as it always was."""
+    if book.get("status") != "ready":
+        return "archived"
+    rights = book.get("rights_status")
+    return "published" if rights is None or rights in ("cleared", "grandfathered") else "draft"
+
+
 def book_record(book: Mapping[str, Any]) -> dict[str, Any]:
-    ready = book.get("status") == "ready"
+    ready = book_status(book) == "published"
     identifier = _text(book.get("id"))
     return {
         "kind": "book",
@@ -69,7 +78,7 @@ def book_record(book: Mapping[str, Any]) -> dict[str, Any]:
         "title": _text(book.get("title")),
         "subtitle": _text(book.get("author")),
         "language": _text(book.get("language")),
-        "status": "published" if ready else "archived",
+        "status": book_status(book),
         "origin": "imported",
         "created_at": book.get("created_at"),
         "updated_at": book.get("updated_at"),
@@ -79,6 +88,7 @@ def book_record(book: Mapping[str, Any]) -> dict[str, Any]:
             "chapter_count": int(book.get("chapter_count") or 0),
             "word_count": int(book.get("word_count") or 0),
             "source_kind": _text(book.get("source_kind")),
+            "rights_status": book.get("rights_status"),  # D-251; None before migration 0037
         },
         "issues": [],
         # Archiving was the only recovery path and it was one-way. Both
@@ -455,7 +465,7 @@ def history_rows(
             "source": _text(book.get("title")),
             "language": _text(book.get("language")),
             "created_at": book.get("created_at"),
-            "status": "archived" if book.get("status") == "archived" else "published",
+            "status": book_status(book),
             "result": {"content_id": identifier, "title": _text(book.get("title")),
                        "chapter_count": int(book.get("chapter_count") or 0)},
             "error": None,
