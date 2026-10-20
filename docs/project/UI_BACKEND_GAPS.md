@@ -6523,3 +6523,22 @@ The pinned `Orena-Admin.dc.html` draws no provider-health indicator from recorde
 
 Open for the owner: whether the design should draw a health state of its own, a count of calls in the window, and a full switch log page (the history shows the most recent recorded sample only).
 
+
+## Monetisation v2: plan badges, tier fills, the upgrade sheet and locked states (D-248, 2026-10-20)
+
+The pinned `Orena.dc.html` (2026-10-08 export, D-088) draws plans only in Pricing, Plan & usage, the Billing Sheet and Credits. It draws no content tier, no trial and no plan lock. The owner's instruction outranks the design, so each element below is specified from drawn parts and recorded here. Plan: `ORENA_PRE_MARKET_EVIDENCE/MONETISATION_V2_UI_PLAN_2026-10-20.md` §2. Every row: **decided by owner via Hermes 2026-10-20: Monetisation v2.**
+
+- **G1 Plus/Pro corner badge on a content card or cover.** Not drawn. Pricing's tag pill (`pp.tag`: 4px 10px, radius 999, 11.5px/700), top right of the cover, 8px inset; text "Plus" / "Pro", plan names untranslated as in Pricing. Never on a YouTube item's card or cover (YouTube API Services Developer Policies III.F.3.a). Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G2 Tier frame on a card.** Not drawn. A fill, never a stroke (D-147): the edge stays `--edge-light`; Plus a `--spark-soft` wash, Pro an `--accent-soft` wash. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G3 Tier colours.** The design has none (only `--accent` for paid figures). G2 defines them; no new token. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G4 The light upgrade sheet.** Not drawn. The Coming-soon sheet's shape: the lock in a well (Lucide `lock`, `--surface2` well, `--text3` ink), a title, 3 benefit rows, a price line, primary "Start 7-day free trial" (or "Upgrade" once the trial was used) and secondary "See all plans" (`#/plan/pricing`). It never covers the YouTube player's rect (Required Minimum Functionality: no overlays in front of the player); on a media page it pauses the player first or sits off the player. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G5 Trial copy.** The word "trial" appears in no learner frame. Trial lines are added in Pricing, the upgrade sheet and Plan & usage's status line ("Trial · ends 27 Oct"), in EN, VI and ZH. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G6 Lock icon on paid in-room tools** (translation toggle, Score, Dictation, Save from a video). Not drawn. Lucide `lock` at the control's icon size, `--text3`, after the label; the control stays enabled and a tap opens G4. Placed in the tool bar beside or below the player, never on it. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G7 "Free this week" marker on rotation picks.** Not drawn. The minimum: draw nothing; a rotation item simply shows no tier badge that week. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G8 Locked Reader / Listening state after `403 plan_required`.** Not drawn. Title, cover and the first paragraph stay visible, with the G4 sheet inline below them; no blur and no fade-out gradient. Listening never locks the player or the channel's own captions. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G9 Weekly lookup meter** ("2 of 3 videos this week"). Not drawn. One more Plan & usage meter row, the same as the existing rows. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G10 Exam pass and student price.** Not in Pricing. Shown as a row under the three plan cards (smaller than a fourth card), with the offer's price and its "one payment, no renewal" line; Billing supplies the offers and their figures. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G11 Pricing's line "Every plan includes all reading, listening, speaking, writing and review practice. Plans differ in how much Orena can analyse for you."** It contradicts content gating and is rewritten to match D-248, in EN, VI and ZH. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+- **G12 Profile's plan pill ("Lên Pro", GAP in §Hồ sơ).** That gap closes when commerce opens; the pill follows the effective plan, including a trial. Decided by owner via Hermes 2026-10-20: Monetisation v2.
+
+Still open, outside the UI: the Supadata caption source and the 30-day storage rule (YouTube API Services Developer Policies III.E.6, III.E.4.c) are an owner/counsel gate before paid launch (D-248 §8). The once-per-account trial needs proposed migration 0034 (`promotional_grants`), a human schema gate.
