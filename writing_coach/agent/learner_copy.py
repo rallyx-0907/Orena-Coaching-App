@@ -210,6 +210,14 @@ CATALOG: Mapping[str, CopyEntry] = MappingProxyType(
                 "zh-CN": "Orena 正忙，请稍后再试。",
             },
         ),
+        "error.provider_out_of_service": _entry(
+            CopyLayer.SUPPORT,
+            {
+                "en": "Orena can't chat right now. Your lessons still work.",
+                "vi": "Orena tạm thời chưa trò chuyện được. Các bài học vẫn dùng bình thường.",
+                "zh-CN": "Orena 暂时无法聊天，课程仍可正常使用。",
+            },
+        ),
         "error.voice_unavailable": _entry(
             CopyLayer.SUPPORT,
             {

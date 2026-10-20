@@ -102,10 +102,22 @@ export async function stillNotEntitled(interfaceLang, options = {}) {
   return voiceEntitled() === false;
 }
 
+/* Voice off is a normal state, not a failure: the voice list answers 404 while the server runs without live voice
+   (contract §9). That answer is kept for five minutes, so Settings and the Orena room do not ask again on every open
+   (#446); a reload or the five minutes asks again, so voice switched on is seen. */
+const VOICE_OFF_TTL_MS = 300000;
+let voiceOffAt = new WeakMap();
+export function forgetVoiceOff() {
+  voiceOffAt = new WeakMap();
+}
+
 /* The voices the server offers, labelled in the interface language, and whether the plan includes them (`entitled`: true, false, or null when the server could not read the plan). Null while voice is off (404). */
-export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch } = {}) {
+export async function listVoices(interfaceLang, { fetchImpl = globalThis.fetch, now = Date.now() } = {}) {
+  const off = typeof fetchImpl === 'function' ? voiceOffAt.get(fetchImpl) : undefined;
+  if (off !== undefined && now - off <= VOICE_OFF_TTL_MS) return null;
   try {
     const response = await fetchImpl(`/api/agent/voice/voices?interface=${encodeURIComponent(interfaceLang || 'en')}`, { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+    if (response.status === 404) voiceOffAt.set(fetchImpl, now);
     if (!response.ok) return null;
     const data = await response.json();
     noteVoiceEntitled(data?.entitled === false ? false : data?.entitled === true ? true : null);

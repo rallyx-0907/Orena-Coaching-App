@@ -389,3 +389,13 @@ console.log('Orena Today: recommendation pool, continuation mapping, For-you rai
   assert.deepEqual(leadWithContinuation(pool, onlyGone, t, () => null), pool, 'nothing live: the normal composition shows');
   assert.equal(remembered.length, 3, 'the learner record itself is not changed');
 }
+
+// #446: a lesson that answers 404 is forgotten from the saved places, so Today stops asking for it on every open;
+// a failure that is not "gone" (network, 5xx) only hides the card for this open.
+{
+  const { readFileSync } = await import('node:fs');
+  const today = readFileSync(new URL('../static/orena/screens/today/screen.js', import.meta.url), 'utf8');
+  assert.match(today, /error\?\.status === 404\) state\.memory\?\.forgetPlace\?\.\(`media:\$\{id\}`\)/, 'Today forgets a gone lesson');
+  const practice = readFileSync(new URL('../static/orena/screens/practice/continuation.js', import.meta.url), 'utf8');
+  assert.match(practice, /error\?\.status === 404 && item\.id\.startsWith\('media:'\)\) options\.memory\?\.forgetPlace\?\.\(item\.id\)/);
+}
