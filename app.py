@@ -1288,7 +1288,10 @@ def _agent_writing_error_events() -> list[dict[str, Any]]:
 
     categories = active_error_categories()
     return [
-        {"category": error["category"], "created_at": row["created_at"], "essay_id": row["id"]}
+        {"category": error["category"], "created_at": row["created_at"], "essay_id": row["id"],
+         # the learner's own words and the fix, for the weekly report's example (the pack reads only the three above)
+         "fragment": error.get("fragment"), "suggestion": error.get("suggestion"),
+         "mini_rule_vi": error.get("mini_rule_vi")}
         for row in _learning_repository.list_essays(0, ascending=True)
         for error in parse_persisted_error_events(row["errors_json"], error_categories=categories)
     ]
