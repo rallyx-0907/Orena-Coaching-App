@@ -56,7 +56,7 @@ def test_the_speech_rate_is_measured_by_the_server_and_handed_to_the_model():
     generate = Generate(answer())
     result = band_speaking.estimate(request(duration_seconds=60), generate=generate)
     words = band.sample_size("ielts", TRANSCRIPT)
-    assert result["measures"]["words_per_minute"] == words
+    assert result["measures"]["rate_per_minute"] == words and result["measures"]["unit"] == "word"
     prompt = generate.calls[0]["messages"][1]["content"]
     assert f"{words} words per minute" in prompt and "pron_score 78" in prompt
     assert generate.calls[0]["capability_key"] == band.CAPABILITY  # learner text: the same route, guard and cap
@@ -70,6 +70,12 @@ def test_without_a_pronunciation_assessment_pronunciation_is_not_guessed_and_the
     assert result["overall"] is None and result["label"] is None and result["missing"] == ["pronunciation"]
     criteria = generate.calls[0]["schema"]["properties"]["criteria"]["items"]["properties"]["criterion"]["enum"]
     assert "pronunciation" not in criteria  # the model is not asked for it
+
+
+def test_partial_scores_without_the_overall_pronunciation_score_are_not_a_pronunciation_band():
+    partial = {"accuracy_score": 80.0, "fluency_score": 74.0}  # no pron_score: not a pronunciation assessment
+    result = band_speaking.estimate(request(pronunciation=partial), generate=Generate(answer()))
+    assert result["missing"] == ["pronunciation"] and result["overall"] is None
 
 
 def test_too_little_speech_is_not_scored_and_costs_nothing():

@@ -35,7 +35,7 @@ CRITERIA: dict[str, dict[str, str]] = {
         "grammatical_range_accuracy": "Range of structures, complex sentences included, and how many sentences are "
                                       "free of errors.",
         "pronunciation": "How easily the speech is understood: individual sounds, word and sentence stress, rhythm and "
-                         "intonation. Judge from the pronunciation assessment's scores and the words it flagged.",
+                         "intonation. Judge from the pronunciation assessment's scores.",
     },
     "hsk": {
         "task_completion": "Whether the answer does what was asked, with relevant, developed content.",
@@ -89,9 +89,12 @@ def _criteria(request: SpeakingBandRequest) -> list[str]:
 
 
 def measures(request: SpeakingBandRequest) -> dict[str, Any]:
+    """`words` and `rate_per_minute` count words for English and characters for Chinese (`unit`)."""
+
     words = band.sample_size(request.exam, request.transcript)
-    return {"words": words, "seconds": round(request.duration_seconds, 1),
-            "words_per_minute": round(words * 60 / request.duration_seconds)}  # fmt: skip
+    return {"words": words, "unit": "word" if request.exam == "ielts" else "character",
+            "seconds": round(request.duration_seconds, 1),
+            "rate_per_minute": round(words * 60 / request.duration_seconds)}  # fmt: skip
 
 
 def messages(request: SpeakingBandRequest) -> list[dict[str, str]]:
@@ -116,7 +119,7 @@ def messages(request: SpeakingBandRequest) -> list[dict[str, str]]:
         "to say it."
     )
     user = (f"Criteria:\n{criteria}\n\nPart: {request.part}\nQuestion: {request.prompt or '(none given)'}\n"
-            f"Measured: {rate['words']} {unit} in {rate['seconds']} s, {rate['words_per_minute']} {unit} per minute.\n"
+            f"Measured: {rate['words']} {unit} in {rate['seconds']} s, {rate['rate_per_minute']} {unit} per minute.\n"
             f"Pronunciation assessment (0-100): {pronunciation}\n\nTranscript:\n<<<\n{request.transcript}\n>>>")  # fmt: skip
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
