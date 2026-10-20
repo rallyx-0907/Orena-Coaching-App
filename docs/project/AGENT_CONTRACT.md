@@ -760,9 +760,8 @@ pronunciation attempts (the rows Orena Memory reads). Counts only: no model call
 - **Entitlement:** the plan feature `progress.weekly_report` (plan catalogue, on/off: Free off, Plus and Pro on; v14).
   A plan without it is answered **403 `feature_not_in_plan`** (§2.1) with `context.feature`
   `"progress.weekly_report"`, `plan` and `upgrade`, before anything is read; the client shows the upgrade, never a
-  failure. The server check is added by the Intelligence lane after v14 merges; until then the route answers every
-  plan, and the client still reads the plan's `progress.weekly_report` from `GET /api/product/commerce` before it offers
-  the report.
+  failure. The server enforces this (#479); an unreadable plan is answered **503 `quota_unavailable`**. The client
+  still reads the plan's `progress.weekly_report` from `GET /api/product/commerce` before it offers the report.
 
 ### 13.2 Band estimate — `POST /api/agent/band/writing` (#470; experimental, administrators only)
 
