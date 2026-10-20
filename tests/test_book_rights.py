@@ -1,4 +1,4 @@
-"""Book rights and the learner shelf (D-251; PRE-203 part 2): a book is on the learner shelf only when its rights are
+"""Book rights and the learner shelf (D-252; PRE-203 part 2): a book is on the learner shelf only when its rights are
 attested (`cleared`) or it was there before migration 0037 (`grandfathered`); an imported book starts `unknown`. Like
 Media, `cleared` needs an attestation and a licence note. The gate is dormant until a runtime applies 0037.
 

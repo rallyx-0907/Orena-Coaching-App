@@ -1178,7 +1178,7 @@ class BookRightsIn(BaseModel):
 
 @router.post("/content/book/{book_id}/rights")
 def review_book_rights(book_id: str, payload: BookRightsIn, request: Request, response: Response) -> dict[str, Any]:
-    """A book's rights (D-251, PRE-203): the gate learners' shelf reads, like Media's. `cleared` - attested, with a
+    """A book's rights (D-252, PRE-203): the gate learners' shelf reads, like Media's. `cleared` - attested, with a
     licence note - puts a ready book on the shelf; `unknown` or `denied` keeps it (or takes it) off. 503 until the
     runtime has applied migration 0037."""
     from writing_coach.persistence.reading_library_repository import BookRightsUnavailable
@@ -1433,7 +1433,7 @@ def _thumbnail_target(kind: str, item_id: str):
         return entry.title, entry.language, topic, save_media
     if kind == "book":
         repository, asset_store = reading_library_api._require_backend()
-        book = repository.get_book(item_id, learner=False)  # a draft book's cover is an administrator's too (D-251)
+        book = repository.get_book(item_id, learner=False)  # a draft book's cover is an administrator's too (D-252)
         if book is None:
             raise orena_http_error(404, "content_not_found", "This book is not in the catalog.")
 

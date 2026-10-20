@@ -1,4 +1,4 @@
-"""Read-only check: Reading books whose rights are not attested (D-251; PRE-203 part 2).
+"""Read-only check: Reading books whose rights are not attested (D-252; PRE-203 part 2).
 
 After migration 20261021_0037, a book is on the learner shelf only when its rights are `cleared` (attested, with a licence
 note) or it was there before the revision (`grandfathered`, kept until a person decides). This lists every book that is

@@ -40,7 +40,7 @@ from sqlalchemy.engine import Engine
 DEFAULT_PAGE_LIMIT = 24
 MAX_PAGE_LIMIT = 60
 
-# D-251 (PRE-203 part 2): a book's rights decide whether learners may read it. The columns arrive with the proposed
+# D-252 (PRE-203 part 2): a book's rights decide whether learners may read it. The columns arrive with the proposed
 # migration 20261021_0037; until a runtime applies it, the gate is dormant and books show as before.
 RIGHTS_STATUSES = ("unknown", "cleared", "denied", "grandfathered")
 LEARNER_RIGHTS = ("cleared", "grandfathered")  # attested, or on the shelf before 0037 (kept until a person decides)
@@ -293,7 +293,7 @@ class PostgresReadingLibraryRepository:
 
     def set_rights(self, book_id: str, *, status: str, license_note: str, source_url: str,
                    actor: str) -> dict[str, Any] | None:  # fmt: skip
-        """Record a book's rights (D-251). `cleared` makes a ready book readable by learners, anything else keeps it
+        """Record a book's rights (D-252). `cleared` makes a ready book readable by learners, anything else keeps it
         (or takes it) off their shelf; the caller enforces that `cleared` is attested with a licence note. None when
         the book does not exist; `BookRightsUnavailable` before migration 0037."""
         if status not in RIGHTS_STATUSES or status == "grandfathered":
@@ -381,7 +381,7 @@ class PostgresReadingLibraryRepository:
         }
 
     def get_book(self, book_id: str, *, learner: bool = True) -> dict[str, Any] | None:
-        """A ready book. `learner=False` (administration: its cover) reads it whatever its rights (D-251)."""
+        """A ready book. `learner=False` (administration: its cover) reads it whatever its rights (D-252)."""
         identity = _as_uuid(book_id)
         if identity is None:
             return None

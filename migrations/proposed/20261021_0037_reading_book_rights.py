@@ -1,4 +1,4 @@
-"""Rights on Reading books and a publish gate like Media's (D-251; PRE-203 part 2, Hermes for the owner 2026-10-21).
+"""Rights on Reading books and a publish gate like Media's (D-252; PRE-203 part 2, Hermes for the owner 2026-10-21).
 
 Books had no rights field at all, and an imported book was on the learner shelf at once. Five columns on
 `reading_books`, additive:

@@ -7940,7 +7940,7 @@ D-105's hard gate for articles.
 5. **Books are not covered here.** Their rights fields and publish gate need a schema change, proposed separately (a
    human gate).
 
-## D-251 - Reading books get rights, and the learner shelf shows only attested or grandfathered books (2026-10-21)
+## D-252 - Reading books get rights, and the learner shelf shows only attested or grandfathered books (2026-10-21)
 
 **Status:** PROPOSED for the schema part, ACCEPTED for the rule (Hermes for the owner, 2026-10-21 05:40: PRE-203 "SIẾT";
 books get a rights field and a publish gate like Media; nothing already published is taken down on its own). Companion

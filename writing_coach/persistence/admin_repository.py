@@ -396,7 +396,7 @@ class AdminConsoleRepository:
         """Every book in every status, or None when the catalog schema is absent."""
         from writing_coach.persistence.reading_library_repository import has_rights_columns
 
-        rights = ", rights_status" if has_rights_columns(self.engine) else ""  # D-251, after migration 0037
+        rights = ", rights_status" if has_rights_columns(self.engine) else ""  # D-252, after migration 0037
         statement = text(
             "SELECT id, title, author, learning_language, status, chapter_count, word_count, "
             f"cover_asset_key, source_kind, imported_by, created_at, updated_at{rights} "
@@ -434,7 +434,7 @@ class AdminConsoleRepository:
         typed = bindparam("id", type_=Uuid(as_uuid=True))
         from writing_coach.persistence.reading_library_repository import has_rights_columns
 
-        rights = ", rights_status" if has_rights_columns(self.engine) else ""  # D-251, after migration 0037
+        rights = ", rights_status" if has_rights_columns(self.engine) else ""  # D-252, after migration 0037
         try:
             with self.engine.connect() as connection:
                 row = connection.execute(

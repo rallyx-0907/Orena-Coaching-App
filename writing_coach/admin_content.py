@@ -61,7 +61,7 @@ def book_error_stage(category: str) -> str:
 
 
 def book_status(book: Mapping[str, Any]) -> str:
-    """`archived`, `published` (learners can read it) or `draft` (ready, but its rights are not attested yet, D-251).
+    """`archived`, `published` (learners can read it) or `draft` (ready, but its rights are not attested yet, D-252).
     Before migration 0037 a book has no `rights_status` and a ready book is published, as it always was."""
     if book.get("status") != "ready":
         return "archived"
@@ -88,7 +88,7 @@ def book_record(book: Mapping[str, Any]) -> dict[str, Any]:
             "chapter_count": int(book.get("chapter_count") or 0),
             "word_count": int(book.get("word_count") or 0),
             "source_kind": _text(book.get("source_kind")),
-            "rights_status": book.get("rights_status"),  # D-251; None before migration 0037
+            "rights_status": book.get("rights_status"),  # D-252; None before migration 0037
         },
         "issues": [],
         # Archiving was the only recovery path and it was one-way. Both

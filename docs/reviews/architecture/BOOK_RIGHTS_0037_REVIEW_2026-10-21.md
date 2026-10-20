@@ -1,4 +1,4 @@
-# Architecture review: Reading book rights, migration 20261021_0037 (D-251, PR #486)
+# Architecture review: Reading book rights, migration 20261021_0037 (D-252, PR #486)
 
 - **Reviewer:** Delegated Architecture Reviewer, an independent read-only Claude subagent with a separate context. AGENTS.md, "Architecture review authority": the implementer, the Intelligence lane, does not self-approve.
 - **Implementer:** Intelligence lane (Claude Opus 5.5).
@@ -9,7 +9,7 @@
   - `migrations/proposed/20261021_0037_reading_book_rights.py`;
   - `writing_coach/persistence/reading_library_repository.py`, `writing_coach/persistence/admin_repository.py`, `writing_coach/admin_content.py` and the book rights route in `writing_coach/admin_console_api.py`;
   - `scripts/check_books_rights.py` and `tests/test_book_rights.py`;
-  - D-251.
+  - D-252.
 - **Not covered:** this is not product approval, and not authorization to promote or apply the migration. Both are human gates.
 
 ## First review (733f517a): CHANGES REQUIRED
