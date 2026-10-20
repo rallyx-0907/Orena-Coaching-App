@@ -28,6 +28,8 @@ import { languages } from '../../copy/index.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
 import { api } from '../../infrastructure/api.js';
 import { readCollection } from '../collection/actions.js';
+import { planRequired } from '../../kit/access.js';
+import { showReviewLimitNotice } from '../plan/quota-notice.js';
 import { flushQueue, withWaiting } from '../../product/review-queue.js';
 import { t } from './copy.js';
 import { stageCopyKey } from '../word/model.js';
@@ -162,6 +164,7 @@ export default async function mountReview(element, ctx) {
   if (!ctx.isCurrent()) return undefined;
 
   let queue;
+  let reviewLimit = null;
   if (scope.mode === 'word') {
     const page = await api.libraryVocabulary({ query: scope.word, limit: 5, order: 'word' });
     const target = String(scope.word).trim().toLowerCase();
@@ -175,11 +178,15 @@ export default async function mountReview(element, ctx) {
       api.vocabularyLibraryCollection, { includeReview: true });
     if (collectionPayload.language_code !== ctx.context.language) throw new Error('Collection language changed');
     queue = buildQueue(collectionPayload.review_items);
+    reviewLimit = collectionPayload.review_limit;
   } else {
     const page = await api.libraryVocabulary({ status: 'due', order: 'due', limit: 50 });
     queue = buildQueue(page?.items);
+    reviewLimit = page?.summary?.review_limit;
   }
   if (!ctx.isCurrent()) return undefined;
+  // A Free learner's review holds their first saved words (D-248 amendment, MV2-5): the rest are kept and wait for Plus.
+  showReviewLimitNotice(ctx, reviewLimit);
   // A failed read throws above, to the router's load-error card (Back / Retry; it loads again on 'online'): a
   // failure is never turned into an empty queue.
 
@@ -207,6 +214,11 @@ export default async function mountReview(element, ctx) {
       result = await api.reviewLibraryVocabulary(word, grade);
     } catch (caught) {
       error = caught;
+    }
+    // A word past a Free learner's review window (D-248 amendment, MV2-5): kept, not graded; the notice says why.
+    if (planRequired(error)) {
+      showReviewLimitNotice(ctx, error.context?.preview?.review_limit);
+      return 'held';
     }
     const outcome = gradeOutcome({ result, error });
     if (outcome === 'saved' && result?.item?.next_review_at) state.nextTimes.push(result.item.next_review_at);

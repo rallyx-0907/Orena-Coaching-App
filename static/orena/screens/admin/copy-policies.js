@@ -234,6 +234,8 @@ export const en = {
   polHelp_access_reading_rotation_per_week: 'This many more articles at each level are Free each week, on a rotation that changes every Monday.',
   pol_access_set_free_items: 'Free items in each set',
   polHelp_access_set_free_items: 'The first items of each vocabulary set, grammar group or mock test that are Free; the rest need Plus.',
+  pol_access_free_review_words: 'Words in a Free learner\'s review',
+  polHelp_access_free_review_words: 'How many of a Free learner\'s saved words take part in review (the earliest saved). The rest are kept and enter review after an upgrade.',
 };
 
 export const vi = {
@@ -464,6 +466,8 @@ export const vi = {
   polHelp_access_reading_rotation_per_week: 'Thêm chừng này bài ở mỗi trình độ được Miễn phí mỗi tuần, luân phiên và đổi vào mỗi thứ Hai.',
   pol_access_set_free_items: 'Số mục miễn phí trong mỗi bộ',
   polHelp_access_set_free_items: 'Các mục đầu tiên của mỗi bộ từ vựng, nhóm ngữ pháp hoặc bài thi thử là Miễn phí; phần còn lại cần Plus.',
+  pol_access_free_review_words: 'Số từ ôn tập của gói Miễn phí',
+  polHelp_access_free_review_words: 'Số từ đã lưu của người học gói Miễn phí được đưa vào ôn tập (những từ lưu sớm nhất). Các từ còn lại vẫn được giữ và vào ôn tập sau khi nâng cấp.',
 };
 
 export const zh = {
@@ -694,4 +698,6 @@ export const zh = {
   polHelp_access_reading_rotation_per_week: '每个级别每周再有这么多篇文章免费，每周一轮换。',
   pol_access_set_free_items: '每组免费条目数',
   polHelp_access_set_free_items: '每个词汇组、语法组或模拟测试的前几项免费；其余需要 Plus。',
+  pol_access_free_review_words: '免费版复习词数',
+  polHelp_access_free_review_words: '免费版学习者已保存的词中参与复习的数量（最早保存的）。其余的词会保留，升级后进入复习。',
 };

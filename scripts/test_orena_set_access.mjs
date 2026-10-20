@@ -2,8 +2,9 @@
 
    - a vocabulary set's word and a grammar point carry the server's tier; the first item stays open, a locked one shows
      Pricing's tag, the tier wash and the lock, and its tap opens the light upgrade sheet (kind `set`);
-   - a word the server sent locked is never kept by "Add all"; a word the learner already saved is never locked (the
-     server decides, and its `locked` wins over the client's comparison);
+   - a word the server sent locked is never kept by "Add all", and a kept word names its set so the server can refuse
+     it (the server decides, and its `locked` wins over the client's comparison);
+   - a Free learner's capped review says how many words wait for Plus (D-248 item 10), in EN, VI and ZH;
    - My Library and Search rows read the server's `access` block of a Reading item and draw the same tag and wash; a
      video never carries one (YouTube API Services Developer Policies III.F.3.a);
    - nothing is drawn and nothing locks while `access.enforced` is off;
@@ -26,6 +27,7 @@ const { buildLibrary } = await import('../static/orena/screens/grammar/model.js'
 const { upgradeSheetMarkup, benefitKeys, UPGRADE_KINDS } = await import('../static/orena/screens/plan/upgrade-sheet.js');
 const { lockedConceptMarkup } = await import('../static/orena/screens/grammar-concept/screen.js');
 const { t: planT } = await import('../static/orena/screens/plan/copy.js');
+const { reviewHeldLine } = await import('../static/orena/screens/plan/quota-notice.js');
 
 const commerce = (block) => ({ available: true, readiness: 'known', content_access: block });
 const off = accessFrom(commerce({ enforced: false, tier: 'free', trial_available: null }));
@@ -60,11 +62,11 @@ assert.equal(model.missingCount, 1, '"Add all" offers only the open, unsaved wor
 assert.equal(model.savedCount, 1, '"Start review" keeps the saved word');
 assert.ok(isLockedCard(rest) && !isLockedCard(first) && !isLockedCard(savedRest));
 const sent = [];
-const kept = await keepCollectionWords({ language_code: 'en', items: [{ ...first }, { ...rest }, { ...savedRest }] }, {
+const kept = await keepCollectionWords({ id: 'pilot-en', language_code: 'en', items: [{ ...first }, { ...rest }, { ...savedRest }] }, {
   language: 'en',
-  save: async (payload) => { sent.push(payload.word); return { saved: true, item: { review_stage: 0 } }; },
+  save: async (payload) => { sent.push([payload.word, payload.source_collection_id]); return { saved: true, item: { review_stage: 0 } }; },
 });
-assert.deepEqual(sent, ['buffer'], 'a locked word is never saved by "Add all"');
+assert.deepEqual(sent, [['buffer', 'pilot-en']], 'a locked word is never saved by "Add all"; a kept word names its set');
 assert.equal(kept.added, 1);
 
 const collectionScreen = readFileSync('static/orena/screens/collection/screen.js', 'utf8');
@@ -111,6 +113,21 @@ for (const ui of ['en', 'vi', 'zh']) {
   leads.add(planT('upgradeLeadSet', { plan: 'Plus' }));
 }
 assert.equal(leads.size, 3, 'three translations, not one string');
+
+// ---- 4b. the Free review window (D-248 item 10) ---------------------------------------------------------------------
+const lines = new Set();
+for (const ui of ['en', 'vi', 'zh']) {
+  setLanguages({ ui });
+  const line = reviewHeldLine({ limit: 30, saved: 42, held: 12 });
+  assert.ok(line.includes('30') && line.includes('12'), `${ui}: the window and the held count`);
+  lines.add(line);
+}
+assert.equal(lines.size, 3);
+assert.equal(reviewHeldLine({ limit: 30, saved: 20, held: 0 }), '', 'nothing held: no notice');
+assert.equal(reviewHeldLine(null), '', 'no cap: no notice');
+const review = readFileSync('static/orena/screens/review/screen.js', 'utf8');
+assert.ok(/if \(planRequired\(error\)\) \{\s*showReviewLimitNotice\(ctx, error\.context\?\.preview\?\.review_limit\);\s*return 'held';/.test(review), 'a held word is not graded and says why');
+assert.ok(/showReviewLimitNotice\(ctx, reviewLimit\)/.test(review), 'the room says the cap when it loads');
 
 // ---- 5. My Library and Search ----------------------------------------------------------------------------------------
 const entries = [

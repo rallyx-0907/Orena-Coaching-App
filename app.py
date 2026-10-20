@@ -224,7 +224,7 @@ from writing_coach.account_settings import configure_account_settings, router as
 from writing_coach.becoming_memory import (LearnerProfileIn, ProfilePatchIn, configure_becoming_memory, get_learner_profile, get_learning_memory, get_review_cue, patch_learner_profile, put_learner_profile)
 from writing_coach.becoming_practice import PracticeNextIn, build_practice_recommendation, personalize_generated_task
 from writing_coach.becoming_outcomes import PracticeContextIn, configure_becoming_outcomes, get_practice_outcome, list_practice_outcomes
-from writing_coach.becoming_library import LibraryVocabularyIn, RestoreVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, restore_library_vocabulary, review_library_vocabulary, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
+from writing_coach.becoming_library import LibraryVocabularyIn, RestoreVocabularyIn, VocabularyReviewIn, configure_becoming_library, configure_becoming_library_content, delete_library_vocabulary, library_summary, list_library_vocabulary, restore_library_vocabulary, review_library_vocabulary, review_window, save_library_vocabulary, saved_vocabulary_state, saved_vocabulary_words
 from writing_coach.persistence.library_repository import LibraryRepository
 from writing_coach.persistence.deck_repository import DeckRepository
 from writing_coach.deck_api import configure_decks, router as deck_router
@@ -5336,6 +5336,9 @@ def becoming_library_vocabulary_save(payload: LibraryVocabularyIn) -> dict[str, 
     if payload.source_kind == "listening":
         # Saving a word from a video to review is one of Orena's Plus tools around it (D-248 §4); the video is not gated.
         _content_access.require_media_tool("save_to_review", payload.source_media_id)
+    if payload.source_kind == "collection":
+        # A word kept from a vocabulary set is a set item (D-248 §4, MV2-5): refused when the plan does not reach it.
+        _require_vocabulary_set_save(payload)
     try:
         return save_library_vocabulary(payload)
     except ValueError as exc:
@@ -5666,18 +5669,87 @@ _LOCKED_VOCABULARY_CARD_FIELDS = ("identity", "headword", "level", "framework", 
 
 def _gate_vocabulary_set_items(collection_id: str, entries: list[dict[str, Any]], cards: list[dict[str, Any]],
                                head: list[str]) -> list[dict[str, Any]]:
-    """Each card with its `access` block (`{tier, rotation, locked}`, MV2-5). A locked card keeps only its headword: the
-    rest of its body is Plus. A word the learner already saved is never locked, so its review stays theirs."""
+    """Each card with its `access` block (`{tier, rotation, locked}`, MV2-5). A locked card keeps only its headword and
+    the learner's own state for it: the rest of its body is Plus. Keeping a word never unlocks its card (review of #485:
+    a save must not open the set); the learner's review of what they keep is served by `review_items` and the review
+    routes, inside the Free review window."""
     keys = [_vocabulary_set_key(entry) for entry in entries]
     members = [_content_access.Item("vocab_set", f"{collection_id}:{key}",
                                     position=_content_access.set_rank(key, head)) for key in keys]
-    blocks = _content_access.set_card_access(members, own=lambda index: bool(cards[index].get("saved")))
+    blocks = _content_access.set_card_access(members)
     gated = []
     for card, block in zip(cards, blocks, strict=True):
         if block["locked"]:
             card = {field: card[field] for field in _LOCKED_VOCABULARY_CARD_FIELDS if field in card}
         gated.append({**card, "access": block})
     return gated
+
+
+def _vocabulary_sets_locked_for_learner() -> bool:
+    """Whether this learner meets locked set items now: enforcement on and a plan below Plus (read strictly, 503)."""
+    if not _content_access.enforced():
+        return False
+    tier = _content_access.learner_tier()
+    return tier is not None and _content_access.RANK[tier] < _content_access.RANK["plus"]
+
+
+def _free_set_words(code: str) -> set[str]:
+    """The normalized words that are Free in at least one published set of `code`: each set's head, as the first-item
+    rule (and an override) decides it. Bounded by the number of sets x `access.set_free_items`."""
+    words: set[str] = set()
+    summaries = {summary["id"]: summary for summary in list_vocabulary_collections(code)}
+    for summary in _persisted_vocabulary_collections(code):
+        if not is_reserved_collection_id(summary.get("id")):
+            summaries[summary["id"]] = summary
+    for collection_id, summary in summaries.items():
+        persisted = summary.get("origin") == "imported"
+        source = (_persisted_vocabulary_collection(collection_id, limit=max(1, _content_access.set_free_items()))
+                  if persisted else get_vocabulary_collection(collection_id)) or {}
+        entries = source.get("entries") or []
+        head = _vocabulary_set_head(collection_id, entries, persisted=persisted, filtered=False)
+        for entry in entries[:len(head)]:
+            key = _vocabulary_set_key(entry)
+            item = _content_access.Item("vocab_set", f"{collection_id}:{key}",
+                                        position=_content_access.set_rank(key, head))
+            if _content_access.access_tier(item) == "free":
+                words.add(entry.get("normalized_word") or normalize_vocabulary_word(entry.get("word")))
+    return words
+
+
+def _require_vocabulary_set_save(payload: LibraryVocabularyIn) -> None:
+    """A `collection` save, while enforcement is on: the word must be an item of the named set that the learner's plan
+    reaches, else 403 `plan_required`. A save that names no set is accepted only for a word the learner already keeps (a
+    re-save that updates it); a new one needs its set (422), so a locked word cannot be kept by leaving the set out.
+    Words kept from the learner's own reading or video taps are not set items and never come here."""
+    if not _content_access.enforced():
+        return
+    word = str(payload.word or "").strip()
+    collection_id = str(payload.source_collection_id or "").strip()
+    if not collection_id:
+        if saved_vocabulary_words((word,)):
+            return
+        raise orena_http_error(422, "source_collection_required", "A word kept from a set names its set.")
+    if is_reserved_collection_id(collection_id):
+        return  # General is the dictionary's aggregate, not a set: looking a word up stays free (D-188)
+    target = normalize_vocabulary_word(word)
+    stored = _persisted_vocabulary_collection(collection_id, search=word, limit=50)
+    if stored is not None:
+        entries = stored.get("entries") or []
+        head = _vocabulary_set_head(collection_id, entries, persisted=True, filtered=True)
+    else:
+        static = get_vocabulary_collection(collection_id)
+        if static is None:
+            raise HTTPException(404, "Vocabulary collection not found.")
+        entries = static.get("entries") or []
+        head = _vocabulary_set_head(collection_id, entries, persisted=False, filtered=False)
+    entry = next((item for item in entries
+                  if (item.get("normalized_word") or normalize_vocabulary_word(item.get("word"))) == target), None)
+    if entry is None:
+        raise orena_http_error(422, "word_not_in_collection", "That word is not in this set.")
+    key = _vocabulary_set_key(entry)
+    _content_access.require(
+        _content_access.Item("vocab_set", f"{collection_id}:{key}", position=_content_access.set_rank(key, head)),
+        preview={"headword": str(entry.get("word") or word)})
 
 
 @app.get(
@@ -5756,6 +5828,11 @@ def becoming_vocabulary_library_collection_detail(
         # The collection's own saved rows, resolved by the existing owner above.
         # No scan of the learner's whole library and no dictionary generation.
         collection["review_items"] = list(saved_by_word.values())
+        # D-248 amendment (MV2-5): a Free learner reviews their earliest saved words only; the rest stay saved.
+        window = review_window()
+        if window is not None:
+            collection["review_items"] = [row for row in collection["review_items"] if window.holds(row.get("word"))]
+            collection["review_limit"] = window.as_dict()
     return collection
 # === BECOMING VOCABULARY LIBRARY CATALOG ROUTES END ===
 
@@ -5793,11 +5870,18 @@ def becoming_vocabulary_feed(
     learner_context = LearnerFeedContext(
         learner_key=_VOCABULARY_FEED_SANDBOX_LEARNER_KEY, target_level=declared_level
     )
+    pool = _vocabulary_feed_pool(code)
+    if _vocabulary_sets_locked_for_learner():
+        # D-248 §4 (review of #485): every feed word is a member of a published set; a learner whose plan does not reach
+        # the rest of a set is offered only the words that are Free in some set (its first items), never a locked word.
+        open_words = _free_set_words(code)
+        pool = [entry for entry in pool
+                if (entry.get("normalized_word") or normalize_vocabulary_word(entry.get("word"))) in open_words]
     candidates = daily_feed_candidates(
         code,
         learner_context=learner_context,
         exclude_normalized=exclude_normalized,
-        candidate_pool=_vocabulary_feed_pool(code),
+        candidate_pool=pool,
     )
     items = [vocabulary_card_from_feed_candidate(entry) for entry in candidates]
     return {"items": items, "date": datetime.now().astimezone().date().isoformat()}

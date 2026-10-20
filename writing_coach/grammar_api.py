@@ -192,7 +192,15 @@ def by_error(
             rank = levels.get(level)
         return store.by_error(language, error_tag, level_rank=rank, limit=limit)
 
-    return {"language": language, "error_tag": error_tag, "points": _guarded(run)}
+    found = _guarded(run)
+    # D-248 §4 (review of #485): a locked point keeps its title and level here, never its mistake's reason.
+    items = [content_access.Item("grammar", point["grammar_id"],
+                                 position=_guarded(lambda pid=point["grammar_id"]: store.set_rank(language, pid)) or 0)
+             for point in found]
+    blocks = content_access.set_card_access(items) if items else []
+    points = [{**point, "reason": None, "access": block} if block["locked"] else {**point, "access": block}
+              for point, block in zip(found, blocks, strict=True)]
+    return {"language": language, "error_tag": error_tag, "points": points}
 
 
 # -- progress (section 8) -----------------------------------------------------------------------------------------------

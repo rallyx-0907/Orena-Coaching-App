@@ -111,11 +111,35 @@ def vocab_set(monkeypatch):
         rows = [entry for entry in deepcopy(entries) if not search or search in entry["word"]]
         return {**deepcopy(pack), "entries": rows[offset:offset + limit]}
 
+    def save(payload):
+        saved[payload.word] = {"word": payload.word, "review_stage": 0, "due": True, "next_review_at": ""}
+        return {"saved": True, "item": deepcopy(saved[payload.word])}
+
+    state = type("VocabSet", (), {"app": app_module, "calls": calls, "saved": saved, "window": None})
     monkeypatch.setattr(app_module, "_persisted_vocabulary_collection", persisted)
     monkeypatch.setattr(app_module, "saved_vocabulary_state",
                         lambda words: {word: deepcopy(saved[word]) for word in words if word in saved})
-    monkeypatch.setattr(app_module, "save_library_vocabulary", lambda *a, **k: pytest.fail("opening must not save"))
-    return type("VocabSet", (), {"app": app_module, "calls": calls})
+    monkeypatch.setattr(app_module, "saved_vocabulary_words",
+                        lambda words=(): {word for word in (words or saved) if word in saved})
+    monkeypatch.setattr(app_module, "save_library_vocabulary", save)
+    monkeypatch.setattr(app_module, "review_window", lambda user_key=None: state.window)
+    return state
+
+
+def _post(app_module, path, body):
+    async def exercise():
+        transport = httpx.ASGITransport(app=app_module.app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://testserver") as client:
+            return await client.post(path, json=body, headers={"origin": "http://testserver"})
+
+    return asyncio.run(exercise())
+
+
+def _keep(app_module, word, collection_id="pack"):
+    body = {"word": word, "source_kind": "collection"}
+    if collection_id:
+        body["source_collection_id"] = collection_id
+    return _post(app_module, "/api/library/vocabulary", body)
 
 
 def test_free_opens_the_first_word_and_gets_the_rest_without_their_body(vocab_set):
@@ -153,18 +177,201 @@ def test_a_searched_page_ranks_against_the_head_of_the_set(vocab_set):
     assert {"search": "", "level": "", "limit": 1, "offset": 0} in vocab_set.calls, "the head is read unfiltered"
 
 
-def test_free_review_of_saved_words_stays_whole(vocab_set):
-    """D-248 keeps review usable on Free: the set's saved words keep their full rows in the review projection, and a
-    saved word in a paid position is not locked. Nothing a learner saved is removed."""
+def test_free_review_of_saved_words_stays_inside_the_window(vocab_set):
+    """Review stays usable on Free: the set's saved words inside the review window keep their full rows in the review
+    projection; the card of a paid position stays locked (keeping a word never unlocks it). Nothing saved is removed."""
+    from writing_coach.becoming_library import ReviewWindow
+
+    vocab_set.window = ReviewWindow(30, ["packed"], 1)
     _plan(catalog.FREE)
     with installed(MemoryPolicyStore(ENFORCED)):
         body = _get(vocab_set.app, "/api/vocabulary/library/collections/pack?include_review=true").json()
     assert body["review_items"] == [{"word": "packed", "review_stage": 2, "due": True,
                                      "next_review_at": "2026-10-21"}]
+    assert body["review_limit"] == {"limit": 30, "saved": 1, "held": 0}
     packed = next(item for item in body["items"] if item["headword"] == "packed")
-    assert packed["access"] == {"tier": "plus", "rotation": False, "locked": False}
-    assert packed["meanings"] and packed["saved"] is True and packed["review_stage"] == 2
+    assert packed["access"] == {"tier": "plus", "rotation": False, "locked": True}
+    assert "meanings" not in packed and packed["saved"] is True and packed["review_stage"] == 2
     assert body["progress"]["learned_count"] == 1 and body["progress"]["due_count"] == 1
+    vocab_set.window = ReviewWindow(30, ["buffer"], 31)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        body = _get(vocab_set.app, "/api/vocabulary/library/collections/pack?include_review=true").json()
+    assert body["review_items"] == [], "a word past the window waits for Plus"
+    assert vocab_set.saved["packed"], "and is still kept"
+
+
+# ================================================================== 2b. keeping a set's word (review of #485, P1) ==
+
+def test_keeping_a_locked_word_of_a_set_is_refused_and_the_first_is_kept(vocab_set):
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        locked = _keep(vocab_set.app, "hectic")
+        first = _keep(vocab_set.app, "buffer")
+        unnamed = _keep(vocab_set.app, "steady", collection_id="")
+        stranger = _keep(vocab_set.app, "zebra")
+    assert locked.status_code == 403 and locked.json()["detail"]["category"] == "plan_required"
+    assert locked.json()["detail"]["context"]["kind"] == "vocab_set"
+    assert first.status_code == 200 and "buffer" in vocab_set.saved
+    assert unnamed.status_code == 422, "a new set save that leaves its set out is refused, not waved through"
+    assert stranger.status_code == 422, "a word that is not in the named set"
+    assert "hectic" not in vocab_set.saved and "steady" not in vocab_set.saved
+
+
+def test_add_all_through_the_api_keeps_only_what_the_plan_reaches(vocab_set):
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        answers = {word: _keep(vocab_set.app, word).status_code for word in ("buffer", "hectic", "packed", "steady")}
+    assert answers == {"buffer": 200, "hectic": 403, "packed": 403, "steady": 403}
+    _plan(catalog.PLUS)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        assert _keep(vocab_set.app, "hectic").status_code == 200, "Plus keeps any word of the set"
+    _plan(catalog.FREE)
+    with installed():
+        assert _keep(vocab_set.app, "steady").status_code == 200, "enforcement off refuses nothing"
+
+
+def test_a_word_kept_another_way_never_unlocks_its_card(vocab_set):
+    """A reading tap or a manual save is not a set item and stays free; the set's card stays locked all the same."""
+    vocab_set.saved["hectic"] = {"word": "hectic", "review_stage": 0, "due": True, "next_review_at": ""}
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        manual = _post(vocab_set.app, "/api/library/vocabulary", {"word": "steady", "source_kind": "reading"})
+        items = {item["headword"]: item for item in
+                 _get(vocab_set.app, "/api/vocabulary/library/collections/pack").json()["items"]}
+    assert manual.status_code == 200, "a word tapped in the learner's own reading stays free"
+    for word in ("hectic", "steady"):
+        assert items[word]["access"]["locked"] is True and "meanings" not in items[word], word
+        assert items[word]["saved"] is True
+
+
+def test_the_daily_feed_offers_a_free_learner_only_open_words(vocab_set, monkeypatch):
+    app_module = vocab_set.app
+    pool = [{"word": word, "normalized_word": word, "language_code": "en", "definition": f"{word} meaning"}
+            for word in ("buffer", "hectic", "packed", "steady")]
+    monkeypatch.setattr(app_module, "_vocabulary_feed_pool", lambda code: deepcopy(pool))
+    monkeypatch.setattr(app_module, "list_vocabulary_collections", lambda code: [])
+    monkeypatch.setattr(app_module, "_persisted_vocabulary_collections",
+                        lambda code: [{"id": "pack", "origin": "imported"}])
+    vocab_set.saved.clear()
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        free_feed = _get(app_module, "/api/vocabulary/feed?language_code=en").json()["items"]
+    _plan(catalog.PLUS)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        plus_feed = _get(app_module, "/api/vocabulary/feed?language_code=en").json()["items"]
+    assert [item["headword"] for item in free_feed] == ["buffer"]
+    assert "hectic meaning" not in str(free_feed)
+    assert {item["headword"] for item in plus_feed} == {"buffer", "hectic", "packed", "steady"}
+
+
+# ======================================================================= 3b. the Free review window (D-248 item 10) ==
+
+class _Library:
+    """A learner's saved words for `becoming_library`, in memory."""
+
+    def __init__(self, words):
+        self.rows = {word: {"word": word, "phonetic": "", "part_of_speech": "", "definition": "", "translation_vi": "",
+                            "added_at": f"2026-10-{index + 1:02d}T00:00:00+00:00", "source_essay_id": None,
+                            "source_fragment": "", "source_kind": "manual", "focus_note": "", "review_stage": 0,
+                            "successful_recalls": 0, "lapse_count": 0, "last_reviewed_at": "", "next_review_at": ""}
+                     for index, word in enumerate(words)}
+        self.graded = []
+
+    def library_counts(self, now=""):
+        return {"saved": len(self.rows), "due": len(self.rows), "mastered": 0}
+
+    def list_review_window(self, limit):
+        return sorted(self.rows, key=lambda word: self.rows[word]["added_at"])[:limit]
+
+    def list_saved_rows(self, words):
+        return [dict(self.rows[word]) for word in words if word in self.rows]
+
+    def get_library_progress(self, word):
+        return dict(self.rows[word]) if word in self.rows else None
+
+    def update_library_review(self, word, values):
+        self.graded.append(word)
+        self.rows[word].update(values)
+        return dict(self.rows[word])
+
+
+@pytest.fixture()
+def library(monkeypatch):
+    from writing_coach import becoming_library
+
+    store = _Library(["alpha", "bravo", "charlie", "delta"])
+    monkeypatch.setattr(becoming_library, "_repository", store)
+    monkeypatch.setattr(becoming_library, "_catalog_resolver", lambda language: (lambda normalized: None))
+    monkeypatch.setattr(becoming_library, "_catalog_entry_for", lambda word, resolve=None: None)
+    return store
+
+
+CAPPED = {**ENFORCED, "access.free_review_words": 2}
+
+
+def test_the_window_is_the_earliest_saved_words_and_only_for_free(library):
+    from writing_coach import becoming_library
+
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(CAPPED)):
+        window = becoming_library.review_window()
+    assert window.words == ("alpha", "bravo") and window.as_dict() == {"limit": 2, "saved": 4, "held": 2}
+    with installed(MemoryPolicyStore({"access.free_review_words": 2})):
+        assert becoming_library.review_window() is None, "enforcement off: no cap"
+    _plan(catalog.PLUS)
+    with installed(MemoryPolicyStore(CAPPED)):
+        assert becoming_library.review_window() is None, "Plus reviews everything"
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        assert becoming_library.review_window().limit == 30, "the default is the founder's 30"
+
+
+def test_the_due_list_and_the_summary_hold_the_window_and_keep_every_word(library):
+    from writing_coach import becoming_library
+
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(CAPPED)):
+        page = becoming_library.library_page(status="due", order="due", limit=50)
+    assert [item["word"] for item in page["items"]] == ["alpha", "bravo"]
+    assert page["summary"]["due"] == 2 and page["summary"]["saved"] == 4, "every saved word is still counted as kept"
+    assert page["summary"]["review_limit"] == {"limit": 2, "saved": 4, "held": 2}
+    assert set(library.rows) == {"alpha", "bravo", "charlie", "delta"}, "nothing is deleted"
+
+
+def test_grading_a_word_past_the_window_is_refused_and_inside_it_works(library):
+    from writing_coach import becoming_library
+    from writing_coach.becoming_library import VocabularyReviewIn
+
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(CAPPED)):
+        assert becoming_library.review_library_vocabulary("alpha", VocabularyReviewIn(result="got_it"))["found"]
+        with pytest.raises(HTTPException) as refused:
+            becoming_library.review_library_vocabulary("delta", VocabularyReviewIn(result="got_it"))
+    assert refused.value.status_code == 403 and refused.value.detail["category"] == "plan_required"
+    assert refused.value.detail["context"]["preview"]["review_limit"]["held"] == 2
+    assert library.graded == ["alpha"]
+    _plan(catalog.PLUS)
+    with installed(MemoryPolicyStore(CAPPED)):
+        assert becoming_library.review_library_vocabulary("delta", VocabularyReviewIn(result="got_it"))["found"]
+
+
+def test_the_review_queue_holds_the_window(library, monkeypatch):
+    from writing_coach import library_api
+
+    class Queue:
+        def review_queue(self, limit):
+            return {"pinned": [{"id": "p1", "word": "delta"}, {"id": "p2", "word": "alpha"}], "pinned_count": 2,
+                    "due_count": 4, "first_due_word": "alpha", "total": 6}
+
+    monkeypatch.setattr(library_api, "_library", lambda: Queue())
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(CAPPED)):
+        queue = library_api.library_review_queue()
+    assert [entry["word"] for entry in queue["pinned"]] == ["alpha"]
+    assert queue["due_count"] == 2 and queue["total"] == 3 and queue["review_limit"]["held"] == 2
+    _plan(catalog.PLUS)
+    with installed(MemoryPolicyStore(CAPPED)):
+        assert library_api.library_review_queue()["due_count"] == 4
 
 
 # ============================================================================================== 4. a grammar set ==
@@ -209,6 +416,20 @@ def test_free_opens_the_first_point_and_is_refused_the_next(grammar):
     assert "quick_practice" not in refused.text and "When one" not in refused.text, "no body in the refusal"
     assert graded.status_code == 403, "a locked point's quiz is not graded"
     assert missing.status_code == 404, "an unpublished id is a 404 before any 403"
+
+
+def test_by_error_gives_a_locked_point_without_its_reason(grammar):
+    _plan(catalog.FREE)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        points = {point["grammar_id"]: point for point in
+                  grammar.client.get("/api/grammar/v1/by-error", params={"error_tag": "tense_choice"}).json()["points"]}
+    assert points["en.second"]["reason"] is None and points["en.second"]["access"]["locked"] is True
+    assert points["en.second"]["title"], "the title stays"
+    assert points["en.first"]["reason"] and points["en.first"]["access"]["locked"] is False
+    _plan(catalog.PLUS)
+    with installed(MemoryPolicyStore(ENFORCED)):
+        points = grammar.client.get("/api/grammar/v1/by-error", params={"error_tag": "tense_choice"}).json()["points"]
+    assert all(point["reason"] for point in points)
 
 
 def test_plus_opens_every_point(grammar):

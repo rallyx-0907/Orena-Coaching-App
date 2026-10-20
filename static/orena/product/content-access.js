@@ -54,8 +54,8 @@ export function cardView(card, access = OFF) {
 }
 
 /* An item of an own set (a word of a vocabulary set, a grammar point; D-248 §4, MV2-5) or a row of a list (My Library,
-   Search): `{badge, locked}` as for a card. When the server says `locked` itself (a set's detail read, which never locks
-   a word the learner already saved), its answer wins over the comparison. */
+   Search): `{badge, locked}` as for a card. When the server says `locked` itself (a set's detail read), its answer wins
+   over the comparison. */
 export function itemView(item, access = OFF) {
   const view = cardView(item, access);
   if (!access?.enforced) return view;

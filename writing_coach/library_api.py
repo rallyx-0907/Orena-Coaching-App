@@ -158,7 +158,20 @@ def library_item_delete(item_id: str) -> dict[str, Any]:
 
 @router.get("/review-queue", name="orena_library_review_queue")
 def library_review_queue() -> dict[str, Any]:
-    return _library().review_queue(limit=QUEUE_LIMIT)
+    queue = _library().review_queue(limit=QUEUE_LIMIT)
+    # D-248 amendment (MV2-5): a Free learner's review holds their earliest saved words only; a pinned or due word
+    # outside that window stays saved and waits for an upgrade.
+    from writing_coach.becoming_library import review_window, saved_vocabulary_state
+
+    window = review_window()
+    if window is None:
+        return queue
+    pinned = [entry for entry in queue.get("pinned") or [] if not entry.get("word") or window.holds(entry["word"])]
+    due = sorted((item for item in saved_vocabulary_state(window.words).values() if item.get("due")),
+                 key=lambda item: (item.get("next_review_at") or "", item.get("word") or ""))
+    return {**queue, "pinned": pinned, "pinned_count": len(pinned), "due_count": len(due),
+            "first_due_word": due[0]["word"] if due else "", "total": len(pinned) + len(due),
+            "review_limit": window.as_dict()}
 
 
 @router.get("/collections", name="orena_library_collections")
