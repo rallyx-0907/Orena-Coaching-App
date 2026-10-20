@@ -100,7 +100,12 @@ def sources(monkeypatch):
     from writing_coach.agent import api as agent_api
     from writing_coach.agent.memory_pack import PackBuilder, PackSources
 
+    from writing_coach.product import quota
+    from writing_coach.product.catalog import PLUS
+
     enable([])
+    # A Plus learner, stated: the report is a Plus feature, and the quota runtime may hold a plan system already.
+    monkeypatch.setattr(quota.runtime(), "plan_for", lambda user_key, strict=True: PLUS)
     rows = {"writing": [error("grammar", "10-12", 1), error("grammar", "10-20", 2)], "speaking": []}
     agent_api._runtime.pack = PackBuilder(enabled=False, sources=PackSources(
         writing_events=lambda: rows["writing"], speaking_attempts=lambda limit: rows["speaking"]))
