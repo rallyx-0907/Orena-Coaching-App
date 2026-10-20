@@ -880,6 +880,16 @@
 .s-reader-locked__title {
   margin: 0;
 }
+/* The card is the workspace's fixed bottom row, outside the scroll region (rule 49, #472): Unlock stays in the
+   viewport at 360x740 whatever the preview's length. Same column as the article (`.s-reader__grid`). */
+.s-reader-locked__foot {
+  flex: none;
+  display: grid;
+  grid-template-columns: minmax(0, 720px);
+  justify-content: center;
+  /* The Reader's own top inset (`.s-reader` padding-top 14px), mirrored, above the home indicator. */
+  padding-bottom: max(14px, env(safe-area-inset-bottom, 0px));
+}
 .s-reader-locked__end {
   font-family: var(--font-ui);
   line-height: normal;
