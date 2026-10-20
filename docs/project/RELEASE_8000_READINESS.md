@@ -396,22 +396,51 @@ YouTube model clips (S-27); Onboarding polish.
 (`orena-8000-<UTC stamp>.dump`, `orena-8000-data-<UTC stamp>.tar.gz`). It stops, recreates and removes nothing, and never
 writes a volume. Only the human runs or schedules it (D-127); the lane only wrote it.
 
-- **Run:** `powershell -ExecutionPolicy Bypass -File scripts\daily_backup_8000.ps1` (`-KeepCount 14`, `-MinFreeRamGB 2`,
-  `-MinFreeDiskGB 5` are the defaults; one run a day, so 14 files is 14 days). With less than 2 GB free RAM or 5 GB free
-  disk it logs one line and exits 2 without touching Docker. The disk check is a fixed floor, not sized from the volume;
-  keep headroom. The helper container is the already-local `postgres:17-alpine` (nothing is pulled; exit 3 if absent).
-- **Schedule (03:30 local):** `scripts\register_daily_backup_8000.ps1` prints the `Register-ScheduledTask` commands (hidden
-  window, runs on battery); `-Apply` registers task `OrenaDailyBackup8000`.
-- **Exit codes:** 0 done, 1 a step failed, 2 skipped for RAM or disk, 3 prerequisite missing. A dump failure removes the
-  partial files; a data-volume failure exits 1 but keeps the verified dump. The volume is live, so tar exit 1 ("file
-  changed as we read it") is only a logged warning and the archive is kept.
-- **Verify:** the last line of `%USERPROFILE%\.orena\backups\backup.log` reads `exit 0: backup complete`. The script has
+- **Run:** `powershell -ExecutionPolicy Bypass -File scripts\daily_backup_8000.ps1` (add `-VerifyOffsite` to decrypt
+  and check each offsite copy; `-DryRun` decides and prints without touching Docker or writing any file or log line).
+- **Floors (PR BV).** Free disk at least `-MinFreeDiskGB` (5) or exit 2 at once. Free RAM at least `-MinFreeRamGBDump`
+  (0.8 GB) for the dump, which is a ~3 MB `pg_dump` inside the running Postgres, and at least `-MinFreeRamGB` (2 GB) for
+  the volume tar, which starts a helper container. The tar needs no stop or pause: it mounts the volume read-only while
+  the app runs (files are written whole; the database is in the dump), so nothing is stopped. The disk check is a fixed
+  floor, not sized from the volume; keep headroom. The helper is the already-local `postgres:17-alpine` (exit 3 if absent).
+- **Retries (PR BV).** The loop is inside the script, not a repeating task: one run, one log, one exit line. While RAM is
+  below a floor it logs `waiting: ... next check HH:mm (cut-off HH:mm)` and re-checks every `-RetryEveryMinutes` (30)
+  until `-RetryUntil` (06:00 local; `''` turns retries off; started after the cut-off it tries once). Docker is not
+  touched while it waits. If the dump floor is never met nothing is backed up (exit 2); if only the tar floor is never
+  met, the verified dump is kept and copied offsite and the run still exits 2.
+- **Off-machine copy (PRE-504, PR BV).** On by default (`-NoOffsite` turns it off). Each artefact of the run is
+  encrypted with `gpg --batch --symmetric --cipher-algo AES256 --passphrase-file <key file>` (key file
+  `%LOCALAPPDATA%\orena-product\offsite-backup.key`, `-OffsiteKeyFile` overrides; the script passes only its path and
+  never reads, prints, logs or copies it), copied to `-OffsiteDir` (`%USERPROFILE%\OneDrive\Orena-Backups`) as
+  `<name>.gpg` through a `.partial` name, its SHA-256 re-checked after the copy and written to `SHA256SUMS.txt` there
+  (`sha256sum -c` format; it lists exactly the `.gpg` files present). The newest `-OffsiteKeepCount` (14) sets (one UTC
+  stamp = one set) are kept offsite; older `orena-8000-<stamp>` sets are pruned there, never after a failed copy and never
+  local files or other names (Hermes' `orena-8000-pre-*` copies stay). `gpg` is taken from PATH, else Gpg4win
+  (`GnuPG\bin`), else Git for Windows (`Git\usr\bin\gpg.exe`); `-Gpg` names one. A missing key file or gpg never stops
+  the local backup; the run then exits 4. The owner must keep the key's content off this machine (password manager):
+  without it the offsite copies cannot be restored. Restore one with
+  `gpg --batch --pinentry-mode loopback --passphrase-file <key file> --output <name> --decrypt <name>.gpg`.
+- **Exit codes:** 0 done (dump, data archive and offsite copy); 1 a step failed (a dump failure removes the partial
+  files; a data-volume failure keeps the verified dump); 2 skipped for RAM or disk (the whole run, or the data step only);
+  3 prerequisite missing or bad parameter; 4 local backup done, offsite copy failed. Precedence 1, 4, 2. Every exit writes
+  one `exit N: <reason>` line; the health check's `backup-log` reads the last one, so a skip or failure now fails it.
+  The volume is live, so tar exit 1 ("file changed as we read it") is only a logged warning and the archive is kept.
+- **Schedule (03:30 local):** `scripts\register_daily_backup_8000.ps1` prints the `Register-ScheduledTask` commands (runs on
+  battery, 4 h execution limit to cover the retry window); `-Apply` registers task `OrenaDailyBackup8000`. Re-register
+  after PR BV (human step, from the checkout the task should run from):
+  `powershell -ExecutionPolicy Bypass -File scripts\register_daily_backup_8000.ps1 -VerifyOffsite -Apply`.
+  It passes `-OffsiteDir`, `-OffsiteKeyFile`, `-RetryUntil`, `-MinFreeRamGBDump`, `-MinFreeRamGB`, `-VerifyOffsite` and
+  `-NoOffsite` through only when given. The action is `powershell.exe -WindowStyle Hidden ...` without the
+  `conhost.exe --headless` wrapper: on 2026-10-20 the script exited 2 (skipped, RAM 1.52 GB < 2 GB) and the task still
+  recorded LastTaskResult 0, the wrapper's result rather than the script's. A console may show briefly at 03:30. Check
+  with `Get-ScheduledTaskInfo -TaskName OrenaDailyBackup8000` (LastTaskResult is the script's exit code).
+- **Verify:** the last `exit` line of `%USERPROFILE%\.orena\backups\backup.log` reads `exit 0: backup complete`. The script has
   already run `pg_restore --list` on the dump and compared the host copy's size with the container file (a dump that
   fails either check is deleted and the run fails). Check that the dump's size is not shrinking day over day, and read
-  the log weekly for `exit 1` or `exit 2`.
+  the log weekly for `exit 1`, `exit 2` or `exit 4`.
 - **Limits:** the dump and the tar are taken one after the other, so they are not point-in-time consistent with each
-  other. Backups are unencrypted and stay on this machine; an off-machine copy is the owner's decision. Retention keeps
-  the newest 14 of each kind and removes only files named `orena-8000-*`.
+  other. Local backups are unencrypted (the offsite copies are encrypted). Local retention keeps the newest 14 of each
+  kind and removes only files named `orena-8000-*`; 14 daily sets are within the Privacy Policy's 30-day bound (D-162).
 - **Restore (incident operation, needs authorisation), in this order:** (1) before touching anything, capture the
   deletions journal: `python scripts/runtime_backup.py deletions --out <path outside Git>`; (2) rehearse on a throwaway
   Postgres (`scripts\product_migration_rehearsal.ps1`); (3) stop web and worker, `docker cp` the dump into the Postgres
@@ -451,7 +480,8 @@ What the code and scripts now do. None of it was run against :8000; the human de
   alert was raised (the 2nd consecutive failing run, then hourly): a toast through BurntToast when installed, else
   `msg.exe`. `scripts\register_health_check_8000.ps1` prints the `Register-ScheduledTask` command (every 5 minutes, task
   `OrenaHealthCheck8000`); `-Apply` registers it. The task runs only while the user is logged on.
-  **Quiet mode (PR AX).** Both registrations (`register_health_check_8000.ps1`, `register_daily_backup_8000.ps1`) run
+  **Quiet mode (PR AX).** The health registration (`register_health_check_8000.ps1`; the backup task left it in PR BV, see
+  section 12) runs
   `conhost.exe --headless powershell.exe -NoProfile -ExecutionPolicy Bypass -File <script>` when the OS build is >= 22000
   (decided by the build alone; no probe runs, so registering flashes nothing), else the previous `powershell.exe -WindowStyle
   Hidden` action. The health task passes `-NoToast` by default (`-Toast` at registration opts in to BurntToast);
