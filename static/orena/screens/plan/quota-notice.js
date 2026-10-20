@@ -13,6 +13,7 @@ import { aiPauseOf, recentAiPause } from '../../infrastructure/ai-paused.js';
 import { t } from './copy.js';
 import { displayAmount, formatNumber } from './model.js';
 import { holdLanguageRefusal, REASON_LANGUAGE } from './reason.js';
+import { openUpgradeSheet } from './upgrade-sheet.js';
 
 export function isQuotaExhausted(error) {
   return Boolean(error) && error.status === 429 && error.category === 'quota_exhausted';
@@ -209,6 +210,8 @@ export function showRecordAgainNotice() {
    `already_assessed` (record again), or `paused` / `rate_limited` (the line, nothing to retry). False for every other failure, which the room handles as before. */
 export function showAssessmentRefusal(ctx, failure) {
   if (failure?.kind === 'quota') showQuotaNotice(ctx, failure.error);
+  // Scored shadowing is a Plus tool around a video (D-248 §4): the light upgrade sheet (G4), the take is not scored.
+  else if (failure?.kind === 'plan_required') void openUpgradeSheet({ source: 'shadowing', kind: 'tool', tier: failure.error?.context?.required_tier || 'plus', go: (to) => ctx.go(to) });
   else if (failure?.kind === 'already_assessed') showRecordAgainNotice();
   else if (failure?.kind === 'paused' || failure?.kind === 'rate_limited') toast(pausedLineOf(failure.error)); // the line, no Retry
   else return false;

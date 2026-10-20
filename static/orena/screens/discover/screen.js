@@ -16,6 +16,9 @@ import { openMedia } from '../../product/media-source.js';
 import { sourceFromLesson } from '../../product/speaking-source.js';
 import { shellCopy as ts } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
+import { planName } from '../../copy/shell.js';
+import { readAccess, cardView } from '../../product/content-access.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
 import { t } from './copy.js';
 import { mountCreateLesson, lessonTabsFor } from './create-lesson.js';
 import { overviewMarkup } from './overview.js';
@@ -121,11 +124,23 @@ export default async function discover(element, ctx) {
     paintResults();
   }
 
+  /* Content access (D-248 §4-§5): a Plus/Pro Reading card carries Pricing's tag and its tier wash; a locked one opens the
+     light upgrade sheet instead of the room. Only an article: a video is never badged (YouTube III.F.3.a). */
+  let access = null;
+  root.addEventListener('click', (event) => {
+    const locked = event.target.closest?.('[data-locked]');
+    if (!locked) return;
+    event.preventDefault();
+    void openUpgradeSheet({ source: 'discover', kind: 'reading', tier: locked.dataset.locked, go: (to) => ctx.go(to) });
+  });
+
   // One card for one entry, as every tab draws it (the All overview reuses it unchanged).
   function cardFor(entry) {
     // Navigation history is not completion of this newly chosen practice.
     const card = presentCard(practice ? { ...entry, started: false, progressPct: null } : entry, t);
-    return mediaCard({ ...card, title: langSpan(headlineTitle(card.title), card.titleLang), fullTitle: card.title, dataset: { go: practice ? practiceHref(entry, ctx.href, practicePlace) : hrefFor(entry, ctx.href) } });
+    const view = entry.kind === 'article' ? cardView(entry, access || undefined) : { badge: null, locked: false };
+    const dataset = view.locked ? { locked: view.badge } : { go: practice ? practiceHref(entry, ctx.href, practicePlace) : hrefFor(entry, ctx.href) };
+    return mediaCard({ ...card, title: langSpan(headlineTitle(card.title), card.titleLang), fullTitle: card.title, tier: view.badge, tierLabel: view.badge ? planName({ id: view.badge }) : '', dataset });
   }
 
   function paintFilterBadge() {
@@ -305,7 +320,7 @@ export default async function discover(element, ctx) {
   async function load() {
     if (!practice) compose();
     const [, , , , speaking] = await Promise.all([
-      bucketed('articles', allReadingArticles(language)),
+      bucketed('articles', Promise.all([allReadingArticles(language), readAccess().then((value) => { access = value; })]).then(([value]) => value)),
       bucketed('books', api.libraryBooks(language).catch(emptyOnFailure('books'))),
       bucketed('media', api.listeningLibrary(language).catch(emptyOnFailure('media'))),
       bucketed('collections', api.vocabularyLibraryCollections(language).catch(emptyOnFailure('collections'))),

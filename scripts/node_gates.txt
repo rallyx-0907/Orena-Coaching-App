@@ -151,3 +151,4 @@ scripts/test_orena_limit_ux.mjs
 scripts/test_orena_avatar_fallback.mjs
 scripts/test_orena_word_audio_format.mjs
 scripts/test_orena_access.mjs
+scripts/test_orena_upgrade_access.mjs

@@ -212,6 +212,22 @@ export function priceView(plan, cycle, locale = 'en') {
   return { free: false, price: formatMoney(amount, currency, locale), billedKey: 'billedMonthly', billedAmount: '' };
 }
 
+/* The upgrade sheet's price line (D-248 §1, MV2-3): the plan's dong prices from the catalogue (GET /api/product/plans),
+   monthly and yearly, as the VietQR/SePay offers charge them; never a figure of the client's own. `null` when the
+   catalogue holds neither, and the sheet then shows no price. The USD-or-VND question for a Polar monthly charge is
+   Billing's (D-248 §3 OPEN; UI_BACKEND_GAPS "Monetisation v2", MV2-3). */
+export const SHEET_CURRENCY = 'VND';
+export function upgradePrice(plan, locale = 'en') {
+  const monthly = Number(plan?.prices?.monthly?.[SHEET_CURRENCY]);
+  const yearly = Number(plan?.prices?.yearly?.[SHEET_CURRENCY]);
+  const has = (value) => Number.isFinite(value) && value > 0;
+  if (!has(monthly) && !has(yearly)) return null;
+  return {
+    monthly: has(monthly) ? formatMoney(monthly, SHEET_CURRENCY, locale) : '',
+    yearly: has(yearly) ? formatMoney(yearly, SHEET_CURRENCY, locale) : '',
+  };
+}
+
 /* What paying yearly saves against twelve months, in whole percent - the smallest across the paid plans,
    so the switch never promises more than every plan gives. 0 when nothing is saved or a price is missing. */
 export function yearlySaving(plans, locale = 'en') {

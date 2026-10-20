@@ -41,6 +41,38 @@
   right: 10px;
   font-size: 12px;
 }
+/* Plus/Pro on a Reading card (D-248 §5, G1-G3): the Pricing frame's tag pill (`pp.tag`: 4px 10px, radius 999,
+   11.5px/700, `--surface2` on `--text` for a paid plan), top right of the cover, 8px in. The tier frame is a fill, never
+   an outline or ring (D-147): Plus a `--spark-soft` wash, Pro an `--accent-soft` wash; the card's own shadow is kept. */
+.o-plan-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: normal;
+  white-space: nowrap;
+}
+.c-media__tier {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.c-media--tier-plus {
+  background: var(--spark-soft);
+}
+.c-media--tier-pro {
+  background: var(--accent-soft);
+}
+/* A paid tool's lock (G6): Lucide `lock` after the control's label, at its icon size, in `--text3`. */
+.o-tool-lock {
+  display: inline-flex;
+  flex: none;
+  color: var(--text3);
+}
 .c-media__progress {
   position: absolute;
   left: 0;

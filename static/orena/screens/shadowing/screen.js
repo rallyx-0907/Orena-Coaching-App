@@ -33,6 +33,11 @@ import { createSpeakingTake, TAKE } from '../../capabilities/speaking-take.js';
 import { createLocalAudioRecorder } from '../../capabilities/audio-recorder.js';
 import { watchMicrophone } from '../../capabilities/mic-readiness.js';
 import { showAssessmentRefusal } from '../plan/quota-notice.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
+import { t as planT } from '../plan/copy.js';
+import { toolLock } from '../../kit/components.js';
+import { toolLocked } from '../../product/content-access.js';
+import { planName } from '../../copy/shell.js';
 import { t } from './copy.js';
 import { openMedia } from '../../product/media-source.js';
 import {
@@ -79,6 +84,15 @@ export default async function mountShadowing(element, ctx) {
 
   const lesson = mapLesson(payload);
   if (!lesson.segments.length) throw new Error(`Shadowing: lesson "${lessonId}" has no lines to shadow.`);
+  /* Scored shadowing is one of Orena's Plus tools around a video (D-248 §4-§5, G6): when the server says it is locked for
+     this learner, Start keeps its place and label with a lock after it, and opens the light upgrade sheet. The model
+     line still plays. */
+  const scoreLocked = toolLocked(payload, 'shadowing_score');
+  const scoreTier = payload?.access?.tools?.shadowing_score?.tier || 'plus';
+  const scoreLock = () => (scoreLocked ? toolLock({ size: 14, label: planT('partOfPlan', { plan: planName({ id: scoreTier }) }) }) : '');
+  const start = () => (scoreLocked
+    ? void openUpgradeSheet({ source: 'shadowing', kind: 'tool', tier: scoreTier, go: (to) => ctx.go(to) })
+    : micGate(ctx, () => void beginShadow()));
   ctx.setCrumb(lesson.title || shellCopy('shadowing'));
 
   // `seg` is the Listening Workspace's hand-off key; `segment` is the one the Speaking rooms use.
@@ -166,7 +180,7 @@ export default async function mountShadowing(element, ctx) {
 
   function dockMarkup() {
     if (phase === 'idle')
-      return html`<button type="button" class="o-btn o-btn--primary s-shadow__start" data-start>${raw(icon('play', { size: 14 }))}${t('startCta')}</button>
+      return html`<button type="button" class="o-btn o-btn--primary s-shadow__start" data-start>${raw(icon('play', { size: 14 }))}${t('startCta')}${scoreLock()}</button>
       <div class="s-shadow__note">${t('headphonesNote')}</div>`;
     if (phase === 'result')
       return html`<div class="s-shadow__resultrow">
@@ -194,7 +208,7 @@ export default async function mountShadowing(element, ctx) {
   }
 
   function bindCard() {
-    element.querySelector('[data-start]')?.addEventListener('click', () => micGate(ctx, () => void beginShadow()));
+    element.querySelector('[data-start]')?.addEventListener('click', start);
     element.querySelector('[data-play-model]')?.addEventListener('click', playModelOnly);
     element.querySelector('[data-play-mine]')?.addEventListener('click', () => {
       if (!take?.takeUrl) return;
