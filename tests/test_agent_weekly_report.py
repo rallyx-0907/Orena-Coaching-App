@@ -100,7 +100,12 @@ def sources(monkeypatch):
     from writing_coach.agent import api as agent_api
     from writing_coach.agent.memory_pack import PackBuilder, PackSources
 
+    from writing_coach.product import quota
+    from writing_coach.product.catalog import PLUS
+
     enable([])
+    # A Plus learner, stated: the report is a Plus feature, and the quota runtime may hold a plan system already.
+    monkeypatch.setattr(quota.runtime(), "plan_for", lambda user_key, strict=True: PLUS)
     rows = {"writing": [error("grammar", "10-12", 1), error("grammar", "10-20", 2)], "speaking": []}
     agent_api._runtime.pack = PackBuilder(enabled=False, sources=PackSources(
         writing_events=lambda: rows["writing"], speaking_attempts=lambda limit: rows["speaking"]))
@@ -134,3 +139,57 @@ def test_a_source_that_cannot_be_read_is_unknown(client, sources):  # noqa: F811
     agent_api._runtime.pack = PackBuilder(enabled=False, sources=PackSources(writing_events=broken))
     body = client.get("/api/agent/progress/weekly").json()
     assert body["writing"] is None
+
+
+def test_a_bad_time_zone_header_falls_back_to_utc(client, sources):  # noqa: F811
+    answered = client.get("/api/agent/progress/weekly", headers={"X-Orena-Timezone": "Mars/Olympus"})
+    assert answered.status_code == 200 and answered.json()["time_zone"] == "UTC"
+
+
+def test_the_route_reports_statuses_and_counts(client, sources):  # noqa: F811
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime.now(UTC)
+    sources["writing"] = [{"category": "grammar", "created_at": (now - timedelta(weeks=w)).isoformat(), "essay_id": w,
+                           "fragment": "he go", "suggestion": "he goes", "mini_rule_vi": "-s"} for w in (0, 1)]
+    (item,) = client.get("/api/agent/progress/weekly").json()["writing"]
+    assert (item["status"], item["this_week"], item["before"]) == ("recurring", 1, 1)
+    assert item["example"]["fragment"] == "he go"
+
+
+# --- the plan gate (MV2-6a): Plus and Pro; Free is told, before anything is read -----------------------------------
+
+
+@pytest.fixture()
+def plan(monkeypatch):
+    from writing_coach.product import quota
+    from writing_coach.product.catalog import FREE
+
+    state = {"plan": FREE}
+    monkeypatch.setattr(quota.runtime(), "plan_for", lambda user_key, strict=True: state["plan"])
+    return state
+
+
+def test_a_free_learner_is_told_the_report_is_not_in_their_plan(client, sources, plan):  # noqa: F811
+    refused = client.get("/api/agent/progress/weekly")
+    assert refused.status_code == 403
+    detail = refused.json()["detail"]
+    assert detail["category"] == "feature_not_in_plan" and detail["context"]["feature"] == "progress.weekly_report"
+
+
+def test_plus_and_pro_get_the_report(client, sources, plan):  # noqa: F811
+    from writing_coach.product.catalog import PLUS, PRO
+
+    for paid in (PLUS, PRO):
+        plan["plan"] = paid
+        assert client.get("/api/agent/progress/weekly").status_code == 200
+
+
+def test_an_unreadable_plan_fails_closed(client, sources, monkeypatch):  # noqa: F811
+    from writing_coach.product import quota
+
+    def broken(user_key, strict=True):
+        raise RuntimeError("subscription store down")
+
+    monkeypatch.setattr(quota.runtime(), "plan_for", broken)
+    assert client.get("/api/agent/progress/weekly").status_code == 503

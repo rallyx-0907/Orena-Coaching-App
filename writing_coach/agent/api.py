@@ -38,6 +38,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import ValidationError
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
+from writing_coach.agent import band, band_speaking
 from writing_coach.agent.contract import DAILY_AI_LIMIT_VERSION
 from writing_coach.agent.events import Event, sse_frame
 from writing_coach.agent.locale import interface_languages, to_internal
@@ -307,6 +308,7 @@ async def _voice_extend_allowed(request: Request,
 # --- the weekly recurring-mistake report (Monetisation v2): counts from the learner's own records -------------------
 
 SPEAKING_ATTEMPTS_READ = 200
+WEEKLY_REPORT = "progress.weekly_report"  # the plan entitlement (catalog.METERS)
 
 
 def _source(read, *args):
@@ -329,8 +331,13 @@ def agent_progress_weekly(request: Request, response: Response, tz: str | None =
 
     if interface not in interface_languages():
         raise HTTPException(status_code=422, detail="unknown interface language")
+    # Plus and Pro (MV2-6a, D-248): 403 feature_not_in_plan for Free before anything is read; 503 when the plan cannot
+    # be read (fail closed).
+    plan_features.require(LearnerScope.from_request_context().user_key, WEEKLY_REPORT)
     sources = getattr(runtime.pack, "sources", None)
     zone = tz or request.headers.get("X-Orena-Timezone") or "UTC"
+    if not tz and not weekly_report.known_zone(zone):
+        zone = "UTC"  # a device's bad header falls back; only an explicit `tz` is refused
     try:
         answer = weekly_report.weekly_report(
             writing=_source(sources.writing_events) if sources is not None else None,
@@ -467,4 +474,55 @@ def agent_capabilities(
 
 
 # `/api/agent/memory` (contract v9 §10) is on this router too.
+# --- the band estimator (Monetisation v2): administrators only until calibrated --------------------------------------
+
+
+def _band_admin(request: Request) -> dict:
+    from auth_support import require_admin
+
+    return require_admin(request)
+
+
+def _band_answer(request: Request, response: Response, exam: str, run) -> dict:
+    """What both estimators share: the switch, the administrator gate before any model call, the exam of the language
+    learned, and the provider's failures as statuses."""
+
+    if band.mode() == "off":
+        raise HTTPException(status_code=404, detail="Not Found")
+    _band_admin(request)
+    learner = LearnerScope.from_request_context()
+    if band.exam_for_language(learner.language) != exam:  # None: no exam for this language
+        raise HTTPException(status_code=409, detail="exam_language_mismatch")
+    response.headers["Cache-Control"] = "no-store"
+    from writing_coach.ai import spend_gate
+    from writing_coach.ai.base import AICapabilityError, AIProviderError
+
+    try:
+        return run()
+    except band.BandUnavailable as exc:
+        raise HTTPException(status_code=502, detail="band_unavailable") from exc
+    except spend_gate.SpendCeilingReached:
+        raise  # the app's handler answers it, with the paused header
+    except (AICapabilityError, AIProviderError) as exc:
+        raise HTTPException(status_code=503, detail="ai_unavailable") from exc
+
+
+@router.post("/band/writing")
+def agent_band_writing(body: band.BandRequest, request: Request, response: Response,
+                       runtime: AgentRuntime = Depends(_read_allowed)) -> dict:  # fmt: skip
+    """An estimated IELTS Writing band or HSK level for a piece of writing (agent/band.py). Experimental and for
+    administrators until the pilot calibration agrees with real scores; `BAND_ESTIMATOR=off` removes it."""
+
+    return _band_answer(request, response, body.exam, lambda: band.estimate(body))
+
+
+@router.post("/band/speaking")
+def agent_band_speaking(body: band_speaking.SpeakingBandRequest, request: Request, response: Response,
+                        runtime: AgentRuntime = Depends(_read_allowed)) -> dict:  # fmt: skip
+    """An estimated IELTS Speaking band or HSK level for a spoken answer: its transcript, duration and pronunciation
+    assessment scores (agent/band_speaking.py). Experimental and for administrators, like the writing estimator."""
+
+    return _band_answer(request, response, body.exam, lambda: band_speaking.estimate(body))
+
+
 from writing_coach.agent import memory_api  # noqa: E402, F401

@@ -17,6 +17,7 @@ from writing_coach.product.catalog import (
     PlanCatalogInvalid,
     current_plans,
     save_catalog,
+    stale_limits,
     stored_catalog,
 )
 from writing_coach.product.commerce import accountCommerce
@@ -114,13 +115,17 @@ def _admin_catalog() -> dict[str, Any]:
         # the number it edits (D-160).
         "meters": {
             key: {"window": meter.window, "unit": meter.unit, "display_unit": meter.display_unit,
-                  "scale": meter.scale, "params": {name: list(bounds) for name, bounds in meter.params.items()}}
+                  "scale": meter.scale, "params": {name: list(bounds) for name, bounds in meter.params.items()},
+                  "on_off": meter.on_off}
             for key, meter in METERS.items()
         },
         "version": 2,
         "currencies": list(CURRENCIES),
         "periods": list(PERIODS),
         "source": "stored" if record else "default",
+        # Saved limits set under another window than the meter's current one (D-248: voice day -> month): not applied,
+        # the built-in value is, until an administrator saves again.
+        "stale_limits": stale_limits(record),
         "updated_at": record.get("updated_at") or None,
         "updated_by": record.get("updated_by") or None,
         "billing_ready": product_service.billing_is_ready(),

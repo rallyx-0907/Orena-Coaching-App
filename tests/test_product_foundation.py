@@ -78,7 +78,8 @@ def test_the_meters_are_the_designs_pricing():
     """D-161: the design's BILL_PLANS `lim` - messages/day, reviews/month, minutes (stored as seconds), languages."""
     free, plus, pro = (plan.entitlement_map() for plan in (FREE, PLUS, PRO))
     assert list(free) == ["orena.message", "writing.review", "pronunciation.audio", "media.import", "languages.target",
-                          "word.assist", "reading.assist", "writing.task", "orena.voice", "media.tools_weekly"]
+                          "word.assist", "reading.assist", "writing.task", "orena.voice", "media.tools_weekly",
+                          "progress.weekly_report"]
     # D-248 (MV2-1): Free looks words up on 3 videos a week; Plus and Pro have the full media tools.
     assert [m["media.tools_weekly"].limit for m in (free, plus, pro)] == [3, 10_000, 10_000]
     assert free["media.tools_weekly"].window == "week"
@@ -124,6 +125,132 @@ def test_the_semantic_ai_meters_are_wired_but_never_credit_funded():
     for key in ("word.assist", "reading.assist", "writing.task"):
         assert key in quota.WIRED_METERS and key in quota.ENFORCEABLE and key in quota.SYNC_METERS
         assert key not in CREDIT_ELIGIBLE_V1
+
+
+def test_voice_is_a_monthly_meter_with_the_d248_limits():
+    """D-248 (MV2-6a): `orena.voice` is seconds per month shown in minutes; Plus 6000 s (about 100 min), Pro 18000 s;
+    Free stays off."""
+    from datetime import UTC, datetime
+
+    from writing_coach.product import quota
+    from writing_coach.product.catalog import METERS
+
+    meter = METERS["orena.voice"]
+    assert (meter.window, meter.unit, meter.display_unit, meter.scale) == ("month", "second", "minute", 60)
+    voice = [plan.entitlement_map()["orena.voice"] for plan in (FREE, PLUS, PRO)]
+    assert [item.enabled for item in voice] == [False, True, True]
+    assert [item.limit for item in voice[1:]] == [6000, 18000]
+    row = voice[1].as_dict()
+    assert (row["window"], row["monthly_limit"]) == ("month", 6000)
+    # A monthly meter's window ends (its `resets_at`) at 00:00 on the 1st of the next month - the catalogue's window, read
+    # by the quota's window (voice's own count, plan_features #478, resets on the 1st too).
+    window = quota.window_for(meter.window, now=datetime(2026, 10, 21, 9, tzinfo=UTC), zone_name="UTC", previous=None)
+    assert window.end == datetime(2026, 11, 1, tzinfo=UTC)
+    december = quota.window_for(meter.window, now=datetime(2026, 12, 31, 23, tzinfo=UTC), zone_name="UTC", previous=None)
+    assert december.end == datetime(2027, 1, 1, tzinfo=UTC)
+
+
+def test_the_weekly_report_is_an_on_off_plan_feature():
+    """D-248 (MV2-6a): `progress.weekly_report` - Free off, Plus and Pro on; no window and no limit."""
+    from writing_coach.product.catalog import METERS
+
+    meter = METERS["progress.weekly_report"]
+    assert meter.on_off is True and meter.window is None
+    report = [plan.entitlement_map()["progress.weekly_report"] for plan in (FREE, PLUS, PRO)]
+    assert [item.enabled for item in report] == [False, True, True]
+    assert all(item.limit is None for item in report)
+
+
+def test_an_admin_turns_the_weekly_report_on_and_off_but_never_gives_it_a_limit():
+    store = MemoryStore()
+    configure_plan_store(store)
+    edited = document()
+    for item in edited["plans"][0]["entitlements"]:
+        if item["key"] == "progress.weekly_report":
+            item["enabled"] = True
+    save_catalog(edited, updated_by="admin")
+    assert plan_by_id("free").entitlement_map()["progress.weekly_report"].enabled is True
+    with pytest.raises(PlanCatalogInvalid, match="on or off"):
+        validate_catalog(document(plus={"entitlements": [{"key": "progress.weekly_report", "enabled": True, "limit": 1}]}))
+
+
+def test_a_stored_voice_placeholder_reads_as_the_plans_default_everywhere():
+    """A voice limit under a minute (the D-236 on/off placeholder) reads as that plan's default in the catalogue itself,
+    so Admin's editor, Plans and enforcement all see the same figure (no client-side constant)."""
+    store = MemoryStore()
+    configure_plan_store(store)
+    stored = document()
+    for row in stored["plans"]:
+        for item in row["entitlements"]:
+            if item["key"] == "orena.voice" and row["id"] != "free":
+                item["limit"] = 1
+    save_catalog(stored, updated_by="admin")
+    assert [plan_by_id(plan).entitlement_map()["orena.voice"].limit for plan in ("plus", "pro")] == [6000, 18000]
+
+
+def _stored_voice(store, limit, **window):
+    """A saved catalogue whose voice limits are `limit`, saved under `window` (none: a document from before D-248)."""
+    stored = document()
+    for row in stored["plans"]:
+        for item in row["entitlements"]:
+            item.pop("window", None)
+            if item["key"] == "orena.voice":
+                item.update({"limit": limit, **window})
+    store.rows[catalog.PLAN_SETTING_KEY] = {"value": stored, "updated_at": "2026-10-19T10:00:00+00:00", "updated_by": "a"}
+    configure_plan_store(store)
+
+
+def test_a_voice_limit_saved_per_day_is_not_read_as_a_month():
+    """Review of #477, P1: a catalogue saved before D-248 holds `orena.voice` 900 (15 minutes a DAY). Once the meter is
+    monthly it must not become 15 minutes a month: the built-in value applies and the Admin view names the stale limit.
+    The stored document is not changed."""
+    for window in ({"window": "day"}, {}):  # saved under "day", or with no window (a document from before this build)
+        store = MemoryStore()
+        _stored_voice(store, 900, **window)
+        plans = current_plans(strict=True)
+        assert [plans[plan].entitlement_map()["orena.voice"].limit for plan in ("plus", "pro")] == [6000, 18000]
+        record = store.get_setting(catalog.PLAN_SETTING_KEY)
+        assert catalog.stale_limits(record) == [  # Free's voice is off: nothing it limits, nothing to report
+            {"plan": plan, "key": "orena.voice", "limit": 900, "saved_window": "day", "window": "month"}
+            for plan in ("plus", "pro")]
+        assert [item for row in record["value"]["plans"] for item in row["entitlements"]
+                if row["id"] == "plus" and item["key"] == "orena.voice"][0]["limit"] == 900, "stored data untouched"
+
+
+def test_a_voice_limit_saved_per_month_is_honoured_and_a_save_stamps_the_window():
+    store = MemoryStore()
+    _stored_voice(store, 4500, window="month")
+    assert plan_by_id("plus", strict=True).entitlement_map()["orena.voice"].limit == 4500
+    assert catalog.stale_limits(store.get_setting(catalog.PLAN_SETTING_KEY)) == []
+    # An administrator's save records the window each limit was set for, so a later window change is detected.
+    edited = document(plus={"entitlements": [{"key": "orena.voice", "enabled": True, "limit": 3000}]})
+    save_catalog(edited, updated_by="admin")
+    saved = store.get_setting(catalog.PLAN_SETTING_KEY)["value"]
+    voice = [item for row in saved["plans"] for item in row["entitlements"] if row["id"] == "plus" and item["key"] == "orena.voice"]
+    # the daily sub-cap (2026-10-21) is the meter's parameter: a save without it keeps the code's (Plus 20 minutes)
+    assert voice == [{"key": "orena.voice", "enabled": True, "limit": 3000, "params": {"daily_seconds": 1200},
+                      "window": "month"}]
+    assert plan_by_id("plus").entitlement_map()["orena.voice"].limit == 3000
+
+
+def test_other_meters_saved_without_a_window_keep_their_limits():
+    """Only a meter whose window changed is affected: a pre-D-248 document's other limits still apply."""
+    store = MemoryStore()
+    _stored_voice(store, 900)
+    for row in store.rows[catalog.PLAN_SETTING_KEY]["value"]["plans"]:
+        for item in row["entitlements"]:
+            if row["id"] == "plus" and item["key"] == "writing.review":
+                item["limit"] = 12
+    assert plan_by_id("plus", strict=True).entitlement_map()["writing.review"].limit == 12
+
+
+def test_the_admin_view_reports_a_stale_limit(monkeypatch):
+    import writing_coach.product.api as product_api
+
+    store = MemoryStore()
+    _stored_voice(store, 900, window="day")
+    assert product_api._admin_catalog()["stale_limits"] == [
+        {"plan": plan, "key": "orena.voice", "limit": 900, "saved_window": "day", "window": "month"} for plan in ("plus", "pro")]
 
 
 def test_a_stored_catalogue_without_the_new_meters_reads_their_defaults():

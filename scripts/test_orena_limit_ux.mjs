@@ -106,7 +106,7 @@ copy.setLanguages({ ui: 'en', support: 'en' });
 
 // G9: "You can still message Orena" only while the message meter has room.
 {
-  const voice = { feature: 'orena.voice', used: 15, limit: 15, scale: 60 };
+  const voice = { feature: 'orena.voice', used: 15, limit: 15, scale: 60, window: 'day' };
   const messages = (used) => ({ features: { 'orena.message': { used, limit: 20, usage_state: 'known' } } });
   assert.ok(notice.quotaMessage({ context: voice }).includes('You can still message Orena'), 'no commerce read: the clause stays');
   assert.ok(notice.quotaMessage({ context: voice }, messages(3)).includes('You can still message Orena'));
@@ -119,6 +119,29 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   assert.ok(!notice.quotaMessage({ context: voice }, messages(20)).includes('发消息'));
   copy.setLanguages({ ui: 'vi', support: 'vi' });
   assert.ok(!notice.quotaMessage({ context: voice }, messages(20)).includes('nhắn tin'));
+  copy.setLanguages({ ui: 'en', support: 'en' });
+}
+
+// D-248 (MV2-6a): the voice line names the window the server sends (`context.window`), never a fixed day.
+{
+  const month = { feature: 'orena.voice', used: 6000, limit: 6000, scale: 60, window: 'month' };
+  const day = { ...month, window: 'day' };
+  const none = { feature: 'orena.voice', used: 6000, limit: 6000, scale: 60 };
+  const spent = { features: { 'orena.message': { used: 20, limit: 20, usage_state: 'known' } } };
+  const lines = {
+    en: ['You have used all 100 minutes of voice chat this month. You can still message Orena.', 'You have used all 100 minutes of voice chat today. You can still message Orena.', 'You have used all 100 minutes of voice chat. You can still message Orena.', 'You have used all 100 minutes of voice chat this month.'],
+    vi: ['Bạn đã dùng hết 100 phút trò chuyện bằng giọng nói của tháng này. Bạn vẫn có thể nhắn tin với Orena.', 'Hôm nay bạn đã dùng hết 100 phút trò chuyện bằng giọng nói. Bạn vẫn có thể nhắn tin với Orena.', 'Bạn đã dùng hết 100 phút trò chuyện bằng giọng nói. Bạn vẫn có thể nhắn tin với Orena.', 'Bạn đã dùng hết 100 phút trò chuyện bằng giọng nói của tháng này.'],
+    zh: ['本月的 100 分钟语音聊天已用完。你仍可以给 Orena 发消息。', '今天的 100 分钟语音聊天已用完。你仍可以给 Orena 发消息。', '100 分钟语音聊天已用完。你仍可以给 Orena 发消息。', '本月的 100 分钟语音聊天已用完。'],
+  };
+  for (const [ui, [monthLine, dayLine, noneLine, monthOnly]] of Object.entries(lines)) {
+    copy.setLanguages({ ui, support: ui });
+    assert.equal(notice.quotaMessage({ context: month }), monthLine, `${ui}: a monthly window says the month`);
+    assert.equal(notice.quotaMessage({ context: day }), dayLine, `${ui}: a daily window says today`);
+    assert.equal(notice.quotaMessage({ context: none }), noneLine, `${ui}: no window, no period promised`);
+    assert.equal(notice.quotaMessage({ context: month }, spent), monthOnly, `${ui}: messages spent, the month line without the clause`);
+    // The mid-chunk line reads the window from the commerce read too.
+    assert.equal(notice.voiceDayLimitMessage({ features: { 'orena.voice': { limit: 6000, scale: 60, window: 'month' } } }), monthLine, `${ui}: chunk end, monthly`);
+  }
   copy.setLanguages({ ui: 'en', support: 'en' });
 }
 

@@ -289,8 +289,8 @@ export function createVoiceEngine({ ctx = {}, send, onChange, abort, resume, onT
         if (disposed) return;
         setPhase('idle');
         if (reason === 'mic') void openMicState(ctx, { state: 'blocked' });
-        // The day's voice minutes ended inside the chunk that just played out (`day_limit_reached`): the line once, and no
-        // offer to start again.
+        // The window's voice minutes ended inside the chunk that just played out (`day_limit_reached`): the line once, and
+        // no offer to start again. The line names the window from the commerce read ("this month" / "today", EN/VI/ZH).
         if (reason === 'day_limit') void api.productCommerce().catch(() => null).then((commerce) => { if (!disposed) toast(voiceDayLimitMessage(commerce)); });
       },
     });

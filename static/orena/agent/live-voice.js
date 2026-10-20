@@ -194,8 +194,8 @@ export function connectLiveVoice(session, { audio, mediaDevices = globalThis.nav
     renewTimer = setTimeout(() => void extend(0), Math.max(0, Number(renewIn) * 1000 - (Date.now() - mintedAt)));
   };
   scheduleRenew(session.renew_in, Date.now());
-  // `day_limit_reached` (contract v13, D-237, #328): the held token was clamped to what is left of today's voice minutes, so
-  // the day ends inside it. Only `=== true` counts: a missing field (an older server) is false. The chunk plays out as
+  // `day_limit_reached` (contract v13, D-237, #328): the held token was clamped to what is left of the window's voice minutes
+  // (the `orena.voice` meter's window: a month since D-248, v14), so the window's minutes end inside it. Only `=== true` counts: a missing field (an older server) is false. The chunk plays out as
   // always; when it ends the session closes with the reason `day_limit` instead of `cap`.
   let dayLimit = session.day_limit_reached === true;
 

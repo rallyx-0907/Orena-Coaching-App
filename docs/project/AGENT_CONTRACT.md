@@ -6,7 +6,9 @@ Purpose: the single interface between the Orena Intelligence backend (lane `feat
 Authority: D-085, D-086, D-092, D-094, D-095, D-096, D-222, D-223. Below AGENTS.md, ARCHITECTURE_INVARIANTS.md and the human gates; above either lane's own notes.
 Change when: a field, event, action, intent or rule below changes. Edit only through a reviewed pull request to `main` from the UI lane that bumps `contract_version` and records the change in DECISION_LOG.md (D-223 point 9; the practice since v7, D-164; `codex/work` has been dormant since 2026-10-08 - D-223); the intelligence lane receives it by merging `main` forward. Never edit this file on the intelligence lane.
 
-`contract_version: 13`
+`contract_version: 14`
+
+v14 (D-248, MV2-6a, 2026-10-21): three read routes the server already answers (#469, #470, #471, #476) are recorded, and the `orena.voice` meter becomes monthly. **`GET /api/agent/voice/allowance`** (§9, point 8) reads the learner's voice minutes for the energy bar without minting or charging anything. **`GET /api/agent/progress/weekly`** (§13.1) is the weekly recurring-mistake report, an on/off plan feature `progress.weekly_report` (Free off, Plus and Pro on). **`POST /api/agent/band/writing`** (§13.2) is the experimental band estimator, for administrators only. The plan catalogue's `orena.voice` meter now has window `month` (it was `day` in v12): Plus 6000 s (about 100 minutes) and Pro 18000 s a month by the code's defaults, Free off. A client reads `window` and `resets_at` from each answer (the 429 `context`, the allowance, the commerce read) and never assumes a day. No event, field of the turn stream, action or intent changed, and like v11 and v12 these are the plan's entitlements, not features of the version a client declares.
 
 v13 (D-237, 2026-10-19): every voice chunk answer - `POST /api/agent/voice/session` and `POST /api/agent/voice/extend` (§9, §9.1) - gains `day_limit_reached: bool`. It is true only when this token was clamped to the seconds left of today's voice minutes, so the day's voice minutes end with this token; it describes this token only (if a few seconds remain afterwards, a later short chunk may carry it instead). It is false on a normal `last`, on an uncapped server and for an unmetered token that is not clamped, because `last: true` alone cannot tell these apart. The client lets the chunk play out and, when it ends, tells the learner once that today's voice minutes are used up; a missing field is false, so a client reads an older server correctly (server: #328).
 
@@ -54,6 +56,9 @@ The new UI may add, rename or drop flows. The agent therefore never names a rout
 POST /api/agent/turn           request §3 → response: text/event-stream (§4), one stream per turn
 GET  /api/agent/capabilities   → registry (§8), filtered by the caller's locale
 POST /api/agent/voice/session  → §9 (with /voice/extend, /voice/tool and /voice/end)
+GET  /api/agent/voice/allowance → §9 point 8 (v14)
+GET  /api/agent/progress/weekly → §13.1 (v14)
+POST /api/agent/band/writing    → §13.2 (v14, administrators only)
 ```
 
 Auth: the app's existing session. The server never trusts an identifier the model produces; the learner is always the authenticated caller.
@@ -456,7 +461,7 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - Errors:
      - 429 `rate_limited` with Retry-After (the daily cap and turn window apply first);
      - 429 `daily_ai_limit` (v10): `{"detail": {"category": "daily_ai_limit", …, "context": {"scope", "resets_at"}}}` (§2.1) - Orena's AI is paused for everyone until `resets_at`. No token is minted and nothing was charged. The client tells the learner once, does **not** fall back to its device cascade, and does not offer the plans. A client that declares `contract_version` <= 9 receives `rate_limited` instead;
-     - 429 `quota_exhausted` with `context.feature` `orena.voice` (D-237): `{"detail": {"category": "quota_exhausted", …, "context": {"feature": "orena.voice", "used", "limit", "unit": "second", "display_unit": "minute", "scale": 60, "window": "day", "resets_at", "plan"}}}`, header `Retry-After` - today's voice minutes are used up (`limit` / `scale` minutes). There is no `upgrade` and no `options` (Plus and Pro hold the same minutes). No token is minted and nothing was charged. The client tells the learner once, in the interface language and from its own copy, that today's voice minutes are used and that text chat goes on; it does **not** retry, does **not** fall back to its device cascade, and offers no way to the plans. It affects voice only: nothing else is locked. The Free upsell (`403 feature_not_in_plan`, below) is a different refusal and is unchanged;
+     - 429 `quota_exhausted` with `context.feature` `orena.voice` (D-237): `{"detail": {"category": "quota_exhausted", …, "context": {"feature": "orena.voice", "used", "limit", "unit": "second", "display_unit": "minute", "scale": 60, "window", "resets_at", "plan"}}}`, header `Retry-After` - the voice minutes of the window are used up (`window` is the catalogue's: `day` in v12, `month` from v14) (`limit` / `scale` minutes). There is no `upgrade` and no `options` (D-237, when Plus and Pro held the same minutes; the client offers the plans only if a later server lists `upgrade` in `options`). No token is minted and nothing was charged. The client tells the learner once, in the interface language and from its own copy, that the voice minutes of that window ("this month", "today", from `context.window`) are used and that text chat goes on; it does **not** retry, does **not** fall back to its device cascade, and offers no way to the plans. It affects voice only: nothing else is locked. The Free upsell (`403 feature_not_in_plan`, below) is a different refusal and is unchanged;
      - 429 `quota_exhausted` (v8): `{"detail": {"category": "quota_exhausted", …, "context": {"feature": "orena.message", …}}}` (§2.1) - not even one message is left in the learner's day, so no chunk can be minted. No token is minted and nothing was charged. The client shows the server's figures where it shows a failed request, with the way to the plans, and does **not** fall back to its device cascade (its turns would be refused as well);
      - 409 `target_language_mismatch`, or `operation_in_progress | operation_finished | operation_conflict | account_not_ready` (v8, §2.1: the request's `Idempotency-Key` repeats a session already open or finished); 403 `account_deleted | feature_not_in_plan` (v11: `context.feature` `orena.voice` for a plan without live voice chat; see §2.1 - the client opens the voice upsell sheet and does **not** fall back to its cascade, whose turns would be voice chat too);
      - 503 `voice_unavailable`;
@@ -578,6 +583,30 @@ server runs with `AGENT_VOICE_ENABLED` beside `AGENT_ENABLED`. While off, the ro
    - The server records each chunk in the shared AI ledger when its token is minted, at the seconds the token lives (the most the vendor can charge for it). A session never ended costs the same.
    - Plan (v8): there is no settlement at the end. A session the learner left open, or whose client vanished, costs
      exactly the chunks it minted, and the server forgets it when its newest token dies.
+8. **Allowance (v14, #469).**
+   - `GET /api/agent/voice/allowance` (no body, no parameters) reads the learner's `orena.voice` minutes for the voice
+     energy bar. It is a read: nothing is minted, reserved or charged, and `POST /api/agent/voice/session` stays the
+     authority (its 403 and 429 above). The answer carries `Cache-Control: no-store`.
+   - 200 response:
+     `{ feature: "orena.voice", entitled, limit, used, left, unit: "second", display_unit: "minute", scale: 60, window, resets_at, plan }`.
+     `limit`, `used` and `left` are seconds (`limit` / `scale` minutes); `window` is the meter's window from the plan
+     catalogue (`month` from v14); `resets_at` is ISO 8601 UTC; `plan` is the learner's plan id, or `null` on a server with no
+     plan system. **`used` counts minted seconds:** every token already minted in the window counts in full when it is
+     minted, whether or not it was used, so `left` is what a new session may still be given. `used` is never more than
+     `limit` (a token minted past a lowered limit reads as `used == limit`, `left: 0`).
+   - A plan without live voice chat (Free) answers 200 with `entitled: false`, `limit: 0`, `used: 0`, `left: 0` - not a
+     refusal; the client offers the voice upsell (§2.1, v11) and draws no bar.
+   - `limit` and `left` are **`null` when the minutes are not capped** on this server (no plan system, no usage store, or no
+     limit in the catalogue); `entitled` is then `true` and `used` is `0`. The client draws no bar and does not tell the
+     learner a figure.
+   - `used` sums the seconds minted in the meter's window (#478): with `window: "month"` the current UTC calendar month,
+     and `resets_at` is 00:00 UTC on the 1st of the next month (a `day` window: the UTC day and the next UTC midnight).
+     The 429 `quota_exhausted` of §9 point 1 carries the same `window` and `resets_at`. The client never computes the
+     reset itself: it reads `window` and `resets_at`.
+   - Errors: 404 `{"detail": "Not Found"}` when voice is absent on this server (as every voice route, and while the agent
+     is off, §2.1) - the client hides the bar; 503 `quota_unavailable` (§2.1) when the plan, the catalogue or the usage
+     cannot be read (fail closed: never "no minutes left") - the client shows no figure; 429 `rate_limited` with
+     `Retry-After` (it is counted with the capability reads, §2.1).
 
 Rules:
 - A provider key never reaches the client.
@@ -685,3 +714,87 @@ session → memory_update{upsert, {id: "address-vi", kind: address, address: {se
 ```text
 session → segment_end{0, vi, "Chị là Orena, trợ lý học tập AI … của em …", neutral_explain} → done   # fixed copy, by rule, no model
 ```
+
+---
+
+## 13. Progress and estimates (v14)
+
+Both routes are behind `AGENT_ENABLED` (404 while off, §2.1), use the learner's own session and are counted with the
+capability reads (429 `rate_limited` with `Retry-After`, §2.1). Neither changes any learner record.
+
+### 13.1 Weekly report — `GET /api/agent/progress/weekly` (#471, #476)
+
+This ISO week's recurring mistakes against the four weeks before, from the learner's own stored writing reviews and
+pronunciation attempts (the rows Orena Memory reads). Counts only: no model call, no cost.
+
+- **Query.** `interface` (default `en`; an interface language, else 422 `"unknown interface language"`) names the
+  language of each writing category's `label`. `tz` (optional, an IANA zone name, at most 64 characters) is the
+  learner's time zone.
+- **Time zone, in this order:** the `tz` parameter; else the request header `X-Orena-Timezone` (§3); else `UTC`. An
+  explicit `tz` the server does not know is **422 `{"detail": "unknown_time_zone"}`**; a header it does not know falls
+  back to `UTC` (a device's bad header is never a refusal). The week runs from Monday 00:00 in that zone.
+- **200 response** (`Cache-Control: private, no-store`):
+
+  ```text
+  {
+    "week": "2026-W43", "week_start": "2026-10-19", "time_zone": "Asia/Ho_Chi_Minh", "compared_with_weeks": 4,
+    "writing": [{ "category", "label", "this_week", "before", "status",
+                  "example": { "fragment", "suggestion", "rule" } }],
+    "speaking": [{ "word", "this_week", "before", "status" }],
+    "practised": { "writing_reviews", "speaking_attempts" }
+  }
+  ```
+
+  - `time_zone` is the zone the week was cut in (the header's fallback shows here as `UTC`).
+  - `status` is `recurring` (this week and before), `new` (at least twice this week, never before) or `improving` (at
+    least twice before, not this week); a single mistake is not listed. At most 5 items per list, the most frequent this
+    week first.
+  - `writing[].category` is the review's error category and `label` its name in `interface`; `example` is the learner's
+    latest own words (`fragment`), the fix (`suggestion`) and the review's short rule (`rule`, as stored), each cut to
+    120 characters.
+  - `speaking[].word` is a word the pronunciation provider flagged, over the learner's newest 200 attempts.
+  - `practised` counts this week's reviewed essays and pronunciation attempts.
+  - **`null` means unreadable, never "nothing":** `writing` or `speaking` is `null` when its source cannot be read
+    (`[]` is a source read with nothing recurring), a count in `practised` is `null` likewise, and `practised` is `null`
+    when neither source can be read. The client says it cannot show that part and never draws an empty report for it.
+- **Entitlement:** the plan feature `progress.weekly_report` (plan catalogue, on/off: Free off, Plus and Pro on; v14).
+  A plan without it is answered **403 `feature_not_in_plan`** (§2.1) with `context.feature`
+  `"progress.weekly_report"`, `plan` and `upgrade`, before anything is read; the client shows the upgrade, never a
+  failure. The server check is added by the Intelligence lane after v14 merges; until then the route answers every
+  plan, and the client still reads the plan's `progress.weekly_report` from `GET /api/product/commerce` before it offers
+  the report.
+
+### 13.2 Band estimate — `POST /api/agent/band/writing` (#470; experimental, administrators only)
+
+An estimated IELTS Writing band, or for Chinese the HSK level, for a piece of writing, criterion by criterion. It is
+**always an estimate, never an exam result**, and stays **administrators-only and experimental** until a pilot
+calibration agrees with real scores. No learner UI calls it yet.
+
+- **Switch:** `BAND_ESTIMATOR=off` removes the route (404 `{"detail": "Not Found"}`); anything else (the default) is
+  administrators-only. No setting opens it to learners.
+- **Order of checks**, as implemented: the agent is on (404 while off, §2.1) and the learner's read window admits the
+  request (429 `rate_limited`); the body matches (422); then the switch (404 when `off`); then the administrator check
+  (403); then the exam against the learning language (409); only then the estimate (no model call for a short text).
+- **Body** (no other field; 422 for one that does not match):
+  `{ exam: "ielts" | "hsk", task?: "task1" | "task2" | "free" (default "task2"), prompt?: string (≤ 2,000, default ""), text: string (1-8,000), support?: "vi" | "en" | "zh-CN" (default "vi") }`.
+  `support` is the language of every reason and fix.
+- **Who:** an administrator (the app's admin check; a learner is refused 403 before any model call).
+- **200 response** (`Cache-Control: no-store`):
+  `{ exam, task, estimate: true, experimental: true, insufficient_evidence, overall, label, criteria: [{ criterion, score, reason, evidence: [string] }], fixes: [{ fix, why, before, after }], sample_size, provider?, model? }`.
+  - `overall` is the server's: for IELTS the mean of the criteria rounded to the half band (.25 and .75 up), `label`
+    `"IELTS 7.0"`; for HSK the mean rounded down, `label` `"HSK 4"` (or `"HSK 7-9"`). Criteria are whole numbers
+    (IELTS 0-9: `task_response`, `coherence_cohesion`, `lexical_resource`, `grammatical_range_accuracy`; HSK 1-9:
+    `task_completion`, `vocabulary`, `grammar`, `coherence`).
+  - `evidence` (at most 2 per criterion) and each fix's `before` are exact quotes from `text`; anything not found in it
+    is dropped. At most 3 fixes.
+  - `insufficient_evidence: true` (with `overall` and `label` `null`, `criteria` and `fixes` empty) when the text is
+    under half the exam's minimum length (IELTS words: 75 for task 1, 125 otherwise; HSK: 40 characters) - answered
+    without a model call - or when the model says it cannot judge.
+  - `sample_size` is the words (IELTS) or Chinese characters (HSK) counted.
+- **Errors:** 409 `{"detail": "exam_language_mismatch"}` when `exam` is not the learner's learning language's exam
+  (English: `ielts`, Chinese: `hsk`; any other language: always 409); 502 `{"detail": "band_unavailable"}` when the
+  model's answer is not a usable estimate (a score out of range, a criterion missing - never patched up); 503
+  `{"detail": "ai_unavailable"}` when no provider can answer; 429 `daily_ai_limit` (§2.1) when the system's daily AI
+  ceiling is reached.
+- **Future entitlement:** when it opens to learners it will be the plan feature `band.estimate`, by a later contract
+  version; that key is not in the catalogue yet and no client may rely on it.

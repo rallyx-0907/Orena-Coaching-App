@@ -4,7 +4,8 @@ this ISO week, in the learner's time zone, against the four weeks before.
 - **writing**: per error category of the stored reviews, `this_week` and `before` counts and a status - `recurring`
   (this week and before), `new` (at least twice this week, never before), `improving` (at least twice before, not this
   week) - with the learner's latest own words, the fix and the rule. A single mistake is not a pattern.
-- **speaking**: words the pronunciation provider flagged, with the same counts and statuses.
+- **speaking**: words the pronunciation provider flagged, with the same counts and statuses (over the newest
+  attempts the route reads, `SPEAKING_ATTEMPTS_READ`).
 - **practised**: the reviews and attempts of this week.
 
 Counts only, from the same rows Orena Memory reads (`PackSources`); nothing is estimated or asked of a model, so it
@@ -32,6 +33,14 @@ def _zone(tz: str) -> ZoneInfo:
         return ZoneInfo(tz)
     except (ZoneInfoNotFoundError, ValueError) as error:
         raise ValueError(f"unknown time zone {tz!r}") from error
+
+
+def known_zone(tz: str) -> bool:
+    try:
+        _zone(tz)
+    except ValueError:
+        return False
+    return True
 
 
 def _instant(value: Any) -> datetime | None:

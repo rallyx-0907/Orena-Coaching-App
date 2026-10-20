@@ -16,7 +16,8 @@
 export const FEATURE_ORDER = Object.freeze([
   'orena.message', 'orena.voice', 'writing.review', 'pronunciation.audio', 'media.import', 'languages.target',
 ]);
-/* `orena.voice` is a daily meter in seconds shown in minutes (D-237): a usage row like the others. */
+/* `orena.voice` is a meter in seconds shown in minutes (D-237), monthly under D-248: a usage row like the others; its
+   window is read from the data. */
 export const USAGE_ORDER = Object.freeze(['orena.message', 'orena.voice', 'writing.review', 'pronunciation.audio', 'media.import']);
 
 /* An entitlement's limit (catalogue v2 `limit`, in its stored unit; v1 answers carried `monthly_limit`). */
@@ -129,6 +130,7 @@ export function pricingPlans({ plans, commerce } = {}) {
       features: FEATURE_ORDER.filter((key) => byKey[key] && byKey[key].enabled).map((key) => ({
         key,
         limit: limitOf(byKey[key]) == null ? null : displayAmount(limitOf(byKey[key]), scaleOf(byKey[key])),
+        window: byKey[key].window || null,
       })),
       byKey,
     };
