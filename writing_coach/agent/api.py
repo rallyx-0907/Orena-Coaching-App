@@ -27,11 +27,10 @@ read - and charged whole when the token exists. `/voice/end` only stops further 
 
 from __future__ import annotations
 
-import json
+import logging
 import math
 import threading
 from collections.abc import AsyncIterator, Iterator, Mapping
-from datetime import UTC, datetime, timedelta
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Response
 from fastapi.responses import StreamingResponse
@@ -39,7 +38,6 @@ from pydantic import ValidationError
 from starlette.concurrency import iterate_in_threadpool, run_in_threadpool
 
 from writing_coach.agent import band, band_speaking
-from writing_coach.agent.contract import DAILY_AI_LIMIT_VERSION
 from writing_coach.agent.events import Event, sse_frame
 from writing_coach.agent.locale import interface_languages, to_internal
 from writing_coach.agent.ratelimit import SlidingWindowLimiter
@@ -51,6 +49,7 @@ from writing_coach.ai.live_voice import VoiceUnavailable
 from writing_coach.product import plan_features, quota
 
 router = APIRouter(prefix="/api/agent", tags=["agent"])
+_log = logging.getLogger(__name__)
 
 _TRUE = frozenset({"1", "true", "yes", "on"})
 _runtime: AgentRuntime | None = None
@@ -115,55 +114,53 @@ def _admit(limiter: SlidingWindowLimiter) -> None:
         )
 
 
-async def _declared_version(request: Request) -> int:
-    """The contract version the request body declares, read before the body is validated; 0 when there is none."""
-
-    try:
-        declared = json.loads(await request.body() or b"{}").get("contract_version")
-        if isinstance(declared, bool):
-            return 0
-        if isinstance(declared, float):
-            return int(declared) if declared.is_integer() else 0  # 10.0 validates as 10 (pydantic lax mode)
-        return int(declared) if isinstance(declared, int | str) else 0
-    except Exception:  # noqa: BLE001 - a body that does not parse is answered by validation, after this check
-        return 0
-
-
-FAULT_RETRY_SECONDS = 60  # a spend limit that cannot be checked: refused (fail closed), then tried again soon
-
-
 async def _spend_refused(request: Request, runtime: AgentRuntime) -> None:
-    """The daily spend limits (agent/budget.py; the system ceiling, ai/spend_gate.py) before anything runs: a request
-    they refuse is not counted in the learner's window. v10: `daily_ai_limit`, told once (§2.1); below: `rate_limited`."""
+    """The daily spend limits (agent/budget.py; the system total, ai/spend_gate.py) are watched, never a refusal (D-251,
+    the owner 2026-10-21: no app-wide cap; limits are each learner's, by plan). The check still runs - it records the
+    day's total and warns the operator - but nothing is refused here, so `daily_ai_limit` is no longer sent. The name
+    stays for its callers."""
 
     guard = runtime.spend_guard
     if guard is None:
         return
-    check = getattr(guard, "check", None)
-    # The guard reads the ledger and the settings store (database reads): never on the event loop (review of #304).
-    if callable(check):
-        refused = await run_in_threadpool(check)
-    else:
-        wait = await run_in_threadpool(guard)
-        refused = (wait, "agent", False) if wait is not None else None
-    if refused is None:
-        return
-    wait, scope, fault = refused
-    if fault:  # a cap or ledger that cannot be read is not "AI off until midnight": wait briefly, then send again
-        raise HTTPException(status_code=429, detail="rate_limited", headers={"Retry-After": str(FAULT_RETRY_SECONDS)})
-    retry = max(1, math.ceil(wait))
-    headers = {"Retry-After": str(retry)}
-    if await _declared_version(request) >= DAILY_AI_LIMIT_VERSION:
-        resets = (datetime.now(UTC) + timedelta(seconds=retry)).replace(microsecond=0)
-        raise HTTPException(status_code=429, headers=headers, detail={
-            "category": "daily_ai_limit", "retryable": False,
-            "message": "Orena's AI is paused until the daily AI budget resets.",
-            "context": {"scope": scope, "resets_at": resets.isoformat()}})  # fmt: skip
-    raise HTTPException(status_code=429, detail="rate_limited", headers=headers)
+    check = getattr(guard, "check", None) or guard
+    try:
+        # The guard reads the ledger and the settings store (database reads): never on the event loop (review of #304).
+        await run_in_threadpool(check)
+    except Exception:  # noqa: BLE001 - a monitor that cannot read is reported, never a refusal
+        _log.warning("agent daily spend monitor could not be read", exc_info=True)
+
+
+def _paid_route(runtime: AgentRuntime) -> bool:
+    """Whether the agent's model now is a paid one (a local or free-tier model is never capped, D-251). Unknown: paid."""
+
+    from writing_coach.ai.platform import provider_tier
+
+    router = getattr(runtime, "router", None)
+    try:
+        route = router.current() if router is not None else None
+    except Exception:  # noqa: BLE001 - unreadable: treated as paid, so the learner's cap applies
+        route = None
+    return route is None or provider_tier(route.provider, route.model) == "paid"
+
+
+async def _learner_cost_refused(runtime: AgentRuntime) -> None:
+    """The learner's own daily AI cost cap (D-251, ai/learner_cost.py): at the plan's hard ceiling a paid turn is refused
+    before anything runs - 429 `quota_exhausted`, feature `ai.daily_cost`, the same body as the app's handler (Agent
+    Contract §2.1, v7).
+    Below it, a degraded learner's turn uses the economy model (`ai.platform.stream_agent_turn`)."""
+
+    from writing_coach.ai import learner_cost
+
+    state = await run_in_threadpool(learner_cost.learner_cost_state)
+    if state.state == learner_cost.REFUSE and _paid_route(runtime):
+        body, headers = learner_cost.refusal_body(learner_cost.LearnerCostCapReached(state))
+        raise HTTPException(status_code=429, detail=body["detail"], headers=headers)
 
 
 async def _turn_allowed(request: Request, runtime: AgentRuntime = Depends(_require_runtime)) -> AgentRuntime:
     await _spend_refused(request, runtime)
+    await _learner_cost_refused(runtime)
     _admit(runtime.turn_limiter)
     return runtime
 

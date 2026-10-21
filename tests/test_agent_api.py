@@ -233,23 +233,29 @@ def test_the_statuses_answer_as_contract_section_2_1_says(client):
     assert limited.headers["retry-after"].isdigit() and int(limited.headers["retry-after"]) >= 1
 
 
-def test_a_turn_over_the_daily_spend_cap_is_the_contracts_429_and_reaches_no_provider(client):
+def test_the_daily_spend_limits_are_watched_and_never_refuse_a_turn(client):
+    """D-251 (the owner, 2026-10-21): no app-wide cap. The agent's daily limit and the system total are a monitor -
+    checked (for the operator), never a refusal; limits are each learner's, by plan."""
     from writing_coach.agent import api as agent_api
 
-    enable([])  # no round scripted: a provider call would fail the test
-    agent_api._runtime.spend_guard = lambda: 3600.0
-    response = client.post("/api/agent/turn", json=body())
-    assert response.status_code == 429 and response.headers["retry-after"] == "3600"
+    enable([reply("Ok.")])
+    guard = _Refusing(3600.0, "system")
+    agent_api._runtime.spend_guard = guard
+    answered = client.post("/api/agent/turn", json={**body(), "contract_version": 10})
+    assert answered.status_code == 200
+    assert guard.checked == 1  # it was looked at
 
 
-def test_a_turn_refused_by_the_cap_is_not_counted_in_the_learners_window(client):
+def test_a_monitor_that_cannot_be_read_refuses_nothing(client):
     from writing_coach.agent import api as agent_api
-    from writing_coach.agent.limits import AgentLimits
 
-    enable([reply("Ok.")], limits=AgentLimits(turns_per_window=1))
-    agent_api._runtime.spend_guard = lambda: 60.0
-    assert client.post("/api/agent/turn", json=body()).status_code == 429
-    agent_api._runtime.spend_guard = None  # the cap resets: the one turn the window allows still runs
+    enable([reply("Ok.")])
+
+    class Broken:
+        def check(self):
+            raise RuntimeError("ledger down")
+
+    agent_api._runtime.spend_guard = Broken()
     assert client.post("/api/agent/turn", json=body()).status_code == 200
 
 
@@ -263,32 +269,11 @@ class _Refusing:
     def __call__(self):
         return self.wait
 
+    checked = 0
+
     def check(self):
+        self.checked += 1
         return (self.wait, self.scope, self.fault)
-
-
-@pytest.mark.parametrize("scope", ["system", "agent"])
-def test_a_v10_client_is_told_daily_ai_limit_once_never_to_wait_it_out(client, scope):
-    """Agent Contract v10 (accepted by the UI lane 2026-10-18): the daily spend limits answer `daily_ai_limit`, an
-    object with `retryable: false` and the reset time, so the client tells the learner instead of resending."""
-    from writing_coach.agent import api as agent_api
-
-    enable([])
-    agent_api._runtime.spend_guard = _Refusing(5400.0, scope)
-    answer = client.post("/api/agent/turn", json={**body(), "contract_version": 10})
-    assert answer.status_code == 429 and answer.headers["retry-after"] == "5400"
-    detail = answer.json()["detail"]
-    assert detail["category"] == "daily_ai_limit" and detail["retryable"] is False and detail["message"]
-    assert detail["context"]["scope"] == scope and detail["context"]["resets_at"].endswith("+00:00")
-
-
-def test_a_v9_client_still_gets_rate_limited_from_the_daily_limits(client):
-    from writing_coach.agent import api as agent_api
-
-    enable([])
-    agent_api._runtime.spend_guard = _Refusing(60.0, "system")
-    answer = client.post("/api/agent/turn", json=body())
-    assert (answer.status_code, answer.json()) == (429, {"detail": "rate_limited"})
 
 
 class _Voice:
@@ -309,35 +294,24 @@ class _Voice:
         return {}
 
 
-@pytest.mark.parametrize(("version", "expected"), [(10, "daily_ai_limit"), (9, "rate_limited")])
-def test_voice_open_and_extend_answer_the_daily_limit_and_mint_nothing(client, version, expected, monkeypatch):
+def test_voice_open_and_extend_are_not_refused_by_the_daily_spend_monitor(client, monkeypatch):
     from writing_coach.product import plan_features
 
     # an account whose plan has voice chat (the plan rule is tests/test_agent_voice_plan.py)
     monkeypatch.setattr(plan_features, "require", lambda user_key, feature: None)
     monkeypatch.setattr(plan_features, "require_voice_time", lambda user_key: None)
     from writing_coach.agent import api as agent_api
-    from writing_coach.agent.limits import AgentLimits
 
-    enable([], limits=AgentLimits(turns_per_window=1))
+    enable([])
     voice = _Voice()
     agent_api._runtime.voice = voice
     agent_api._runtime.spend_guard = _Refusing(120.0, "system")
     for path in ("/api/agent/voice/session", "/api/agent/voice/extend"):
-        answer = client.post(path, json={"contract_version": version})
-        assert answer.status_code == 429 and answer.headers["retry-after"] == "120", path
-        detail = answer.json()["detail"]
-        if expected == "daily_ai_limit":
-            assert detail["category"] == expected and detail["retryable"] is False, path
-            assert detail["context"]["scope"] == "system" and detail["context"]["resets_at"], path
-        else:
-            assert detail == "rate_limited", path
-    assert voice.calls == []
-    agent_api._runtime.spend_guard = None  # the refused session did not use up the learner's one turn
-    assert client.post("/api/agent/voice/session", json={"contract_version": version}).status_code == 200
+        assert client.post(path, json={"contract_version": 10}).status_code == 200, path
+    assert voice.calls == ["open", "extend"]
 
 
-def test_an_absent_voice_answers_404_before_any_daily_limit(client):
+def test_an_absent_voice_answers_404(client):
     from writing_coach.agent import api as agent_api
 
     enable([])
@@ -346,25 +320,61 @@ def test_an_absent_voice_answers_404_before_any_daily_limit(client):
         assert client.post(path, json={"contract_version": 10}).status_code == 404, path
 
 
-def test_a_limit_that_cannot_be_checked_is_a_short_wait_not_a_day_off(client):
-    """Review of #304, P2-3: an unreadable cap or ledger refuses (fail closed) but is not "AI paused until midnight"."""
+# --- the learner's own daily AI cost cap (D-251): a paid turn at the hard ceiling is refused -----------------------
+
+
+def _cost_state(monkeypatch, state):
+    from writing_coach.ai import learner_cost
+
+    monkeypatch.setattr(learner_cost, "learner_cost_state", lambda user_key=None: learner_cost.LearnerCostState(
+        state, account="u1", plan="free", resets_at="2026-10-22T00:00:00Z"))
+
+
+class _Route:
+    def __init__(self, provider, model):
+        from writing_coach.agent.provider import ModelRoute
+
+        self.route = ModelRoute(provider, model)
+
+    def current(self):
+        return self.route
+
+    def usable(self, route):
+        return True
+
+    def fallback(self):
+        return None
+
+
+def test_at_the_hard_ceiling_a_paid_turn_is_the_plans_429_and_reaches_no_provider(client, monkeypatch):
     from writing_coach.agent import api as agent_api
+    from writing_coach.ai import learner_cost
 
-    enable([])
-    agent_api._runtime.spend_guard = _Refusing(3600.0, "agent", fault=True)
-    answer = client.post("/api/agent/turn", json={**body(), "contract_version": 10})
-    assert (answer.status_code, answer.json()) == (429, {"detail": "rate_limited"})
-    assert answer.headers["retry-after"] == str(agent_api.FAULT_RETRY_SECONDS)
+    enable([])  # no round scripted: a provider call would fail the test
+    agent_api._runtime.router = _Route("gemini", "gemini-3.5-flash-lite")
+    _cost_state(monkeypatch, learner_cost.REFUSE)
+    refused = client.post("/api/agent/turn", json=body())
+    assert refused.status_code == 429
+    detail = refused.json()["detail"]
+    assert detail["category"] == "quota_exhausted" and detail["retryable"] is False
+    assert detail["context"]["feature"] == "ai.daily_cost" and detail["context"]["upgrade"]
 
 
-def test_a_v10_refusal_comes_before_body_validation_and_reads_an_integral_float(client):
+def test_a_local_model_is_never_capped(client, monkeypatch):
     from writing_coach.agent import api as agent_api
+    from writing_coach.ai import learner_cost
 
-    enable([])
-    agent_api._runtime.spend_guard = _Refusing(60.0, "agent")
-    invalid = client.post("/api/agent/turn", json={"contract_version": 10})
-    assert invalid.status_code == 429 and invalid.json()["detail"]["category"] == "daily_ai_limit"
-    floated = client.post("/api/agent/turn", json={**body(), "contract_version": 10.0})
-    assert floated.json()["detail"]["category"] == "daily_ai_limit"
-    boolean = client.post("/api/agent/turn", json={**body(), "contract_version": True})
-    assert boolean.json() == {"detail": "rate_limited"}
+    enable([reply("Ok.")])
+    agent_api._runtime.router = _Route("ollama", "qwen3:8b")
+    _cost_state(monkeypatch, learner_cost.REFUSE)
+    assert client.post("/api/agent/turn", json=body()).status_code == 200
+
+
+def test_below_the_hard_ceiling_the_turn_runs(client, monkeypatch):
+    from writing_coach.agent import api as agent_api
+    from writing_coach.ai import learner_cost
+
+    enable([reply("Ok.")])
+    agent_api._runtime.router = _Route("gemini", "gemini-3.5-flash-lite")
+    _cost_state(monkeypatch, learner_cost.DEGRADE)  # the economy model answers (ai.platform.stream_agent_turn)
+    assert client.post("/api/agent/turn", json=body()).status_code == 200
