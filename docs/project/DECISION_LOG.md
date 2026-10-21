@@ -7875,6 +7875,15 @@ every schema step named below stays a human gate.
    administrators-only, experimental `POST /api/agent/band/writing` (#470, future entitlement `band.estimate`). The
    Intelligence lane counts voice seconds over the meter's window with `resets_at` on the 1st (#478); the server's 403
    `feature_not_in_plan` for `progress.weekly_report` is left to it.
+10. **Amendment 2026-10-21 (MV2-5): the Free review limit.** The founder's spec (`founder/MONETIZATION_V2_SPEC.md`,
+   Hermes' Monetisation v2, relayed from the owner) gives Free "Tra từ nghĩa Việt; ôn tập tối đa 30 từ; 5 lượt AI
+   coach/ngày"; this decision omitted the review limit, and the coordinator directed it built (review of #485). A Free
+   learner's active review holds at most **30 words** (policy `access.free_review_words`, Admin › Policies): their
+   earliest saved words. Every other saved word is **kept, never deleted**, still listed and looked up, and enters review
+   when the plan reaches Plus. Grading a word outside the window is 403 `plan_required`; the review reads say
+   `review_limit {limit, saved, held}` and the Review room shows the quota notice with "See all plans". Like every MV2
+   gate it applies only while `access.enforced` is on. In the same review, a word kept from a vocabulary set is a set item:
+   a save naming a set the plan does not reach is 403 `plan_required` (a save naming no set is a free, non-set save), and keeping a word never unlocks its set's card.
 
 Design gaps G1-G12 are recorded in `docs/project/UI_BACKEND_GAPS.md` ("Monetisation v2").
 

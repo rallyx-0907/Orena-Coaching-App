@@ -279,6 +279,9 @@ POLICIES: tuple[Policy, ...] = (
     _p("access.reading_rotation_per_week", "access", "int", 2, unit="count", low=0, high=50),
     # The first items of each set (vocabulary collection, grammar function, mock test) that are Free.
     _p("access.set_free_items", "access", "int", 1, unit="count", low=0, high=50),
+    # How many of a Free learner's saved words take part in review (D-248 amendment, MV2-5): the earliest saved; the
+    # rest are kept, never deleted, and enter review on upgrade.
+    _p("access.free_review_words", "access", "int", 30, unit="count", low=1, high=10000),
 )
 
 

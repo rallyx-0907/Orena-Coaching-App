@@ -49,6 +49,9 @@ class LibraryVocabularyIn(BaseModel):
     reading: str = Field(default="", max_length=240)
     # The video a `listening` save comes from, when the client names it (D-248 §4: content access). Not stored.
     source_media_id: str = Field(default="", max_length=255)
+    # The vocabulary set a `collection` save comes from (D-248 §4, MV2-5): a word of the set the learner's plan does not
+    # reach is refused. Not stored.
+    source_collection_id: str = Field(default="", max_length=200)
 
 
 class VocabularyReviewIn(BaseModel):
@@ -245,6 +248,62 @@ def _row_to_item(row: dict[str, Any], resolve: Any = None) -> dict[str, Any]:
     return item
 
 
+# --- the Free review window (D-248 amendment, MV2-5) ----------------------------------------------------------------
+# The founder's spec: Free "ôn tập tối đa 30 từ". A Free learner's review takes part on their earliest saved words, up to
+# `access.free_review_words`; every other saved word is kept (never deleted, still listed, still looked up) and enters
+# review when the plan reaches Plus. Applied only while `access.enforced` is on, like every MV2 gate.
+
+
+class ReviewWindow:
+    """The words a capped learner reviews: `words` as saved, `folded` for comparison; `saved` is how many they keep."""
+
+    def __init__(self, limit: int, words: list[str], saved: int) -> None:
+        self.limit = limit
+        self.words = tuple(words)
+        self.folded = frozenset(normalize_vocabulary_word(word) or word.casefold() for word in words)
+        self.saved = saved
+
+    def holds(self, word: str) -> bool:
+        return (normalize_vocabulary_word(word) or str(word or "").casefold()) in self.folded
+
+    def as_dict(self) -> dict[str, int]:
+        return {"limit": self.limit, "saved": self.saved, "held": max(0, self.saved - self.limit)}
+
+
+def review_window(user_key: str | None = None) -> ReviewWindow | None:
+    """The learner's review window, or None when their review is not capped (enforcement off, a plan at Plus or above,
+    a server without plans). The plan is read strictly: 503, never a cap over an outage."""
+    from writing_coach import policies
+    from writing_coach.product import content_access
+
+    if not content_access.enforced():
+        return None
+    tier = content_access.learner_tier(user_key)
+    if tier is None or content_access.RANK[tier] >= content_access.RANK["plus"]:
+        return None
+    limit = int(policies.value("access.free_review_words"))
+    counts = _repo().library_counts(now=_iso(_now()))
+    return ReviewWindow(limit, _repo().list_review_window(limit), int(counts.get("saved", 0)))
+
+
+def _window_items(window: ReviewWindow) -> list[dict[str, Any]]:
+    resolve = _catalog_resolver(current_language_code().strip().casefold())
+    return [_row_to_item(row, resolve) for row in _repo().list_saved_rows(window.words)]
+
+
+def require_in_review_window(word: str) -> None:
+    """403 `plan_required` when a capped learner grades a word outside their review window (the word stays saved)."""
+    from writing_coach.product import content_access
+
+    window = review_window()
+    if window is None or window.holds(word):
+        return
+    content_access.record_event("locked_view", "review")
+    raise content_access.plan_required(user_key=content_access._user(None), kind="review", item_id="",
+                                       required_tier="plus", plan="free",
+                                       preview={"review_limit": window.as_dict()})
+
+
 def library_summary() -> dict[str, Any]:
     """The learner's vocabulary as numbers, counted in the database.
 
@@ -273,6 +332,12 @@ def library_summary() -> dict[str, Any]:
         # payload do not break.
         "available": mastered,
     }
+    window = review_window()
+    if window is not None:
+        # A capped review: what is due is what is due inside the window; the rest waits for an upgrade.
+        inside = _window_items(window)
+        summary["due"] = sum(1 for item in inside if item["due"])
+        summary["review_limit"] = window.as_dict()
     # The ladder travels with the summary: it is thirty-two short entries, it
     # is the same for everyone, and sending it means Tiến độ draws the rungs
     # the product defines rather than keeping its own copy of them.
@@ -312,6 +377,20 @@ def library_page(
     the learner's own fields only.
     """
 
+    if str(status or "").strip().casefold() == "due":
+        window = review_window()
+        if window is not None:
+            # The due words of a capped review are those inside the window, soonest first; one bounded page.
+            due = sorted((item for item in _window_items(window) if item["due"]),
+                         key=lambda item: (item["next_review_at"] or "", item["word"]))
+            needle = str(search or "").strip().casefold()
+            if needle:
+                due = [item for item in due if needle in item["word"].casefold()]
+            if focus:
+                due = [item for item in due if item["focus_note"] in focus]
+            counts = library_summary()
+            return {"items": due[:max(1, int(limit))], "next_cursor": None, "has_more": False, "total": len(due),
+                    **counts}
     resolve = _catalog_resolver(current_language_code().strip().casefold())
     page = _repo().list_library_page(
         limit=limit, cursor=cursor, search=search, status=status,
@@ -564,6 +643,7 @@ def review_library_vocabulary(word: str, payload: VocabularyReviewIn) -> dict[st
     row = _repo().get_library_progress(clean)
     if not row:
         return {"found": False}
+    require_in_review_window(clean)
     stage=int(row["review_stage"] or 0); success=int(row["successful_recalls"] or 0); lapses=int(row["lapse_count"] or 0)
     if payload.result == "got_it":
         next_stage=min(MAX_REVIEW_STAGE,stage+1); success+=1

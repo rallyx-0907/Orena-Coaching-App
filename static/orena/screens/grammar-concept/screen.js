@@ -15,13 +15,17 @@
    the frame draws (score, Retry). A failed save says so in a toast and is sent again on the next finish. */
 import { html, mount, raw } from '../../kit/html.js';
 import { useStyles } from '../../kit/styles.js';
-import { pageHeader } from '../../kit/components.js';
+import { pageHeader, planTag } from '../../kit/components.js';
+import { icon } from '../../kit/icons.js';
 import { langAttr, langSpan } from '../../kit/lang.js';
 import { emptyMarkup } from '../../kit/states.js';
-import { shellCopy as shell } from '../../copy/shell.js';
+import { shellCopy as shell, planName } from '../../copy/shell.js';
 import { languages } from '../../copy/index.js';
 import { t } from './copy.js';
-import { grammarCatalog, grammarPoint, recordGrammarCompletion } from '../../product/grammar-source.js';
+import { t as planT } from '../plan/copy.js';
+import { planRequired } from '../../kit/access.js';
+import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
+import { contractText, grammarCatalog, grammarPoint, recordGrammarCompletion } from '../../product/grammar-source.js';
 import { toast } from '../../kit/toast.js';
 import { askOrena } from '../../shell/agent-bridge.js';
 import { conceptView, sectionsOf } from './model.js';
@@ -239,10 +243,59 @@ function notFound(element, ctx) {
   element.querySelector('[data-back]')?.addEventListener('click', () => ctx.back());
 }
 
+/* A point the learner's plan does not reach (D-248 §4, MV2-5: the rest of a grammar set is Plus). The server answered
+   403 `plan_required` with the point's title line; the page keeps that header and shows the Coming-soon card the locked
+   Reader ends with (lock in a well, the plan's tag, one line, Unlock), whose button opens the light upgrade sheet. */
+export function lockedConceptMarkup(refusal, { support = 'en' } = {}) {
+  const tier = refusal?.requiredTier || 'plus';
+  const plan = planName({ id: tier }) || tier;
+  const header = refusal?.preview?.header || {};
+  const native = String(header.native_title || '');
+  const lang = String(refusal?.itemId || '').startsWith('zh.') ? 'zh' : 'en';
+  const sub = contractText(header.sub, support) || contractText(header.title, support);
+  const level = String(refusal?.preview?.level?.value || '');
+  return html`<div class="s-gc s-gc--locked">
+    <div class="s-gc__head">${pageHeader({
+      back: { label: shell('back'), dataset: { back: '1' } },
+      title: native ? langSpan(native, lang) : shell('grammar'),
+      meta: [shell('grammar'), level, sub].filter(Boolean).join(' · '),
+      compact: true,
+    })}</div>
+    <div class="s-gc__scroll" data-scroll-region>
+      <div class="s-gc__inner">
+        <div class="o-coming__card s-gc__lockedCard">
+          <div class="o-coming__icon">${raw(icon('lock', { size: 28 }))}</div>
+          ${planTag(plan)}
+          <div class="s-gc__lockedTitle">${planT('partOfPlan', { plan })}</div>
+          <button type="button" class="o-btn o-btn--primary" data-locked-unlock="${tier}">${planT('previewUnlock')}</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+async function showLocked(element, ctx, refusal) {
+  await useStyles('screens/coming/coming.css');
+  if (!ctx.isCurrent()) return;
+  mount(element, lockedConceptMarkup(refusal, { support: languages().support }));
+  element.querySelector('[data-back]')?.addEventListener('click', () => ctx.back());
+  element.querySelector('[data-locked-unlock]')?.addEventListener('click', (event) => {
+    void openUpgradeSheet({ source: 'grammar', kind: 'set', tier: event.currentTarget.dataset.lockedUnlock || 'plus', go: (to) => ctx.go(to) });
+  });
+}
+
 export default async function grammarConcept(element, ctx) {
   await useStyles('screens/grammar-concept/grammar-concept.css');
   const context = ctx.context;
-  const found = await grammarPoint(ctx.params.id, { targetLang: context.language === 'zh' ? 'zh' : 'en' });
+  let found;
+  try {
+    found = await grammarPoint(ctx.params.id, { targetLang: context.language === 'zh' ? 'zh' : 'en' });
+  } catch (error) {
+    const refusal = planRequired(error);
+    if (!refusal) throw error;
+    await showLocked(element, ctx, refusal);
+    return;
+  }
   if (!ctx.isCurrent()) return;
   if (found.redirect) {
     ctx.replace(ctx.href('gconcept', { id: found.redirect }));

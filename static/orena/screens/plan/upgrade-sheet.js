@@ -28,14 +28,17 @@ import { readAccess } from '../../product/content-access.js';
 import { t } from './copy.js';
 import { upgradePrice } from './model.js';
 
-export const UPGRADE_KINDS = Object.freeze(['reading', 'tool']);
+export const UPGRADE_KINDS = Object.freeze(['reading', 'tool', 'set']);
 
-/* The three things Plus unlocks, the one the learner just met first. */
+/* The three things Plus unlocks, the one the learner just met first. `set` is a locked item of a vocabulary or grammar
+   set (MV2-5). */
 export function benefitKeys(kind) {
-  return kind === 'tool'
-    ? ['benefitVideoTools', 'benefitVideoReview', 'benefitReading']
-    : ['benefitReading', 'benefitVideoTools', 'benefitVideoReview'];
+  if (kind === 'tool') return ['benefitVideoTools', 'benefitVideoReview', 'benefitReading'];
+  if (kind === 'set') return ['benefitSets', 'benefitReading', 'benefitVideoTools'];
+  return ['benefitReading', 'benefitVideoTools', 'benefitVideoReview'];
 }
+
+const LEAD = Object.freeze({ tool: 'upgradeLeadTool', set: 'upgradeLeadSet' });
 
 /* The price line: "{monthly} / month · {yearly} / year" from the catalogue, either half alone when the catalogue holds only one. */
 export function priceLine(price) {
@@ -52,7 +55,7 @@ export function upgradeSheetMarkup({ kind = 'reading', tier = 'plus', price = nu
     <div class="o-sheet__body s-upgrade">
       <div class="s-upgrade__top">
         <div class="o-coming__icon">${raw(icon('lock', { size: 28 }))}</div>
-        <div class="s-mic__body">${t(kind === 'tool' ? 'upgradeLeadTool' : 'upgradeLeadReading', { plan })}</div>
+        <div class="s-mic__body">${t(LEAD[kind] || 'upgradeLeadReading', { plan })}</div>
       </div>
       <div class="s-pricing-card__feats">${benefitKeys(kind).map((key) => html`<div class="s-pricing-card__feat"><span class="s-pricing-card__tick">${raw(icon('check', { size: 17, stroke: 2.4 }))}</span><span>${t(key)}</span></div>`)}</div>
       <div class="s-pricing-card__billed" data-upgrade-price>${priceLine(price)}</div>

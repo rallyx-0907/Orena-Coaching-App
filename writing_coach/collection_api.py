@@ -83,6 +83,17 @@ def catalog_lesson_resolver() -> Callable[[str, str], LessonRef | None]:
     return resolve
 
 
+def with_reading_access(rows: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Each Reading row with its article's `access` block (`{tier, rotation}`, D-248 §4, MV2-5), decided by the one
+    owner of tiers (`product/content_access.py`) from the article's language and level. The block is the same for
+    every learner; the client compares it with the plan it reads, and the Reader's own read still refuses on its own."""
+    from writing_coach.product import content_access
+
+    items = [content_access.Item('reading', str(row.get('article_id') or ''), language=str(row.get('language') or ''),
+                                 level=str(row.get('article_level') or '')) for row in rows]
+    return [{**row, 'access': block} for row, block in zip(rows, content_access.card_access(items), strict=True)]
+
+
 def runtime_owners(*, library: Callable[[int, str], dict[str, Any]], reading: Callable[[int], dict[str, Any]],
                    essays: Callable[[], Sequence[dict[str, Any]]], specialized: Any,
                    grammar: Callable[[], Sequence[dict[str, Any]]]) -> Callable[[], list[Owner]]:
@@ -101,7 +112,8 @@ def runtime_owners(*, library: Callable[[int, str], dict[str, Any]], reading: Ca
         return [
             Owner('language', lambda query='': library(LANGUAGE_BOUND, query).get('items', []),
                   language_entries, LANGUAGE_BOUND, searches=True),
-            Owner('reading', lambda: reading(READING_BOUND).get('items', []), reading_entries, READING_BOUND),
+            Owner('reading', lambda: with_reading_access(reading(READING_BOUND).get('items', [])), reading_entries,
+                  READING_BOUND),
             Owner('media', lambda: specialized.list_recent_listening_progress_records(LISTENING_BOUND),
                   media_entries_with(resolve), LISTENING_BOUND),
             Owner('writing', essays, writing_entries),

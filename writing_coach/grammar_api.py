@@ -9,6 +9,7 @@ Until the migration is applied, every route answers `503 grammar_store_unavailab
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -22,6 +23,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from writing_coach.core.errors import orena_http_error
 from writing_coach.core.request_context import current_language_code
 from writing_coach.grammar_store import contract
+from writing_coach.product import content_access
 from writing_coach.persistence.grammar_store_repository import (
     GrammarStoreRefusal,
     GrammarStoreRepository,
@@ -94,11 +96,60 @@ def _check_language(point_id: str, language: str) -> None:
 # -- content ------------------------------------------------------------------------------------------------------------
 
 
+# -- content access (D-248 §4, MV2-5) -------------------------------------------------------------------------------
+# A grammar set is the published points of one function at one level, in the catalogue's order (sequence, then id): its
+# first `access.set_free_items` points are Free, the rest Plus (`product/content_access.py`'s rule for sets).
+
+
+def _set_of(point: dict[str, Any]) -> tuple[str, str]:
+    level = point.get("level") or {}
+    return str(point.get("function") or ""), str(level.get("value") or "") if isinstance(level, dict) else ""
+
+
+def _with_access(catalog: dict[str, Any]) -> dict[str, Any]:
+    """Each point with its `access` block (`{tier, rotation}`, the same for every learner, so the list stays cacheable).
+    Ranks are counted per set over the catalogue the store returned, in its order."""
+    seen: dict[tuple[str, str], int] = {}
+    items = []
+    for point in catalog.get("points") or []:
+        key = _set_of(point)
+        rank = seen.get(key, 0)
+        seen[key] = rank + 1
+        items.append(content_access.Item("grammar", str(point.get("id") or ""), position=rank))
+    blocks = content_access.card_access(items)
+    return {**catalog, "points": [{**point, "access": block}
+                                  for point, block in zip(catalog.get("points") or [], blocks, strict=True)]}
+
+
+def _access_tag(catalog: dict[str, Any]) -> str:
+    """A short digest of the catalogue's tiers, in its ETag: an override or a policy edit changes the answer."""
+    tiers = ",".join(f'{point.get("id")}={(point.get("access") or {}).get("tier")}' for point in catalog["points"])
+    return hashlib.sha256(tiers.encode("utf-8")).hexdigest()[:12]
+
+
+def _grammar_preview(point: dict[str, Any]) -> dict[str, Any]:
+    """What a locked point still shows (D-248 §4): its title line and level, never its explanation or practice."""
+    header = point.get("header") or {}
+    return {"header": {key: header[key] for key in ("native_title", "native_title_pinyin", "title", "sub")
+                       if key in header},
+            "level": point.get("level")}
+
+
+def _require_point(store: GrammarStoreRepository, language: str, point_id: str,
+                   point: dict[str, Any]) -> None:
+    """403 `plan_required` for a paid point of a set the learner's plan does not reach (only while enforcement is on);
+    503 when the plan cannot be read. A point that is not published was already a 404."""
+    rank = _guarded(lambda: store.set_rank(language, point_id))
+    content_access.require(content_access.Item("grammar", point_id, position=rank if rank is not None else 0),
+                           preview=_grammar_preview(point))
+
+
 @router.get("/points")
 def points(request: Request, response: Response, level: str | None = Query(None, max_length=20)):
     language = _language()
-    catalog = _guarded(lambda: _store().catalog(language, level=level))
-    etag = f'W/"{language}-{catalog["catalog_revision"]}{"-" + level if level else ""}"'
+    # A set lies inside one level, so a level filter keeps every set whole and its ranks unchanged.
+    catalog = _with_access(_guarded(lambda: _store().catalog(language, level=level)))
+    etag = f'W/"{language}-{catalog["catalog_revision"]}{"-" + level if level else ""}-{_access_tag(catalog)}"'
     if _not_modified(request, etag):
         return Response(status_code=304, headers={"ETag": etag, "Cache-Control": "private, no-cache"})
     _cache(response, etag)
@@ -112,6 +163,7 @@ def point(point_id: str, request: Request, response: Response):
     store = _store()
     published = _guarded(lambda: store.published(language, point_id))
     if published is not None:
+        _require_point(store, language, point_id, published["point"])
         etag = f'"{published["content_hash"]}"'
         if _not_modified(request, etag):
             return Response(status_code=304, headers={"ETag": etag, "Cache-Control": "private, no-cache"})
@@ -140,7 +192,15 @@ def by_error(
             rank = levels.get(level)
         return store.by_error(language, error_tag, level_rank=rank, limit=limit)
 
-    return {"language": language, "error_tag": error_tag, "points": _guarded(run)}
+    found = _guarded(run)
+    # D-248 §4 (review of #485): a locked point keeps its title and level here, never its mistake's reason.
+    items = [content_access.Item("grammar", point["grammar_id"],
+                                 position=_guarded(lambda pid=point["grammar_id"]: store.set_rank(language, pid)) or 0)
+             for point in found]
+    blocks = content_access.set_card_access(items) if items else []
+    points = [{**point, "reason": None, "access": block} if block["locked"] else {**point, "access": block}
+              for point, block in zip(found, blocks, strict=True)]
+    return {"language": language, "error_tag": error_tag, "points": points}
 
 
 # -- progress (section 8) -----------------------------------------------------------------------------------------------
@@ -228,6 +288,7 @@ def record_progress(point_id: str, body: ProgressBody | None = None) -> dict:
     language = _language()
     store, repo = _store(), _progress_repo()
     published = _guarded(lambda: _published_or_refuse(store, language, point_id))
+    _require_point(store, language, point_id, published["point"])  # the quiz of a locked point is graded for Plus
     quiz = None
     answers = body.answers if body is not None else None
     if answers is not None:

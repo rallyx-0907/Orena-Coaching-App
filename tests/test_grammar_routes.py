@@ -140,9 +140,11 @@ def test_learner_catalogue_point_etags_and_language_scope(world):
     world.import_and_publish([body("en.a", aliases=["a1-old"]), body("en.b", sequence=2)],
                              r5_map=[{"r5_id": "a1-old", "point_id": "en.a", "disposition": "replaced", "is_primary": True}])
     catalog = world.client.get("/api/grammar/v1/points")
-    assert catalog.status_code == 200 and catalog.headers["etag"] == 'W/"en-1"'
+    # The revision, then a digest of the points' access tiers (D-248 §4, MV2-5): an override changes the answer too.
+    assert catalog.status_code == 200 and catalog.headers["etag"].startswith('W/"en-1-')
     assert catalog.headers["cache-control"] == "private, no-cache"
-    assert world.client.get("/api/grammar/v1/points", headers={"if-none-match": 'W/"en-1"'}).status_code == 304
+    assert world.client.get("/api/grammar/v1/points",
+                            headers={"if-none-match": catalog.headers["etag"]}).status_code == 304
     point = world.client.get("/api/grammar/v1/points/en.a")
     assert point.status_code == 200 and "catalog_revision" not in point.json()
     assert "source_refs" not in point.json()["point"]
@@ -164,10 +166,12 @@ def test_learner_catalogue_point_etags_and_language_scope(world):
 
 def test_unpublish_takes_effect_on_the_next_request_with_a_new_revision(world):
     world.import_and_publish([body("en.a")])
+    before = world.client.get("/api/grammar/v1/points").headers["etag"]
     assert world.client.post("/api/admin/grammar/points/en.a/status", headers=ORIGIN,
                              json={"action": "unpublish"}).status_code == 200
-    catalog = world.client.get("/api/grammar/v1/points", headers={"if-none-match": 'W/"en-1"'})
-    assert catalog.status_code == 200 and catalog.headers["etag"] == 'W/"en-2"' and catalog.json()["points"] == []
+    catalog = world.client.get("/api/grammar/v1/points", headers={"if-none-match": before})
+    assert catalog.status_code == 200 and catalog.headers["etag"].startswith('W/"en-2-')
+    assert catalog.json()["points"] == []
     assert world.client.get("/api/grammar/v1/points/en.a").status_code == 404
 
 

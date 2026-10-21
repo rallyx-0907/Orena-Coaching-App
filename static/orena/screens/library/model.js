@@ -50,6 +50,8 @@ export function contentRows(entries = [], continuation = []) {
         source: entry.snippet || '',
         unavailable: entry.availability === 'unavailable',
         pct: placeFor(continuation, contentId).percent,
+        // D-248 §4 (MV2-5): a Reading entry's tier block from the server; a video never carries one (III.F.3.a).
+        access: entry.ref.domain === 'reading' && entry.access && typeof entry.access === 'object' ? entry.access : null,
       };
     });
 }

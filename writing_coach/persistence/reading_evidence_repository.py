@@ -1082,7 +1082,8 @@ class ReadingEvidenceRepository:
                 select(ReadingAttempt.id, ReadingAttempt.set_id, ReadingAttempt.created_at,
                        ReadingAttempt.passage_level, ReadingAttempt.correct_count, ReadingAttempt.total,
                        ReadingArticle.id.label("article_id"), ReadingArticle.title,
-                       ReadingArticle.topic, ReadingArticle.content_kind)
+                       ReadingArticle.topic, ReadingArticle.content_kind,
+                       ReadingArticle.effective_level.label("article_level"))
                 .join(ReadingComprehensionSet, ReadingComprehensionSet.id == ReadingAttempt.set_id)
                 .join(ReadingArticle, ReadingArticle.id == ReadingComprehensionSet.article_id)
                 .where(ReadingAttempt.user_id == uid, ReadingAttempt.language_code == language)
@@ -1101,6 +1102,8 @@ class ReadingEvidenceRepository:
                 "content_kind": row.content_kind,
                 "created_at": _iso(row.created_at),
                 "passage_level": row.passage_level,
+                # The article's own level: the (language, level) pool its access tier is decided in (D-248 §4).
+                "article_level": row.article_level or "",
                 "correct_count": row.correct_count,
                 "total": row.total,
             }

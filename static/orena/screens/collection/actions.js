@@ -1,6 +1,9 @@
 /* Shared collection action/read orchestration. No providers or storage of its own.
    Opening reads; only the explicit keep action calls the existing saved-word API. */
 export const collectionWordKey = (card) => card.identity?.normalized || String(card.headword || '').trim().toLowerCase();
+/* A word of the set the server sent without its body (D-248 §4, MV2-5: the rest of a set is Plus). Never kept by "Add
+   all" (the server refuses it too); keeping a word never unlocks its card. */
+export const isLockedCard = (card) => card?.access?.locked === true;
 export async function readCollection(id, read, { includeReview = false } = {}) {
   let offset = 0;
   let result;
@@ -21,7 +24,7 @@ export async function readCollection(id, read, { includeReview = false } = {}) {
     ...(includeReview ? { review_items: [...new Map(reviewItems.map((row) => [row.word, row])).values()] } : {}) };
 }
 
-export function collectionSavePayload(card) {
+export function collectionSavePayload(card, collectionId = '') {
   const language = card.identity?.language;
   const meanings = card.meanings || [];
   const primary = meanings.find((entry) => entry.language === language);
@@ -37,12 +40,14 @@ export function collectionSavePayload(card) {
     // learner's support language is rendered from the sense's localizations (D-124).
     source_fragment: example?.text || '',
     source_kind: 'collection',
+    // The set the word is kept from (D-248 §4, MV2-5): the server refuses a word of the set the plan does not reach.
+    ...(collectionId ? { source_collection_id: String(collectionId) } : {}),
   };
 }
 
 export async function keepCollectionWords(collection, { language, save, onProgress = () => {}, isCurrent = () => true }) {
   if (collection.language_code !== language) throw new Error('Collection language changed');
-  const missing = [...new Map((collection.items || []).filter((card) => !card.saved && card.headword)
+  const missing = [...new Map((collection.items || []).filter((card) => !card.saved && card.headword && !isLockedCard(card))
     .map((card) => [collectionWordKey(card), card])).values()];
   let added = 0;
   let error = null;
@@ -50,7 +55,7 @@ export async function keepCollectionWords(collection, { language, save, onProgre
     if (!isCurrent()) break;
     if (card.saved) continue;
     try {
-      const response = await save(collectionSavePayload(card));
+      const response = await save(collectionSavePayload(card, collection.id));
       if (!response?.saved) throw new Error('Word was not saved');
       for (const match of collection.items.filter((entry) =>
         collectionWordKey(entry) === collectionWordKey(card))) {

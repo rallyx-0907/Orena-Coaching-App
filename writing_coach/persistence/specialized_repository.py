@@ -242,6 +242,7 @@ class SpecializedLearningRepository(Protocol):
     def library_counts(self, *, now: str) -> dict[str, int]: ...
     def list_saved_words(self, *, words: tuple[str, ...] = ()) -> list[str]: ...
     def list_saved_rows(self, words: tuple[str, ...]) -> list[dict[str, Any]]: ...
+    def list_review_window(self, limit: int) -> list[str]: ...
     def list_library_page(
         self,
         *,
@@ -729,6 +730,19 @@ class SQLiteSpecializedLearningRepository:
                 ).fetchall()
             else:
                 rows = conn.execute("SELECT word FROM saved_words").fetchall()
+        return [str(row["word"]) for row in rows if str(row["word"] or "").strip()]
+
+    def list_review_window(self, limit: int) -> list[str]:
+        """The learner's `limit` earliest saved words (by when they were saved, then the word): the words a capped plan
+        reviews (D-248 amendment, MV2-5). One narrow column, bounded by the cap."""
+
+        bounded = max(0, int(limit))
+        with self._db() as conn:
+            if not bounded or not self._has_table(conn, "saved_words"):
+                return []
+            rows = conn.execute(
+                "SELECT word FROM saved_words ORDER BY added_at ASC, word ASC LIMIT ?", (bounded,)
+            ).fetchall()
         return [str(row["word"]) for row in rows if str(row["word"] or "").strip()]
 
     def _library_filters(
@@ -1340,6 +1354,21 @@ class PostgresSpecializedLearningRepository:
                 for word in session.scalars(select(SavedWord.word).where(*conditions)).all()
                 if str(word or "").strip()
             ]
+
+    def list_review_window(self, limit: int) -> list[str]:
+        """The learner's `limit` earliest saved words (D-248 amendment, MV2-5), as in the SQLite repository."""
+        bounded = max(0, int(limit))
+        if not bounded:
+            return []
+        uid, lang = self._scope()
+        with Session(self.engine) as session:
+            words = session.scalars(
+                select(SavedWord.word)
+                .where(SavedWord.user_id == uid, SavedWord.language_code == lang)
+                .order_by(SavedWord.added_at.asc(), SavedWord.word.asc())
+                .limit(bounded)
+            ).all()
+        return [str(word) for word in words if str(word or "").strip()]
 
     def list_library_page(
         self,
