@@ -27,7 +27,7 @@ import { saveResponse } from '../../product/account-records.js';
 import { micGate, openMicState } from '../mic/sheet.js';
 import { t } from './copy.js';
 import { scenarios, progressLabel, naturalAlternative, situationJudgements } from './model.js';
-import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
+import { pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 export default async function situation(element, ctx) {
   await useStyles('screens/situation/situation.css');
@@ -206,7 +206,7 @@ export default async function situation(element, ctx) {
       });
       if (!alive()) return;
       coaching = result?.available ? result : null;
-      errorText = result?.available ? '' : (pausedLineNow('/api/dictionary/spoken-response') || t('serviceError'));
+      errorText = result?.available ? '' : t('serviceError');
     } catch (error) {
       if (!alive()) return;
       coaching = null;

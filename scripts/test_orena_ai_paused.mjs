@@ -1,4 +1,5 @@
-/* Gate for contract v11 (D-235): the system AI pause reaches every surface through one header, and voice chat is a Plus and Pro
+/* Gate for contract v11 (D-235), as D-251 changed it: no AI-paused header any more (the system spend is a monitor); the agent's
+   `daily_ai_limit` refusal is still a pause; voice chat is a Plus and Pro
    benefit. Pure parts are driven; each surface is pinned at its source, as the other gates here do for DOM-heavy screens. */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -18,62 +19,30 @@ const answer = (status, body, headers = {}) => ({
   text: async () => JSON.stringify(body),
 });
 
-// 1. The shared fetch layer reads the header once, for any route, status and body.
+// 1. D-251: the system's daily AI spend is a monitor, so `X-Orena-AI-Paused` is no longer sent and no longer read. A
+// response that still carried it is an ordinary failure; only the agent's own `daily_ai_limit` body is a pause.
 {
   const { request } = await import('../static/orena/infrastructure/api.js');
-  const { aiPauseOf, recentAiPause, clearAiPause } = await import('../static/orena/infrastructure/ai-paused.js');
-  const { pausedLineOf, pausedLineNow, isAiPaused, pausedMessage } = await import('../static/orena/screens/plan/quota-notice.js');
+  const paused = await import('../static/orena/infrastructure/ai-paused.js');
+  const { aiPauseOf } = paused;
+  const { pausedLineOf, isAiPaused, pausedMessage } = await import('../static/orena/screens/plan/quota-notice.js');
+  const notice = await import('../static/orena/screens/plan/quota-notice.js');
   const reply = (response) => { globalThis.fetch = async () => response; };
 
-  // Reading: a 503 with the header.
   reply(answer(503, { detail: 'unavailable' }, { 'X-Orena-AI-Paused': RESETS }));
   const reading = await request('/api/reading/translate').catch((error) => error);
-  assert.equal(reading.aiPaused, RESETS, 'a refused request carries the reset time on its error');
-  assert.deepEqual(aiPauseOf(reading), { resetsAt: RESETS });
-  assert.equal(isAiPaused(reading), true);
-  assert.equal(pausedLineOf(reading), pausedMessage(RESETS), 'the line is the interface-language sentence with the time');
-  assert.ok(!pausedLineOf(reading).includes('{time}'));
+  assert.equal(reading.aiPaused, undefined, 'the fetch layer reads no header');
+  assert.equal(aiPauseOf(reading), null);
+  assert.equal(isAiPaused(reading), false);
+  assert.equal(pausedLineOf(reading), '', 'a failure is never told as a pause');
+  assert.deepEqual(Object.keys(paused), ['aiPauseOf'], 'only the refusal reader is left');
+  assert.equal(notice.pausedLineNow, undefined, 'no surface reads a remembered header');
 
-  // A fault: no header, no pause.
-  reply(answer(503, { detail: 'unavailable' }));
-  const fault = await request('/api/reading/translate').catch((error) => error);
-  assert.equal(fault.aiPaused, undefined);
-  assert.equal(pausedLineOf(fault), '', 'a fault is never told as a pause');
-
-  // Listening: a 200 with the header has no error to read; the newest signal is kept for the surface that asked.
-  clearAiPause();
-  assert.equal(pausedLineNow(), '');
-  reply(answer(200, { asset: {}, translation: 'unavailable' }, { 'X-Orena-AI-Paused': RESETS }));
-  await request('/api/media/my/1');
-  assert.deepEqual(recentAiPause(['/api/media/'], Date.now())?.resetsAt, RESETS);
-  clearAiPause();
-  reply(answer(200, { ok: true }, { 'X-Orena-AI-Paused': RESETS }));
-  await request('/api/x');
-  assert.equal(pausedLineNow('/api/x') !== '' || Date.now() > Date.parse(RESETS), true, 'a 200 with the header is remembered for the route that received it');
-  // Keyed to the route: another surface's "unavailable" 200 is a fault, not a pause.
-  clearAiPause();
-  reply(answer(200, { ok: true }, { 'X-Orena-AI-Paused': RESETS }));
-  await request('/api/reading/translate?x=1');
-  assert.equal(recentAiPause(['/api/dictionary/word-detail']), null, 'a different route reads no pause');
-  assert.equal(pausedLineNow('/api/dictionary/sentence-sheet'), '');
-  assert.ok(recentAiPause('/api/reading/translate'), 'the route that carried the header does');
-  // And only briefly: a pause seen ten seconds ago is not today's news for this call.
-  assert.equal(recentAiPause('/api/reading/translate', Date.now() + 11000), null, 'the window is about ten seconds');
-  // A fault after a pause (no header) does not erase the route rule: it simply is not asked for another route.
-  reply(answer(200, { available: false }));
-  await request('/api/dictionary/word-detail');
-  assert.equal(recentAiPause(['/api/dictionary/word-detail']), null, 'a fault on its own route carries no header: no pause');
-
-  // The header without a time still pauses: the line has no time to promise.
-  reply(answer(429, { detail: 'x' }, { 'X-Orena-AI-Paused': '' }));
-  const noTime = await request('/api/writing/review').catch((error) => error);
-  assert.equal(noTime.aiPaused, '');
-  assert.equal(pausedLineOf(noTime), pausedMessage(''));
-  assert.ok(pausedMessage('').includes('paused for today') && !pausedMessage('').includes('{time}'));
-
-  // The agent's own body (v10) is the same fact without the header.
+  // The agent's own body (v10, `scope: "agent"`) is still a pause.
   const agent = Object.assign(new Error('x'), { status: 429, category: 'daily_ai_limit', context: { resets_at: RESETS } });
   assert.equal(pausedLineOf(agent), pausedMessage(RESETS));
+  assert.ok(!pausedLineOf(agent).includes('{time}'));
+  assert.ok(pausedMessage('').includes('paused for today') && !pausedMessage('').includes('{time}'));
   // A plan limit is not a pause.
   assert.equal(pausedLineOf(Object.assign(new Error('x'), { status: 429, category: 'quota_exhausted' })), '');
   assert.equal(pausedLineOf(null), '');
@@ -87,7 +56,7 @@ const answer = (status, body, headers = {}) => ({
   assert.equal(refusalLineOf(spent('word.assist')), 'You have used 30 of 30 word explanations today.');
   assert.equal(refusalLineOf(spent('reading.assist')), 'You have used 30 of 30 reading helps today.');
   assert.equal(refusalLineOf(spent('writing.task')), 'You have used 30 of 30 writing prompts today.');
-  const paused = Object.assign(spent('word.assist'), { aiPaused: RESETS });
+  const paused = Object.assign(new Error('x'), { status: 429, category: 'daily_ai_limit', context: { resets_at: RESETS } });
   assert.equal(refusalLineOf(paused), pausedMessage(RESETS), 'the system pause is told first');
   assert.equal(refusalLineOf(Object.assign(new Error('x'), { status: 503 })), '', 'a fault is never a plan line');
   assert.equal(refusalLineOf(null), '');
@@ -99,7 +68,7 @@ const answer = (status, body, headers = {}) => ({
   assert.ok(/refusalLineOf\(error\)/.test(reader) && /translationState === 'failed' && translationPause\) return html`[^`]*\$\{translationPause\}<\/p>`/.test(reader), 'Reader: the translation says the pause, with no Retry button');
   assert.ok(/summary\.state === 'failed' && summaryPause\) return html`[^`]*\$\{summaryPause\}<\/div>`/.test(reader), 'Reader: the summary says the pause, with no Retry button');
   const listening = src('static/orena/screens/listening/screen.js');
-  assert.ok(/const meaningPause = pausedLineNow\(\['\/api\/media\/', '\/api\/listening'\]\)/.test(listening) && /toast\(meaningPause \|\| t\('meaningUnavailable'\)\)/.test(listening), 'Listening: a 200 with its meaning unavailable says the pause');
+  assert.ok(!/pausedLineNow|meaningPause/.test(listening) && /toast\(t\('meaningUnavailable'\)\)/.test(listening), 'Listening: a 200 with its meaning unavailable says so (D-251: no header pause)');
   const vocab = src('static/orena/screens/listening/vocab-sheet.js');
   assert.ok(/paused = refusalLineOf\(error\)/.test(vocab) && /pauseLine \? html`<div class="s-vocab__empty" role="status">/.test(vocab), 'Vocabulary Focus: the pause is said once above the terms');
   const sheet = src('static/orena/screens/quick-sheet/sheet.js');
@@ -109,7 +78,7 @@ const answer = (status, body, headers = {}) => ({
   assert.ok(/sheetPause && !sheetData\.structure\.length/.test(sheet) && /sheetPause && !sheetData\.vocabulary\.length/.test(sheet), 'sentence sheet: Structure and Vocabulary say the pause');
   const writing = src('static/orena/screens/writing/screen.js');
   assert.ok(/const paused = pausedLineOf\(error\);\s+failed = paused \? \{ retry: false, paused \}/.test(writing) && /\$\{failed\.paused \|\| failed\.quota/.test(writing), 'Writing room: the pause is the review failure line, with neither retry nor plans');
-  for (const room of ['respond', 'discussion', 'situation', 'free-talk', 'reading-transfer']) assert.ok(/pausedLine(Of|Now)\(/.test(src(`static/orena/screens/${room}/screen.js`)), `${room} says the pause in its own error place`);
+  for (const room of ['respond', 'discussion', 'situation', 'free-talk', 'reading-transfer']) assert.ok(/pausedLineOf\(/.test(src(`static/orena/screens/${room}/screen.js`)), `${room} says the pause in its own error place`);
   const react = src('static/orena/screens/react/screen.js');
   assert.ok(/resultPause = pausedLineOf\(error\)/.test(react) && /\$\{resultPause \|\| t\('coachingError'\)\}/.test(react), 'React: the pause replaces the coaching error line');
   const conversation = src('static/orena/screens/conversation/screen.js');
@@ -120,7 +89,10 @@ const answer = (status, body, headers = {}) => ({
   const planCopy = src('static/orena/screens/plan/copy.js');
   for (const line of ['Every plan includes all reading, listening, speaking practice,', 'Mọi gói đều gồm đầy đủ luyện đọc, nghe, luyện nói,', '每个套餐都包含全部阅读、听力、口语练习、']) assert.ok(planCopy.includes(line), line);
   const api = src('static/orena/infrastructure/api.js');
-  assert.ok(/aiPausedFromResponse\(response\)/.test(api) && /error\.aiPaused=aiPaused/.test(api), 'one place reads the header: the shared fetch layer');
+  assert.ok(!/aiPaused|X-Orena-AI-Paused/.test(api), 'D-251: the shared fetch layer reads no AI-paused header');
+  for (const file of ['listening/screen.js', 'listening/vocab-sheet.js', 'quick-sheet/sheet.js', 'reader/screen.js', 'word/screen.js', 'conversation/screen.js', 'free-talk/screen.js', 'situation/screen.js', 'react/screen.js']) {
+    assert.ok(!/pausedLineNow|recentAiPause/.test(src(`static/orena/screens/${file}`)), `${file}: no remembered-header pause`);
+  }
 }
 
 // 3. Voice chat is Plus and Pro: the entitlement read, the refusal, the sheet and the copy.

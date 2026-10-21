@@ -1171,9 +1171,21 @@ def generate_structured(
             assert invalid is not None
             raise invalid
 
+        # D-251 review: a paid call holds its estimated cost against the learner while it is in flight, so concurrent
+        # calls cannot all pass a cap the ledger has not caught up with.
+        learner_account = learner.account
+        input_estimate = max(1, sum(len(str(item.get("content") or "")) for item in messages
+                                    if isinstance(item, dict)) // 3)
+
+        def _ask_reserved(target: ProviderTarget) -> AIResult:
+            usd = _learner_cost.estimate_call_usd(target.provider, target.model, input_tokens=input_estimate,
+                                                  output_tokens=max_output_tokens)
+            with _learner_cost.reserve(learner_account, usd):
+                return _ask(target)
+
         try:
             outcome = run_chain(
-                chain, _ask, on_attempt=_record_attempt(capability_key, router_version,
+                chain, _ask_reserved, on_attempt=_record_attempt(capability_key, router_version,
                                                         sent=lambda: unaccounted.pop("rung", False)),
                 deadline=deadline,
                 health=health, admit=admit,

@@ -39,7 +39,7 @@ import { openWordSheet, openSentenceSheet } from '../quick-sheet/sheet.js';
 import { loadNotesAcross, noteKeysFor, noteTypeColorKey } from '../quick-sheet/model.js';
 import { legacyAliases } from './legacy-sentences.js';
 import { t } from './copy.js';
-import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
+import { refusalLineOf } from '../plan/quota-notice.js';
 import { mountReaderLexical } from './lexical.js';
 import { loadHighlights, isHighlighted, toggleHighlight } from './highlights.js';
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from './annotations-sync.js';
@@ -192,7 +192,7 @@ export default async function mountReader(element, ctx) {
   const openNoteSegs = new Set();
   const translations = new Map(); // sentence segment id -> meaning (D-130: the sentence is the shared unit)
   let translationState = 'idle'; // 'idle' | 'loading' | 'ready' | 'failed'
-  // The system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure, with no retry.
+  // The system's daily AI pause (a refused request that says so): said in place of the failure, with no retry.
   let translationPause = '';
   let summaryPause = '';
   const annotations = new Map(); // segment -> tokens (offsets relative to the sentence)
@@ -303,7 +303,7 @@ export default async function mountReader(element, ctx) {
         try {
           const response = await api.readingTranslate({ source_language: language, target_language: target, content_id: contentId, segments: turn });
           for (const [seg, meaning] of sentenceTranslationsFrom(response)) translations.set(seg, meaning);
-          if (response?.status !== 'ready') { failed = true; translationPause = translationPause || pausedLineNow('/api/reading/translate'); }
+          if (response?.status !== 'ready') failed = true;
         } catch (error) {
           failed = true;
           translationPause = translationPause || refusalLineOf(error);
@@ -708,7 +708,6 @@ export default async function mountReader(element, ctx) {
       const value = await api.readingSummary({ source_language: language, target_language: target, ...which });
       const bullets = Array.isArray(value?.bullets) ? value.bullets.map((line) => String(line || '').trim()).filter(Boolean) : [];
       summary = bullets.length ? { state: 'ready', bullets } : { state: 'failed', bullets: [] };
-      if (!bullets.length) summaryPause = pausedLineNow('/api/reading/summary');
     } catch (error) {
       summary = { state: 'failed', bullets: [] };
       summaryPause = refusalLineOf(error);

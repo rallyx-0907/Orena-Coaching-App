@@ -7987,3 +7987,18 @@ built). D-248 point 2's hidden per-learner ceiling stands and is implemented her
    cap (`media.daily_cap_usd`) and Supadata's daily request count are operator-pipeline and provider-credit limits, and
    word audio's lifetime cap falls back to the free voice; each is reported to the owner, not changed here.
 7. **Published text.** No published legal document (docs/legal/public) promises a system spend ceiling; none changes.
+8. **What a learner's total counts** (independent review of #487, CHANGES REQUESTED, and Hermes for the owner):
+   - priced calls only. A call without a price counts **0** for the learner, never an allowance, and raises one monitor
+     alert a day ("unpriced provider in use"). The system monitor still counts it at its 0.01 USD allowance. An accounting
+     gap never throttles a learner.
+   - no local model (`ollama`, cost 0) and no free-tier provider.
+   - no feature with its own plan meter: `agent_voice` (voice minutes, D-249), `pronunciation_evaluator` (pronunciation
+     minutes), `speech_asr` (the daily recognition brake), `word_tts` (`audio.tts`). They stay in the system monitor.
+   - calls in flight: each paid rung reserves its list-price estimate until it returns. Cost rows the per-account recorder
+     could not write are kept, retried and counted meanwhile (an ALERT is logged; nothing is dropped silently).
+   - system costs (no signed-in account, an administrator's own runs) reach the monitor only, never a learner cap.
+   - a public runtime also refuses to start when the per-account ledger is not wired and readable.
+9. **Recorded gap: Ollama Cloud has no confirmed per-token price.** It is credits-based and publishes none (#454 review),
+   so no number is invented: its rows are `unpriced`, count 0 in a learner's cap (a Free learner calling it 20 times is
+   never degraded or refused, `tests/test_learner_cost_cap.py`) and count the allowance in the system monitor. When the
+   owner confirms a price or a covered-credit rate, it is added to `ai/pricing.py` and is then counted.

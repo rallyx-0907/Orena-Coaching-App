@@ -24,16 +24,22 @@ LOCAL = ProviderTarget("ollama", "gemma3")
 
 
 class Ledger:
-    """`ai_cost_records` per account: {user_key: USD today}."""
+    """`ai_cost_records` per account: {user_key: USD today}, or rows {user_key: [(provider, feature, usd or None)]} read
+    with the repository's own exclusions (a row without a price adds 0 and counts as unpriced)."""
 
-    def __init__(self, spend=None, fail=()):
-        self.spend, self.fail, self.calls = dict(spend or {}), set(fail), []
+    def __init__(self, spend=None, fail=(), rows=None):
+        self.spend, self.fail, self.calls, self.rows = dict(spend or {}), set(fail), [], dict(rows or {})
+        self.lock = __import__("threading").Lock()
 
-    def __call__(self, user_key, since, *, exclude_providers=()):
+    def __call__(self, user_key, since, *, exclude_providers=(), exclude_features=()):
         self.calls.append((user_key, tuple(exclude_providers)))
         if user_key in self.fail:
             raise RuntimeError("ledger down")
-        return self.spend.get(user_key, 0.0), 0
+        with self.lock:
+            rows = [row for row in self.rows.get(user_key, [])
+                    if row[0] not in exclude_providers and row[1] not in exclude_features]
+        usd = sum(row[2] for row in rows if row[2] is not None)
+        return self.spend.get(user_key, 0.0) + usd, sum(1 for row in rows if row[2] is None)
 
 
 @pytest.fixture
@@ -198,3 +204,148 @@ def test_a_capability_cap_measures_the_requests_own_learner(monkeypatch):
         assert spend_gate.paid_refused("word_translation", "word_translation.daily_spend_cap_usd") is True
     finally:
         spend_gate.reset()
+
+
+# ======================================================================================== review of #487 (P1, P2) ==
+
+def test_unpriced_and_local_calls_never_throttle_a_learner(world, caplog):
+    """Ollama (local) costs 0 and Ollama Cloud has no published price: neither moves a Free learner to the economy model,
+    however many calls; the unpriced ones raise one monitor alert a day."""
+    import logging
+
+    world.rows = {"light": [("ollama", "writing_evaluator", None)] * 50
+                  + [("ollama-cloud", "writing_evaluator", None)] * 50}
+    with caplog.at_level(logging.ERROR):
+        state = learner_cost.learner_cost_state("light")
+        learner_cost.reset()
+        learner_cost.learner_cost_state("light")
+    assert state.state == learner_cost.OK and state.spent_usd == 0.0
+    alerts = [r for r in caplog.records if "unpriced provider in use" in r.getMessage()]
+    assert alerts and alerts[0].levelno == logging.ERROR
+    assert "ollama" in learner_cost.uncounted_providers()
+
+
+def test_audio_rows_with_their_own_meter_do_not_fill_the_text_cap(world):
+    """Pronunciation, voice chat, speech recognition and word audio are limited by their own plan meters."""
+    world.rows = {"light": [("azure", "pronunciation_evaluator", 0.5), ("gemini", "agent_voice", 0.5),
+                            ("groq", "speech_asr", 0.5), ("azure", "word_tts", 0.5)]}
+    state = learner_cost.learner_cost_state("light")
+    assert state.state == learner_cost.OK and state.spent_usd == 0.0
+    learner_cost.reset()
+    world.rows["light"].append(("gemini", "writing_evaluator", 0.025))   # text AI does count: past Free's 0.02
+    assert learner_cost.learner_cost_state("light").state == learner_cost.DEGRADE
+    assert set(learner_cost.METERED_FEATURES) == {"agent_voice", "pronunciation_evaluator", "speech_asr", "word_tts"}
+
+
+def test_concurrent_calls_reserve_their_cost_so_a_cap_is_not_overshot(world):
+    """Twenty threads of one Free learner each ask before any row reaches the ledger: the reservations already held
+    stop the rest at the hard ceiling, where the ledger alone would have let every one through."""
+    import threading
+
+    estimate, admitted, start = 0.005, [], threading.Barrier(20)
+    lock = threading.Lock()
+
+    def one_call():
+        start.wait()
+        with lock:   # admission and reservation together, as the router's chain does per rung
+            state = learner_cost.learner_cost_state("heavy")
+            if state.state == learner_cost.REFUSE:
+                return
+            held = learner_cost.reserve("heavy", estimate)
+            admitted.append(held)
+
+    threads = [threading.Thread(target=one_call) for _ in range(20)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+    hard = learner_cost.daily_cap_usd("free") * policies.value(learner_cost.HARD_POLICY)
+    assert len(admitted) == int(round(hard / estimate)), "the in-flight sum reaches the hard ceiling, then refuses"
+    assert learner_cost.in_flight_usd("heavy") == pytest.approx(len(admitted) * estimate)
+    assert learner_cost.learner_cost_state("light").state == learner_cost.OK, "another learner is not touched"
+    for held in admitted:
+        held.release()
+    assert learner_cost.in_flight_usd("heavy") == 0.0
+    assert learner_cost.estimate_call_usd("ollama", "gemma3") == 0.0
+    assert learner_cost.estimate_call_usd("gemini", "gemini-3.5-flash-lite", input_tokens=1000, output_tokens=100) > 0
+
+
+def test_a_row_the_recorder_could_not_write_still_counts_and_is_retried(world, caplog):
+    import logging
+
+    from writing_coach.ai import account_costs
+
+    class Failing:
+        def __init__(self):
+            self.ok, self.rows = False, []
+
+        def record_ai_cost(self, user_key, event):
+            if not self.ok:
+                raise RuntimeError("table down")
+            self.rows.append(user_key)
+            return True
+
+    clock = [NOW]
+    store = Failing()
+    recorder = account_costs.AccountCostRecorder(store, now=lambda: clock[0], run=lambda work: None)
+    event = {"outcome": "success", "provider": "gemini", "cost": {"state": "estimated", "amount": 0.05}}
+    with caplog.at_level(logging.ERROR):
+        assert recorder.record("heavy", event) is False
+    assert any("ALERT AI cost per account not written" in r.getMessage() for r in caplog.records)
+    assert recorder.pending_usd("heavy", NOW.replace(hour=0)) == pytest.approx(0.05)
+    previous = account_costs._recorder
+    account_costs._recorder = recorder
+    try:
+        assert learner_cost.learner_cost_state("heavy").state == learner_cost.REFUSE, "the kept row counts meanwhile"
+    finally:
+        account_costs._recorder = previous
+    store.ok, clock[0] = True, NOW.replace(hour=10)   # after the pause: the kept row is written first
+    assert recorder.record("heavy", event) is True
+    assert store.rows == ["heavy", "heavy"] and recorder.pending_usd("heavy", NOW.replace(hour=0)) == 0.0
+
+
+def test_a_public_runtime_refuses_to_start_without_the_ledger_wired(world):
+    from writing_coach.core.published_promises import enforce_at_start
+    from test_published_promises import KEPT, ON, policy
+
+    assert learner_cost.ledger_wired() is True
+    assert enforce_at_start({**KEPT, "APP_ENV": "production"}, policy(ON), learner_ledger=learner_cost.ledger_wired) == []
+    learner_cost.configure(None)
+    with pytest.raises(RuntimeError, match="ledger"):
+        enforce_at_start({**KEPT, "APP_ENV": "production"}, policy(ON), learner_ledger=learner_cost.ledger_wired)
+
+    def broken(*args, **kwargs):
+        raise NotImplementedError("the per-account AI ledger is PostgreSQL-only")
+
+    learner_cost.configure(broken)
+    assert learner_cost.ledger_wired() is False
+
+
+def test_system_costs_never_reach_a_learner_cap(world):
+    """No signed-in account (a background job) and an administrator's own runs are system costs: the monitor only."""
+    from writing_coach.ai import account_costs
+
+    assert learner_cost.learner_cost_state("local-admin").state == learner_cost.OK
+    recorder = account_costs.AccountCostRecorder(object(), run=lambda work: None)
+    for origin in ("operator_test", "configuration"):
+        assert recorder.record("heavy", {"outcome": "success", "provider": "gemini", "origin": origin}) is False
+    assert recorder.pending_usd("heavy", NOW.replace(hour=0)) == 0.0
+
+
+def test_a_free_learner_calling_ollama_cloud_20_times_is_never_degraded_or_refused(world):
+    """Hermes for the owner (review of #487): Ollama Cloud is credits-based and publishes no per-token price, so its rows
+    are `unpriced`. A Free learner at USD 0.02 a day makes 20 calls; after each the state is read fresh from the ledger,
+    and the learner is never degraded or refused because of that accounting gap (recorded in D-251)."""
+    from writing_coach.ai.pricing import resolve_token_pricing
+
+    assert resolve_token_pricing("ollama-cloud", "gpt-oss:120b") is None, "no confirmed published price: unpriced"
+    assert learner_cost.daily_cap_usd("free") == pytest.approx(0.02)
+    world.rows = {"light": []}
+    for call in range(20):
+        world.rows["light"].append(("ollama-cloud", "writing_evaluator", None))
+        learner_cost.reset()
+        state = learner_cost.learner_cost_state("light")
+        assert state.state == learner_cost.OK, f"call {call + 1}: {state.state}"
+        assert learner_cost.admitted_chain([ProviderTarget("ollama-cloud", "gpt-oss:120b")], state) == [
+            ProviderTarget("ollama-cloud", "gpt-oss:120b")]
+    assert state.spent_usd == 0.0

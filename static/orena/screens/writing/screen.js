@@ -803,7 +803,7 @@ export default async function mountWriting(element, ctx) {
       busyReview = false;
       rightMode = essay ? 'review' : 'none';
       // The plan's limit is reached: the server's own figures, and the way to the plans - never a retry.
-      // The system's daily AI pause (X-Orena-AI-Paused, D-235) is told in the same place, with neither a retry nor the plans.
+      // The system's daily AI pause (a refused request that says so) is told in the same place, with neither a retry nor the plans.
       const paused = pausedLineOf(error);
       failed = paused ? { retry: false, paused } : isQuotaExhausted(error) ? { retry: false, quota: quotaMessage(error) } : { retry: error?.retryable !== false };
       activePane = 'review';

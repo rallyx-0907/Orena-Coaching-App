@@ -21,10 +21,28 @@ The caps are policies (Admin > Policies & limits, group "spend"). Free is USD 0.
 the plan's monthly price spread over 30 days at `ai.learner_cost.vnd_per_usd` (default 26,000 VND a dollar): Plus
 79.000 d -> about USD 0.061 a day, Pro 159.000 d -> about USD 0.122 a day, unless an administrator stores a USD figure.
 
+What the learner's text-AI total counts (review of #487):
+- **priced calls only.** A call recorded without a price (`unpriced`, e.g. Ollama Cloud, which publishes no per-token
+  price - a recorded gap) counts 0 here, never an allowance: an accounting gap never throttles a learner. Each UTC day
+  with unpriced calls in a learner total raises one monitor alert ("unpriced provider in use"). The system monitor
+  (ai/spend_gate.py) still counts them at its allowance.
+- **no local model** (`ollama`, our own machine: cost 0) and no free-tier provider.
+- **no feature with its own plan meter**: `agent_voice` (voice minutes, D-249), `pronunciation_evaluator`
+  (pronunciation minutes), `speech_asr` (the daily recognition brake), `word_tts` (the `audio.tts` meter and its own
+  cap). Those are limited per learner by their meters; this cap is for text AI. (They stay in the system monitor.)
+- **calls in flight**: every paid call reserves its estimated cost (`reserve`) until it returns, so concurrent calls of
+  one learner cannot all pass a cap the ledger has not caught up with; and cost rows the per-account recorder could not
+  write yet (ai/account_costs.py keeps and retries them) are added from its pending queue.
+
+System costs: work with no signed-in account (background jobs, the media pipeline) and an administrator's own runs
+(origin `operator_test`, `configuration`, never recorded per account) are system costs. They reach the monitor only,
+never a learner cap.
+
 Faults never block everyone either: a ledger that cannot be read degrades the learner to the economy model (bounded
-cost, still answered) instead of refusing; a plan that cannot be read uses the Free cap. A request with no signed-in
-account (a background job, a bare development server) has no learner cap. The Intelligence lane calls
-`learner_cost_state` from the agent turn (and picks `economy`), as the router does here.
+cost, still answered) instead of refusing; a plan that cannot be read uses the Free cap. A store with no per-account
+ledger at all (the SQLite archive) has no learner cap, and a public runtime refuses to start without one
+(`ledger_wired`, core/published_promises.py). The Intelligence lane calls `learner_cost_state` from the agent turn (and
+picks `economy`), as the router does here.
 """
 
 from __future__ import annotations
@@ -62,8 +80,11 @@ DAYS_PER_MONTH = 30
 DEFAULT_VND_PER_USD = 26_000
 DEFAULT_REVENUE_SHARE = 0.6
 DEFAULT_FREE_USD = 0.02
-UNPRICED_ALLOWANCE_USD = 0.01   # a call recorded without a price counts this much, never zero (as the system monitor)
-CACHE_SECONDS = 5.0             # a soft cap: calls in flight inside one window may overshoot it a little
+CACHE_SECONDS = 5.0             # the ledger read is cached; calls in flight are counted apart (`reserve`)
+# Never counted in a learner's text-AI total (see the module docstring).
+LOCAL_PROVIDERS: tuple[str, ...] = ("ollama",)
+METERED_FEATURES: tuple[str, ...] = ("agent_voice", "pronunciation_evaluator", "speech_asr", "word_tts")
+ESTIMATE_INPUT_TOKENS = 2_000   # a reservation's input when the caller gives none
 MAX_CACHED = 4096
 # Request contexts that are not a signed-in account (ai/account_costs.py): no learner cap.
 _NOT_AN_ACCOUNT = frozenset({"", "legacy", "local-admin", "local"})
@@ -134,6 +155,8 @@ def configure(read: Callable[..., tuple[float, int]] | None, *, monotonic: Calla
 def reset() -> None:
     with _lock:
         _cache.clear()
+        _inflight.clear()
+        _unpriced_alerted.clear()
 
 
 def current_account() -> str | None:
@@ -187,23 +210,127 @@ def _free_tier_providers() -> tuple[str, ...]:
     return tuple(provider for provider in cost_tier.PROVIDERS if cost_tier.is_free_tier(provider))
 
 
+def uncounted_providers() -> tuple[str, ...]:
+    """Providers that cost Orena nothing: local models and free-tier accounts."""
+    return (*LOCAL_PROVIDERS, *_free_tier_providers())
+
+
+_unpriced_alerted: set[str] = set()
+
+
+def note_unpriced(count: int, moment: datetime | None = None) -> None:
+    """A learner total held calls without a price: counted 0 for the learner, one monitor alert a UTC day."""
+    if not count:
+        return
+    day = (moment or _now()).date().isoformat()
+    with _lock:
+        if day in _unpriced_alerted:
+            return
+        _unpriced_alerted.clear()
+        _unpriced_alerted.add(day)
+    _log.error("ALERT unpriced provider in use: %d AI call(s) in a learner's cost today have no price; counted 0 for the "
+               "learner's cap (the system monitor counts them at its allowance). Add the model's price to ai/pricing.py.",
+               int(count))
+
+
+_inflight: dict[str, float] = {}
+
+
+class _Reservation:
+    def __init__(self, account: str | None, usd: float) -> None:
+        self.account, self.usd, self._open = account, usd, account is not None and usd > 0
+
+    def release(self) -> None:
+        if not self._open:
+            return
+        self._open = False
+        with _lock:
+            left = _inflight.get(self.account, 0.0) - self.usd
+            if left > 1e-12:
+                _inflight[self.account] = left
+            else:
+                _inflight.pop(self.account, None)
+            _cache.pop(self.account, None)   # the call's own row is in the ledger now (or pending): read it fresh
+
+    def __enter__(self) -> _Reservation:
+        return self
+
+    def __exit__(self, *exc: object) -> None:
+        self.release()
+
+
+def estimate_call_usd(provider: str, model: str, *, input_tokens: int | None = None,
+                      output_tokens: int | None = None) -> float:
+    """A paid call's cost at list price before it is sent; 0 for a local, free or unpriced model."""
+    if provider_tier(provider, model) != "paid" or provider in uncounted_providers():
+        return 0.0
+    from writing_coach.ai.pricing import list_rate
+
+    rates = list_rate(provider, model)
+    if rates is None:
+        return 0.0
+    tokens_in = ESTIMATE_INPUT_TOKENS if input_tokens is None else max(0, int(input_tokens))
+    tokens_out = 500 if output_tokens is None else max(0, int(output_tokens))
+    return (tokens_in * rates[0] + tokens_out * rates[1]) / 1_000_000
+
+
+def reserve(account: str | None, usd: float) -> _Reservation:
+    """Hold `usd` against `account` while a paid call is in flight; release it when the call returns."""
+    held = _Reservation(account if account not in (None, *_NOT_AN_ACCOUNT) else None, float(usd or 0.0))
+    if held._open:
+        with _lock:
+            _inflight[held.account] = _inflight.get(held.account, 0.0) + held.usd
+    return held
+
+
+def in_flight_usd(account: str) -> float:
+    with _lock:
+        return _inflight.get(account, 0.0)
+
+
+def _pending_usd(account: str, since: datetime) -> float:
+    from writing_coach.ai import account_costs
+
+    try:
+        return float(account_costs.pending_usd(account, since))
+    except Exception:  # noqa: BLE001 - the queue is a best effort on top of the ledger
+        return 0.0
+
+
 def _spent(account: str, since: datetime) -> float:
     now = _monotonic()
     with _lock:
         held = _cache.get(account)
-        if held is not None and now - held[0] < CACHE_SECONDS:
-            return held[1]
+        fresh = held is not None and now - held[0] < CACHE_SECONDS
+    if fresh:
+        ledger = held[1]
+    else:
+        reader = _read
+        if reader is None:
+            raise RuntimeError("no per-account AI ledger")
+        usd, unpriced = reader(account, since, exclude_providers=uncounted_providers(),
+                               exclude_features=METERED_FEATURES)
+        note_unpriced(int(unpriced))
+        ledger = float(usd)   # an unpriced call counts 0 for the learner (never an allowance)
+        with _lock:
+            _cache[account] = (now, ledger)
+            _cache.move_to_end(account)
+            while len(_cache) > MAX_CACHED:
+                _cache.popitem(last=False)
+    return ledger + in_flight_usd(account) + _pending_usd(account, since)
+
+
+def ledger_wired() -> bool:
+    """Whether the per-account ledger is installed and readable (a public runtime refuses to start otherwise)."""
     reader = _read
     if reader is None:
-        raise RuntimeError("no per-account AI ledger")
-    usd, unpriced = reader(account, since, exclude_providers=_free_tier_providers())
-    spent = float(usd) + int(unpriced) * UNPRICED_ALLOWANCE_USD
-    with _lock:
-        _cache[account] = (now, spent)
-        _cache.move_to_end(account)
-        while len(_cache) > MAX_CACHED:
-            _cache.popitem(last=False)
-    return spent
+        return False
+    try:
+        reader("__startup_probe__", _midnight(_now()), exclude_providers=(), exclude_features=())
+    except Exception:  # noqa: BLE001 - not wired: no table, no PostgreSQL, the archive store
+        _log.error("per-learner AI cost ledger is not readable", exc_info=True)
+        return False
+    return True
 
 
 def learner_cost_state(user_key: str | None = None) -> LearnerCostState:

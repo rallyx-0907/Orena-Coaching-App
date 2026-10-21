@@ -20,7 +20,7 @@ import { keepProvenance } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { lookupContext } from './model.js';
 import { wordDetailRequest } from '../quick-sheet/model.js';
-import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
+import { refusalLineOf } from '../plan/quota-notice.js';
 import { planRequired } from '../../kit/access.js';
 
 async function resolveTerm(term, { lang, support, context, source }) {
@@ -28,7 +28,6 @@ async function resolveTerm(term, { lang, support, context, source }) {
   let paused = '';
   try {
     detail = await api.wordDetail(wordDetailRequest({ contextual: false, target: term, context: lookupContext(term, context), lang, support, source }));
-    if (!detail?.available) paused = pausedLineNow('/api/dictionary/word-detail');
   } catch (error) {
     detail = null;
     paused = refusalLineOf(error);
@@ -51,7 +50,7 @@ export async function openVocabFocus(ctx, { label, terms, lang, support, context
   let rows = words.map((word) => ({ word, reading: '', meaning: '', saved: false }));
   let alive = true;
   let sheetEl = null;
-  let pauseLine = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said once above the terms, no retry
+  let pauseLine = ''; // the system's daily AI pause (a refused request that says so): said once above the terms, no retry
 
   function rowMarkup(row, index) {
     return html`<div class="s-vocab__row">

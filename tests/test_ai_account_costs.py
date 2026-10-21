@@ -72,7 +72,8 @@ def test_a_database_error_pauses_recording_for_five_minutes_then_it_resumes():
     clock[0] = NOON + timedelta(minutes=4)
     assert costs.record("google-sub-1", CALL) is False and repository.recorded == []  # still paused
     clock[0] = NOON + timedelta(minutes=5)
-    assert costs.record("google-sub-1", CALL) is True and len(repository.recorded) == 1
+    # review of #487: the two rows kept while paused are written first, then this one - nothing is lost
+    assert costs.record("google-sub-1", CALL) is True and len(repository.recorded) == 3
 
 
 @pytest.mark.parametrize("origin", ["operator_test", "configuration"])

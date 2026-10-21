@@ -202,8 +202,15 @@ def _reader(capability: str, provider: str | None = None, model: str | None = No
         repository = _installed_platform_repository()
         if account is not None:
             # D-251: this learner's own spend of this capability (and of one rung, when given) from `ai_cost_records`.
-            return repository.ai_spend_since_for_account(account, since, capability=capability, provider=provider,
-                                                         model=model)
+            # Local and free-tier calls cost nothing; an unpriced call counts 0 for a learner and alerts the monitor
+            # (review of #487: an accounting gap never throttles a learner).
+            from writing_coach.ai import learner_cost
+
+            usd, unpriced = repository.ai_spend_since_for_account(
+                account, since, capability=capability, provider=provider, model=model,
+                exclude_providers=learner_cost.uncounted_providers())
+            learner_cost.note_unpriced(int(unpriced))
+            return float(usd), 0
         if provider is None:
             return repository.ai_spend_since_for_capability(capability, since)
         # PR-MON-7: one rung's own spend (the reviewed paid backup), not the capability's total.

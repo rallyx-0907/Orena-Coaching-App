@@ -1177,10 +1177,11 @@ _spend_gate.configure_ceiling(_spend_gate.live_ceiling, read=_system_ai_spend_si
                               warn_ratio=_spend_gate.live_warn_ratio)
 
 
-def _learner_ai_spend_since(user_key: str, since: datetime, *, exclude_providers: tuple[str, ...] = ()) -> tuple[float, int]:
+def _learner_ai_spend_since(user_key: str, since: datetime, *, exclude_providers: tuple[str, ...] = (),
+                            exclude_features: tuple[str, ...] = ()) -> tuple[float, int]:
     """One learner's AI cost today from the per-account ledger (`ai_cost_records`), for the per-learner cap (D-251)."""
-    return _persistence_runtime.platform_repository.ai_spend_since_for_account(user_key, since,
-                                                                              exclude_providers=exclude_providers)
+    return _persistence_runtime.platform_repository.ai_spend_since_for_account(
+        user_key, since, exclude_providers=exclude_providers, exclude_features=exclude_features)
 
 
 # Each learner's own daily AI cost cap, by plan (D-251, ai/learner_cost.py): degrade to the economy model, then refuse.
@@ -1194,7 +1195,7 @@ _learner_cost.configure(_learner_ai_spend_since
 from writing_coach.core.published_promises import enforce_at_start as _enforce_promises  # noqa: E402
 from writing_coach.core.published_promises import unmet_promises as _unmet_promises  # noqa: E402
 
-_enforce_promises(os.environ, _policies.value)
+_enforce_promises(os.environ, _policies.value, learner_ledger=_learner_cost.ledger_wired)
 
 
 def _voice_daily_usage(user_key: str, feature: str) -> int:

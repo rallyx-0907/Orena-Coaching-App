@@ -39,7 +39,7 @@ import {
 } from '../../product/conversation.js';
 import { t } from './copy.js';
 import { situations, defaultLevel, turnSituation, learnerTurnCount, fixesOf, strengthsOf } from './model.js';
-import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
+import { pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 function judgementLabel(judgement) {
   return t.has(`judge_${judgement}`) ? t(`judge_${judgement}`) : '';
@@ -62,7 +62,7 @@ export default async function conversationScreen(element, ctx) {
   let level = defaultLevel(ctx.context.level); // the Difficulty chip: B1 / B2 / C1, opening on the learner's level
   let convo = null; // the product/conversation.js state, once started
   let busy = false;
-  let turnPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the retry
+  let turnPause = ''; // the system's daily AI pause (a refused request that says so): said in place of the retry
   let recording = false;
   let transcribing = false; // a take is being turned into text
   let lastBlob = null; // the recording awaiting a transcript, kept so a Retry sends the same take again
@@ -198,7 +198,7 @@ export default async function conversationScreen(element, ctx) {
     if (isOver()) return '';
     const failed = (Boolean(pendingTurn(convo)) || needsOpening(convo)) && !busy; // the opening or the reply was requested and the request itself failed
     if (failed) {
-      // The system's daily AI pause (X-Orena-AI-Paused, D-235): the line, and no retry (it would be refused again).
+      // The system's daily AI pause (a refused request that says so): the line, and no retry (it would be refused again).
       if (turnPause) return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${turnPause}</span>${endButton()}</div>`;
       return html`<div class="s-conv__composer"><span class="s-conv__retry-text" role="alert">${t('replyFailed')}</span><button type="button" class="o-btn o-btn--secondary s-conv__retry-btn" data-retry>${t('retryCta')}</button>${endButton()}</div>`;
     }
@@ -400,7 +400,7 @@ export default async function conversationScreen(element, ctx) {
         situation: turnSituation(convo.situation, convo.turns, index),
       });
       if (!alive()) return;
-      coaching.set(index, { loading: false, result, paused: result?.available ? '' : pausedLineNow('/api/dictionary/spoken-response') });
+      coaching.set(index, { loading: false, result, paused: '' });
     } catch (error) {
       if (!alive()) return;
       coaching.set(index, { loading: false, result: null, paused: pausedLineOf(error) });

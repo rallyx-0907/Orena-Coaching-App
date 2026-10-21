@@ -130,9 +130,15 @@ and local models answer them, and a request with nothing else is 429 `quota_exha
 figure shown). The per-capability caps measure the request's own learner. The system total is a monitor: it warns,
 then raises a high-severity alert (log, provider health signal / health.log, Admin overview) and refuses nothing.
 
-Every USD amount is measured at list price. A free-plan call counts at list price and an unpriced call at 0.01 USD,
-except in the per-learner cost cap, where a provider whose `cost.free_tier.*` flag is on costs nothing. The media caps
-are counted separately.
+Every USD amount is measured at list price. A free-plan call counts at list price and an unpriced call at 0.01 USD in the
+system monitor. **A learner's text-AI cost cap counts differently** (review of #487):
+- priced calls only; an unpriced call counts 0 and raises a daily "unpriced provider in use" alert;
+- no local model, and no provider whose `cost.free_tier.*` flag is on;
+- no feature with its own plan meter (`agent_voice`, `pronunciation_evaluator`, `speech_asr`, `word_tts`);
+- plus every paid call in flight (its reservation) and every cost row not written yet.
+
+Ollama Cloud has no confirmed per-token price, so it is unpriced (a recorded gap, D-251 point 9). The media caps are
+counted separately.
 
 | Name | Set in | Type / range | Default | Meaning | Raise / lower | Pilot | Production | Risk if wrong | Related | Applies |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |

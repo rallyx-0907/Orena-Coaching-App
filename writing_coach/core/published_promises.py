@@ -141,10 +141,12 @@ def unmet_promises(values: Mapping[str, str], policy: Callable[[str], Any]) -> l
     return problems
 
 
-def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) -> list[UnmetPromise]:
+def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any], *,
+                     learner_ledger: Callable[[], bool] | None = None) -> list[UnmetPromise]:
     """At start. A public runtime logs each unmet promise as an ERROR and refuses to start without the per-learner AI
-    cost caps and the environment's monitor threshold (production and staging alike, D-251). Development returns nothing
-    and logs nothing."""
+    cost caps and the environment's monitor threshold (production and staging alike, D-251). `learner_ledger` (app.py:
+    `learner_cost.ledger_wired`): the caps need their per-account ledger installed and readable, not only their defaults.
+    Development returns nothing and logs nothing."""
 
     app_env = environment_name(values.get("APP_ENV", "development"))
     if not is_public_environment(app_env):
@@ -156,6 +158,9 @@ def enforce_at_start(values: Mapping[str, str], policy: Callable[[str], Any]) ->
     if missing:  # D-251: never a public runtime with paid AI unbounded per learner
         raise RuntimeError(f"A per-learner daily AI cost cap is required for every plan when APP_ENV={app_env} "
                            f"(D-251, PRE-502 R2); missing: {', '.join(missing)}.")
+    if learner_ledger is not None and not learner_ledger():
+        raise RuntimeError(f"The per-learner AI cost ledger (ai_cost_records) is not wired or not readable when "
+                           f"APP_ENV={app_env}: the per-learner caps would count nothing (D-251, PRE-502 R2).")
     if not _ceiling_set(values):  # the monitor's threshold, whatever Admin holds; staging runs like production
         raise RuntimeError(f"AI_DAILY_SPEND_CEILING_USD (the spend monitor's alert threshold) is required when "
                            f"APP_ENV={app_env} (D-251, PRE-502 R2).")

@@ -30,7 +30,7 @@ import { saveResponse } from '../../product/account-records.js';
 import { t } from './copy.js';
 import { openMedia } from '../../product/media-source.js';
 import { usefulPhrase, buildUnderstandCheck, mapCoaching, phraseReused, resultTiles, waveBars, promptKey } from './model.js';
-import { pausedLineNow, pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
+import { pausedLineOf, showTranscribeRefusal } from '../plan/quota-notice.js';
 
 const STEPS = ['stepListen', 'stepUnderstand', 'stepReveal', 'stepContext', 'stepResult'];
 const WAVE_BARS = 32;
@@ -71,7 +71,7 @@ export default async function reactReuse(element, ctx) {
   let checking = false;
   let result = null;
   let resultError = false;
-  let resultPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure
+  let resultPause = ''; // the system's daily AI pause (a refused request that says so): said in place of the failure
   let playing = false;
   let recorder = null;
   let stopTimer = 0;
