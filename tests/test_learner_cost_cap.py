@@ -208,21 +208,28 @@ def test_a_capability_cap_measures_the_requests_own_learner(monkeypatch):
 
 # ======================================================================================== review of #487 (P1, P2) ==
 
-def test_unpriced_and_local_calls_never_throttle_a_learner(world, caplog):
-    """Ollama (local) costs 0 and Ollama Cloud has no published price: neither moves a Free learner to the economy model,
-    however many calls; the unpriced ones raise one monitor alert a day."""
+def test_local_calls_count_nothing_and_unpriced_paid_calls_count_the_estimate(world, caplog):
+    """Re-review of #487: local `ollama` (our machine) and free-tier providers count 0, however many calls. A PAID call
+    with no catalogue price (Ollama Cloud) counts the conservative estimate, so its spend stays capped, and raises one
+    monitor alert a day."""
     import logging
 
-    world.rows = {"light": [("ollama", "writing_evaluator", None)] * 50
-                  + [("ollama-cloud", "writing_evaluator", None)] * 50}
+    estimate = learner_cost.unpriced_call_usd()
+    assert estimate == pytest.approx(0.0008) and estimate > 0
+    world.rows = {"light": [("ollama", "writing_evaluator", None)] * 500}
+    assert learner_cost.learner_cost_state("light").state == learner_cost.OK
+    assert learner_cost.learner_cost_state("light").spent_usd == 0.0
+    learner_cost.reset()
+    world.rows = {"light": [("ollama-cloud", "writing_evaluator", None)] * 10}
     with caplog.at_level(logging.ERROR):
         state = learner_cost.learner_cost_state("light")
-        learner_cost.reset()
-        learner_cost.learner_cost_state("light")
-    assert state.state == learner_cost.OK and state.spent_usd == 0.0
-    alerts = [r for r in caplog.records if "unpriced provider in use" in r.getMessage()]
-    assert alerts and alerts[0].levelno == logging.ERROR
-    assert "ollama" in learner_cost.uncounted_providers()
+    assert state.state == learner_cost.OK and state.spent_usd == pytest.approx(10 * estimate)
+    assert any("unpriced provider in use" in r.getMessage() for r in caplog.records)
+    learner_cost.reset()
+    world.rows = {"light": [("ollama-cloud", "writing_evaluator", None)] * 40}   # 0.032 USD: past Free's hard 0.03
+    assert learner_cost.learner_cost_state("light").state == learner_cost.REFUSE, "an unpriced paid provider is capped"
+    assert "ollama" in learner_cost.uncounted_providers() and "ollama-cloud" not in learner_cost.uncounted_providers()
+    assert learner_cost.estimate_call_usd("ollama-cloud", "gpt-oss:120b") == pytest.approx(estimate)
 
 
 def test_audio_rows_with_their_own_meter_do_not_fill_the_text_cap(world):
@@ -237,22 +244,20 @@ def test_audio_rows_with_their_own_meter_do_not_fill_the_text_cap(world):
     assert set(learner_cost.METERED_FEATURES) == {"agent_voice", "pronunciation_evaluator", "speech_asr", "word_tts"}
 
 
-def test_concurrent_calls_reserve_their_cost_so_a_cap_is_not_overshot(world):
-    """Twenty threads of one Free learner each ask before any row reaches the ledger: the reservations already held
-    stop the rest at the hard ceiling, where the ledger alone would have let every one through."""
+def test_concurrent_calls_are_admitted_atomically_so_a_cap_is_not_overshot(world):
+    """Twenty threads of one Free learner each ask `admit_paid` at once, before any row reaches the ledger: the state check
+    and the reservation are one step under the learner's lock, so exactly as many pass as the hard ceiling holds."""
     import threading
 
-    estimate, admitted, start = 0.005, [], threading.Barrier(20)
-    lock = threading.Lock()
+    economy = ProviderTarget("gemini", "gemini-3.1-flash-lite")   # the economy model: a degraded learner may still use it
+    estimate, admitted, refused, start = 0.005, [], [], threading.Barrier(20)
 
     def one_call():
         start.wait()
-        with lock:   # admission and reservation together, as the router's chain does per rung
-            state = learner_cost.learner_cost_state("heavy")
-            if state.state == learner_cost.REFUSE:
-                return
-            held = learner_cost.reserve("heavy", estimate)
-            admitted.append(held)
+        try:
+            admitted.append(learner_cost.admit_paid("heavy", economy, estimate))
+        except learner_cost.LearnerCostCapReached:
+            refused.append(1)
 
     threads = [threading.Thread(target=one_call) for _ in range(20)]
     for thread in threads:
@@ -260,14 +265,37 @@ def test_concurrent_calls_reserve_their_cost_so_a_cap_is_not_overshot(world):
     for thread in threads:
         thread.join()
     hard = learner_cost.daily_cap_usd("free") * policies.value(learner_cost.HARD_POLICY)
-    assert len(admitted) == int(round(hard / estimate)), "the in-flight sum reaches the hard ceiling, then refuses"
+    assert len(admitted) == int(round(hard / estimate)) and len(admitted) + len(refused) == 20
     assert learner_cost.in_flight_usd("heavy") == pytest.approx(len(admitted) * estimate)
-    assert learner_cost.learner_cost_state("light").state == learner_cost.OK, "another learner is not touched"
+    other = ProviderTarget("openai", "gpt-4o")
+    with pytest.raises(learner_cost.LearnerCostCapReached):
+        learner_cost.admit_paid("heavy", other, estimate)
+    learner_cost.admit_paid("light", other, estimate).release()   # another learner is not touched
     for held in admitted:
         held.release()
     assert learner_cost.in_flight_usd("heavy") == 0.0
+    # Settle, then invalidate: released estimates count until a ledger read newer than their release.
+    released = len(admitted) * estimate
+    assert learner_cost._settling_usd("heavy", read_at=-1.0) == pytest.approx(released), \
+        "a ledger read older than the release still counts the estimates (the rows may not be visible yet)"
+    assert learner_cost._settling_usd("heavy", read_at=float("inf")) == 0.0, "a newer read holds the rows: settled"
+    assert learner_cost._settling_usd("heavy", read_at=-1.0) == 0.0, "settled estimates are dropped"
     assert learner_cost.estimate_call_usd("ollama", "gemma3") == 0.0
     assert learner_cost.estimate_call_usd("gemini", "gemini-3.5-flash-lite", input_tokens=1000, output_tokens=100) > 0
+
+
+def test_a_single_selected_model_is_refused_only_at_the_hard_ceiling(world):
+    cap = learner_cost.daily_cap_usd("free")
+    target = ProviderTarget("openai", "gpt-4o")
+    world.spend = {"heavy": cap}   # degraded: no economy rung to give way to, the one model still answers
+    learner_cost.admit_paid("heavy", target, 0.0001, single_model=True).release()
+    with pytest.raises(learner_cost.LearnerCostCapReached):
+        learner_cost.admit_paid("heavy", target, 0.0001)
+    learner_cost.reset()
+    world.spend = {"heavy": cap * 2}
+    with pytest.raises(learner_cost.LearnerCostCapReached):
+        learner_cost.admit_paid("heavy", target, 0.0001, single_model=True)
+    assert learner_cost.admit_paid("heavy", ProviderTarget("ollama", "gemma3"), 0.0)._open is False, "local: no gate"
 
 
 def test_a_row_the_recorder_could_not_write_still_counts_and_is_retried(world, caplog):
@@ -334,8 +362,9 @@ def test_system_costs_never_reach_a_learner_cap(world):
 
 def test_a_free_learner_calling_ollama_cloud_20_times_is_never_degraded_or_refused(world):
     """Hermes for the owner (review of #487): Ollama Cloud is credits-based and publishes no per-token price, so its rows
-    are `unpriced`. A Free learner at USD 0.02 a day makes 20 calls; after each the state is read fresh from the ledger,
-    and the learner is never degraded or refused because of that accounting gap (recorded in D-251)."""
+    are `unpriced` and each counts the conservative estimate (USD 0.0008). A Free learner at USD 0.02 a day makes 20 calls
+    (USD 0.016); after each the state is read fresh from the ledger, and the learner is never degraded or refused. The
+    default and this fixture are chosen together (D-251 point 9): the 25th call reaches the cap."""
     from writing_coach.ai.pricing import resolve_token_pricing
 
     assert resolve_token_pricing("ollama-cloud", "gpt-oss:120b") is None, "no confirmed published price: unpriced"
@@ -348,4 +377,7 @@ def test_a_free_learner_calling_ollama_cloud_20_times_is_never_degraded_or_refus
         assert state.state == learner_cost.OK, f"call {call + 1}: {state.state}"
         assert learner_cost.admitted_chain([ProviderTarget("ollama-cloud", "gpt-oss:120b")], state) == [
             ProviderTarget("ollama-cloud", "gpt-oss:120b")]
-    assert state.spent_usd == 0.0
+    assert state.spent_usd == pytest.approx(20 * 0.0008)
+    world.rows["light"].extend([("ollama-cloud", "writing_evaluator", None)] * 5)   # the 25th call: the cap
+    learner_cost.reset()
+    assert learner_cost.learner_cost_state("light").state == learner_cost.DEGRADE

@@ -295,14 +295,14 @@ def test_the_learner_cap_degrades_to_the_economy_model_then_refuses_a_paid_only_
     from writing_coach.ai import learner_cost
 
     economy = routing.ProviderTarget("deepseek", DEEPSEEK_MODEL)
-    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda: _learner(learner_cost.DEGRADE, economy))
+    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda *a: _learner(learner_cost.DEGRADE, economy))
     result = ask("learner_dictionary")
     assert result.provider == "deepseek" and world.transport.hosts() == ["deepseek"], "the paid primary is skipped"
-    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda: _learner(learner_cost.REFUSE))
+    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda *a: _learner(learner_cost.REFUSE))
     with pytest.raises(learner_cost.LearnerCostCapReached):
         ask("learner_dictionary")
     assert world.transport.hosts() == ["deepseek"], "nothing is sent at the hard ceiling"
     assert world.repo.operations[-1]["failure_class"] == "not_counted", "not a provider outage"
-    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda: _learner(learner_cost.OK))
+    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda *a: _learner(learner_cost.OK))
     assert ask("learner_dictionary").provider == "deepseek"
     assert world.transport.hosts() == ["deepseek", "gemini", "deepseek"], "another learner: the whole chain"

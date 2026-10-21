@@ -7997,17 +7997,25 @@ built). D-248 point 2's hidden per-learner ceiling stands and is implemented her
    word audio's lifetime cap falls back to the free voice; each is reported to the owner, not changed here.
 7. **Published text.** No published legal document (docs/legal/public) promises a system spend ceiling; none changes.
 8. **What a learner's total counts** (independent review of #487, CHANGES REQUESTED, and Hermes for the owner):
-   - priced calls only. A call without a price counts **0** for the learner, never an allowance, and raises one monitor
-     alert a day ("unpriced provider in use"). The system monitor still counts it at its 0.01 USD allowance. An accounting
-     gap never throttles a learner.
+   - a **paid** call without a catalogue price counts a conservative per-call estimate, policy
+     `ai.learner_cost.unpriced_call_usd`, default **USD 0.0008** (above a typical 2,000-in / 500-out gpt-oss-120b-class
+     call at list price, about USD 0.0006), and raises one monitor alert a day ("unpriced provider in use"); the system
+     monitor still counts its 0.01 USD allowance (re-review of #487: USD 0 would leave a learner's paid spend uncapped and,
+     on credits, let one learner drain the shared balance). Only local and free-tier calls count 0.
    - no local model (`ollama`, cost 0) and no free-tier provider.
    - no feature with its own plan meter: `agent_voice` (voice minutes, D-249), `pronunciation_evaluator` (pronunciation
      minutes), `speech_asr` (the daily recognition brake), `word_tts` (`audio.tts`). They stay in the system monitor.
-   - calls in flight: each paid rung reserves its list-price estimate until it returns. Cost rows the per-account recorder
-     could not write are kept, retried and counted meanwhile (an ALERT is logged; nothing is dropped silently).
+   - calls in flight: before each paid call (the router's rungs and the single selected model) the learner's state is read
+     and the call's estimate reserved under that learner's lock, atomically. A released estimate keeps counting until a
+     ledger read newer than its release (settle, then drop). Reservations are per process: across workers the overshoot is
+     bounded by workers x one learner's concurrent calls x one call's estimate, and the ledger catches up within seconds -
+     the simple documented option, not a shared reservation store (which would be new persistence). Cost rows the
+     per-account recorder could not write are kept, retried and counted meanwhile (an ALERT is logged).
    - system costs (no signed-in account, an administrator's own runs) reach the monitor only, never a learner cap.
    - a public runtime also refuses to start when the per-account ledger is not wired and readable.
 9. **Recorded gap: Ollama Cloud has no confirmed per-token price.** It is credits-based and publishes none (#454 review),
-   so no number is invented: its rows are `unpriced`, count 0 in a learner's cap (a Free learner calling it 20 times is
-   never degraded or refused, `tests/test_learner_cost_cap.py`) and count the allowance in the system monitor. When the
-   owner confirms a price or a covered-credit rate, it is added to `ai/pricing.py` and is then counted.
+   so no price is invented and it is not classed free-tier (its credits are real, owner-held value, PR-MON-7: "never
+   $0"). Its rows are `unpriced` and count the conservative estimate (USD 0.0008 a call) in a learner's cap. The default and
+   the owner's fixture are chosen together: a Free learner (USD 0.02) calling it 20 times (USD 0.016) is never degraded or
+   refused; the 25th call reaches the cap (`tests/test_learner_cost_cap.py`). When the owner confirms a price or a
+   covered-credit rate, it goes into `ai/pricing.py` and replaces the estimate.

@@ -200,6 +200,10 @@ POLICIES: tuple[Policy, ...] = (
     _p("ai.learner_cost.vnd_per_usd", "spend", "int", 26_000, low=10_000, high=50_000),
     _p("ai.learner_cost.revenue_share", "spend", "float", 0.6, low=0.05, high=1, confirm_above=0.8),
     _p("ai.learner_cost.hard_ratio", "spend", "float", 1.5, low=1, high=5, confirm_above=3),
+    # What one paid call without a catalogue price counts in a learner's cap (re-review of #487): a conservative estimate,
+    # above a typical 2,000-in / 500-out gpt-oss-120b-class call at list price (~0.0006). Never 0: an unpriced paid
+    # provider (Ollama Cloud, an operator-added model) must stay capped per learner.
+    _p("ai.learner_cost.unpriced_call_usd", "spend", "float", 0.0008, unit="usd", low=0.0001, high=0.1, confirm_above=0.01),
     _p("ai.learner_cost.economy_model", "spend", "enum", "gemini/gemini-3.1-flash-lite",
        choices=("gemini/gemini-3.1-flash-lite", "gemini/gemini-3.5-flash-lite", "none")),
     # The share of the threshold at which the warning is logged and shown in Admin (owner, 2026-10-18: 80%).

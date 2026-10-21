@@ -22,17 +22,21 @@ the plan's monthly price spread over 30 days at `ai.learner_cost.vnd_per_usd` (d
 79.000 d -> about USD 0.061 a day, Pro 159.000 d -> about USD 0.122 a day, unless an administrator stores a USD figure.
 
 What the learner's text-AI total counts (review of #487):
-- **priced calls only.** A call recorded without a price (`unpriced`, e.g. Ollama Cloud, which publishes no per-token
-  price - a recorded gap) counts 0 here, never an allowance: an accounting gap never throttles a learner. Each UTC day
-  with unpriced calls in a learner total raises one monitor alert ("unpriced provider in use"). The system monitor
-  (ai/spend_gate.py) still counts them at its allowance.
-- **no local model** (`ollama`, our own machine: cost 0) and no free-tier provider.
+- **a paid call without a catalogue price** (`unpriced`: Ollama Cloud, which publishes no per-token price - a recorded
+  gap - or any operator-added model) counts a conservative per-call estimate, `ai.learner_cost.unpriced_call_usd`
+  (default USD 0.0008: above the list price of a typical 2,000-in / 500-out call on the gpt-oss-120b class, about USD
+  0.0006), so its paid spend stays capped. Each UTC day with such calls raises one monitor alert ("unpriced provider in
+  use"). At the default a Free learner (USD 0.02) makes 25 of them before the economy model and 37 before the hard
+  ceiling; 20 never throttle (the fixture in tests/test_learner_cost_cap.py).
+- **no local model** (`ollama`, our own machine: cost 0) and no free-tier provider (`cost.free_tier.*`): these count 0.
 - **no feature with its own plan meter**: `agent_voice` (voice minutes, D-249), `pronunciation_evaluator`
   (pronunciation minutes), `speech_asr` (the daily recognition brake), `word_tts` (the `audio.tts` meter and its own
   cap). Those are limited per learner by their meters; this cap is for text AI. (They stay in the system monitor.)
-- **calls in flight**: every paid call reserves its estimated cost (`reserve`) until it returns, so concurrent calls of
-  one learner cannot all pass a cap the ledger has not caught up with; and cost rows the per-account recorder could not
-  write yet (ai/account_costs.py keeps and retries them) are added from its pending queue.
+- **calls in flight**: before each paid call `admit_paid` reads the state and reserves the call's estimate under that
+  learner's lock, atomically, so concurrent calls of one learner cannot all pass. A released estimate keeps counting
+  until a ledger read newer than its release (settle, then drop). Reservations are per process: across workers the
+  overshoot is bounded by workers x one learner's concurrent calls x one call's estimate. Cost rows the per-account
+  recorder could not write yet (ai/account_costs.py keeps and retries them) are added from its pending queue.
 
 System costs: work with no signed-in account (background jobs, the media pipeline) and an administrator's own runs
 (origin `operator_test`, `configuration`, never recorded per account) are system costs. They reach the monitor only,
@@ -156,6 +160,7 @@ def reset() -> None:
     with _lock:
         _cache.clear()
         _inflight.clear()
+        _settling.clear()
         _unpriced_alerted.clear()
 
 
@@ -216,10 +221,18 @@ def uncounted_providers() -> tuple[str, ...]:
 
 
 _unpriced_alerted: set[str] = set()
+UNPRICED_POLICY = "ai.learner_cost.unpriced_call_usd"
+
+
+def unpriced_call_usd() -> float:
+    """What one PAID call without a catalogue price counts in a learner's cap (re-review of #487): a conservative
+    per-call estimate, never 0, so an unpriced paid provider (Ollama Cloud's credits, an operator-added model) cannot leave a
+    learner's paid spend uncapped. Local and free-tier calls are excluded before this, so they stay at 0."""
+    return float(policies.value(UNPRICED_POLICY))
 
 
 def note_unpriced(count: int, moment: datetime | None = None) -> None:
-    """A learner total held calls without a price: counted 0 for the learner, one monitor alert a UTC day."""
+    """A learner total held paid calls without a price: counted at `unpriced_call_usd` each, one monitor alert a UTC day."""
     if not count:
         return
     day = (moment or _now()).date().isoformat()
@@ -228,12 +241,26 @@ def note_unpriced(count: int, moment: datetime | None = None) -> None:
             return
         _unpriced_alerted.clear()
         _unpriced_alerted.add(day)
-    _log.error("ALERT unpriced provider in use: %d AI call(s) in a learner's cost today have no price; counted 0 for the "
-               "learner's cap (the system monitor counts them at its allowance). Add the model's price to ai/pricing.py.",
-               int(count))
+    _log.error("ALERT unpriced provider in use: %d paid AI call(s) in a learner's cost today have no catalogue price; "
+               "each counts the estimate %s USD in the learner's cap. Add the model's price to ai/pricing.py.",
+               int(count), unpriced_call_usd())
 
 
+# Reservations are held in this process. With several workers a learner's calls in flight on other workers are not seen
+# until their rows reach the ledger: the overshoot is bounded by (workers x one learner's concurrent calls x one call's
+# estimate) - a few cents at most - and the ledger, read fresh every CACHE_SECONDS, catches up (re-review of #487: the
+# simple, documented option, chosen over a shared reservation store, which would be a new persistence decision).
 _inflight: dict[str, float] = {}
+# Released reservations whose ledger row may not be visible yet: (released at, usd). Each counts until a ledger read that
+# started after it was released; then the row itself is counted (settle first, then the estimate is dropped).
+_settling: dict[str, list[tuple[float, float]]] = {}
+_STRIPES = 64
+_account_locks = [threading.Lock() for _ in range(_STRIPES)]
+
+
+def account_lock(account: str) -> threading.Lock:
+    """One learner's lock (striped): the state check and the reservation of a paid call happen under it together."""
+    return _account_locks[hash(account) % _STRIPES]
 
 
 class _Reservation:
@@ -250,7 +277,8 @@ class _Reservation:
                 _inflight[self.account] = left
             else:
                 _inflight.pop(self.account, None)
-            _cache.pop(self.account, None)   # the call's own row is in the ledger now (or pending): read it fresh
+            # Settle, then invalidate: the estimate keeps counting until a ledger read newer than this moment.
+            _settling.setdefault(self.account, []).append((_monotonic(), self.usd))
 
     def __enter__(self) -> _Reservation:
         return self
@@ -261,14 +289,15 @@ class _Reservation:
 
 def estimate_call_usd(provider: str, model: str, *, input_tokens: int | None = None,
                       output_tokens: int | None = None) -> float:
-    """A paid call's cost at list price before it is sent; 0 for a local, free or unpriced model."""
+    """A paid call's cost before it is sent: list price, or `unpriced_call_usd` for a paid model with no catalogue price;
+    0 for a local or free-tier one."""
     if provider_tier(provider, model) != "paid" or provider in uncounted_providers():
         return 0.0
     from writing_coach.ai.pricing import list_rate
 
     rates = list_rate(provider, model)
     if rates is None:
-        return 0.0
+        return unpriced_call_usd()
     tokens_in = ESTIMATE_INPUT_TOKENS if input_tokens is None else max(0, int(input_tokens))
     tokens_out = 500 if output_tokens is None else max(0, int(output_tokens))
     return (tokens_in * rates[0] + tokens_out * rates[1]) / 1_000_000
@@ -281,6 +310,23 @@ def reserve(account: str | None, usd: float) -> _Reservation:
         with _lock:
             _inflight[held.account] = _inflight.get(held.account, 0.0) + held.usd
     return held
+
+
+def admit_paid(account: str | None, target: ProviderTarget, usd: float, *, single_model: bool = False) -> _Reservation:
+    """The atomic step before one paid call: under the learner's lock, read the state (ledger + calls in flight) and, unless
+    the hard ceiling is reached, reserve the call's estimate. At the hard ceiling: `LearnerCostCapReached`. A degraded
+    learner may still use the economy model; `single_model` (one selected model with no economy rung to give way to) is
+    refused only at the hard ceiling. A local or free rung, or no account, needs no admission."""
+    if account in (None, *_NOT_AN_ACCOUNT) or provider_tier(target.provider, target.model) != "paid" or usd <= 0:
+        return _Reservation(None, 0.0)
+    with account_lock(account):
+        state = learner_cost_state(account)
+        economy = state.economy
+        is_economy = economy is not None and (target.provider, target.model) == (economy.provider, economy.model)
+        degraded_off = state.state == DEGRADE and not is_economy and not state.fault and not single_model
+        if state.state == REFUSE or degraded_off:
+            raise LearnerCostCapReached(state)
+        return reserve(account, usd)
 
 
 def in_flight_usd(account: str) -> float:
@@ -297,27 +343,39 @@ def _pending_usd(account: str, since: datetime) -> float:
         return 0.0
 
 
+def _settling_usd(account: str, read_at: float) -> float:
+    """Released estimates the ledger read taken at `read_at` cannot include yet; older ones are dropped (settled)."""
+    with _lock:
+        held = [item for item in _settling.get(account, []) if item[0] >= read_at]
+        if held:
+            _settling[account] = held
+        else:
+            _settling.pop(account, None)
+        return sum(usd for _at, usd in held)
+
+
 def _spent(account: str, since: datetime) -> float:
     now = _monotonic()
     with _lock:
         held = _cache.get(account)
         fresh = held is not None and now - held[0] < CACHE_SECONDS
     if fresh:
-        ledger = held[1]
+        read_at, ledger = held
     else:
         reader = _read
         if reader is None:
             raise RuntimeError("no per-account AI ledger")
+        read_at = now
         usd, unpriced = reader(account, since, exclude_providers=uncounted_providers(),
                                exclude_features=METERED_FEATURES)
         note_unpriced(int(unpriced))
-        ledger = float(usd)   # an unpriced call counts 0 for the learner (never an allowance)
+        ledger = float(usd) + int(unpriced) * unpriced_call_usd()
         with _lock:
-            _cache[account] = (now, ledger)
+            _cache[account] = (read_at, ledger)
             _cache.move_to_end(account)
             while len(_cache) > MAX_CACHED:
                 _cache.popitem(last=False)
-    return ledger + in_flight_usd(account) + _pending_usd(account, since)
+    return ledger + in_flight_usd(account) + _settling_usd(account, read_at) + _pending_usd(account, since)
 
 
 def ledger_wired() -> bool:

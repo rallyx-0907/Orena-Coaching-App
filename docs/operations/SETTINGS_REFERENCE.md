@@ -132,10 +132,12 @@ then raises a high-severity alert (log, provider health signal / health.log, Adm
 
 Every USD amount is measured at list price. A free-plan call counts at list price and an unpriced call at 0.01 USD in the
 system monitor. **A learner's text-AI cost cap counts differently** (review of #487):
-- priced calls only; an unpriced call counts 0 and raises a daily "unpriced provider in use" alert;
-- no local model, and no provider whose `cost.free_tier.*` flag is on;
+- a paid call without a catalogue price counts `ai.learner_cost.unpriced_call_usd` (0.0008) and raises a daily
+  "unpriced provider in use" alert;
+- no local model, and no provider whose `cost.free_tier.*` flag is on (these count 0);
 - no feature with its own plan meter (`agent_voice`, `pronunciation_evaluator`, `speech_asr`, `word_tts`);
-- plus every paid call in flight (its reservation) and every cost row not written yet.
+- plus every paid call in flight (reserved atomically with the state check, per learner, per process: across workers
+  the overshoot is bounded by workers x concurrent calls x one estimate) and every cost row not written yet.
 
 Ollama Cloud has no confirmed per-token price, so it is unpriced (a recorded gap, D-251 point 9). The media caps are
 counted separately.
@@ -150,6 +152,7 @@ counted separately.
 | `ai.learner_cost.vnd_per_usd` | Admin › Spend caps | 10 000–50 000 | 26 000 | The VND→USD rate the Plus and Pro defaults are derived with (an assumption, D-251). | Raise: lower USD caps. | 26 000 | the current rate | Wrong: caps drift from 60% of revenue. | plan caps | live |
 | `ai.learner_cost.revenue_share` | Admin › Spend caps | 0.05–1; confirm above 0.8 | 0.6 | The share of a plan's monthly price its learner's AI may cost (D-248: 60% of net revenue; gross list price used until net is known). | Raise: more AI per learner. | 0.6 | owner | Above 1 is a loss per learner. | plan caps | live |
 | `ai.learner_cost.hard_ratio` | Admin › Spend caps | 1–5; confirm above 3 | 1.5 | The hard ceiling as a multiple of the learner's cap: at it only free and local models answer that learner until UTC midnight. | Raise: the economy model answers longer. | 1.5 | 1.5 | Below 1 is refused at start. | plan caps | live |
+| `ai.learner_cost.unpriced_call_usd` | Admin › Spend caps | USD 0.0001–0.1; confirm above 0.01 | 0.0008 | What one paid call with no catalogue price (Ollama Cloud, an operator-added model) counts in a learner's cap. Never 0. At 0.0008 a Free learner makes 25 such calls before the economy model. | Raise: unpriced providers bind sooner. | 0.0008 | until real prices are in `ai/pricing.py` | Too low: an unpriced paid provider is nearly uncapped. | plan caps | live |
 | `ai.learner_cost.economy_model` | Admin › Spend caps | `gemini/gemini-3.1-flash-lite`, `gemini/gemini-3.5-flash-lite`, `none` | `gemini/gemini-3.1-flash-lite` | The paid model a learner's calls use between the cap and the hard ceiling. `none`: only free and local models. | — | default | default | A model the provider does not offer leaves only free rungs. | plan caps | live |
 | `agent.daily_spend_cap_usd` | Admin › Spend caps; pin `AGENT_DAILY_SPEND_CAP_USD` | USD 0.01–10 000, or "no cap"; confirm above 50 | no cap | Daily cap on Orena chat and voice. It fails closed when the store was never read. | Raise: more Orena use. Lower: Orena pauses sooner. | **Remove `AGENT_DAILY_SPEND_CAP_USD` from `runtime.env`** so Admin governs it; set it at or below the 2 USD ceiling | At or below the ceiling. Never "no cap". | "No cap" leaves only the system ceiling. | ceiling, `agent.*` limits | live (Admin); restart (pin) |
 | `media.daily_cap_usd` | Admin; pin `MEDIA_DAILY_CAP_USD` | USD 0–10 000; confirm above 250 | 25 | Daily cap on media import AI and speech recognition (admin imports). | Raise: more imports per day. | under the ceiling | 10–25, under the ceiling | Above the ceiling it has no effect; 0 blocks every import. | batch caps, price estimates | live |

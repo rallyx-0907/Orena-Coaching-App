@@ -1004,14 +1004,21 @@ def generate_structured(
             _require_paid_funding(capability_key or "legacy", provider_id, model,
                                   _effective_timeout(attempt_timeout, getattr(item, "timeout", None)))
             unaccounted["legacy"] = True
-            answer = item.generate_json(
-                messages=messages,
-                schema=schema,
-                model=model,
-                max_output_tokens=max_output_tokens,
-                temperature=temperature,
-                seed=seed,
-            )
+            # D-251 review: the single selected model reserves its estimate too, atomically with the state check.
+            legacy_usd = _learner_cost.estimate_call_usd(
+                provider_id or "", model or "", output_tokens=max_output_tokens,
+                input_tokens=max(1, sum(len(str(m.get("content") or "")) for m in messages if isinstance(m, dict)) // 3))
+            with _learner_cost.admit_paid(_learner_cost.current_account(),
+                                          ProviderTarget(provider_id or "", model or ""), legacy_usd,
+                                          single_model=True):
+                answer = item.generate_json(
+                    messages=messages,
+                    schema=schema,
+                    model=model,
+                    max_output_tokens=max_output_tokens,
+                    temperature=temperature,
+                    seed=seed,
+                )
             unaccounted["legacy"] = False
             return finish(answer)
 
@@ -1171,8 +1178,8 @@ def generate_structured(
             assert invalid is not None
             raise invalid
 
-        # D-251 review: a paid call holds its estimated cost against the learner while it is in flight, so concurrent
-        # calls cannot all pass a cap the ledger has not caught up with.
+        # D-251 review: before each paid rung the learner's state is read and the call's estimate reserved under that
+        # learner's lock (atomic), held until the call returns, so concurrent calls cannot all pass a cap.
         learner_account = learner.account
         input_estimate = max(1, sum(len(str(item.get("content") or "")) for item in messages
                                     if isinstance(item, dict)) // 3)
@@ -1180,7 +1187,7 @@ def generate_structured(
         def _ask_reserved(target: ProviderTarget) -> AIResult:
             usd = _learner_cost.estimate_call_usd(target.provider, target.model, input_tokens=input_estimate,
                                                   output_tokens=max_output_tokens)
-            with _learner_cost.reserve(learner_account, usd):
+            with _learner_cost.admit_paid(learner_account, target, usd):
                 return _ask(target)
 
         try:
