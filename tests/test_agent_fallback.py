@@ -204,3 +204,63 @@ def test_a_fallback_cleared_for_less_than_the_first_rung_is_withheld(hermetic): 
     assert _turn_with(SECOND, lower).fallback is None  # it would receive the same pack (G8)
     equal = ProviderDataClasses.parse("gemini=learning_profile,deepseek=learning_profile")
     assert _turn_with(SECOND, equal).fallback is not None
+
+
+# --- the learner's own daily AI cost cap on an agent round (D-251) ---------------------------------------------
+
+
+def _learner(monkeypatch, state, economy=SECOND):
+    from writing_coach.ai import learner_cost
+    from writing_coach.ai.routing import ProviderTarget
+
+    target = ProviderTarget(*economy) if economy else None
+    monkeypatch.setattr(learner_cost, "learner_cost_state", lambda user_key=None: learner_cost.LearnerCostState(
+        state, account="u1", plan="plus", economy=target, resets_at="2026-10-22T00:00:00Z"))
+    monkeypatch.setattr(platform, "agent_route_usable", lambda route: True)
+    monkeypatch.setattr(platform, "_legacy_privacy_guard", lambda capability, item, model: None)
+
+
+def test_over_the_plans_cap_a_paid_round_uses_the_economy_model(rig, monkeypatch):
+    from writing_coach.ai import learner_cost
+
+    telemetry, items = rig
+    _learner(monkeypatch, learner_cost.DEGRADE)
+    items["gemini"] = Selected(events=ANSWER, provider_id="gemini")
+    items["deepseek"] = Selected(events=ANSWER, provider_id="deepseek")
+    assert list(turn(fallback=None)) == ANSWER
+    assert items["gemini"].calls == []  # the selected paid model is not asked
+    assert telemetry[-1]["provider"] == "deepseek" and telemetry[-1]["learner_cost"] == "degraded"
+
+
+def test_at_the_hard_ceiling_a_paid_round_is_refused_and_nothing_is_asked(rig, monkeypatch):
+    from writing_coach.ai import learner_cost
+
+    _telemetry, items = rig
+    _learner(monkeypatch, learner_cost.REFUSE)
+    items["gemini"] = Selected(events=ANSWER, provider_id="gemini")
+    items["deepseek"] = Selected(events=ANSWER, provider_id="deepseek")
+    with pytest.raises(learner_cost.LearnerCostCapReached):
+        list(turn())
+    assert items["gemini"].calls == [] and items["deepseek"].calls == []
+
+
+def test_over_the_cap_with_no_economy_model_the_selected_one_answers_and_no_paid_fallback(rig, monkeypatch):
+    from writing_coach.ai import learner_cost
+
+    telemetry, items = rig
+    _learner(monkeypatch, learner_cost.DEGRADE, economy=None)
+    items["gemini"] = Selected(fail=spend_cap(), provider_id="gemini")
+    items["deepseek"] = Selected(events=ANSWER, provider_id="deepseek")
+    with pytest.raises(AIProviderError):
+        list(turn())  # the paid fallback is withheld from a degraded learner
+    assert items["deepseek"].calls == []
+    assert telemetry[0]["learner_cost"] == "degraded_no_economy"
+
+
+def test_under_the_cap_nothing_changes(rig, monkeypatch):
+    from writing_coach.ai import learner_cost
+
+    telemetry, items = rig
+    _learner(monkeypatch, learner_cost.OK)
+    items["gemini"] = Selected(events=ANSWER, provider_id="gemini")
+    assert list(turn()) == ANSWER and "learner_cost" not in telemetry[0]

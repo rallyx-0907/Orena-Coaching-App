@@ -22,6 +22,8 @@ def script(monkeypatch):
     spec.loader.exec_module(module)
     monkeypatch.setattr(module, "_account", lambda app, email: {"user_key": "sub-1", "role": "user"})
     monkeypatch.setattr(module, "_spend", lambda: {"ceiling_usd": 2.0, "spent_usd": 0.4, "reached": False})
+    monkeypatch.setattr(module, "_learner_cap", lambda user_key: {"state": "ok", "plan": "plus", "cap_usd": 0.1,
+                                                                   "spent_usd": 0.0, "fault": False})
     return module
 
 
@@ -37,7 +39,7 @@ def test_the_default_is_a_dry_run_that_calls_nothing(script, capsys, monkeypatch
     code, report = _run(script, capsys)
     assert code == 0 and report["execute"] is False and called == []
     assert report["account"] == "te***@example.com"  # never the email in full
-    assert report["f1_spend_lock_readable"] is True and len(report["would_run"]) == 4
+    assert report["f1_learner_cap_readable"] is True and len(report["would_run"]) == 4
 
 
 def test_an_unknown_account_is_refused(script, capsys, monkeypatch):
@@ -46,12 +48,24 @@ def test_an_unknown_account_is_refused(script, capsys, monkeypatch):
     assert code == 2 and report["refused"] == "no such account"
 
 
-def test_a_reached_or_nearly_reached_ceiling_refuses_before_any_call(script, capsys, monkeypatch):
-    monkeypatch.setattr(script, "_spend", lambda: {"ceiling_usd": 2.0, "spent_usd": 2.0, "reached": True})
-    assert _run(script, capsys, "--execute")[0] == 2
-    monkeypatch.setattr(script, "_spend", lambda: {"ceiling_usd": 2.0, "spent_usd": 1.99, "reached": False})
+def test_the_system_total_is_a_monitor_and_never_refuses_the_run(script, capsys, monkeypatch):
+    """D-251: no app-wide cap - a system total past its old ceiling refuses nothing."""
+    monkeypatch.setattr(script, "_spend", lambda: {"ceiling_usd": 2.0, "spent_usd": 2.5, "reached": True})
+    code, report = _run(script, capsys)
+    assert code == 0 and "refused" not in report
+
+
+def test_an_account_at_its_plans_ceiling_is_refused_before_any_call(script, capsys, monkeypatch):
+    monkeypatch.setattr(script, "_learner_cap", lambda user_key: {"state": "refuse", "plan": "free", "cap_usd": 0.02,
+                                                                   "spent_usd": 0.03, "fault": False})
     code, report = _run(script, capsys, "--execute")
-    assert code == 2 and "past the ceiling" in report["refused"]
+    assert code == 2 and "plan's daily AI ceiling" in report["refused"]
+
+
+def test_an_unreadable_learner_cap_is_reported(script, capsys, monkeypatch):
+    monkeypatch.setattr(script, "_learner_cap", lambda user_key: {"state": "degrade", "plan": "plus", "cap_usd": 0.1,
+                                                                   "spent_usd": None, "fault": True})
+    assert _run(script, capsys)[1]["f1_learner_cap_readable"] is False
 
 
 def test_execute_runs_the_four_checks_as_the_account_and_reports_the_run_spend(script, capsys, monkeypatch):

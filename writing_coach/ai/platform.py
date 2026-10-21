@@ -725,8 +725,10 @@ def stream_agent_turn(
     text rule (`agent_fallback_route`). Each attempt is recorded in the AI operation telemetry under `agent_turn_fast`,
     the one that answered after a switch with `provider_switch`; each counts toward the spend gates as any round."""
 
+    route, fallback, cost_note = _learner_cost_route(route, fallback)
     kwargs = dict(messages=messages, tools=tools, max_output_tokens=max_output_tokens, temperature=temperature,
-                  should_stop=should_stop, timeout_seconds=timeout_seconds, tool_choice=tool_choice)
+                  should_stop=should_stop, timeout_seconds=timeout_seconds, tool_choice=tool_choice,
+                  learner_cost=cost_note)  # fmt: skip
     first = route
     if fallback is None or tuple(fallback) == tuple(first or ()):
         return _agent_round(route=first, **kwargs)
@@ -736,6 +738,39 @@ def stream_agent_turn(
         return _agent_round(route=fallback, switch={"from": first_id[0], "to": fallback[0], "reason": reason,
                                                     "trigger": "down"}, **kwargs)  # fmt: skip
     return _with_fallback(first, first_id, fallback, kwargs)
+
+
+def _learner_cost_route(route: tuple[str, str] | None, fallback: tuple[str, str] | None
+                        ) -> tuple[tuple[str, str] | None, tuple[str, str] | None, str | None]:  # fmt: skip
+    """The learner's own daily AI cost cap (D-251, ai/learner_cost.py) on an agent round. A local or free-tier model is
+    never capped. Over the plan's cap (`degrade`) a paid round uses the economy model when it can take agent turns
+    here and may receive learner text (D-104); without one the selected model answers until the hard ceiling, like one
+    selected model in `generate_structured`. A degraded round has no paid fallback other than the economy model. At
+    the hard ceiling (`refuse`) a paid round is refused (`LearnerCostCapReached`; the route already refused the turn at
+    admission, this holds for a race). Returns the round's route, fallback and the telemetry note."""
+
+    first = route if route is not None else _selection_route()
+    if first is None or provider_tier(*first) != "paid":
+        return route, fallback, None
+    state = _learner_cost.learner_cost_state()
+    if state.state == _learner_cost.OK:
+        return route, fallback, None
+    if state.state == _learner_cost.REFUSE:
+        raise _learner_cost.LearnerCostCapReached(state)
+    economy = state.economy
+    target = (economy.provider, economy.model) if economy is not None else None
+    usable = False
+    if target is not None and target != tuple(first):
+        try:
+            usable = agent_route_usable(target)
+            _legacy_privacy_guard(None, _route_item(target), target[1])
+        except Exception:  # noqa: BLE001 - not usable for learner text here: the selected model answers
+            usable = False
+    if not usable:
+        kept = fallback if fallback is None or provider_tier(*fallback) != "paid" else None
+        return route, kept, "degraded_no_economy"
+    kept = fallback if fallback is not None and provider_tier(*fallback) != "paid" else None
+    return target, kept, "degraded"
 
 
 def _selection_route() -> tuple[str, str] | None:
@@ -759,8 +794,8 @@ def _with_fallback(first: tuple[str, str] | None, first_id: tuple[str, str] | No
     except (AICapabilityError, AIProviderError) as exc:
         if isinstance(exc, AICapabilityError) and not isinstance(exc, AIProviderUnavailable):
             raise  # a configuration refusal is not fixed by asking someone else
-        if isinstance(exc, spend_gate.SpendCeilingReached):
-            raise  # the system's own daily ceiling: every paid rung is refused alike
+        if isinstance(exc, (spend_gate.SpendCeilingReached, _learner_cost.LearnerCostCapReached)):
+            raise  # our own limits, not a provider failure: no other rung is asked
         _logger.warning("agent first rung failed before answering (%s); falling back to %s", type(exc).__name__,
                      fallback[0])  # fmt: skip
         switch = {"from": first_id[0] if first_id else None, "to": fallback[0],
@@ -788,6 +823,7 @@ def _agent_round(
     route: tuple[str, str] | None = None,
     tool_choice: str | None = None,
     switch: dict[str, Any] | None = None,
+    learner_cost: str | None = None,
 ) -> Iterator[ChatStreamEvent]:
     """One provider attempt of an agent round (the body `stream_agent_turn` had before D-247)."""
 
@@ -827,6 +863,7 @@ def _agent_round(
                 "quota_available": "unknown",
                 "billable_attempt": sent["request"],
                 **({"provider_switch": switch} if switch else {}),
+                **({"learner_cost": learner_cost} if learner_cost else {}),
             }
         )
         # The shared breaker (PR BZ): a provider that failed is skipped by the next rounds while it cools down.

@@ -10,7 +10,8 @@ four D1 checks the owner would otherwise do signed in (OWNER_ADMIN_STEPS_8000_20
 3. one Writing review (`POST /api/evaluate`) - it is stored on the test account, as a learner's would be;
 4. a Listening meaning (`POST /api/media-learning/explain`).
 
-Plus F1 (the system spend lock is readable and not tripped) and the spend of the run itself.
+Plus F1 - since D-251 the test account's own daily AI cost cap (by plan) is readable; the system total is a
+monitor - and the spend of the run itself.
 
 How it runs: inside the application container, importing the app, with each check called as the app's route function
 under that account's learner context (the same context its signed-in requests run in). No session is made or forged,
@@ -23,7 +24,7 @@ no SQL is written by hand, no secret is read or printed. The account is found by
         --actor "hermes-supervisor (on behalf of Calis)"
 
 Prints one JSON object (no learner text beyond the fixed probe sentences, no email in full). Exit 0 every check passed
-(or a clean dry run), 1 a check failed, 2 refused before running (no account, ceiling reached, over budget).
+(or a clean dry run), 1 a check failed, 2 refused before running (no account, or the account at its plan's ceiling).
 """
 
 from __future__ import annotations
@@ -70,6 +71,16 @@ def _account(app: Any, email: str) -> dict[str, Any] | None:
     with Session(engine) as session:
         user = session.scalars(select(User).where(func.lower(User.email) == email.strip().casefold())).first()
         return None if user is None else {"user_key": user.user_key, "role": user.role}
+
+
+def _learner_cap(user_key: str) -> dict[str, Any]:
+    """The account's own daily AI cost state (D-251, ai/learner_cost.py): ok / degrade / refuse, its cap and today's
+    spend. Figures are for the operator only - never shown to a learner."""
+    from writing_coach.ai import learner_cost
+
+    state = learner_cost.learner_cost_state(user_key)
+    return {"state": state.state, "plan": state.plan, "cap_usd": state.cap_usd, "spent_usd": state.spent_usd,
+            "fault": state.fault}
 
 
 def _spend() -> dict[str, Any]:
@@ -168,19 +179,15 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(report, ensure_ascii=False))
         return 2
     report["role"] = account["role"]
-    before = _spend()
+    before = _spend()  # the system's daily total: a monitor since D-251, read for the run's own spend
     report["spend_before"] = before
-    cap = before.get("ceiling_usd")
-    spent = before.get("spent_usd")
-    # F1: the system spend lock reads and is not tripped (a reached ceiling refuses the run before any call)
-    f1_ok = cap is not None and spent is not None and not before.get("reached")
-    report["f1_spend_lock_readable"] = f1_ok
-    if before.get("reached"):
-        report["refused"] = "the system's daily AI ceiling is reached"
-        print(json.dumps(report, ensure_ascii=False))
-        return 2
-    if cap is not None and spent is not None and float(spent) + ESTIMATE_USD > float(cap):
-        report["refused"] = "this run could take the day past the ceiling"
+    # F1 (D-251): the test account's own daily AI cost cap reads - the limit that refuses now, per learner by plan
+    learner = _learner_cap(account["user_key"])
+    report["learner_cost"] = learner
+    f1_ok = learner.get("cap_usd") is not None and not learner.get("fault")
+    report["f1_learner_cap_readable"] = f1_ok
+    if learner.get("state") == "refuse":
+        report["refused"] = "the test account is at its plan's daily AI ceiling"
         print(json.dumps(report, ensure_ascii=False))
         return 2
     plan = ["chat_turn", "why_here", "writing_review (stored on the test account)", "listening_meaning"]
