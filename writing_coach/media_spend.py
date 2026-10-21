@@ -84,14 +84,11 @@ def _now() -> datetime:
 
 
 def _system_ceiling() -> None:
-    """A paid media step (ASR, media AI) is refused once the system's daily AI spend ceiling is reached
-    (ai/spend_gate.py, owner 2026-10-18), with the day limit's own code so the operator sees a known reason."""
+    """Tick the system's daily AI spend monitor before a paid media step (ai/spend_gate.py). Since D-251 it alerts and
+    never refuses; the media caps below decide."""
     from writing_coach.ai import spend_gate
 
-    if spend_gate.ceiling_reached():
-        status = spend_gate.ceiling_status()
-        raise SpendCapReached("spend_cap_day", limit=float(status.get("ceiling_usd") or 0.0),
-                              spent=float(status.get("spent_usd") or 0.0), scope="system")
+    spend_gate.observe()
 
 
 class SpendLedger:

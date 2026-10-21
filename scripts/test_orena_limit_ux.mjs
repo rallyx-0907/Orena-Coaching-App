@@ -58,13 +58,13 @@ copy.setLanguages({ ui: 'en', support: 'en' });
   assert.equal(notice.pausedLineOf(err(503, 'provider_unavailable')), '', 'another 503 is the room\'s own failure line');
 }
 
-// G4: pronunciation scoring recognises the $5 ceiling (body or header) and never offers Retry.
+// G4: pronunciation scoring recognises the agent's daily_ai_limit body (D-251: no header) and never offers Retry.
 {
   const resets = inHours(5);
   const body = failureOf(err(429, 'daily_ai_limit', { context: { resets_at: resets } }));
   assert.deepEqual([body.kind, body.retry], ['paused', false]);
   const header = failureOf(err(503, '', { aiPaused: resets }));
-  assert.deepEqual([header.kind, header.retry], ['paused', false], 'the pause header on any answer');
+  assert.notEqual(header.kind, 'paused', 'D-251: no AI-paused header any more; a 503 is its own failure');
   assert.equal(notice.pausedLineOf(body.error), notice.pausedMessage(resets), 'the existing AI-paused sentence, with the time');
   assert.ok(notice.pausedLineOf(body.error).startsWith("Orena's AI is paused for today."));
   assert.equal(failureOf(err(429, 'rate_limited')).retry, false);

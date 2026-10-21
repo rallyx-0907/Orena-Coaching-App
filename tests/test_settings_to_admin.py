@@ -198,9 +198,9 @@ def test_the_ceiling_gate_applies_an_admin_change_without_a_restart():
         with installed(MemoryPolicyStore(), env={"AI_DAILY_SPEND_CEILING_USD": "5"}):
             spend_gate.configure_ceiling(spend_gate.live_ceiling, read=lambda since: (1.5, 0),
                                          warn_ratio=spend_gate.live_warn_ratio)
-            assert spend_gate.ceiling_usd() == 5.0 and not spend_gate.ceiling_reached(mark=False)
+            assert spend_gate.ceiling_usd() == 5.0 and not spend_gate.ceiling_status()["reached"]
             save({"set": {key: 1.0, "ai.daily_spend_warn_ratio": 0.5}})
-            assert spend_gate.ceiling_usd() == 1.0 and spend_gate.ceiling_reached(mark=False)
+            assert spend_gate.ceiling_usd() == 1.0 and spend_gate.ceiling_status()["reached"]  # an alert (D-251)
             assert spend_gate.ceiling_status()["ceiling_usd"] == 1.0
     finally:
         spend_gate.configure_ceiling(None, read=None)

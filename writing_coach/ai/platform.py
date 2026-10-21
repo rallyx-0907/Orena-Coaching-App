@@ -36,6 +36,7 @@ from writing_coach.ai.base import (
     telemetry_error_class,
 )
 from writing_coach.ai import routing as _routing
+from writing_coach.ai import learner_cost as _learner_cost
 from writing_coach.ai import spend_gate
 from writing_coach.ai.capabilities import AIOperation, require_capability
 from writing_coach.ai.config import (
@@ -441,10 +442,9 @@ def _funded_gate(capability_key: str, budget: Callable[[ProviderTarget], str | N
     from writing_coach.billing import funding_context
 
     def admit(target: ProviderTarget) -> str | None:
-        # The system-wide daily ceiling first (ai/spend_gate.py): every paid rung, a routed primary and the rung of an
-        # uncapped capability too; local and free rungs run on.
-        if provider_tier(target.provider, target.model) == "paid" and spend_gate.ceiling_reached():
-            return spend_gate.CEILING_REASON
+        # The system's daily spend is a monitor since D-251 (ai/spend_gate.py): ticked for every paid rung, never a refusal.
+        if provider_tier(target.provider, target.model) == "paid":
+            spend_gate.observe()
         refused = budget(target) if budget is not None else None
         if refused is not None:
             return refused
@@ -478,8 +478,7 @@ def _require_paid_funding(capability: str, provider: str | None, model: str | No
     from writing_coach.billing import funding_context
 
     if provider and provider_tier(provider, model or "") == "paid":
-        if spend_gate.ceiling_reached():  # the system-wide daily ceiling (ai/spend_gate.py), before anything is sent
-            raise spend_gate.SpendCeilingReached()
+        spend_gate.observe()  # the system's daily spend monitor (ai/spend_gate.py, D-251): it alerts, it never refuses
         funding_context.require_paid(capability=capability, provider=provider, timeout_seconds=timeout or 0.0)
 
 
@@ -995,19 +994,31 @@ def generate_structured(
             if not item.configured:
                 raise AIProviderUnavailable(f"{item.name} is not configured.")
             _legacy_privacy_guard(capability_key, item, model)
+            if provider_tier(provider_id or "", model or "") == "paid":
+                # D-251: one selected model has no economy rung to give way to; at the hard ceiling it is refused.
+                learner = _learner_cost.learner_cost_state()
+                if learner.state == _learner_cost.REFUSE:
+                    raise _learner_cost.LearnerCostCapReached(learner)
 
             # Do not silently fail over to a paid provider.
             _require_paid_funding(capability_key or "legacy", provider_id, model,
                                   _effective_timeout(attempt_timeout, getattr(item, "timeout", None)))
             unaccounted["legacy"] = True
-            answer = item.generate_json(
-                messages=messages,
-                schema=schema,
-                model=model,
-                max_output_tokens=max_output_tokens,
-                temperature=temperature,
-                seed=seed,
-            )
+            # D-251 review: the single selected model reserves its estimate too, atomically with the state check.
+            legacy_usd = _learner_cost.estimate_call_usd(
+                provider_id or "", model or "", output_tokens=max_output_tokens,
+                input_tokens=max(1, sum(len(str(m.get("content") or "")) for m in messages if isinstance(m, dict)) // 3))
+            with _learner_cost.admit_paid(_learner_cost.current_account(),
+                                          ProviderTarget(provider_id or "", model or ""), legacy_usd,
+                                          single_model=True):
+                answer = item.generate_json(
+                    messages=messages,
+                    schema=schema,
+                    model=model,
+                    max_output_tokens=max_output_tokens,
+                    temperature=temperature,
+                    seed=seed,
+                )
             unaccounted["legacy"] = False
             return finish(answer)
 
@@ -1075,6 +1086,25 @@ def generate_structured(
                 refused = spend_gate.paid_refused(definition.key, cap_policy, provider=target.provider,
                                                   model=target.model)
                 return "budget" if refused else None
+
+        # D-251: the learner's own daily cost cap, by plan. At the cap the paid rungs give way to the economy model; at
+        # the hard ceiling only free and local rungs run, and a chain of paid rungs alone is refused (429 quota_exhausted).
+        learner = _learner_cost.learner_cost_state()
+        if learner.state != _learner_cost.OK:
+            chain = _learner_cost.admitted_chain(chain, learner)
+            if not chain:
+                raise _learner_cost.LearnerCostCapReached(learner)
+            economy = learner.economy if learner.state == _learner_cost.DEGRADE else None
+            if economy is not None and budget is not None:
+                capability_budget = budget
+
+                def budget(target: ProviderTarget) -> str | None:
+                    # The learner's economy model answers under the learner's own cap, not the capability's backup cap
+                    # (a routed backup's 0 means "no reviewed backup", not "no economy model"); privacy and funding
+                    # still gate it.
+                    if (target.provider, target.model) == (economy.provider, economy.model):
+                        return None
+                    return capability_budget(target)
 
         gate = _funded_gate(definition.key, budget,
                             lambda target: _effective_timeout(_timeout_for(target), _provider_timeout(target.provider)))
@@ -1148,9 +1178,21 @@ def generate_structured(
             assert invalid is not None
             raise invalid
 
+        # D-251 review: before each paid rung the learner's state is read and the call's estimate reserved under that
+        # learner's lock (atomic), held until the call returns, so concurrent calls cannot all pass a cap.
+        learner_account = learner.account
+        input_estimate = max(1, sum(len(str(item.get("content") or "")) for item in messages
+                                    if isinstance(item, dict)) // 3)
+
+        def _ask_reserved(target: ProviderTarget) -> AIResult:
+            usd = _learner_cost.estimate_call_usd(target.provider, target.model, input_tokens=input_estimate,
+                                                  output_tokens=max_output_tokens)
+            with _learner_cost.admit_paid(learner_account, target, usd):
+                return _ask(target)
+
         try:
             outcome = run_chain(
-                chain, _ask, on_attempt=_record_attempt(capability_key, router_version,
+                chain, _ask_reserved, on_attempt=_record_attempt(capability_key, router_version,
                                                         sent=lambda: unaccounted.pop("rung", False)),
                 deadline=deadline,
                 health=health, admit=admit,

@@ -78,7 +78,8 @@ console.log('Admin control-center rendering and truthful state checks passed');
   const warned = page({ ...ceiling, spent_usd: 4.0, ratio: 0.8, warned: true });
   assert.ok(warned.includes('data-tone="warn"') && warned.includes('AI spend today $4.00 of $5.00 - 80% reached'), 'the warning at 80%');
   const paused = page({ ...ceiling, spent_usd: 5.01, ratio: 1.002, warned: true, reached: true });
-  assert.ok(paused.includes('data-tone="err"') && paused.includes('AI paused until') && !paused.includes('80% reached'), 'paused at 100%');
+  assert.ok(paused.includes('data-tone="err"') && paused.includes('AI spend alert: $5.01 of $5.00 today') && !paused.includes('80% reached'), 'a high-severity alert at 100%');
+  assert.ok(paused.includes('AI keeps running') && !paused.includes('AI paused'), 'D-251: the monitor never says AI is paused');
   assert.ok(!paused.includes('Invalid Date'));
   console.log('Admin AI spend ceiling notice checks passed');
 }

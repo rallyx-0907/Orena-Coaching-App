@@ -24,9 +24,9 @@ const titleKey = {
   adminOperations: 'navOperations', adminWorkers: 'opWorkers', adminPolling: 'opPolling', adminErrors: 'opErrors',
 };
 
-/* The system AI ceiling (GET /api/admin/ai-spend, `system`): nothing below the warning, the warning strip once the server
-   says `warned`, and "AI paused until ..." once `reached`. The design draws no system-ceiling notice, so this is the
-   existing banner (UI_BACKEND_GAPS.md, "AI spend ceiling notice"). */
+/* The system AI spend monitor (GET /api/admin/ai-spend, `system`; D-251: it alerts, it never pauses AI): nothing below the
+   warning, the warning strip once the server says `warned`, and the high-severity alert once `reached`. The design draws
+   no system-spend notice, so this is the existing banner (UI_BACKEND_GAPS.md, "AI spend ceiling notice"). */
 export function spendBanner(spend, href) {
   const system = spend?.system;
   if (!system || !system.ceiling_usd || !(system.reached || system.warned)) return '';
@@ -35,11 +35,7 @@ export function spendBanner(spend, href) {
   const spent = money(Number(system.spent_usd) || 0);
   const cap = money(Number(system.ceiling_usd));
   const actions = [{ label: t('navAi'), a: 'go', data: { to: href('adminAi') } }];
-  if (system.reached) {
-    const at = system.resets_at ? new Date(system.resets_at) : null;
-    const when = at && !Number.isNaN(at.getTime()) ? new Intl.DateTimeFormat(ui, { dateStyle: 'medium', timeStyle: 'short' }).format(at) : t('opUnavailable');
-    return banner({ tone: 'err', title: t('spPausedTitle', { when }), text: t('spPausedText', { spent, cap }), actions });
-  }
+  if (system.reached) return banner({ tone: 'err', title: t('spReachedTitle', { spent, cap }), text: t('spReachedText'), actions });
   const pct = Math.round((Number(system.ratio) || 0) * 100);
   return banner({ tone: 'warn', title: t('spWarnTitle', { spent, cap, pct }), text: t('spWarnText'), actions });
 }

@@ -9,7 +9,10 @@ Kept 13 months, then deleted automatically: the write path starts a sweep at mos
 request thread, in bounded batches through a repository method that deletes cost records and nothing else.
 
 Before the table exists (migration 20261005_0026, applied per runtime by the operator), or on any database error,
-recording pauses for five minutes and then tries again; nothing a learner does ever fails because of it. An
+writing pauses for five minutes and then tries again; nothing a learner does ever fails because of it. A row that could
+not be written is never dropped silently (review of #487): it is kept in a bounded in-process queue, retried before the
+next write, counted in that learner's per-learner cost cap meanwhile (`pending_usd`, ai/learner_cost.py), and the
+failure is logged as an ALERT. Rows past the queue's bound are counted and alerted, never silently lost. An
 administrator's connection test and configuration checks are not an account's spend and are not recorded.
 
 Unlike the agent.turn sweep, this one has no off switch: automatic deletion at 13 months is the human's decision
@@ -20,6 +23,7 @@ from __future__ import annotations
 
 import logging
 import threading
+from collections import deque
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -32,6 +36,7 @@ RETRY_AFTER = timedelta(minutes=5)
 # Calls made for the operator, not the account in whose request they ran.
 _NOT_SPEND = frozenset({"operator_test", "configuration"})
 SWEEP_BATCH = 5000
+MAX_PENDING = 5000   # rows kept for a retry while the table cannot be written
 MAX_BATCHES = 20
 # Request contexts that are not a signed-in account: nothing is recorded for them.
 _NOT_AN_ACCOUNT = frozenset({"", "legacy", "local-admin", "local"})
@@ -50,6 +55,8 @@ class AccountCostRecorder:
         self._lock = threading.Lock()
         self._paused_until: datetime | None = None
         self._last_sweep: datetime | None = None
+        self._pending: deque[tuple[str, dict[str, Any], datetime]] = deque()
+        self.dropped = 0   # rows lost past MAX_PENDING (alerted)
 
     def record(self, user_key: str, event: dict[str, Any]) -> bool:
         """Record one telemetry event for this account, if it was a provider call that answered."""
@@ -62,20 +69,65 @@ class AccountCostRecorder:
             return False
         if event.get("origin") in _NOT_SPEND:
             return False
-        if self._paused_until is not None and self._now() < self._paused_until:
-            return False
         writer = getattr(self._repository, "record_ai_cost", None)
         if not callable(writer):
+            return False
+        if self._paused_until is not None and self._now() < self._paused_until:
+            self._keep(user_key, event)
+            return False
+        if not self._flush(writer):
+            self._keep(user_key, event)
             return False
         try:
             written = bool(writer(user_key, event))
         except Exception as error:  # noqa: BLE001 - the table may not exist yet; a learner never pays for it
-            _log.warning("AI cost per account not recorded (%s); retrying in %s", type(error).__name__, RETRY_AFTER)
-            self._paused_until = self._now() + RETRY_AFTER
+            self._failed(error)
+            self._keep(user_key, event)
             return False
         self._paused_until = None
         self.maybe_sweep()
         return written
+
+    def _failed(self, error: BaseException) -> None:
+        _log.error("ALERT AI cost per account not written (%s); the row is kept and retried in %s, and it still counts "
+                   "in the learner's cost cap", type(error).__name__, RETRY_AFTER)
+        self._paused_until = self._now() + RETRY_AFTER
+
+    def _keep(self, user_key: str, event: dict[str, Any]) -> None:
+        with self._lock:
+            if len(self._pending) >= MAX_PENDING:
+                self._pending.popleft()
+                self.dropped += 1
+                _log.error("ALERT AI cost rows lost: the retry queue is full (%d dropped so far)", self.dropped)
+            self._pending.append((user_key, dict(event), self._now()))
+
+    def _flush(self, writer: Callable[[str, dict[str, Any]], Any]) -> bool:
+        """Write the kept rows, oldest first; False (and paused again) at the first that still fails."""
+        while True:
+            with self._lock:
+                if not self._pending:
+                    return True
+                user_key, event, _at = self._pending[0]
+            try:
+                writer(user_key, event)
+            except Exception as error:  # noqa: BLE001
+                self._failed(error)
+                return False
+            with self._lock:
+                if self._pending and self._pending[0][1] is event:
+                    self._pending.popleft()
+
+    def pending_usd(self, user_key: str, since: datetime) -> float:
+        """The cost of this account's rows not written yet, since `since` (counted in its per-learner cap)."""
+        with self._lock:
+            rows = [event for key, event, at in self._pending if key == user_key and at >= since]
+        total = 0.0
+        for event in rows:
+            cost = event.get("cost") if isinstance(event.get("cost"), dict) else {}
+            amount = cost.get("amount")
+            if isinstance(amount, (int, float)) and amount > 0:
+                total += float(amount)
+        return total
 
     def maybe_sweep(self) -> None:
         now = self._now()
@@ -112,6 +164,11 @@ def install(repository: Any) -> None:
     global _recorder
     _recorder = (AccountCostRecorder(repository, days=lambda: policies.value("ai_costs.retention_days"))
                  if repository is not None else None)
+
+
+def pending_usd(user_key: str, since: datetime) -> float:
+    """Rows of this account not written to `ai_cost_records` yet (ai/learner_cost.py adds them to the learner total)."""
+    return _recorder.pending_usd(user_key, since) if _recorder is not None else 0.0
 
 
 def record_for_current_account(event: dict[str, Any]) -> None:

@@ -209,16 +209,18 @@ def test_the_spend_ceiling_is_charged_at_deepseeks_rate(world):
     assert spend_gate.ceiling_status()["ceiling_usd"] == 2.0
 
 
-def test_the_ceiling_stops_the_paid_backup_once_reached(world, monkeypatch):
+def test_the_monitor_alerts_but_never_stops_the_paid_backup(world, monkeypatch):
+    """D-251: the system total past its threshold is an alert, not a lock: the next learner is still answered."""
     import writing_coach.agent.budget as budget
 
     monkeypatch.setattr(budget, "CACHE_SECONDS", 0.0)   # read the ledger at each check, not the 5-second verdict
     spend_gate.configure_ceiling(0.0005, read=world.repo.ai_spend_since)
-    ask("learner_dictionary")   # 0.0009 USD at DeepSeek's rate: the ceiling is now reached
-    assert spend_gate.ceiling_status()["reached"] is True
-    with pytest.raises(routing.AllProvidersUnavailable):
-        ask("writing_evaluator")
-    assert world.transport.hosts() == ["gemini", "deepseek"], "no paid rung is asked once the ceiling is reached"
+    ask("learner_dictionary")   # 0.0009 USD at DeepSeek's rate: the threshold is now reached
+    status = spend_gate.ceiling_status()
+    assert status["reached"] is True and status["severity"] == "high"
+    before = len(world.transport.hosts())
+    assert ask("writing_evaluator") is not None
+    assert len(world.transport.hosts()) > before, "a paid rung is still asked past the monitor's threshold"
 
 
 def test_d104_still_lets_deepseek_receive_learner_text():
@@ -262,15 +264,45 @@ def test_the_retry_passes_the_spend_gate_again(world, monkeypatch):
     routing.provider_health.record_failure("gemini", "spend_cap")
     world.transport.deepseek = ['{"ok": tr', '{"ok": true}']
     monkeypatch.setattr(budget, "CACHE_SECONDS", 0.0)   # read the ledger at each check, not the 5-second verdict
-    # The ceiling is reached by the first (malformed) answer's own cost: the retry is refused, not assumed.
+    # The monitor's threshold is reached by the first (malformed) answer's own cost: the retry is admitted again through
+    # the gate (never assumed), and D-251's monitor does not refuse it.
     one_call = (PROMPT_TOKENS * 0.30 + COMPLETION_TOKENS * 1.20) / 1_000_000
     spend_gate.configure_ceiling(one_call * 0.99, read=world.repo.ai_spend_since)
-    with pytest.raises(AIProviderResponseInvalid):
-        ask("learner_dictionary")
-    assert world.transport.hosts() == ["deepseek"], "the retry is another paid call: refused at the ceiling"
+    assert ask("learner_dictionary").data == {"ok": True}
+    assert world.transport.hosts() == ["deepseek", "deepseek"], "the retry passes the gate: the monitor only alerts"
+    assert spend_gate.ceiling_status()["reached"] is True
 
 
 def test_the_streaming_agent_turn_has_no_json_retry():
     import inspect
 
     assert "MALFORMED_JSON_RETRIES" not in inspect.getsource(platform.stream_agent_turn)
+
+
+# ===================================================================== D-251: the learner's own daily cost cap ==
+
+def _learner(state, economy=None):
+    from writing_coach.ai import learner_cost
+
+    return learner_cost.LearnerCostState(state, account="heavy", plan="free", resets_at="2026-10-22T00:00:00Z",
+                                         economy=economy)
+
+
+def test_the_learner_cap_degrades_to_the_economy_model_then_refuses_a_paid_only_chain(world, monkeypatch):
+    """Gemini primary and DeepSeek backup, both paid, through the real router: at the learner's cap only the economy
+    model is asked; at the hard ceiling nothing is sent and the request is that learner's own refusal (the next
+    learner, still under their cap, gets the whole chain)."""
+    from writing_coach.ai import learner_cost
+
+    economy = routing.ProviderTarget("deepseek", DEEPSEEK_MODEL)
+    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda *a: _learner(learner_cost.DEGRADE, economy))
+    result = ask("learner_dictionary")
+    assert result.provider == "deepseek" and world.transport.hosts() == ["deepseek"], "the paid primary is skipped"
+    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda *a: _learner(learner_cost.REFUSE))
+    with pytest.raises(learner_cost.LearnerCostCapReached):
+        ask("learner_dictionary")
+    assert world.transport.hosts() == ["deepseek"], "nothing is sent at the hard ceiling"
+    assert world.repo.operations[-1]["failure_class"] == "not_counted", "not a provider outage"
+    monkeypatch.setattr(platform._learner_cost, "learner_cost_state", lambda *a: _learner(learner_cost.OK))
+    assert ask("learner_dictionary").provider == "deepseek"
+    assert world.transport.hosts() == ["deepseek", "gemini", "deepseek"], "another learner: the whole chain"

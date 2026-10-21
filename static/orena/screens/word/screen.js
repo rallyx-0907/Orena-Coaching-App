@@ -36,7 +36,7 @@ import { speakOnDevice } from '../../kit/device-voice.js';
 import { canPlayAudio } from '../../kit/audio-support.js';
 import { wordSeed } from '../../product/word-seed.js';
 import { meaningLanguageLabel } from '../../product/vocabulary-meaning.js';
-import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
+import { refusalLineOf } from '../plan/quota-notice.js';
 
 /* A failed read is not "this word is not saved": it reaches the router's load-error card (Back / Retry, retried by
    itself when the connection returns). Only an answered, empty list means the word is not saved. */
@@ -158,7 +158,7 @@ export default async function mountWordDetail(element, ctx) {
   let clipsReady = false;
   let lookupFailed = false; // the lookup was refused or unreachable (not paused): with nothing else to show, the load-error card
   let clipsFailed = false; // the clips read failed: the panel is left out, never "no context yet"
-  let wordPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in the deep panel's place, no retry
+  let wordPause = ''; // the system's daily AI pause (a refused request that says so): said in the deep panel's place, no retry
   const pending = Promise.all([
     // The lookup runs in the learner's current learning language: the server refuses any other (409,
     // media_interaction.py#_validated_source_language). A Chinese word looked up under English can answer with an
@@ -179,7 +179,6 @@ export default async function mountWordDetail(element, ctx) {
     // A refused or empty lookup never fails the page: the card is drawn from whatever exists - here only the
     // word itself - with no reading rather than a wrong one (rule 40).
     detail = found;
-    if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
     clips = withTappedSentence(mapClips(clipsPayload), tapped);
     clipsReady = !clipsFailed;
   }
@@ -375,7 +374,6 @@ export default async function mountWordDetail(element, ctx) {
       if (!ctx.isCurrent()) return;
       lookupPending = false;
       detail = found;
-      if (!found?.available && !wordPause) wordPause = pausedLineNow('/api/dictionary/word-detail');
       clips = withTappedSentence(mapClips(clipsPayload), tapped);
       clipsReady = !clipsFailed;
       deepRows = mapDeepWord(detail);

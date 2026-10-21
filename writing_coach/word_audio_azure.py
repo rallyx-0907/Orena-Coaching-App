@@ -184,11 +184,7 @@ class AzureVoice:
             return None
         from writing_coach.ai import spend_gate
 
-        # The system's daily AI ceiling: a failed voice, so the next voice answers - and the word still sounds, so the
-        # response is not marked "AI paused".
-        if spend_gate.ceiling_reached(mark=False):
-            self._state.failed = True
-            return None
+        spend_gate.observe()  # the system's daily AI spend monitor (D-251): it alerts, it never refuses
         # PR-MON-7D2: a fresh synthesis is `audio.tts` (characters), admitted only here - after the cache and the free
         # voices missed - so cached, stored and catalogue audio is never charged. Pending: the no-op until its limits.
         from writing_coach.billing.funding_context import require_paid

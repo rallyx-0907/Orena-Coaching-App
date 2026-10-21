@@ -309,9 +309,9 @@ class GroqSpeechAsrProvider:
         FUNDING_ENFORCEMENT is `enforce` (PR-MON-6 §2)."""
         from writing_coach.billing.funding_context import require_paid
 
-        from writing_coach.ai.spend_gate import require_below_ceiling
+        from writing_coach.ai.spend_gate import observe
 
-        require_below_ceiling()  # the system's daily AI spend ceiling, before anything is sent
+        observe()  # the system's daily AI spend monitor (D-251): it alerts, it never refuses
         require_paid(capability="speech_asr", provider=str(getattr(self, "provider_id", "") or "groq"),
                      timeout_seconds=self._timeout_seconds)   # the timeout every Groq request uses
 

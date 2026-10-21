@@ -9,7 +9,7 @@
    one decimal otherwise ("1.1 of 5 pronunciation minutes"). */
 import { languages } from '../../copy/index.js';
 import { toast } from '../../kit/toast.js';
-import { aiPauseOf, recentAiPause } from '../../infrastructure/ai-paused.js';
+import { aiPauseOf } from '../../infrastructure/ai-paused.js';
 import { t, windowedKey } from './copy.js';
 import { displayAmount, formatNumber } from './model.js';
 import { holdLanguageRefusal, REASON_LANGUAGE } from './reason.js';
@@ -127,11 +127,10 @@ export function pausedMessage(resetsAt) {
   return t('aiPaused', { time: new Intl.DateTimeFormat(languages().ui, { hour: 'numeric', minute: '2-digit' }).format(at) });
 }
 
-/* The same pause as any response carries it (header `X-Orena-AI-Paused`, contract v11, D-235): the surface that made the call
-   shows this line in the place it already shows a failed request - no retry (it would be refused again), no way to the plans
-   (it is not the learner's plan). `pausedLineOf(error)` reads a refused request; `pausedLineNow(route)` serves a call the server
-   answered 200 with part of it unavailable (Listening's meaning), which has no error to read. '' when there is no pause,
-   so a surface falls through to its own failed-request text. */
+/* The agent's `daily_ai_limit` refusal (contract v10): the surface that made the call shows this line in the place it already
+   shows a failed request - no retry (it would be refused again), no way to the plans. Since D-251 the system's daily spend
+   is a monitor and the `X-Orena-AI-Paused` header is no longer sent, so only a refused request carries a pause. '' when
+   there is none, so a surface falls through to its own failed-request text. */
 export function isAiPaused(error) {
   return Boolean(aiPauseOf(error));
 }
@@ -152,11 +151,6 @@ export function pausedLineOf(error) {
    already shows a failed request - never a Retry, which would be refused again. '' for every other failure. */
 export function refusalLineOf(error) {
   return pausedLineOf(error) || (isQuotaExhausted(error) ? quotaMessage(error) : '');
-}
-
-export function pausedLineNow(routes) {
-  const pause = recentAiPause(routes);
-  return pause ? pausedMessage(pause.resetsAt) : '';
 }
 
 /* A recording room's catch for speech-to-text (G5): a refusal that is the system's or the account's limit is said in a

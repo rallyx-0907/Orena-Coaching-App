@@ -422,6 +422,13 @@ class SQLitePlatformRepository:
         # No ledger here: a spend cap must refuse, not read zero.
         raise NotImplementedError("the AI spend ledger is PostgreSQL-only")
 
+    def ai_spend_since_for_account(self, user_key: str, since: datetime, *, capability: str | None = None,
+                                   provider: str | None = None, model: str | None = None,
+                                   exclude_providers: tuple[str, ...] = (),
+                                   exclude_features: tuple[str, ...] = ()) -> tuple[float, int]:
+        # No per-account ledger here: a cap must not read zero.
+        raise NotImplementedError("the per-account AI ledger is PostgreSQL-only")
+
     def record_ai_cost(self, user_key: str, event: dict) -> bool:
         return False
 
@@ -719,6 +726,33 @@ class PostgresPlatformRepository:
         with self.engine.connect() as connection:
             usd, unpriced = connection.execute(query, {"since": since, "capability": str(capability),
                                                        "provider": provider, "model": model}).one()
+        return float(usd or 0), int(unpriced or 0)
+
+    def ai_spend_since_for_account(self, user_key: str, since: datetime, *, capability: str | None = None,
+                                   provider: str | None = None, model: str | None = None,
+                                   exclude_providers: tuple[str, ...] = (),
+                                   exclude_features: tuple[str, ...] = ()) -> tuple[float, int]:
+        """One learner's AI cost since `since` from `ai_cost_records` (AC-2; indexed by account and time): the
+        estimated USD, and how many of the account's calls have no price (D-251, the per-learner caps). Optionally
+        one capability (`feature`), one rung (provider and model), and without the providers named in
+        `exclude_providers` (local and free-tier: they cost Orena nothing) or the features in `exclude_features` (those
+        with their own plan meter, ai/learner_cost.py). A row without a price adds 0 USD and is counted as unpriced."""
+
+        query = text(
+            "SELECT COALESCE(SUM(c.cost_usd), 0), COUNT(*) FILTER (WHERE c.cost_state <> 'estimated') "
+            "FROM ai_cost_records c JOIN users u ON u.id = c.account_id "
+            "WHERE u.user_key = :user_key AND c.occurred_at >= :since "
+            "AND (CAST(:capability AS TEXT) IS NULL OR c.feature = CAST(:capability AS TEXT)) "
+            "AND (CAST(:provider AS TEXT) IS NULL OR c.provider = CAST(:provider AS TEXT)) "
+            "AND (CAST(:model AS TEXT) IS NULL OR c.model = CAST(:model AS TEXT)) "
+            "AND NOT (c.provider = ANY(CAST(:excluded AS TEXT[]))) "
+            "AND NOT (c.feature = ANY(CAST(:excluded_features AS TEXT[])))"
+        )
+        with self.engine.connect() as connection:
+            usd, unpriced = connection.execute(query, {
+                "user_key": str(user_key), "since": since, "capability": capability, "provider": provider,
+                "model": model, "excluded": [str(item) for item in exclude_providers],
+                "excluded_features": [str(item) for item in exclude_features]}).one()
         return float(usd or 0), int(unpriced or 0)
 
     def ai_spend_for_capability(self, capability: str) -> float:

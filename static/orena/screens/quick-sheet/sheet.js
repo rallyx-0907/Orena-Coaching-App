@@ -61,7 +61,7 @@ import {
 import { pullIntoDevice, scheduleAnnotationPush, noteRemoved } from '../reader/annotations-sync.js';
 import { keepProvenance } from '../../product/account-records.js';
 import { createStrokeTiles } from '../word/stroke-tiles.js';
-import { pausedLineNow, refusalLineOf } from '../plan/quota-notice.js';
+import { refusalLineOf } from '../plan/quota-notice.js';
 import { planRequired } from '../../kit/access.js';
 import { openUpgradeSheet } from '../plan/upgrade-sheet.js';
 
@@ -168,7 +168,7 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
   let contextualPending = false; // true only while the learner's own "Why here?" is being answered (never on open)
   let lookupFailed = false; // the first lookup was refused or unreachable (not an AI pause): said as a failure with Retry, never as "no gloss prepared"
   let contextualFailed = false; // the provider failed (contextStatus provider_error): offer Retry
-  let aiPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure, with no Retry
+  let aiPause = ''; // the system's daily AI pause (a refused request that says so): said in place of the failure, with no Retry
 
   function posMarkup() {
     const label = posLabel(card.pos, t);
@@ -472,7 +472,6 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
           const ctxText = contextFor(target, context || sentence);
           try {
             detail = await api.wordDetail(wordDetailRequest({ contextual: false, target, context: ctxText, lang, support, source }));
-            if (!detail?.available) aiPause = pausedLineNow('/api/dictionary/word-detail');
           } catch (error) {
             detail = null;
             aiPause = refusalLineOf(error);
@@ -491,7 +490,6 @@ export async function openWordSheet(ctx = {}, { word, lang, sentence = '', conte
             withinTime(api.wordDetail(wordDetailRequest({ contextual: true, target, context: ctxText, lang, support, source })), CONTEXT_WAIT_MS).then(enriched => {
               if (!alive) return;
               contextualFailed = enriched?.contextStatus === 'provider_error' && Boolean(enriched?.retryable);
-              if (contextualFailed || enriched?.available === false) aiPause = pausedLineNow('/api/dictionary/word-detail');
               if (aiPause) contextualFailed = true;
               // Whether it is kept is the learner's own last save/unsave, not what the answer says.
               const answer = enriched ? { ...enriched, saved: keptNow } : enriched;
@@ -555,7 +553,7 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
   let sheetData = { available: false, translation: '', structure: [], vocabulary: [] };
   let sheetPause = ''; // the daily AI pause on the structure / vocabulary call (same line, no Retry)
   let translation = { state: 'loading', text: '' }; // the sentence's meaning, from the Reader's own shared source
-  let aiPause = ''; // the system's daily AI pause (X-Orena-AI-Paused, D-235): said in place of the failure, with no Retry
+  let aiPause = ''; // the system's daily AI pause (a refused request that says so): said in place of the failure, with no Retry
   let tab = 'Translation';
   const canHighlight = Boolean(storage && source?.content_id && source?.segment);
   const highlightOn = () => canHighlight && isHighlighted(loadHighlights(storage, owner, source.content_id), source.segment, subject, legacy);
@@ -606,7 +604,6 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
       const response = await api.readingTranslate({ source_language: lang, target_language: support, content_id: source?.content_id || undefined, segments: [{ segment_id: 's0', text: subject }] });
       const meaning = response?.status === 'ready' ? String(response.translations?.[0]?.translated_meaning || '').trim() : '';
       translation = meaning ? { state: 'ready', text: meaning } : { state: 'failed', text: '' };
-      if (!meaning) aiPause = pausedLineNow('/api/reading/translate');
     } catch (error) {
       translation = { state: 'failed', text: '' };
       aiPause = refusalLineOf(error);
@@ -787,7 +784,6 @@ export async function openSentenceSheet(ctx = {}, { sentence, focus = '', lang, 
           }
           if (!alive) return;
           sheetData = mapSentenceSheet(response || {});
-          if (!sheetData.available && !sheetPause) sheetPause = pausedLineNow('/api/dictionary/sentence-sheet');
           paint();
         })();
         return () => {
